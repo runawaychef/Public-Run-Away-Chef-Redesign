@@ -1,0 +1,2112 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Runaway Chef Project</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1f2937">
+    <link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
+    <link rel="apple-touch-icon" href="icon-180.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="RunawayChef">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <style>
+        html, body { font-size: 13px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background: linear-gradient(to bottom, #f7f7f7, #e5e7eb); }
+        /* Базовый размер для всего контента приложения */
+        #appContent { font-size: 13px; }
+        .btn { transition: all 0.2s ease; }
+        .btn:active { transform: scale(0.97); opacity: 0.85; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: flex-start; overflow-y: auto; padding: 16px 8px; z-index: 100; }
+        #confirmModal { z-index: 300; }
+        .stats-table, .stats-table td, .stats-table th { font-size: 11px; color: #374151; }
+        .stats-table th { font-size: 10px; color: #6b7280; font-weight: 600; }
+        .stats-table td.stats-num { font-weight: 600; color: #111827; }
+        .stats-table td.stats-pct { font-size: 10px; color: #6b7280; }
+        .modal-content { background: white; padding: 16px; border-radius: 16px; max-width: 380px; width: 100%; margin: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
+
+        /* ── Вкладки — нижняя синяя черта вместо серой заливки ── */
+        .tab { cursor: pointer; position: relative; background: transparent !important; color: #6b7280 !important; border-radius: 0 !important; padding-bottom: 6px !important; border-bottom: 2px solid transparent; transition: color 0.2s, border-color 0.2s; font-size: 14px; font-weight: 500; }
+        .tab.active { color: #4f46e5 !important; font-weight: 600; position: relative; }
+        .tab.active::after { content: ""; position: absolute; bottom: -2px; left: 10%; right: 10%; height: 3px; background: #4f46e5; border-radius: 9999px; }
+        .tab:hover:not(.active) { color: #374151 !important; }
+
+        /* Единый стиль таблиц — сетка как в Складе */
+        table td, table th { border: 1px solid #e5e7eb; padding: 2px 4px !important; line-height: 1.3; }
+        table thead tr { background: #f3f4f6; }
+        #statsCustomerTableScroll table { touch-action: pan-y; }
+        td, th { font-size: 13px; font-family: inherit; }
+        .flag { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin: 0; vertical-align: middle; }
+        .flag-red { background-color: #f97316; }
+        .flag-yellow { background-color: #facc15; }
+        .flag-green { background-color: #22c55e; }
+        svg { cursor: pointer; }
+        input::placeholder, select:invalid { color: #6b7280; opacity: 1; }
+        select option { color: #1f2937; }
+        #chartCanvas { max-width: 300px; max-height: 300px; }
+
+        /* ── Fade-in для карточек ── */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeInUp 0.18s ease both; }
+
+        /* Контейнер для slide-анимации вкладок */
+        #tabsWrapper {
+            position: relative;
+            overflow: hidden;
+        }
+        .tab-content {
+            will-change: transform;
+        }
+        /* Во время анимации обе вкладки абсолютны — чтобы не растягивали страницу */
+        #tabsWrapper.animating {
+            min-height: var(--tabs-height, 200px);
+        }
+        #tabsWrapper.animating .tab-content:not(.hidden) {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            pointer-events: none;
+        }
+        @keyframes slideInFromRight {
+            from { transform: translateX(100%); }
+            to   { transform: translateX(0); }
+        }
+        @keyframes slideInFromLeft {
+            from { transform: translateX(-100%); }
+            to   { transform: translateX(0); }
+        }
+        @keyframes slideOutToLeft {
+            from { transform: translateX(0); }
+            to   { transform: translateX(-100%); }
+        }
+        @keyframes slideOutToRight {
+            from { transform: translateX(0); }
+            to   { transform: translateX(100%); }
+        }
+        .slide-in-right  { animation: slideInFromRight 0.25s cubic-bezier(0.4,0,0.2,1) both; }
+        .slide-in-left   { animation: slideInFromLeft  0.25s cubic-bezier(0.4,0,0.2,1) both; }
+        .slide-out-left  { animation: slideOutToLeft   0.25s cubic-bezier(0.4,0,0.2,1) both; }
+        .slide-out-right { animation: slideOutToRight  0.25s cubic-bezier(0.4,0,0.2,1) both; }
+
+        /* ── Строки списков ── */
+        .text-13 { font-size: 13px; }
+        .order-row { cursor: pointer; transition: background 0.12s; }
+        .order-row:hover { background: #f0f4ff; }
+        .order-row:active { background: #e0e7ff; }
+
+        /* Детальный вид заказа */
+        #orderDetail { display: none; }
+        #orderDetail.active { display: block; }
+        #ordersList.hidden-list { display: none; }
+
+        /* Детальный вид изделия */
+        #productDetail { display: none; }
+        #productDetail.active { display: block; }
+        #customerDetail { display: none; }
+        #customerDetail.active { display: block; }
+        #ingredientDetail { display: none; }
+        #ingredientDetail.active { display: block; }
+
+        /* Детальный вид полуфабриката */
+        #semiFinishedDetail { display: none; }
+        #semiFinishedDetail.active { display: block; }
+
+        /* Строка новой позиции */
+        .new-item-row td { padding: 3px 2px; vertical-align: middle; }
+        .new-item-row select, .new-item-row input {
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            padding: 2px 4px;
+            font-size: 12px;
+            width: 100%;
+        }
+
+        /* Экран входа в аккаунт (Supabase Auth) — открывается раньше выбора сотрудника */
+        #authScreen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, #f7f7f7, #e5e7eb);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 210;
+        }
+        #authScreen.hidden { display: none; }
+
+        /* Экран выбора сотрудника */
+        #loginScreen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, #f7f7f7, #e5e7eb);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 200;
+        }
+        #loginScreen.hidden { display: none; }
+        #appContent.app-locked { display: none; }
+
+        /* Индикатор загрузки. z-index ниже, чем у #confirmModal (300) — иначе
+           если showInfo()/showConfirm() вызываются во время показа загрузки
+           (например, после сохранения файла), окно подтверждения визуально
+           прячется под спиннером и его physически нельзя нажать. */
+        #loadingOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.7);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 250;
+        }
+        #loadingOverlay.hidden { display: none; }
+
+        /* Realtime-тост */
+        #realtimeToast {
+            position: fixed; bottom: 72px; left: 50%; transform: translateX(-50%);
+            background: #1f2937; color: #fff;
+            padding: 8px 16px; border-radius: 20px;
+            font-size: 13px; white-space: nowrap;
+            z-index: 400; opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        #realtimeToast.visible { opacity: 1; }
+        .spinner {
+            border: 3px solid #e5e7eb; border-top-color: #6b7280;
+            border-radius: 50%; width: 28px; height: 28px;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Кнопка настроек (шестерёнка) в правом верхнем углу.
+           top учитывает безопасную зону iPhone (чёлка/динамический остров) —
+           на Android env() равен 0, поведение не меняется. */
+        #settingsBtn {
+            position: fixed; top: calc(6px + env(safe-area-inset-top)); right: 6px;
+            background: white; border: 1px solid #e5e7eb; border-radius: 50%;
+            width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+            z-index: 50; box-shadow: 0 1px 3px rgba(0,0,0,0.08); cursor: pointer;
+        }
+        #settingsBtn.hidden { display: none; }
+
+        /* Иконка "Статистика" — та же стилистика, что и шестерёнка, левее неё */
+        #statsBtn {
+            position: fixed; top: calc(6px + env(safe-area-inset-top)); right: 46px;
+            background: white; border: 1px solid #e5e7eb; border-radius: 50%;
+            width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+            z-index: 50; box-shadow: 0 1px 3px rgba(0,0,0,0.08); cursor: pointer;
+        }
+        #statsBtn.hidden { display: none; }
+
+        /* Иконка "Склад" — корзина, левее статистики */
+        #inventoryBtn {
+            position: fixed; top: calc(6px + env(safe-area-inset-top)); right: 86px;
+            background: white; border: 1px solid #e5e7eb; border-radius: 50%;
+            width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+            z-index: 50; box-shadow: 0 1px 3px rgba(0,0,0,0.08); cursor: pointer;
+        }
+        #inventoryBtn.hidden { display: none !important; }
+
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.4); }
+        }
+
+        /* ── FAB кнопка "+" — создание новой записи ── */
+        #fabAddBtn {
+            position: fixed; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom));
+            width: 56px; height: 56px; border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            color: white; border: none;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 16px rgba(79,70,229,0.45), 0 2px 6px rgba(0,0,0,0.15);
+            z-index: 60; cursor: pointer;
+            animation: fabIn 0.25s cubic-bezier(0.34,1.56,0.64,1) both;
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        #fabAddBtn:active { transform: scale(0.92); box-shadow: 0 2px 8px rgba(79,70,229,0.3); }
+        #fabAddBtn.hidden { display: none; }
+        @keyframes fabIn {
+            from { opacity: 0; transform: scale(0.5) translateY(20px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .search-input-wrap { position: relative; }
+        .search-dropdown { position: absolute; top: 100%; left: 0; right: 0; z-index: 200; background: white; border: 1px solid #d1d5db; border-top: none; max-height: 180px; overflow-y: auto; box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .search-dropdown.hidden { display: none; }
+        .search-dropdown-item { padding: 5px 6px; font-size: 12px; cursor: pointer; border-bottom: 1px solid #f3f4f6; }
+        .search-dropdown-item:last-child { border-bottom: none; }
+        .search-dropdown-item:hover, .search-dropdown-item.active { background: #eef2ff; }
+        .action-icon { stroke: #6b7280; transition: stroke 0.15s ease; }
+        .action-icon.icon-edit:hover, .action-icon.icon-edit:active { stroke: #3b82f6; }
+        .action-icon.icon-delete:hover, .action-icon.icon-delete:active { stroke: #ef4444; }
+        .action-icon.icon-copy:hover, .action-icon.icon-copy:active { stroke: #22c55e; }
+    </style>
+</head>
+<body class="font-sans">
+
+<!-- Экран входа / регистрации -->
+<div id="authScreen" class="hidden">
+    <div class="bg-white p-5 rounded-xl shadow-lg w-full max-w-xs text-center">
+
+        <!-- Логотип -->
+        <img src="icon-192.png" alt="Runaway Chef" style="width:56px;height:56px;border-radius:12px;margin:0 auto 10px;">
+        <h1 class="text-lg font-bold text-gray-800 mb-1">Runaway Chef</h1>
+        <p class="text-xs text-gray-400 mb-4">Учёт заказов и рецептур</p>
+
+        <!-- Заголовок режима (Вход / Регистрация / Сброс пароля) -->
+        <p id="authTitle" class="text-sm font-semibold text-gray-700 mb-3">Вход</p>
+
+        <!-- Кнопка Google -->
+        <button id="googleSignInBtn" class="btn w-full flex items-center justify-center gap-2 border border-gray-300 rounded-lg py-2 px-3 text-sm text-gray-700 hover:bg-gray-50 mb-3">
+            <svg width="18" height="18" viewBox="0 0 48 48">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+            </svg>
+            Войти через Google
+        </button>
+
+        <div class="flex items-center gap-2 mb-3">
+            <div class="flex-1 h-px bg-gray-200"></div>
+            <span class="text-xs text-gray-400">или</span>
+            <div class="flex-1 h-px bg-gray-200"></div>
+        </div>
+
+        <!-- Форма email/пароль -->
+        <form id="authForm" class="flex flex-col gap-2 text-left">
+            <input id="authEmail" type="email" required placeholder="Email" autocomplete="username"
+                class="border border-gray-300 p-2 rounded-lg text-sm focus:outline-none focus:border-indigo-400">
+            <input id="authPassword" type="password" placeholder="Пароль" autocomplete="current-password"
+                class="border border-gray-300 p-2 rounded-lg text-sm focus:outline-none focus:border-indigo-400">
+            <button id="authSubmitBtn" type="submit"
+                class="btn bg-indigo-600 text-white p-2 rounded-lg hover:bg-indigo-700 text-sm mt-1 font-medium">
+                Войти
+            </button>
+        </form>
+
+        <!-- Сообщения об ошибке и успехе -->
+        <p id="authError" class="text-xs text-red-500 mt-2 hidden"></p>
+        <p id="authSuccess" class="text-xs text-green-600 mt-2 hidden"></p>
+
+        <!-- Забыли пароль -->
+        <p id="forgotPasswordLink" class="text-xs text-indigo-500 mt-2 cursor-pointer hover:underline">
+            Забыли пароль?
+        </p>
+
+        <!-- Назад к входу (показывается только в режиме сброса пароля) -->
+        <p id="backToLoginLink" class="text-xs text-indigo-500 mt-2 cursor-pointer hover:underline hidden">
+            ← Назад к входу
+        </p>
+
+        <!-- Переключение между входом и регистрацией -->
+        <p id="toggleAuthMode" class="text-xs text-gray-500 mt-3 cursor-pointer hover:underline">
+            Нет аккаунта? Зарегистрироваться
+        </p>
+
+    </div>
+</div>
+
+<!-- Экран выбора сотрудника -->
+<div id="loginScreen">
+    <div class="bg-white p-4 rounded-md shadow-md w-full max-w-xs text-center">
+        <h1 class="text-lg font-bold mb-3 text-gray-800">Runaway Chef Project</h1>
+        <p class="text-sm text-gray-600 mb-3">Кто вводит данные?</p>
+        <div id="employeeList" class="flex flex-col gap-2"></div>
+        <p id="loginError" class="text-xs text-red-500 mt-2 hidden">Не удалось загрузить список сотрудников. Проверьте подключение к интернету.</p>
+        <p class="text-xs text-gray-400 mt-3 cursor-pointer underline" onclick="signOutAccount()">Сменить аккаунт</p>
+    </div>
+</div>
+
+<!-- Индикатор загрузки -->
+<div id="loadingOverlay" class="hidden">
+    <div style="text-align:center;">
+        <div class="spinner"></div>
+        <p id="loadingOverlayText" class="text-xs text-gray-600 mt-2" style="display:none;"></p>
+    </div>
+</div>
+
+<!-- Realtime-тост -->
+<div id="realtimeToast">🔄 Данные обновлены</div>
+
+<!-- Склад: корзина, доступна из любого раздела -->
+<button id="inventoryBtn" onclick="openInventoryModal()" title="Склад">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#4b5563" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+        <path d="M1 1h4l2.68 13.39a2 2 0 001.98 1.61h9.72a2 2 0 001.98-1.61L23 6H6"/>
+    </svg>
+    <span id="inventoryAlertDot" class="hidden" style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;background:#ef4444;border-radius:50%;animation:pulse-dot 1.5s infinite;"></span>
+</button>
+
+<!-- Статистика: значок графика, доступен из любого раздела -->
+<button id="statsBtn" class="hidden" onclick="showTab('stats')" title="Статистика">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#4b5563" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="13" width="3" height="5"/><rect x="12" y="9" width="3" height="9"/><rect x="17" y="5" width="3" height="13"/></svg>
+</button>
+
+<!-- Шестерёнка: служебные функции (доступна во всех разделах) -->
+<button id="settingsBtn" class="hidden" onclick="openSettingsModal()" title="Настройки">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4b5563" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+</button>
+
+<!-- Плавающая кнопка "+": создать заказ/клиента/изделие/ингредиент — контекстно по разделу -->
+<button id="fabAddBtn" class="hidden" title="Добавить">
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+</button>
+
+<div class="container mx-auto max-w-2xl">
+    <!-- Sticky шапка: логотип + меню вкладок -->
+    <div style="position:sticky; top:0; z-index:40; background:#f3f4f6; padding: 8px 8px 0; padding-top: max(8px, env(safe-area-inset-top));">
+        <div class="bg-white rounded-md shadow-md p-3 flex items-center gap-3 mb-2">
+            <img src="icon-192.png" alt="Runaway Chef" style="width:48px;height:48px;border-radius:10px;flex-shrink:0;">
+            <div>
+                <div class="text-xl font-bold text-gray-800 leading-tight">Runaway Chef Project</div>
+                <div class="text-xs text-gray-400">Учёт заказов и рецептур</div>
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-1 pb-2">
+            <button onclick="showTab('orders')" class="tab btn bg-gray-200 text-gray-800 p-1 rounded-md hover:bg-gray-300 text-base font-semibold active">Заказы</button>
+            <button onclick="showTab('customers')" class="tab btn bg-gray-200 text-gray-800 p-1 rounded-md hover:bg-gray-300 text-base font-semibold">Клиенты</button>
+            <button onclick="showTab('products')" class="tab btn bg-gray-200 text-gray-800 p-1 rounded-md hover:bg-gray-300 text-base font-semibold">Ассортимент</button>
+            <button onclick="showTab('ingredients')" class="tab btn bg-gray-200 text-gray-800 p-1 rounded-md hover:bg-gray-300 text-base font-semibold">Склад</button>
+        </div>
+    </div>
+
+    <!-- Контент страницы -->
+    <div class="p-2">
+    <div id="tabsWrapper">
+    <div id="appContent" class="app-locked">
+
+        <!-- ===== ИЗДЕЛИЯ ===== -->
+        <div id="products" class="tab-content hidden">
+            <div id="productsList">
+                <div class="bg-white p-2 rounded-md shadow-md">
+                    <h2 class="text-sm font-semibold mb-2 text-gray-800">Ассортимент</h2>
+                    <p class="text-xs text-gray-400 mb-2">Нажмите на строку изделия, чтобы открыть рецептуру</p>
+                    <p id="productsUnitWarning" class="text-xs text-red-600 bg-red-50 border border-red-200 rounded-md p-1.5 mb-2 hidden">⚠ У некоторых изделий не выбрана единица измерения или не подтверждён рецепт. Откройте их и проверьте.</p>
+                    <table class="w-full table-auto table-clean">
+                        <thead><tr class="bg-gray-100">
+                            <th class="p-1 text-xs w-[45%]">Название</th>
+                            <th class="p-1 text-xs w-[15%]">Ед.</th>
+                            <th class="p-1 text-xs w-[15%]">Цена (€)</th>
+                            <th class="p-1 text-xs w-[25%]">Действия</th>
+                        </tr></thead>
+                        <tbody id="productTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ДЕТАЛЬНЫЙ ВИД ИЗДЕЛИЯ / РЕЦЕПТУРА -->
+            <div id="productDetail">
+                <div class="bg-white p-2 rounded-md shadow-md mb-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <button onclick="closeProductDetail()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                            Назад к изделиям
+                        </button>
+                        <button onclick="deleteCurrentProduct()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300">Удалить изделие</button>
+                    </div>
+                    <div id="pdUnitWarning" class="hidden bg-red-50 border border-red-200 text-red-700 text-xs rounded-md p-1.5 mb-2">
+                        ⚠ Для этого изделия не выбрана единица измерения. Пожалуйста, выберите «шт» или «кг».
+                    </div>
+                    <div class="grid grid-cols-2 gap-1 mb-2">
+                        <div>
+                            <label class="text-xs text-gray-500">Название</label>
+                            <input id="pdName" type="text" onblur="savePdHeader()" class="border p-0.5 rounded-md w-full text-base font-bold text-gray-900">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">Единица продажи</label>
+                            <select id="pdUnit" onchange="savePdHeader()" class="border p-0.5 rounded-md w-full">
+                                <option value="">— выберите —</option>
+                                <option value="pcs">за штуку (шт)</option>
+                                <option value="kg">на вес (кг)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">Продажная цена (€) <span id="pdPriceUnitHint" class="text-gray-400"></span></label>
+                            <input id="pdPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" onchange="savePdHeader()" class="border p-0.5 rounded-md w-full">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">Размер партии</label>
+                            <input id="pdBatchSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" onchange="savePdHeader()" class="border p-0.5 rounded-md w-full">
+                        </div>
+                        <div class="col-span-2">
+                            <label class="text-xs text-gray-500">Прочие расходы на партию (€)</label>
+                            <input id="pdOtherCosts" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" onchange="savePdHeader()" class="border p-0.5 rounded-md w-full">
+                        </div>
+                    </div>
+                    <button id="pdSaveNewBtn" onclick="saveNewProduct()" class="hidden btn bg-gray-500 text-white w-full py-1.5 rounded-md text-sm mt-2 hover:bg-gray-600">Сохранить</button>
+                </div>
+
+                <div id="pdRecipeBlock" class="bg-white p-2 rounded-md shadow-md">
+                    <h2 class="text-xs font-semibold text-gray-800 mb-2">Рецептура (на партию)</h2>
+                    <div class="bg-gray-50 border border-dashed border-gray-300 rounded-md p-2 mb-2">
+                        <label class="text-xs text-gray-500">Скопировать рецепт из другого изделия</label>
+                        <div class="search-input-wrap">
+                            <input id="copyRecipeFromInput" placeholder="— выберите изделие —" autocomplete="off" class="border p-1 rounded-md text-xs w-full">
+                            <div id="copyRecipeFromDropdown" class="search-dropdown hidden"></div>
+                        </div>
+                    </div>
+                    <table class="w-full table-auto mb-2">
+                        <thead><tr class="bg-gray-100">
+                            <th class="p-1 text-xs w-[40%]">Ингредиент</th>
+                            <th class="p-1 text-xs w-[25%]">Кол-во</th>
+                            <th class="p-1 text-xs w-[20%]">Стоимость</th>
+                            <th class="p-1 text-xs w-[15%]">Действия</th>
+                        </tr></thead>
+                        <tbody id="recipeItemsBody"></tbody>
+                    </table>
+                    <div class="bg-blue-50 rounded-md p-2 mb-2">
+                        <label class="text-xs text-gray-500">Добавить в рецепт</label>
+                        <div class="search-input-wrap mb-1">
+                            <input id="newRecipeIngredient" placeholder="— ингредиент / полуфабрикат —" autocomplete="off" class="border p-1 rounded-md text-xs w-full">
+                            <div id="newRecipeIngredientDropdown" class="search-dropdown hidden"></div>
+                        </div>
+                        <div class="flex gap-1">
+                            <input id="newRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="Количество" class="border p-1 rounded-md text-xs flex-1">
+                            <button onclick="addIngredientToRecipe()" class="btn bg-gray-500 text-white px-3 py-1 rounded-md text-xs hover:bg-gray-600 whitespace-nowrap">+ Добавить</button>
+                        </div>
+                    </div>
+                    <label class="flex items-center gap-2 text-xs text-gray-700 border-t pt-2 mb-1 cursor-pointer">
+                        <input type="checkbox" id="pdRecipeConfirmed" onchange="toggleRecipeConfirmed()">
+                        Рецепт заполнен полностью
+                    </label>
+                    <label class="flex items-center gap-2 text-xs text-gray-700 mb-1 cursor-pointer">
+                        <input type="checkbox" id="pdTrackStock" onchange="toggleTrackStock()">
+                        Отслеживать остатки постоянно (включить в аналитику склада)
+                    </label>
+                    <div class="text-right text-xs text-gray-600 space-y-0.5 border-t pt-1">
+                        <div>Себестоимость партии: <span id="pdBatchCost" class="font-medium text-gray-800">0.00 €</span></div>
+                        <div>Себестоимость 1 шт: <span id="pdUnitCost" class="font-semibold text-gray-900">0.00 €</span></div>
+                        <div>Прибыль с 1 шт: <span id="pdProfit" class="font-semibold text-green-700">0.00 €</span> (<span id="pdProfitPct">0.0</span>%)</div>
+                    </div>
+                </div>
+
+                <!-- График динамики себестоимости изделия -->
+                <div class="bg-white p-2 rounded-md shadow-md mt-3">
+                    <h3 class="text-xs font-semibold text-gray-700 mb-2">Динамика себестоимости</h3>
+                    <canvas id="productCostChart" style="max-height:180px;"></canvas>
+                    <p id="productCostChartEmpty" class="text-xs text-gray-400 hidden">Недостаточно данных — нужно минимум 2 точки изменения цен</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== ИНГРЕДИЕНТЫ ===== -->
+        <div id="ingredients" class="tab-content hidden">
+            <div id="ingredientsList">
+                <div class="bg-white p-2 rounded-md shadow-md">
+                    <div class="flex items-center justify-between mb-2">
+                        <h2 class="text-sm font-semibold text-gray-800">Склад</h2>
+                        <div class="flex gap-1">
+                            <button onclick="openInventarizationModal()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300">📋 Инвентаризация</button>
+                            <button onclick="showTab('semiFinished')" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300">Полуфабрикаты →</button>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-400 mb-2">Нажмите на строку, чтобы открыть карточку</p>
+                    <table class="w-full table-auto">
+                        <thead><tr class="bg-gray-100">
+                            <th class="p-1 text-xs w-[35%]">Название</th>
+                            <th class="p-1 text-xs w-[20%]">Цена за ед.</th>
+                            <th class="p-1 text-xs w-[25%]">Остаток</th>
+                            <th class="p-1 text-xs w-[20%]">Хватит</th>
+                        </tr></thead>
+                        <tbody id="ingredientTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Карточка ингредиента -->
+            <div id="ingredientDetail">
+                <!-- Блок 1: Навигация + название + единица измерения -->
+                <div class="bg-white p-2 rounded-md shadow-md mb-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <button onclick="closeIngredientDetail()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                            Назад к складу
+                        </button>
+                        <button onclick="deleteCurrentIngredient()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300">Удалить ингредиент</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-1 mt-1">
+                        <div>
+                            <label class="text-xs text-gray-500">Название</label>
+                            <input id="idNameInput" type="text" onblur="saveIngredientHeader()" class="border border-gray-300 p-0.5 rounded-md w-full text-sm" placeholder="Например: Мука пшеничная">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">Единица</label>
+                            <select id="idUnitInput" onchange="saveIngredientHeader()" class="border border-gray-300 p-0.5 rounded-md w-full text-sm">
+                                <option value="g">г</option>
+                                <option value="kg">кг</option>
+                                <option value="ml">мл</option>
+                                <option value="l">л</option>
+                                <option value="pcs">шт</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button id="idSaveNewBtn" onclick="saveNewIngredient()" class="hidden btn bg-gray-500 text-white w-full py-1.5 rounded-md text-sm mt-2 hover:bg-gray-600">Сохранить</button>
+                </div>
+
+                <!-- Блок 2: Пополнить склад (остаток + новая цена) -->
+                <div id="ingStockBlock" class="bg-white p-2 rounded-md shadow-md mb-3">
+                    <h3 class="text-xs font-semibold text-gray-700 mb-2">Склад</h3>
+
+                    <!-- Текущий остаток -->
+                    <div class="flex items-center justify-between mb-3 border-b pb-2">
+                        <div>
+                            <span class="text-xs text-gray-500">Остаток:</span>
+                            <span id="ingBalanceValue" class="text-xs font-bold text-gray-800 ml-1">—</span>
+                            <span id="ingBalanceUnit" class="text-xs text-gray-500 ml-1"></span>
+                        </div>
+                        <div id="ingDaysLeft" class="text-xs text-gray-500"></div>
+                    </div>
+
+                    <!-- Форма пополнения (количество + цена) -->
+                    <div class="grid grid-cols-2 gap-1 mb-2">
+                        <div>
+                            <label class="text-xs text-gray-500">Дата</label>
+                            <input id="idNewPriceDate" type="date" class="border p-0.5 rounded-md w-full">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">Количество (<span id="ingQtyUnit"></span>)</label>
+                            <input id="idStockQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-0.5 rounded-md text-xs w-full" placeholder="0">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">Цена за упаковку (€)</label>
+                            <input id="idPackagePrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" onchange="renderIngredientUnitPricePreview()" class="border p-0.5 rounded-md w-full">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">Размер упаковки</label>
+                            <input id="idPackageSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" onchange="renderIngredientUnitPricePreview()" class="border p-0.5 rounded-md w-full">
+                        </div>
+                        <div class="col-span-2">
+                            <span class="text-xs text-gray-500">Цена за ед.: <span id="idUnitPrice" class="font-semibold text-gray-900">0.0000 €</span></span>
+                        </div>
+                    </div>
+                    <button onclick="saveStockAndPrice()" class="btn bg-gray-500 text-white p-1 rounded-md hover:bg-gray-600 text-xs w-full">Сохранить</button>
+                    <button onclick="openWriteOffModal()" class="btn bg-gray-200 text-gray-700 p-1 rounded-md hover:bg-gray-300 text-xs w-full mt-1">— Списать (корректировка)</button>
+                    <button onclick="closeIngredientDetail(); openInventarizationModal();" class="btn bg-gray-200 text-gray-700 p-1 rounded-md hover:bg-gray-300 text-xs w-full mt-1">📋 Инвентаризация</button>
+
+                    <!-- История пополнений -->
+                    <div id="ingStockHistory" class="mt-2"></div>
+                </div>
+
+                <!-- Блок 3: График изменения цены -->
+                <div class="bg-white p-2 rounded-md shadow-md mb-3">
+                    <h3 class="text-xs font-semibold text-gray-700  mb-2">Динамика цены</h3>
+                    <canvas id="ingredientPriceChart" style="max-height:180px;"></canvas>
+                    <p id="ingredientPriceChartEmpty" class="text-xs text-gray-400 hidden">Недостаточно данных — нужно минимум 2 записи</p>
+                </div>
+
+                <!-- Блок 4: История цен -->
+                <div class="bg-white p-2 rounded-md shadow-md mb-3">
+                    <h3 class="text-xs font-semibold text-gray-700 mb-2">История цен</h3>
+                    <div id="idPriceHistory"><p class="text-xs text-gray-400">Загрузка...</p></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== ПОЛУФАБРИКАТЫ ===== -->
+        <div id="semiFinished" class="tab-content hidden">
+            <div id="semiFinishedList">
+                <div class="flex justify-start mb-2">
+                    <button onclick="showTab('ingredients')" class="btn bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 text-xs flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                        Назад к ингредиентам
+                    </button>
+                </div>
+                <div class="bg-white p-2 rounded-md shadow-md">
+                    <div class="flex items-center justify-between mb-2">
+                        <h2 class="text-sm font-semibold text-gray-800">Полуфабрикаты</h2>
+                        <div class="flex gap-1">
+                            <button onclick="openSfInventarizationModal()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300">📋 Инвентаризация</button>
+                            <button onclick="showTab('ingredients')" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300">← Склад</button>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-400 mb-2">Нажмите на строку, чтобы открыть рецептуру</p>
+                    <p id="semiFinishedRecipeWarning" class="text-xs text-red-600 bg-red-50 border border-red-200 rounded-md p-1.5 mb-2 hidden">⚠ У некоторых полуфабрикатов не подтверждён рецепт. Откройте их и проверьте.</p>
+                    <table class="w-full table-auto">
+                        <thead><tr class="bg-gray-100">
+                            <th class="p-1 text-xs w-[35%]">Название</th>
+                            <th class="p-1 text-xs w-[20%]">Цена за ед.</th>
+                            <th class="p-1 text-xs w-[25%]">Остаток</th>
+                            <th class="p-1 text-xs w-[20%]">Хватит</th>
+                        </tr></thead>
+                        <tbody id="semiFinishedTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ДЕТАЛЬНЫЙ ВИД ПОЛУФАБРИКАТА -->
+            <div id="semiFinishedDetail">
+                <div class="bg-white p-2 rounded-md shadow-md mb-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <button onclick="closeSemiFinishedDetail()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                            Назад к полуфабрикатам
+                        </button>
+                        <button onclick="deleteCurrentSemiFinished()" class="text-xs px-2 py-1 rounded-md text-gray-700" style="background-color:#e5e7eb;">Удалить полуфабрикат</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-1 mb-2">
+                        <div class="col-span-2">
+                            <label class="text-xs text-gray-500">Название</label>
+                            <input id="sfdName" type="text" onblur="saveSfdHeader()" class="border p-0.5 rounded-md w-full text-base font-bold text-gray-900">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">Размер партии</label>
+                            <input id="sfdBatchSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" onchange="saveSfdHeader()" class="border p-0.5 rounded-md w-full">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">Единица</label>
+                            <select id="sfdUnit" onchange="saveSfdHeader()" class="border p-0.5 rounded-md w-full">
+                                <option value="g">граммы (г)</option>
+                                <option value="kg">килограммы (кг)</option>
+                                <option value="ml">миллилитры (мл)</option>
+                                <option value="l">литры (л)</option>
+                            </select>
+                        </div>
+                        <div class="col-span-2">
+                            <label class="text-xs text-gray-500">Прочие расходы на партию (€)</label>
+                            <input id="sfdOtherCosts" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" onchange="saveSfdHeader()" class="border p-0.5 rounded-md w-full">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Блок склада полуфабриката — вверху карточки -->
+                <div class="bg-white p-2 rounded-md shadow-md mb-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-xs text-gray-500">Остаток:</span>
+                            <span id="sfBalanceValue" class="text-lg font-bold text-gray-800 ml-1">—</span>
+                            <span id="sfBalanceUnit" class="text-xs text-gray-500 ml-1"></span>
+                        </div>
+                        <div id="sfDaysLeft" class="text-xs text-gray-500"></div>
+                    </div>
+
+                </div>
+
+                <div class="bg-white p-2 rounded-md shadow-md">
+                    <h2 class="text-xs font-semibold text-gray-800 mb-2">Рецептура (на партию)</h2>
+                    <div class="bg-gray-50 border border-dashed border-gray-300 rounded-md p-2 mb-2">
+                        <label class="text-xs text-gray-500">Скопировать рецепт из другого полуфабриката</label>
+                        <div class="search-input-wrap">
+                            <input id="copySfRecipeFromInput" placeholder="— выберите полуфабрикат —" autocomplete="off" class="border p-1 rounded-md text-xs w-full">
+                            <div id="copySfRecipeFromDropdown" class="search-dropdown hidden"></div>
+                        </div>
+                    </div>
+                    <table class="w-full table-auto mb-2">
+                        <thead><tr class="bg-gray-100">
+                            <th class="p-1 text-xs w-[40%]">Ингредиент</th>
+                            <th class="p-1 text-xs w-[25%]">Кол-во</th>
+                            <th class="p-1 text-xs w-[20%]">Стоимость</th>
+                            <th class="p-1 text-xs w-[15%]">Действия</th>
+                        </tr></thead>
+                    <p class="text-xs text-gray-400 mb-1">Нажмите ★ чтобы отметить основной ингредиент для расчёта производства.</p>
+                        <tbody id="sfRecipeItemsBody"></tbody>
+                    </table>
+                    <div class="bg-blue-50 rounded-md p-2 mb-2">
+                        <label class="text-xs text-gray-500">Добавить в рецепт</label>
+                        <div class="search-input-wrap mb-1">
+                            <input id="newSfRecipeIngredient" placeholder="— ингредиент —" autocomplete="off" class="border p-1 rounded-md text-xs w-full">
+                            <div id="newSfRecipeIngredientDropdown" class="search-dropdown hidden"></div>
+                        </div>
+                        <div class="flex gap-1">
+                            <input id="newSfRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="Количество" class="border p-1 rounded-md text-xs flex-1">
+                            <button onclick="addIngredientToSfRecipe()" class="btn bg-gray-500 text-white px-3 py-1 rounded-md text-xs hover:bg-gray-600 whitespace-nowrap">+ Добавить</button>
+                        </div>
+                    </div>
+                    <button onclick="produceSfBatch()" class="btn bg-gray-100 text-gray-700 border border-gray-300 px-2 py-1 rounded-md hover:bg-gray-200 text-xs w-full mb-2">🍳 Произвести партию</button>
+                    <button onclick="openSfWriteOffModal()" class="btn bg-gray-100 text-gray-700 border border-gray-300 px-2 py-1 rounded-md hover:bg-gray-200 text-xs w-full mb-2">— Списать (корректировка)</button>
+                    <label class="flex items-center gap-2 text-xs text-gray-700 border-t pt-2 mb-1 cursor-pointer">
+                        <input type="checkbox" id="sfdRecipeConfirmed" onchange="toggleSfRecipeConfirmed()">
+                        Рецепт заполнен полностью
+                    </label>
+                    <label class="flex items-center gap-2 text-xs text-gray-700 mb-1 cursor-pointer">
+                        <input type="checkbox" id="sfdTrackStock" onchange="toggleSfTrackStock()">
+                        Отслеживать остатки постоянно (включить в аналитику склада)
+                    </label>
+                    <div class="text-right text-xs text-gray-600 space-y-0.5 border-t pt-1">
+                        <div>Себестоимость партии: <span id="sfdBatchCost" class="font-medium text-gray-800">0.00 €</span></div>
+                        <div>Себестоимость за единицу: <span id="sfdUnitCost" class="font-semibold text-gray-900">0.0000 €</span></div>
+                    </div>
+                </div>
+
+                <!-- Динамика себестоимости и история производства — внизу карточки -->
+                <div class="bg-white p-2 rounded-md shadow-md mb-3">
+                    <p class="text-xs font-semibold text-gray-700 mb-1">Динамика себестоимости партии</p>
+                    <canvas id="sfCostChart" height="160" style="display:none;"></canvas>
+                    <p id="sfCostChartEmpty" class="text-xs text-gray-400 hidden">Недостаточно данных — нужно 2+ партии.</p>
+                    <div id="sfStockHistory" class="mt-2"></div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ===== КЛИЕНТЫ ===== -->
+        <div id="customers" class="tab-content hidden">
+            <div id="customersList">
+                <div class="bg-white p-2 rounded-md shadow-md">
+                    <h2 class="text-sm font-semibold mb-2 text-gray-800">Список клиентов</h2>
+                    <p class="text-xs text-gray-400 mb-2">Нажмите на строку, чтобы открыть карточку клиента</p>
+                    <p id="customersNameWarning" class="text-xs text-red-600 bg-red-50 border border-red-200 rounded-md p-1.5 mb-2 hidden">⚠ У некоторых клиентов не указано имя. Откройте их карточку и заполните имя — без этого их заказы будут отображаться некорректно.</p>
+                    <table class="w-full table-auto table-clean">
+                        <thead><tr class="bg-gray-100">
+                            <th class="p-1 text-xs w-[35%]">Имя</th>
+                            <th class="p-1 text-xs w-[30%]">Контакты</th>
+                            <th class="p-1 text-xs w-[10%]">Скидка (%)</th>
+                            <th class="p-1 text-xs w-[12%]">Без НДС</th>
+                            <th class="p-1 text-xs w-[13%]">Действия</th>
+                        </tr></thead>
+                        <tbody id="customerTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Карточка клиента -->
+            <div id="customerDetail">
+                <div class="bg-white p-2 rounded-md shadow-md mb-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <button onclick="closeCustomerDetail()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                            Назад к клиентам
+                        </button>
+                        <button onclick="deleteCurrentCustomer()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300">Удалить клиента</button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-1 mb-2">
+                        <div>
+                            <label class="text-xs text-gray-500">Имя</label>
+                            <input id="cdName" type="text" onblur="saveCdHeader()" class="border p-0.5 rounded-md w-full">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">Контакты</label>
+                            <input id="cdContact" type="text" onblur="saveCdHeader()" class="border p-0.5 rounded-md w-full">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">Скидка (%)</label>
+                            <input id="cdDiscount" type="number" autocomplete="off" inputmode="decimal" step="0.01" onchange="saveCdHeader()" class="border p-0.5 rounded-md w-full">
+                        </div>
+                        <div class="flex items-end pb-1">
+                            <label class="flex items-center gap-2 text-xs text-gray-700">
+                                <input id="cdVatExempt" type="checkbox" onchange="saveCdHeader()"> Без НДС
+                            </label>
+                        </div>
+                    </div>
+                    <button onclick="applyVatExemptToAllOrders()" class="btn bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 text-xs w-full">Применить текущий статус НДС ко всем заказам клиента</button>
+                    <div class="mt-2">
+                        <label class="text-xs text-gray-500">Заметки (аллергии, особые условия, контакты...)</label>
+                        <textarea id="cdNotes" rows="3" onblur="saveCdHeader()" class="border p-0.5 rounded-md text-xs w-full resize-none" placeholder="Например: оплата по счёту, аллергия на орехи..."></textarea>
+                    </div>
+                </div>
+
+                <div class="bg-white p-2 rounded-md shadow-md mb-3">
+                    <div class="grid grid-cols-3 gap-1 text-center bg-gray-50 rounded-md p-2">
+                        <div><p class="text-xs text-gray-500">Заказов всего</p><p id="cdOrderCount" class="text-xs font-bold text-gray-800">0</p></div>
+                        <div><p class="text-xs text-gray-500">Сумма за всё время</p><p id="cdTotalSum" class="text-xs font-bold text-gray-800">0.00 €</p></div>
+                        <div><p class="text-xs text-gray-500">Последний заказ</p><p id="cdLastOrderDate" class="text-xs font-bold text-gray-800">—</p></div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-2 rounded-md shadow-md">
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 class="text-xs font-semibold text-gray-800">Заказы клиента</h2>
+                        <select id="cdDateRange" onchange="renderCustomerOrders()" class="border p-0.5 rounded-md text-xs">
+                            <option value="all">Весь период</option>
+                            <option value="week">Текущая неделя</option>
+                            <option value="month">Текущий месяц</option>
+                            <option value="year">Текущий год</option>
+                        </select>
+                    </div>
+                    <div id="cdOrdersList" style="max-height:280px;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
+                    <button onclick="openCustomerReportPreview()" class="btn bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 text-xs w-full mt-2">📄 Сводный отчёт по изделиям за период</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Предпросмотр сводного отчёта по изделиям клиента за период -->
+        <div id="customerReportModal" class="modal">
+            <div class="modal-content" style="max-width:480px;">
+                <div id="customerReportContent" style="background:white;"></div>
+                <div class="flex gap-1 mt-3">
+                    <button id="downloadReportPdfBtn" onclick="downloadCustomerReportPdf()" class="btn bg-gray-700 text-white p-1 rounded-md hover:bg-gray-800 text-xs flex-1">⬇ Скачать PDF</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs flex-1">Закрыть</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== ИСТОРИЯ ===== -->
+        <div id="history" class="tab-content hidden">
+            <div class="bg-white p-2 rounded-md shadow-md">
+                <div class="flex items-center justify-between mb-2">
+                    <h2 class="text-sm font-semibold text-gray-800">Журнал действий</h2>
+                    <button onclick="closeHistoryScreen()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 flex items-center gap-1">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                        Назад
+                    </button>
+                </div>
+                <div class="mb-2">
+                    <select id="historyEmployeeFilter" onchange="loadHistory()" class="border p-0.5 rounded-md w-full text-xs">
+                        <option value="">Все сотрудники</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <select id="historyActionFilter" onchange="loadHistory()" class="border p-0.5 rounded-md w-full text-xs">
+                        <option value="">Все действия</option>
+                        <option value="order">Заказы</option>
+                        <option value="item">Позиции заказа</option>
+                        <option value="customer">Клиенты</option>
+                        <option value="product">Изделия</option>
+                        <option value="auth">Вход/выход</option>
+                    </select>
+                </div>
+                <p class="text-xs text-gray-400 mb-2">Записи о заказах можно открыть нажатием (кроме удалённых)</p>
+                <table class="w-full table-auto table-clean">
+                    <thead><tr class="bg-gray-100">
+                        <th class="p-1 text-xs w-[15%]">Дата</th>
+                        <th class="p-1 text-xs w-[10%]">Время</th>
+                        <th class="p-1 text-xs w-[20%]">Сотрудник</th>
+                        <th class="p-1 text-xs w-[55%]">Действие</th>
+                    </tr></thead>
+                    <tbody id="historyTableBody"></tbody>
+                </table>
+                <div class="text-center mt-2">
+                    <button id="historyLoadMoreBtn" onclick="loadMoreHistory()" class="btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 text-xs hidden">Показать ещё</button>
+                </div>
+            </div>
+        </div>
+        <div id="orders" class="tab-content">
+
+            <!-- СПИСОК ЗАКАЗОВ -->
+            <div id="ordersList">
+                <div id="todaySummary" class="bg-white rounded-md shadow-md mb-3 hidden" style="border-left: 4px solid #4f46e5;">
+                    <div class="p-2">
+                    <div id="todaySummaryContent" class="text-xs text-gray-700"></div>
+                    </div>
+                </div>
+                <div class="bg-white p-2 rounded-md shadow-md">
+                    <h2 class="text-sm font-semibold mb-2 text-gray-800">Список заказов</h2>
+                    <p class="text-xs text-gray-400 mb-2">Нажмите на строку заказа, чтобы открыть его</p>
+
+                    <!-- Фильтры -->
+                    <div class="relative mb-1">
+                        <button type="button" onclick="toggleOrderFilterDropdown()" id="orderFilterBtn" class="border p-1 rounded-md w-full text-xs text-left bg-white flex justify-between items-center">
+                            <span id="orderFilterLabel">Все клиенты</span>
+                            <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                        </button>
+                        <div id="orderFilterDropdown" class="hidden absolute z-10 bg-white border rounded-md shadow-md w-full mt-1 max-h-40 overflow-y-auto p-1">
+                            <label class="flex items-center gap-2 px-1 py-1 text-xs border-b mb-1 font-medium">
+                                <input type="checkbox" id="orderFilterAll" onchange="toggleAllOrderCustomersFilter(this)" checked> Все клиенты
+                            </label>
+                            <div id="orderFilterList"></div>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <select id="orderDateRangeFilter" onchange="toggleOrderDateRange(); applyOrderFilter();" class="border p-0.5 rounded-md w-full text-xs">
+                            <option value="all">Весь период</option>
+                            <option value="week">Текущая неделя</option>
+                            <option value="month">Текущий месяц</option>
+                            <option value="custom">От - До</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <select id="orderEmployeeFilter" onchange="applyOrderFilter()" class="border p-0.5 rounded-md w-full text-xs">
+                            <option value="">Все исполнители</option>
+                        </select>
+                    </div>
+                    <div id="orderCustomDateRange" class="hidden mb-2">
+                        <div class="flex gap-1">
+                            <div class="flex-1">
+                                <label class="text-xs text-gray-500">От</label>
+                                <input id="orderDateFrom" type="date" onchange="applyOrderFilter()" class="border p-0.5 rounded-md w-full text-xs">
+                            </div>
+                            <div class="flex-1">
+                                <label class="text-xs text-gray-500">До</label>
+                                <input id="orderDateTo" type="date" onchange="applyOrderFilter()" class="border p-0.5 rounded-md w-full text-xs">
+                            </div>
+                        </div>
+                    </div>
+
+                    <table class="w-full table-auto table-clean">
+                        <thead><tr class="bg-gray-100">
+                            <th class="p-1 text-xs w-[17%]">Дата</th>
+                            <th class="p-1 text-xs w-[23%]">Клиент</th>
+                            <th class="p-1 text-xs w-[10%]">Позиций</th>
+                            <th class="p-1 text-xs w-[15%]">Итого с НДС (€)</th>
+                            <th class="p-1 text-xs w-[10%] text-center">Статус</th>
+                            <th class="p-1 text-xs w-[25%]">Действия</th>
+                        </tr></thead>
+                        <tbody id="orderTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ДЕТАЛЬНЫЙ ВИД ЗАКАЗА -->
+            <div id="orderDetail">
+                <div class="bg-white p-2 rounded-md shadow-md mb-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <button onclick="closeOrderDetail()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                            Назад к заказам
+                        </button>
+                        <span id="detailOrderId" class="text-xs text-gray-400"></span>
+                        <div class="flex gap-2 items-center">
+                            <!-- Проверен (только для объединённых) -->
+                            <button id="markCheckedBtn" onclick="markOrderChecked()" title="Проверен" class="hidden text-green-600 hover:text-green-800">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>
+                            </button>
+                            <!-- Карточка клиента -->
+                            <button onclick="goToCustomerFromOrder()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300">Карточка клиента</button>
+                            <!-- Удалить заказ -->
+                            <button onclick="deleteCurrentOrder()" title="Удалить заказ" class="text-gray-400 hover:text-red-600 text-lg leading-none">🗑</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-1 mb-2">
+                        <div>
+                            <label class="text-xs text-gray-500">Клиент</label>
+                            <div class="search-input-wrap">
+                                <input id="detailCustomer" placeholder="Выберите" autocomplete="off" class="border p-0.5 rounded-md w-full">
+                                <div id="detailCustomerDropdown" class="search-dropdown hidden"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">Дата</label>
+                            <input id="detailDate" type="date" onchange="saveDetailHeader()" class="border p-0.5 rounded-md w-full">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">Статус</label>
+                            <select id="detailStatus" onchange="saveDetailHeader()" class="border p-0.5 rounded-md w-full">
+                                <option value="принят">Принят</option>
+                                <option value="в работе">В работе</option>
+                                <option value="выполнен">Выполнен</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">Скидка (%)</label>
+                            <input id="detailDiscount" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" max="100" onchange="saveDetailHeader()" class="border p-0.5 rounded-md w-full">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500">Исполнитель</label>
+                            <select id="detailEmployee" onchange="saveDetailHeader()" class="border p-0.5 rounded-md w-full">
+                                <option value="">—</option>
+                            </select>
+                        </div>
+                        <div class="col-span-2">
+                            <label class="flex items-center gap-2 text-xs text-gray-700">
+                                <input id="detailVatExempt" type="checkbox" onchange="saveDetailHeader()"> Без НДС для этого заказа
+                            </label>
+                        </div>
+                        <div class="col-span-2">
+                            <label class="text-xs text-gray-500">Комментарий к заказу</label>
+                            <textarea id="detailNotes" onblur="saveDetailHeader()" rows="2" placeholder="Например: особые пожелания, время доставки..." class="border p-1 rounded-md text-xs w-full resize-none font-semibold text-blue-700"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-2 rounded-md shadow-md">
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 class="text-xs font-semibold text-gray-800">Позиции заказа</h2>
+                    </div>
+                    <table class="w-full table-auto mb-2">
+                        <thead><tr class="bg-gray-100">
+                            <th class="p-1 text-xs w-[35%]">Изделие</th>
+                            <th class="p-1 text-xs w-[12%]">Кол-во</th>
+                            <th class="p-1 text-xs w-[17%]">Цена (€)</th>
+                            <th class="p-1 text-xs w-[16%]">Итого (€)</th>
+                            <th class="p-1 text-xs w-[20%]">Действия</th>
+                        </tr></thead>
+                        <tbody id="detailItemsBody"></tbody>
+                        <!-- Строка добавления новой позиции -->
+                        <tbody>
+                            <tr class="new-item-row bg-blue-50">
+                                <td><div class="search-input-wrap">
+                                    <input id="newItemProduct" oninput="autoFillNewItemPrice()" placeholder="— изделие —" autocomplete="off" class="text-xs">
+                                    <div id="newItemProductDropdown" class="search-dropdown hidden"></div>
+                                </div></td>
+                                <td><input id="newItemQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" placeholder="1" class="text-xs"></td>
+                                <td><input id="newItemPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="0.00" class="text-xs"></td>
+                                <td class="text-xs text-gray-400 text-center">—</td>
+                                <td class="text-center">
+                                    <button onclick="addItemToOrder()" class="btn bg-gray-500 text-white px-2 py-0.5 rounded text-xs hover:bg-gray-600">+ Добавить</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="text-right text-xs text-gray-600 space-y-0.5">
+                        <div>Всего изделий: <span id="detailItemsCount" class="font-semibold text-gray-700">0</span> шт.</div>
+                        <div>Сумма позиций: <span id="detailSubtotal" class="font-medium text-gray-800">0.00 €</span></div>
+                        <div id="detailDiscountRow">Скидка (<span id="detailDiscountPct">0</span>%): <span id="detailDiscountAmount" class="font-medium text-red-600">-0.00 €</span></div>
+                        <div>НДС (21%): <span id="detailVatAmount" class="font-medium text-gray-800">0.00 €</span></div>
+                        <div class="text-xs font-semibold text-gray-900 pt-1 border-t mt-1">Итого к оплате: <span id="detailTotal">0.00 €</span></div>
+                        <div class="pt-1 border-t mt-1">Себестоимость: <span id="detailCost" class="font-medium text-gray-700">0.00 €</span></div>
+                        <div>Прибыль: <span id="detailProfit" class="font-semibold text-green-700">0.00 €</span> (<span id="detailProfitPct">0.0</span>%)</div>
+                        <button onclick="openOrderCostBreakdown()" class="btn bg-gray-100 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-200 text-xs w-full mt-1">📊 Детализация себестоимости</button>
+                        <button onclick="notifyOrderToTelegram()" class="btn bg-indigo-600 text-white px-2 py-1 rounded-md hover:bg-indigo-700 text-xs w-full mt-1">📤 Отправить уведомление</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== МОДАЛЬНЫЕ ОКНА ===== -->
+
+        <!-- Редактировать изделие -->
+        <div id="editProductModal" class="modal">
+            <div class="modal-content">
+                <h2 class="text-xs font-semibold mb-2 text-gray-800">Редактировать изделие</h2>
+                <input id="editProductName" type="text" placeholder="Название изделия" class="border p-0.5 rounded-md mb-1 w-full text-xs">
+                <input id="editProductPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="Продажная цена (€)" class="border p-0.5 rounded-md mb-2 w-full">
+                <button onclick="saveProductEdit()" class="btn bg-gray-500 text-white p-0.5 rounded-md hover:bg-gray-600 mr-1 text-xs">Сохранить</button>
+                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-0.5 rounded-md hover:bg-gray-500 text-xs">Отмена</button>
+            </div>
+        </div>
+
+        <!-- Редактировать ингредиент -->
+
+
+        <!-- Редактировать позицию рецепта -->
+        <div id="editRecipeItemModal" class="modal">
+            <div class="modal-content">
+                <h2 class="text-xs font-semibold mb-2 text-gray-800">Редактировать ингредиент рецепта</h2>
+                <label class="text-xs text-gray-600">Ингредиент</label>
+                <select id="editRecipeIngredient" class="border p-0.5 rounded-md mb-1 w-full text-xs">
+                    <option value="">Выберите ингредиент</option>
+                </select>
+                <label class="text-xs text-gray-600">Количество</label>
+                <input id="editRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-0.5 rounded-md mb-2 w-full">
+                <button onclick="saveRecipeItemEdit()" class="btn bg-gray-500 text-white p-0.5 rounded-md hover:bg-gray-600 mr-1 text-xs">Сохранить</button>
+                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-0.5 rounded-md hover:bg-gray-500 text-xs">Отмена</button>
+            </div>
+        </div>
+
+        <!-- Редактировать позицию рецепта полуфабриката -->
+        <div id="editSfRecipeItemModal" class="modal">
+            <div class="modal-content">
+                <h2 class="text-xs font-semibold mb-2 text-gray-800">Редактировать ингредиент рецепта</h2>
+                <label class="text-xs text-gray-600">Ингредиент</label>
+                <select id="editSfRecipeIngredient" class="border p-0.5 rounded-md mb-1 w-full text-xs">
+                    <option value="">Выберите ингредиент</option>
+                </select>
+                <label class="text-xs text-gray-600">Количество</label>
+                <input id="editSfRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-0.5 rounded-md mb-2 w-full">
+                <button onclick="saveSfRecipeItemEdit()" class="btn bg-gray-500 text-white p-0.5 rounded-md hover:bg-gray-600 mr-1 text-xs">Сохранить</button>
+                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-0.5 rounded-md hover:bg-gray-500 text-xs">Отмена</button>
+            </div>
+        </div>
+
+        <!-- Редактировать клиента -->
+        <!-- Редактировать позицию заказа -->
+        <div id="editItemModal" class="modal">
+            <div class="modal-content">
+                <h2 class="text-xs font-semibold mb-2 text-gray-800">Редактировать позицию</h2>
+                <label class="text-xs text-gray-600">Изделие</label>
+                <div class="search-input-wrap">
+                    <input id="editItemProduct" oninput="autoFillEditItemPrice()" placeholder="Выберите изделие" autocomplete="off" class="border p-0.5 rounded-md mb-1 w-full text-xs">
+                    <div id="editItemProductDropdown" class="search-dropdown hidden"></div>
+                </div>
+                <label class="text-xs text-gray-600">Количество</label>
+                <input id="editItemQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" class="border p-0.5 rounded-md mb-1 w-full text-xs">
+                <label class="text-xs text-gray-600">Цена (€)</label>
+                <input id="editItemPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" class="border p-0.5 rounded-md mb-2 w-full">
+                <button onclick="saveItemEdit()" class="btn bg-gray-500 text-white p-0.5 rounded-md hover:bg-gray-600 mr-1 text-xs">Сохранить</button>
+                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-0.5 rounded-md hover:bg-gray-500 text-xs">Отмена</button>
+            </div>
+        </div>
+
+        <!-- Редактировать заголовок заказа (из списка) -->
+        <div id="editOrderModal" class="modal">
+            <div class="modal-content">
+                <h2 class="text-xs font-semibold mb-2 text-gray-800">Редактировать заказ</h2>
+                <label class="text-xs text-gray-600">Клиент</label>
+                <div class="search-input-wrap mb-1">
+                    <input id="editOrderCustomer" placeholder="Выберите клиента" autocomplete="off" class="border p-0.5 rounded-md w-full text-xs">
+                    <div id="editOrderCustomerDropdown" class="search-dropdown hidden"></div>
+                </div>
+                <label class="text-xs text-gray-600">Дата</label>
+                <input id="editOrderDate" type="date" class="border p-0.5 rounded-md mb-1 w-full text-xs">
+                <label class="text-xs text-gray-600">Статус</label>
+                <select id="editOrderStatus" class="border p-0.5 rounded-md mb-2 w-full">
+                    <option value="принят">Принят</option>
+                    <option value="в работе">В работе</option>
+                    <option value="выполнен">Выполнен</option>
+                </select>
+                <button onclick="saveOrderEdit()" class="btn bg-gray-500 text-white p-0.5 rounded-md hover:bg-gray-600 mr-1 text-xs">Сохранить</button>
+                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-0.5 rounded-md hover:bg-gray-500 text-xs">Отмена</button>
+            </div>
+        </div>
+
+        <!-- Подтверждение удаления -->
+        <div id="deleteModal" class="modal">
+            <div class="modal-content">
+                <p id="deleteModalText" class="mb-2 text-xs text-gray-700">Вы уверены, что хотите удалить этот элемент?</p>
+                <button onclick="confirmDelete()" class="btn bg-red-500 text-white p-0.5 rounded-md hover:bg-red-600 mr-1 text-xs">Удалить</button>
+                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-0.5 rounded-md hover:bg-gray-500 text-xs">Отмена</button>
+            </div>
+        </div>
+
+        <!-- Универсальное окно подтверждения (замена системного confirm()) -->
+        <div id="confirmModal" class="modal">
+            <div class="modal-content text-center">
+                <p id="confirmMessage" class="text-sm text-gray-800 mb-4" style="white-space: pre-line;"></p>
+                <div class="flex justify-center gap-2">
+                    <button id="confirmCancelBtn" class="btn bg-gray-300 text-gray-800 px-4 py-1.5 rounded-md hover:bg-gray-400 text-sm">Отмена</button>
+                    <button id="confirmOkBtn" class="btn bg-gray-700 text-white px-4 py-1.5 rounded-md hover:bg-gray-800 text-sm">OK</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Настройки (шестерёнка) — служебные функции, доступны из любого раздела -->
+        <div id="settingsModal" class="modal">
+            <div class="modal-content" style="max-width:320px;">
+                <h2 class="text-xs font-semibold mb-1 text-gray-800">Настройки</h2>
+                <p class="text-xs text-gray-500 mb-3">Текущий сотрудник: <b id="settingsCurrentEmployee" class="text-gray-800"></b></p>
+
+                <div class="flex flex-col gap-1 mb-3">
+                    <button onclick="downloadBackup()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs text-left border border-gray-200">⬇ Скачать резервную копию</button>
+                    <button onclick="openHistoryScreen()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs text-left border border-gray-200">📋 Журнал действий</button>
+                    <button onclick="loadAllData()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs text-left border border-gray-200">↻ Обновить данные</button>
+                    <button onclick="openOrdersTrash()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs text-left border border-gray-200">🗑 Корзина удалённых заказов</button>
+                </div>
+
+                <div class="flex flex-col gap-1 mb-3 border-t pt-2">
+                    <label class="text-xs text-gray-500">Учёт склада с даты (списание ингредиентов только для новых заказов)</label>
+                    <div class="flex gap-1">
+                        <input id="inventoryStartDate" type="date" class="border p-0.5 rounded-md text-xs flex-1">
+                        <button onclick="saveInventoryStartDate()" class="btn bg-gray-700 text-white px-2 py-1 rounded-md hover:bg-gray-800 text-xs">Сохранить</button>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-1 mb-3 border-t pt-2">
+                    <button onclick="logoutEmployee()" class="btn bg-gray-200 text-gray-800 px-2 py-1.5 rounded-md hover:bg-gray-300 text-xs text-left">👤 Сменить сотрудника</button>
+                    <button onclick="signOutAccount()" class="btn bg-gray-200 text-gray-800 px-2 py-1.5 rounded-md hover:bg-gray-300 text-xs text-left">🔒 Сменить аккаунт (выйти из приложения)</button>
+                </div>
+
+                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 w-full text-xs">Закрыть</button>
+            </div>
+        </div>
+
+        <!-- Детализация себестоимости заказа -->
+        <div id="orderCostBreakdownModal" class="modal">
+            <div class="modal-content" style="max-width:480px;">
+                <h2 class="text-xs font-semibold mb-1 text-gray-800">Детализация себестоимости</h2>
+                <p id="orderCostBreakdownSubtitle" class="text-xs text-gray-500 mb-2"></p>
+                <div id="orderCostBreakdownContent" style="max-height:60vh;overflow-y:auto;"></div>
+                <div class="flex gap-1 mt-3">
+                    <button onclick="recalcOrderCostBreakdown()" class="btn bg-indigo-50 text-indigo-700 p-1 rounded-md hover:bg-indigo-100 flex-1 text-xs">↻ Пересчитать по актуальному рецепту</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs" style="width:80px;">Закрыть</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модалка склада -->
+        <div id="inventoryModal" class="modal">
+            <div class="modal-content" style="max-width:480px;">
+                <h2 id="inventoryModalTitle" class="text-base font-semibold mb-2 text-gray-800">🛒 Аналитика склада</h2>
+                <!-- Вкладки -->
+                <div class="flex gap-3 border-b mb-3">
+                    <button id="invTabStock" onclick="switchInventoryTab('stock')" class="tab active text-xs pb-1">Склад</button>
+                    <button id="invTabShop" onclick="switchInventoryTab('shop')" class="tab text-xs pb-1">Список покупок <span id="shopListBadge" class="hidden bg-indigo-600 text-white rounded-full px-1.5 py-0.5 text-xs ml-1"></span></button>
+                </div>
+                <!-- Склад -->
+                <div id="inventoryTabStock">
+                    <div id="inventoryContent" style="max-height:58vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
+                </div>
+                <!-- Список покупок -->
+                <div id="inventoryTabShop" class="hidden">
+                    <div class="flex gap-1 mb-2">
+                        <button onclick="addCriticalToShoppingList()" class="btn bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md hover:bg-indigo-100 text-xs flex-1">+ Добавить критичное</button>
+                        <button onclick="clearShoppingList()" class="btn bg-red-50 text-red-600 px-2 py-1 rounded-md hover:bg-red-100 text-xs">Очистить всё</button>
+                    </div>
+                    <div class="mb-2">
+                        <button onclick="sendShoppingListToTelegram(_shoppingList)" class="btn bg-indigo-600 text-white px-2 py-1 rounded-md hover:bg-indigo-700 text-xs w-full">📤 Отправить уведомление</button>
+                    </div>
+                    <div id="shopListContent" style="max-height:52vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;">
+                        <p class="text-xs text-gray-400 text-center py-4">Список пуст</p>
+                    </div>
+                </div>
+                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 w-full text-xs mt-3">Закрыть</button>
+            </div>
+        </div>
+
+        <!-- Модалка производства п/ф — шаг 1: количество основного ингредиента -->
+        <div id="sfProduceModal" class="modal">
+            <div class="modal-content" style="max-width:480px;">
+                <h2 class="text-base font-semibold mb-3 text-gray-800">🍳 Произвести партию — шаг 1</h2>
+                <p class="text-xs text-gray-500 mb-3">Введите количество основного ингредиента.</p>
+                <div class="mb-4">
+                    <label class="text-xs text-gray-600 block mb-1">Основной ингредиент: <span id="sfProduceIngName" class="font-semibold text-gray-800"></span></label>
+                    <div class="flex gap-2 items-center">
+                        <input type="number" inputmode="decimal" step="0.01" min="0.01" id="sfProduceIngQty"
+                            class="border rounded p-1 text-xs flex-1 text-right">
+                        <span id="sfProduceIngUnit" class="text-xs text-gray-500 w-8"></span>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="sfProduceCalc()" class="btn bg-gray-500 text-white p-1 rounded-md hover:bg-gray-600 text-xs flex-1">Рассчитать →</button>
+                    <button onclick="closeModal()" class="btn bg-gray-200 text-gray-700 p-1 rounded-md hover:bg-gray-300 text-xs flex-1">Отмена</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модалка производства п/ф — шаг 2: подтверждение выхода -->
+        <div id="sfConfirmModal" class="modal">
+            <div class="modal-content" style="max-width:480px;">
+                <h2 class="text-base font-semibold mb-3 text-gray-800">🍳 Подтвердите производство</h2>
+                <div class="bg-gray-50 rounded p-2 mb-3 text-xs text-gray-700">
+                    <p class="mb-1">Будет списано:</p>
+                    <p class="font-semibold" id="sfConfirmIngLine"></p>
+                </div>
+                <div class="mb-4">
+                    <label class="text-xs text-gray-600 block mb-1">Фактический выход п/ф:</label>
+                    <div class="flex gap-2 items-center">
+                        <input type="number" inputmode="decimal" step="0.01" min="0.01" id="sfConfirmResultQty"
+                            class="border rounded p-1 text-xs flex-1 text-right font-semibold">
+                        <span id="sfConfirmResultUnit" class="text-xs text-gray-500 w-8"></span>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1">Расчётное значение подставлено автоматически. Измените если фактический выход отличается.</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="confirmSfProduce()" class="btn bg-gray-500 text-white p-1 rounded-md hover:bg-gray-600 text-xs flex-1">Подтвердить</button>
+                    <button onclick="closeModal()" class="btn bg-gray-200 text-gray-700 p-1 rounded-md hover:bg-gray-300 text-xs flex-1">Отмена</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модалка списания полуфабриката -->
+        <div id="sfWriteOffModal" class="modal">
+            <div class="modal-content" style="max-width:480px;">
+                <h2 class="text-base font-semibold mb-3 text-gray-800">Списание п/ф (корректировка)</h2>
+                <p id="sfWriteOffName" class="text-xs text-gray-500 mb-3"></p>
+                <label class="text-xs text-gray-500">Количество (<span id="sfWriteOffUnit"></span>)</label>
+                <input id="sfWriteOffQty" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-0.5 rounded-md mb-2 w-full">
+                <label class="text-xs text-gray-500">Причина (необязательно)</label>
+                <input id="sfWriteOffNote" type="text" class="border p-0.5 rounded-md mb-3 w-full text-xs" placeholder="Например: испортилось">
+                <div class="flex gap-1">
+                    <button onclick="saveSfWriteOff()" class="btn bg-red-500 text-white p-1 rounded-md hover:bg-red-600 text-xs flex-1">Списать</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs flex-1">Отмена</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модалка инвентаризации полуфабрикатов -->
+        <div id="sfInventarizationModal" class="modal">
+            <div class="modal-content" style="max-width:480px;">
+                <h2 class="text-base font-semibold mb-1 text-gray-800">📋 Инвентаризация п/ф</h2>
+                <p class="text-xs text-gray-500 mb-3">Введите фактическое количество. Пустые поля — пропускаются.</p>
+                <div id="sfInventarizationContent" style="max-height:60vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
+                <div class="flex gap-1 mt-3">
+                    <button onclick="saveSfInventarization()" class="btn bg-gray-700 text-white p-1 rounded-md hover:bg-gray-800 text-xs flex-1">Сохранить</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs" style="width:80px;">Отмена</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Корзина удалённых заказов -->
+        <div id="ordersTrashModal" class="modal">
+            <div class="modal-content" style="max-width:480px;">
+                <h2 class="text-base font-semibold mb-1 text-gray-800">🗑 Корзина</h2>
+                <p class="text-xs text-gray-500 mb-3">Удалённые заказы хранятся 30 дней. Нажмите на заказ для восстановления или окончательного удаления.</p>
+                <div id="ordersTrashContent" style="max-height:65vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
+                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 w-full text-xs mt-3">Закрыть</button>
+            </div>
+        </div>
+
+        <!-- Модалка действий с заказом в корзине -->
+        <div id="trashOrderActionsModal" class="modal" style="z-index:310;">
+            <div class="modal-content" style="max-width:340px;">
+                <h2 id="trashOrderActionsTitle" class="text-sm font-semibold mb-3 text-gray-800"></h2>
+                <div class="flex flex-col gap-2">
+                    <button id="trashRestoreBtn" class="btn bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700 text-xs">↩ Восстановить заказ</button>
+                    <button id="trashDeleteBtn" class="btn bg-red-50 text-red-600 p-2 rounded-md hover:bg-red-100 text-xs">🗑 Удалить навсегда</button>
+                    <button onclick="document.getElementById('trashOrderActionsModal').style.display='none'" class="btn bg-gray-200 text-gray-700 p-2 rounded-md hover:bg-gray-300 text-xs">Отмена</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модалка инвентаризации -->
+        <div id="inventarizationModal" class="modal">
+            <div class="modal-content" style="max-width:480px;">
+                <h2 class="text-base font-semibold mb-1 text-gray-800">📋 Инвентаризация</h2>
+                <p class="text-xs text-gray-500 mb-3">Введите фактическое количество. Пустые поля — пропускаются. Разница запишется автоматически.</p>
+                <div id="inventarizationContent" style="max-height:60vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
+                <div class="flex gap-1 mt-3">
+                    <button onclick="saveInventarization()" class="btn bg-gray-700 text-white p-1 rounded-md hover:bg-gray-800 text-xs flex-1">Сохранить инвентаризацию</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs" style="width:80px;">Отмена</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модалка редактирования названия/единицы ингредиента -->
+        <div id="editIngredientHeaderModal" class="modal">
+            <div class="modal-content" style="max-width:480px;">
+                <h2 class="text-base font-semibold mb-3 text-gray-800">Редактировать ингредиент</h2>
+                <label class="text-xs text-gray-500">Название</label>
+                <input id="editIngName" type="text" class="border p-0.5 rounded-md mb-2 w-full text-sm">
+                <label class="text-xs text-gray-500">Единица измерения</label>
+                <select id="editIngUnit" class="border p-0.5 rounded-md mb-3 w-full text-sm">
+                    <option value="g">граммы (г)</option>
+                    <option value="kg">килограммы (кг)</option>
+                    <option value="ml">миллилитры (мл)</option>
+                    <option value="l">литры (л)</option>
+                    <option value="pcs">штуки (шт)</option>
+                </select>
+                <div class="flex gap-1">
+                    <button onclick="saveIngredientHeader()" class="btn bg-gray-700 text-white p-1 rounded-md hover:bg-gray-800 text-xs flex-1">Сохранить</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs flex-1">Отмена</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модалка редактирования записи склада -->
+        <div id="editInventoryModal" class="modal">
+            <div class="modal-content" style="max-width:480px;">
+                <h2 class="text-base font-semibold mb-3 text-gray-800">Редактировать запись</h2>
+                <input type="hidden" id="editInventoryId">
+                <label class="text-xs text-gray-500">Количество</label>
+                <input id="editInventoryQty" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-0.5 rounded-md mb-2 w-full">
+                <label class="text-xs text-gray-500">Заметка</label>
+                <input id="editInventoryNotes" type="text" class="border p-0.5 rounded-md mb-3 w-full">
+                <div class="flex gap-1">
+                    <button onclick="saveInventoryEdit()" class="btn bg-gray-700 text-white p-1 rounded-md hover:bg-gray-800 text-xs flex-1">Сохранить</button>
+                    <button onclick="deleteInventoryRecord(Number(document.getElementById('editInventoryId').value))" class="btn bg-red-500 text-white p-1 rounded-md hover:bg-red-600 text-xs flex-1">Удалить</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs flex-1">Отмена</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модалка ручного списания со склада -->
+        <div id="writeOffModal" class="modal">
+            <div class="modal-content" style="max-width:480px;">
+                <h2 class="text-base font-semibold mb-3 text-gray-800">Списание (корректировка)</h2>
+                <p id="writeOffIngName" class="text-xs text-gray-500 mb-3"></p>
+                <label class="text-xs text-gray-500">Количество (<span id="writeOffUnit"></span>)</label>
+                <input id="writeOffQty" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-0.5 rounded-md mb-2 w-full">
+                <label class="text-xs text-gray-500">Причина (необязательно)</label>
+                <select id="writeOffReason" class="border p-0.5 rounded-md mb-2 w-full">
+                    <option value="">— выберите причину —</option>
+                    <option value="Испортилось">Испортилось</option>
+                    <option value="Личное использование">Личное использование</option>
+                    <option value="Пересчёт остатков">Пересчёт остатков</option>
+                    <option value="Другое">Другое</option>
+                </select>
+                <input id="writeOffNote" type="text" class="border p-0.5 rounded-md mb-3 w-full text-xs hidden" placeholder="Уточните причину...">
+                <div class="flex gap-1">
+                    <button onclick="saveWriteOff()" class="btn bg-red-500 text-white p-1 rounded-md hover:bg-red-600 text-xs flex-1">Списать</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs flex-1">Отмена</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модалка пополнения склада -->
+        <div id="inventoryAddModal" class="modal">
+            <div class="modal-content" style="max-width:480px;">
+                <h2 class="text-base font-semibold mb-3 text-gray-800" id="inventoryAddTitle">Пополнить склад</h2>
+                <input type="hidden" id="inventoryAddIngId">
+                <label class="text-xs text-gray-500">Количество (<span id="inventoryAddUnit"></span>)</label>
+                <input id="inventoryAddQty" type="number" inputmode="decimal" step="0.01" class="border p-0.5 rounded-md mb-2 w-full">
+                <label class="text-xs text-gray-500">Заметка (необязательно)</label>
+                <input id="inventoryAddNotes" type="text" class="border p-0.5 rounded-md mb-3 w-full text-xs" placeholder="Например: купил в Maxima">
+                <div class="flex gap-1">
+                    <button onclick="saveInventoryAdd()" class="btn bg-gray-700 text-white p-1 rounded-md hover:bg-gray-800 text-xs flex-1">Сохранить</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs flex-1">Отмена</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Редактирование/добавление записи истории цен ингредиента -->
+        <div id="priceHistoryModal" class="modal">
+            <div class="modal-content">
+                <h2 class="text-xs font-semibold mb-3 text-gray-800" id="priceHistoryModalTitle">Запись истории цен</h2>
+                <input type="hidden" id="priceHistoryRecordId">
+                <label class="text-xs text-gray-500">Дата (с какого числа действует цена)</label>
+                <input id="priceHistoryDate" type="date" class="border p-0.5 rounded-md mb-2 w-full">
+                <label class="text-xs text-gray-500">Цена за упаковку (€)</label>
+                <input id="priceHistoryPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" class="border p-0.5 rounded-md mb-2 w-full">
+                <label class="text-xs text-gray-500">Размер упаковки</label>
+                <input id="priceHistorySize" type="number" autocomplete="off" inputmode="decimal" step="0.01" class="border p-0.5 rounded-md mb-3 w-full">
+                <div class="flex gap-1">
+                    <button onclick="savePriceHistoryRecord()" class="btn bg-gray-700 text-white p-1 rounded-md hover:bg-gray-800 text-xs flex-1">Сохранить</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs flex-1">Отмена</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Быстрое создание нового ингредиента прямо из карточки рецепта -->
+        <div id="quickAddIngredientModal" class="modal">
+            <div class="modal-content">
+                <h2 class="text-base font-semibold mb-2 text-gray-800">Новый ингредиент</h2>
+                <label class="text-xs text-gray-600">Название</label>
+                <input id="qaiName" class="border p-1 rounded-md mb-1 w-full text-xs">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-xs text-gray-600">Цена упаковки (€)</label>
+                        <input id="qaiPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-1 rounded-md mb-1 w-full text-xs">
+                    </div>
+                    <div>
+                        <label class="text-xs text-gray-600">Размер упаковки</label>
+                        <input id="qaiSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" class="border p-1 rounded-md mb-1 w-full text-xs">
+                    </div>
+                </div>
+                <label class="text-xs text-gray-600">Единица измерения</label>
+                <select id="qaiUnit" class="border p-1 rounded-md mb-2 w-full text-xs">
+                    <option value="g">граммы (г)</option>
+                    <option value="kg">килограммы (кг)</option>
+                    <option value="ml">миллилитры (мл)</option>
+                    <option value="l">литры (л)</option>
+                    <option value="pcs">штуки (шт)</option>
+                </select>
+                <button onclick="confirmQuickAddIngredient()" class="btn bg-gray-700 text-white p-1 rounded-md hover:bg-gray-800 text-xs mr-1">Создать</button>
+                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs">Отмена</button>
+            </div>
+        </div>
+
+        <!-- Статистика -->
+        <div id="stats" class="tab-content hidden">
+            <div class="bg-white rounded-md shadow-md p-2 mb-3">
+                <h2 class="text-base font-semibold mb-2 text-gray-800">Статистика</h2>
+
+                <!-- Фильтры -->
+                <div class="relative mb-1">
+                    <button type="button" onclick="toggleCustomerFilterDropdown()" id="customerFilterBtn" class="border p-1 rounded-md w-full text-xs text-left bg-white flex justify-between items-center">
+                        <span id="customerFilterLabel">Все клиенты</span>
+                        <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    </button>
+                    <div id="customerFilterDropdown" class="hidden absolute z-10 bg-white border rounded-md shadow-md w-full mt-1 max-h-40 overflow-y-auto p-1">
+                        <label class="flex items-center gap-2 px-1 py-1 text-xs border-b mb-1 font-medium">
+                            <input type="checkbox" id="customerFilterAll" onchange="toggleAllCustomersFilter(this)" checked> Все клиенты
+                        </label>
+                        <div id="customerFilterList"></div>
+                    </div>
+                </div>
+                <div class="mb-1">
+                    <select id="statsDateRange" onchange="toggleDateRange(); applyFilter();" class="border p-0.5 rounded-md w-full text-xs">
+                        <option value="all">Весь период</option>
+                        <option value="week">Текущая неделя</option>
+                        <option value="month">Текущий месяц</option>
+                        <option value="year">Текущий год</option>
+                        <option value="custom">От - До</option>
+                    </select>
+                </div>
+                <div id="customDateRange" class="hidden mb-1">
+                    <div class="flex gap-1">
+                        <div class="flex-1">
+                            <label class="text-xs text-gray-500">От</label>
+                            <input id="statsDateFrom" type="date" onchange="applyFilter()" class="border p-0.5 rounded-md w-full text-xs">
+                        </div>
+                        <div class="flex-1">
+                            <label class="text-xs text-gray-500">До</label>
+                            <input id="statsDateTo" type="date" onchange="applyFilter()" class="border p-0.5 rounded-md w-full text-xs">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+                <!-- Таблица по клиентам -->
+                <div class="bg-white rounded-md shadow-md p-2 mb-5">
+                    <h3 class="text-xs font-semibold text-gray-700 mb-1 ">Сумма по клиентам (с НДС)</h3>
+                    <div id="statsCustomerTableScroll" style="max-height:240px;overflow-y:auto; touch-action:pan-y; overscroll-behavior:contain;"></div>
+                    <div id="statsCustomerTableTotal" class="border-t mb-2"></div>
+                </div>
+
+                <!-- Круговая диаграмма -->
+                <div class="bg-white rounded-md shadow-md p-2 mb-5">
+                    <h3 class="text-xs font-semibold text-gray-700 mb-1 ">Доля клиентов (с НДС)</h3>
+                    <div class="flex justify-center mb-1">
+                        <canvas id="chartCanvas" width="200" height="200"></canvas>
+                    </div>
+                    <!-- Легенда отдельно, со скроллом -->
+                    <div id="chartLegend" style="max-height:120px;overflow-y:auto; touch-action:pan-y; overscroll-behavior:contain;" class="border rounded-md p-2 bg-gray-50"></div>
+                </div>
+
+                <!-- Общие цифры -->
+                <div class="bg-white rounded-md shadow-md p-2 mb-5">
+                    <div class="bg-gray-50 rounded-md p-2 mb-2 grid grid-cols-2 gap-1 text-center">
+                        <div><p class="text-xs text-gray-500">Всего (с НДС)</p><p id="totalPrice" class="text-xs font-bold text-gray-800">0.00 €</p></div>
+                        <div><p class="text-xs text-gray-500">в т.ч. НДС</p><p id="totalVatModal" class="text-sm font-bold text-blue-700">0.00 €</p></div>
+                        <div><p class="text-xs text-gray-500">Неделя (с НДС)</p><p id="weekTotalModal" class="text-xs font-bold text-gray-800">0.00 €</p></div>
+                        <div><p class="text-xs text-gray-500">Месяц (с НДС)</p><p id="monthTotalModal" class="text-xs font-bold text-gray-800">0.00 €</p></div>
+                    </div>
+                    <div class="flex gap-3 text-xs text-gray-500">
+                        <span>Клиентов: <b id="customerCount" class="text-gray-700">0</b></span>
+                        <span>Изделий: <b id="productCount" class="text-gray-700">0</b></span>
+                        <span>Заказов: <b id="orderCount" class="text-gray-700">0</b></span>
+                    </div>
+                </div>
+
+                <!-- Динамика по месяцам -->
+                <div class="bg-white rounded-md shadow-md p-2 mb-5">
+                    <h3 class="text-xs font-semibold text-gray-700 mb-1 ">Динамика по месяцам: выручка и прибыль</h3>
+                    <canvas id="monthlyCanvas" style="width:100%;height:140px;"></canvas>
+                </div>
+
+                <!-- Выручка по дням (свайп влево/вправо двигает окно на неделю) -->
+                <div class="bg-white rounded-md shadow-md p-2 mb-5">
+                    <div class="flex justify-between items-center mb-1">
+                        <h3 class="text-xs font-semibold text-gray-700 ">Выручка по дням</h3>
+                        <span id="dailyChartRange" class="text-xs text-gray-400"></span>
+                    </div>
+                    <div style="position: relative;">
+                        <canvas id="dailyRevenueCanvas" style="width:100%;height:140px; touch-action: pan-y;"></canvas>
+                        <div id="dailyChartTooltip" class="hidden" style="position:absolute; background:#1f2937; color:white; font-size:10px; padding:3px 6px; border-radius:4px; pointer-events:none; white-space:nowrap; transform: translate(-50%, -100%);"></div>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-1 text-center">← свайп для перехода к другим неделям →</p>
+                </div>
+
+                <!-- Топ изделий -->
+                <div class="bg-white rounded-md shadow-md p-2 mb-5">
+                    <h3 class="text-xs font-semibold text-gray-700 mb-1 ">Топ изделий по сумме</h3>
+                    <div id="statsProductTable"></div>
+                </div>
+
+                <!-- Рентабельность за период + топ изделий по рентабельности -->
+                <div class="bg-white rounded-md shadow-md p-2 mb-5">
+                    <div class="bg-gray-50 rounded-md p-2 mb-2 grid grid-cols-3 gap-1 text-center">
+                        <div><p class="text-xs text-gray-500">Себестоимость</p><p id="statsTotalCost" class="text-xs font-bold text-gray-800">0.00 €</p></div>
+                        <div><p class="text-xs text-gray-500">Прибыль</p><p id="statsTotalProfit" class="text-sm font-bold text-green-700">0.00 €</p></div>
+                        <div><p class="text-xs text-gray-500">Рентабельность</p><p id="statsProfitPct" class="text-sm font-bold text-gray-800">0.0%</p></div>
+                    </div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <h3 class="text-xs font-semibold text-gray-700 ">Рентабельность изделий</h3>
+                        <input id="productProfitFilter" type="text" placeholder="Фильтр по названию..." 
+                            class="border p-0.5 rounded text-xs flex-1" style="max-width:160px;">
+                    </div>
+                    <div id="statsProductProfitability"></div>
+                </div>
+
+                <p class="text-xs text-gray-400 mb-3">Данные синхронизированы с облаком (Supabase)</p>
+        </div>
+
+    </div><!-- appContent -->
+    </div><!-- tabsWrapper -->
+    </div><!-- p-2 -->
+</div><!-- container -->
+
+<script src="dates.js?v=1"></script>
+    <script src="money.js?v=1"></script>
+    <script src="supabaseClient.js?v=1"></script>
+    <script src="auth.js?v=1"></script>
+    <script src="employees.js?v=1"></script>
+    <script src="inventory.js?v=1"></script>
+<script src="ingredients.js?v=1"></script>
+<script src="semifinished.js?v=1"></script>
+<script src="products.js?v=1"></script>
+<script src="customers.js?v=1"></script>
+<script src="orders.js?v=1"></script>
+<script src="stats.js?v=1"></script>
+<script src="history.js?v=1"></script>
+<script src="modals.js?v=1"></script>
+<script src="helpers.js?v=1"></script>
+<script>
+// SUPABASE_URL, SUPABASE_KEY, db перенесены в supabaseClient.js
+
+// VAT_RATE перенесён в money.js
+
+// ==================== ДАННЫЕ (кэш в памяти) ====================
+let products  = [];   // [{id, name, price, batch_size, other_costs, ingredients:[{id, ingredient_id, quantity}]}]
+let customers = [];   // [{id, name, contact, discount}]
+let orders    = [];   // [{id, customer, customer_id, date, status, discount, items:[{id, product, product_id, quantity, price}]}]
+// employees, currentEmployee, logActivity, initLogin, selectEmployee, logoutEmployee
+// перенесены в employees.js
+
+// HISTORY_PAGE_SIZE, historyOffset, historyHasMore перенесены в history.js
+
+// Общее состояние для модальных окон редактирования/удаления,
+// используется во всех модулях (orders.js, products.js, customers.js, ingredients.js, modals.js)
+let editIndex      = null; // индекс редактируемой записи (продукт/клиент/ингредиент/заказ)
+let editItemIdx    = null; // индекс редактируемой позиции заказа
+let deleteId       = null; // id/индекс записи для удаления
+let deleteType     = null; // тип записи для удаления ('product','customer','order','item','ingredient','recipeItem')
+let currentOrderId   = null; // id заказа, открытого в детальном виде (orders.js)
+let currentTabId = 'orders'; // текущая активная вкладка (по умолчанию совпадает с HTML-разметкой)
+let currentProductId = null; // id изделия, открытого в детальном виде (products.js)
+let currentSemiFinishedId = null; // id полуфабриката, открытого в детальном виде (semifinished.js)
+let currentCustomerId = null; // id клиента, открытого в детальном виде (customers.js)
+let currentIngredientId = null; // id ингредиента, открытого в детальном виде (ingredients.js)
+
+
+// ==================== ЗАГРУЗКА / ИНДИКАТОР ====================
+function showLoading(message) {
+    document.getElementById('loadingOverlay').classList.remove('hidden');
+    const textEl = document.getElementById('loadingOverlayText');
+    if (textEl) {
+        if (message) { textEl.textContent = message; textEl.style.display = 'block'; }
+        else { textEl.style.display = 'none'; }
+    }
+}
+function hideLoading() { document.getElementById('loadingOverlay').classList.add('hidden'); }
+
+// ==================== ЗАГРУЗКА ВСЕХ ДАННЫХ ====================
+async function loadAllData() {
+    showLoading();
+    try {
+        const [pRes, cRes, oRes, oiRes, eRes, ingRes, piRes, sfRes, sfiRes] = await Promise.all([
+            db.from('products').select('id, name, price, batch_size, other_costs, unit, recipe_confirmed, track_stock').order('name').limit(5000),
+            db.from('customers').select('id, name, contact, discount, vat_exempt, notes').order('name').limit(5000),
+            db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number').is('deleted_at', null).range(0, 9999),
+            db.from('order_items').select('id, order_id, product_id, quantity, price, item_cost').range(0, 9999),
+            db.from('employees').select('id, name').order('name').limit(1000),
+            db.from('ingredients').select('id, name, package_price, package_size, unit').order('name').limit(5000),
+            db.from('product_ingredients').select('id, product_id, ingredient_id, semi_finished_id, quantity').limit(10000),
+            db.from('semi_finished').select('id, name, batch_size, unit, other_costs, recipe_confirmed, track_stock').order('name').limit(5000),
+            db.from('semi_finished_ingredients').select('id, semi_finished_id, ingredient_id, quantity, is_primary').limit(10000)
+        ]);
+        if (pRes.error) throw pRes.error;
+        if (cRes.error) throw cRes.error;
+        if (oRes.error) throw oRes.error;
+        if (oiRes.error) throw oiRes.error;
+        if (eRes.error) throw eRes.error;
+        if (ingRes.error) throw ingRes.error;
+        if (piRes.error) throw piRes.error;
+        if (sfRes.error) throw sfRes.error;
+        if (sfiRes.error) throw sfiRes.error;
+
+        ingredients = (ingRes.data || []).map(i => ({ id: i.id, name: i.name, package_price: Number(i.package_price), package_size: Number(i.package_size), unit: i.unit }));
+
+        const sfRecipeBySf = {};
+        (sfiRes.data || []).forEach(ri => {
+            if (!sfRecipeBySf[ri.semi_finished_id]) sfRecipeBySf[ri.semi_finished_id] = [];
+            sfRecipeBySf[ri.semi_finished_id].push({ id: ri.id, ingredient_id: ri.ingredient_id, quantity: Number(ri.quantity), is_primary: !!ri.is_primary });
+        });
+        semiFinished = (sfRes.data || []).map(sf => ({
+            id: sf.id, name: sf.name, batch_size: Number(sf.batch_size || 1), unit: sf.unit, other_costs: Number(sf.other_costs || 0),
+            recipe_confirmed: !!sf.recipe_confirmed,
+            track_stock: !!sf.track_stock,
+            ingredients: sfRecipeBySf[sf.id] || []
+        }));
+
+        const recipeByProduct = {};
+        (piRes.data || []).forEach(ri => {
+            if (!recipeByProduct[ri.product_id]) recipeByProduct[ri.product_id] = [];
+            recipeByProduct[ri.product_id].push({ id: ri.id, ingredient_id: ri.ingredient_id, semi_finished_id: ri.semi_finished_id, quantity: Number(ri.quantity) });
+        });
+
+        products  = (pRes.data || []).map(p => ({
+            id: p.id, name: p.name, price: Number(p.price),
+            batch_size: Number(p.batch_size || 1), other_costs: Number(p.other_costs || 0),
+            unit: p.unit || '',
+            recipe_confirmed: !!p.recipe_confirmed,
+            track_stock: !!p.track_stock,
+            ingredients: recipeByProduct[p.id] || []
+        }));
+        customers = (cRes.data || []).map(c => ({ id: c.id, name: c.name || '', contact: c.contact || '', discount: Number(c.discount || 0), vat_exempt: !!c.vat_exempt, notes: c.notes || '' }));
+        employees = (eRes.data || []).map(e => ({ id: e.id, name: e.name }));
+
+        const customerById = {};
+        customers.forEach(c => customerById[c.id] = c);
+        const productById = {};
+        products.forEach(p => productById[p.id] = p);
+        const employeeById = {};
+        employees.forEach(e => employeeById[e.id] = e);
+
+        const itemsByOrder = {};
+        (oiRes.data || []).forEach(it => {
+            if (!itemsByOrder[it.order_id]) itemsByOrder[it.order_id] = [];
+            const prod = productById[it.product_id];
+            itemsByOrder[it.order_id].push({
+                id: it.id,
+                product_id: it.product_id,
+                product: prod ? prod.name : '(удалённое изделие)',
+                quantity: Number(it.quantity),
+                price: Number(it.price),
+                item_cost: it.item_cost != null ? Number(it.item_cost) : null
+            });
+        });
+
+        orders = (oRes.data || []).map(o => {
+            const cust = customerById[o.customer_id];
+            const emp  = employeeById[o.employee_id];
+            return {
+                id: o.id,
+                customer_id: o.customer_id,
+                customer: cust ? (cust.name || '(имя клиента не указано)') : '(удалённый клиент)',
+                date: o.order_date,
+                status: o.status || 'принят',
+                discount: Number(o.discount || 0),
+                vat_exempt: !!o.vat_exempt,
+                employee_id: o.employee_id || null,
+                employee: emp ? emp.name : '',
+                notes: o.notes || '',
+                order_number: o.order_number || null,
+                items: itemsByOrder[o.id] || []
+            };
+        });
+
+        displayProducts();
+        displayCustomers();
+        displayIngredients();
+        displaySemiFinished();
+        updateOrderEmployeeFilter();
+        displayOrders();
+    } catch (e) {
+        console.error(e);
+        alert('Ошибка загрузки данных. Проверьте подключение к интернету.');
+    } finally {
+        hideLoading();
+    }
+}
+
+// ==================== ТАБЫ ====================
+function showTab(tabId) {
+    // Принудительно завершаем предыдущую анимацию если она ещё идёт
+    const wrapper = document.getElementById('tabsWrapper');
+    if (wrapper) {
+        wrapper.classList.remove('animating');
+        wrapper.querySelectorAll('.tab-content').forEach(el => {
+            el.classList.remove('slide-in-right','slide-in-left','slide-out-left','slide-out-right');
+        });
+    }
+
+    const TAB_SLIDE_ORDER = ['orders', 'customers', 'products', 'ingredients'];
+    const fromId  = currentTabId;
+    currentTabId  = tabId;
+
+    const fromIdx = TAB_SLIDE_ORDER.indexOf(fromId);
+    const toIdx   = TAB_SLIDE_ORDER.indexOf(tabId);
+    const animate = fromIdx !== -1 && toIdx !== -1 && fromId !== tabId;
+    const goRight = toIdx > fromIdx; // новая вкладка правее в меню
+
+    const fromEl = fromId ? document.getElementById(fromId) : null;
+    const toEl   = document.getElementById(tabId);
+
+    // Сначала скрываем все вкладки кроме текущей (из которой уходим)
+    document.querySelectorAll('.tab-content').forEach(t => {
+        if (t.id !== fromId) t.classList.add('hidden');
+    });
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+
+    if (animate && fromEl) {
+        const animClasses = ['slide-in-right','slide-in-left','slide-out-left','slide-out-right'];
+        const wrapper = document.getElementById('tabsWrapper');
+
+        fromEl.classList.remove(...animClasses);
+        toEl.classList.remove(...animClasses);
+
+        // Фиксируем высоту враппера чтобы не прыгала во время анимации
+        wrapper.style.setProperty('--tabs-height', fromEl.offsetHeight + 'px');
+        wrapper.classList.add('animating');
+
+        toEl.classList.remove('hidden');
+        void toEl.offsetWidth;
+
+        fromEl.classList.add(goRight ? 'slide-out-left'  : 'slide-out-right');
+        toEl.classList.add  (goRight ? 'slide-in-right'  : 'slide-in-left');
+
+        const duration = 260;
+        setTimeout(() => {
+            fromEl.classList.add('hidden');
+            fromEl.classList.remove(...animClasses);
+            toEl.classList.remove(...animClasses);
+            wrapper.classList.remove('animating');
+        }, duration);
+    } else {
+        if (fromEl) fromEl.classList.add('hidden');
+        toEl.classList.remove('hidden');
+    }
+    const tabBtn = document.querySelector(`button[onclick="showTab('${tabId}')"]`);
+    if (tabBtn) tabBtn.classList.add('active');
+
+    // Закрываем ВСЕ открытые карточки при переключении вкладки (не только
+    // карточку текущего раздела) — иначе, например, открытая карточка клиента
+    // продолжает считаться "активной" после перехода в Изделия, и кнопка "+"
+    // ошибочно остаётся скрытой.
+    if (tabId !== 'orders')      closeOrderDetailSilent();
+    if (tabId !== 'products')    closeProductDetailSilent();
+    if (tabId !== 'customers')   closeCustomerDetailSilent();
+    if (tabId !== 'ingredients') closeIngredientDetailSilent();
+    if (tabId !== 'semiFinished') closeSemiFinishedDetailSilent();
+
+    if (tabId === 'orders')    { closeOrderDetail(); displayOrders(); }
+    if (tabId === 'products')  { closeProductDetailSilent(); displayProducts(); }
+    if (tabId === 'customers') { closeCustomerDetailSilent(); displayCustomers(); }
+    if (tabId === 'ingredients') { closeIngredientDetailSilent(); displayIngredients(); }
+    if (tabId === 'semiFinished') { closeSemiFinishedDetailSilent(); displaySemiFinished(); }
+    if (tabId === 'history')   { updateHistoryEmployeeFilter(); loadHistory(); }
+    if (tabId === 'stats')     { updateStatsCustomerFilter(); toggleDateRange(); applyFilter(); updateInfoCounts(); initDailyRevenueChart(); }
+    refreshFab();
+}
+
+// ==================== ПЛАВАЮЩАЯ КНОПКА "+" ====================
+// Видна только на 4 разделах со списками (Заказы/Клиенты/Изделия/Ингредиенты)
+// и только когда открыт сам список, а не карточка какой-то записи.
+// Вызывается из showTab() и из всех open*Detail()/close*Detail() функций.
+function refreshFab() {
+    const fab = document.getElementById('fabAddBtn');
+    if (!fab) return;
+    const tabId = currentTabId;
+
+    const isDetailOpen = () =>
+        document.getElementById('orderDetail')?.classList.contains('active') ||
+        document.getElementById('productDetail')?.classList.contains('active') ||
+        document.getElementById('customerDetail')?.classList.contains('active') ||
+        document.getElementById('ingredientDetail')?.classList.contains('active') ||
+        document.getElementById('semiFinishedDetail')?.classList.contains('active');
+
+    const actions = {
+        orders: createDraftOrderAndOpen,
+        customers: createDraftCustomerAndOpen,
+        products: createDraftProductAndOpen,
+        ingredients: createDraftIngredientAndOpen,
+        semiFinished: createDraftSemiFinishedAndOpen,
+    };
+
+    if (tabId && actions[tabId] && !isDetailOpen()) {
+        fab.classList.remove('hidden');
+        fab.onclick = actions[tabId];
+        void fab.offsetWidth; // принудительный reflow — на некоторых мобильных
+                               // браузерах position:fixed элемент не перерисовывается
+                               // сразу после снятия display:none без этого "толчка"
+    } else {
+        fab.classList.add('hidden');
+        fab.onclick = null;
+    }
+}
+
+// Сброс детального вида полуфабриката без повторной перерисовки списка
+async function closeSemiFinishedDetailSilent() {
+    const leavingId = currentSemiFinishedId;
+    currentSemiFinishedId = null;
+    const list = document.getElementById('semiFinishedList');
+    const detail = document.getElementById('semiFinishedDetail');
+    if (list) list.classList.remove('hidden');
+    if (detail) detail.classList.remove('active');
+    if (leavingId !== null) await cleanupSemiFinishedDraftIfEmpty(leavingId);
+    refreshFab();
+}
+
+// Сброс детального вида изделия без повторной перерисовки списка (избегаем двойного displayProducts)
+async function closeProductDetailSilent() {
+    const leavingId = currentProductId;
+    currentProductId = null;
+    const list = document.getElementById('productsList');
+    const detail = document.getElementById('productDetail');
+    if (list) list.classList.remove('hidden');
+    if (detail) detail.classList.remove('active');
+    if (leavingId !== null) await cleanupProductDraftIfEmpty(leavingId);
+    refreshFab();
+}
+
+// Сброс детального вида клиента без повторной перерисовки списка
+async function closeCustomerDetailSilent() {
+    const leavingId = currentCustomerId;
+    currentCustomerId = null;
+    const list = document.getElementById('customersList');
+    const detail = document.getElementById('customerDetail');
+    if (list) list.classList.remove('hidden');
+    if (detail) detail.classList.remove('active');
+    if (leavingId !== null) await cleanupCustomerDraftIfEmpty(leavingId);
+    refreshFab();
+}
+
+// Сброс детального вида ингредиента без повторной перерисовки списка
+async function closeIngredientDetailSilent() {
+    const leavingId = currentIngredientId;
+    currentIngredientId = null;
+    const list = document.getElementById('ingredientsList');
+    const detail = document.getElementById('ingredientDetail');
+    if (list) list.classList.remove('hidden');
+    if (detail) detail.classList.remove('active');
+    if (leavingId !== null) await cleanupIngredientDraftIfEmpty(leavingId);
+    refreshFab();
+}
+
+// Переход из карточки клиента к полной карточке заказа в разделе "Заказы"
+function goToOrderFromCustomer(orderId) {
+    showTab('orders');
+    openOrderDetail(orderId);
+}
+
+// Открыть экран истории из окна статистики
+function openHistoryScreen() {
+    closeModal(); // закрыть модальное окно статистики
+    showTab('history');
+}
+
+// Вернуться из истории к заказам (т.к. История больше не основная вкладка)
+function closeHistoryScreen() {
+    showTab('orders');
+}
+
+// ==================== ИЗДЕЛИЯ ====================
+// displayProducts, addProduct, openEditProductModal, saveProductEdit, copyProduct
+// перенесены в products.js
+
+// ==================== КЛИЕНТЫ ====================
+// displayCustomers, addCustomer, openCustomerDetail, saveCdHeader
+// перенесены в customers.js
+
+// ==================== ЗАКАЗЫ — СПИСОК ====================
+// Вся логика списка заказов (отображение, группировка по неделям/месяцам,
+// фильтры, создание и копирование заказа) перенесена в orders.js
+
+// ==================== ЗАКАЗЫ — ДЕТАЛЬНЫЙ ВИД ====================
+// Открытие/закрытие детального вида, позиции, сохранение шапки,
+// а также модальные окна редактирования заказа из списка —
+// перенесены в orders.js
+
+
+// ==================== УДАЛЕНИЕ / ОБЩИЕ МОДАЛЬНЫЕ ОКНА ====================
+// openDeleteModal, confirmDelete, closeModal —
+// перенесены в modals.js
+
+
+// ==================== ИСТОРИЯ (ЖУРНАЛ ДЕЙСТВИЙ) ====================
+// Загрузка и отображение журнала действий, фильтры, переход к заказу из записи —
+// перенесены в history.js
+
+
+
+// ==================== СТАТИСТИКА ====================
+// Окно статистики, фильтры, таблицы, графики, экспорт резервной копии —
+// перенесены в stats.js
+
+
+// ==================== ВСПОМОГАТЕЛЬНЫЕ ====================
+// Заполнение выпадающих списков и SVG-иконки —
+// перенесены в helpers.js
+
+
+// ==================== ИНИЦИАЛИЗАЦИЯ ====================
+
+(async function init() {
+    // Сбрасываем все detail-панели при старте — браузер мог сохранить их состояние
+    // (класс 'active') если приложение было закрыто во время просмотра карточки.
+    ['orderDetail','productDetail','customerDetail','ingredientDetail','semiFinishedDetail'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('active');
+    });
+    ['ordersList','productsList','customersList','ingredientsList','semiFinishedList'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove('hidden');
+    });
+    await initAuth();
+})();
+
+// ==================== REALTIME ====================
+// Подписка на изменения в таблицах orders, order_items, customers, ingredients.
+// При любом изменении — перезагружаем все данные и показываем тост.
+
+let _realtimeToastTimer = null;
+
+function showRealtimeToast() {
+    const toast = document.getElementById('realtimeToast');
+    if (!toast) return;
+    toast.classList.add('visible');
+    if (_realtimeToastTimer) clearTimeout(_realtimeToastTimer);
+    _realtimeToastTimer = setTimeout(() => toast.classList.remove('visible'), 3000);
+}
+
+let _realtimeChannel = null;
+
+function initRealtime() {
+    if (!db || !db.channel) return;
+    // Не создаём второй канал если уже подписаны (смена сотрудника без перезагрузки)
+    if (_realtimeChannel) return;
+
+    _realtimeChannel = db.channel('realtime-sync')
+    _realtimeChannel
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' },        () => handleRealtimeEvent())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'order_items' },   () => handleRealtimeEvent())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'customers' },     () => handleRealtimeEvent())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'ingredients' },   () => handleRealtimeEvent())
+        .subscribe((status) => {
+            if (status === 'SUBSCRIBED') console.log('[Realtime] подписка активна');
+            else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') console.warn('[Realtime] ошибка:', status);
+        });
+}
+
+let _realtimePending = false;
+
+// Флаг: текущий пользователь сам пишет в БД — игнорируем собственное Realtime-эхо.
+// Выставляется в true в начале каждой функции записи, сбрасывается через 3 сек.
+let _suppressRealtime = false;
+let _suppressRealtimeTimer = null;
+
+function suppressRealtimeFor3s() {
+    _suppressRealtime = true;
+    if (_suppressRealtimeTimer) clearTimeout(_suppressRealtimeTimer);
+    _suppressRealtimeTimer = setTimeout(() => { _suppressRealtime = false; }, 3000);
+}
+
+async function handleRealtimeEvent() {
+    // Игнорируем эхо собственных действий
+    if (_suppressRealtime) return;
+    if (_realtimePending) return;
+    _realtimePending = true;
+    setTimeout(async () => {
+        _realtimePending = false;
+        if (_suppressRealtime) return;
+        await loadAllData();
+    }, 1500);
+}
+
+// ==================== iOS: восстановление после смахивания ====================
+// На iOS Safari после смахивания страница восстанавливается из bfcache
+// (persisted: true) — DOMContentLoaded и init() не запускаются повторно.
+// Слушаем pageshow чтобы обновить FAB и данные после «разморозки».
+window.addEventListener('pageshow', (e) => {
+    if (e.persisted) {
+        // Страница восстановлена из кэша браузера (iOS bfcache)
+        requestAnimationFrame(() => {
+            refreshFab();
+            setTimeout(refreshFab, 300);
+        });
+    }
+});
+
+// ==================== СВАЙП МЕЖДУ ВКЛАДКАМИ ====================
+// Горизонтальный свайп переключает вкладки: Заказы ↔ Клиенты ↔ Ассортимент ↔ Склад.
+// Свайп игнорируется если открыта карточка записи или модальное окно.
+
+(function initSwipeNavigation() {
+    const TAB_ORDER = ['orders', 'customers', 'products', 'ingredients'];
+    const MIN_SWIPE_X = 60;   // минимальная горизонтальная дистанция свайпа (px)
+    const MAX_SWIPE_Y = 80;   // максимальное вертикальное отклонение (px) — чтобы не путать со скроллом
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    document.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    document.addEventListener('touchend', (e) => {
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        const dy = e.changedTouches[0].clientY - touchStartY;
+
+        // Игнорируем если движение больше вертикальное, чем горизонтальное
+        if (Math.abs(dx) < MIN_SWIPE_X || Math.abs(dy) > MAX_SWIPE_Y) return;
+
+        // Игнорируем если открыта карточка записи
+        const detailOpen =
+            document.getElementById('orderDetail')?.classList.contains('active') ||
+            document.getElementById('productDetail')?.classList.contains('active') ||
+            document.getElementById('customerDetail')?.classList.contains('active') ||
+            document.getElementById('ingredientDetail')?.classList.contains('active') ||
+            document.getElementById('semiFinishedDetail')?.classList.contains('active');
+        if (detailOpen) return;
+
+        // Игнорируем если открыто модальное окно
+        const modalOpen = document.querySelector('.modal[style*="flex"]');
+        if (modalOpen) return;
+
+        // Только основные 4 вкладки
+        const idx = TAB_ORDER.indexOf(currentTabId);
+        if (idx === -1) return;
+
+        if (dx < 0 && idx < TAB_ORDER.length - 1) {
+            // Свайп влево (справа налево) — следующая вкладка
+            showTab(TAB_ORDER[idx + 1]);
+        } else if (dx > 0 && idx > 0) {
+            // Свайп вправо (слева направо) — предыдущая вкладка
+            showTab(TAB_ORDER[idx - 1]);
+        }
+    }, { passive: true });
+})();
+
+// Регистрация Service Worker для установки как приложение (PWA)
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => console.error('SW registration failed:', err));
+    });
+}
+</script>
+</body>
+</html>
