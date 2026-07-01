@@ -1,4 +1,4 @@
-const CACHE_NAME = 'runwaychef-public-cache-v1';
+const CACHE_NAME = 'runwaychef-public-cache-v2';
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -26,7 +26,14 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
-  self.skipWaiting();
+  // Больше не переключаемся на новую версию автоматически —
+  // ждём явной команды от пользователя (кнопка "Обновить" в приложении)
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('activate', (event) => {
