@@ -1051,35 +1051,50 @@
                     </div>
                 </div>
 
-                <!-- Оплата -->
-                <div class="bg-white p-2 rounded-md shadow-md mt-3">
-                    <div class="flex justify-between items-center mb-2">
+                <!-- Оплата (кратко) -->
+                <div class="bg-white p-2 rounded-md shadow-md mt-3 cursor-pointer" onclick="openPaymentModal()">
+                    <div class="flex justify-between items-center">
                         <h2 class="text-xs font-semibold text-gray-800">Оплата</h2>
                         <span id="paymentStatusBadge" class="text-xs font-semibold px-2 py-0.5 rounded-full">—</span>
                     </div>
-
-                    <div class="w-full bg-gray-100 rounded-full h-1.5 mb-2 overflow-hidden">
-                        <div id="paymentProgressBar" class="h-1.5 bg-green-500 rounded-full" style="width:0%"></div>
-                    </div>
-
-                    <div class="text-xs text-gray-600 space-y-0.5 mb-2">
-                        <div>Оплачено: <span id="paymentPaidAmount" class="font-medium text-gray-800">0.00 €</span></div>
-                        <div>Осталось: <span id="paymentRemainingAmount" class="font-semibold text-gray-900">0.00 €</span></div>
-                        <div id="paymentOverpaidRow" class="hidden">Переплата: <span id="paymentOverpaidAmount" class="font-semibold text-indigo-600">0.00 €</span></div>
-                        <div class="flex items-center gap-1 pt-1">
-                            <span>Оплатить до:</span>
-                            <input id="orderDueDate" type="date" class="border p-0.5 rounded-md text-xs" onchange="saveDueDate()">
-                            <span id="dueDateOverdueTag" class="text-red-600 font-semibold hidden"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>просрочено</span>
-                        </div>
-                    </div>
-
-                    <div id="paymentsListContent" class="mb-2"></div>
-
-                    <div class="flex gap-1">
-                        <button onclick="openAddPaymentModal()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs flex-1 border border-gray-200">+ Добавить оплату</button>
-                        <button id="payRemainingBtn" onclick="openAddPaymentModal(true)" class="btn bg-green-50 text-green-700 px-2 py-1.5 rounded-md hover:bg-green-100 text-xs flex-1 border border-green-200 hidden items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0018.75 4.5H5.25A2.25 2.25 0 003 6.75v10.5A2.25 2.25 0 005.25 19.5z"/></svg>Внести остаток</button>
+                    <div class="flex justify-between items-center mt-1">
+                        <span id="paymentSummaryLine" class="text-xs text-gray-500">Оплачено 0.00 € из 0.00 €</span>
+                        <svg class="w-3.5 h-3.5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Оплата (подробно) -->
+        <div id="paymentDetailModal" class="modal">
+            <div class="modal-content" style="max-width:360px;">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-xs font-semibold text-gray-800">Оплата</h2>
+                    <span id="paymentStatusBadge2" class="text-xs font-semibold px-2 py-0.5 rounded-full">—</span>
+                </div>
+
+                <div class="w-full bg-gray-100 rounded-full h-1.5 mb-2 overflow-hidden">
+                    <div id="paymentProgressBar" class="h-1.5 bg-green-500 rounded-full" style="width:0%"></div>
+                </div>
+
+                <div class="text-xs text-gray-600 space-y-0.5 mb-2">
+                    <div>Оплачено: <span id="paymentPaidAmount" class="font-medium text-gray-800">0.00 €</span></div>
+                    <div>Осталось: <span id="paymentRemainingAmount" class="font-semibold text-gray-900">0.00 €</span></div>
+                    <div id="paymentOverpaidRow" class="hidden">Переплата: <span id="paymentOverpaidAmount" class="font-semibold text-indigo-600">0.00 €</span></div>
+                    <div class="flex items-center gap-1 pt-1">
+                        <span>Оплатить до:</span>
+                        <input id="orderDueDate" type="date" class="border p-0.5 rounded-md text-xs" onchange="saveDueDate()">
+                        <span id="dueDateOverdueTag" class="text-red-600 font-semibold hidden"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>просрочено</span>
+                    </div>
+                </div>
+
+                <div id="paymentsListContent" class="mb-2"></div>
+
+                <div class="flex gap-1 mb-1">
+                    <button onclick="openAddPaymentModal()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs flex-1 border border-gray-200">+ Добавить оплату</button>
+                    <button id="payRemainingBtn" onclick="openAddPaymentModal(true)" class="btn bg-green-50 text-green-700 px-2 py-1.5 rounded-md hover:bg-green-100 text-xs flex-1 border border-green-200 hidden items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0018.75 4.5H5.25A2.25 2.25 0 003 6.75v10.5A2.25 2.25 0 005.25 19.5z"/></svg>Внести остаток</button>
+                </div>
+                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1.5 rounded-md hover:bg-gray-500 text-xs w-full">Закрыть</button>
             </div>
         </div>
 
@@ -1315,7 +1330,7 @@
                 <div class="flex gap-1">
                     <button id="paymentDeleteBtn" onclick="deletePayment()" class="btn bg-red-50 text-red-600 p-1.5 rounded-md hover:bg-red-100 text-xs hidden" style="width:80px;">Удалить</button>
                     <button onclick="savePayment()" class="btn bg-indigo-600 text-white p-1.5 rounded-md hover:bg-indigo-700 flex-1 text-xs">Сохранить</button>
-                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1.5 rounded-md hover:bg-gray-500 text-xs" style="width:80px;">Отмена</button>
+                    <button onclick="document.getElementById('addPaymentModal').style.display='none'" class="btn bg-gray-400 text-white p-1.5 rounded-md hover:bg-gray-500 text-xs" style="width:80px;">Отмена</button>
                 </div>
             </div>
         </div>

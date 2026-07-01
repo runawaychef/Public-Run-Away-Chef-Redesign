@@ -49,6 +49,9 @@ function renderPayments() {
     if (paidEl) paidEl.textContent = paid.toFixed(2) + ' €';
     if (remEl) remEl.textContent = remaining.toFixed(2) + ' €';
 
+    const summaryLine = document.getElementById('paymentSummaryLine');
+    if (summaryLine) summaryLine.textContent = `Оплачено ${paid.toFixed(2)} € из ${total.toFixed(2)} €`;
+
     const overpaidRow = document.getElementById('paymentOverpaidRow');
     if (overpaidRow) {
         overpaidRow.classList.toggle('hidden', overpaid <= 0);
@@ -67,18 +70,20 @@ function renderPayments() {
     const isFullyPaid = paid > 0 && paid >= total && total > 0;
 
     const badge = document.getElementById('paymentStatusBadge');
-    if (badge) {
+    const badge2 = document.getElementById('paymentStatusBadge2');
+    [badge, badge2].forEach(b => {
+        if (!b) return;
         if (paid <= 0) {
-            badge.textContent = 'Не оплачен';
-            badge.className = 'text-xs font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-600';
+            b.textContent = 'Не оплачен';
+            b.className = 'text-xs font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-600';
         } else if (paid < total) {
-            badge.textContent = 'Частично оплачен';
-            badge.className = 'text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700';
+            b.textContent = 'Частично оплачен';
+            b.className = 'text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700';
         } else {
-            badge.textContent = 'Оплачен';
-            badge.className = 'text-xs font-semibold px-2 py-0.5 rounded-full bg-green-50 text-green-700';
+            b.textContent = 'Оплачен';
+            b.className = 'text-xs font-semibold px-2 py-0.5 rounded-full bg-green-50 text-green-700';
         }
-    }
+    });
 
     // Кнопка быстрого закрытия остатка — показываем только если есть что закрывать
     const payRemainingBtn = document.getElementById('payRemainingBtn');
@@ -112,6 +117,10 @@ function renderPayments() {
     });
     html += '</div>';
     list.innerHTML = html;
+}
+
+function openPaymentModal() {
+    document.getElementById('paymentDetailModal').style.display = 'flex';
 }
 
 // ── Срок оплаты ──────────────────────────────────────────────────────────────
@@ -191,7 +200,7 @@ async function savePayment() {
             if (error) throw error;
             logActivity('order', `Внесена оплата ${amount.toFixed(2)} € (${method})`, currentOrderId);
         }
-        closeModal();
+        document.getElementById('addPaymentModal').style.display = 'none';
         await loadOrderPayments(currentOrderId);
     } catch (e) {
         console.error(e);
@@ -208,7 +217,7 @@ async function deletePayment() {
         const { error } = await db.from('order_payments').delete().eq('id', id);
         if (error) throw error;
         logActivity('order', 'Удалена запись об оплате', currentOrderId);
-        closeModal();
+        document.getElementById('addPaymentModal').style.display = 'none';
         await loadOrderPayments(currentOrderId);
     } catch (e) {
         console.error(e);
