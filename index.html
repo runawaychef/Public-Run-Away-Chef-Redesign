@@ -958,6 +958,10 @@
                             </button>
                             <!-- Карточка клиента -->
                             <button onclick="goToCustomerFromOrder()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300">Карточка клиента</button>
+                            <!-- Поделиться заказом -->
+                            <button onclick="shareOrderInfo()" title="Поделиться заказом" class="text-gray-400 hover:text-indigo-600">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0-12l-4 4m4-4l4 4M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6"/></svg>
+                            </button>
                             <!-- Удалить заказ -->
                             <button onclick="deleteCurrentOrder()" title="Удалить заказ" class="text-gray-400 hover:text-red-600 text-lg leading-none perm-delete">🗑</button>
                         </div>
@@ -1044,7 +1048,6 @@
                             <div>Прибыль: <span id="detailProfit" class="font-semibold text-green-700">0.00 €</span> (<span id="detailProfitPct">0.0</span>%)</div>
                             <button onclick="openOrderCostBreakdown()" class="btn bg-gray-100 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-200 text-xs w-full mt-1">📊 Детализация себестоимости</button>
                         </div>
-                        <button onclick="shareOrderInfo()" class="btn bg-indigo-600 text-white px-2 py-1 rounded-md hover:bg-indigo-700 text-xs w-full mt-1">📤 Поделиться заказом</button>
                     </div>
                 </div>
 
