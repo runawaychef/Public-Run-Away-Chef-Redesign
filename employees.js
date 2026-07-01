@@ -273,13 +273,28 @@ function openEmployeesModal() {
 
     pendingInvitations.forEach(inv => {
         const row = document.createElement('div');
-        row.className = 'px-2 py-1.5 rounded-md text-xs text-left border border-dashed border-gray-300 bg-gray-50 flex justify-between items-center';
-        row.innerHTML = `<span>${inv.name} <span class="text-gray-400">(${inv.email})</span></span><span class="text-amber-600">⏳ Ждём регистрации</span>`;
+        row.className = 'px-2 py-1.5 rounded-md text-xs text-left border border-dashed border-gray-300 bg-gray-50';
+        row.innerHTML = `
+            <div class="flex justify-between items-center">
+                <span>${inv.name} <span class="text-gray-400">(${inv.email})</span></span>
+                <span class="text-amber-600 flex-shrink-0 ml-1">⏳ Ждём регистрации</span>
+            </div>`;
+        const actionsRow = document.createElement('div');
+        actionsRow.className = 'flex gap-2 mt-1';
+
+        const shareBtn = document.createElement('button');
+        shareBtn.textContent = '📤 Поделиться';
+        shareBtn.className = 'text-indigo-600 hover:text-indigo-800 text-xs';
+        shareBtn.onclick = (e) => { e.stopPropagation(); shareInvitation(inv); };
+
         const cancelBtn = document.createElement('button');
-        cancelBtn.textContent = '✕';
-        cancelBtn.className = 'text-gray-400 hover:text-red-500 ml-2';
+        cancelBtn.textContent = '✕ Отменить';
+        cancelBtn.className = 'text-gray-400 hover:text-red-500 text-xs';
         cancelBtn.onclick = (e) => { e.stopPropagation(); cancelInvitation(inv.id); };
-        row.appendChild(cancelBtn);
+
+        actionsRow.appendChild(shareBtn);
+        actionsRow.appendChild(cancelBtn);
+        row.appendChild(actionsRow);
         content.appendChild(row);
     });
 
@@ -363,6 +378,26 @@ async function deleteEmployee() {
         console.error(e);
         showInfo('Ошибка удаления сотрудника.');
     } finally { hideLoading(); }
+}
+
+async function shareInvitation(inv) {
+    const appUrl = window.location.origin + window.location.pathname;
+    const orgLabel = currentOrgName || 'нашу пекарню';
+    const text = `Здравствуйте, ${inv.name}! Приглашаю вас в приложение «${orgLabel}» для учёта заказов.\n\n1. Откройте: ${appUrl}\n2. Зарегистрируйтесь именно на этот email: ${inv.email}\n\nПосле регистрации вы автоматически получите доступ.`;
+
+    if (navigator.share) {
+        try {
+            await navigator.share({ text });
+        } catch (e) { /* пользователь закрыл меню — ничего не делаем */ }
+    } else {
+        try {
+            await navigator.clipboard.writeText(text);
+            showInfo('Текст приглашения скопирован — вставьте его в сообщение сотруднику.');
+        } catch (e) {
+            console.error(e);
+            showInfo('Не удалось скопировать текст. Скопируйте вручную:\n\n' + text);
+        }
+    }
 }
 
 async function cancelInvitation(id) {
