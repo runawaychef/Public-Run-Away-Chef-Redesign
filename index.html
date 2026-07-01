@@ -1209,7 +1209,13 @@
                 <h2 id="employeeEditTitle" class="text-xs font-semibold mb-2 text-gray-800">Новый сотрудник</h2>
                 <input type="hidden" id="employeeEditId">
                 <label class="text-xs text-gray-500">Имя сотрудника</label>
-                <input id="employeeEditName" type="text" class="border p-1 rounded-md text-xs w-full mb-3" placeholder="Например, Анна">
+                <input id="employeeEditName" type="text" class="border p-1 rounded-md text-xs w-full mb-2" placeholder="Например, Анна">
+
+                <div id="employeeEditEmailBlock">
+                    <label class="text-xs text-gray-500">Email для личного входа (необязательно)</label>
+                    <input id="employeeEditEmail" type="email" class="border p-1 rounded-md text-xs w-full mb-1" placeholder="Оставьте пустым для входа по имени на общем устройстве">
+                    <p class="text-xs text-gray-400 mb-3">Если указать email — сотрудник сможет установить приложение на свой телефон и войти под собой. Он должен зарегистрироваться в приложении именно на этот email.</p>
+                </div>
 
                 <p class="text-xs text-gray-500 mb-1">Полномочия:</p>
                 <div class="flex flex-col gap-1.5 mb-3 text-xs text-gray-800">

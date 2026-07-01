@@ -45,6 +45,8 @@ async function loadCurrentOrg() {
 
 // ==================== ЭКРАН ВЫБОРА СОТРУДНИКА ====================
 
+const EMPLOYEE_SELECT_FIELDS = 'id, name, is_owner, user_id, can_view_costs, can_delete, can_manage_inventory, can_edit_catalog, can_view_reports';
+
 async function initLogin() {
     // Сначала загружаем организацию текущего пользователя
     const membership = await loadCurrentOrg();
@@ -53,14 +55,38 @@ async function initLogin() {
         return;
     }
 
+    // ID текущего Auth-пользователя — нужен, чтобы найти его личную запись сотрудника (если есть)
+    const { data: authData } = await db.auth.getUser();
+    const myUserId = authData && authData.user ? authData.user.id : null;
+
     try {
         const { data, error } = await db
             .from('employees')
-            .select('id, name, is_owner, can_view_costs, can_delete, can_manage_inventory, can_edit_catalog, can_view_reports')
+            .select(EMPLOYEE_SELECT_FIELDS)
             .eq('org_id', currentOrgId)
             .order('name');
         if (error) throw error;
         employees = data || [];
+
+        // Если у этого аккаунта уже есть личная привязанная запись — входим сразу под ней, без выбора
+        let myOwn = myUserId ? employees.find(e => e.user_id === myUserId) : null;
+
+        // Самолечение для существующих владельцев, которые вошли до появления личных аккаунтов:
+        // если это владелец организации и есть "ничья" запись владельца — привязываем её к нему
+        if (!myOwn && myUserId && membership.role === 'owner') {
+            const ownerRow = employees.find(e => e.is_owner && !e.user_id);
+            if (ownerRow) {
+                const { data: linked } = await db.from('employees')
+                    .update({ user_id: myUserId })
+                    .eq('id', ownerRow.id)
+                    .select(EMPLOYEE_SELECT_FIELDS)
+                    .single();
+                if (linked) myOwn = linked;
+            }
+        }
+
+        if (myOwn) { await selectEmployee(myOwn); return; }
+
         const list = document.getElementById('employeeList');
         list.innerHTML = '';
 
@@ -68,8 +94,8 @@ async function initLogin() {
             // Пекарня новая (или ещё нет ни одной записи) — создаём настоящую запись владельца с полными правами
             const { data: owner, error: ownerErr } = await db
                 .from('employees')
-                .insert({ org_id: currentOrgId, name: 'Владелец', is_owner: true })
-                .select('id, name, is_owner, can_view_costs, can_delete, can_manage_inventory, can_edit_catalog, can_view_reports')
+                .insert({ org_id: currentOrgId, name: 'Владелец', is_owner: true, user_id: myUserId })
+                .select(EMPLOYEE_SELECT_FIELDS)
                 .single();
             if (ownerErr || !owner) {
                 console.error('Ошибка создания владельца:', ownerErr);
@@ -92,6 +118,7 @@ async function initLogin() {
         document.getElementById('loginError').classList.remove('hidden');
     }
 }
+
 
 async function selectEmployee(emp) {
     currentEmployee = emp;
@@ -147,26 +174,51 @@ const PERMISSION_CHECKBOX_IDS = {
     can_view_reports: 'permReports'
 };
 
+let pendingInvitations = [];
+
 async function reloadEmployeesList() {
     const { data, error } = await db
         .from('employees')
-        .select('id, name, is_owner, can_view_costs, can_delete, can_manage_inventory, can_edit_catalog, can_view_reports')
+        .select(EMPLOYEE_SELECT_FIELDS)
         .eq('org_id', currentOrgId)
         .order('name');
     if (!error) employees = data || [];
+
+    const { data: invData, error: invErr } = await db
+        .from('invitations')
+        .select('id, email, name, can_view_costs, can_delete, can_manage_inventory, can_edit_catalog, can_view_reports')
+        .eq('org_id', currentOrgId)
+        .is('used_at', null)
+        .order('created_at');
+    if (!invErr) pendingInvitations = invData || [];
 }
 
 function openEmployeesModal() {
     closeModal();
     const content = document.getElementById('employeesListContent');
     content.innerHTML = '';
+
     employees.forEach(emp => {
         const row = document.createElement('button');
         row.className = 'btn bg-gray-100 text-gray-800 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs text-left border border-gray-200 flex justify-between items-center';
-        row.innerHTML = `<span>${emp.name}</span>` + (emp.is_owner ? '<span class="text-gray-400">Владелец</span>' : '<span class="text-gray-400">✎</span>');
+        const badge = emp.is_owner ? 'Владелец' : (emp.user_id ? 'Личный вход' : 'Общее устройство');
+        row.innerHTML = `<span>${emp.name}</span><span class="text-gray-400">${badge}</span>`;
         row.onclick = () => openEmployeeEditModal(emp);
         content.appendChild(row);
     });
+
+    pendingInvitations.forEach(inv => {
+        const row = document.createElement('div');
+        row.className = 'px-2 py-1.5 rounded-md text-xs text-left border border-dashed border-gray-300 bg-gray-50 flex justify-between items-center';
+        row.innerHTML = `<span>${inv.name} <span class="text-gray-400">(${inv.email})</span></span><span class="text-amber-600">⏳ Ждём регистрации</span>`;
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = '✕';
+        cancelBtn.className = 'text-gray-400 hover:text-red-500 ml-2';
+        cancelBtn.onclick = (e) => { e.stopPropagation(); cancelInvitation(inv.id); };
+        row.appendChild(cancelBtn);
+        content.appendChild(row);
+    });
+
     document.getElementById('employeesModal').style.display = 'flex';
 }
 
@@ -174,7 +226,11 @@ function openEmployeeEditModal(emp) {
     closeModal();
     document.getElementById('employeeEditId').value = emp ? emp.id : '';
     document.getElementById('employeeEditName').value = emp ? emp.name : '';
+    document.getElementById('employeeEditEmail').value = '';
     document.getElementById('employeeEditTitle').textContent = emp ? 'Редактирование сотрудника' : 'Новый сотрудник';
+
+    // Поле email для приглашения имеет смысл только при создании новой записи
+    document.getElementById('employeeEditEmailBlock').classList.toggle('hidden', !!emp);
 
     PERMISSION_FIELDS.forEach(field => {
         document.getElementById(PERMISSION_CHECKBOX_IDS[field]).checked = emp ? !!emp[field] : false;
@@ -191,22 +247,33 @@ function openEmployeeEditModal(emp) {
 async function saveEmployee() {
     const id = document.getElementById('employeeEditId').value;
     const name = document.getElementById('employeeEditName').value.trim();
+    const email = document.getElementById('employeeEditEmail').value.trim();
     if (!name) { showInfo('Введите имя сотрудника.'); return; }
 
-    const payload = { name };
+    const permissions = {};
     PERMISSION_FIELDS.forEach(field => {
-        payload[field] = document.getElementById(PERMISSION_CHECKBOX_IDS[field]).checked;
+        permissions[field] = document.getElementById(PERMISSION_CHECKBOX_IDS[field]).checked;
     });
 
     showLoading('Сохранение...');
     try {
         if (id) {
-            const { error } = await db.from('employees').update(payload).eq('id', id);
+            // Редактирование существующей записи (имя + права)
+            const { error } = await db.from('employees').update({ name, ...permissions }).eq('id', id);
             if (error) throw error;
             logActivity('system', `Обновлены данные сотрудника: ${name}`);
+        } else if (email) {
+            // Создаём приглашение на личный вход — запись сотрудника появится сама при регистрации
+            const { error } = await db.from('invitations').insert({ org_id: currentOrgId, email, name, ...permissions });
+            if (error) throw error;
+            logActivity('system', `Отправлено приглашение сотруднику: ${name} (${email})`);
+            await reloadEmployeesList();
+            openEmployeesModal();
+            await showInfo(`Приглашение создано. Сообщите сотруднику, что нужно зарегистрироваться в приложении на email: ${email}`);
+            return;
         } else {
-            payload.org_id = currentOrgId;
-            const { error } = await db.from('employees').insert(payload);
+            // Обычная запись для входа по имени на общем устройстве
+            const { error } = await db.from('employees').insert({ org_id: currentOrgId, name, ...permissions });
             if (error) throw error;
             logActivity('system', `Создан сотрудник: ${name}`);
         }
@@ -231,6 +298,20 @@ async function deleteEmployee() {
     } catch (e) {
         console.error(e);
         showInfo('Ошибка удаления сотрудника.');
+    } finally { hideLoading(); }
+}
+
+async function cancelInvitation(id) {
+    if (!(await showConfirm('Отменить это приглашение?'))) return;
+    showLoading('Отмена...');
+    try {
+        const { error } = await db.from('invitations').delete().eq('id', id);
+        if (error) throw error;
+        await reloadEmployeesList();
+        openEmployeesModal();
+    } catch (e) {
+        console.error(e);
+        showInfo('Ошибка отмены приглашения.');
     } finally { hideLoading(); }
 }
 
