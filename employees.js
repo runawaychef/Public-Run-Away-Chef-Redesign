@@ -278,8 +278,9 @@ async function reloadEmployeesList() {
     if (!invErr) pendingInvitations = invData || [];
 }
 
-function openEmployeesModal() {
+async function openEmployeesModal() {
     closeModal();
+    await reloadEmployeesList();
     const content = document.getElementById('employeesListContent');
     content.innerHTML = '';
 
