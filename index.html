@@ -1044,7 +1044,7 @@
                             <div>Прибыль: <span id="detailProfit" class="font-semibold text-green-700">0.00 €</span> (<span id="detailProfitPct">0.0</span>%)</div>
                             <button onclick="openOrderCostBreakdown()" class="btn bg-gray-100 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-200 text-xs w-full mt-1">📊 Детализация себестоимости</button>
                         </div>
-                        <button onclick="notifyOrderToTelegram()" class="btn bg-indigo-600 text-white px-2 py-1 rounded-md hover:bg-indigo-700 text-xs w-full mt-1">📤 Отправить уведомление</button>
+                        <button onclick="shareOrderInfo()" class="btn bg-indigo-600 text-white px-2 py-1 rounded-md hover:bg-indigo-700 text-xs w-full mt-1">📤 Поделиться заказом</button>
                     </div>
                 </div>
             </div>
@@ -1277,7 +1277,7 @@
                         <button onclick="clearShoppingList()" class="btn bg-red-50 text-red-600 px-2 py-1 rounded-md hover:bg-red-100 text-xs">Очистить всё</button>
                     </div>
                     <div class="mb-2">
-                        <button onclick="sendShoppingListToTelegram(_shoppingList)" class="btn bg-indigo-600 text-white px-2 py-1 rounded-md hover:bg-indigo-700 text-xs w-full">📤 Отправить уведомление</button>
+                        <button onclick="shareShoppingList()" class="btn bg-indigo-600 text-white px-2 py-1 rounded-md hover:bg-indigo-700 text-xs w-full">📤 Поделиться списком</button>
                     </div>
                     <div id="shopListContent" style="max-height:52vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;">
                         <p class="text-xs text-gray-400 text-center py-4">Список пуст</p>

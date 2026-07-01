@@ -844,6 +844,29 @@ async function addRowToShoppingList(ingId, sfId) {
     } finally { hideLoading(); }
 }
 
+// ── Поделиться списком покупок ───────────────────────────────────────────────
+
+function shareShoppingList() {
+    if (!_shoppingList.length) { showInfo('Список покупок пуст.'); return; }
+    const UL = { g: 'г', kg: 'кг', ml: 'мл', l: 'л', pcs: 'шт' };
+
+    let text = `Список покупок — ${currentOrgName || 'пекарня'}\n\n`;
+    _shoppingList.forEach(row => {
+        let name = '—', unit = '';
+        if (row.ingredient_id) {
+            const ing = (ingredients || []).find(i => i.id === row.ingredient_id);
+            if (ing) { name = ing.name; unit = UL[ing.unit] || ing.unit; }
+        } else if (row.semi_finished_id) {
+            const sf = (semiFinished || []).find(s => s.id === row.semi_finished_id);
+            if (sf) { name = sf.name; unit = UL[sf.unit] || sf.unit; }
+        }
+        const mark = row.is_bought ? '✅' : '☐';
+        text += `${mark} ${name} — ${Number(row.quantity_to_buy).toFixed(2)} ${unit}\n`;
+    });
+
+    shareOrCopyText(text);
+}
+
 // ── Очистить весь список ─────────────────────────────────────────────────────
 
 async function clearShoppingList() {

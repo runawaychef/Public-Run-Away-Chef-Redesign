@@ -429,20 +429,7 @@ async function shareInvitation(inv) {
     const appUrl = window.location.origin + window.location.pathname;
     const orgLabel = currentOrgName || 'нашу пекарню';
     const text = `Здравствуйте, ${inv.name}! Приглашаю вас в приложение «${orgLabel}» для учёта заказов.\n\n1. Откройте: ${appUrl}\n2. Зарегистрируйтесь именно на этот email: ${inv.email}\n\nПосле регистрации вы автоматически получите доступ.`;
-
-    if (navigator.share) {
-        try {
-            await navigator.share({ text });
-        } catch (e) { /* пользователь закрыл меню — ничего не делаем */ }
-    } else {
-        try {
-            await navigator.clipboard.writeText(text);
-            showInfo('Текст приглашения скопирован — вставьте его в сообщение сотруднику.');
-        } catch (e) {
-            console.error(e);
-            showInfo('Не удалось скопировать текст. Скопируйте вручную:\n\n' + text);
-        }
-    }
+    await shareOrCopyText(text);
 }
 
 async function cancelInvitation(id) {

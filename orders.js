@@ -629,6 +629,23 @@ async function permanentDeleteOrder(orderId) {
     finally { hideLoading(); }
 }
 
+// Формирует текстовую сводку по заказу и открывает системное меню "Поделиться"
+// (владелец сам выбирает получателя — клиента, коллегу или просто копирует себе)
+function shareOrderInfo() {
+    const order = orders.find(o => o.id === currentOrderId);
+    if (!order) return;
+    const oNum = order.order_number || `#${order.id}`;
+    const total = (document.getElementById('detailTotal').textContent || '').trim();
+
+    let text = `Заказ ${oNum}\nКлиент: ${order.customer}\nДата: ${formatDateDMY(order.date)}\nСтатус: ${order.status}\n\nПозиции:\n`;
+    (order.items || []).forEach(item => {
+        text += `• ${item.product} — ${item.quantity} × ${item.price.toFixed(2)} € = ${(item.quantity * item.price).toFixed(2)} €\n`;
+    });
+    text += `\nИтого к оплате: ${total}`;
+
+    shareOrCopyText(text);
+}
+
 function deleteCurrentOrder() {
     const idx = orders.findIndex(o => o.id === currentOrderId);
     if (idx === -1) return;
@@ -704,13 +721,6 @@ async function saveDetailHeader() {
         if ((old.employee || '') !== (order.employee || '')) changes.push(`исполнитель «${old.employee || '—'}» → «${order.employee || '—'}»`);
         if (old.notes !== order.notes) changes.push(`комментарий изменён`);
         if (changes.length) logActivity('order', `Изменён заказ №${order.id}: ${changes.join(', ')}`, order.id);
-
-        // Telegram: автоуведомление при смене статуса
-        if (old.status !== order.status && order.customer) {
-            const senderName = currentEmployee ? currentEmployee.name : '—';
-            const text = `🔄 ${order.customer} · 📅 ${formatDateDMY(order.date)}\nСтатус: ${old.status} → ${order.status}\n👨\u200d🍳 ${senderName}`;
-            sendTelegramNotification(text);
-        }
     } catch (e) { console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.'); }
     finally { hideLoading(); }
 }
