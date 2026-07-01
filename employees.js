@@ -6,6 +6,12 @@
 let employees = [];       // [{id, name}]
 let currentEmployee = null; // {id, name}
 let currentOrgId = null;    // id текущей организации (пекарни)
+let currentOrgName = '';    // название текущей организации (пекарни)
+
+function updateHeaderOrgName() {
+    const el = document.getElementById('orgNameHeader');
+    if (el && currentOrgName) el.textContent = currentOrgName;
+}
 
 // ==================== ЖУРНАЛ ДЕЙСТВИЙ ====================
 
@@ -42,6 +48,8 @@ async function loadCurrentOrg() {
             .single();
         if (error) throw error;
         currentOrgId = data.org_id;
+        currentOrgName = (data.organizations && data.organizations.name) || '';
+        updateHeaderOrgName();
         return data;
     } catch (e) {
         console.error('Ошибка загрузки организации:', e);
@@ -109,7 +117,7 @@ async function initLogin() {
                 console.error('Ошибка создания владельца:', ownerErr);
                 await selectEmployee({ id: null, name: 'Владелец', is_owner: true });
             } else {
-                await selectEmployee(owner);
+                openOrgNameSetupModal(owner);
             }
             return true;
         }
@@ -139,6 +147,7 @@ async function selectEmployee(emp) {
     document.getElementById('statsBtn').classList.remove('hidden');
     document.getElementById('inventoryBtn').classList.remove('hidden');
     document.getElementById('employeesManageBtn').classList.toggle('hidden', !emp.is_owner);
+    document.getElementById('orgNameEditBlock').classList.toggle('hidden', !emp.is_owner);
     await loadAllData();
     await loadInventory();
     initRealtime();
@@ -171,6 +180,51 @@ async function logoutEmployee() {
     document.getElementById('settingsBtn').classList.add('hidden');
     document.getElementById('statsBtn').classList.add('hidden');
     document.getElementById('inventoryBtn').classList.add('hidden');
+}
+
+// ==================== НАЗВАНИЕ ПЕКАРНИ ====================
+
+let _pendingOwnerForSetup = null;
+
+function openOrgNameSetupModal(owner) {
+    _pendingOwnerForSetup = owner;
+    document.getElementById('orgNameSetupInput').value = '';
+    document.getElementById('orgNameSetupModal').style.display = 'flex';
+}
+
+async function saveOrgNameSetup() {
+    const name = document.getElementById('orgNameSetupInput').value.trim();
+    if (name) {
+        try {
+            const { error } = await db.from('organizations').update({ name }).eq('id', currentOrgId);
+            if (error) throw error;
+            currentOrgName = name;
+            updateHeaderOrgName();
+        } catch (e) {
+            console.error(e);
+            showInfo('Не удалось сохранить название, но можно будет изменить его позже в настройках.');
+        }
+    }
+    document.getElementById('orgNameSetupModal').style.display = 'none';
+    const owner = _pendingOwnerForSetup;
+    _pendingOwnerForSetup = null;
+    await selectEmployee(owner);
+}
+
+async function saveOrgName() {
+    const name = document.getElementById('orgNameInput').value.trim();
+    if (!name) { showInfo('Введите название пекарни.'); return; }
+    showLoading('Сохранение...');
+    try {
+        const { error } = await db.from('organizations').update({ name }).eq('id', currentOrgId);
+        if (error) throw error;
+        currentOrgName = name;
+        updateHeaderOrgName();
+        logActivity('system', `Изменено название пекарни: ${name}`);
+    } catch (e) {
+        console.error(e);
+        showInfo('Ошибка сохранения названия.');
+    } finally { hideLoading(); }
 }
 
 // ==================== СОТРУДНИКИ И ПРАВА (только владелец) ====================

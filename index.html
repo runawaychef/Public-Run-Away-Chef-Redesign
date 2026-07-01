@@ -363,7 +363,7 @@
         <div class="bg-white rounded-md shadow-md p-3 flex items-center gap-3 mb-2">
             <img src="icon-192.png" alt="Runaway Chef" style="width:48px;height:48px;border-radius:10px;flex-shrink:0;">
             <div>
-                <div class="text-xl font-bold text-gray-800 leading-tight">Runaway Chef Project</div>
+                <div id="orgNameHeader" class="text-xl font-bold text-gray-800 leading-tight">Runaway Chef Project</div>
                 <div class="text-xs text-gray-400">Учёт заказов и рецептур</div>
             </div>
         </div>
@@ -1159,6 +1159,14 @@
                 <h2 class="text-xs font-semibold mb-1 text-gray-800">Настройки</h2>
                 <p class="text-xs text-gray-500 mb-3">Текущий сотрудник: <b id="settingsCurrentEmployee" class="text-gray-800"></b></p>
 
+                <div id="orgNameEditBlock" class="flex flex-col gap-1 mb-3 hidden">
+                    <label class="text-xs text-gray-500">Название пекарни</label>
+                    <div class="flex gap-1">
+                        <input id="orgNameInput" type="text" class="border p-1 rounded-md text-xs flex-1" placeholder="Например, Пекарня Анны">
+                        <button onclick="saveOrgName()" class="btn bg-gray-700 text-white px-2 py-1 rounded-md hover:bg-gray-800 text-xs">Сохранить</button>
+                    </div>
+                </div>
+
                 <div class="flex flex-col gap-1 mb-3">
                     <button onclick="downloadBackup()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs text-left border border-gray-200">⬇ Скачать резервную копию</button>
                     <button onclick="openHistoryScreen()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs text-left border border-gray-200">📋 Журнал действий</button>
@@ -1189,6 +1197,16 @@
                     <button onclick="recalcOrderCostBreakdown()" class="btn bg-indigo-50 text-indigo-700 p-1 rounded-md hover:bg-indigo-100 flex-1 text-xs">↻ Пересчитать по актуальному рецепту</button>
                     <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs" style="width:80px;">Закрыть</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- Первый запуск: ввод названия пекарни -->
+        <div id="orgNameSetupModal" class="modal">
+            <div class="modal-content" style="max-width:320px;">
+                <h2 class="text-sm font-semibold mb-1 text-gray-800">Добро пожаловать!</h2>
+                <p class="text-xs text-gray-500 mb-3">Как называется ваша пекарня? Это название будет отображаться в шапке приложения. Изменить его можно позже в настройках.</p>
+                <input id="orgNameSetupInput" type="text" class="border p-1.5 rounded-md text-sm w-full mb-3" placeholder="Например, Пекарня Анны">
+                <button onclick="saveOrgNameSetup()" class="btn bg-indigo-600 text-white p-1.5 rounded-md hover:bg-indigo-700 w-full text-xs">Начать работу</button>
             </div>
         </div>
 

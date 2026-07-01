@@ -7,6 +7,7 @@ const STOCK_LOW_DAYS = 7; // порог «критически мало» — м
 
 function openSettingsModal() {
     document.getElementById('settingsCurrentEmployee').textContent = currentEmployee ? currentEmployee.name : '—';
+    document.getElementById('orgNameInput').value = currentOrgName || '';
     document.getElementById('settingsModal').style.display = 'flex';
 }
 
