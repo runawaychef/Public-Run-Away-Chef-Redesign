@@ -30,9 +30,15 @@ async function logActivity(actionType, description, orderId = null) {
 // Определяем к какой пекарне принадлежит текущий Auth-пользователь
 async function loadCurrentOrg() {
     try {
+        const { data: authData, error: authErr } = await db.auth.getUser();
+        if (authErr) throw authErr;
+        const uid = authData && authData.user ? authData.user.id : null;
+        if (!uid) throw new Error('Нет активной сессии пользователя');
+
         const { data, error } = await db
             .from('memberships')
             .select('org_id, role, organizations(id, name, plan)')
+            .eq('user_id', uid)
             .single();
         if (error) throw error;
         currentOrgId = data.org_id;
