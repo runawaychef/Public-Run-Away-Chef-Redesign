@@ -59,7 +59,7 @@ async function loadCurrentOrg() {
 
 // ==================== ЭКРАН ВЫБОРА СОТРУДНИКА ====================
 
-const EMPLOYEE_SELECT_FIELDS = 'id, name, is_owner, user_id, can_view_costs, can_delete, can_manage_inventory, can_edit_catalog, can_view_reports';
+const EMPLOYEE_SELECT_FIELDS = 'id, name, is_owner, user_id, can_view_costs, can_delete, can_manage_inventory, can_view_reports';
 
 async function initLogin() {
     document.getElementById('loginError').classList.add('hidden');
@@ -143,7 +143,6 @@ const PERM_CLASS_MAP = {
     can_view_costs: 'perm-view-costs',
     can_delete: 'perm-delete',
     can_manage_inventory: 'perm-inventory',
-    can_edit_catalog: 'perm-catalog',
     can_view_reports: 'perm-reports'
 };
 
@@ -250,12 +249,11 @@ async function saveOrgName() {
 
 // ==================== СОТРУДНИКИ И ПРАВА (только владелец) ====================
 
-const PERMISSION_FIELDS = ['can_view_costs', 'can_delete', 'can_manage_inventory', 'can_edit_catalog', 'can_view_reports'];
+const PERMISSION_FIELDS = ['can_view_costs', 'can_delete', 'can_manage_inventory', 'can_view_reports'];
 const PERMISSION_CHECKBOX_IDS = {
     can_view_costs: 'permViewCosts',
     can_delete: 'permDelete',
     can_manage_inventory: 'permInventory',
-    can_edit_catalog: 'permCatalog',
     can_view_reports: 'permReports'
 };
 
@@ -271,7 +269,7 @@ async function reloadEmployeesList() {
 
     const { data: invData, error: invErr } = await db
         .from('invitations')
-        .select('id, email, name, can_view_costs, can_delete, can_manage_inventory, can_edit_catalog, can_view_reports')
+        .select('id, email, name, can_view_costs, can_delete, can_manage_inventory, can_view_reports')
         .eq('org_id', currentOrgId)
         .is('used_at', null)
         .order('created_at');
