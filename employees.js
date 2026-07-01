@@ -304,19 +304,19 @@ async function openEmployeesModal() {
         row.innerHTML = `
             <div class="flex justify-between items-center">
                 <span>${inv.name} <span class="text-gray-400">(${inv.email})</span></span>
-                <span class="text-amber-600 flex-shrink-0 ml-1">⏳ Ждём регистрации</span>
+                <span class="text-amber-600 flex-shrink-0 ml-1 inline-flex items-center">${icon('clock')}Ждём регистрации</span>
             </div>`;
         const actionsRow = document.createElement('div');
         actionsRow.className = 'flex gap-2 mt-1';
 
         const shareBtn = document.createElement('button');
-        shareBtn.textContent = '📤 Поделиться';
-        shareBtn.className = 'text-indigo-600 hover:text-indigo-800 text-xs';
+        shareBtn.innerHTML = icon('share') + 'Поделиться';
+        shareBtn.className = 'text-indigo-600 hover:text-indigo-800 text-xs inline-flex items-center';
         shareBtn.onclick = (e) => { e.stopPropagation(); shareInvitation(inv); };
 
         const cancelBtn = document.createElement('button');
-        cancelBtn.textContent = '✕ Отменить';
-        cancelBtn.className = 'text-gray-400 hover:text-red-500 text-xs';
+        cancelBtn.innerHTML = icon('close') + 'Отменить';
+        cancelBtn.className = 'text-gray-400 hover:text-red-500 text-xs inline-flex items-center';
         cancelBtn.onclick = (e) => { e.stopPropagation(); cancelInvitation(inv.id); };
 
         actionsRow.appendChild(shareBtn);

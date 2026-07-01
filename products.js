@@ -17,7 +17,7 @@ function displayProducts() {
         const recipeOk = !!p.recipe_confirmed;
         const needsAttention = !hasUnit || !recipeOk;
         if (needsAttention) warningCount++;
-        const unitLabel = hasUnit ? UNIT_PRODUCT_LABELS[p.unit] : '⚠';
+        const unitLabel = hasUnit ? UNIT_PRODUCT_LABELS[p.unit] : icon('warning', 'w-3.5 h-3.5 text-red-500 inline-block');
         const row = document.createElement('tr');
         row.className = 'order-row border-b' + (needsAttention ? ' bg-red-50' : '');
         row.innerHTML = `

@@ -107,7 +107,7 @@ function renderPayments() {
                 <div class="font-medium text-gray-800">${Number(p.amount).toFixed(2)} € · ${escapeHtml(p.method || '—')}</div>
                 <div class="text-gray-400">${formatDateDMY(p.paid_at)}${emp ? ' · ' + escapeHtml(emp.name) : ''}${p.note ? ' · ' + escapeHtml(p.note) : ''}</div>
             </div>
-            <span class="text-gray-300">✎</span>
+            <span class="text-gray-300">${icon('edit', 'w-3.5 h-3.5')}</span>
         </div>`;
     });
     html += '</div>';

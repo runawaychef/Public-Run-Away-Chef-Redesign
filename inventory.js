@@ -291,7 +291,7 @@ async function openInventoryModal() {
             ? _shoppingList.some(r => r.semi_finished_id === ing.id)
             : _shoppingList.some(r => r.ingredient_id === ing.id);
         const addBtn = inList
-            ? `<span class="text-green-600 text-xs font-semibold">✓</span>`
+            ? `<span class="text-green-600 text-xs font-semibold"><svg class="w-3.5 h-3.5 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg></span>`
             : `<button onclick="addRowToShoppingList(${isSf ? 'null' : ing.id}, ${isSf ? ing.id : 'null'})" class="btn bg-indigo-50 text-indigo-600 px-1 py-0.5 rounded text-xs hover:bg-indigo-100">+</button>`;
         const detailClick = isSf
             ? `closeModal(); showTab('semiFinished'); openSemiFinishedDetail(${ing.id});`
@@ -325,22 +325,22 @@ async function openInventoryModal() {
 
     // 🔴 Критично: ингредиенты
     if (red.length) {
-        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold text-red-600 bg-red-50">🔴 Критично</td></tr>`;
+        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold text-red-600 bg-red-50"><span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>Критично</td></tr>`;
         red.forEach(item => { html += renderRow(item, 'bg-red-50', 'text-red-600', false); });
     }
     // 🔴 Критично: полуфабрикаты
     if (sfRed.length) {
-        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold text-red-600 bg-red-50">🔴 Критично — п/ф</td></tr>`;
+        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold text-red-600 bg-red-50"><span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>Критично — п/ф</td></tr>`;
         sfRed.forEach(item => { html += renderRow(item, 'bg-red-50', 'text-red-600', true); });
     }
     // 🟡 Заканчивается: ингредиенты
     if (yellow.length) {
-        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold text-yellow-700 bg-yellow-50">🟡 Заканчивается</td></tr>`;
+        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold text-yellow-700 bg-yellow-50"><span class="inline-block w-2 h-2 rounded-full bg-yellow-500 mr-1"></span>Заканчивается</td></tr>`;
         yellow.forEach(item => { html += renderRow(item, 'bg-yellow-50', 'text-yellow-700', false); });
     }
     // 🟡 Заканчивается: полуфабрикаты
     if (sfYellow.length) {
-        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold text-yellow-700 bg-yellow-50">🟡 Заканчивается — п/ф</td></tr>`;
+        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold text-yellow-700 bg-yellow-50"><span class="inline-block w-2 h-2 rounded-full bg-yellow-500 mr-1"></span>Заканчивается — п/ф</td></tr>`;
         sfYellow.forEach(item => { html += renderRow(item, 'bg-yellow-50', 'text-yellow-700', true); });
     }
     // Остальные ингредиенты
@@ -569,7 +569,7 @@ function switchInventoryTab(tab) {
     document.getElementById('invTabStock').classList.toggle('active', tab === 'stock');
     document.getElementById('invTabShop').classList.toggle('active', tab === 'shop');
     const title = document.getElementById('inventoryModalTitle');
-    if (title) title.textContent = tab === 'stock' ? '🛒 Аналитика склада' : '🛒 Корзина';
+    if (title) title.innerHTML = tab === 'stock' ? (icon('cart') + 'Аналитика склада') : (icon('trash') + 'Корзина');
     if (tab === 'shop') renderShoppingList();
 }
 
@@ -655,7 +655,7 @@ function renderShoppingList() {
                     class="border rounded p-0.5 text-xs w-full text-right ${row.is_bought ? 'text-gray-400' : ''}">
             </td>
             <td class="p-1 text-center">
-                <button onclick="removeShopItem(${row.id})" class="text-gray-300 hover:text-red-500 text-base leading-none" title="Удалить">✕</button>
+                <button onclick="removeShopItem(${row.id})" class="text-gray-300 hover:text-red-500" title="Удалить">${icon('close', 'w-3.5 h-3.5')}</button>
             </td>
         </tr>`;
     });

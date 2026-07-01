@@ -54,9 +54,9 @@ function displayOrders() {
         const dayAfterOrders = orders.filter(o => o.date === dayAfter);
         if (todayOrders.length || tomorrowOrders.length || dayAfterOrders.length) {
             contentEl.innerHTML =
-                buildDaySummary(todayOrders, '📋 Сегодня') +
-                buildDaySummary(tomorrowOrders, '📋 Завтра') +
-                buildDaySummary(dayAfterOrders, '📋 Послезавтра');
+                buildDaySummary(todayOrders, icon('clipboard') + 'Сегодня') +
+                buildDaySummary(tomorrowOrders, icon('clipboard') + 'Завтра') +
+                buildDaySummary(dayAfterOrders, icon('clipboard') + 'Послезавтра');
             summaryEl.classList.remove('hidden');
         } else {
             summaryEl.classList.add('hidden');

@@ -14,14 +14,14 @@ function displayCustomers() {
     customers.forEach((c, i) => {
         const hasName = !!(c.name && c.name.trim());
         if (!hasName) warningCount++;
-        const nameLabel = hasName ? escapeHtml(c.name) : '⚠ (имя не указано)';
+        const nameLabel = hasName ? escapeHtml(c.name) : icon('warning', 'w-3 h-3 inline-block align-[-1px] mr-0.5') + '(имя не указано)';
         const row = document.createElement('tr');
         row.className = 'order-row border-b' + (hasName ? '' : ' bg-red-50');
         row.innerHTML = `
             <td class=" p-0.5 text-xs ${hasName ? '' : 'text-red-600 font-semibold'}" onclick="openCustomerDetail(${c.id})">${nameLabel}</td>
             <td class=" p-0.5 text-xs" onclick="openCustomerDetail(${c.id})">${escapeHtml(c.contact)}</td>
             <td class=" p-0.5 text-xs" onclick="openCustomerDetail(${c.id})">${c.discount.toFixed(2)}</td>
-            <td class=" p-0.5 text-xs text-center" onclick="openCustomerDetail(${c.id})">${c.vat_exempt ? '✓' : ''}</td>
+            <td class=" p-0.5 text-xs text-center" onclick="openCustomerDetail(${c.id})">${c.vat_exempt ? icon('check', 'w-3.5 h-3.5 text-green-600 inline-block') : ''}</td>
             <td class=" p-0.5 text-center whitespace-nowrap">
                 ${svgEdit(`openCustomerDetail(${c.id})`)}
                 ${hasPermission('can_delete') ? svgDelete(`openDeleteModal(${i},'customer','клиента «${c.name || '(без имени)'}»')`) : ''}
@@ -201,7 +201,7 @@ async function downloadCustomerReportPdf() {
     if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; btn.textContent = 'Формирую PDF...'; }
 
     const cust = customers.find(c => c.id === currentCustomerId);
-    if (!cust) { _reportPdfInProgress = false; if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.textContent = '⬇ Скачать PDF'; } return; }
+    if (!cust) { _reportPdfInProgress = false; if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.innerHTML = icon('download') + 'Скачать PDF'; } return; }
     const { range, custOrders } = getCustomerOrdersForRange(cust);
     const dates = custOrders.map(o => o.date).sort();
     const periodTag = dates.length
@@ -261,7 +261,7 @@ async function downloadCustomerReportPdf() {
         clone.remove();
         hideLoading();
         _reportPdfInProgress = false;
-        if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.textContent = '⬇ Скачать PDF'; }
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.innerHTML = icon('download') + 'Скачать PDF'; }
     }
 }
 

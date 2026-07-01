@@ -211,7 +211,7 @@ function renderSemiFinishedRecipe(sf) {
             const unitPrice = ing ? ingredientUnitPrice(ing) : 0;
             const lineCost = unitPrice * ri.quantity;
             const isPrimary = !!ri.is_primary;
-            const starBtn = `<button onclick="setSfPrimaryIngredient(${i})" title="Сделать основным" class="text-base leading-none ${isPrimary ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-300'}">★</button>`;
+            const starBtn = `<button onclick="setSfPrimaryIngredient(${i})" title="Сделать основным" class="inline-flex ${isPrimary ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-300'}"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="${isPrimary ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.562.562 0 00-.586 0L6.98 21.539a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"/></svg></button>`;
             const row = document.createElement('tr');
             row.className = 'border-b';
             row.innerHTML = `
@@ -537,7 +537,7 @@ async function produceSfBatch() {
 
     const primaryRi = sf.ingredients.find(ri => ri.is_primary);
     if (!primaryRi) {
-        showInfo('Укажите основной ингредиент рецепта (нажмите ★ у нужного ингредиента).'); return;
+        showInfo('Укажите основной ингредиент рецепта (нажмите на звёздочку у нужного ингредиента).'); return;
     }
     const primaryIng = ingredients.find(i => i.id === primaryRi.ingredient_id);
     const primaryUnitLabel = primaryIng ? (UNIT_LABELS[primaryIng.unit] || primaryIng.unit) : '';

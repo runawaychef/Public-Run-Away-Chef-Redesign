@@ -578,9 +578,9 @@ async function renderIngredientStockBlock(ing) {
 
         // Итоговая строка
         let summary = `<div class="text-xs text-gray-600 mt-2 mb-2 space-y-0.5">`;
-        summary += `<div>🟢 Куплено: <span class="font-semibold text-green-700">${totals.in.qty.toFixed(2)} ${unitLabel}</span> · ${totals.in.cost.toFixed(2)} €</div>`;
-        if (totals.order.qty > 0) summary += `<div>🔵 На заказы: <span class="font-semibold text-blue-700">${totals.order.qty.toFixed(2)} ${unitLabel}</span> · ${totals.order.cost.toFixed(2)} €</div>`;
-        if (totals.personal.qty > 0) summary += `<div>🔴 Личное/потери: <span class="font-semibold text-red-600">${totals.personal.qty.toFixed(2)} ${unitLabel}</span> · ${totals.personal.cost.toFixed(2)} €</div>`;
+        summary += `<div><span class="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span>Куплено: <span class="font-semibold text-green-700">${totals.in.qty.toFixed(2)} ${unitLabel}</span> · ${totals.in.cost.toFixed(2)} €</div>`;
+        if (totals.order.qty > 0) summary += `<div><span class="inline-block w-2 h-2 rounded-full bg-blue-500 mr-1"></span>На заказы: <span class="font-semibold text-blue-700">${totals.order.qty.toFixed(2)} ${unitLabel}</span> · ${totals.order.cost.toFixed(2)} €</div>`;
+        if (totals.personal.qty > 0) summary += `<div><span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>Личное/потери: <span class="font-semibold text-red-600">${totals.personal.qty.toFixed(2)} ${unitLabel}</span> · ${totals.personal.cost.toFixed(2)} €</div>`;
         summary += `</div>`;
 
         // Фильтр-табы
@@ -755,8 +755,8 @@ function renderIngredientPriceHistory(ingredientId) {
             <td class="p-0.5 text-right">${Number(h.package_price).toFixed(2)} €</td>
             <td class="p-0.5 text-right">${unitPrice} €/${unitLabel}</td>
             <td class="p-0.5 text-center whitespace-nowrap">
-                <button onclick="openEditPriceHistoryModal(${h.id},'${h.valid_from}',${h.package_price},${h.package_size})" class="text-gray-400 hover:text-indigo-600 mr-1">✏️</button>
-                <button onclick="deletePriceHistoryRecord(${h.id})" class="text-gray-400 hover:text-red-600">🗑</button>
+                <button onclick="openEditPriceHistoryModal(${h.id},'${h.valid_from}',${h.package_price},${h.package_size})" class="text-gray-400 hover:text-indigo-600 mr-1">${icon('edit', 'w-3.5 h-3.5')}</button>
+                <button onclick="deletePriceHistoryRecord(${h.id})" class="text-gray-400 hover:text-red-600">${icon('trash', 'w-3.5 h-3.5')}</button>
             </td>
         </tr>`;
     });
