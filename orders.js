@@ -153,7 +153,7 @@ function displayOrders() {
             <td class=" p-0.5 text-xs font-medium" onclick="openOrderDetail(${order.id})">${total}</td>
             <td class=" p-0.5 text-center" onclick="openOrderDetail(${order.id})"><span class="${flagClass}"></span></td>
             <td class=" p-0.5 text-center">
-                ${svgDelete(`openDeleteModal(${realIdx},'order','заказ клиента «${order.customer}»')`)}
+                ${hasPermission('can_delete') ? svgDelete(`openDeleteModal(${realIdx},'order','заказ клиента «${order.customer}»')`) : ''}
                 ${svgCopy(`copyOrder(${realIdx})`)}
             </td>`;
         tbody.appendChild(row);
@@ -736,7 +736,7 @@ function renderDetailItems(order) {
                 <td class="p-0.5 text-xs text-center font-medium">${total}</td>
                 <td class="p-0.5 text-center">
                     ${svgEdit(`openEditItemModal(${i})`)}
-                    ${svgDelete(`deleteItem(${i})`)}
+                    ${hasPermission('can_delete') ? svgDelete(`deleteItem(${i})`) : ''}
                 </td>`;
             tbody.appendChild(row);
         });

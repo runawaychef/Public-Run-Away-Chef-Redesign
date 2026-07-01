@@ -146,6 +146,12 @@ const PERM_CLASS_MAP = {
     can_view_reports: 'perm-reports'
 };
 
+// Универсальная проверка права для мест, где интерфейс формируется через JS-шаблоны
+// (списки, где HTML пересоздаётся заново при каждом обновлении — статичная метка perm-* тут не сработает)
+function hasPermission(field) {
+    return !!(currentEmployee && (currentEmployee.is_owner || currentEmployee[field]));
+}
+
 // Показывает/скрывает элементы интерфейса согласно правам сотрудника.
 // Владелец видит всё всегда, независимо от состояния чекбоксов.
 function applyPermissions(emp) {

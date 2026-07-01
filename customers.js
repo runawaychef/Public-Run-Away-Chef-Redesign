@@ -24,7 +24,7 @@ function displayCustomers() {
             <td class=" p-0.5 text-xs text-center" onclick="openCustomerDetail(${c.id})">${c.vat_exempt ? '✓' : ''}</td>
             <td class=" p-0.5 text-center whitespace-nowrap">
                 ${svgEdit(`openCustomerDetail(${c.id})`)}
-                ${svgDelete(`openDeleteModal(${i},'customer','клиента «${c.name || '(без имени)'}»')`)}
+                ${hasPermission('can_delete') ? svgDelete(`openDeleteModal(${i},'customer','клиента «${c.name || '(без имени)'}»')`) : ''}
             </td>`;
         tbody.appendChild(row);
     });
