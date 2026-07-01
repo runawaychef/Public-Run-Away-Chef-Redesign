@@ -432,6 +432,7 @@ function openOrderDetail(orderId) {
     renderDetailItems(order);
     updateProductSelects();
     refreshFab();
+    loadOrderPayments(orderId);
 }
 
 function fillDetailEmployeeSelect(selectedId) {

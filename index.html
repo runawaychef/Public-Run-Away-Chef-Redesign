@@ -1047,6 +1047,20 @@
                         <button onclick="shareOrderInfo()" class="btn bg-indigo-600 text-white px-2 py-1 rounded-md hover:bg-indigo-700 text-xs w-full mt-1">📤 Поделиться заказом</button>
                     </div>
                 </div>
+
+                <!-- Оплата -->
+                <div class="bg-white p-2 rounded-md shadow-md mt-3">
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 class="text-xs font-semibold text-gray-800">Оплата</h2>
+                        <span id="paymentStatusBadge" class="text-xs font-semibold px-2 py-0.5 rounded-full">—</span>
+                    </div>
+                    <div class="text-xs text-gray-600 space-y-0.5 mb-2">
+                        <div>Оплачено: <span id="paymentPaidAmount" class="font-medium text-gray-800">0.00 €</span></div>
+                        <div>Осталось: <span id="paymentRemainingAmount" class="font-semibold text-gray-900">0.00 €</span></div>
+                    </div>
+                    <div id="paymentsListContent" class="mb-2"></div>
+                    <button onclick="openAddPaymentModal()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs w-full border border-gray-200">+ Добавить оплату</button>
+                </div>
             </div>
         </div>
 
@@ -1253,6 +1267,34 @@
                     <button id="employeeDeleteBtn" onclick="deleteEmployee()" class="btn bg-red-50 text-red-600 p-1.5 rounded-md hover:bg-red-100 text-xs hidden" style="width:80px;">Удалить</button>
                     <button onclick="saveEmployee()" class="btn bg-indigo-600 text-white p-1.5 rounded-md hover:bg-indigo-700 flex-1 text-xs">Сохранить</button>
                     <button onclick="openEmployeesModal()" class="btn bg-gray-400 text-white p-1.5 rounded-md hover:bg-gray-500 text-xs" style="width:80px;">Назад</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Внесение платежа по заказу -->
+        <div id="addPaymentModal" class="modal">
+            <div class="modal-content" style="max-width:320px;">
+                <h2 class="text-xs font-semibold mb-2 text-gray-800">Добавить оплату</h2>
+
+                <label class="text-xs text-gray-500">Сумма (€)</label>
+                <input id="paymentAmount" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-1 rounded-md text-xs w-full mb-2" placeholder="0.00">
+
+                <label class="text-xs text-gray-500">Дата</label>
+                <input id="paymentDate" type="date" class="border p-1 rounded-md text-xs w-full mb-2">
+
+                <label class="text-xs text-gray-500">Способ оплаты</label>
+                <select id="paymentMethod" class="border p-1 rounded-md text-xs w-full mb-2">
+                    <option value="наличные">Наличные</option>
+                    <option value="карта">Карта</option>
+                    <option value="перевод">Перевод</option>
+                </select>
+
+                <label class="text-xs text-gray-500">Заметка (необязательно)</label>
+                <input id="paymentNote" type="text" class="border p-1 rounded-md text-xs w-full mb-3" placeholder="Например, депозит">
+
+                <div class="flex gap-1">
+                    <button onclick="savePayment()" class="btn bg-indigo-600 text-white p-1.5 rounded-md hover:bg-indigo-700 flex-1 text-xs">Сохранить</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1.5 rounded-md hover:bg-gray-500 text-xs" style="width:80px;">Отмена</button>
                 </div>
             </div>
         </div>
@@ -1651,6 +1693,7 @@
 <script src="products.js?v=1"></script>
 <script src="customers.js?v=1"></script>
 <script src="orders.js?v=1"></script>
+<script src="payments.js?v=1"></script>
 <script src="stats.js?v=1"></script>
 <script src="history.js?v=1"></script>
 <script src="modals.js?v=1"></script>

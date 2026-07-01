@@ -12,6 +12,7 @@ const ASSETS = [
   './modals.js',
   './employees.js',
   './orders.js',
+  './payments.js',
   './customers.js',
   './products.js',
   './semifinished.js',
