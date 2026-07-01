@@ -138,9 +138,30 @@ async function initLogin() {
 }
 
 
+// Соответствие столбца в базе и CSS-класса, которым помечены элементы интерфейса
+const PERM_CLASS_MAP = {
+    can_view_costs: 'perm-view-costs',
+    can_delete: 'perm-delete',
+    can_manage_inventory: 'perm-inventory',
+    can_edit_catalog: 'perm-catalog',
+    can_view_reports: 'perm-reports'
+};
+
+// Показывает/скрывает элементы интерфейса согласно правам сотрудника.
+// Владелец видит всё всегда, независимо от состояния чекбоксов.
+function applyPermissions(emp) {
+    const allowAll = !!(emp && emp.is_owner);
+    Object.keys(PERM_CLASS_MAP).forEach(field => {
+        const cls = PERM_CLASS_MAP[field];
+        const allowed = allowAll || !!(emp && emp[field]);
+        document.querySelectorAll('.' + cls).forEach(el => el.classList.toggle('hidden', !allowed));
+    });
+}
+
 async function selectEmployee(emp) {
     currentEmployee = emp;
     localStorage.setItem('currentEmployee', JSON.stringify(emp));
+    applyPermissions(emp);
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('appContent').classList.remove('app-locked');
     document.getElementById('settingsBtn').classList.remove('hidden');
