@@ -304,6 +304,7 @@ function openEmployeesModal() {
 function openEmployeeEditModal(emp) {
     closeModal();
     document.getElementById('employeeEditId').value = emp ? emp.id : '';
+    document.getElementById('employeeEditUserId').value = emp && emp.user_id ? emp.user_id : '';
     document.getElementById('employeeEditName').value = emp ? emp.name : '';
     document.getElementById('employeeEditEmail').value = '';
     document.getElementById('employeeEditTitle').textContent = emp ? 'Редактирование сотрудника' : 'Новый сотрудник';
@@ -366,12 +367,29 @@ async function saveEmployee() {
 
 async function deleteEmployee() {
     const id = document.getElementById('employeeEditId').value;
+    const userId = document.getElementById('employeeEditUserId').value;
     if (!id) return;
-    if (!(await showConfirm('Удалить этого сотрудника? Записи в журнале действий сохранятся.'))) return;
+
+    const warning = userId
+        ? 'Удалить этого сотрудника? Он полностью потеряет доступ к пекарне (личный вход тоже будет отозван). Записи в журнале действий сохранятся.'
+        : 'Удалить этого сотрудника? Записи в журнале действий сохранятся.';
+    if (!(await showConfirm(warning))) return;
+
     showLoading('Удаление...');
     try {
         const { error } = await db.from('employees').delete().eq('id', id);
         if (error) throw error;
+
+        // Если у сотрудника был личный вход — отзываем и само членство в организации,
+        // иначе он формально остался бы полноправным участником пекарни
+        if (userId) {
+            const { error: memErr } = await db.from('memberships').delete().eq('user_id', userId).eq('org_id', currentOrgId);
+            if (memErr) {
+                console.error(memErr);
+                showInfo('Карточка сотрудника удалена, но не удалось отозвать доступ к организации. Проверьте вручную в Supabase (таблица memberships).');
+            }
+        }
+
         await reloadEmployeesList();
         openEmployeesModal();
     } catch (e) {
