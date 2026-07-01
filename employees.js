@@ -56,7 +56,7 @@ async function initLogin() {
     try {
         const { data, error } = await db
             .from('employees')
-            .select('id, name')
+            .select('id, name, is_owner, can_view_costs, can_delete, can_manage_inventory, can_edit_catalog, can_view_reports')
             .eq('org_id', currentOrgId)
             .order('name');
         if (error) throw error;
@@ -65,8 +65,18 @@ async function initLogin() {
         list.innerHTML = '';
 
         if (!employees.length) {
-            // Пекарня новая — сотрудников ещё нет, входим без выбора
-            await selectEmployee({ id: null, name: 'Владелец' });
+            // Пекарня новая (или ещё нет ни одной записи) — создаём настоящую запись владельца с полными правами
+            const { data: owner, error: ownerErr } = await db
+                .from('employees')
+                .insert({ org_id: currentOrgId, name: 'Владелец', is_owner: true })
+                .select('id, name, is_owner, can_view_costs, can_delete, can_manage_inventory, can_edit_catalog, can_view_reports')
+                .single();
+            if (ownerErr || !owner) {
+                console.error('Ошибка создания владельца:', ownerErr);
+                await selectEmployee({ id: null, name: 'Владелец', is_owner: true });
+            } else {
+                await selectEmployee(owner);
+            }
             return;
         }
 
@@ -91,6 +101,7 @@ async function selectEmployee(emp) {
     document.getElementById('settingsBtn').classList.remove('hidden');
     document.getElementById('statsBtn').classList.remove('hidden');
     document.getElementById('inventoryBtn').classList.remove('hidden');
+    document.getElementById('employeesManageBtn').classList.toggle('hidden', !emp.is_owner);
     await loadAllData();
     await loadInventory();
     initRealtime();
@@ -125,7 +136,103 @@ async function logoutEmployee() {
     document.getElementById('inventoryBtn').classList.add('hidden');
 }
 
-// ==================== ФИКСАЦИЯ СЕБЕСТОИМОСТИ ====================
+// ==================== СОТРУДНИКИ И ПРАВА (только владелец) ====================
+
+const PERMISSION_FIELDS = ['can_view_costs', 'can_delete', 'can_manage_inventory', 'can_edit_catalog', 'can_view_reports'];
+const PERMISSION_CHECKBOX_IDS = {
+    can_view_costs: 'permViewCosts',
+    can_delete: 'permDelete',
+    can_manage_inventory: 'permInventory',
+    can_edit_catalog: 'permCatalog',
+    can_view_reports: 'permReports'
+};
+
+async function reloadEmployeesList() {
+    const { data, error } = await db
+        .from('employees')
+        .select('id, name, is_owner, can_view_costs, can_delete, can_manage_inventory, can_edit_catalog, can_view_reports')
+        .eq('org_id', currentOrgId)
+        .order('name');
+    if (!error) employees = data || [];
+}
+
+function openEmployeesModal() {
+    closeModal();
+    const content = document.getElementById('employeesListContent');
+    content.innerHTML = '';
+    employees.forEach(emp => {
+        const row = document.createElement('button');
+        row.className = 'btn bg-gray-100 text-gray-800 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs text-left border border-gray-200 flex justify-between items-center';
+        row.innerHTML = `<span>${emp.name}</span>` + (emp.is_owner ? '<span class="text-gray-400">Владелец</span>' : '<span class="text-gray-400">✎</span>');
+        row.onclick = () => openEmployeeEditModal(emp);
+        content.appendChild(row);
+    });
+    document.getElementById('employeesModal').style.display = 'flex';
+}
+
+function openEmployeeEditModal(emp) {
+    closeModal();
+    document.getElementById('employeeEditId').value = emp ? emp.id : '';
+    document.getElementById('employeeEditName').value = emp ? emp.name : '';
+    document.getElementById('employeeEditTitle').textContent = emp ? 'Редактирование сотрудника' : 'Новый сотрудник';
+
+    PERMISSION_FIELDS.forEach(field => {
+        document.getElementById(PERMISSION_CHECKBOX_IDS[field]).checked = emp ? !!emp[field] : false;
+    });
+
+    // Владельца нельзя ни удалить, ни ограничить в правах
+    const isOwnerRow = emp && emp.is_owner;
+    PERMISSION_FIELDS.forEach(field => { document.getElementById(PERMISSION_CHECKBOX_IDS[field]).disabled = isOwnerRow; });
+    document.getElementById('employeeDeleteBtn').classList.toggle('hidden', !emp || isOwnerRow);
+
+    document.getElementById('employeeEditModal').style.display = 'flex';
+}
+
+async function saveEmployee() {
+    const id = document.getElementById('employeeEditId').value;
+    const name = document.getElementById('employeeEditName').value.trim();
+    if (!name) { showInfo('Введите имя сотрудника.'); return; }
+
+    const payload = { name };
+    PERMISSION_FIELDS.forEach(field => {
+        payload[field] = document.getElementById(PERMISSION_CHECKBOX_IDS[field]).checked;
+    });
+
+    showLoading('Сохранение...');
+    try {
+        if (id) {
+            const { error } = await db.from('employees').update(payload).eq('id', id);
+            if (error) throw error;
+            logActivity('system', `Обновлены данные сотрудника: ${name}`);
+        } else {
+            payload.org_id = currentOrgId;
+            const { error } = await db.from('employees').insert(payload);
+            if (error) throw error;
+            logActivity('system', `Создан сотрудник: ${name}`);
+        }
+        await reloadEmployeesList();
+        openEmployeesModal();
+    } catch (e) {
+        console.error(e);
+        showInfo('Ошибка сохранения сотрудника.');
+    } finally { hideLoading(); }
+}
+
+async function deleteEmployee() {
+    const id = document.getElementById('employeeEditId').value;
+    if (!id) return;
+    if (!(await showConfirm('Удалить этого сотрудника? Записи в журнале действий сохранятся.'))) return;
+    showLoading('Удаление...');
+    try {
+        const { error } = await db.from('employees').delete().eq('id', id);
+        if (error) throw error;
+        await reloadEmployeesList();
+        openEmployeesModal();
+    } catch (e) {
+        console.error(e);
+        showInfo('Ошибка удаления сотрудника.');
+    } finally { hideLoading(); }
+}
 
 async function fixateAllItemCosts() {
     const ok = await showConfirm(

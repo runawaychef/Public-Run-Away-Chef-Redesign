@@ -1166,16 +1166,12 @@
                 </div>
 
                 <div class="flex flex-col gap-1 mb-3 border-t pt-2">
-                    <label class="text-xs text-gray-500">Учёт склада с даты (списание ингредиентов только для новых заказов)</label>
-                    <div class="flex gap-1">
-                        <input id="inventoryStartDate" type="date" class="border p-0.5 rounded-md text-xs flex-1">
-                        <button onclick="saveInventoryStartDate()" class="btn bg-gray-700 text-white px-2 py-1 rounded-md hover:bg-gray-800 text-xs">Сохранить</button>
-                    </div>
+                    <button id="employeesManageBtn" onclick="openEmployeesModal()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs text-left border border-gray-200 hidden">🧑‍🍳 Сотрудники и права</button>
                 </div>
 
                 <div class="flex flex-col gap-1 mb-3 border-t pt-2">
                     <button onclick="logoutEmployee()" class="btn bg-gray-200 text-gray-800 px-2 py-1.5 rounded-md hover:bg-gray-300 text-xs text-left">👤 Сменить сотрудника</button>
-                    <button onclick="signOutAccount()" class="btn bg-gray-200 text-gray-800 px-2 py-1.5 rounded-md hover:bg-gray-300 text-xs text-left">🔒 Сменить аккаунт (выйти из приложения)</button>
+                    <button onclick="signOutAccount()" class="btn bg-gray-200 text-gray-800 px-2 py-1.5 rounded-md hover:bg-gray-300 text-xs text-left">🔒 Выйти из аккаунта</button>
                 </div>
 
                 <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 w-full text-xs">Закрыть</button>
@@ -1191,6 +1187,43 @@
                 <div class="flex gap-1 mt-3">
                     <button onclick="recalcOrderCostBreakdown()" class="btn bg-indigo-50 text-indigo-700 p-1 rounded-md hover:bg-indigo-100 flex-1 text-xs">↻ Пересчитать по актуальному рецепту</button>
                     <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs" style="width:80px;">Закрыть</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Список сотрудников и их прав (только для владельца) -->
+        <div id="employeesModal" class="modal">
+            <div class="modal-content" style="max-width:360px;">
+                <h2 class="text-xs font-semibold mb-2 text-gray-800">Сотрудники и права</h2>
+                <div id="employeesListContent" class="flex flex-col gap-1 mb-3" style="max-height:50vh;overflow-y:auto;"></div>
+                <div class="flex gap-1">
+                    <button onclick="openEmployeeEditModal(null)" class="btn bg-indigo-600 text-white p-1.5 rounded-md hover:bg-indigo-700 flex-1 text-xs">+ Создать сотрудника</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1.5 rounded-md hover:bg-gray-500 text-xs" style="width:80px;">Закрыть</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Создание / редактирование сотрудника -->
+        <div id="employeeEditModal" class="modal">
+            <div class="modal-content" style="max-width:340px;">
+                <h2 id="employeeEditTitle" class="text-xs font-semibold mb-2 text-gray-800">Новый сотрудник</h2>
+                <input type="hidden" id="employeeEditId">
+                <label class="text-xs text-gray-500">Имя сотрудника</label>
+                <input id="employeeEditName" type="text" class="border p-1 rounded-md text-xs w-full mb-3" placeholder="Например, Анна">
+
+                <p class="text-xs text-gray-500 mb-1">Полномочия:</p>
+                <div class="flex flex-col gap-1.5 mb-3 text-xs text-gray-800">
+                    <label class="flex items-center gap-2"><input type="checkbox" id="permViewCosts"> 💰 Видеть себестоимость и маржу</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" id="permDelete"> 🗑 Удаление заказов и клиентов</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" id="permInventory"> 📦 Управление складом</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" id="permCatalog"> 🍰 Редактирование ассортимента и рецептур</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" id="permReports"> 📊 Просмотр отчётов и статистики</label>
+                </div>
+
+                <div class="flex gap-1">
+                    <button id="employeeDeleteBtn" onclick="deleteEmployee()" class="btn bg-red-50 text-red-600 p-1.5 rounded-md hover:bg-red-100 text-xs hidden" style="width:80px;">Удалить</button>
+                    <button onclick="saveEmployee()" class="btn bg-indigo-600 text-white p-1.5 rounded-md hover:bg-indigo-700 flex-1 text-xs">Сохранить</button>
+                    <button onclick="openEmployeesModal()" class="btn bg-gray-400 text-white p-1.5 rounded-md hover:bg-gray-500 text-xs" style="width:80px;">Назад</button>
                 </div>
             </div>
         </div>
