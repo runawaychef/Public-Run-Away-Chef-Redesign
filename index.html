@@ -773,7 +773,7 @@
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                             Назад к клиентам
                         </button>
-                        <button onclick="deleteCurrentCustomer()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300">Удалить клиента</button>
+                        <button onclick="deleteCurrentCustomer()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 perm-delete">Удалить клиента</button>
                     </div>
                     <div class="grid grid-cols-2 gap-1 mb-2">
                         <div>
@@ -959,7 +959,7 @@
                             <!-- Карточка клиента -->
                             <button onclick="goToCustomerFromOrder()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300">Карточка клиента</button>
                             <!-- Удалить заказ -->
-                            <button onclick="deleteCurrentOrder()" title="Удалить заказ" class="text-gray-400 hover:text-red-600 text-lg leading-none">🗑</button>
+                            <button onclick="deleteCurrentOrder()" title="Удалить заказ" class="text-gray-400 hover:text-red-600 text-lg leading-none perm-delete">🗑</button>
                         </div>
                     </div>
                     <div class="grid grid-cols-2 gap-1 mb-2">
@@ -1175,7 +1175,7 @@
                     <button onclick="downloadBackup()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs text-left border border-gray-200">⬇ Скачать резервную копию</button>
                     <button onclick="openHistoryScreen()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs text-left border border-gray-200">📋 Журнал действий</button>
                     <button onclick="loadAllData()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs text-left border border-gray-200">↻ Обновить данные</button>
-                    <button onclick="openOrdersTrash()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs text-left border border-gray-200">🗑 Корзина удалённых заказов</button>
+                    <button onclick="openOrdersTrash()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs text-left border border-gray-200 perm-delete">🗑 Корзина удалённых заказов</button>
                 </div>
 
                 <div class="flex flex-col gap-1 mb-3 border-t pt-2">
