@@ -309,15 +309,10 @@ async function createDraftOrderAndOpen() {
     const employeeId = currentEmployee ? currentEmployee.id : null;
     showLoading();
     try {
-        // Генерируем номер заказа: ДДММГГ-NNN (порядковый среди всех заказов на эту дату)
-        const todayOrders = orders.filter(o => o.date === today);
-        const daySeq = todayOrders.length + 1;
-        const d = new Date(today + 'T00:00:00');
-        const orderNumber =
-            String(d.getDate()).padStart(2,'0') +
-            String(d.getMonth()+1).padStart(2,'0') +
-            String(d.getFullYear()).slice(2) +
-            '-' + String(daySeq).padStart(3,'0');
+        // Номер заказа выдаёт база данных (атомарно, без риска дублей при одновременном создании)
+        const { data: orderNumberData, error: numErr } = await db.rpc('next_order_number', { p_org_id: currentOrgId });
+        if (numErr) throw numErr;
+        const orderNumber = orderNumberData;
 
         const { data, error } = await db.from('orders').insert({
             org_id: currentOrgId, customer_id: null, order_date: today, status: 'принят', discount: 0, vat_exempt: false,
@@ -348,6 +343,10 @@ async function copyOrder(i) {
     const employeeId = currentEmployee ? currentEmployee.id : null;
     showLoading();
     try {
+        const { data: orderNumberData, error: numErr } = await db.rpc('next_order_number', { p_org_id: currentOrgId });
+        if (numErr) throw numErr;
+        const orderNumber = orderNumberData;
+
         const { data, error } = await db.from('orders').insert({
             org_id: currentOrgId,
             customer_id: o.customer_id,
@@ -355,7 +354,8 @@ async function copyOrder(i) {
             status: 'принят',
             discount: o.discount || 0,
             vat_exempt: !!o.vat_exempt,
-            employee_id: employeeId
+            employee_id: employeeId,
+            order_number: orderNumber
         }).select().single();
         if (error) throw error;
 
@@ -365,6 +365,7 @@ async function copyOrder(i) {
             date: data.order_date, status: data.status, discount: Number(data.discount || 0),
             vat_exempt: !!data.vat_exempt,
             employee_id: data.employee_id || null, employee: emp ? emp.name : '',
+            order_number: data.order_number || orderNumber,
             items: []
         };
 
