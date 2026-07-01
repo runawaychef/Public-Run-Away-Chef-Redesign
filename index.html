@@ -1777,7 +1777,7 @@ function hideLoading() { document.getElementById('loadingOverlay').classList.add
 async function loadAllData() {
     showLoading();
     try {
-        const [pRes, cRes, oRes, oiRes, eRes, ingRes, piRes, sfRes, sfiRes] = await Promise.all([
+        const [pRes, cRes, oRes, oiRes, eRes, ingRes, piRes, sfRes, sfiRes, opRes] = await Promise.all([
             db.from('products').select('id, name, price, batch_size, other_costs, unit, recipe_confirmed, track_stock').eq('org_id', currentOrgId).order('name').limit(5000),
             db.from('customers').select('id, name, contact, discount, vat_exempt, notes').eq('org_id', currentOrgId).order('name').limit(5000),
             db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number').eq('org_id', currentOrgId).is('deleted_at', null).range(0, 9999),
@@ -1786,7 +1786,8 @@ async function loadAllData() {
             db.from('ingredients').select('id, name, package_price, package_size, unit').eq('org_id', currentOrgId).order('name').limit(5000),
             db.from('product_ingredients').select('id, product_id, ingredient_id, semi_finished_id, quantity').eq('org_id', currentOrgId).limit(10000),
             db.from('semi_finished').select('id, name, batch_size, unit, other_costs, recipe_confirmed, track_stock').eq('org_id', currentOrgId).order('name').limit(5000),
-            db.from('semi_finished_ingredients').select('id, semi_finished_id, ingredient_id, quantity, is_primary').eq('org_id', currentOrgId).limit(10000)
+            db.from('semi_finished_ingredients').select('id, semi_finished_id, ingredient_id, quantity, is_primary').eq('org_id', currentOrgId).limit(10000),
+            db.from('order_payments').select('order_id, amount').eq('org_id', currentOrgId).limit(20000)
         ]);
         if (pRes.error) throw pRes.error;
         if (cRes.error) throw cRes.error;
@@ -1797,6 +1798,13 @@ async function loadAllData() {
         if (piRes.error) throw piRes.error;
         if (sfRes.error) throw sfRes.error;
         if (sfiRes.error) throw sfiRes.error;
+        if (opRes.error) throw opRes.error;
+
+        // Суммы платежей по каждому заказу — для отметки статуса оплаты в списке
+        _orderPaidTotals = {};
+        (opRes.data || []).forEach(p => {
+            _orderPaidTotals[p.order_id] = (_orderPaidTotals[p.order_id] || 0) + Number(p.amount);
+        });
 
         ingredients = (ingRes.data || []).map(i => ({ id: i.id, name: i.name, package_price: Number(i.package_price), package_size: Number(i.package_size), unit: i.unit }));
 

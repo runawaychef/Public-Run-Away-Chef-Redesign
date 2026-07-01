@@ -6,6 +6,7 @@
 //             formatDateDMY, getLocalDateStr (dates.js), hasPermission (employees.js).
 
 let _orderPayments = [];
+let _orderPaidTotals = {}; // { orderId: сумма всех платежей } — для отметки статуса оплаты в списке заказов
 
 async function loadOrderPayments(orderId) {
     try {
@@ -26,6 +27,10 @@ async function loadOrderPayments(orderId) {
     if (dueInput) dueInput.value = order && order.due_date ? order.due_date : '';
 
     renderPayments();
+
+    // Держим общую сводку по заказу в синхронизации со списком заказов
+    _orderPaidTotals[orderId] = _orderPayments.reduce((s, p) => s + Number(p.amount), 0);
+    if (typeof displayOrders === 'function') displayOrders();
 }
 
 // Итог заказа берём из уже отрисованной карточки (там учтены скидка и НДС) —

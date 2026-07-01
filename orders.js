@@ -143,6 +143,14 @@ function displayOrders() {
         else if (order.status === 'в работе') flagClass += ' flag-yellow';
         else if (order.status === 'выполнен') flagClass += ' flag-green';
 
+        // Статус оплаты — цветная точка рядом с суммой (не оплачен/частично/оплачен)
+        const paidAmt = _orderPaidTotals[order.id] || 0;
+        const grandAmt = Number(total);
+        let payDotColor = 'bg-red-500', payDotTitle = 'Не оплачен';
+        if (paidAmt > 0 && paidAmt < grandAmt) { payDotColor = 'bg-amber-400'; payDotTitle = 'Частично оплачен'; }
+        else if (paidAmt >= grandAmt && grandAmt > 0) { payDotColor = 'bg-green-500'; payDotTitle = 'Оплачен'; }
+        const payDot = `<span class="inline-block w-2 h-2 rounded-full ${payDotColor} mr-1" title="${payDotTitle}"></span>`;
+
         const isMerged = order.notes && order.notes.includes('⚠ объединён, требует проверки');
         const row = document.createElement('tr');
         row.className = 'order-row border-b' + (isMerged ? ' bg-red-50' : '');
@@ -150,7 +158,7 @@ function displayOrders() {
             <td class=" p-0.5 text-xs whitespace-nowrap${isMerged ? ' text-red-700 font-semibold' : ''}" onclick="openOrderDetail(${order.id})">${formatDateDMY(order.date)}${isMerged ? ' ⚠' : ''}</td>
             <td class=" p-0.5 text-xs" onclick="openOrderDetail(${order.id})">${escapeHtml(order.customer)}</td>
             <td class=" p-0.5 text-xs text-center" onclick="openOrderDetail(${order.id})">${itemsCount}</td>
-            <td class=" p-0.5 text-xs font-medium" onclick="openOrderDetail(${order.id})">${total}</td>
+            <td class=" p-0.5 text-xs font-medium" onclick="openOrderDetail(${order.id})">${payDot}${total}</td>
             <td class=" p-0.5 text-center" onclick="openOrderDetail(${order.id})"><span class="${flagClass}"></span></td>
             <td class=" p-0.5 text-center">
                 ${hasPermission('can_delete') ? svgDelete(`openDeleteModal(${realIdx},'order','заказ клиента «${order.customer}»')`) : ''}
