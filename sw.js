@@ -1,4 +1,4 @@
-const CACHE_NAME = 'runwaychef-public-cache-v2';
+const CACHE_NAME = 'runwaychef-public-cache-v3';
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -53,9 +53,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Для JS/HTML/CSS/изображений — сначала сеть, при ошибке кэш
+  // Для JS/HTML/CSS/изображений — сначала сеть (по-настоящему, минуя HTTP-кэш браузера), при ошибке — офлайн-кэш
   event.respondWith(
-    fetch(req)
+    fetch(req, { cache: 'no-store' })
       .then((res) => {
         const resClone = res.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(req, resClone));
