@@ -53,15 +53,19 @@ function showAuthScreen() {
 async function showAuthedApp() {
     document.getElementById('authScreen').classList.add('hidden');
     document.getElementById('loginScreen').classList.remove('hidden');
-    await initLogin();
+    const autoSelected = await initLogin();
 
-    // Если сотрудник уже выбирался ранее на этом устройстве — авто-вход
-    const saved = localStorage.getItem('currentEmployee');
-    if (saved) {
-        try {
-            const emp = JSON.parse(saved);
-            if (emp && emp.id && emp.name) await selectEmployee(emp);
-        } catch (e) { /* ignore */ }
+    // Подставляем сотрудника из кэша устройства только если:
+    // 1) организация действительно загрузилась (currentOrgId определён), и
+    // 2) вход ещё не произошёл автоматически по личному аккаунту
+    if (!autoSelected && currentOrgId) {
+        const saved = localStorage.getItem('currentEmployee');
+        if (saved) {
+            try {
+                const emp = JSON.parse(saved);
+                if (emp && emp.id && emp.name) await selectEmployee(emp);
+            } catch (e) { /* ignore */ }
+        }
     }
 }
 

@@ -48,11 +48,13 @@ async function loadCurrentOrg() {
 const EMPLOYEE_SELECT_FIELDS = 'id, name, is_owner, user_id, can_view_costs, can_delete, can_manage_inventory, can_edit_catalog, can_view_reports';
 
 async function initLogin() {
+    document.getElementById('loginError').classList.add('hidden');
+    document.getElementById('loginRetryBtn').classList.add('hidden');
     // Сначала загружаем организацию текущего пользователя
     const membership = await loadCurrentOrg();
     if (!membership) {
-        document.getElementById('loginError').classList.remove('hidden');
-        return;
+        document.getElementById('loginError').classList.remove('hidden'); document.getElementById('loginRetryBtn').classList.remove('hidden');
+        return false;
     }
 
     // ID текущего Auth-пользователя — нужен, чтобы найти его личную запись сотрудника (если есть)
@@ -85,7 +87,7 @@ async function initLogin() {
             }
         }
 
-        if (myOwn) { await selectEmployee(myOwn); return; }
+        if (myOwn) { await selectEmployee(myOwn); return true; }
 
         const list = document.getElementById('employeeList');
         list.innerHTML = '';
@@ -103,7 +105,7 @@ async function initLogin() {
             } else {
                 await selectEmployee(owner);
             }
-            return;
+            return true;
         }
 
         employees.forEach(emp => {
@@ -113,9 +115,11 @@ async function initLogin() {
             btn.onclick = () => selectEmployee(emp);
             list.appendChild(btn);
         });
+        return false;
     } catch (e) {
         console.error(e);
-        document.getElementById('loginError').classList.remove('hidden');
+        document.getElementById('loginError').classList.remove('hidden'); document.getElementById('loginRetryBtn').classList.remove('hidden');
+        return false;
     }
 }
 
