@@ -32,7 +32,7 @@ function displayOrders() {
         dayOrders.forEach(o => {
             const clientQty = (o.items || []).reduce((q, it) => q + Number(it.quantity || 0), 0);
             const clientSum = orderGrandTotal(o);
-            const statusColor = o.status === 'выполнен' ? '#22c55e' : o.status === 'в работе' ? '#d97706' : '#f97316';
+            const statusColor = o.status === 'выполнен' ? '#22c55e' : o.status === 'в работе' ? '#d97706' : '#ef4444';
             const statusText  = o.status === 'выполнен' ? 'выполнен' : o.status === 'в работе' ? 'в работе' : 'принят';
             clientLines += `<div class="pl-1 mt-0.5 cursor-pointer hover:bg-indigo-50 rounded px-1 -mx-1 transition-colors" onclick="openOrderDetail(${o.id})">
                 <span class="text-indigo-600 font-medium">${escapeHtml(o.customer || '(без клиента)')}:</span> ${clientQty} шт. · ${clientSum.toFixed(2)} € · <span style="color:${statusColor};font-weight:500">${statusText}</span>
