@@ -156,6 +156,7 @@ function hasPermission(field) {
 // Владелец видит всё всегда, независимо от состояния чекбоксов.
 function applyPermissions(emp) {
     const allowAll = !!(emp && emp.is_owner);
+    document.querySelectorAll('.perm-owner-only').forEach(el => el.classList.toggle('hidden', !allowAll));
     Object.keys(PERM_CLASS_MAP).forEach(field => {
         const cls = PERM_CLASS_MAP[field];
         const allowed = allowAll || !!(emp && emp[field]);
