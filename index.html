@@ -2259,6 +2259,24 @@ window.addEventListener('pageshow', (e) => {
     }, { passive: true });
 })();
 
+// Отслеживание подключения к интернету — показываем заметный баннер при потере сети,
+// чтобы человек не гадал, баг это или просто пропал интернет.
+function showOfflineBanner() {
+    if (document.getElementById('offlineBanner')) return;
+    const banner = document.createElement('div');
+    banner.id = 'offlineBanner';
+    banner.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:9999;background:#dc2626;color:#fff;padding:8px 12px;text-align:center;font-size:12px;font-weight:600;';
+    banner.textContent = 'Нет подключения к интернету';
+    document.body.appendChild(banner);
+}
+function hideOfflineBanner() {
+    const banner = document.getElementById('offlineBanner');
+    if (banner) banner.remove();
+}
+window.addEventListener('online', hideOfflineBanner);
+window.addEventListener('offline', showOfflineBanner);
+if (!navigator.onLine) showOfflineBanner();
+
 // Регистрация Service Worker для установки как приложение (PWA)
 // + автоматическое обнаружение новой версии, без ручной очистки кэша
 if ('serviceWorker' in navigator) {
