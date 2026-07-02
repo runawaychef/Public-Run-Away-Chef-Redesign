@@ -611,6 +611,11 @@ function openTrashOrderActions(orderId, custName, orderDate) {
 }
 
 async function restoreOrder(orderId) {
+    if (!hasPermission('can_delete')) {
+        closeModal();
+        showInfo('У вас нет права на это действие. Обратитесь к владельцу пекарни.');
+        return;
+    }
     suppressRealtimeFor3s();
     showLoading();
     try {
@@ -627,6 +632,11 @@ async function restoreOrder(orderId) {
 }
 
 async function permanentDeleteOrder(orderId) {
+    if (!hasPermission('can_delete')) {
+        closeModal();
+        showInfo('У вас нет права на удаление. Обратитесь к владельцу пекарни.');
+        return;
+    }
     suppressRealtimeFor3s();
     showLoading();
     try {

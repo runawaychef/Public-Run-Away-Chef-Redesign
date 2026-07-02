@@ -17,6 +17,13 @@ function openDeleteModal(id, type, label) {
 
 async function confirmDelete() {
     if (deleteId === null || !deleteType) return;
+    // Страховка: даже если кнопка удаления где-то по ошибке не спрятана,
+    // без права can_delete фактическое удаление не выполнится.
+    if (!hasPermission('can_delete')) {
+        closeModal();
+        showInfo('У вас нет права на удаление. Обратитесь к владельцу пекарни.');
+        return;
+    }
     showLoading();
     try {
         if (deleteType === 'product') {

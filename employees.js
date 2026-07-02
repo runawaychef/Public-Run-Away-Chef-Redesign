@@ -191,6 +191,9 @@ async function refreshCurrentEmployeePermissions() {
             // (hasPermission() в шаблоне), а не статичным CSS-классом.
             if (typeof displayOrders === 'function') displayOrders();
             if (typeof displayCustomers === 'function') displayCustomers();
+            if (typeof displayProducts === 'function') displayProducts();
+            if (typeof displayIngredients === 'function') displayIngredients();
+            if (typeof displaySemiFinished === 'function') displaySemiFinished();
         }
     } catch (e) { /* тихо игнорируем — плохая сеть не должна мешать работе */ }
 }

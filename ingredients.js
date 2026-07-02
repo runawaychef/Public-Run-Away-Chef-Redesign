@@ -157,7 +157,7 @@ async function saveNewIngredient() {
         const saveBtn = document.getElementById('idSaveNewBtn');
         if (saveBtn) saveBtn.classList.add('hidden');
         const delBtn = document.querySelector('#ingredientDetail button[onclick="deleteCurrentIngredient()"]');
-        if (delBtn) delBtn.classList.remove('hidden');
+        if (delBtn) delBtn.classList.toggle('hidden', !hasPermission('can_delete'));
         const stockBlock = document.getElementById('ingStockBlock');
         if (stockBlock) stockBlock.classList.remove('hidden');
 
@@ -433,9 +433,9 @@ async function closeIngredientDetail() {
     _isNewIngredient = false;
     document.getElementById('ingredientsList').classList.remove('hidden');
     document.getElementById('ingredientDetail').classList.remove('active');
-    // Показываем кнопку удаления на случай если была скрыта
+    // Показываем кнопку удаления на случай если была скрыта — но только если есть право
     const delBtn = document.querySelector('#ingredientDetail button[onclick="deleteCurrentIngredient()"]');
-    if (delBtn) delBtn.classList.remove('hidden');
+    if (delBtn) delBtn.classList.toggle('hidden', !hasPermission('can_delete'));
     const saveBtn = document.getElementById('idSaveNewBtn');
     if (saveBtn) saveBtn.classList.add('hidden');
     const stockBlock = document.getElementById('ingStockBlock');
@@ -756,7 +756,7 @@ function renderIngredientPriceHistory(ingredientId) {
             <td class="p-0.5 text-right">${unitPrice} €/${unitLabel}</td>
             <td class="p-0.5 text-center whitespace-nowrap">
                 <button onclick="openEditPriceHistoryModal(${h.id},'${h.valid_from}',${h.package_price},${h.package_size})" class="text-gray-400 hover:text-indigo-600 mr-1">${icon('edit', 'w-3.5 h-3.5')}</button>
-                <button onclick="deletePriceHistoryRecord(${h.id})" class="text-gray-400 hover:text-red-600">${icon('trash', 'w-3.5 h-3.5')}</button>
+                ${hasPermission('can_delete') ? `<button onclick="deletePriceHistoryRecord(${h.id})" class="text-gray-400 hover:text-red-600">${icon('trash', 'w-3.5 h-3.5')}</button>` : ''}
             </td>
         </tr>`;
     });
@@ -825,6 +825,10 @@ async function savePriceHistoryRecord() {
 
 // Удалить запись из истории цен
 async function deletePriceHistoryRecord(id) {
+    if (!hasPermission('can_delete')) {
+        showInfo('У вас нет права на удаление. Обратитесь к владельцу пекарни.');
+        return;
+    }
     const ok = await showConfirm('Удалить эту запись из истории цен?');
     if (!ok) return;
     showLoading();

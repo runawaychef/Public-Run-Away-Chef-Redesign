@@ -25,7 +25,7 @@ function displayProducts() {
             <td class=" p-0.5 text-xs text-center ${hasUnit ? '' : 'text-red-600 font-semibold'}" onclick="openProductDetail(${p.id})">${unitLabel}</td>
             <td class=" p-0.5 text-xs" onclick="openProductDetail(${p.id})">${p.price.toFixed(2)}</td>
             <td class=" p-0.5 text-center">
-                ${svgDelete(`openDeleteModal(${i},'product','изделие «${p.name}»')`)}
+                ${hasPermission('can_delete') ? svgDelete(`openDeleteModal(${i},'product','изделие «${p.name}»')`) : ''}
                 ${svgCopy(`copyProduct(${i})`)}
             </td>`;
         tbody.appendChild(row);
@@ -438,7 +438,7 @@ function renderProductRecipe(prod) {
                 <td class="p-0.5 text-xs text-center font-medium">${lineCost.toFixed(2)} €</td>
                 <td class="p-0.5 text-center">
                     ${svgEdit(`openEditRecipeItemModal(${i})`)}
-                    ${svgDelete(`deleteRecipeItem(${i})`)}
+                    ${hasPermission('can_delete') ? svgDelete(`deleteRecipeItem(${i})`) : ''}
                 </td>`;
             tbody.appendChild(row);
         });

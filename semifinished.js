@@ -220,7 +220,7 @@ function renderSemiFinishedRecipe(sf) {
                 <td class="p-0.5 text-xs text-center font-medium">${lineCost.toFixed(2)} €</td>
                 <td class="p-0.5 text-center">
                     ${svgEdit(`openEditSfRecipeItemModal(${i})`)}
-                    ${svgDelete(`deleteSfRecipeItem(${i})`)}
+                    ${hasPermission('can_delete') ? svgDelete(`deleteSfRecipeItem(${i})`) : ''}
                 </td>`;
             tbody.appendChild(row);
         });
