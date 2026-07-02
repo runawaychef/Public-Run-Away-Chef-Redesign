@@ -246,6 +246,19 @@ async function shareOrCopyText(text) {
     }
 }
 
+// Показывает понятное сообщение при достижении лимита бесплатного тарифа,
+// иначе — обычное сообщение об ошибке (по умолчанию). Текст лимита берём
+// прямо из базы (поле DETAIL, заданное в триггере) — не дублируем цифры тут.
+function showDbError(e, fallbackMsg) {
+    const code = e && e.message;
+    if (code === 'FREE_LIMIT_CUSTOMERS' || code === 'FREE_LIMIT_ORDERS') {
+        showInfo((e.details || 'Достигнут лимит бесплатного тарифа.') + '\n\nЧтобы продолжить, перейдите на платный тариф.');
+        return true;
+    }
+    showInfo(fallbackMsg);
+    return false;
+}
+
 function svgCopy(onclick) {
     return `<svg class="action-icon icon-copy inline mr-1 cursor-pointer" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" title="Копировать" onclick="${onclick}"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124M15.75 17.25h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25"/></svg>`;
 }

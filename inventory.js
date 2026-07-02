@@ -8,7 +8,36 @@ const STOCK_LOW_DAYS = 7; // порог «критически мало» — м
 function openSettingsModal() {
     document.getElementById('settingsCurrentEmployee').textContent = currentEmployee ? currentEmployee.name : '—';
     document.getElementById('orgNameInput').value = currentOrgName || '';
+    renderPlanInfo();
     document.getElementById('settingsModal').style.display = 'flex';
+}
+
+// Показывает текущий тариф и, для бесплатного — сколько уже использовано из лимита
+function renderPlanInfo() {
+    const badge = document.getElementById('settingsPlanBadge');
+    const usage = document.getElementById('settingsPlanUsage');
+    if (!badge || !usage) return;
+
+    const isFree = currentOrgPlan === 'free';
+    if (isFree) {
+        badge.textContent = 'Бесплатный';
+        badge.className = 'text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-200 text-gray-700';
+
+        const custLimit = 5, orderLimit = 50;
+        const custUsed = Math.min(currentOrgCustomersUsed, custLimit);
+        const orderUsed = Math.min(currentOrgOrdersUsed, orderLimit);
+
+        const custColor = currentOrgCustomersUsed >= custLimit ? 'text-red-600' : currentOrgCustomersUsed >= custLimit * 0.8 ? 'text-amber-600' : 'text-gray-500';
+        const orderColor = currentOrgOrdersUsed >= orderLimit ? 'text-red-600' : currentOrgOrdersUsed >= orderLimit * 0.8 ? 'text-amber-600' : 'text-gray-500';
+
+        usage.innerHTML = `
+            <div class="${custColor}">Клиенты (за всё время): ${custUsed} из ${custLimit}</div>
+            <div class="${orderColor}">Заказы (за всё время): ${orderUsed} из ${orderLimit}</div>`;
+    } else {
+        badge.textContent = 'Платный';
+        badge.className = 'text-xs font-semibold px-2 py-0.5 rounded-full bg-green-50 text-green-700';
+        usage.innerHTML = '<div>Лимиты не действуют.</div>';
+    }
 }
 
 // Кэш данных склада: { ingredient_id: { total_in, total_out, balance } }

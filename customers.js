@@ -50,7 +50,7 @@ async function createDraftCustomerAndOpen() {
         displayCustomers();
         openCustomerDetail(newCust.id);
         logActivity('customer', `Создан черновик клиента №${newCust.id}`);
-    } catch (e) { console.error(e); showInfo('Ошибка создания клиента. Проверьте подключение.'); }
+    } catch (e) { console.error(e); showDbError(e, 'Ошибка создания клиента. Проверьте подключение.'); }
     finally { hideLoading(); }
 }
 

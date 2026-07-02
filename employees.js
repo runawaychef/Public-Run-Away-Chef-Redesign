@@ -7,6 +7,9 @@ let employees = [];       // [{id, name}]
 let currentEmployee = null; // {id, name}
 let currentOrgId = null;    // id текущей организации (пекарни)
 let currentOrgName = '';    // название текущей организации (пекарни)
+let currentOrgPlan = 'free';        // текущий тариф: 'free' или платный
+let currentOrgCustomersUsed = 0;    // сколько клиентов создано за всё время (для лимита бесплатного тарифа)
+let currentOrgOrdersUsed = 0;       // сколько заказов создано за всё время (для лимита бесплатного тарифа)
 
 function updateHeaderOrgName() {
     const el = document.getElementById('orgNameHeader');
@@ -43,12 +46,15 @@ async function loadCurrentOrg() {
 
         const { data, error } = await db
             .from('memberships')
-            .select('org_id, role, organizations(id, name, plan)')
+            .select('org_id, role, organizations(id, name, plan, customers_created_total, orders_created_total)')
             .eq('user_id', uid)
             .single();
         if (error) throw error;
         currentOrgId = data.org_id;
         currentOrgName = (data.organizations && data.organizations.name) || '';
+        currentOrgPlan = (data.organizations && data.organizations.plan) || 'free';
+        currentOrgCustomersUsed = (data.organizations && data.organizations.customers_created_total) || 0;
+        currentOrgOrdersUsed = (data.organizations && data.organizations.orders_created_total) || 0;
         updateHeaderOrgName();
         return data;
     } catch (e) {

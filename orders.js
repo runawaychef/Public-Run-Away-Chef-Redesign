@@ -341,7 +341,7 @@ async function createDraftOrderAndOpen() {
         displayOrders();
         openOrderDetail(newOrder.id);
         logActivity('order', `Создан черновик заказа №${newOrder.id}`, newOrder.id);
-    } catch (e) { console.error(e); showInfo('Ошибка создания заказа. Проверьте подключение.'); }
+    } catch (e) { console.error(e); showDbError(e, 'Ошибка создания заказа. Проверьте подключение.'); }
     finally { hideLoading(); }
 }
 
@@ -396,7 +396,7 @@ async function copyOrder(i) {
         displayOrders();
         openOrderDetail(copy.id);
         logActivity('order', `Скопирован заказ №${o.id} → новый заказ №${copy.id} (клиент «${o.customer}»)`, copy.id);
-    } catch (e) { console.error(e); showInfo('Ошибка копирования заказа. Проверьте подключение.'); }
+    } catch (e) { console.error(e); showDbError(e, 'Ошибка копирования заказа. Проверьте подключение.'); }
     finally { hideLoading(); }
 }
 
