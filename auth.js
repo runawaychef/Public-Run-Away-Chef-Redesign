@@ -62,8 +62,17 @@ async function showAuthedApp() {
         const saved = localStorage.getItem('currentEmployee');
         if (saved) {
             try {
-                const emp = JSON.parse(saved);
-                if (emp && emp.id && emp.name) await selectEmployee(emp);
+                const cached = JSON.parse(saved);
+                if (cached && cached.id && cached.name) {
+                    // Права могли измениться с прошлого раза, когда сотрудник
+                    // выбрал себя на этом устройстве — сохранённая копия могла устареть.
+                    // initLogin() выше уже загрузил свежий список сотрудников из базы,
+                    // поэтому берём актуальные права оттуда, а не из старого кэша.
+                    const fresh = (typeof employees !== 'undefined')
+                        ? employees.find(e => e.id === cached.id)
+                        : null;
+                    await selectEmployee(fresh || cached);
+                }
             } catch (e) { /* ignore */ }
         }
     }

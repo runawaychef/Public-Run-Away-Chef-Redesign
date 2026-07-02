@@ -170,6 +170,31 @@ function applyPermissions(emp) {
     });
 }
 
+// Тихо сверяет права текущего сотрудника с базой и, если владелец их поменял,
+// обновляет интерфейс на лету — без перезагрузки и без выхода/входа.
+// Вызывается периодически, пока сотрудник работает в открытом приложении.
+async function refreshCurrentEmployeePermissions() {
+    if (!currentEmployee || !currentEmployee.id) return;
+    try {
+        const { data, error } = await db
+            .from('employees')
+            .select(EMPLOYEE_SELECT_FIELDS)
+            .eq('id', currentEmployee.id)
+            .single();
+        if (error || !data) return; // офлайн или ошибка — не рискуем, оставляем как было
+        const changed = JSON.stringify(data) !== JSON.stringify(currentEmployee);
+        currentEmployee = data;
+        localStorage.setItem('currentEmployee', JSON.stringify(data));
+        if (changed) {
+            applyPermissions(currentEmployee);
+            // Перерисовываем списки, где значок удаления решается в момент отрисовки
+            // (hasPermission() в шаблоне), а не статичным CSS-классом.
+            if (typeof displayOrders === 'function') displayOrders();
+            if (typeof displayCustomers === 'function') displayCustomers();
+        }
+    } catch (e) { /* тихо игнорируем — плохая сеть не должна мешать работе */ }
+}
+
 async function selectEmployee(emp) {
     currentEmployee = emp;
     localStorage.setItem('currentEmployee', JSON.stringify(emp));
@@ -199,6 +224,7 @@ async function selectEmployee(emp) {
         } else {
             displayOrders();
         }
+        refreshCurrentEmployeePermissions();
     }, 60000);
 }
 
