@@ -325,6 +325,7 @@ async function saveCdHeader() {
         logActivity('customer', `Изменён клиент «${oldName}»${oldName !== name ? ` → «${name}»` : ''}`);
         renderCustomerStats(cust);
         renderCustomerOrders();
+        showAutosaveToast();
     } catch (e) { console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.'); }
     finally { hideLoading(); }
 }

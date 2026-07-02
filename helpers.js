@@ -222,6 +222,18 @@ function icon(name, cls) {
 }
 
 
+// Показывает короткое подтверждение "Сохранено" после автосохранения поля
+// в карточке (клиент/изделие/ингредиент/полуфабрикат/заказ) — чтобы пользователю
+// было очевидно, что изменения уже улетели в базу, без отдельной кнопки "Сохранить".
+let _autosaveToastTimer = null;
+function showAutosaveToast() {
+    const toast = document.getElementById('autosaveToast');
+    if (!toast) return;
+    toast.classList.add('visible');
+    if (_autosaveToastTimer) clearTimeout(_autosaveToastTimer);
+    _autosaveToastTimer = setTimeout(() => toast.classList.remove('visible'), 1400);
+}
+
 function svgEdit(onclick) {
     return `<svg class="action-icon icon-edit inline mr-1 cursor-pointer" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" title="Редактировать" onclick="${onclick}"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/></svg>`;
 }

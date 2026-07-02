@@ -464,6 +464,7 @@ async function saveIdHeader() {
         ing.unit = unit;
         renderIngredientUnitPrice(ing);
         logActivity('ingredient', `Изменён ингредиент «${name}»`);
+        showAutosaveToast();
     } catch (e) { console.error(e); }
 }
 

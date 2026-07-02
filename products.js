@@ -376,6 +376,7 @@ async function savePdHeader() {
         updatePdUnitUI(unit);
         renderProductRecipe(prod);
         logActivity('product', `Изменено изделие «${prod.name}»${unitChanged ? ` (единица: ${UNIT_PRODUCT_LABELS[unit] || '—'})` : ''}`);
+        showAutosaveToast();
     } catch (e) { console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.'); }
     finally { hideLoading(); }
 }

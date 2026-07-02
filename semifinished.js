@@ -187,6 +187,7 @@ async function saveSfdHeader() {
         sf.name = name; sf.batch_size = batchSize; sf.unit = unit; sf.other_costs = parseFloat(otherCosts.toFixed(2));
         renderSemiFinishedRecipe(sf);
         logActivity('semiFinished', `Изменён полуфабрикат «${sf.name}»`);
+        showAutosaveToast();
     } catch (e) { console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.'); }
     finally { hideLoading(); }
 }
