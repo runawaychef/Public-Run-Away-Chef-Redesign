@@ -299,7 +299,7 @@ async function openEmployeesModal() {
         const row = document.createElement('button');
         row.className = 'btn bg-gray-100 text-gray-800 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs text-left border border-gray-200 flex justify-between items-center';
         const badge = emp.is_owner ? 'Владелец' : (emp.user_id ? 'Личный вход' : 'Общее устройство');
-        row.innerHTML = `<span>${emp.name}</span><span class="text-gray-400">${badge}</span>`;
+        row.innerHTML = `<span>${escapeHtml(emp.name)}</span><span class="text-gray-400">${badge}</span>`;
         row.onclick = () => openEmployeeEditModal(emp);
         content.appendChild(row);
     });
@@ -309,7 +309,7 @@ async function openEmployeesModal() {
         row.className = 'px-2 py-1.5 rounded-md text-xs text-left border border-dashed border-gray-300 bg-gray-50';
         row.innerHTML = `
             <div class="flex justify-between items-center">
-                <span>${inv.name} <span class="text-gray-400">(${inv.email})</span></span>
+                <span>${escapeHtml(inv.name)} <span class="text-gray-400">(${escapeHtml(inv.email)})</span></span>
                 <span class="text-amber-600 flex-shrink-0 ml-1 inline-flex items-center">${icon('clock')}Ждём регистрации</span>
             </div>`;
         const actionsRow = document.createElement('div');

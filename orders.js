@@ -232,7 +232,7 @@ function updateOrderCustomerFilter() {
         const checked = selectedOrderCustomers.includes(c.name) ? 'checked' : '';
         const label = document.createElement('label');
         label.className = 'flex items-center gap-2 px-1 py-1 text-xs hover:bg-gray-50 rounded';
-        label.innerHTML = `<input type="checkbox" value="${c.name}" onchange="onOrderCustomerFilterChange(this)" ${checked}> ${c.name}`;
+        label.innerHTML = `<input type="checkbox" value="${escapeHtml(c.name)}" onchange="onOrderCustomerFilterChange(this)" ${checked}> ${escapeHtml(c.name)}`;
         list.appendChild(label);
     });
     updateOrderFilterLabel();

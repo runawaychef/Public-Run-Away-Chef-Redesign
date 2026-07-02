@@ -38,8 +38,8 @@ function formatHistoryRow(entry) {
     return `<tr class="${rowClass}"${clickAttr}>
         <td class="p-0.5 text-xs whitespace-nowrap">${dateStr}</td>
         <td class="p-0.5 text-xs whitespace-nowrap">${timeStr}</td>
-        <td class="p-0.5 text-xs">${entry.employee_name || '—'}</td>
-        <td class="p-0.5 text-xs">${entry.description || ''}${orderExists ? ' <span class="text-indigo-500">→</span>' : ''}</td>
+        <td class="p-0.5 text-xs">${escapeHtml(entry.employee_name || '—')}</td>
+        <td class="p-0.5 text-xs">${escapeHtml(entry.description || '')}${orderExists ? ' <span class="text-indigo-500">→</span>' : ''}</td>
     </tr>`;
 }
 
