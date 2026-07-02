@@ -143,12 +143,12 @@ function displayOrders() {
         else if (order.status === 'в работе') flagClass += ' flag-yellow';
         else if (order.status === 'выполнен') flagClass += ' flag-green';
 
-        // Статус оплаты — цветная точка рядом с суммой (не оплачен/частично/оплачен)
-        const paidAmt = _orderPaidTotals[order.id] || 0;
-        const grandAmt = Number(total);
+        // Статус оплаты — цветная точка рядом с суммой (не оплачен/частично/оплачен/просрочен)
+        const payInfo = getOrderPaymentStatus(order);
         let payDotColor = 'bg-red-500', payDotTitle = 'Не оплачен';
-        if (paidAmt > 0 && paidAmt < grandAmt) { payDotColor = 'bg-amber-400'; payDotTitle = 'Частично оплачен'; }
-        else if (paidAmt >= grandAmt && grandAmt > 0) { payDotColor = 'bg-green-500'; payDotTitle = 'Оплачен'; }
+        if (payInfo.status === 'partial') { payDotColor = 'bg-amber-400'; payDotTitle = 'Частично оплачен'; }
+        else if (payInfo.status === 'paid') { payDotColor = 'bg-green-500'; payDotTitle = 'Оплачен'; }
+        if (payInfo.overdue) { payDotColor = 'bg-red-700'; payDotTitle += ' · просрочен'; }
         const payDot = `<span class="inline-block w-2 h-2 rounded-full ${payDotColor} mr-1" title="${payDotTitle}"></span>`;
 
         const isMerged = order.notes && order.notes.includes('⚠ объединён, требует проверки');
@@ -189,6 +189,19 @@ function calcGroupTotals(allOrders, predicate) {
     return { sum, qty, count };
 }
 
+// Статус оплаты заказа — единая логика для цветной точки в списке и для фильтра "Оплата",
+// чтобы они никогда не расходились между собой.
+function getOrderPaymentStatus(order) {
+    const paidAmt = _orderPaidTotals[order.id] || 0;
+    const grandAmt = orderGrandTotal(order);
+    let status = 'unpaid';
+    if (paidAmt > 0 && paidAmt < grandAmt) status = 'partial';
+    else if (paidAmt >= grandAmt && grandAmt > 0) status = 'paid';
+    const today = getLocalDateStr(0);
+    const overdue = !!order.due_date && order.due_date < today && status !== 'paid';
+    return { paidAmt, grandAmt, status, overdue };
+}
+
 // ---- Фильтры списка заказов ----
 
 let selectedOrderCustomers = []; // пусто = все клиенты
@@ -198,9 +211,16 @@ function getFilteredOrdersForList() {
     const dateFrom  = document.getElementById('orderDateFrom') ? document.getElementById('orderDateFrom').value : '';
     const dateTo    = document.getElementById('orderDateTo')   ? document.getElementById('orderDateTo').value   : '';
     const employeeFilter = document.getElementById('orderEmployeeFilter') ? document.getElementById('orderEmployeeFilter').value : '';
+    const paymentFilter  = document.getElementById('orderPaymentFilter')  ? document.getElementById('orderPaymentFilter').value  : '';
     let filtered = [...orders];
     if (selectedOrderCustomers.length > 0) filtered = filtered.filter(o => selectedOrderCustomers.includes(o.customer));
     if (employeeFilter) filtered = filtered.filter(o => String(o.employee_id) === employeeFilter);
+    if (paymentFilter) {
+        filtered = filtered.filter(o => {
+            const info = getOrderPaymentStatus(o);
+            return paymentFilter === 'overdue' ? info.overdue : info.status === paymentFilter;
+        });
+    }
     if (dateRange === 'week' || dateRange === 'month') {
         const today = new Date();
         let startStr, endStr;
@@ -334,6 +354,7 @@ async function createDraftOrderAndOpen() {
             vat_exempt: false,
             employee_id: data.employee_id || null, employee: emp ? emp.name : '',
             notes: '', order_number: data.order_number || orderNumber,
+            due_date: null,
             items: []
         };
         orders.push(newOrder);
@@ -374,6 +395,7 @@ async function copyOrder(i) {
             vat_exempt: !!data.vat_exempt,
             employee_id: data.employee_id || null, employee: emp ? emp.name : '',
             order_number: data.order_number || orderNumber,
+            due_date: null,
             items: []
         };
 

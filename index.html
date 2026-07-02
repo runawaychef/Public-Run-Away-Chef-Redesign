@@ -934,6 +934,15 @@
                             <option value="">Все исполнители</option>
                         </select>
                     </div>
+                    <div class="mb-2">
+                        <select id="orderPaymentFilter" onchange="applyOrderFilter()" class="border p-0.5 rounded-md w-full text-xs">
+                            <option value="">Оплата: все</option>
+                            <option value="unpaid">Не оплачен</option>
+                            <option value="partial">Частично оплачен</option>
+                            <option value="paid">Оплачен</option>
+                            <option value="overdue">Просрочен</option>
+                        </select>
+                    </div>
                     <div id="orderCustomDateRange" class="hidden mb-2">
                         <div class="flex gap-1">
                             <div class="flex-1">
@@ -1751,23 +1760,23 @@
     </div><!-- p-2 -->
 </div><!-- container -->
 
-<script src="dates.js?v=2"></script>
-    <script src="money.js?v=2"></script>
-    <script src="supabaseClient.js?v=2"></script>
-    <script src="auth.js?v=2"></script>
-    <script src="employees.js?v=2"></script>
-    <script src="inventory.js?v=2"></script>
-<script src="ingredients.js?v=2"></script>
-<script src="semifinished.js?v=2"></script>
-<script src="products.js?v=2"></script>
-<script src="customers.js?v=2"></script>
-<script src="orders.js?v=2"></script>
-<script src="payments.js?v=2"></script>
-<script src="stats.js?v=2"></script>
-<script src="history.js?v=2"></script>
-<script src="modals.js?v=2"></script>
-<script src="demoData.js?v=2"></script>
-<script src="helpers.js?v=2"></script>
+<script src="dates.js?v=3"></script>
+    <script src="money.js?v=3"></script>
+    <script src="supabaseClient.js?v=3"></script>
+    <script src="auth.js?v=3"></script>
+    <script src="employees.js?v=3"></script>
+    <script src="inventory.js?v=3"></script>
+<script src="ingredients.js?v=3"></script>
+<script src="semifinished.js?v=3"></script>
+<script src="products.js?v=3"></script>
+<script src="customers.js?v=3"></script>
+<script src="orders.js?v=3"></script>
+<script src="payments.js?v=3"></script>
+<script src="stats.js?v=3"></script>
+<script src="history.js?v=3"></script>
+<script src="modals.js?v=3"></script>
+<script src="demoData.js?v=3"></script>
+<script src="helpers.js?v=3"></script>
 <script>
 // SUPABASE_URL, SUPABASE_KEY, db перенесены в supabaseClient.js
 
@@ -1814,7 +1823,7 @@ async function loadAllData() {
         const [pRes, cRes, oRes, oiRes, eRes, ingRes, piRes, sfRes, sfiRes, opRes] = await Promise.all([
             db.from('products').select('id, name, price, batch_size, other_costs, unit, recipe_confirmed, track_stock').eq('org_id', currentOrgId).order('name').limit(5000),
             db.from('customers').select('id, name, contact, discount, vat_exempt, notes').eq('org_id', currentOrgId).order('name').limit(5000),
-            db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number').eq('org_id', currentOrgId).is('deleted_at', null).range(0, 9999),
+            db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date').eq('org_id', currentOrgId).is('deleted_at', null).range(0, 9999),
             db.from('order_items').select('id, order_id, product_id, quantity, price, item_cost').eq('org_id', currentOrgId).range(0, 9999),
             db.from('employees').select('id, name').eq('org_id', currentOrgId).order('name').limit(1000),
             db.from('ingredients').select('id, name, package_price, package_size, unit').eq('org_id', currentOrgId).order('name').limit(5000),
@@ -1907,6 +1916,7 @@ async function loadAllData() {
                 employee: emp ? emp.name : '',
                 notes: o.notes || '',
                 order_number: o.order_number || null,
+                due_date: o.due_date || null,
                 items: itemsByOrder[o.id] || []
             };
         });
