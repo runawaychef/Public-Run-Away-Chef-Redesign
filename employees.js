@@ -270,11 +270,14 @@ let _pendingOwnerForSetup = null;
 function openOrgNameSetupModal(owner) {
     _pendingOwnerForSetup = owner;
     document.getElementById('orgNameSetupInput').value = '';
+    const demoCheckbox = document.getElementById('orgNameSetupDemoCheckbox');
+    if (demoCheckbox) demoCheckbox.checked = false;
     document.getElementById('orgNameSetupModal').style.display = 'flex';
 }
 
 async function saveOrgNameSetup() {
     const name = document.getElementById('orgNameSetupInput').value.trim();
+    const wantsDemo = document.getElementById('orgNameSetupDemoCheckbox')?.checked;
     if (name) {
         try {
             const { error } = await db.from('organizations').update({ name }).eq('id', currentOrgId);
@@ -286,8 +289,19 @@ async function saveOrgNameSetup() {
             showInfo('Не удалось сохранить название, но можно будет изменить его позже в настройках.');
         }
     }
-    document.getElementById('orgNameSetupModal').style.display = 'none';
     const owner = _pendingOwnerForSetup;
+    if (wantsDemo && owner) {
+        showLoading('Заполняю пример...');
+        try {
+            await createDemoData(currentOrgId, owner.id);
+        } catch (e) {
+            console.error(e);
+            showInfo('Не удалось заполнить пример — но можно продолжить и добавить данные вручную.');
+        } finally {
+            hideLoading();
+        }
+    }
+    document.getElementById('orgNameSetupModal').style.display = 'none';
     _pendingOwnerForSetup = null;
     await selectEmployee(owner);
 }
