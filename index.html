@@ -419,7 +419,7 @@
                         </div>
                         <div>
                             <label class="text-xs text-gray-500">Единица продажи</label>
-                            <select id="pdUnit" onchange="savePdHeader()" class="border p-0.5 rounded-md w-full">
+                            <select id="pdUnit" onchange="savePdHeader()" class="border p-0.5 rounded-md w-full text-xs">
                                 <option value="">— выберите —</option>
                                 <option value="pcs">за штуку (шт)</option>
                                 <option value="kg">на вес (кг)</option>
@@ -427,15 +427,15 @@
                         </div>
                         <div>
                             <label class="text-xs text-gray-500">Продажная цена (€) <span id="pdPriceUnitHint" class="text-gray-400"></span></label>
-                            <input id="pdPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" onchange="savePdHeader()" class="border p-0.5 rounded-md w-full">
+                            <input id="pdPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" onchange="savePdHeader()" class="border p-0.5 rounded-md w-full text-xs">
                         </div>
                         <div>
                             <label class="text-xs text-gray-500">Размер партии</label>
-                            <input id="pdBatchSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" onchange="savePdHeader()" class="border p-0.5 rounded-md w-full">
+                            <input id="pdBatchSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" onchange="savePdHeader()" class="border p-0.5 rounded-md w-full text-xs">
                         </div>
                         <div class="col-span-2">
                             <label class="text-xs text-gray-500">Прочие расходы на партию (€)</label>
-                            <input id="pdOtherCosts" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" onchange="savePdHeader()" class="border p-0.5 rounded-md w-full">
+                            <input id="pdOtherCosts" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" onchange="savePdHeader()" class="border p-0.5 rounded-md w-full text-xs">
                         </div>
                     </div>
                     <button id="pdSaveNewBtn" onclick="saveNewProduct()" class="hidden btn bg-gray-500 text-white w-full py-1.5 rounded-md text-sm mt-2 hover:bg-gray-600">Сохранить</button>
@@ -566,7 +566,7 @@
                     <div class="grid grid-cols-2 gap-1 mb-2">
                         <div>
                             <label class="text-xs text-gray-500">Дата</label>
-                            <input id="idNewPriceDate" type="date" class="border p-0.5 rounded-md w-full">
+                            <input id="idNewPriceDate" type="date" class="border p-0.5 rounded-md w-full text-xs">
                         </div>
                         <div>
                             <label class="text-xs text-gray-500">Количество (<span id="ingQtyUnit"></span>)</label>
@@ -574,11 +574,11 @@
                         </div>
                         <div>
                             <label class="text-xs text-gray-500">Цена за упаковку (€)</label>
-                            <input id="idPackagePrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" onchange="renderIngredientUnitPricePreview()" class="border p-0.5 rounded-md w-full">
+                            <input id="idPackagePrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" onchange="renderIngredientUnitPricePreview()" class="border p-0.5 rounded-md w-full text-xs">
                         </div>
                         <div>
                             <label class="text-xs text-gray-500">Размер упаковки</label>
-                            <input id="idPackageSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" onchange="renderIngredientUnitPricePreview()" class="border p-0.5 rounded-md w-full">
+                            <input id="idPackageSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" onchange="renderIngredientUnitPricePreview()" class="border p-0.5 rounded-md w-full text-xs">
                         </div>
                         <div class="col-span-2">
                             <span class="text-xs text-gray-500">Цена за ед.: <span id="idUnitPrice" class="font-semibold text-gray-900">0.0000 €</span></span>
@@ -655,11 +655,11 @@
                         </div>
                         <div>
                             <label class="text-xs text-gray-500">Размер партии</label>
-                            <input id="sfdBatchSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" onchange="saveSfdHeader()" class="border p-0.5 rounded-md w-full">
+                            <input id="sfdBatchSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" onchange="saveSfdHeader()" class="border p-0.5 rounded-md w-full text-xs">
                         </div>
                         <div>
                             <label class="text-xs text-gray-500">Единица</label>
-                            <select id="sfdUnit" onchange="saveSfdHeader()" class="border p-0.5 rounded-md w-full">
+                            <select id="sfdUnit" onchange="saveSfdHeader()" class="border p-0.5 rounded-md w-full text-xs">
                                 <option value="g">граммы (г)</option>
                                 <option value="kg">килограммы (кг)</option>
                                 <option value="ml">миллилитры (мл)</option>
@@ -668,7 +668,7 @@
                         </div>
                         <div class="col-span-2">
                             <label class="text-xs text-gray-500">Прочие расходы на партию (€)</label>
-                            <input id="sfdOtherCosts" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" onchange="saveSfdHeader()" class="border p-0.5 rounded-md w-full">
+                            <input id="sfdOtherCosts" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" onchange="saveSfdHeader()" class="border p-0.5 rounded-md w-full text-xs">
                         </div>
                     </div>
                 </div>
@@ -778,15 +778,15 @@
                     <div class="grid grid-cols-2 gap-1 mb-2">
                         <div>
                             <label class="text-xs text-gray-500">Имя</label>
-                            <input id="cdName" type="text" onblur="saveCdHeader()" class="border p-0.5 rounded-md w-full">
+                            <input id="cdName" type="text" onblur="saveCdHeader()" class="border p-0.5 rounded-md w-full text-xs">
                         </div>
                         <div>
                             <label class="text-xs text-gray-500">Контакты</label>
-                            <input id="cdContact" type="text" onblur="saveCdHeader()" class="border p-0.5 rounded-md w-full">
+                            <input id="cdContact" type="text" onblur="saveCdHeader()" class="border p-0.5 rounded-md w-full text-xs">
                         </div>
                         <div>
                             <label class="text-xs text-gray-500">Скидка (%)</label>
-                            <input id="cdDiscount" type="number" autocomplete="off" inputmode="decimal" step="0.01" onchange="saveCdHeader()" class="border p-0.5 rounded-md w-full">
+                            <input id="cdDiscount" type="number" autocomplete="off" inputmode="decimal" step="0.01" onchange="saveCdHeader()" class="border p-0.5 rounded-md w-full text-xs">
                         </div>
                         <div class="flex items-end pb-1">
                             <label class="flex items-center gap-2 text-xs text-gray-700">
@@ -1105,7 +1105,7 @@
             <div class="modal-content">
                 <h2 class="text-xs font-semibold mb-2 text-gray-800">Редактировать изделие</h2>
                 <input id="editProductName" type="text" placeholder="Название изделия" class="border p-0.5 rounded-md mb-1 w-full text-xs">
-                <input id="editProductPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="Продажная цена (€)" class="border p-0.5 rounded-md mb-2 w-full">
+                <input id="editProductPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="Продажная цена (€)" class="border p-0.5 rounded-md mb-2 w-full text-xs">
                 <button onclick="saveProductEdit()" class="btn bg-gray-500 text-white p-0.5 rounded-md hover:bg-gray-600 mr-1 text-xs">Сохранить</button>
                 <button onclick="closeModal()" class="btn bg-gray-400 text-white p-0.5 rounded-md hover:bg-gray-500 text-xs">Отмена</button>
             </div>
@@ -1123,7 +1123,7 @@
                     <option value="">Выберите ингредиент</option>
                 </select>
                 <label class="text-xs text-gray-600">Количество</label>
-                <input id="editRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-0.5 rounded-md mb-2 w-full">
+                <input id="editRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-0.5 rounded-md mb-2 w-full text-xs">
                 <button onclick="saveRecipeItemEdit()" class="btn bg-gray-500 text-white p-0.5 rounded-md hover:bg-gray-600 mr-1 text-xs">Сохранить</button>
                 <button onclick="closeModal()" class="btn bg-gray-400 text-white p-0.5 rounded-md hover:bg-gray-500 text-xs">Отмена</button>
             </div>
@@ -1138,7 +1138,7 @@
                     <option value="">Выберите ингредиент</option>
                 </select>
                 <label class="text-xs text-gray-600">Количество</label>
-                <input id="editSfRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-0.5 rounded-md mb-2 w-full">
+                <input id="editSfRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-0.5 rounded-md mb-2 w-full text-xs">
                 <button onclick="saveSfRecipeItemEdit()" class="btn bg-gray-500 text-white p-0.5 rounded-md hover:bg-gray-600 mr-1 text-xs">Сохранить</button>
                 <button onclick="closeModal()" class="btn bg-gray-400 text-white p-0.5 rounded-md hover:bg-gray-500 text-xs">Отмена</button>
             </div>
@@ -1157,7 +1157,7 @@
                 <label class="text-xs text-gray-600">Количество</label>
                 <input id="editItemQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" class="border p-0.5 rounded-md mb-1 w-full text-xs">
                 <label class="text-xs text-gray-600">Цена (€)</label>
-                <input id="editItemPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" class="border p-0.5 rounded-md mb-2 w-full">
+                <input id="editItemPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" class="border p-0.5 rounded-md mb-2 w-full text-xs">
                 <button onclick="saveItemEdit()" class="btn bg-gray-500 text-white p-0.5 rounded-md hover:bg-gray-600 mr-1 text-xs">Сохранить</button>
                 <button onclick="closeModal()" class="btn bg-gray-400 text-white p-0.5 rounded-md hover:bg-gray-500 text-xs">Отмена</button>
             </div>
@@ -1175,7 +1175,7 @@
                 <label class="text-xs text-gray-600">Дата</label>
                 <input id="editOrderDate" type="date" class="border p-0.5 rounded-md mb-1 w-full text-xs">
                 <label class="text-xs text-gray-600">Статус</label>
-                <select id="editOrderStatus" class="border p-0.5 rounded-md mb-2 w-full">
+                <select id="editOrderStatus" class="border p-0.5 rounded-md mb-2 w-full text-xs">
                     <option value="принят">Принят</option>
                     <option value="в работе">В работе</option>
                     <option value="выполнен">Выполнен</option>
@@ -1415,7 +1415,7 @@
                 <h2 class="text-base font-semibold mb-3 text-gray-800">Списание п/ф (корректировка)</h2>
                 <p id="sfWriteOffName" class="text-xs text-gray-500 mb-3"></p>
                 <label class="text-xs text-gray-500">Количество (<span id="sfWriteOffUnit"></span>)</label>
-                <input id="sfWriteOffQty" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-0.5 rounded-md mb-2 w-full">
+                <input id="sfWriteOffQty" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-0.5 rounded-md mb-2 w-full text-xs">
                 <label class="text-xs text-gray-500">Причина (необязательно)</label>
                 <input id="sfWriteOffNote" type="text" class="border p-0.5 rounded-md mb-3 w-full text-xs" placeholder="Например: испортилось">
                 <div class="flex gap-1">
@@ -1500,9 +1500,9 @@
                 <h2 class="text-base font-semibold mb-3 text-gray-800">Редактировать запись</h2>
                 <input type="hidden" id="editInventoryId">
                 <label class="text-xs text-gray-500">Количество</label>
-                <input id="editInventoryQty" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-0.5 rounded-md mb-2 w-full">
+                <input id="editInventoryQty" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-0.5 rounded-md mb-2 w-full text-xs">
                 <label class="text-xs text-gray-500">Заметка</label>
-                <input id="editInventoryNotes" type="text" class="border p-0.5 rounded-md mb-3 w-full">
+                <input id="editInventoryNotes" type="text" class="border p-0.5 rounded-md mb-3 w-full text-xs">
                 <div class="flex gap-1">
                     <button onclick="saveInventoryEdit()" class="btn bg-gray-700 text-white p-1 rounded-md hover:bg-gray-800 text-xs flex-1">Сохранить</button>
                     <button onclick="deleteInventoryRecord(Number(document.getElementById('editInventoryId').value))" class="btn bg-red-500 text-white p-1 rounded-md hover:bg-red-600 text-xs flex-1">Удалить</button>
@@ -1517,9 +1517,9 @@
                 <h2 class="text-base font-semibold mb-3 text-gray-800">Списание (корректировка)</h2>
                 <p id="writeOffIngName" class="text-xs text-gray-500 mb-3"></p>
                 <label class="text-xs text-gray-500">Количество (<span id="writeOffUnit"></span>)</label>
-                <input id="writeOffQty" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-0.5 rounded-md mb-2 w-full">
+                <input id="writeOffQty" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-0.5 rounded-md mb-2 w-full text-xs">
                 <label class="text-xs text-gray-500">Причина (необязательно)</label>
-                <select id="writeOffReason" class="border p-0.5 rounded-md mb-2 w-full">
+                <select id="writeOffReason" class="border p-0.5 rounded-md mb-2 w-full text-xs">
                     <option value="">— выберите причину —</option>
                     <option value="Испортилось">Испортилось</option>
                     <option value="Личное использование">Личное использование</option>
@@ -1540,7 +1540,7 @@
                 <h2 class="text-base font-semibold mb-3 text-gray-800" id="inventoryAddTitle">Пополнить склад</h2>
                 <input type="hidden" id="inventoryAddIngId">
                 <label class="text-xs text-gray-500">Количество (<span id="inventoryAddUnit"></span>)</label>
-                <input id="inventoryAddQty" type="number" inputmode="decimal" step="0.01" class="border p-0.5 rounded-md mb-2 w-full">
+                <input id="inventoryAddQty" type="number" inputmode="decimal" step="0.01" class="border p-0.5 rounded-md mb-2 w-full text-xs">
                 <label class="text-xs text-gray-500">Заметка (необязательно)</label>
                 <input id="inventoryAddNotes" type="text" class="border p-0.5 rounded-md mb-3 w-full text-xs" placeholder="Например: купил в Maxima">
                 <div class="flex gap-1">
@@ -1556,11 +1556,11 @@
                 <h2 class="text-xs font-semibold mb-3 text-gray-800" id="priceHistoryModalTitle">Запись истории цен</h2>
                 <input type="hidden" id="priceHistoryRecordId">
                 <label class="text-xs text-gray-500">Дата (с какого числа действует цена)</label>
-                <input id="priceHistoryDate" type="date" class="border p-0.5 rounded-md mb-2 w-full">
+                <input id="priceHistoryDate" type="date" class="border p-0.5 rounded-md mb-2 w-full text-xs">
                 <label class="text-xs text-gray-500">Цена за упаковку (€)</label>
-                <input id="priceHistoryPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" class="border p-0.5 rounded-md mb-2 w-full">
+                <input id="priceHistoryPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" class="border p-0.5 rounded-md mb-2 w-full text-xs">
                 <label class="text-xs text-gray-500">Размер упаковки</label>
-                <input id="priceHistorySize" type="number" autocomplete="off" inputmode="decimal" step="0.01" class="border p-0.5 rounded-md mb-3 w-full">
+                <input id="priceHistorySize" type="number" autocomplete="off" inputmode="decimal" step="0.01" class="border p-0.5 rounded-md mb-3 w-full text-xs">
                 <div class="flex gap-1">
                     <button onclick="savePriceHistoryRecord()" class="btn bg-gray-700 text-white p-1 rounded-md hover:bg-gray-800 text-xs flex-1">Сохранить</button>
                     <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs flex-1">Отмена</button>
