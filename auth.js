@@ -145,13 +145,20 @@ async function handleAuthSubmit(e) {
             await showAuthedApp();
         } else {
             btn.textContent = 'Регистрация...';
-            const { error } = await db.auth.signUp({ email, password });
+            const { data, error } = await db.auth.signUp({ email, password });
             if (error) throw error;
             document.getElementById('authPassword').value = '';
-            // Показываем сообщение о подтверждении email
-            document.getElementById('authSuccess').textContent =
-                'На ваш email отправлено письмо для подтверждения. Пожалуйста, проверьте почту.';
-            document.getElementById('authSuccess').classList.remove('hidden');
+            if (data && data.session) {
+                // Подтверждение email сейчас отключено в Supabase — сессия создаётся
+                // сразу же, без письма. Пускаем пользователя в приложение напрямую,
+                // как после обычного входа.
+                await showAuthedApp();
+            } else {
+                // Подтверждение email включено — реально отправлено письмо, ждём его.
+                document.getElementById('authSuccess').textContent =
+                    'На ваш email отправлено письмо для подтверждения. Пожалуйста, проверьте почту.';
+                document.getElementById('authSuccess').classList.remove('hidden');
+            }
         }
     } catch (err) {
         console.error(err);

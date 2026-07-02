@@ -1,6 +1,6 @@
 {
-  "name": "RunawayChef",
-  "short_name": "RunawayChef",
+  "name": "Runaway Chef",
+  "short_name": "Runaway Chef",
   "description": "Учёт заказов, клиентов и изделий",
   "start_url": "./index.html",
   "scope": "./",
