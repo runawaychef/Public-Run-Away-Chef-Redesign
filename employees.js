@@ -170,6 +170,25 @@ function applyPermissions(emp) {
     });
 }
 
+// Показывает/скрывает кнопки «Склад» и «Статистика» согласно правам сотрудника,
+// и если сотрудник в момент потери права уже находится на закрытом для него экране —
+// аккуратно возвращает его обратно (закрывает склад / переключает на заказы).
+function applyScreenAccessPermissions() {
+    const canInventory = hasPermission('can_manage_inventory');
+    const canReports = hasPermission('can_view_reports');
+
+    document.getElementById('inventoryBtn').classList.toggle('hidden', !canInventory);
+    document.getElementById('statsBtn').classList.toggle('hidden', !canReports);
+
+    if (!canInventory) {
+        const invModal = document.getElementById('inventoryModal');
+        if (invModal && invModal.style.display === 'flex') invModal.style.display = 'none';
+    }
+    if (!canReports && typeof currentTabId !== 'undefined' && currentTabId === 'stats') {
+        showTab('orders');
+    }
+}
+
 // Тихо сверяет права текущего сотрудника с базой и, если владелец их поменял,
 // обновляет интерфейс на лету — без перезагрузки и без выхода/входа.
 // Вызывается периодически, пока сотрудник работает в открытом приложении.
@@ -187,6 +206,7 @@ async function refreshCurrentEmployeePermissions() {
         localStorage.setItem('currentEmployee', JSON.stringify(data));
         if (changed) {
             applyPermissions(currentEmployee);
+            applyScreenAccessPermissions();
             // Перерисовываем списки, где значок удаления решается в момент отрисовки
             // (hasPermission() в шаблоне), а не статичным CSS-классом.
             if (typeof displayOrders === 'function') displayOrders();
@@ -205,8 +225,7 @@ async function selectEmployee(emp) {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('appContent').classList.remove('app-locked');
     document.getElementById('settingsBtn').classList.remove('hidden');
-    document.getElementById('statsBtn').classList.remove('hidden');
-    document.getElementById('inventoryBtn').classList.remove('hidden');
+    applyScreenAccessPermissions();
     document.getElementById('employeesManageBtn').classList.toggle('hidden', !emp.is_owner);
     document.getElementById('orgNameEditBlock').classList.toggle('hidden', !emp.is_owner);
     await loadAllData();

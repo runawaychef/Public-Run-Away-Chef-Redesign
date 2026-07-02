@@ -214,6 +214,10 @@ function updateInventoryAlertDot() {
 // ── Открытие окна склада ─────────────────────────────────────────────────────
 
 async function openInventoryModal() {
+    if (!hasPermission('can_manage_inventory')) {
+        showInfo('У вас нет доступа к складу. Обратитесь к владельцу пекарни.');
+        return;
+    }
     showLoading('Загружаю склад...');
     await Promise.all([loadInventory(), loadShoppingList()]);
     hideLoading();

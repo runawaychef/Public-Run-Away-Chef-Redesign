@@ -1901,6 +1901,10 @@ async function loadAllData() {
 
 // ==================== ТАБЫ ====================
 function showTab(tabId) {
+    if (tabId === 'stats' && typeof hasPermission === 'function' && !hasPermission('can_view_reports')) {
+        showInfo('У вас нет доступа к статистике. Обратитесь к владельцу пекарни.');
+        return;
+    }
     // Принудительно завершаем предыдущую анимацию если она ещё идёт
     const wrapper = document.getElementById('tabsWrapper');
     if (wrapper) {
