@@ -550,7 +550,7 @@ async function openOrdersTrash() {
 
         // Загружаем оставшиеся удалённые заказы
         const { data, error } = await db.from('orders')
-            .select('id, customer_id, order_date, status, notes, deleted_at')
+            .select('id, customer_id, order_date, status, notes, deleted_at, order_number')
             .not('deleted_at', 'is', null)
             .order('deleted_at', { ascending: false });
 
@@ -568,8 +568,9 @@ async function openOrdersTrash() {
                 const custName = cust ? cust.name : '(неизвестно)';
                 const deletedDate = new Date(o.deleted_at).toLocaleDateString('ru-LT');
                 const orderDate = formatDateDMY(o.order_date || o.date);
+                const orderNum = o.order_number || `#${o.id}`;
                 html += `<tr class="border-b cursor-pointer hover:bg-gray-50 active:bg-gray-100"
-                    onclick="openTrashOrderActions(${o.id}, '${escapeHtml(custName)}', '${orderDate}')">
+                    onclick="openTrashOrderActions(${o.id}, '${escapeHtml(custName)}', '${orderDate}', '${escapeHtml(orderNum)}')">
                     <td class="p-0.5">${orderDate}</td>
                     <td class="p-0.5">${escapeHtml(custName)}</td>
                     <td class="p-0.5 text-gray-400">${deletedDate}</td>
@@ -586,15 +587,14 @@ async function openOrdersTrash() {
     }
 }
 
-function openTrashOrderActions(orderId, custName, orderDate) {
+function openTrashOrderActions(orderId, custName, orderDate, orderNum) {
     const modal = document.getElementById('trashOrderActionsModal');
     const title = document.getElementById('trashOrderActionsTitle');
     const restoreBtn = document.getElementById('trashRestoreBtn');
     const deleteBtn  = document.getElementById('trashDeleteBtn');
     if (!modal) return;
 
-    const _delNum = order.order_number || `#${orderId}`;
-    title.textContent = `Заказ ${_delNum} · ${custName} · ${orderDate}`;
+    title.textContent = `Заказ ${orderNum} · ${custName} · ${orderDate}`;
 
     // Переназначаем обработчики каждый раз (избегаем накопления listener-ов)
     restoreBtn.onclick = async () => {
