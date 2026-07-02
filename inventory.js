@@ -12,7 +12,9 @@ function openSettingsModal() {
     document.getElementById('settingsModal').style.display = 'flex';
 }
 
-// Показывает текущий тариф и, для бесплатного — сколько уже использовано из лимита
+// Показывает текущий тариф и, для бесплатного — сколько уже использовано из лимита.
+// Считаем реально существующие записи (уже загружены в приложении), а не отдельный
+// счётчик "за всё время" — так честнее для пользователя и надёжнее технически.
 function renderPlanInfo() {
     const badge = document.getElementById('settingsPlanBadge');
     const usage = document.getElementById('settingsPlanUsage');
@@ -24,15 +26,15 @@ function renderPlanInfo() {
         badge.className = 'text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-200 text-gray-700';
 
         const custLimit = 5, orderLimit = 50;
-        const custUsed = Math.min(currentOrgCustomersUsed, custLimit);
-        const orderUsed = Math.min(currentOrgOrdersUsed, orderLimit);
+        const custCount = (customers || []).length;
+        const orderCount = (orders || []).length;
 
-        const custColor = currentOrgCustomersUsed >= custLimit ? 'text-red-600' : currentOrgCustomersUsed >= custLimit * 0.8 ? 'text-amber-600' : 'text-gray-500';
-        const orderColor = currentOrgOrdersUsed >= orderLimit ? 'text-red-600' : currentOrgOrdersUsed >= orderLimit * 0.8 ? 'text-amber-600' : 'text-gray-500';
+        const custColor = custCount >= custLimit ? 'text-red-600' : custCount >= custLimit * 0.8 ? 'text-amber-600' : 'text-gray-500';
+        const orderColor = orderCount >= orderLimit ? 'text-red-600' : orderCount >= orderLimit * 0.8 ? 'text-amber-600' : 'text-gray-500';
 
         usage.innerHTML = `
-            <div class="${custColor}">Клиенты (за всё время): ${custUsed} из ${custLimit}</div>
-            <div class="${orderColor}">Заказы (за всё время): ${orderUsed} из ${orderLimit}</div>`;
+            <div class="${custColor}">Клиенты: ${custCount} из ${custLimit}</div>
+            <div class="${orderColor}">Заказы: ${orderCount} из ${orderLimit}</div>`;
     } else {
         badge.textContent = 'Платный';
         badge.className = 'text-xs font-semibold px-2 py-0.5 rounded-full bg-green-50 text-green-700';
