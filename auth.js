@@ -50,7 +50,21 @@ function showAuthScreen() {
     showLoginMode();
 }
 
-async function showAuthedApp() {
+// Supabase может вызвать onAuthStateChange('SIGNED_IN') сразу при восстановлении
+// уже существующей сессии из хранилища — почти одновременно с ручной проверкой
+// getSession() в initAuth(). Без защиты это запускает showAuthedApp() дважды
+// параллельно, и один вызов может домешать своё состояние DOM поверх другого —
+// внешне это выглядит как вспышка экрана выбора сотрудника. Кэшируем промис,
+// чтобы повторные вызовы просто дожидались уже идущего.
+let _showAuthedAppPromise = null;
+
+function showAuthedApp() {
+    if (_showAuthedAppPromise) return _showAuthedAppPromise;
+    _showAuthedAppPromise = _doShowAuthedApp().finally(() => { _showAuthedAppPromise = null; });
+    return _showAuthedAppPromise;
+}
+
+async function _doShowAuthedApp() {
     document.getElementById('authScreen').classList.add('hidden');
     // Пока не выяснили, нужен ли реальный выбор сотрудника (или он определится
     // автоматически / возьмётся из кэша устройства) — держим нейтральный спиннер,
