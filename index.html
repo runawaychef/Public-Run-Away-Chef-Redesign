@@ -2377,6 +2377,20 @@ function showUpdateBanner(reg) {
 // синхронно раньше этого места) уже применил стили ко всей разметке выше —
 // значит, показывать точно можно без вспышки нестилизованного вида.
 document.body.classList.remove('style-loading');
+
+// Известный баг мобильного Chrome: если перед первой отрисовкой браузер успевает
+// выполнить много синхронного JS (как у нас — компиляция Tailwind на лету +
+// инициализация всего приложения), он иногда неверно считает начальный масштаб
+// страницы (выглядит как "десктопный" вид), и только следующее событие
+// (скролл/свайп/resize) заставляет пересчитать корректно. Форсируем этот
+// пересчёт сами сразу после полной загрузки, без участия пользователя.
+window.addEventListener('load', function () {
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (!viewport) return;
+    const original = viewport.getAttribute('content');
+    viewport.setAttribute('content', original + ', shrink-to-fit=no');
+    setTimeout(() => viewport.setAttribute('content', original), 50);
+});
 </script>
 </body>
 </html>
