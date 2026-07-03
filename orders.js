@@ -1138,9 +1138,9 @@ async function saveOrderItemIngredients(orderItemId, prod, itemQty) {
         quantity:         parseFloat(r.quantity.toFixed(4)),
         unit:             r.unit,
         unit_price:       r.unit_price,
-        total_cost:       parseFloat(r.total_cost.toFixed(4))
+        total_cost:       parseFloat(r.total_cost.toFixed(4)),
+        org_id:           currentOrgId
     }));
-    rows = rows.map(r => ({ ...r, org_id: currentOrgId }));
     try {
         await db.from('order_item_ingredients').insert(rows);
     } catch (e) { console.error('Не удалось сохранить снимок рецепта:', e); }
