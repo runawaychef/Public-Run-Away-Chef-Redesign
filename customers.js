@@ -6,6 +6,18 @@
 // svgEdit/svgDelete, updateCustomerSelects, updateStatsCustomerFilter,
 // updateOrderCustomerFilter, openDeleteModal, closeModal (главный скрипт).
 
+function customerDebt(c) {
+    let debt = 0;
+    orders.forEach(o => {
+        const matches = o.customer_id != null ? o.customer_id === c.id : o.customer === c.name;
+        if (!matches) return;
+        const info = getOrderPaymentStatus(o);
+        const owed = info.grandAmt - info.paidAmt;
+        if (owed > 0.01) debt += owed;
+    });
+    return debt;
+}
+
 function displayCustomers() {
     customers.sort((a, b) => (a.name||"").localeCompare(b.name||""));
     const tbody = document.getElementById('customerTableBody');
@@ -15,17 +27,17 @@ function displayCustomers() {
         const hasName = !!(c.name && c.name.trim());
         if (!hasName) warningCount++;
         const nameLabel = hasName ? escapeHtml(c.name) : icon('warning', 'w-3 h-3 inline-block align-[-1px] mr-0.5') + '(имя не указано)';
+        const debt = customerDebt(c);
+        const debtLabel = debt > 0.01
+            ? `<span class="text-red-600 font-semibold">${debt.toFixed(2)} €</span>`
+            : `<span class="text-gray-400">—</span>`;
         const row = document.createElement('tr');
         row.className = 'order-row border-b' + (hasName ? '' : ' bg-red-50');
         row.innerHTML = `
             <td class=" p-0.5 table-text ${hasName ? '' : 'text-red-600 font-semibold'}" onclick="openCustomerDetail(${c.id})">${nameLabel}</td>
             <td class=" p-0.5 table-text" onclick="openCustomerDetail(${c.id})">${escapeHtml(c.contact)}</td>
             <td class=" p-0.5 table-text" onclick="openCustomerDetail(${c.id})">${c.discount.toFixed(2)}</td>
-            <td class=" p-0.5 table-text text-center" onclick="openCustomerDetail(${c.id})">${c.vat_exempt ? icon('check', 'w-3.5 h-3.5 text-green-600 inline-block') : ''}</td>
-            <td class=" p-0.5 text-center whitespace-nowrap">
-                ${svgEdit(`openCustomerDetail(${c.id})`)}
-                ${hasPermission('can_delete') ? svgDelete(`openDeleteModal(${i},'customer','клиента «${c.name || '(без имени)'}»')`) : ''}
-            </td>`;
+            <td class=" p-0.5 table-text" onclick="openCustomerDetail(${c.id})">${debtLabel}</td>`;
         tbody.appendChild(row);
     });
     const warningEl = document.getElementById('customersNameWarning');
