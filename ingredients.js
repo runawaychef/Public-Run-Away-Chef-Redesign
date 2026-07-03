@@ -78,10 +78,10 @@ function displayIngredients() {
         const row = document.createElement('tr');
         row.className = 'order-row' + rowBg;
         row.innerHTML = `
-            <td class="border p-0.5 text-xs" onclick="openIngredientDetail(${ing.id})">${escapeHtml(ing.name)}</td>
-            <td class="border p-0.5 text-xs text-center" onclick="openIngredientDetail(${ing.id})">${unitPrice.toFixed(4)} €/${unitLabel}</td>
-            <td class="border p-0.5 text-xs text-center" onclick="openIngredientDetail(${ing.id})">${balanceStr}</td>
-            <td class="border p-0.5 text-xs text-center" onclick="openIngredientDetail(${ing.id})">${daysStr}</td>`;
+            <td class="border p-0.5 table-text" onclick="openIngredientDetail(${ing.id})">${escapeHtml(ing.name)}</td>
+            <td class="border p-0.5 table-text text-center" onclick="openIngredientDetail(${ing.id})">${unitPrice.toFixed(4)} €/${unitLabel}</td>
+            <td class="border p-0.5 table-text text-center" onclick="openIngredientDetail(${ing.id})">${balanceStr}</td>
+            <td class="border p-0.5 table-text text-center" onclick="openIngredientDetail(${ing.id})">${daysStr}</td>`;
         tbody.appendChild(row);
     });
 }

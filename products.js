@@ -21,9 +21,9 @@ function displayProducts() {
         const row = document.createElement('tr');
         row.className = 'order-row border-b' + (needsAttention ? ' bg-red-50' : '');
         row.innerHTML = `
-            <td class=" p-0.5 text-xs" onclick="openProductDetail(${p.id})">${escapeHtml(p.name)}</td>
-            <td class=" p-0.5 text-xs text-center ${hasUnit ? '' : 'text-red-600 font-semibold'}" onclick="openProductDetail(${p.id})">${unitLabel}</td>
-            <td class=" p-0.5 text-xs" onclick="openProductDetail(${p.id})">${p.price.toFixed(2)}</td>
+            <td class=" p-0.5 table-text" onclick="openProductDetail(${p.id})">${escapeHtml(p.name)}</td>
+            <td class=" p-0.5 table-text text-center ${hasUnit ? '' : 'text-red-600 font-semibold'}" onclick="openProductDetail(${p.id})">${unitLabel}</td>
+            <td class=" p-0.5 table-text" onclick="openProductDetail(${p.id})">${p.price.toFixed(2)}</td>
             <td class=" p-0.5 text-center">
                 ${hasPermission('can_delete') ? svgDelete(`openDeleteModal(${i},'product','изделие «${p.name}»')`) : ''}
                 ${svgCopy(`copyProduct(${i})`)}
