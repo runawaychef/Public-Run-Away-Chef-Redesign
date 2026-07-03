@@ -158,7 +158,7 @@ function displayOrders() {
             <td class=" p-0.5 table-text whitespace-nowrap${isMerged ? ' text-red-700 font-semibold' : ''}" onclick="openOrderDetail(${order.id})">${formatDateDMY(order.date)}${isMerged ? ' ⚠' : ''}</td>
             <td class=" p-0.5 table-text" onclick="openOrderDetail(${order.id})">${escapeHtml(order.customer)}</td>
             <td class=" p-0.5 table-text text-center" onclick="openOrderDetail(${order.id})">${itemsCount}</td>
-            <td class=" p-0.5 table-text font-medium" onclick="openOrderDetail(${order.id})">${payDot}${total}</td>
+            <td class=" p-0.5 table-text font-medium whitespace-nowrap" onclick="openOrderDetail(${order.id})">${payDot}${total}</td>
             <td class=" p-0.5 text-center" onclick="openOrderDetail(${order.id})"><span class="${flagClass}"></span></td>
             <td class=" p-0.5 text-center">
                 ${hasPermission('can_delete') ? svgDelete(`openDeleteModal(${realIdx},'order','заказ клиента «${order.customer}»')`) : ''}
