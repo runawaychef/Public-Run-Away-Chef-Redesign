@@ -199,8 +199,14 @@ function getOrderPaymentStatus(order) {
     // "частично оплачен" вместо "оплачен".
     const EPS = 0.01;
     let status = 'unpaid';
-    if (paidAmt > 0 && paidAmt < grandAmt - EPS) status = 'partial';
-    else if (paidAmt >= grandAmt - EPS && grandAmt > 0) status = 'paid';
+    if (grandAmt <= EPS) {
+        // Платить нечего (например, скидка 100%) — заказ считается закрытым
+        status = 'paid';
+    } else if (paidAmt > 0 && paidAmt < grandAmt - EPS) {
+        status = 'partial';
+    } else if (paidAmt >= grandAmt - EPS) {
+        status = 'paid';
+    }
     const today = getLocalDateStr(0);
     const overdue = !!order.due_date && order.due_date < today && status !== 'paid';
     return { paidAmt, grandAmt, status, overdue };
