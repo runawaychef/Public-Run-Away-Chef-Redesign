@@ -1,4 +1,4 @@
-const CACHE_NAME = 'runwaychef-public-cache-v11';
+const CACHE_NAME = 'runwaychef-public-cache-v12';
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -65,4 +65,3 @@ self.addEventListener('fetch', (event) => {
       .catch(() => caches.match(req))
   );
 });
-    

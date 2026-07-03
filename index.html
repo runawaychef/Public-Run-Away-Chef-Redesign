@@ -22,6 +22,12 @@
     <style>
         html, body { font-size: 13px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         body { background: linear-gradient(to bottom, #f7f7f7, #e5e7eb); }
+        /* Пока Tailwind CDN не скомпилировал и не применил стили (он делает это
+           уже в браузере пользователя, а не заранее, поэтому при холодной
+           загрузке страница долю секунды выглядит нестилизованной — как
+           случайный переход в "десктопный" вид) — держим страницу скрытой.
+           Снимается в самом конце body, когда все стили уже точно применены. */
+        body.style-loading { visibility: hidden; }
         /* Базовый размер для всего контента приложения */
         #appContent { font-size: 13px; }
         .btn { transition: all 0.2s ease; }
@@ -257,7 +263,7 @@
         .action-icon.icon-copy:hover, .action-icon.icon-copy:active { stroke: #22c55e; }
     </style>
 </head>
-<body class="font-sans">
+<body class="font-sans style-loading">
 
 <!-- Экран входа / регистрации -->
 <div id="authScreen" class="hidden">
@@ -2366,6 +2372,11 @@ function showUpdateBanner(reg) {
     };
     document.body.appendChild(banner);
 }
+
+// Показываем страницу только теперь: скрипт Tailwind CDN (в <head>, выполняется
+// синхронно раньше этого места) уже применил стили ко всей разметке выше —
+// значит, показывать точно можно без вспышки нестилизованного вида.
+document.body.classList.remove('style-loading');
 </script>
 </body>
 </html>
