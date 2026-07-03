@@ -194,9 +194,13 @@ function calcGroupTotals(allOrders, predicate) {
 function getOrderPaymentStatus(order) {
     const paidAmt = _orderPaidTotals[order.id] || 0;
     const grandAmt = orderGrandTotal(order);
+    // Допуск в 1 цент — иначе копеечное расхождение при округлении (JS vs заранее
+    // посчитанные суммы, например при переносе данных) ошибочно показывало
+    // "частично оплачен" вместо "оплачен".
+    const EPS = 0.01;
     let status = 'unpaid';
-    if (paidAmt > 0 && paidAmt < grandAmt) status = 'partial';
-    else if (paidAmt >= grandAmt && grandAmt > 0) status = 'paid';
+    if (paidAmt > 0 && paidAmt < grandAmt - EPS) status = 'partial';
+    else if (paidAmt >= grandAmt - EPS && grandAmt > 0) status = 'paid';
     const today = getLocalDateStr(0);
     const overdue = !!order.due_date && order.due_date < today && status !== 'paid';
     return { paidAmt, grandAmt, status, overdue };
