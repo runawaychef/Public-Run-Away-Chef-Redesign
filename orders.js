@@ -143,13 +143,15 @@ function displayOrders() {
         else if (order.status === 'в работе') flagClass += ' flag-yellow';
         else if (order.status === 'выполнен') flagClass += ' flag-green';
 
-        // Статус оплаты — цветная точка рядом с суммой (не оплачен/частично/оплачен/просрочен)
+        // Статус оплаты — цветная галочка рядом с суммой (не оплачен/частично/оплачен/просрочен).
+        // Раньше была цветная точка того же вида, что и кружок статуса заказа справа —
+        // визуально путались. Форма (галочка) теперь заметно другая, цвета те же.
         const payInfo = getOrderPaymentStatus(order);
-        let payDotColor = 'bg-red-500', payDotTitle = 'Не оплачен';
-        if (payInfo.status === 'partial') { payDotColor = 'bg-amber-400'; payDotTitle = 'Частично оплачен'; }
-        else if (payInfo.status === 'paid') { payDotColor = 'bg-green-500'; payDotTitle = 'Оплачен'; }
-        if (payInfo.overdue) { payDotColor = 'bg-red-700'; payDotTitle += ' · просрочен'; }
-        const payDot = `<span class="inline-block w-2 h-2 rounded-full ${payDotColor} mr-1" title="${payDotTitle}"></span>`;
+        let payColor = '#ef4444', payDotTitle = 'Не оплачен';
+        if (payInfo.status === 'partial') { payColor = '#facc15'; payDotTitle = 'Частично оплачен'; }
+        else if (payInfo.status === 'paid') { payColor = '#22c55e'; payDotTitle = 'Оплачен'; }
+        if (payInfo.overdue) { payColor = '#b91c1c'; payDotTitle += ' · просрочен'; }
+        const payDot = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="${payColor}" stroke-width="3" style="margin-right:4px;flex-shrink:0;vertical-align:-1px;display:inline-block;" title="${payDotTitle}"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>`;
 
         const isMerged = order.notes && order.notes.includes('⚠ объединён, требует проверки');
         const row = document.createElement('tr');
