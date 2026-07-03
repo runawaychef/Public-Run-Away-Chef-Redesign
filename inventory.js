@@ -332,9 +332,9 @@ async function openInventoryModal() {
             ? `closeModal(); showTab('semiFinished'); openSemiFinishedDetail(${ing.id});`
             : `closeModal(); showTab('ingredients'); openIngredientDetail(${ing.id});`;
         return `<tr class="border-b ${bgClass}">
-            <td class="p-1 text-xs cursor-pointer hover:underline" onclick="${detailClick}">${escapeHtml(ing.name)}</td>
-            <td class="p-1 text-xs text-right">${balanceStr}</td>
-            <td class="p-1 text-xs text-right ${daysClass} font-semibold">${daysStr}</td>
+            <td class="p-1 table-text cursor-pointer hover:underline" onclick="${detailClick}">${escapeHtml(ing.name)}</td>
+            <td class="p-1 table-text text-right">${balanceStr}</td>
+            <td class="p-1 table-text text-right ${daysClass} font-semibold">${daysStr}</td>
             <td class="p-1 text-center">${addBtn}</td>
         </tr>`;
     }
@@ -391,7 +391,7 @@ async function openInventoryModal() {
     let html = '';
     if (pendingRows.length) {
         html += `<div onclick="document.getElementById('pendingWriteOffBlock').scrollIntoView({behavior:'smooth'})" class="mb-2 p-1.5 bg-indigo-50 border border-indigo-200 rounded-md text-xs text-indigo-700 cursor-pointer flex items-center justify-between">
-            <span>📅 Запланировано списаний: ${pendingRows.length}</span>
+            <span>📅 Запланировано списаний: ${pendingRows.length} · ближайшее ${formatDateDMY(pendingRows[0].earliestDate)}</span>
             <span class="text-indigo-400">Показать ↓</span>
         </div>`;
     }
@@ -453,7 +453,7 @@ async function openInventoryModal() {
         html += `<p id="pendingWriteOffBlock" class="text-xs font-semibold text-indigo-700 mt-3 mb-1">📅 Плановый расход</p>`;
         html += '<table class="w-full text-xs"><thead><tr class="bg-gray-100 sticky top-0"><th class="p-1 text-left">Ингредиент</th><th class="p-1 text-right">Количество</th><th class="p-1 text-right">Дата списания</th></tr></thead><tbody>';
         pendingRows.forEach(r => {
-            html += `<tr class="border-b"><td class="p-1 text-xs">${escapeHtml(r.name)}</td><td class="p-1 text-xs text-right">${r.qty.toFixed(2)} ${r.unit}</td><td class="p-1 text-xs text-right">${formatDateDMY(r.earliestDate)}</td></tr>`;
+            html += `<tr class="border-b"><td class="p-1 table-text">${escapeHtml(r.name)}</td><td class="p-1 table-text text-right">${r.qty.toFixed(2)} ${r.unit}</td><td class="p-1 table-text text-right">${formatDateDMY(r.earliestDate)}</td></tr>`;
         });
         html += '</tbody></table>';
     }
