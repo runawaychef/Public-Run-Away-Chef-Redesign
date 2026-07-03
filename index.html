@@ -58,6 +58,11 @@
         table thead tr { background: #f3f4f6; }
         #statsCustomerTableScroll table { touch-action: pan-y; }
         td, th { font-size: 13px; font-family: inherit; }
+        /* Пробное увеличение шрифта в таблицах — испытываем сначала только на
+           списке заказов, отдельным классом, не трогая text-xs (он используется
+           много где ещё — кнопки, бейджи, подписи — и не должен расти вместе с
+           этим). Если приживётся — раскатим на остальные таблицы. */
+        .table-text { font-size: 12px; font-family: inherit; }
         .flag { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin: 0; vertical-align: middle; }
         .flag-red { background-color: #ef4444; }
         .flag-yellow { background-color: #facc15; }
@@ -1783,7 +1788,7 @@
 <script src="semifinished.js?v=7"></script>
 <script src="products.js?v=7"></script>
 <script src="customers.js?v=7"></script>
-<script src="orders.js?v=9"></script>
+<script src="orders.js?v=10"></script>
 <script src="payments.js?v=7"></script>
 <script src="stats.js?v=7"></script>
 <script src="history.js?v=7"></script>
