@@ -17,8 +17,17 @@ function displayOrders() {
     const summaryEl = document.getElementById('todaySummary');
     const contentEl = document.getElementById('todaySummaryContent');
 
-    function buildDaySummary(dayOrders, label) {
-        if (!dayOrders.length) return '';
+    function buildDaySummary(allDayOrders, label) {
+        if (!allDayOrders.length) return '';
+        // Напоминание — про то, что ещё нужно сделать, поэтому выполненные заказы
+        // сюда не включаем. Но если на день были заказы и все они уже выполнены —
+        // показываем явное подтверждение вместо того, чтобы блок просто исчезал.
+        const dayOrders = allDayOrders.filter(o => o.status !== 'выполнен');
+        if (!dayOrders.length) {
+            return `<div class="mb-2 last:mb-0">
+                <div class="font-semibold text-green-700 mb-0.5">${label}: все заказы выполнены ${icon('check', 'w-3.5 h-3.5 inline-block align-[-2px]')}</div>
+            </div>`;
+        }
         const totalSum = dayOrders.reduce((s, o) => s + orderGrandTotal(o), 0);
         const totalQty = dayOrders.reduce((s, o) => s + (o.items || []).reduce((q, it) => q + Number(it.quantity || 0), 0), 0);
         // Подсчёт статусов
