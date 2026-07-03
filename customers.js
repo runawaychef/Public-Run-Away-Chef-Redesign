@@ -18,10 +18,10 @@ function displayCustomers() {
         const row = document.createElement('tr');
         row.className = 'order-row border-b' + (hasName ? '' : ' bg-red-50');
         row.innerHTML = `
-            <td class=" p-0.5 text-xs ${hasName ? '' : 'text-red-600 font-semibold'}" onclick="openCustomerDetail(${c.id})">${nameLabel}</td>
-            <td class=" p-0.5 text-xs" onclick="openCustomerDetail(${c.id})">${escapeHtml(c.contact)}</td>
-            <td class=" p-0.5 text-xs" onclick="openCustomerDetail(${c.id})">${c.discount.toFixed(2)}</td>
-            <td class=" p-0.5 text-xs text-center" onclick="openCustomerDetail(${c.id})">${c.vat_exempt ? icon('check', 'w-3.5 h-3.5 text-green-600 inline-block') : ''}</td>
+            <td class=" p-0.5 table-text ${hasName ? '' : 'text-red-600 font-semibold'}" onclick="openCustomerDetail(${c.id})">${nameLabel}</td>
+            <td class=" p-0.5 table-text" onclick="openCustomerDetail(${c.id})">${escapeHtml(c.contact)}</td>
+            <td class=" p-0.5 table-text" onclick="openCustomerDetail(${c.id})">${c.discount.toFixed(2)}</td>
+            <td class=" p-0.5 table-text text-center" onclick="openCustomerDetail(${c.id})">${c.vat_exempt ? icon('check', 'w-3.5 h-3.5 text-green-600 inline-block') : ''}</td>
             <td class=" p-0.5 text-center whitespace-nowrap">
                 ${svgEdit(`openCustomerDetail(${c.id})`)}
                 ${hasPermission('can_delete') ? svgDelete(`openDeleteModal(${i},'customer','клиента «${c.name || '(без имени)'}»')`) : ''}
