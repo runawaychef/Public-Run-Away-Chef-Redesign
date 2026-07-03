@@ -1969,7 +1969,7 @@ function showTab(tabId) {
         });
     }
 
-    const TAB_SLIDE_ORDER = ['orders', 'customers', 'products', 'ingredients'];
+    const TAB_SLIDE_ORDER = ['orders', 'products', 'ingredients', 'customers'];
     const fromId  = currentTabId;
     currentTabId  = tabId;
 
@@ -2272,7 +2272,7 @@ window.addEventListener('pageshow', (e) => {
 // Свайп игнорируется если открыта карточка записи или модальное окно.
 
 (function initSwipeNavigation() {
-    const TAB_ORDER = ['orders', 'customers', 'products', 'ingredients'];
+    const TAB_ORDER = ['orders', 'products', 'ingredients', 'customers'];
     const MIN_SWIPE_X = 60;   // минимальная горизонтальная дистанция свайпа (px)
     const MAX_SWIPE_Y = 80;   // максимальное вертикальное отклонение (px) — чтобы не путать со скроллом
 
