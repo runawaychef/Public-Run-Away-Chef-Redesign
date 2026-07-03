@@ -52,13 +52,24 @@ function showAuthScreen() {
 
 async function showAuthedApp() {
     document.getElementById('authScreen').classList.add('hidden');
-    document.getElementById('loginScreen').classList.remove('hidden');
+    // Пока не выяснили, нужен ли реальный выбор сотрудника (или он определится
+    // автоматически / возьмётся из кэша устройства) — держим нейтральный спиннер,
+    // а не экран "Кто вводит данные?". Иначе он мелькает на экране при каждом
+    // открытии приложения, пока идут запросы к базе (organization + employees).
+    showLoading();
     const autoSelected = await initLogin();
+
+    if (autoSelected) {
+        // initLogin() уже сам вызвал selectEmployee() и скрыл loginScreen/спиннер не нужен —
+        // но на всякий случай гасим спиннер явно.
+        hideLoading();
+        return;
+    }
 
     // Подставляем сотрудника из кэша устройства только если:
     // 1) организация действительно загрузилась (currentOrgId определён), и
     // 2) вход ещё не произошёл автоматически по личному аккаунту
-    if (!autoSelected && currentOrgId) {
+    if (currentOrgId) {
         const saved = localStorage.getItem('currentEmployee');
         if (saved) {
             try {
@@ -71,11 +82,19 @@ async function showAuthedApp() {
                     const fresh = (typeof employees !== 'undefined')
                         ? employees.find(e => e.id === cached.id)
                         : null;
-                    await selectEmployee(fresh || cached);
+                    if (fresh || cached) {
+                        await selectEmployee(fresh || cached);
+                        hideLoading();
+                        return;
+                    }
                 }
             } catch (e) { /* ignore */ }
         }
     }
+
+    // Ни автовхода, ни валидного кэша — только теперь реально показываем выбор сотрудника.
+    hideLoading();
+    document.getElementById('loginScreen').classList.remove('hidden');
 }
 
 // ===== Переключение режимов =====
