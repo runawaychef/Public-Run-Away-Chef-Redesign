@@ -356,7 +356,47 @@ async function openInventoryModal() {
         else sfRest.push(item);
     });
 
-    let html = '<table class="w-full text-xs"><thead><tr class="bg-gray-100 sticky top-0"><th class="p-1 text-left">Ингредиент</th><th class="p-1 text-right">Остаток</th><th class="p-1 text-right">Хватит</th><th class="p-1 text-center">Список</th></tr></thead><tbody>';
+    // 📅 Плановый расход — сколько и когда спишется по заказам с отложенным
+    // списанием (inventory_pending). Суммируем по ингредиенту/п-ф на случай,
+    // если он нужен для нескольких отложенных заказов, показываем ближайшую дату.
+    const pendingByKey = {};
+    (orders || []).filter(o => o.inventory_pending).forEach(o => {
+        const writeOffDate = getWriteOffDate(o.date);
+        (o.items || []).forEach(item => {
+            const prod = products.find(p => p.id === item.product_id);
+            if (!prod || !prod.ingredients) return;
+            const factor = 1 / Number(prod.batch_size || 1);
+            prod.ingredients.forEach(ri => {
+                let key, name, unit;
+                if (ri.ingredient_id) {
+                    const ing = ingredients.find(i => i.id === ri.ingredient_id);
+                    if (!ing) return;
+                    key = `ing_${ing.id}`; name = ing.name; unit = UNIT_LABELS[ing.unit] || ing.unit;
+                } else if (ri.semi_finished_id) {
+                    const sfP = semiFinished.find(s => s.id === ri.semi_finished_id);
+                    if (!sfP) return;
+                    key = `sf_${sfP.id}`; name = sfP.name; unit = UNIT_LABELS[sfP.unit] || sfP.unit;
+                } else return;
+                const qty = Number(ri.quantity) * Number(item.quantity) * factor;
+                if (!pendingByKey[key]) pendingByKey[key] = { name, unit, qty: 0, earliestDate: writeOffDate };
+                pendingByKey[key].qty += qty;
+                if (writeOffDate < pendingByKey[key].earliestDate) pendingByKey[key].earliestDate = writeOffDate;
+            });
+        });
+    });
+    const pendingRows = Object.values(pendingByKey).sort((a, b) => a.earliestDate.localeCompare(b.earliestDate));
+
+    // Компактный бейдж наверху — виден сразу, без прокрутки до конца списка.
+    // Сам блок с деталями остаётся внизу, чтобы не оттеснять "Критично" по важности.
+    let html = '';
+    if (pendingRows.length) {
+        html += `<div onclick="document.getElementById('pendingWriteOffBlock').scrollIntoView({behavior:'smooth'})" class="mb-2 p-1.5 bg-indigo-50 border border-indigo-200 rounded-md text-xs text-indigo-700 cursor-pointer flex items-center justify-between">
+            <span>📅 Запланировано списаний: ${pendingRows.length}</span>
+            <span class="text-indigo-400">Показать ↓</span>
+        </div>`;
+    }
+
+    html += '<table class="w-full text-xs"><thead><tr class="bg-gray-100 sticky top-0"><th class="p-1 text-left">Ингредиент</th><th class="p-1 text-right">Остаток</th><th class="p-1 text-right">Хватит</th><th class="p-1 text-center">Список</th></tr></thead><tbody>';
 
     // 🔴 Критично: ингредиенты
     if (red.length) {
@@ -405,6 +445,16 @@ async function openInventoryModal() {
             return a.daysLeft - b.daysLeft;
         });
         sfRest.forEach(item => { html += renderRow(item, '', 'text-gray-500', true); });
+        html += '</tbody></table>';
+    }
+
+    // 📅 Плановый расход — сам блок, внизу (бейдж наверху уже даёт о нём знать)
+    if (pendingRows.length) {
+        html += `<p id="pendingWriteOffBlock" class="text-xs font-semibold text-indigo-700 mt-3 mb-1">📅 Плановый расход</p>`;
+        html += '<table class="w-full text-xs"><thead><tr class="bg-gray-100 sticky top-0"><th class="p-1 text-left">Ингредиент</th><th class="p-1 text-right">Количество</th><th class="p-1 text-right">Дата списания</th></tr></thead><tbody>';
+        pendingRows.forEach(r => {
+            html += `<tr class="border-b"><td class="p-1">${escapeHtml(r.name)}</td><td class="p-1 text-right">${r.qty.toFixed(2)} ${r.unit}</td><td class="p-1 text-right">${formatDateDMY(r.earliestDate)}</td></tr>`;
+        });
         html += '</tbody></table>';
     }
 

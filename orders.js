@@ -244,6 +244,24 @@ function getFilteredOrdersForList() {
     return filtered;
 }
 
+// Проверяет все заказы с отложенным списанием (inventory_pending = true) — если до
+// даты заказа осталось ≤ INVENTORY_PENDING_DAYS дней, списывает склад и снимает флаг.
+// Вызывается при каждой загрузке данных (loadAllData), чтобы отложенные заказы
+// "дозревали" сами, без участия пользователя.
+async function processPendingInventory() {
+    const pending = orders.filter(o => o.inventory_pending && shouldWriteOffNow(o.date));
+    if (!pending.length) return;
+    for (const order of pending) {
+        for (const it of (order.items || [])) {
+            const prod = products.find(p => p.id === it.product_id);
+            if (prod) await writeOffInventoryForItem(prod, it.quantity, order.id);
+        }
+        const { error } = await db.from('orders').update({ inventory_pending: false }).eq('id', order.id);
+        if (!error) order.inventory_pending = false;
+    }
+    displayOrders();
+}
+
 function updateOrderCustomerFilter() {
     const list = document.getElementById('orderFilterList');
     if (!list) return;
@@ -355,6 +373,7 @@ async function createDraftOrderAndOpen() {
             employee_id: data.employee_id || null, employee: emp ? emp.name : '',
             notes: '', order_number: data.order_number || orderNumber,
             due_date: null,
+            inventory_pending: false,
             items: []
         };
         orders.push(newOrder);
@@ -396,6 +415,7 @@ async function copyOrder(i) {
             employee_id: data.employee_id || null, employee: emp ? emp.name : '',
             order_number: data.order_number || orderNumber,
             due_date: null,
+            inventory_pending: false,
             items: []
         };
 
@@ -412,6 +432,23 @@ async function copyOrder(i) {
                 const prod = products.find(p => p.id === it.product_id);
                 return { id: it.id, product_id: it.product_id, product: prod ? prod.name : it.product_id, quantity: Number(it.quantity), price: Number(it.price), item_cost: it.item_cost != null ? Number(it.item_cost) : null };
             });
+
+            // Снимок рецепта + списание склада для каждой скопированной позиции —
+            // раньше это пропускали при копировании (баг), из-за чего копия заказа
+            // не отражалась на складе вообще. Копия всегда создаётся на сегодня,
+            // так что shouldWriteOffNow тут практически всегда true, но проверяем
+            // на будущее — если логика создания копии когда-нибудь изменится.
+            for (const it of copy.items) {
+                const prod = products.find(p => p.id === it.product_id);
+                if (!prod) continue;
+                await saveOrderItemIngredients(it.id, prod, it.quantity);
+                if (shouldWriteOffNow(copy.date)) {
+                    await writeOffInventoryForItem(prod, it.quantity, copy.id);
+                } else if (!copy.inventory_pending) {
+                    const { error: pendErr } = await db.from('orders').update({ inventory_pending: true }).eq('id', copy.id);
+                    if (!pendErr) copy.inventory_pending = true;
+                }
+            }
         }
 
         orders.push(copy);
@@ -754,6 +791,26 @@ async function saveDetailHeader() {
         order.notes       = notes;
         renderDetailItems(order);
 
+        // Дата заказа могла пересечь порог отложенного списания (INVENTORY_PENDING_DAYS) —
+        // если да, нужно либо списать склад прямо сейчас, либо сторнировать уже списанное.
+        if (old.date !== order.date && order.items && order.items.length) {
+            const nowShould = shouldWriteOffNow(order.date);
+            if (nowShould && order.inventory_pending) {
+                // Дату придвинули ближе — списываем сейчас то, что раньше откладывали
+                for (const it of order.items) {
+                    const prod = products.find(p => p.id === it.product_id);
+                    if (prod) await writeOffInventoryForItem(prod, it.quantity, order.id);
+                }
+                await db.from('orders').update({ inventory_pending: false }).eq('id', order.id);
+                order.inventory_pending = false;
+            } else if (!nowShould && !order.inventory_pending) {
+                // Дату отодвинули далеко вперёд — сторнируем то, что уже успели списать
+                await reverseInventoryForOrder(order.id);
+                await db.from('orders').update({ inventory_pending: true }).eq('id', order.id);
+                order.inventory_pending = true;
+            }
+        }
+
         // Журнал: фиксируем только реально изменившиеся поля
         const changes = [];
         if (old.customer !== order.customer) changes.push(`клиент «${old.customer}» → «${order.customer}»`);
@@ -853,9 +910,18 @@ async function addItemToOrder() {
         if (error) throw error;
         order.items.push({ id: data.id, product_id: prod.id, product: prod.name, quantity: Number(data.quantity), price: Number(data.price), item_cost: itemCost });
 
-        // Фиксируем снимок рецепта с ценами на момент создания позиции
+        // Фиксируем снимок рецепта с ценами на момент создания позиции —
+        // это нужно всегда, независимо от того, спишем ли склад сейчас или позже
         await saveOrderItemIngredients(data.id, prod, Number(data.quantity));
-        await writeOffInventoryForItem(prod, Number(data.quantity), order.id);
+
+        if (shouldWriteOffNow(order.date)) {
+            await writeOffInventoryForItem(prod, Number(data.quantity), order.id);
+        } else if (!order.inventory_pending) {
+            // Заказ далеко вперёд — списание отложено до момента, когда до него
+            // останется INVENTORY_PENDING_DAYS дней (см. processPendingInventory)
+            const { error: pendErr } = await db.from('orders').update({ inventory_pending: true }).eq('id', order.id);
+            if (!pendErr) order.inventory_pending = true;
+        }
 
         renderDetailItems(order);
         logActivity('item', `Добавлена позиция в заказ №${order.id}: «${prod.name}» × ${quantity}`, order.id);

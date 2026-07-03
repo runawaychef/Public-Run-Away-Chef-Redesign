@@ -16,6 +16,30 @@ function getLocalDateStr(offsetDays) {
     return `${y}-${m}-${day}`;
 }
 
+// ── Отложенное списание склада для заказов далеко вперёд ────────────────────
+// Если заказ на дату больше чем через N дней — списывать сырьё сразу рано:
+// его может ещё не быть на складе, аналитика начнёт врать (уйдёт в минус).
+// Вместо этого откладываем списание до момента, когда до заказа останется N дней.
+const INVENTORY_PENDING_DAYS = 7;
+
+// true = списывать сейчас (заказ сегодня, в прошлом, или в пределах ближайших N дней)
+function shouldWriteOffNow(orderDateStr) {
+    if (!orderDateStr) return true;
+    const limit = getLocalDateStr(INVENTORY_PENDING_DAYS);
+    return orderDateStr <= limit; // сравнение строк YYYY-MM-DD работает как числовое
+}
+
+// Дата, когда должно произойти отложенное списание (дата заказа минус N дней)
+function getWriteOffDate(orderDateStr) {
+    const [y, m, d] = orderDateStr.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    dt.setDate(dt.getDate() - INVENTORY_PENDING_DAYS);
+    const yy = dt.getFullYear();
+    const mm = String(dt.getMonth() + 1).padStart(2, '0');
+    const dd = String(dt.getDate()).padStart(2, '0');
+    return `${yy}-${mm}-${dd}`;
+}
+
 // Простое уведомление (замена системного alert()) — одна кнопка "ОК".
 // Переиспользует confirmModal, временно пряча кнопку "Отмена".
 function showInfo(message) {

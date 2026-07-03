@@ -57,6 +57,9 @@ async function confirmDelete() {
         } else if (deleteType === 'order') {
             const order = orders[deleteId];
             const wasOpenInDetail = order.id === currentOrderId;
+            // Подавляем Realtime перед сторно — иначе собственное сторно-событие
+            // прилетит обратно и вызовет лишнюю перезагрузку данных
+            suppressRealtimeFor3s();
             // Сторнируем списание со склада
             await reverseInventoryForOrder(order.id);
             // Soft delete — помечаем как удалённый, не удаляем физически

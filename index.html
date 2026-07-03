@@ -1760,23 +1760,23 @@
     </div><!-- p-2 -->
 </div><!-- container -->
 
-<script src="dates.js?v=3"></script>
-    <script src="money.js?v=3"></script>
-    <script src="supabaseClient.js?v=3"></script>
-    <script src="auth.js?v=3"></script>
-    <script src="employees.js?v=3"></script>
-    <script src="inventory.js?v=3"></script>
-<script src="ingredients.js?v=3"></script>
-<script src="semifinished.js?v=3"></script>
-<script src="products.js?v=3"></script>
-<script src="customers.js?v=3"></script>
-<script src="orders.js?v=3"></script>
-<script src="payments.js?v=3"></script>
-<script src="stats.js?v=3"></script>
-<script src="history.js?v=3"></script>
-<script src="modals.js?v=3"></script>
-<script src="demoData.js?v=3"></script>
-<script src="helpers.js?v=3"></script>
+<script src="dates.js?v=4"></script>
+    <script src="money.js?v=4"></script>
+    <script src="supabaseClient.js?v=4"></script>
+    <script src="auth.js?v=4"></script>
+    <script src="employees.js?v=4"></script>
+    <script src="inventory.js?v=4"></script>
+<script src="ingredients.js?v=4"></script>
+<script src="semifinished.js?v=4"></script>
+<script src="products.js?v=4"></script>
+<script src="customers.js?v=4"></script>
+<script src="orders.js?v=4"></script>
+<script src="payments.js?v=4"></script>
+<script src="stats.js?v=4"></script>
+<script src="history.js?v=4"></script>
+<script src="modals.js?v=4"></script>
+<script src="demoData.js?v=4"></script>
+<script src="helpers.js?v=4"></script>
 <script>
 // SUPABASE_URL, SUPABASE_KEY, db перенесены в supabaseClient.js
 
@@ -1823,7 +1823,7 @@ async function loadAllData() {
         const [pRes, cRes, oRes, oiRes, eRes, ingRes, piRes, sfRes, sfiRes, opRes] = await Promise.all([
             db.from('products').select('id, name, price, batch_size, other_costs, unit, recipe_confirmed, track_stock').eq('org_id', currentOrgId).order('name').limit(5000),
             db.from('customers').select('id, name, contact, discount, vat_exempt, notes').eq('org_id', currentOrgId).order('name').limit(5000),
-            db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date').eq('org_id', currentOrgId).is('deleted_at', null).range(0, 9999),
+            db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending').eq('org_id', currentOrgId).is('deleted_at', null).range(0, 9999),
             db.from('order_items').select('id, order_id, product_id, quantity, price, item_cost').eq('org_id', currentOrgId).range(0, 9999),
             db.from('employees').select('id, name').eq('org_id', currentOrgId).order('name').limit(1000),
             db.from('ingredients').select('id, name, package_price, package_size, unit').eq('org_id', currentOrgId).order('name').limit(5000),
@@ -1917,6 +1917,7 @@ async function loadAllData() {
                 notes: o.notes || '',
                 order_number: o.order_number || null,
                 due_date: o.due_date || null,
+                inventory_pending: !!o.inventory_pending,
                 items: itemsByOrder[o.id] || []
             };
         });
@@ -1927,6 +1928,7 @@ async function loadAllData() {
         displaySemiFinished();
         updateOrderEmployeeFilter();
         displayOrders();
+        await processPendingInventory();
     } catch (e) {
         console.error(e);
         alert('Ошибка загрузки данных. Проверьте подключение к интернету.');
