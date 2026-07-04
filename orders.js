@@ -76,36 +76,30 @@ function displayOrders() {
     const tbody = document.getElementById('orderTableBody');
     tbody.innerHTML = '';
 
-    let currentMonthKey  = null; // 'YYYY-MM'
-    let currentWeekKey   = null; // 'YYYY-MM_YYYY-MM-DD' — уникален даже для "урезанной" недели
-    let currentWeekStart = null;
-    let currentWeekEnd   = null;
+    let currentMonthKey = null; // 'YYYY-MM' — календарный месяц самого заказа
+    let currentWeekKey  = null; // 'YYYY-MM-DD' понедельника — неделя всегда целая, Пн–Вс
 
     function localStr(d) {
         return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
     }
 
-    // Строго календарные месяц и неделя: если ISO-неделя (Пн–Вс) пересекает границу
-    // месяца, каждому месяцу достаётся только своя часть недели. Раньше вся неделя
-    // целиком относилась к месяцу понедельника — из-за этого "Итого за месяц" не
-    // совпадало с интуитивным ожиданием (все заказы с датой в этом месяце).
-    function groupKeysFor(order) {
+    // Неделя и месяц — независимые понятия. Неделя всегда целая (Пн–Вс, не режется
+    // границей месяца) — так недельный итог сохраняет смысл (полный производственный
+    // цикл). Месяц считается строго по календарной дате заказа и закрывается там, где
+    // реально заканчивается — даже если это происходит посреди недельного блока.
+    function keysFor(order) {
         const d = new Date(order.date);
-        const monthKey   = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-        const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
-        const monthEnd   = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-        const monday = getMondayOf(d);
-        const sunday = new Date(monday);
-        sunday.setDate(sunday.getDate() + 6);
-        const weekStart = monday < monthStart ? monthStart : monday;
-        const weekEnd   = sunday > monthEnd   ? monthEnd   : sunday;
-        const weekKey = monthKey + '_' + localStr(weekStart);
-        return { monthKey, weekKey, weekStart, weekEnd };
+        const monthKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        const weekKey  = localStr(getMondayOf(d));
+        return { monthKey, weekKey };
     }
 
-    function appendWeekSummary(weekKey, weekStart, weekEnd) {
-        const weekTotals = calcGroupTotals(sorted, o => groupKeysFor(o).weekKey === weekKey);
-        const weekLabel = formatDateDMY(localStr(weekStart)) + ' – ' + formatDateDMY(localStr(weekEnd));
+    function appendWeekSummary(weekKey) {
+        const monday = new Date(weekKey + 'T00:00:00');
+        const sunday = new Date(monday);
+        sunday.setDate(sunday.getDate() + 6);
+        const weekTotals = calcGroupTotals(sorted, o => keysFor(o).weekKey === weekKey);
+        const weekLabel = formatDateDMY(localStr(monday)) + ' – ' + formatDateDMY(localStr(sunday));
         const weekRow = document.createElement('tr');
         weekRow.innerHTML = `<td colspan="6" class="bg-gray-200 text-gray-700 text-xs font-medium p-0.5">
             Неделя ${weekLabel} — ${weekTotals.count} зак., ${weekTotals.qty} шт., ${weekTotals.sum.toFixed(2)} €
@@ -115,7 +109,7 @@ function displayOrders() {
 
     function appendMonthSummary(monthKey) {
         const [y, m] = monthKey.split('-').map(Number);
-        const monthTotals = calcGroupTotals(sorted, o => groupKeysFor(o).monthKey === monthKey);
+        const monthTotals = calcGroupTotals(sorted, o => keysFor(o).monthKey === monthKey);
         const monthLabel = `${MONTH_NAMES_RU[m - 1]} ${y}`;
         const monthRow = document.createElement('tr');
         monthRow.innerHTML = `<td colspan="6" class="bg-gray-700 text-white text-xs font-semibold p-0.5.5">
@@ -131,25 +125,24 @@ function displayOrders() {
     }
 
     sorted.forEach((order, idx) => {
-        const { monthKey, weekKey, weekStart, weekEnd } = groupKeysFor(order);
+        const { monthKey, weekKey } = keysFor(order);
 
         const monthChanged = currentMonthKey !== null && monthKey !== currentMonthKey;
         const weekChanged  = currentWeekKey  !== null && weekKey  !== currentWeekKey;
 
-        if (monthChanged || weekChanged) {
-            // Закрываем текущую неделю
-            appendWeekSummary(currentWeekKey, currentWeekStart, currentWeekEnd);
-            // Если поменялся месяц — закрываем и его, со спейсером
-            if (monthChanged) {
-                appendMonthSummary(currentMonthKey);
-            }
+        // Месяц закрывается сам по себе, независимо от недели — может попасть
+        // прямо посреди недельного блока.
+        if (monthChanged) {
+            appendMonthSummary(currentMonthKey);
+        }
+        // Неделя закрывается только когда реально меняется сама неделя.
+        if (weekChanged) {
+            appendWeekSummary(currentWeekKey);
             appendSpacer();
         }
 
-        currentMonthKey  = monthKey;
-        currentWeekKey   = weekKey;
-        currentWeekStart = weekStart;
-        currentWeekEnd   = weekEnd;
+        currentMonthKey = monthKey;
+        currentWeekKey  = weekKey;
 
         const realIdx = orders.indexOf(order);
         const total = orderGrandTotal(order).toFixed(2);
@@ -185,7 +178,7 @@ function displayOrders() {
 
     // Закрываем последнюю неделю и месяц
     if (currentWeekKey !== null) {
-        appendWeekSummary(currentWeekKey, currentWeekStart, currentWeekEnd);
+        appendWeekSummary(currentWeekKey);
         appendMonthSummary(currentMonthKey);
     }
 
