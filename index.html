@@ -1265,12 +1265,8 @@
                     <div id="settingsPlanUsage" class="text-xs text-gray-500 mt-1"></div>
                 </div>
 
-                <div id="orgNameEditBlock" class="flex flex-col gap-1 mb-3 hidden">
-                    <label class="text-xs text-gray-500">Название пекарни</label>
-                    <div class="flex gap-1">
-                        <input id="orgNameInput" type="text" class="border p-1 rounded-md text-xs flex-1" placeholder="Например, Пекарня Анны">
-                        <button onclick="saveOrgName()" class="btn bg-gray-700 text-white px-2 py-1 rounded-md hover:bg-gray-800 text-xs">Сохранить</button>
-                    </div>
+                <div id="companyInfoBtnBlock" class="flex flex-col gap-1 mb-3 hidden">
+                    <button onclick="openCompanyInfoModal()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs text-left border border-gray-200 flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21"/></svg>Информация о компании</button>
                 </div>
 
                 <div class="flex flex-col gap-1 mb-3">
@@ -1288,6 +1284,100 @@
                 <div class="flex flex-col gap-1 mb-3 border-t pt-2">
                     <button onclick="logoutEmployee()" class="btn bg-gray-200 text-gray-800 px-2 py-1.5 rounded-md hover:bg-gray-300 text-xs text-left flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Сменить сотрудника</button>
                     <button onclick="signOutAccount()" class="btn bg-gray-200 text-gray-800 px-2 py-1.5 rounded-md hover:bg-gray-300 text-xs text-left flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15 9V5.25A2.25 2.25 0 0012.75 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 006.75 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"/></svg>Выйти из аккаунта</button>
+                </div>
+
+                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 w-full text-xs">Закрыть</button>
+            </div>
+        </div>
+
+        <!-- Информация о компании -->
+        <div id="companyInfoModal" class="modal">
+            <div class="modal-content" style="max-width:400px;max-height:85vh;overflow-y:auto;">
+                <h2 class="text-xs font-semibold mb-1 text-gray-800">Информация о компании</h2>
+                <p class="text-[11px] text-gray-400 mb-3">Изменения сохраняются автоматически</p>
+
+                <div class="mb-3">
+                    <label class="table-text text-gray-500">Название пекарни</label>
+                    <input id="cmpOrgName" type="text" onblur="saveCompanyInfo('name', this.value)" class="border p-1 rounded-md w-full table-text" placeholder="Например, Пекарня Анны">
+                </div>
+
+                <div class="mb-3">
+                    <label class="table-text text-gray-500">Валюта расчёта</label>
+                    <select id="cmpCurrency" onchange="saveCompanyInfo('currency_code', this.value)" class="border p-1 rounded-md w-full table-text">
+                        <option value="EUR">Евро (€)</option>
+                        <option value="USD">Доллар США ($)</option>
+                        <option value="RUB">Российский рубль (₽)</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="table-text text-gray-500 mb-1 block">Тип лица</label>
+                    <div class="flex gap-1">
+                        <button id="cmpEntityIndividualBtn" onclick="setCompanyEntityType('individual')" class="btn flex-1 text-xs py-1 rounded-md border">Физ. лицо</button>
+                        <button id="cmpEntityCompanyBtn" onclick="setCompanyEntityType('company')" class="btn flex-1 text-xs py-1 rounded-md border">Юр. лицо</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-1 mb-3">
+                    <div>
+                        <label class="table-text text-gray-500">Телефон</label>
+                        <input id="cmpPhone" type="text" autocomplete="off" onblur="saveCompanyInfo('phone', this.value)" class="border p-1 rounded-md w-full table-text">
+                    </div>
+                    <div>
+                        <label class="table-text text-gray-500">Email</label>
+                        <input id="cmpEmail" type="email" autocomplete="off" onblur="saveCompanyInfo('email', this.value)" class="border p-1 rounded-md w-full table-text">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="table-text text-gray-500">Адрес</label>
+                        <input id="cmpAddress" type="text" autocomplete="off" onblur="saveCompanyInfo('address', this.value)" class="border p-1 rounded-md w-full table-text">
+                    </div>
+                </div>
+
+                <!-- Только для юридического лица -->
+                <div id="cmpCompanyFields" class="border-t pt-2 mb-3">
+                    <div class="grid grid-cols-2 gap-1">
+                        <div class="col-span-2">
+                            <label class="table-text text-gray-500">Юридическое название</label>
+                            <input id="cmpLegalName" type="text" autocomplete="off" onblur="saveCompanyInfo('legal_name', this.value)" class="border p-1 rounded-md w-full table-text" placeholder="Например, MB Runaway Chef">
+                        </div>
+                        <div>
+                            <label class="table-text text-gray-500">Рег. номер</label>
+                            <input id="cmpRegNumber" type="text" autocomplete="off" onblur="saveCompanyInfo('reg_number', this.value)" class="border p-1 rounded-md w-full table-text">
+                        </div>
+                        <div>
+                            <label class="table-text text-gray-500">Код НДС / PVM</label>
+                            <input id="cmpVatCode" type="text" autocomplete="off" onblur="saveCompanyInfo('vat_code', this.value)" class="border p-1 rounded-md w-full table-text">
+                        </div>
+                        <div class="col-span-2">
+                            <label class="table-text text-gray-500">Директор / представитель</label>
+                            <input id="cmpDirectorName" type="text" autocomplete="off" onblur="saveCompanyInfo('director_name', this.value)" class="border p-1 rounded-md w-full table-text">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Только для физического лица -->
+                <div id="cmpIndividualFields" class="border-t pt-2 mb-3">
+                    <label class="table-text text-gray-500">Личный код</label>
+                    <input id="cmpPersonalCode" type="text" autocomplete="off" onblur="saveCompanyInfo('personal_code', this.value)" class="border p-1 rounded-md w-full table-text">
+                </div>
+
+                <!-- Банковские реквизиты — общие для обоих типов -->
+                <div class="border-t pt-2 mb-3">
+                    <label class="table-text text-gray-500 mb-1 block">Банковские реквизиты</label>
+                    <div class="grid grid-cols-2 gap-1">
+                        <div class="col-span-2">
+                            <label class="table-text text-gray-500">Банк</label>
+                            <input id="cmpBankName" type="text" autocomplete="off" onblur="saveCompanyInfo('bank_name', this.value)" class="border p-1 rounded-md w-full table-text">
+                        </div>
+                        <div>
+                            <label class="table-text text-gray-500">IBAN / счёт</label>
+                            <input id="cmpBankAccount" type="text" autocomplete="off" onblur="saveCompanyInfo('bank_account', this.value)" class="border p-1 rounded-md w-full table-text">
+                        </div>
+                        <div>
+                            <label class="table-text text-gray-500">SWIFT / BIC</label>
+                            <input id="cmpBankSwift" type="text" autocomplete="off" onblur="saveCompanyInfo('bank_swift', this.value)" class="border p-1 rounded-md w-full table-text">
+                        </div>
+                    </div>
                 </div>
 
                 <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 w-full text-xs">Закрыть</button>
@@ -1781,7 +1871,8 @@
     <script src="money.js?v=7"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="auth.js?v=9"></script>
-    <script src="employees.js?v=7"></script>
+    <script src="employees.js?v=8"></script>
+    <script src="company.js?v=1"></script>
     <script src="inventory.js?v=10"></script>
 <script src="ingredients.js?v=10"></script>
 <script src="semifinished.js?v=9"></script>
