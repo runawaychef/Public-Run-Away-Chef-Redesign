@@ -831,6 +831,34 @@
                         </div>
                     </div>
                     <button onclick="applyVatExemptToAllOrders()" class="btn bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 text-xs w-full">Применить текущий статус НДС ко всем заказам клиента</button>
+
+                    <!-- Реквизиты для счетов/накладных -->
+                    <div class="border-t pt-2 mt-2">
+                        <label class="table-text text-gray-500 mb-1 block">Тип лица (для счетов)</label>
+                        <div class="flex gap-1 mb-2">
+                            <button id="cdEntityIndividualBtn" onclick="setCustomerEntityType('individual')" class="btn flex-1 text-xs py-1 rounded-md border">Физ. лицо</button>
+                            <button id="cdEntityCompanyBtn" onclick="setCustomerEntityType('company')" class="btn flex-1 text-xs py-1 rounded-md border">Юр. лицо</button>
+                        </div>
+                        <div class="mb-2">
+                            <label class="table-text text-gray-500">Адрес</label>
+                            <input id="cdAddress" type="text" autocomplete="off" onblur="saveCdHeader()" class="border p-0.5 rounded-md w-full table-text">
+                        </div>
+                        <div id="cdCompanyFields" class="grid grid-cols-2 gap-1 mb-1">
+                            <div>
+                                <label class="table-text text-gray-500">Рег. номер</label>
+                                <input id="cdRegNumber" type="text" autocomplete="off" onblur="saveCdHeader()" class="border p-0.5 rounded-md w-full table-text">
+                            </div>
+                            <div>
+                                <label class="table-text text-gray-500">Код НДС</label>
+                                <input id="cdVatCode" type="text" autocomplete="off" onblur="saveCdHeader()" class="border p-0.5 rounded-md w-full table-text">
+                            </div>
+                        </div>
+                        <div id="cdIndividualFields" class="mb-1">
+                            <label class="table-text text-gray-500">Личный код</label>
+                            <input id="cdPersonalCode" type="text" autocomplete="off" onblur="saveCdHeader()" class="border p-0.5 rounded-md w-full table-text">
+                        </div>
+                    </div>
+
                     <div class="mt-2">
                         <label class="table-text text-gray-500">Заметки (аллергии, особые условия, контакты...)</label>
                         <textarea id="cdNotes" rows="3" onblur="saveCdHeader()" class="border p-0.5 rounded-md table-text w-full resize-none" placeholder="Например: оплата по счёту, аллергия на орехи..."></textarea>
@@ -871,6 +899,30 @@
                 </div>
             </div>
         </div>
+
+        <!-- Выбор типа документа: счёт или накладная -->
+        <div id="documentTypeModal" class="modal">
+            <div class="modal-content" style="max-width:340px;">
+                <h2 class="text-xs font-semibold mb-3 text-gray-800">Какой документ сформировать?</h2>
+                <div class="flex flex-col gap-2">
+                    <button onclick="openOrderDocumentPreview('invoice')" class="btn bg-gray-700 text-white p-2 rounded-md hover:bg-gray-800 text-xs">Счёт</button>
+                    <button onclick="openOrderDocumentPreview('delivery_note')" class="btn bg-gray-700 text-white p-2 rounded-md hover:bg-gray-800 text-xs">Накладная</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs">Закрыть</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Предпросмотр счёта / накладной -->
+        <div id="orderDocumentModal" class="modal">
+            <div class="modal-content" style="max-width:520px;">
+                <div id="orderDocumentContent" style="background:white;"></div>
+                <div class="flex gap-1 mt-3">
+                    <button id="sendOrderDocumentBtn" onclick="shareOrderDocumentPdf()" class="btn bg-gray-700 text-white p-1 rounded-md hover:bg-gray-800 text-xs flex-1 inline-flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"/></svg>Отправить</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs flex-1">Закрыть</button>
+                </div>
+            </div>
+        </div>
+
 
         <!-- ===== ИСТОРИЯ ===== -->
         <div id="history" class="tab-content hidden">
@@ -1006,6 +1058,10 @@
                             <!-- Поделиться заказом -->
                             <button onclick="shareOrderInfo()" title="Поделиться заказом" class="text-gray-400 hover:text-indigo-600">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0-12l-4 4m4-4l4 4M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6"/></svg>
+                            </button>
+                            <!-- Счёт / Накладная -->
+                            <button onclick="openDocumentTypeModal()" title="Счёт / накладная" class="text-gray-400 hover:text-indigo-600">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h6m-6 4h6m-8 5h10a2 2 0 002-2V7.828a2 2 0 00-.586-1.414l-3.828-3.828A2 2 0 0012.172 2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                             </button>
                             <!-- Удалить заказ -->
                             <button onclick="deleteCurrentOrder()" title="Удалить заказ" class="text-gray-400 hover:text-red-600 perm-delete"><svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg></button>
@@ -1879,8 +1935,9 @@
 <script src="ingredients.js?v=10"></script>
 <script src="semifinished.js?v=9"></script>
 <script src="products.js?v=12"></script>
-<script src="customers.js?v=12"></script>
+<script src="customers.js?v=13"></script>
 <script src="orders.js?v=16"></script>
+<script src="invoice.js?v=1"></script>
 <script src="payments.js?v=7"></script>
 <script src="stats.js?v=7"></script>
 <script src="history.js?v=7"></script>

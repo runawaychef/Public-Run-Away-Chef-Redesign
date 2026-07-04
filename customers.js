@@ -293,6 +293,11 @@ function openCustomerDetail(custId) {
     document.getElementById('cdVatExempt').checked = !!cust.vat_exempt;
     document.getElementById('cdNotes').value = cust.notes || '';
     document.getElementById('cdDateRange').value = 'all';
+    document.getElementById('cdAddress').value = cust.address || '';
+    document.getElementById('cdRegNumber').value = cust.reg_number || '';
+    document.getElementById('cdVatCode').value = cust.vat_code || '';
+    document.getElementById('cdPersonalCode').value = cust.personal_code || '';
+    setCustomerEntityType(cust.entity_type || 'company', /*skipSave*/ true);
 
     renderCustomerStats(cust);
     renderCustomerOrders();
@@ -317,6 +322,23 @@ function deleteCurrentCustomer() {
     openDeleteModal(idx, 'customer', `клиента «${cust.name || '(без имени)'}»`);
 }
 
+let _customerEntityType = 'company';
+
+function setCustomerEntityType(type, skipSave) {
+    _customerEntityType = type;
+    const isCompany = type === 'company';
+
+    document.getElementById('cdCompanyFields').classList.toggle('hidden', !isCompany);
+    document.getElementById('cdIndividualFields').classList.toggle('hidden', isCompany);
+
+    const companyBtn    = document.getElementById('cdEntityCompanyBtn');
+    const individualBtn = document.getElementById('cdEntityIndividualBtn');
+    companyBtn.className    = 'btn flex-1 text-xs py-1 rounded-md border' + (isCompany ? ' bg-indigo-600 text-white border-indigo-600' : ' bg-white text-gray-700');
+    individualBtn.className = 'btn flex-1 text-xs py-1 rounded-md border' + (!isCompany ? ' bg-indigo-600 text-white border-indigo-600' : ' bg-white text-gray-700');
+
+    if (!skipSave) saveCdHeader();
+}
+
 async function saveCdHeader() {
     suppressRealtimeFor3s();
     const cust = customers.find(c => c.id === currentCustomerId);
@@ -326,13 +348,22 @@ async function saveCdHeader() {
     const discount = parseFloat(document.getElementById('cdDiscount').value) || 0;
     const vatExempt = document.getElementById('cdVatExempt').checked;
     const notes    = document.getElementById('cdNotes').value.trim();
+    const address     = document.getElementById('cdAddress').value.trim();
+    const regNumber   = document.getElementById('cdRegNumber').value.trim();
+    const vatCode     = document.getElementById('cdVatCode').value.trim();
+    const personalCode = document.getElementById('cdPersonalCode').value.trim();
+    const entityType  = _customerEntityType;
     if (!name) { showInfo('Заполните имя клиента!'); return; }
     const oldName = cust.name;
     showLoading();
     try {
-        const { error } = await db.from('customers').update({ name, contact, discount: parseFloat(discount.toFixed(2)), vat_exempt: vatExempt, notes }).eq('id', cust.id);
+        const { error } = await db.from('customers').update({
+            name, contact, discount: parseFloat(discount.toFixed(2)), vat_exempt: vatExempt, notes,
+            address, reg_number: regNumber, vat_code: vatCode, personal_code: personalCode, entity_type: entityType
+        }).eq('id', cust.id);
         if (error) throw error;
         cust.name = name; cust.contact = contact; cust.discount = parseFloat(discount.toFixed(2)); cust.vat_exempt = vatExempt; cust.notes = notes;
+        cust.address = address; cust.reg_number = regNumber; cust.vat_code = vatCode; cust.personal_code = personalCode; cust.entity_type = entityType;
         orders.forEach(o => { if (o.customer_id === cust.id) o.customer = name; });
         logActivity('customer', `Изменён клиент «${oldName}»${oldName !== name ? ` → «${name}»` : ''}`);
         renderCustomerStats(cust);
