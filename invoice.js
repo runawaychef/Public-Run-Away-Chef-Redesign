@@ -187,16 +187,16 @@ function buildDocumentHtml({ docType, order, org, cust, number }) {
             </div>
         </div>
 
-        <table style="width:100%;border-collapse:collapse;font-size:15px;">
+        <table style="width:100%;border-collapse:collapse;font-size:15px;table-layout:fixed;">
             <thead>
                 <tr style="background:#f3f4f6;">
-                    <th style="padding:10px 8px;text-align:left;">Наименование</th>
-                    <th style="padding:10px 8px;text-align:center;">Кол-во</th>
-                    <th style="padding:10px 8px;text-align:right;">Цена без НДС</th>
-                    <th style="padding:10px 8px;text-align:right;">Сумма без НДС</th>
-                    <th style="padding:10px 8px;text-align:right;">НДС</th>
-                    <th style="padding:10px 8px;text-align:center;">НДС %</th>
-                    <th style="padding:10px 8px;text-align:right;">Итого</th>
+                    <th style="padding:10px 8px;text-align:left;width:32%;">Наименование</th>
+                    <th style="padding:10px 8px;text-align:center;width:8%;">Кол-во</th>
+                    <th style="padding:10px 8px;text-align:right;width:14%;">Цена без НДС</th>
+                    <th style="padding:10px 8px;text-align:right;width:14%;">Сумма без НДС</th>
+                    <th style="padding:10px 8px;text-align:right;width:12%;">НДС</th>
+                    <th style="padding:10px 8px;text-align:center;width:8%;">НДС %</th>
+                    <th style="padding:10px 8px;text-align:right;width:12%;">Итого</th>
                 </tr>
             </thead>
             <tbody>${itemsHtml}</tbody>

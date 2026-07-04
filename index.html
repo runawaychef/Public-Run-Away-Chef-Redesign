@@ -905,8 +905,8 @@
             <div class="modal-content" style="max-width:340px;">
                 <h2 class="text-xs font-semibold mb-3 text-gray-800">Какой документ сформировать?</h2>
                 <div class="flex flex-col gap-2">
-                    <button onclick="openOrderDocumentPreview('invoice')" class="btn bg-gray-700 text-white p-2 rounded-md hover:bg-gray-800 text-xs">Счёт</button>
-                    <button onclick="openOrderDocumentPreview('delivery_note')" class="btn bg-gray-700 text-white p-2 rounded-md hover:bg-gray-800 text-xs">Накладная</button>
+                    <button onclick="openOrderDocumentPreview('invoice')" class="btn bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700 text-xs">Счёт</button>
+                    <button onclick="openOrderDocumentPreview('delivery_note')" class="btn bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700 text-xs">Накладная</button>
                     <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs">Закрыть</button>
                 </div>
             </div>
@@ -917,7 +917,7 @@
             <div class="modal-content" style="max-width:520px;">
                 <div id="orderDocumentContent" style="background:white;"></div>
                 <div class="flex gap-1 mt-3">
-                    <button id="sendOrderDocumentBtn" onclick="shareOrderDocumentPdf()" class="btn bg-gray-700 text-white p-1 rounded-md hover:bg-gray-800 text-xs flex-1 inline-flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"/></svg>Отправить</button>
+                    <button id="sendOrderDocumentBtn" onclick="shareOrderDocumentPdf()" class="btn bg-indigo-600 text-white p-1 rounded-md hover:bg-indigo-700 text-xs flex-1 inline-flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"/></svg>Отправить</button>
                     <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs flex-1">Закрыть</button>
                 </div>
             </div>
@@ -1937,7 +1937,7 @@
 <script src="products.js?v=12"></script>
 <script src="customers.js?v=13"></script>
 <script src="orders.js?v=16"></script>
-<script src="invoice.js?v=2"></script>
+<script src="invoice.js?v=3"></script>
 <script src="payments.js?v=7"></script>
 <script src="stats.js?v=7"></script>
 <script src="history.js?v=7"></script>
