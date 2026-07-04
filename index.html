@@ -1014,42 +1014,42 @@
                     <p class="text-[11px] text-gray-400 mb-1">Изменения сохраняются автоматически</p>
                     <div class="grid grid-cols-2 gap-1 mb-2">
                         <div>
-                            <label class="text-xs text-gray-500">Клиент</label>
+                            <label class="table-text text-gray-500">Клиент</label>
                             <div class="search-input-wrap">
-                                <input id="detailCustomer" placeholder="Выберите" autocomplete="off" class="border p-0.5 rounded-md w-full text-xs">
+                                <input id="detailCustomer" placeholder="Выберите" autocomplete="off" class="border p-0.5 rounded-md w-full table-text">
                                 <div id="detailCustomerDropdown" class="search-dropdown hidden"></div>
                             </div>
                         </div>
                         <div>
-                            <label class="text-xs text-gray-500">Дата</label>
-                            <input id="detailDate" type="date" onchange="saveDetailHeader()" class="border p-0.5 rounded-md w-full text-xs">
+                            <label class="table-text text-gray-500">Дата</label>
+                            <input id="detailDate" type="date" onchange="saveDetailHeader()" class="border p-0.5 rounded-md w-full table-text">
                         </div>
                         <div>
-                            <label class="text-xs text-gray-500">Статус</label>
-                            <select id="detailStatus" onchange="saveDetailHeader()" class="border p-0.5 rounded-md w-full text-xs">
+                            <label class="table-text text-gray-500">Статус</label>
+                            <select id="detailStatus" onchange="saveDetailHeader()" class="border p-0.5 rounded-md w-full table-text">
                                 <option value="принят">Принят</option>
                                 <option value="в работе">В работе</option>
                                 <option value="выполнен">Выполнен</option>
                             </select>
                         </div>
                         <div>
-                            <label class="text-xs text-gray-500">Скидка (%)</label>
-                            <input id="detailDiscount" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" max="100" onchange="saveDetailHeader()" class="border p-0.5 rounded-md w-full text-xs">
+                            <label class="table-text text-gray-500">Скидка (%)</label>
+                            <input id="detailDiscount" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" max="100" onchange="saveDetailHeader()" class="border p-0.5 rounded-md w-full table-text">
                         </div>
                         <div>
-                            <label class="text-xs text-gray-500">Исполнитель</label>
-                            <select id="detailEmployee" onchange="saveDetailHeader()" class="border p-0.5 rounded-md w-full text-xs">
+                            <label class="table-text text-gray-500">Исполнитель</label>
+                            <select id="detailEmployee" onchange="saveDetailHeader()" class="border p-0.5 rounded-md w-full table-text">
                                 <option value="">—</option>
                             </select>
                         </div>
                         <div class="col-span-2">
-                            <label class="flex items-center gap-2 text-xs text-gray-700">
+                            <label class="flex items-center gap-2 table-text text-gray-700">
                                 <input id="detailVatExempt" type="checkbox" onchange="saveDetailHeader()"> Без НДС для этого заказа
                             </label>
                         </div>
                         <div class="col-span-2">
-                            <label class="text-xs text-gray-500">Комментарий к заказу</label>
-                            <textarea id="detailNotes" onblur="saveDetailHeader()" rows="2" placeholder="Например: особые пожелания, время доставки..." class="border p-1 rounded-md text-xs w-full resize-none font-semibold text-blue-700"></textarea>
+                            <label class="table-text text-gray-500">Комментарий к заказу</label>
+                            <textarea id="detailNotes" onblur="saveDetailHeader()" rows="2" placeholder="Например: особые пожелания, время доставки..." class="border p-1 rounded-md table-text w-full resize-none font-semibold text-blue-700"></textarea>
                         </div>
                     </div>
                 </div>
@@ -1072,23 +1072,23 @@
                     </div>
                     <table class="w-full table-auto mb-2">
                         <thead><tr class="bg-gray-100">
-                            <th class="p-1 text-xs w-[35%]">Изделие</th>
-                            <th class="p-1 text-xs w-[12%]">Кол-во</th>
-                            <th class="p-1 text-xs w-[17%]">Цена (€)</th>
-                            <th class="p-1 text-xs w-[16%]">Итого (€)</th>
-                            <th class="p-1 text-xs w-[20%]">Действия</th>
+                            <th class="p-1 text-xs w-[46%]">Изделие</th>
+                            <th class="p-1 text-xs w-[10%]">Кол-во</th>
+                            <th class="p-1 text-xs w-[14%]">Цена (€)</th>
+                            <th class="p-1 text-xs w-[14%]">Итого (€)</th>
+                            <th class="p-1 text-xs w-[16%]">Действия</th>
                         </tr></thead>
                         <tbody id="detailItemsBody"></tbody>
                         <!-- Строка добавления новой позиции -->
                         <tbody>
                             <tr class="new-item-row bg-blue-50">
                                 <td><div class="search-input-wrap">
-                                    <input id="newItemProduct" oninput="autoFillNewItemPrice()" placeholder="— изделие —" autocomplete="off" class="text-xs">
+                                    <input id="newItemProduct" oninput="autoFillNewItemPrice()" placeholder="— изделие —" autocomplete="off" class="table-text">
                                     <div id="newItemProductDropdown" class="search-dropdown hidden"></div>
                                 </div></td>
-                                <td><input id="newItemQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" placeholder="1" class="text-xs"></td>
-                                <td><input id="newItemPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="0.00" class="text-xs"></td>
-                                <td class="text-xs text-gray-400 text-center">—</td>
+                                <td><input id="newItemQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" placeholder="1" class="table-text"></td>
+                                <td><input id="newItemPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="0.00" class="table-text"></td>
+                                <td class="table-text text-gray-400 text-center">—</td>
                                 <td class="text-center">
                                     <button onclick="addItemToOrder()" class="btn bg-gray-500 text-white px-2 py-0.5 rounded text-xs hover:bg-gray-600">+ Добавить</button>
                                 </td>
@@ -1787,7 +1787,7 @@
 <script src="semifinished.js?v=8"></script>
 <script src="products.js?v=11"></script>
 <script src="customers.js?v=10"></script>
-<script src="orders.js?v=15"></script>
+<script src="orders.js?v=16"></script>
 <script src="payments.js?v=7"></script>
 <script src="stats.js?v=7"></script>
 <script src="history.js?v=7"></script>

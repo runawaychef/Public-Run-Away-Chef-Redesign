@@ -859,10 +859,10 @@ function renderDetailItems(order) {
             const row = document.createElement('tr');
             row.className = 'border-b';
             row.innerHTML = `
-                <td class="p-0.5 text-xs">${escapeHtml(item.product)}</td>
-                <td class="p-0.5 text-xs text-center">${item.quantity}${unitLabel ? ' ' + unitLabel : ''}</td>
-                <td class="p-0.5 text-xs text-center">${item.price.toFixed(2)}</td>
-                <td class="p-0.5 text-xs text-center font-medium">${total}</td>
+                <td class="p-0.5 table-text">${escapeHtml(item.product)}</td>
+                <td class="p-0.5 table-text text-center">${item.quantity}${unitLabel ? ' ' + unitLabel : ''}</td>
+                <td class="p-0.5 table-text text-center">${item.price.toFixed(2)}</td>
+                <td class="p-0.5 table-text text-center font-medium">${total}</td>
                 <td class="p-0.5 text-center">
                     ${svgEdit(`openEditItemModal(${i})`)}
                     ${hasPermission('can_delete') ? svgDelete(`deleteItem(${i})`) : ''}
