@@ -41,7 +41,7 @@ async function openOrderDocumentPreview(docType) {
         const number = await ensureDocumentNumber(order, docType);
 
         _docPreview = { docType, order, org, cust, number };
-        document.getElementById('orderDocumentContent').innerHTML = buildDocumentHtml(_docPreview);
+        renderDocumentPreviewThumbnail();
         document.getElementById('orderDocumentModal').style.display = 'flex';
     } catch (e) {
         console.error(e);
@@ -49,6 +49,28 @@ async function openOrderDocumentPreview(docType) {
     } finally {
         hideLoading();
     }
+}
+
+// Показывает документ в предпросмотре как уменьшенную копию целой страницы A4
+// (настоящий размер 794px используется только "под капотом" — на экране
+// телефона он умещается целиком за счёт CSS-трансформации масштаба).
+function renderDocumentPreviewThumbnail() {
+    const container = document.getElementById('orderDocumentContent');
+    container.innerHTML = `<div id="orderDocumentPreviewWrap" style="overflow:hidden;margin:0 auto;background:#f3f4f6;">
+        <div id="orderDocumentInner" style="transform-origin:top left;">${buildDocumentHtml(_docPreview)}</div>
+    </div>`;
+
+    requestAnimationFrame(() => {
+        const inner = document.getElementById('orderDocumentInner');
+        const wrap = document.getElementById('orderDocumentPreviewWrap');
+        const trueWidth = inner.scrollWidth;
+        const trueHeight = inner.scrollHeight;
+        const targetWidth = Math.min(340, container.clientWidth || 340);
+        const scale = targetWidth / trueWidth;
+        inner.style.transform = `scale(${scale})`;
+        wrap.style.width = Math.round(trueWidth * scale) + 'px';
+        wrap.style.height = Math.round(trueHeight * scale) + 'px';
+    });
 }
 
 // Присваивает номер документа при первом обращении, иначе возвращает уже сохранённый
@@ -122,13 +144,13 @@ function buildDocumentHtml({ docType, order, org, cust, number }) {
         const lineSubtotal = lineNetAfterDiscount + lineVat;
         totalQty += Number(item.quantity);
         itemsHtml += `<tr>
-            <td style="padding:6px 4px;border-bottom:1px solid #e5e7eb;">${escapeHtml(item.product)}</td>
-            <td style="padding:6px 4px;border-bottom:1px solid #e5e7eb;text-align:center;">${item.quantity}</td>
-            <td style="padding:6px 4px;border-bottom:1px solid #e5e7eb;text-align:right;">${money(item.price)}</td>
-            <td style="padding:6px 4px;border-bottom:1px solid #e5e7eb;text-align:right;">${money(lineNetAfterDiscount)}</td>
-            <td style="padding:6px 4px;border-bottom:1px solid #e5e7eb;text-align:right;">${money(lineVat)}</td>
-            <td style="padding:6px 4px;border-bottom:1px solid #e5e7eb;text-align:center;">${vatPctLabel}</td>
-            <td style="padding:6px 4px;border-bottom:1px solid #e5e7eb;text-align:right;">${money(lineSubtotal)}</td>
+            <td style="padding:9px 8px;border-bottom:1px solid #e5e7eb;">${escapeHtml(item.product)}</td>
+            <td style="padding:9px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">${item.quantity}</td>
+            <td style="padding:9px 8px;border-bottom:1px solid #e5e7eb;text-align:right;">${money(item.price)}</td>
+            <td style="padding:9px 8px;border-bottom:1px solid #e5e7eb;text-align:right;">${money(lineNetAfterDiscount)}</td>
+            <td style="padding:9px 8px;border-bottom:1px solid #e5e7eb;text-align:right;">${money(lineVat)}</td>
+            <td style="padding:9px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">${vatPctLabel}</td>
+            <td style="padding:9px 8px;border-bottom:1px solid #e5e7eb;text-align:right;">${money(lineSubtotal)}</td>
         </tr>`;
     });
 
@@ -136,53 +158,58 @@ function buildDocumentHtml({ docType, order, org, cust, number }) {
         ? `<div>Срок оплаты: ${dueDate}</div>`
         : '';
 
+    // Макет рассчитан на реальную ширину A4 при 96dpi (794px) — не под экран
+    // телефона. На телефоне эта разметка показывается уменьшенной копией
+    // (см. openOrderDocumentPreview), а для PDF снимок делается с нетронутого,
+    // полноразмерного варианта — поэтому шрифты и отступы подобраны как для
+    // печатной страницы, а не для мобильного экрана.
     return `
-    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#111827;padding:16px;font-size:12px;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
-            <h1 style="font-size:18px;margin:0;">${title}</h1>
-            <div style="text-align:right;font-size:11px;color:#374151;">
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#111827;width:794px;min-height:1123px;box-sizing:border-box;padding:56px;font-size:16px;background:white;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;">
+            <h1 style="font-size:26px;margin:0;">${title}</h1>
+            <div style="text-align:right;font-size:15px;color:#374151;">
                 <div>Номер: ${escapeHtml(number)}</div>
                 <div>Дата: ${issueDate}</div>
                 ${dueDateRow}
             </div>
         </div>
 
-        <div style="display:flex;gap:16px;margin-bottom:16px;">
+        <div style="display:flex;gap:32px;margin-bottom:28px;">
             <div style="flex:1;">
-                <div style="font-size:10px;color:#6b7280;font-weight:600;margin-bottom:2px;">ПРОДАВЕЦ</div>
-                <div style="font-weight:600;">${escapeHtml(sellerName)}</div>
-                ${sellerLines.map(l => `<div style="font-size:11px;color:#374151;">${l}</div>`).join('')}
+                <div style="font-size:13px;color:#6b7280;font-weight:600;margin-bottom:4px;">ПРОДАВЕЦ</div>
+                <div style="font-weight:600;font-size:16px;">${escapeHtml(sellerName)}</div>
+                ${sellerLines.map(l => `<div style="font-size:15px;color:#374151;">${l}</div>`).join('')}
             </div>
             <div style="flex:1;">
-                <div style="font-size:10px;color:#6b7280;font-weight:600;margin-bottom:2px;">ПОКУПАТЕЛЬ</div>
-                <div style="font-weight:600;">${escapeHtml(buyerName)}</div>
-                ${buyerLines.map(l => `<div style="font-size:11px;color:#374151;">${l}</div>`).join('')}
+                <div style="font-size:13px;color:#6b7280;font-weight:600;margin-bottom:4px;">ПОКУПАТЕЛЬ</div>
+                <div style="font-weight:600;font-size:16px;">${escapeHtml(buyerName)}</div>
+                ${buyerLines.map(l => `<div style="font-size:15px;color:#374151;">${l}</div>`).join('')}
             </div>
         </div>
 
-        <table style="width:100%;border-collapse:collapse;font-size:11px;">
+        <table style="width:100%;border-collapse:collapse;font-size:15px;">
             <thead>
                 <tr style="background:#f3f4f6;">
-                    <th style="padding:6px 4px;text-align:left;">Наименование</th>
-                    <th style="padding:6px 4px;text-align:center;">Кол-во</th>
-                    <th style="padding:6px 4px;text-align:right;">Цена без НДС</th>
-                    <th style="padding:6px 4px;text-align:right;">Сумма без НДС</th>
-                    <th style="padding:6px 4px;text-align:right;">НДС</th>
-                    <th style="padding:6px 4px;text-align:center;">НДС %</th>
-                    <th style="padding:6px 4px;text-align:right;">Итого</th>
+                    <th style="padding:10px 8px;text-align:left;">Наименование</th>
+                    <th style="padding:10px 8px;text-align:center;">Кол-во</th>
+                    <th style="padding:10px 8px;text-align:right;">Цена без НДС</th>
+                    <th style="padding:10px 8px;text-align:right;">Сумма без НДС</th>
+                    <th style="padding:10px 8px;text-align:right;">НДС</th>
+                    <th style="padding:10px 8px;text-align:center;">НДС %</th>
+                    <th style="padding:10px 8px;text-align:right;">Итого</th>
                 </tr>
             </thead>
             <tbody>${itemsHtml}</tbody>
         </table>
 
-        <div style="margin-top:12px;text-align:right;font-size:11px;">
+        <div style="margin-top:20px;text-align:right;font-size:15px;">
             <div>Итого кол-во: <b>${totalQty}</b></div>
             <div>Итого без НДС: <b>${money(orderAfterDiscount(order))}</b></div>
             <div>Сумма НДС: <b>${money(orderVatAmount(order))}</b></div>
-            <div style="font-size:13px;margin-top:4px;">Итого к оплате: <b>${money(orderGrandTotal(order))}</b></div>
+            <div style="font-size:19px;margin-top:6px;">Итого к оплате: <b>${money(orderGrandTotal(order))}</b></div>
         </div>
 
-        <div style="margin-top:32px;display:flex;justify-content:space-between;font-size:11px;">
+        <div style="margin-top:56px;display:flex;justify-content:space-between;font-size:15px;">
             <div>Выставил: ${escapeHtml(org.director_name || sellerName)}</div>
             <div>Принято: _______________________</div>
         </div>
@@ -195,10 +222,10 @@ async function shareOrderDocumentPdf() {
     const btn = document.getElementById('sendOrderDocumentBtn');
     if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
 
-    const el = document.getElementById('orderDocumentContent');
-    const clone = el.cloneNode(true);
+    const clone = document.createElement('div');
     clone.id = 'orderDocumentClone';
-    clone.style.cssText = 'position:absolute; top:0; left:-9999px; width:520px; background:white;';
+    clone.style.cssText = 'position:absolute; top:0; left:-9999px;';
+    clone.innerHTML = buildDocumentHtml(_docPreview);
     document.body.appendChild(clone);
 
     function withTimeout(promise, ms, label) {
