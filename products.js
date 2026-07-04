@@ -22,7 +22,7 @@ function displayProducts() {
         row.className = 'order-row border-b';
         const nameCellPad = needsAttention ? 'pl-2.5' : '';
         const accentBar = needsAttention
-            ? `<span class="absolute left-0 top-1 bottom-1 w-1 rounded-full bg-red-500"></span>`
+            ? `<span class="absolute left-0 top-1 bottom-1 w-0.5 rounded-full bg-red-500"></span>`
             : '';
         row.innerHTML = `
             <td class=" p-0.5 table-text relative ${nameCellPad}" onclick="openProductDetail(${p.id})">${accentBar}${escapeHtml(p.name)}</td>
