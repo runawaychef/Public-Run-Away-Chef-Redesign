@@ -70,15 +70,19 @@ function displayIngredients() {
             : shortfall ? '<span class="text-red-600 font-semibold">нехватка</span>'
             : '<span class="text-gray-400">—</span>';
 
-        // Цвет всей строки
-        const rowBg = shortfall || (balance !== null && balance <= 0) || (daysLeft !== null && daysLeft < 3)
-            ? ' bg-red-50'
-            : daysLeft !== null && daysLeft < 7 ? ' bg-yellow-50' : '';
+        // Полоска-акцент вместо сплошного фона строки
+        const isCritical = shortfall || (balance !== null && balance <= 0) || (daysLeft !== null && daysLeft < 3);
+        const isWarning  = !isCritical && daysLeft !== null && daysLeft < 7;
+        const accentColor = isCritical ? 'bg-red-500' : isWarning ? 'bg-amber-400' : '';
+        const accentBar = accentColor
+            ? `<span class="absolute left-0 top-1 bottom-1 w-0.5 rounded-full ${accentColor}"></span>`
+            : '';
+        const nameCellPad = accentColor ? 'pl-2.5' : '';
 
         const row = document.createElement('tr');
-        row.className = 'order-row' + rowBg;
+        row.className = 'order-row';
         row.innerHTML = `
-            <td class="border p-0.5 table-text" onclick="openIngredientDetail(${ing.id})">${escapeHtml(ing.name)}</td>
+            <td class="border p-0.5 table-text relative ${nameCellPad}" onclick="openIngredientDetail(${ing.id})">${accentBar}${escapeHtml(ing.name)}</td>
             <td class="border p-0.5 table-text text-center" onclick="openIngredientDetail(${ing.id})">${unitPrice.toFixed(4)} €/${unitLabel}</td>
             <td class="border p-0.5 table-text text-center" onclick="openIngredientDetail(${ing.id})">${balanceStr}</td>
             <td class="border p-0.5 table-text text-center" onclick="openIngredientDetail(${ing.id})">${daysStr}</td>`;

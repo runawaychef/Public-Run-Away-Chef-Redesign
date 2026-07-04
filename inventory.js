@@ -331,7 +331,7 @@ async function openInventoryModal() {
         const detailClick = isSf
             ? `closeModal(); showTab('semiFinished'); openSemiFinishedDetail(${ing.id});`
             : `closeModal(); showTab('ingredients'); openIngredientDetail(${ing.id});`;
-        return `<tr class="border-b ${bgClass}">
+        return `<tr class="border-b">
             <td class="p-1 table-text cursor-pointer hover:underline" onclick="${detailClick}">${escapeHtml(ing.name)}</td>
             <td class="p-1 table-text text-right">${balanceStr}</td>
             <td class="p-1 table-text text-right ${daysClass} font-semibold">${daysStr}</td>
@@ -400,28 +400,28 @@ async function openInventoryModal() {
 
     // 🔴 Критично: ингредиенты
     if (red.length) {
-        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold text-red-600 bg-red-50"><span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>Критично</td></tr>`;
-        red.forEach(item => { html += renderRow(item, 'bg-red-50', 'text-red-600', false); });
+        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold text-red-600"><span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>Критично</td></tr>`;
+        red.forEach(item => { html += renderRow(item, null, 'text-red-600', false); });
     }
     // 🔴 Критично: полуфабрикаты
     if (sfRed.length) {
-        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold text-red-600 bg-red-50"><span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>Критично — п/ф</td></tr>`;
-        sfRed.forEach(item => { html += renderRow(item, 'bg-red-50', 'text-red-600', true); });
+        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold text-red-600"><span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>Критично — п/ф</td></tr>`;
+        sfRed.forEach(item => { html += renderRow(item, null, 'text-red-600', true); });
     }
     // 🟡 Заканчивается: ингредиенты
     if (yellow.length) {
-        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold text-yellow-700 bg-yellow-50"><span class="inline-block w-2 h-2 rounded-full bg-yellow-500 mr-1"></span>Заканчивается</td></tr>`;
-        yellow.forEach(item => { html += renderRow(item, 'bg-yellow-50', 'text-yellow-700', false); });
+        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold text-yellow-700"><span class="inline-block w-2 h-2 rounded-full bg-yellow-500 mr-1"></span>Заканчивается</td></tr>`;
+        yellow.forEach(item => { html += renderRow(item, null, 'text-yellow-700', false); });
     }
     // 🟡 Заканчивается: полуфабрикаты
     if (sfYellow.length) {
-        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold text-yellow-700 bg-yellow-50"><span class="inline-block w-2 h-2 rounded-full bg-yellow-500 mr-1"></span>Заканчивается — п/ф</td></tr>`;
-        sfYellow.forEach(item => { html += renderRow(item, 'bg-yellow-50', 'text-yellow-700', true); });
+        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold text-yellow-700"><span class="inline-block w-2 h-2 rounded-full bg-yellow-500 mr-1"></span>Заканчивается — п/ф</td></tr>`;
+        sfYellow.forEach(item => { html += renderRow(item, null, 'text-yellow-700', true); });
     }
     // Остальные ингредиенты
     if (rest.length) {
         if (red.length || yellow.length || sfRed.length || sfYellow.length) {
-            html += `<tr><td colspan="4" class="p-1 text-xs font-semibold text-gray-500 bg-gray-50">Остальные</td></tr>`;
+            html += `<tr><td colspan="4" class="p-1 text-xs font-semibold text-gray-500">Остальные</td></tr>`;
         }
         rest.sort((a, b) => {
             if (a.daysLeft === null && b.daysLeft === null) return 0;

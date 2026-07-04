@@ -75,18 +75,22 @@ function displaySemiFinished() {
             : shortage ? '<span class="text-red-600 font-semibold">нехватка</span>'
             : '<span class="text-gray-400">—</span>';
 
-        const rowBg = shortage || (balance !== null && balance <= 0) || (daysLeft !== null && daysLeft < 3)
-            ? ' bg-red-50'
-            : daysLeft !== null && daysLeft < 7 ? ' bg-yellow-50' : '';
+        const isCritical = shortage || (balance !== null && balance <= 0) || (daysLeft !== null && daysLeft < 3);
+        const isWarning  = !isCritical && daysLeft !== null && daysLeft < 7;
+        const accentColor = isCritical ? 'bg-red-500' : isWarning ? 'bg-amber-400' : '';
+        const accentBar = accentColor
+            ? `<span class="absolute left-0 top-1 bottom-1 w-0.5 rounded-full ${accentColor}"></span>`
+            : '';
+        const nameCellPad = accentColor ? 'pl-2.5' : '';
 
         const row = document.createElement('tr');
-        row.className = 'order-row border-b' + rowBg;
+        row.className = 'order-row border-b';
         row.style.cursor = 'pointer';
         row.innerHTML = `
-            <td class=" p-0.5 text-xs" onclick="openSemiFinishedDetail(${sf.id})">${escapeHtml(sf.name)}</td>
-            <td class=" p-0.5 text-xs text-center" onclick="openSemiFinishedDetail(${sf.id})">${unitCost.toFixed(4)} €/${unitLabel}</td>
-            <td class=" p-0.5 text-xs text-center" onclick="openSemiFinishedDetail(${sf.id})">${balanceStr}</td>
-            <td class=" p-0.5 text-xs text-center" onclick="openSemiFinishedDetail(${sf.id})">${daysStr}</td>`;
+            <td class=" p-0.5 table-text relative ${nameCellPad}" onclick="openSemiFinishedDetail(${sf.id})">${accentBar}${escapeHtml(sf.name)}</td>
+            <td class=" p-0.5 table-text text-center" onclick="openSemiFinishedDetail(${sf.id})">${unitCost.toFixed(4)} €/${unitLabel}</td>
+            <td class=" p-0.5 table-text text-center" onclick="openSemiFinishedDetail(${sf.id})">${balanceStr}</td>
+            <td class=" p-0.5 table-text text-center" onclick="openSemiFinishedDetail(${sf.id})">${daysStr}</td>`;
         tbody.appendChild(row);
     });
     const warningEl = document.getElementById('semiFinishedRecipeWarning');
