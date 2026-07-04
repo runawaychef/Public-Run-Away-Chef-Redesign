@@ -19,9 +19,13 @@ function displayProducts() {
         if (needsAttention) warningCount++;
         const unitLabel = hasUnit ? UNIT_PRODUCT_LABELS[p.unit] : icon('warning', 'w-3.5 h-3.5 text-red-500 inline-block');
         const row = document.createElement('tr');
-        row.className = 'order-row border-b' + (needsAttention ? ' border-l-4 border-l-red-500' : '');
+        row.className = 'order-row border-b';
+        const nameCellPad = needsAttention ? 'pl-2.5' : '';
+        const accentBar = needsAttention
+            ? `<span class="absolute left-0 top-1 bottom-1 w-1 rounded-full bg-red-500"></span>`
+            : '';
         row.innerHTML = `
-            <td class=" p-0.5 table-text" onclick="openProductDetail(${p.id})">${escapeHtml(p.name)}</td>
+            <td class=" p-0.5 table-text relative ${nameCellPad}" onclick="openProductDetail(${p.id})">${accentBar}${escapeHtml(p.name)}</td>
             <td class=" p-0.5 table-text text-center ${hasUnit ? '' : 'text-red-600 font-semibold'}" onclick="openProductDetail(${p.id})">${unitLabel}</td>
             <td class=" p-0.5 table-text" onclick="openProductDetail(${p.id})">${p.price.toFixed(2)}</td>
             <td class=" p-0.5 text-center">
