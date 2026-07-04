@@ -438,9 +438,9 @@ function renderProductRecipe(prod) {
             const row = document.createElement('tr');
             row.className = 'border-b';
             row.innerHTML = `
-                <td class="p-0.5 text-xs">${escapeHtml(displayName)}</td>
-                <td class="p-0.5 text-xs text-center">${ri.quantity} ${unitLabel}</td>
-                <td class="p-0.5 text-xs text-center font-medium">${lineCost.toFixed(2)} €</td>
+                <td class="p-0.5 table-text">${escapeHtml(displayName)}</td>
+                <td class="p-0.5 table-text text-center">${ri.quantity} ${unitLabel}</td>
+                <td class="p-0.5 table-text text-center font-medium">${lineCost.toFixed(2)} €</td>
                 <td class="p-0.5 text-center">
                     ${svgEdit(`openEditRecipeItemModal(${i})`)}
                     ${hasPermission('can_delete') ? svgDelete(`deleteRecipeItem(${i})`) : ''}

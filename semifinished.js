@@ -220,9 +220,9 @@ function renderSemiFinishedRecipe(sf) {
             const row = document.createElement('tr');
             row.className = 'border-b';
             row.innerHTML = `
-                <td class="p-0.5 text-xs">${starBtn} ${escapeHtml(ing ? ing.name : '(удалён)')}</td>
-                <td class="p-0.5 text-xs text-center">${ri.quantity} ${ing ? UNIT_LABELS[ing.unit] : ''}</td>
-                <td class="p-0.5 text-xs text-center font-medium">${lineCost.toFixed(2)} €</td>
+                <td class="p-0.5 table-text">${starBtn} ${escapeHtml(ing ? ing.name : '(удалён)')}</td>
+                <td class="p-0.5 table-text text-center">${ri.quantity} ${ing ? UNIT_LABELS[ing.unit] : ''}</td>
+                <td class="p-0.5 table-text text-center font-medium">${lineCost.toFixed(2)} €</td>
                 <td class="p-0.5 text-center">
                     ${svgEdit(`openEditSfRecipeItemModal(${i})`)}
                     ${hasPermission('can_delete') ? svgDelete(`deleteSfRecipeItem(${i})`) : ''}
@@ -444,12 +444,12 @@ async function renderSfStockBlock(sf) {
         if (balance !== null && balance > 0 && daily > 0) {
             const days = Math.floor(balance / daily);
             daysEl.textContent = `~${days} дн. запаса`;
-            if (days < 3)      daysEl.className = 'text-xs text-red-600 font-semibold';
-            else if (days < 7) daysEl.className = 'text-xs text-yellow-600 font-semibold';
-            else               daysEl.className = 'text-xs text-green-700';
+            if (days < 3)      daysEl.className = 'table-text text-red-600 font-semibold';
+            else if (days < 7) daysEl.className = 'table-text text-yellow-600 font-semibold';
+            else               daysEl.className = 'table-text text-green-700';
         } else {
             daysEl.textContent = daily > 0 ? 'нет запаса' : 'недостаточно истории';
-            daysEl.className = 'text-xs text-gray-400';
+            daysEl.className = 'table-text text-gray-400';
         }
     }
 
@@ -464,13 +464,13 @@ async function renderSfStockBlock(sf) {
             .order('created_at', { ascending: false })
             .limit(50);
         if (!data || !data.length) {
-            histEl.innerHTML = '<p class="text-xs text-gray-400 mt-1">Движений ещё не было</p>';
+            histEl.innerHTML = '<p class="table-text text-gray-400 mt-1">Движений ещё не было</p>';
             return;
         }
         const totalIn = data.filter(r => r.type === 'приход').reduce((s, r) => s + Number(r.quantity), 0);
-        let html = `<p class="text-xs text-gray-500 font-semibold mt-2 mb-1">История (произведено: ${totalIn.toFixed(2)} ${unitLabel})</p>`;
+        let html = `<p class="table-text text-gray-500 font-semibold mt-2 mb-1">История (произведено: ${totalIn.toFixed(2)} ${unitLabel})</p>`;
         html += '<div style="max-height:224px;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;">';
-        html += '<table class="w-full text-xs"><thead><tr class="bg-gray-100"><th class="p-1 text-left">Дата</th><th class="p-1 text-right">Кол-во</th><th class="p-1 text-left">Заметка</th></tr></thead><tbody>';
+        html += '<table class="w-full table-text"><thead><tr class="bg-gray-100 text-xs"><th class="p-1 text-left">Дата</th><th class="p-1 text-right">Кол-во</th><th class="p-1 text-left">Заметка</th></tr></thead><tbody>';
         data.forEach(r => {
             const date = new Date(r.created_at).toLocaleDateString('ru-LT');
             const isIn = r.type === 'приход';

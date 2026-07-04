@@ -524,10 +524,10 @@ async function renderIngredientStockBlock(ing) {
         if (balance !== null && balance > 0 && daily > 0) {
             const days = Math.floor(balance / daily);
             daysEl.textContent = `~${days} дн. запаса`;
-            daysEl.className = `text-xs font-semibold ${stockColorClass(days, 'text-')}`;
+            daysEl.className = `table-text font-semibold ${stockColorClass(days, 'text-')}`;
         } else {
             daysEl.textContent = daily > 0 ? 'нет данных о запасе' : 'недостаточно истории';
-            daysEl.className = 'text-xs text-gray-400';
+            daysEl.className = 'table-text text-gray-400';
         }
     }
 
@@ -542,7 +542,7 @@ async function renderIngredientStockBlock(ing) {
             .order('created_at', { ascending: false })
             .limit(200);
         if (!data || !data.length) {
-            histEl.innerHTML = '<p class="text-xs text-gray-400 mt-1">Движений ещё не было</p>';
+            histEl.innerHTML = '<p class="table-text text-gray-400 mt-1">Движений ещё не было</p>';
             return;
         }
 
@@ -582,7 +582,7 @@ async function renderIngredientStockBlock(ing) {
         });
 
         // Итоговая строка
-        let summary = `<div class="text-xs text-gray-600 mt-2 mb-2 space-y-0.5">`;
+        let summary = `<div class="table-text text-gray-600 mt-2 mb-2 space-y-0.5">`;
         summary += `<div><span class="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span>Куплено: <span class="font-semibold text-green-700">${totals.in.qty.toFixed(2)} ${unitLabel}</span> · ${totals.in.cost.toFixed(2)} €</div>`;
         if (totals.order.qty > 0) summary += `<div><span class="inline-block w-2 h-2 rounded-full bg-blue-500 mr-1"></span>На заказы: <span class="font-semibold text-blue-700">${totals.order.qty.toFixed(2)} ${unitLabel}</span> · ${totals.order.cost.toFixed(2)} €</div>`;
         if (totals.personal.qty > 0) summary += `<div><span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>Личное/потери: <span class="font-semibold text-red-600">${totals.personal.qty.toFixed(2)} ${unitLabel}</span> · ${totals.personal.cost.toFixed(2)} €</div>`;
@@ -617,13 +617,13 @@ async function renderIngredientStockBlock(ing) {
                 <td class="p-1 whitespace-nowrap">${date}</td>
                 <td class="p-1 text-right ${color} font-semibold whitespace-nowrap">${sign}${qty.toFixed(2)} ${unitLabel}</td>
                 <td class="p-1 text-right text-gray-500 whitespace-nowrap">${cost} €</td>
-                <td class="p-1 text-gray-400 text-xs">${notes}</td>
+                <td class="p-1 text-gray-400">${notes}</td>
             </tr>`;
         });
 
         const table = `<div id="ingHistTableWrap" style="max-height:260px;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;">
-            <table class="w-full text-xs">
-                <thead><tr class="bg-gray-100 sticky top-0">
+            <table class="w-full table-text">
+                <thead><tr class="bg-gray-100 sticky top-0 text-xs">
                     <th class="p-1 text-left">Дата</th>
                     <th class="p-1 text-right">Кол-во</th>
                     <th class="p-1 text-right">Сумма</th>
@@ -748,10 +748,10 @@ function renderIngredientPriceHistory(ingredientId) {
     const container = document.getElementById('idPriceHistory');
     if (!container) return;
     const history = _ingredientPriceHistory[ingredientId] || [];
-    if (!history.length) { container.innerHTML = '<p class="text-xs text-gray-400">История цен пуста</p>'; return; }
+    if (!history.length) { container.innerHTML = '<p class="table-text text-gray-400">История цен пуста</p>'; return; }
     const ing = ingredients.find(i => i.id === ingredientId);
     const unitLabel = ing ? (UNIT_LABELS[ing.unit] || ing.unit) : '';
-    let html = '<table class="w-full text-xs"><thead><tr class="bg-gray-100"><th class="p-0.5 text-left">С даты</th><th class="p-0.5 text-right">Цена упак.</th><th class="p-0.5 text-right">Цена за ед.</th><th class="p-0.5 w-12"></th></tr></thead><tbody>';
+    let html = '<table class="w-full table-text"><thead><tr class="bg-gray-100 text-xs"><th class="p-0.5 text-left">С даты</th><th class="p-0.5 text-right">Цена упак.</th><th class="p-0.5 text-right">Цена за ед.</th><th class="p-0.5 w-12"></th></tr></thead><tbody>';
     history.forEach((h, i) => {
         const unitPrice = h.package_size ? (h.package_price / h.package_size).toFixed(4) : '—';
         const isCurrent = i === 0;
