@@ -813,42 +813,42 @@
                     <p class="text-[11px] text-gray-400 mb-1">Изменения сохраняются автоматически</p>
                     <div class="grid grid-cols-2 gap-1 mb-2">
                         <div>
-                            <label class="text-xs text-gray-500">Имя</label>
-                            <input id="cdName" type="text" onblur="saveCdHeader()" class="border p-0.5 rounded-md w-full text-xs">
+                            <label class="table-text text-gray-500">Имя</label>
+                            <input id="cdName" type="text" onblur="saveCdHeader()" class="border p-0.5 rounded-md w-full table-text">
                         </div>
                         <div>
-                            <label class="text-xs text-gray-500">Контакты</label>
-                            <input id="cdContact" type="text" onblur="saveCdHeader()" class="border p-0.5 rounded-md w-full text-xs">
+                            <label class="table-text text-gray-500">Контакты</label>
+                            <input id="cdContact" type="text" onblur="saveCdHeader()" class="border p-0.5 rounded-md w-full table-text">
                         </div>
                         <div>
-                            <label class="text-xs text-gray-500">Скидка (%)</label>
-                            <input id="cdDiscount" type="number" autocomplete="off" inputmode="decimal" step="0.01" onchange="saveCdHeader()" class="border p-0.5 rounded-md w-full text-xs">
+                            <label class="table-text text-gray-500">Скидка (%)</label>
+                            <input id="cdDiscount" type="number" autocomplete="off" inputmode="decimal" step="0.01" onchange="saveCdHeader()" class="border p-0.5 rounded-md w-full table-text">
                         </div>
                         <div class="flex items-end pb-1">
-                            <label class="flex items-center gap-2 text-xs text-gray-700">
+                            <label class="flex items-center gap-2 table-text text-gray-700">
                                 <input id="cdVatExempt" type="checkbox" onchange="saveCdHeader()"> Без НДС
                             </label>
                         </div>
                     </div>
                     <button onclick="applyVatExemptToAllOrders()" class="btn bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 text-xs w-full">Применить текущий статус НДС ко всем заказам клиента</button>
                     <div class="mt-2">
-                        <label class="text-xs text-gray-500">Заметки (аллергии, особые условия, контакты...)</label>
-                        <textarea id="cdNotes" rows="3" onblur="saveCdHeader()" class="border p-0.5 rounded-md text-xs w-full resize-none" placeholder="Например: оплата по счёту, аллергия на орехи..."></textarea>
+                        <label class="table-text text-gray-500">Заметки (аллергии, особые условия, контакты...)</label>
+                        <textarea id="cdNotes" rows="3" onblur="saveCdHeader()" class="border p-0.5 rounded-md table-text w-full resize-none" placeholder="Например: оплата по счёту, аллергия на орехи..."></textarea>
                     </div>
                 </div>
 
                 <div class="bg-white p-2 rounded-md shadow-md mb-3">
                     <div class="grid grid-cols-3 gap-1 text-center bg-gray-50 rounded-md p-2">
-                        <div><p class="text-xs text-gray-500">Заказов всего</p><p id="cdOrderCount" class="text-xs font-bold text-gray-800">0</p></div>
-                        <div><p class="text-xs text-gray-500">Сумма за всё время</p><p id="cdTotalSum" class="text-xs font-bold text-gray-800">0.00 €</p></div>
-                        <div><p class="text-xs text-gray-500">Последний заказ</p><p id="cdLastOrderDate" class="text-xs font-bold text-gray-800">—</p></div>
+                        <div><p class="table-text text-gray-500">Заказов всего</p><p id="cdOrderCount" class="table-text font-bold text-gray-800">0</p></div>
+                        <div><p class="table-text text-gray-500">Сумма за всё время</p><p id="cdTotalSum" class="table-text font-bold text-gray-800">0.00 €</p></div>
+                        <div><p class="table-text text-gray-500">Последний заказ</p><p id="cdLastOrderDate" class="table-text font-bold text-gray-800">—</p></div>
                     </div>
                 </div>
 
                 <div class="bg-white p-2 rounded-md shadow-md">
                     <div class="flex justify-between items-center mb-2">
                         <h2 class="text-xs font-semibold text-gray-800">Заказы клиента</h2>
-                        <select id="cdDateRange" onchange="renderCustomerOrders()" class="border p-0.5 rounded-md text-xs">
+                        <select id="cdDateRange" onchange="renderCustomerOrders()" class="border p-0.5 rounded-md table-text">
                             <option value="all">Весь период</option>
                             <option value="week">Текущая неделя</option>
                             <option value="month">Текущий месяц</option>
@@ -1786,7 +1786,7 @@
 <script src="ingredients.js?v=10"></script>
 <script src="semifinished.js?v=9"></script>
 <script src="products.js?v=12"></script>
-<script src="customers.js?v=10"></script>
+<script src="customers.js?v=11"></script>
 <script src="orders.js?v=16"></script>
 <script src="payments.js?v=7"></script>
 <script src="stats.js?v=7"></script>

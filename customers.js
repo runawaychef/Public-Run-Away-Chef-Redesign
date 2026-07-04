@@ -382,7 +382,7 @@ function renderCustomerOrders() {
     }
 
     const statusFlag = { 'принят': 'flag-red', 'в работе': 'flag-yellow', 'выполнен': 'flag-green' };
-    let html = '<table class="w-full stats-table" style="table-layout:fixed;"><thead><tr class="bg-gray-100"><th class="p-1 text-left" style="width:20%;">№</th><th class="p-1 text-left" style="width:22%;">Дата</th><th class="p-1 text-right" style="width:30%;">Сумма (€)</th><th class="p-1 text-center" style="width:28%;">Статус</th></tr></thead><tbody>';
+    let html = '<table class="w-full table-text" style="table-layout:fixed;"><thead><tr class="bg-gray-100 text-xs"><th class="p-1 text-left" style="width:20%;">№</th><th class="p-1 text-left" style="width:22%;">Дата</th><th class="p-1 text-right" style="width:30%;">Сумма (€)</th><th class="p-1 text-center" style="width:28%;">Статус</th></tr></thead><tbody>';
     custOrders.forEach(o => {
         const oNum = o.order_number || `#${o.id}`;
         const payInfo = getOrderPaymentStatus(o);
@@ -393,7 +393,7 @@ function renderCustomerOrders() {
         html += `<tr class="border-b order-row" onclick="goToOrderFromCustomer(${o.id})">
             <td class="p-0.5">${escapeHtml(oNum)}</td>
             <td class="p-0.5">${formatDateDMY(o.date)}</td>
-            <td class="p-0.5 text-right stats-num"><span class="inline-block w-2 h-2 rounded-full ${payDotColor} mr-1"></span>${orderGrandTotal(o).toFixed(2)}</td>
+            <td class="p-0.5 text-right font-semibold"><span class="inline-block w-2 h-2 rounded-full ${payDotColor} mr-1"></span>${orderGrandTotal(o).toFixed(2)}</td>
             <td class="p-0.5 text-center"><span class="flag ${statusFlag[o.status] || ''}"></span> ${escapeHtml(o.status)}</td>
         </tr>`;
     });
