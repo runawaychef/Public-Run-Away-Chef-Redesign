@@ -19,7 +19,7 @@ function displayProducts() {
         if (needsAttention) warningCount++;
         const unitLabel = hasUnit ? UNIT_PRODUCT_LABELS[p.unit] : icon('warning', 'w-3.5 h-3.5 text-red-500 inline-block');
         const row = document.createElement('tr');
-        row.className = 'order-row border-b' + (needsAttention ? ' bg-red-50' : '');
+        row.className = 'order-row border-b' + (needsAttention ? ' border-l-4 border-l-red-500' : '');
         row.innerHTML = `
             <td class=" p-0.5 table-text" onclick="openProductDetail(${p.id})">${escapeHtml(p.name)}</td>
             <td class=" p-0.5 table-text text-center ${hasUnit ? '' : 'text-red-600 font-semibold'}" onclick="openProductDetail(${p.id})">${unitLabel}</td>
