@@ -29,7 +29,7 @@ function displayCustomers() {
         const nameLabel = hasName ? escapeHtml(c.name) : icon('warning', 'w-3 h-3 inline-block align-[-1px] mr-0.5') + '(имя не указано)';
         const debt = customerDebt(c);
         const debtLabel = debt > 0.01
-            ? `<span class="text-red-600">${debt.toFixed(2)} €</span>`
+            ? `<span class="text-red-600">${formatMoney(debt)}</span>`
             : `<span class="text-gray-400">—</span>`;
         const row = document.createElement('tr');
         row.className = 'order-row border-b' + (hasName ? '' : ' bg-red-50');
@@ -178,7 +178,7 @@ function openCustomerReportPreview() {
                 <thead><tr style="background:#f3f4f6;">
                     <th style="text-align:left;padding:4px;border-bottom:1px solid #e5e7eb;">Изделие</th>
                     <th style="text-align:right;padding:4px;border-bottom:1px solid #e5e7eb;">Кол-во</th>
-                    <th style="text-align:right;padding:4px;border-bottom:1px solid #e5e7eb;">Сумма (€)</th>
+                    <th style="text-align:right;padding:4px;border-bottom:1px solid #e5e7eb;">Сумма (${CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency})</th>
                 </tr></thead><tbody>`;
     rows.forEach(([name, v]) => {
         html += `<tr><td style="padding:4px;border-bottom:1px solid #f3f4f6;">${escapeHtml(name)}</td><td style="text-align:right;padding:4px;border-bottom:1px solid #f3f4f6;">${v.qty}</td><td style="text-align:right;padding:4px;border-bottom:1px solid #f3f4f6;">${v.sum.toFixed(2)}</td></tr>`;
@@ -191,10 +191,10 @@ function openCustomerReportPreview() {
             </tr></tfoot>
             </table>
             <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:10px;">
-                <tr><td style="padding:2px 4px;color:#6b7280;">Сумма по позициям</td><td style="text-align:right;padding:2px 4px;">${totalSum.toFixed(2)} €</td></tr>
-                ${totalDiscount > 0 ? `<tr><td style="padding:2px 4px;color:#6b7280;">Скидка${discountLabel}</td><td style="text-align:right;padding:2px 4px;color:#dc2626;">−${totalDiscount.toFixed(2)} €</td></tr>` : ''}
-                <tr><td style="padding:2px 4px;color:#6b7280;">НДС (21%)</td><td style="text-align:right;padding:2px 4px;color:#2563eb;">${totalVat.toFixed(2)} €</td></tr>
-                <tr style="font-weight:700;"><td style="padding:4px;border-top:1px solid #e5e7eb;">Итого к оплате</td><td style="text-align:right;padding:4px;border-top:1px solid #e5e7eb;">${grandTotal.toFixed(2)} €</td></tr>
+                <tr><td style="padding:2px 4px;color:#6b7280;">Сумма по позициям</td><td style="text-align:right;padding:2px 4px;">${formatMoney(totalSum)}</td></tr>
+                ${totalDiscount > 0 ? `<tr><td style="padding:2px 4px;color:#6b7280;">Скидка${discountLabel}</td><td style="text-align:right;padding:2px 4px;color:#dc2626;">−${formatMoney(totalDiscount)}</td></tr>` : ''}
+                <tr><td style="padding:2px 4px;color:#6b7280;">НДС (21%)</td><td style="text-align:right;padding:2px 4px;color:#2563eb;">${formatMoney(totalVat)}</td></tr>
+                <tr style="font-weight:700;"><td style="padding:4px;border-top:1px solid #e5e7eb;">Итого к оплате</td><td style="text-align:right;padding:4px;border-top:1px solid #e5e7eb;">${formatMoney(grandTotal)}</td></tr>
             </table>
             <p style="font-size:10px;color:#9ca3af;margin-top:10px;">Заказов за период: ${custOrders.length}. В таблице по изделиям — цены позиций без скидки и НДС, финансовая сводка ниже — уже с их учётом.</p>
         </div>`;
@@ -377,7 +377,7 @@ function renderCustomerStats(cust) {
     const totalSum = custOrders.reduce((s, o) => s + orderGrandTotal(o), 0);
     const lastDate = custOrders.reduce((latest, o) => (!latest || o.date > latest) ? o.date : latest, null);
     document.getElementById('cdOrderCount').textContent = custOrders.length;
-    document.getElementById('cdTotalSum').textContent = totalSum.toFixed(2) + ' €';
+    document.getElementById('cdTotalSum').textContent = formatMoney(totalSum);
     document.getElementById('cdLastOrderDate').textContent = lastDate ? formatDateDMY(lastDate) : '—';
 }
 
@@ -411,7 +411,7 @@ function renderCustomerOrders() {
     }
 
     const statusFlag = { 'принят': 'flag-red', 'в работе': 'flag-yellow', 'выполнен': 'flag-green' };
-    let html = '<table class="w-full table-text" style="table-layout:fixed;"><thead><tr class="bg-gray-100 text-xs"><th class="p-1 text-left" style="width:28%;">№</th><th class="p-1 text-left" style="width:20%;">Дата</th><th class="p-1 text-right" style="width:28%;">Сумма (€)</th><th class="p-1 text-center" style="width:24%;">Статус</th></tr></thead><tbody>';
+    let html = '<table class="w-full table-text" style="table-layout:fixed;"><thead><tr class="bg-gray-100 text-xs"><th class="p-1 text-left" style="width:28%;">№</th><th class="p-1 text-left" style="width:20%;">Дата</th><th class="p-1 text-right" style="width:28%;">Сумма (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-1 text-center" style="width:24%;">Статус</th></tr></thead><tbody>';
     custOrders.forEach(o => {
         const oNum = o.order_number || `#${o.id}`;
         const payInfo = getOrderPaymentStatus(o);

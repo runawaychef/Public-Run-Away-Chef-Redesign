@@ -15,10 +15,7 @@
 // VAT_RATE (money.js), formatDateDMY (dates.js),
 // escapeHtml/showLoading/hideLoading/showInfo/updateChecked (helpers.js).
 
-const CURRENCY_SYMBOLS = {
-    EUR: '€', USD: '$', RUB: '₽', BYN: 'Br', KZT: '₸', KGS: 'с', UZS: 'сум',
-    TJS: 'SM', TMT: 'm', AZN: '₼', AMD: '֏', GEL: '₾', MDL: 'L', UAH: '₴'
-};
+// CURRENCY_SYMBOLS — общая таблица, теперь в money.js (загружается раньше).
 
 let _docPreview = null; // { docType, snapshot } — состояние открытого предпросмотра
 

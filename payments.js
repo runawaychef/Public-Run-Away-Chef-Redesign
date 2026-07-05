@@ -51,17 +51,17 @@ function renderPayments() {
 
     const paidEl = document.getElementById('paymentPaidAmount');
     const remEl = document.getElementById('paymentRemainingAmount');
-    if (paidEl) paidEl.textContent = paid.toFixed(2) + ' €';
-    if (remEl) remEl.textContent = remaining.toFixed(2) + ' €';
+    if (paidEl) paidEl.textContent = formatMoney(paid);
+    if (remEl) remEl.textContent = formatMoney(remaining);
 
     const summaryLine = document.getElementById('paymentSummaryLine');
-    if (summaryLine) summaryLine.textContent = `Оплачено ${paid.toFixed(2)} € из ${total.toFixed(2)} €`;
+    if (summaryLine) summaryLine.textContent = `Оплачено ${formatMoney(paid)} из ${formatMoney(total)}`;
 
     const overpaidRow = document.getElementById('paymentOverpaidRow');
     if (overpaidRow) {
         overpaidRow.classList.toggle('hidden', overpaid <= 0);
         const overpaidEl = document.getElementById('paymentOverpaidAmount');
-        if (overpaidEl) overpaidEl.textContent = overpaid.toFixed(2) + ' €';
+        if (overpaidEl) overpaidEl.textContent = formatMoney(overpaid);
     }
 
     // Шкала прогресса (не больше 100%, даже при переплате)
@@ -114,7 +114,7 @@ function renderPayments() {
         const emp = employees.find(e => e.id === p.created_by);
         html += `<div class="flex justify-between items-center text-xs border-b pb-1 cursor-pointer" onclick='openEditPaymentModal(${JSON.stringify(p).replace(/'/g, "&#39;")})'>
             <div>
-                <div class="font-medium text-gray-800">${Number(p.amount).toFixed(2)} € · ${escapeHtml(p.method || '—')}</div>
+                <div class="font-medium text-gray-800">${formatMoney(p.amount)} · ${escapeHtml(p.method || '—')}</div>
                 <div class="text-gray-400">${formatDateDMY(p.paid_at)}${emp ? ' · ' + escapeHtml(emp.name) : ''}${p.note ? ' · ' + escapeHtml(p.note) : ''}</div>
             </div>
             <span class="text-gray-300">${icon('edit', 'w-3.5 h-3.5')}</span>
@@ -191,7 +191,7 @@ async function savePayment() {
             await updateChecked(db.from('order_payments')
                 .update({ amount, method, paid_at: paidAt, note: note || null })
                 .eq('id', id));
-            logActivity('order', `Изменена оплата: ${amount.toFixed(2)} € (${method})`, currentOrderId);
+            logActivity('order', `Изменена оплата: ${formatMoney(amount)} (${method})`, currentOrderId);
         } else {
             const { error } = await db.from('order_payments').insert({
                 org_id: currentOrgId,
@@ -201,7 +201,7 @@ async function savePayment() {
                 created_by: currentEmployee ? currentEmployee.id : null
             });
             if (error) throw error;
-            logActivity('order', `Внесена оплата ${amount.toFixed(2)} € (${method})`, currentOrderId);
+            logActivity('order', `Внесена оплата ${formatMoney(amount)} (${method})`, currentOrderId);
         }
         document.getElementById('addPaymentModal').style.display = 'none';
         await loadOrderPayments(currentOrderId);

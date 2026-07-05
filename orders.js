@@ -44,7 +44,7 @@ function displayOrders() {
             const statusColor = o.status === 'выполнен' ? '#22c55e' : o.status === 'в работе' ? '#d97706' : '#ef4444';
             const statusText  = o.status === 'выполнен' ? 'выполнен' : o.status === 'в работе' ? 'в работе' : 'принят';
             clientLines += `<div class="pl-1 mt-0.5 cursor-pointer hover:bg-indigo-50 rounded px-1 -mx-1 transition-colors" onclick="openOrderDetail(${o.id})">
-                <span class="text-indigo-600 font-medium">${escapeHtml(o.customer || '(без клиента)')}:</span> ${clientQty} шт. · ${clientSum.toFixed(2)} € · <span style="color:${statusColor};font-weight:500">${statusText}</span>
+                <span class="text-indigo-600 font-medium">${escapeHtml(o.customer || '(без клиента)')}:</span> ${clientQty} шт. · ${formatMoney(clientSum)} · <span style="color:${statusColor};font-weight:500">${statusText}</span>
             </div>`;
             (o.items || []).forEach(it => {
                 clientLines += `<div class="pl-3 text-gray-500">· ${escapeHtml(it.product)} — ${it.quantity} шт.</div>`;
@@ -52,7 +52,7 @@ function displayOrders() {
         });
 
         return `<div class="mb-2 last:mb-0">
-            <div class="font-semibold text-indigo-700 mb-0.5">${label}: ${dayOrders.length} зак. · ${totalQty} шт. · ${totalSum.toFixed(2)} €</div>
+            <div class="font-semibold text-indigo-700 mb-0.5">${label}: ${dayOrders.length} зак. · ${totalQty} шт. · ${formatMoney(totalSum)}</div>
             ${clientLines}
         </div>`;
     }
@@ -102,7 +102,7 @@ function displayOrders() {
         const weekLabel = formatDateDMY(localStr(monday)) + ' – ' + formatDateDMY(localStr(sunday));
         const weekRow = document.createElement('tr');
         weekRow.innerHTML = `<td colspan="6" class="bg-gray-200 text-gray-700 text-xs font-medium p-0.5">
-            Неделя ${weekLabel} — ${weekTotals.count} зак., ${weekTotals.qty} шт., ${weekTotals.sum.toFixed(2)} €
+            Неделя ${weekLabel} — ${weekTotals.count} зак., ${weekTotals.qty} шт., ${formatMoney(weekTotals.sum)}
         </td>`;
         tbody.appendChild(weekRow);
     }
@@ -113,7 +113,7 @@ function displayOrders() {
         const monthLabel = `${MONTH_NAMES_RU[m - 1]} ${y}`;
         const monthRow = document.createElement('tr');
         monthRow.innerHTML = `<td colspan="6" class="bg-gray-700 text-white text-xs font-semibold p-0.5.5">
-            Итого за ${monthLabel} — ${monthTotals.count} зак., ${monthTotals.qty} шт., ${monthTotals.sum.toFixed(2)} €
+            Итого за ${monthLabel} — ${monthTotals.count} зак., ${monthTotals.qty} шт., ${formatMoney(monthTotals.sum)}
         </td>`;
         tbody.appendChild(monthRow);
     }
@@ -737,7 +737,7 @@ function shareOrderInfo() {
 
     let text = `Заказ ${oNum}\nКлиент: ${order.customer}\nДата: ${formatDateDMY(order.date)}\nСтатус: ${order.status}\n\nПозиции:\n`;
     (order.items || []).forEach(item => {
-        text += `• ${item.product} — ${item.quantity} × ${item.price.toFixed(2)} € = ${(item.quantity * item.price).toFixed(2)} €\n`;
+        text += `• ${item.product} — ${item.quantity} × ${formatMoney(item.price)} = ${formatMoney(item.quantity * item.price)}\n`;
     });
     text += `\nИтого к оплате: ${total}`;
 
@@ -878,11 +878,11 @@ function renderDetailItems(order) {
     const grand     = orderGrandTotal(order);
 
     document.getElementById('detailItemsCount').textContent   = totQty;
-    document.getElementById('detailSubtotal').textContent     = subtotal.toFixed(2) + ' €';
+    document.getElementById('detailSubtotal').textContent     = formatMoney(subtotal);
     document.getElementById('detailDiscountPct').textContent  = discPct;
-    document.getElementById('detailDiscountAmount').textContent = '-' + discAmt.toFixed(2) + ' €';
-    document.getElementById('detailVatAmount').textContent    = vatAmt.toFixed(2) + ' €';
-    document.getElementById('detailTotal').textContent        = grand.toFixed(2) + ' €';
+    document.getElementById('detailDiscountAmount').textContent = '-' + formatMoney(discAmt);
+    document.getElementById('detailVatAmount').textContent    = formatMoney(vatAmt);
+    document.getElementById('detailTotal').textContent        = formatMoney(grand);
 
     // Скрыть строку скидки если скидки нет
     document.getElementById('detailDiscountRow').style.display = discPct > 0 ? '' : 'none';
@@ -896,9 +896,9 @@ function renderDetailItems(order) {
     const costEl = document.getElementById('detailCost');
     const profitEl = document.getElementById('detailProfit');
     const profitPctEl = document.getElementById('detailProfitPct');
-    if (costEl) costEl.textContent = cost.toFixed(2) + ' €';
+    if (costEl) costEl.textContent = formatMoney(cost);
     if (profitEl) {
-        profitEl.textContent = profit.toFixed(2) + ' €';
+        profitEl.textContent = formatMoney(profit);
         profitEl.className = profit >= 0 ? 'font-semibold text-green-700' : 'font-semibold text-red-600';
     }
     if (profitPctEl) profitPctEl.textContent = profitPct.toFixed(1);
@@ -1066,13 +1066,13 @@ async function openOrderCostBreakdown() {
             html += `<tr class="border-b">
                 <td class="p-0.5" style="word-break:break-word;">${escapeHtml(r.name)}</td>
                 <td class="p-0.5 text-right whitespace-nowrap">${r.qty.toFixed(2)} ${unitLabel}</td>
-                <td class="p-0.5 text-right whitespace-nowrap">${r.unit_price.toFixed(4)} €</td>
-                <td class="p-0.5 text-right whitespace-nowrap">${r.total.toFixed(4)} €</td>
+                <td class="p-0.5 text-right whitespace-nowrap">${formatMoney(r.unit_price, 4)}</td>
+                <td class="p-0.5 text-right whitespace-nowrap">${formatMoney(r.total, 4)}</td>
             </tr>`;
         });
         html += `</tbody><tfoot><tr class="bg-gray-50 font-semibold">
             <td class="p-0.5" colspan="3">Итого себестоимость</td>
-            <td class="p-0.5 text-right">${grandCost > 0 ? grandCost.toFixed(2) : grandIngCost.toFixed(2)} €</td>
+            <td class="p-0.5 text-right">${grandCost > 0 ? formatMoney(grandCost) : formatMoney(grandIngCost)}</td>
         </tr></tfoot></table>`;
 
         document.getElementById('orderCostBreakdownSubtitle').textContent =

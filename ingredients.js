@@ -83,7 +83,7 @@ function displayIngredients() {
         row.className = 'order-row';
         row.innerHTML = `
             <td class="border p-0.5 table-text relative ${nameCellPad}" onclick="openIngredientDetail(${ing.id})">${accentBar}${escapeHtml(ing.name)}</td>
-            <td class="border p-0.5 table-text text-center" onclick="openIngredientDetail(${ing.id})">${unitPrice.toFixed(4)} €/${unitLabel}</td>
+            <td class="border p-0.5 table-text text-center" onclick="openIngredientDetail(${ing.id})">${formatMoney(unitPrice, 4)}/${unitLabel}</td>
             <td class="border p-0.5 table-text text-center" onclick="openIngredientDetail(${ing.id})">${balanceStr}</td>
             <td class="border p-0.5 table-text text-center" onclick="openIngredientDetail(${ing.id})">${daysStr}</td>`;
         tbody.appendChild(row);
@@ -228,7 +228,7 @@ function renderIngredientUnitPricePreview() {
     const unitLabel = UNIT_LABELS[unit] || unit;
     const unitPrice = size > 0 ? (price / size).toFixed(4) : '0.0000';
     const el = document.getElementById('idUnitPrice');
-    if (el) el.textContent = `${unitPrice} €/${unitLabel}`;
+    if (el) el.textContent = `${formatMoney(unitPrice, 4)}/${unitLabel}`;
 }
 
 // Сохраняет пополнение склада и при необходимости обновляет цену.
@@ -451,7 +451,7 @@ async function closeIngredientDetail() {
 
 function renderIngredientUnitPrice(ing) {
     const unitLabel = UNIT_LABELS[ing.unit] || ing.unit;
-    document.getElementById('idUnitPrice').textContent = `${ingredientUnitPrice(ing).toFixed(4)} €/${unitLabel}`;
+    document.getElementById('idUnitPrice').textContent = `${formatMoney(ingredientUnitPrice(ing), 4)}/${unitLabel}`;
 }
 
 async function saveIdHeader() {
@@ -583,9 +583,9 @@ async function renderIngredientStockBlock(ing) {
 
         // Итоговая строка
         let summary = `<div class="table-text text-gray-600 mt-2 mb-2 space-y-0.5">`;
-        summary += `<div><span class="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span>Куплено: <span class="font-semibold text-green-700">${totals.in.qty.toFixed(2)} ${unitLabel}</span> · ${totals.in.cost.toFixed(2)} €</div>`;
-        if (totals.order.qty > 0) summary += `<div><span class="inline-block w-2 h-2 rounded-full bg-blue-500 mr-1"></span>На заказы: <span class="font-semibold text-blue-700">${totals.order.qty.toFixed(2)} ${unitLabel}</span> · ${totals.order.cost.toFixed(2)} €</div>`;
-        if (totals.personal.qty > 0) summary += `<div><span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>Личное/потери: <span class="font-semibold text-red-600">${totals.personal.qty.toFixed(2)} ${unitLabel}</span> · ${totals.personal.cost.toFixed(2)} €</div>`;
+        summary += `<div><span class="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span>Куплено: <span class="font-semibold text-green-700">${totals.in.qty.toFixed(2)} ${unitLabel}</span> · ${formatMoney(totals.in.cost)}</div>`;
+        if (totals.order.qty > 0) summary += `<div><span class="inline-block w-2 h-2 rounded-full bg-blue-500 mr-1"></span>На заказы: <span class="font-semibold text-blue-700">${totals.order.qty.toFixed(2)} ${unitLabel}</span> · ${formatMoney(totals.order.cost)}</div>`;
+        if (totals.personal.qty > 0) summary += `<div><span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>Личное/потери: <span class="font-semibold text-red-600">${totals.personal.qty.toFixed(2)} ${unitLabel}</span> · ${formatMoney(totals.personal.cost)}</div>`;
         summary += `</div>`;
 
         // Фильтр-табы
@@ -616,7 +616,7 @@ async function renderIngredientStockBlock(ing) {
             rows += `<tr class="border-b hover:bg-gray-50" data-cat="${rowCat}">
                 <td class="p-1 whitespace-nowrap">${date}</td>
                 <td class="p-1 text-right ${color} font-semibold whitespace-nowrap">${sign}${qty.toFixed(2)} ${unitLabel}</td>
-                <td class="p-1 text-right text-gray-500 whitespace-nowrap">${cost} €</td>
+                <td class="p-1 text-right text-gray-500 whitespace-nowrap">${formatMoney(cost)}</td>
                 <td class="p-1 text-gray-400">${notes}</td>
             </tr>`;
         });
@@ -713,7 +713,7 @@ function renderIngredientPriceChart(ingredientId) {
         data: {
             labels,
             datasets: [{
-                label: `Цена (€/${unitLabel})`,
+                label: `Цена (${CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency}/${unitLabel})`,
                 data,
                 borderColor: '#4f46e5',
                 backgroundColor: 'rgba(79,70,229,0.08)',
@@ -729,7 +729,7 @@ function renderIngredientPriceChart(ingredientId) {
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        label: ctx => `${ctx.parsed.y.toFixed(6)} €/${unitLabel}`
+                        label: ctx => `${formatMoney(ctx.parsed.y, 6)}/${unitLabel}`
                     }
                 }
             },
@@ -757,8 +757,8 @@ function renderIngredientPriceHistory(ingredientId) {
         const isCurrent = i === 0;
         html += `<tr class="${isCurrent ? 'bg-indigo-50 font-semibold' : 'border-b'}">
             <td class="p-0.5">${formatDateDMY(h.valid_from)}${isCurrent ? ' <span class="text-indigo-600">(текущая)</span>' : ''}</td>
-            <td class="p-0.5 text-right">${Number(h.package_price).toFixed(2)} €</td>
-            <td class="p-0.5 text-right">${unitPrice} €/${unitLabel}</td>
+            <td class="p-0.5 text-right">${formatMoney(h.package_price)}</td>
+            <td class="p-0.5 text-right">${unitPrice === '—' ? '—' : formatMoney(unitPrice, 4) + '/' + unitLabel}</td>
             <td class="p-0.5 text-center whitespace-nowrap">
                 <button onclick="openEditPriceHistoryModal(${h.id},'${h.valid_from}',${h.package_price},${h.package_size})" class="text-gray-400 hover:text-indigo-600 mr-1">${icon('edit', 'w-3.5 h-3.5')}</button>
                 ${hasPermission('can_delete') ? `<button onclick="deletePriceHistoryRecord(${h.id})" class="text-gray-400 hover:text-red-600">${icon('trash', 'w-3.5 h-3.5')}</button>` : ''}

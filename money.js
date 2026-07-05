@@ -4,6 +4,22 @@
 
 const VAT_RATE = 0.21; // НДС 21% (Литва)
 
+// Символы валют — единая таблица соответствий, используется и в formatMoney(),
+// и в invoice.js (там валюта может браться не из текущей, а из снимка счёта).
+const CURRENCY_SYMBOLS = {
+    EUR: '€', USD: '$', RUB: '₽', BYN: 'Br', KZT: '₸', KGS: 'с', UZS: 'сум',
+    TJS: 'SM', TMT: 'm', AZN: '₼', AMD: '֏', GEL: '₾', MDL: 'L', UAH: '₴'
+};
+
+// Единая точка форматирования сумм — везде в приложении, где раньше было
+// `amount.toFixed(2) + ' €'`, теперь formatMoney(amount). Символ берётся из
+// currentOrgCurrency (глобальная переменная, employees.js) — настройки
+// валюты организации из карточки "Информация о компании".
+function formatMoney(amount, decimals) {
+    const sym = CURRENCY_SYMBOLS[typeof currentOrgCurrency !== 'undefined' ? currentOrgCurrency : 'EUR'] || 'EUR';
+    return Number(amount || 0).toFixed(decimals != null ? decimals : 2) + ' ' + sym;
+}
+
 // Сумма позиций без скидки и НДС
 function orderTotal(order) {
     if (!order.items || !order.items.length) return 0;

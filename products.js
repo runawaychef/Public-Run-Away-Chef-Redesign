@@ -138,7 +138,7 @@ async function saveProductEdit() {
         // Обновить название изделия в позициях заказов (в кэше)
         orders.forEach(o => o.items.forEach(it => { if (it.product_id === prod.id) it.product = name; }));
         displayProducts(); closeModal();
-        logActivity('product', `Изменено изделие «${oldName}» (${oldPrice.toFixed(2)} €) → «${name}» (${price.toFixed(2)} €)`);
+        logActivity('product', `Изменено изделие «${oldName}» (${formatMoney(oldPrice)}) → «${name}» (${formatMoney(price)})`);
     } catch (e) { console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.'); }
     finally { hideLoading(); }
 }
@@ -261,7 +261,7 @@ async function renderProductCostChart(prod) {
         data: {
             labels,
             datasets: [{
-                label: 'Себестоимость 1 шт (€)',
+                label: `Себестоимость 1 шт (${CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency})`,
                 data,
                 borderColor: '#059669',
                 backgroundColor: 'rgba(5,150,105,0.08)',
@@ -277,14 +277,14 @@ async function renderProductCostChart(prod) {
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        label: ctx => `Себест.: ${ctx.parsed.y.toFixed(4)} €`
+                        label: ctx => `Себест.: ${formatMoney(ctx.parsed.y, 4)}`
                     }
                 }
             },
             scales: {
                 x: { ticks: { font: { size: 10 } } },
                 y: {
-                    ticks: { font: { size: 10 }, callback: v => v.toFixed(2) + ' €' },
+                    ticks: { font: { size: 10 }, callback: v => formatMoney(v) },
                     beginAtZero: false
                 }
             }
@@ -440,7 +440,7 @@ function renderProductRecipe(prod) {
             row.innerHTML = `
                 <td class="p-0.5 table-text">${escapeHtml(displayName)}</td>
                 <td class="p-0.5 table-text text-center">${ri.quantity} ${unitLabel}</td>
-                <td class="p-0.5 table-text text-center font-medium">${lineCost.toFixed(2)} €</td>
+                <td class="p-0.5 table-text text-center font-medium">${formatMoney(lineCost)}</td>
                 <td class="p-0.5 text-center">
                     ${svgEdit(`openEditRecipeItemModal(${i})`)}
                     ${hasPermission('can_delete') ? svgDelete(`deleteRecipeItem(${i})`) : ''}
@@ -454,9 +454,9 @@ function renderProductRecipe(prod) {
     const profit    = productProfit(prod);
     const profitPct = prod.price > 0 ? (profit / prod.price * 100) : 0;
 
-    document.getElementById('pdBatchCost').textContent = batchCost.toFixed(2) + ' €';
-    document.getElementById('pdUnitCost').textContent  = unitCost.toFixed(2) + ' €';
-    document.getElementById('pdProfit').textContent    = profit.toFixed(2) + ' €';
+    document.getElementById('pdBatchCost').textContent = formatMoney(batchCost);
+    document.getElementById('pdUnitCost').textContent  = formatMoney(unitCost);
+    document.getElementById('pdProfit').textContent    = formatMoney(profit);
     document.getElementById('pdProfitPct').textContent = profitPct.toFixed(1) + '%';
 }
 

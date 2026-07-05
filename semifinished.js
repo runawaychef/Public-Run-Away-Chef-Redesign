@@ -88,7 +88,7 @@ function displaySemiFinished() {
         row.style.cursor = 'pointer';
         row.innerHTML = `
             <td class=" p-0.5 table-text relative ${nameCellPad}" onclick="openSemiFinishedDetail(${sf.id})">${accentBar}${escapeHtml(sf.name)}</td>
-            <td class=" p-0.5 table-text text-center" onclick="openSemiFinishedDetail(${sf.id})">${unitCost.toFixed(4)} €/${unitLabel}</td>
+            <td class=" p-0.5 table-text text-center" onclick="openSemiFinishedDetail(${sf.id})">${formatMoney(unitCost, 4)}/${unitLabel}</td>
             <td class=" p-0.5 table-text text-center" onclick="openSemiFinishedDetail(${sf.id})">${balanceStr}</td>
             <td class=" p-0.5 table-text text-center" onclick="openSemiFinishedDetail(${sf.id})">${daysStr}</td>`;
         tbody.appendChild(row);
@@ -222,7 +222,7 @@ function renderSemiFinishedRecipe(sf) {
             row.innerHTML = `
                 <td class="p-0.5 table-text">${starBtn} ${escapeHtml(ing ? ing.name : '(удалён)')}</td>
                 <td class="p-0.5 table-text text-center">${ri.quantity} ${ing ? UNIT_LABELS[ing.unit] : ''}</td>
-                <td class="p-0.5 table-text text-center font-medium">${lineCost.toFixed(2)} €</td>
+                <td class="p-0.5 table-text text-center font-medium">${formatMoney(lineCost)}</td>
                 <td class="p-0.5 text-center">
                     ${svgEdit(`openEditSfRecipeItemModal(${i})`)}
                     ${hasPermission('can_delete') ? svgDelete(`deleteSfRecipeItem(${i})`) : ''}
@@ -235,8 +235,8 @@ function renderSemiFinishedRecipe(sf) {
     const unitCost  = semiFinishedUnitCost(sf);
     const unitLabel = SF_UNIT_LABELS[sf.unit] || sf.unit;
 
-    document.getElementById('sfdBatchCost').textContent = batchCost.toFixed(2) + ' €';
-    document.getElementById('sfdUnitCost').textContent  = unitCost.toFixed(4) + ` €/${unitLabel}`;
+    document.getElementById('sfdBatchCost').textContent = formatMoney(batchCost);
+    document.getElementById('sfdUnitCost').textContent  = formatMoney(unitCost, 4) + `/${unitLabel}`;
 }
 
 async function addIngredientToSfRecipe() {
@@ -855,7 +855,7 @@ async function renderSfCostChart(sf) {
         data: {
             labels,
             datasets: [{
-                label: 'Себестоимость партии (€)',
+                label: `Себестоимость партии (${CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency})`,
                 data: costs,
                 borderColor: '#4f46e5',
                 backgroundColor: 'rgba(79,70,229,0.08)',
@@ -871,14 +871,14 @@ async function renderSfCostChart(sf) {
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        label: ctx => `${ctx.parsed.y.toFixed(4)} €`
+                        label: ctx => formatMoney(ctx.parsed.y, 4)
                     }
                 }
             },
             scales: {
                 x: { ticks: { font: { size: 10 } } },
                 y: {
-                    ticks: { font: { size: 10 }, callback: v => v.toFixed(2) + ' €' },
+                    ticks: { font: { size: 10 }, callback: v => formatMoney(v) },
                     beginAtZero: false
                 }
             }

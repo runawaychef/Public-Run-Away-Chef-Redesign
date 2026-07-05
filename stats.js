@@ -175,10 +175,10 @@ function applyFilter() {
 
 function updateDisplay(filteredOrders = orders) {
     const stats = calculateStats(filteredOrders);
-    document.getElementById('totalPrice').textContent      = stats.totalPrice + ' €';
-    document.getElementById('totalVatModal').textContent   = stats.totalVat   + ' €';
-    document.getElementById('weekTotalModal').textContent  = stats.weekTotal  + ' €';
-    document.getElementById('monthTotalModal').textContent = stats.monthTotal + ' €';
+    document.getElementById('totalPrice').textContent      = formatMoney(stats.totalPrice);
+    document.getElementById('totalVatModal').textContent   = formatMoney(stats.totalVat);
+    document.getElementById('weekTotalModal').textContent  = formatMoney(stats.weekTotal);
+    document.getElementById('monthTotalModal').textContent = formatMoney(stats.monthTotal);
     updateInfoCounts();
 }
 
@@ -229,7 +229,7 @@ function drawCustomerTable(filtered) {
         return;
     }
 
-    let html = '<table class="w-full stats-table" style="table-layout:fixed;"><thead><tr class="bg-gray-100" style="position:sticky;top:0;"><th class="p-0.5 text-left" style="width:40%;">Клиент</th><th class="p-0.5 text-right" style="width:15%;">Кол-во</th><th class="p-0.5 text-right" style="width:20%;">Сумма (€)</th><th class="p-0.5 text-right" style="width:15%;">НДС (€)</th><th class="p-0.5 text-right" style="width:10%;">Доля</th></tr></thead><tbody>';
+    let html = '<table class="w-full stats-table" style="table-layout:fixed;"><thead><tr class="bg-gray-100" style="position:sticky;top:0;"><th class="p-0.5 text-left" style="width:40%;">Клиент</th><th class="p-0.5 text-right" style="width:15%;">Кол-во</th><th class="p-0.5 text-right" style="width:20%;">Сумма (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:15%;">НДС (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:10%;">Доля</th></tr></thead><tbody>';
     html += buildCustomerRowsHtml(sorted, totals, vats, qtys, grandTotal);
     html += '</tbody></table>';
     container.innerHTML = html;
@@ -253,7 +253,7 @@ function drawProductTable(filtered) {
         return;
     }
     const max = sorted[0][1];
-    let html = '<table class="w-full stats-table"><thead><tr class="bg-gray-100"><th class="p-0.5 text-left">Изделие</th><th class="p-0.5 text-right">Кол-во</th><th class="p-0.5 text-right">Сумма (€)</th></tr></thead><tbody>';
+    let html = '<table class="w-full stats-table"><thead><tr class="bg-gray-100"><th class="p-0.5 text-left">Изделие</th><th class="p-0.5 text-right">Кол-во</th><th class="p-0.5 text-right">Сумма (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th></tr></thead><tbody>';
     sorted.forEach(([name, val]) => {
         const barW = max > 0 ? Math.round(val/max*100) : 0;
         html += `<tr class="border-b"><td class="p-0.5">
@@ -277,9 +277,9 @@ function drawProfitabilitySummary(filtered) {
     const costEl = document.getElementById('statsTotalCost');
     const profitEl = document.getElementById('statsTotalProfit');
     const profitPctEl = document.getElementById('statsProfitPct');
-    if (costEl) costEl.textContent = totalCost.toFixed(2) + ' €';
+    if (costEl) costEl.textContent = formatMoney(totalCost);
     if (profitEl) {
-        profitEl.textContent = totalProfit.toFixed(2) + ' €';
+        profitEl.textContent = formatMoney(totalProfit);
         profitEl.className = totalProfit >= 0 ? 'text-sm font-bold text-green-700' : 'text-sm font-bold text-red-600';
     }
     if (profitPctEl) profitPctEl.textContent = profitPct.toFixed(1) + '%';
@@ -312,7 +312,7 @@ function drawProductProfitabilityTable() {
         : `Топ-${sorted.length} по рентабельности`;
 
     let html = `<p class="text-xs text-gray-500 mb-1">${title}</p>`;
-    html += '<table class="w-full stats-table" style="table-layout:fixed;"><thead><tr class="bg-gray-100"><th class="p-0.5 text-left" style="width:46%;">Изделие</th><th class="p-0.5 text-right" style="width:18%;">Себест. (€)</th><th class="p-0.5 text-right" style="width:18%;">Цена (€)</th><th class="p-0.5 text-right" style="width:18%;">Рент.</th></tr></thead><tbody>';
+    html += '<table class="w-full stats-table" style="table-layout:fixed;"><thead><tr class="bg-gray-100"><th class="p-0.5 text-left" style="width:46%;">Изделие</th><th class="p-0.5 text-right" style="width:18%;">Себест. (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:18%;">Цена (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:18%;">Рент.</th></tr></thead><tbody>';
     sorted.forEach(p => {
         const cost = productUnitCost(p);
         const pct  = productProfitPct(p);
@@ -459,7 +459,7 @@ function drawPieChart(filtered) {
         legend += `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid #f3f4f6;">
             <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${colors[i]};flex-shrink:0;"></span>
             <span style="flex:1;font-size:11px;color:#374151;">${name}</span>
-            <span style="font-size:11px;font-weight:600;color:#111827;">${val.toFixed(2)} €</span>
+            <span style="font-size:11px;font-weight:600;color:#111827;">${formatMoney(val)}</span>
             <span style="font-size:10px;color:#6b7280;min-width:35px;text-align:right;">${pct}%</span>
         </div>`;
     });
@@ -661,7 +661,7 @@ function drawDailyRevenueChart() {
         ctx.beginPath(); ctx.arc(nearest.x, nearest.y, 1.5, 0, Math.PI*2); ctx.fill();
 
         if (tooltip) {
-            tooltip.textContent = `${WEEKDAY_NAMES_FULL[nearest.dow]}, ${formatDateDMY(nearest.date)} — ${nearest.value.toFixed(2)} €`;
+            tooltip.textContent = `${WEEKDAY_NAMES_FULL[nearest.dow]}, ${formatDateDMY(nearest.date)} — ${formatMoney(nearest.value)}`;
             // Не даём подсказке вылезти за левый/правый край канваса
             const clampedX = Math.min(Math.max(nearest.x, 30), W - 30);
             tooltip.style.left = clampedX + 'px';
