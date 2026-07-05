@@ -145,7 +145,7 @@ function displayOrders() {
         currentWeekKey  = weekKey;
 
         const realIdx = orders.indexOf(order);
-        const total = orderGrandTotal(order).toFixed(2);
+        const total = formatMoney(orderGrandTotal(order));
         const itemsCount = order.items ? order.items.length : 0;
         let flagClass = 'flag';
         if (order.status === 'принят')    flagClass += ' flag-red';
@@ -852,7 +852,7 @@ function renderDetailItems(order) {
         tbody.appendChild(row);
     } else {
         order.items.forEach((item, i) => {
-            const total = (item.quantity * item.price).toFixed(2);
+            const total = formatMoney(item.quantity * item.price);
             const prod = products.find(p => p.id === item.product_id);
             const unitLabel = prod && prod.unit ? (UNIT_PRODUCT_LABELS[prod.unit] || '') : '';
             const row = document.createElement('tr');
@@ -860,7 +860,7 @@ function renderDetailItems(order) {
             row.innerHTML = `
                 <td class="p-0.5 table-text">${escapeHtml(item.product)}</td>
                 <td class="p-0.5 table-text text-center">${item.quantity}${unitLabel ? ' ' + unitLabel : ''}</td>
-                <td class="p-0.5 table-text text-center">${item.price.toFixed(2)}</td>
+                <td class="p-0.5 table-text text-center">${formatMoney(item.price)}</td>
                 <td class="p-0.5 table-text text-center font-medium">${total}</td>
                 <td class="p-0.5 text-center">
                     ${svgEdit(`openEditItemModal(${i})`)}

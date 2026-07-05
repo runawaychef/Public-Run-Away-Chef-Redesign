@@ -27,7 +27,7 @@ function displayProducts() {
         row.innerHTML = `
             <td class=" p-0.5 table-text relative ${nameCellPad}" onclick="openProductDetail(${p.id})">${accentBar}${escapeHtml(p.name)}</td>
             <td class=" p-0.5 table-text text-center ${hasUnit ? '' : 'text-red-600 font-semibold'}" onclick="openProductDetail(${p.id})">${unitLabel}</td>
-            <td class=" p-0.5 table-text" onclick="openProductDetail(${p.id})">${p.price.toFixed(2)}</td>
+            <td class=" p-0.5 table-text" onclick="openProductDetail(${p.id})">${formatMoney(p.price)}</td>
             <td class=" p-0.5 text-center">
                 ${hasPermission('can_delete') ? svgDeleteSafe('openDeleteModal', [i, 'product', `изделие «${p.name}»`]) : ''}
                 ${svgCopy(`copyProduct(${i})`)}
