@@ -82,8 +82,7 @@ async function ensureDocumentNumber(order, docType) {
     const { data: number, error } = await db.rpc(rpcName, { p_org_id: currentOrgId });
     if (error) throw error;
 
-    const { error: updErr } = await db.from('orders').update({ [field]: number }).eq('id', order.id);
-    if (updErr) throw updErr;
+    await updateChecked(db.from('orders').update({ [field]: number }).eq('id', order.id));
 
     order[field] = number;
     return number;

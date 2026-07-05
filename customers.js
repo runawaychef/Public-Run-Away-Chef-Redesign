@@ -100,8 +100,7 @@ async function applyVatExemptToAllOrders() {
     showLoading();
     try {
         const ids = toUpdate.map(o => o.id);
-        const { error } = await db.from('orders').update({ vat_exempt: cust.vat_exempt }).in('id', ids);
-        if (error) throw error;
+        await updateChecked(db.from('orders').update({ vat_exempt: cust.vat_exempt }).in('id', ids));
         toUpdate.forEach(o => { o.vat_exempt = cust.vat_exempt; });
         logActivity('customer', `Применён НДС-статус ${statusLabel} к ${toUpdate.length} заказам клиента «${cust.name}»`);
         renderCustomerStats(cust);
@@ -357,11 +356,10 @@ async function saveCdHeader() {
     const oldName = cust.name;
     showLoading();
     try {
-        const { error } = await db.from('customers').update({
+        await updateChecked(db.from('customers').update({
             name, contact, discount: parseFloat(discount.toFixed(2)), vat_exempt: vatExempt, notes,
             address, reg_number: regNumber, vat_code: vatCode, personal_code: personalCode, entity_type: entityType
-        }).eq('id', cust.id);
-        if (error) throw error;
+        }).eq('id', cust.id));
         cust.name = name; cust.contact = contact; cust.discount = parseFloat(discount.toFixed(2)); cust.vat_exempt = vatExempt; cust.notes = notes;
         cust.address = address; cust.reg_number = regNumber; cust.vat_code = vatCode; cust.personal_code = personalCode; cust.entity_type = entityType;
         orders.forEach(o => { if (o.customer_id === cust.id) o.customer = name; });

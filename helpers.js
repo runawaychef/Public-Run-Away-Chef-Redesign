@@ -295,6 +295,22 @@ function showDbError(e, fallbackMsg) {
     return false;
 }
 
+// UPDATE с проверкой, что реально изменилась хотя бы одна строка.
+// Supabase при заблокированном RLS-политикой обновлении НЕ возвращает ошибку —
+// просто "успех, 0 строк". Из-за этого данные молча теряются, а приложение
+// показывает "сохранено" (мы напоролись на это с organizations). Этот хелпер
+// добавляет .select('id') к запросу и бросает ошибку, если ничего не изменилось.
+//
+// Использование: await updateChecked(db.from('orders').update({...}).eq('id', id));
+async function updateChecked(query) {
+    const { data, error } = await query.select('id');
+    if (error) throw error;
+    if (!data || data.length === 0) {
+        throw new Error('Изменение не было сохранено (0 строк). Возможно, нет прав на обновление этой записи.');
+    }
+    return data;
+}
+
 function svgCopy(onclick) {
     return `<svg class="action-icon icon-copy inline mr-1 cursor-pointer" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" title="Копировать" onclick="${onclick}"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124M15.75 17.25h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25"/></svg>`;
 }

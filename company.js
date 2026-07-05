@@ -112,8 +112,7 @@ function setCompanyEntityType(type, skipSave) {
 // Универсальное сохранение одного поля карточки компании.
 async function saveCompanyInfo(field, value) {
     try {
-        const { error } = await db.from('organizations').update({ [field]: value }).eq('id', currentOrgId);
-        if (error) throw error;
+        await updateChecked(db.from('organizations').update({ [field]: value }).eq('id', currentOrgId));
 
         // Локально обновляем то, что используется в остальном приложении
         if (field === 'name') {

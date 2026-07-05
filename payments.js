@@ -134,8 +134,7 @@ async function saveDueDate() {
     if (!currentOrderId) return;
     const val = document.getElementById('orderDueDate').value || null;
     try {
-        const { error } = await db.from('orders').update({ due_date: val }).eq('id', currentOrderId);
-        if (error) throw error;
+        await updateChecked(db.from('orders').update({ due_date: val }).eq('id', currentOrderId));
         const order = orders.find(o => o.id === currentOrderId);
         if (order) order.due_date = val;
         renderPayments();
@@ -189,10 +188,9 @@ async function savePayment() {
     showLoading('Сохранение...');
     try {
         if (id) {
-            const { error } = await db.from('order_payments')
+            await updateChecked(db.from('order_payments')
                 .update({ amount, method, paid_at: paidAt, note: note || null })
-                .eq('id', id);
-            if (error) throw error;
+                .eq('id', id));
             logActivity('order', `Изменена оплата: ${amount.toFixed(2)} € (${method})`, currentOrderId);
         } else {
             const { error } = await db.from('order_payments').insert({
