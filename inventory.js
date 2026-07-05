@@ -576,10 +576,9 @@ async function saveInventoryAdd() {
 
 // Вызывается при добавлении позиции в заказ
 async function writeOffInventoryForItem(prod, itemQty, orderId, orderItemId = null) {
-    alert('ДИАГНОСТИКА: вход в writeOffInventoryForItem. prod=' + (prod ? prod.name : 'null') + ', itemQty=' + itemQty + ', orderId=' + orderId + ', hasIngredients=' + (prod && prod.ingredients ? prod.ingredients.length : 'n/a'));
     const order = orders.find(o => o.id === orderId);
-    if (!order) { alert('ДИАГНОСТИКА: order не найден в orders[] по id=' + orderId); return; }
-    if (!prod || !prod.ingredients || !prod.ingredients.length) { alert('ДИАГНОСТИКА: выход — нет prod или нет ingredients'); return; }
+    if (!order) return;
+    if (!prod || !prod.ingredients || !prod.ingredients.length) return;
     const rows = [];
     const qtyFactor = 1 / Number(prod.batch_size || 1);
 
@@ -599,10 +598,9 @@ async function writeOffInventoryForItem(prod, itemQty, orderId, orderItemId = nu
         }
     });
 
-    alert('ДИАГНОСТИКА: после сборки rows.length=' + rows.length);
-    if (!rows.length) { alert('ДИАГНОСТИКА: выход — rows пустой (ни semi_finished_id, ни ingredient_id не нашлось в позициях рецепта)'); return; }
+    if (!rows.length) return;
     try {
-        const { error: invErr } = await db.from('inventory').insert(rows.map(r => ({
+        await db.from('inventory').insert(rows.map(r => ({
             org_id:           currentOrgId,
             ingredient_id:    r.ingredient_id || null,
             semi_finished_id: r.semi_finished_id || null,
@@ -612,10 +610,8 @@ async function writeOffInventoryForItem(prod, itemQty, orderId, orderItemId = nu
             order_item_id: orderItemId,
             notes:    `Заказ #${orderId}`
         })));
-        if (invErr) { console.error('Ошибка списания со склада:', invErr); alert('ДИАГНОСТИКА: ошибка INSERT: ' + invErr.message); return; }
-        alert('ДИАГНОСТИКА: INSERT прошёл успешно, ' + rows.length + ' строк');
         await loadInventory();
-    } catch (e) { console.error('Ошибка списания со склада:', e); alert('ДИАГНОСТИКА: исключение (catch): ' + (e && e.message ? e.message : String(e))); }
+    } catch (e) { console.error('Ошибка списания со склада:', e); }
 }
 
 // Сторнирование при удалении/редактировании ОДНОЙ позиции заказа (в отличие от

@@ -440,6 +440,13 @@ async function copyOrder(i) {
             items: []
         };
 
+        // orders.push(copy) — намеренно ДО цикла списания склада ниже: writeOffInventoryForItem()
+        // ищет заказ через orders.find(o => o.id === orderId), и если заказа ещё нет в массиве —
+        // молча выходит без списания и без единой ошибки. Именно из-за обратного порядка
+        // (push после цикла) копия заказа никогда не отражалась на складе — это и был
+        // настоящий баг, а не что-то, связанное с рецептами или удалёнными изделиями.
+        orders.push(copy);
+
         // Копируем позиции, фиксируем item_cost по текущим ценам
         if (o.items.length) {
             const rows = o.items.map(it => {
@@ -454,14 +461,12 @@ async function copyOrder(i) {
                 return { id: it.id, product_id: it.product_id, product: prod ? prod.name : it.product_id, quantity: Number(it.quantity), price: Number(it.price), item_cost: it.item_cost != null ? Number(it.item_cost) : null };
             });
 
-            // Снимок рецепта + списание склада для каждой скопированной позиции —
-            // раньше это пропускали при копировании (баг), из-за чего копия заказа
-            // не отражалась на складе вообще. Копия всегда создаётся на сегодня,
-            // так что shouldWriteOffNow тут практически всегда true, но проверяем
-            // на будущее — если логика создания копии когда-нибудь изменится.
+            // Снимок рецепта + списание склада для каждой скопированной позиции.
+            // Копия всегда создаётся на сегодня, так что shouldWriteOffNow тут
+            // практически всегда true, но проверяем на будущее — если логика
+            // создания копии когда-нибудь изменится.
             for (const it of copy.items) {
                 const prod = products.find(p => p.id === it.product_id);
-                alert('ДИАГНОСТИКА copyOrder: позиция product_id=' + it.product_id + ', найден prod=' + (prod ? prod.name : 'НЕ НАЙДЕН') + ', shouldWriteOffNow=' + shouldWriteOffNow(copy.date));
                 if (!prod) continue;
                 await saveOrderItemIngredients(it.id, prod, it.quantity);
                 if (shouldWriteOffNow(copy.date)) {
@@ -475,7 +480,6 @@ async function copyOrder(i) {
             }
         }
 
-        orders.push(copy);
         displayOrders();
         openOrderDetail(copy.id);
         logActivity('order', `Скопирован заказ №${o.id} → новый заказ №${copy.id} (клиент «${o.customer}»)`, copy.id);
