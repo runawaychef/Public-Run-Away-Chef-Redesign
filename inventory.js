@@ -575,7 +575,7 @@ async function saveInventoryAdd() {
 // ── Списание при создании заказа ─────────────────────────────────────────────
 
 // Вызывается при добавлении позиции в заказ
-async function writeOffInventoryForItem(prod, itemQty, orderId) {
+async function writeOffInventoryForItem(prod, itemQty, orderId, orderItemId = null) {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
     if (!prod || !prod.ingredients || !prod.ingredients.length) return;
@@ -607,10 +607,38 @@ async function writeOffInventoryForItem(prod, itemQty, orderId) {
             type:     'расход',
             quantity: parseFloat(r.quantity.toFixed(4)),
             order_id: orderId,
+            order_item_id: orderItemId,
             notes:    `Заказ #${orderId}`
         })));
         await loadInventory();
     } catch (e) { console.error('Ошибка списания со склада:', e); }
+}
+
+// Сторнирование при удалении/редактировании ОДНОЙ позиции заказа (в отличие от
+// reverseInventoryForOrder — та сторнирует весь заказ). Находит все "расход"-записи,
+// привязанные именно к этой позиции (order_item_id), и создаёт зеркальные "сторно" —
+// точно по факту, что реально было списано, независимо от того, менялся ли рецепт
+// изделия с тех пор.
+async function reverseInventoryForOrderItem(orderItemId) {
+    try {
+        const { data, error } = await db.from('inventory')
+            .select('id, ingredient_id, semi_finished_id, quantity, order_id')
+            .eq('order_item_id', orderItemId)
+            .eq('type', 'расход');
+        if (error || !data || !data.length) return;
+
+        await db.from('inventory').insert(data.map(r => ({
+            org_id:           currentOrgId,
+            ingredient_id:    r.ingredient_id || null,
+            semi_finished_id: r.semi_finished_id || null,
+            type:     'сторно',
+            quantity: r.quantity,
+            order_id: r.order_id,
+            order_item_id: orderItemId,
+            notes:    `Сторно позиции заказа #${r.order_id}`
+        })));
+        await loadInventory();
+    } catch (e) { console.error('Ошибка сторнирования позиции:', e); }
 }
 
 // Сторнирование при удалении заказа

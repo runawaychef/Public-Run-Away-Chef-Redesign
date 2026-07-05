@@ -5,7 +5,8 @@
 // Зависит от: db (supabaseClient.js), products/customers/orders/currentOrderId (главный скрипт),
 // showLoading/hideLoading, logActivity (employees.js),
 // displayProducts (products.js), displayCustomers (customers.js),
-// displayOrders/renderDetailItems (orders.js), deleteId/deleteType/editIndex/editItemIdx (главный скрипт).
+// displayOrders/renderDetailItems (orders.js), reverseInventoryForOrder/reverseInventoryForOrderItem (inventory.js),
+// deleteId/deleteType/editIndex/editItemIdx (главный скрипт).
 
 // ==================== УДАЛЕНИЕ ====================
 function openDeleteModal(id, type, label) {
@@ -79,6 +80,14 @@ async function confirmDelete() {
             const order = orders.find(o => o.id === currentOrderId);
             if (order) {
                 const item = order.items[deleteId];
+                // Если склад по этой позиции уже был списан — сторнируем точно
+                // (по order_item_id). Если списание ещё отложено (inventory_pending),
+                // сторнировать нечего — удалённая позиция просто не попадёт
+                // в processPendingInventory(), т.к. она уже убрана из order.items.
+                if (!order.inventory_pending) {
+                    await reverseInventoryForOrderItem(item.id);
+                }
+                await db.from('order_item_ingredients').delete().eq('order_item_id', item.id);
                 const { error } = await db.from('order_items').delete().eq('id', item.id);
                 if (error) throw error;
                 order.items.splice(deleteId, 1);

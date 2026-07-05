@@ -273,7 +273,7 @@ async function processPendingInventory() {
     for (const order of pending) {
         for (const it of (order.items || [])) {
             const prod = products.find(p => p.id === it.product_id);
-            if (prod) await writeOffInventoryForItem(prod, it.quantity, order.id);
+            if (prod) await writeOffInventoryForItem(prod, it.quantity, order.id, it.id);
         }
         try {
             await updateChecked(db.from('orders').update({ inventory_pending: false }).eq('id', order.id));
@@ -464,7 +464,7 @@ async function copyOrder(i) {
                 if (!prod) continue;
                 await saveOrderItemIngredients(it.id, prod, it.quantity);
                 if (shouldWriteOffNow(copy.date)) {
-                    await writeOffInventoryForItem(prod, it.quantity, copy.id);
+                    await writeOffInventoryForItem(prod, it.quantity, copy.id, it.id);
                 } else if (!copy.inventory_pending) {
                     try {
                         await updateChecked(db.from('orders').update({ inventory_pending: true }).eq('id', copy.id));
@@ -817,7 +817,7 @@ async function saveDetailHeader() {
                 // Дату придвинули ближе — списываем сейчас то, что раньше откладывали
                 for (const it of order.items) {
                     const prod = products.find(p => p.id === it.product_id);
-                    if (prod) await writeOffInventoryForItem(prod, it.quantity, order.id);
+                    if (prod) await writeOffInventoryForItem(prod, it.quantity, order.id, it.id);
                 }
                 await updateChecked(db.from('orders').update({ inventory_pending: false }).eq('id', order.id));
                 order.inventory_pending = false;
@@ -933,7 +933,7 @@ async function addItemToOrder() {
         await saveOrderItemIngredients(data.id, prod, Number(data.quantity));
 
         if (shouldWriteOffNow(order.date)) {
-            await writeOffInventoryForItem(prod, Number(data.quantity), order.id);
+            await writeOffInventoryForItem(prod, Number(data.quantity), order.id, data.id);
         } else if (!order.inventory_pending) {
             // Заказ далеко вперёд — списание отложено до момента, когда до него
             // останется INVENTORY_PENDING_DAYS дней (см. processPendingInventory)
@@ -1003,11 +1003,28 @@ async function saveItemEdit() {
 
     showLoading();
     try {
+        // Если склад по этой позиции уже был списан — сторнируем его точно
+        // (по order_item_id, независимо от того, менялся ли рецепт с тех пор),
+        // и удаляем старый снимок рецепта. Если списание ещё отложено
+        // (inventory_pending), сторнировать нечего — новое количество само
+        // подхватится позже в processPendingInventory().
+        if (!order.inventory_pending) {
+            await reverseInventoryForOrderItem(item.id);
+        }
+        await db.from('order_item_ingredients').delete().eq('order_item_id', item.id);
+
         const itemCost = parseFloat((productUnitCost(prod) * quantity).toFixed(4));
         await updateChecked(db.from('order_items').update({
             product_id: prod.id, quantity, price: parseFloat(price.toFixed(2)), item_cost: itemCost
         }).eq('id', item.id));
         order.items[editItemIdx] = { id: item.id, product_id: prod.id, product: prod.name, quantity, price: parseFloat(price.toFixed(2)), item_cost: itemCost };
+
+        // Новый снимок рецепта — нужен всегда, независимо от того, спишем ли склад сейчас
+        await saveOrderItemIngredients(item.id, prod, quantity);
+        if (!order.inventory_pending) {
+            await writeOffInventoryForItem(prod, quantity, order.id, item.id);
+        }
+
         renderDetailItems(order);
         closeModal();
         logActivity('item', `Изменена позиция в заказе №${order.id}: ${oldDesc} → «${prod.name}» × ${quantity}`, order.id);
