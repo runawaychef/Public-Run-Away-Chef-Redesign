@@ -600,7 +600,7 @@ async function writeOffInventoryForItem(prod, itemQty, orderId, orderItemId = nu
 
     if (!rows.length) return;
     try {
-        await db.from('inventory').insert(rows.map(r => ({
+        const { error: invErr } = await db.from('inventory').insert(rows.map(r => ({
             org_id:           currentOrgId,
             ingredient_id:    r.ingredient_id || null,
             semi_finished_id: r.semi_finished_id || null,
@@ -610,8 +610,9 @@ async function writeOffInventoryForItem(prod, itemQty, orderId, orderItemId = nu
             order_item_id: orderItemId,
             notes:    `Заказ #${orderId}`
         })));
+        if (invErr) { console.error('Ошибка списания со склада:', invErr); showInfo('ВРЕМЕННАЯ ДИАГНОСТИКА: ' + invErr.message); return; }
         await loadInventory();
-    } catch (e) { console.error('Ошибка списания со склада:', e); }
+    } catch (e) { console.error('Ошибка списания со склада:', e); showInfo('ВРЕМЕННАЯ ДИАГНОСТИКА (catch): ' + (e && e.message ? e.message : String(e))); }
 }
 
 // Сторнирование при удалении/редактировании ОДНОЙ позиции заказа (в отличие от
