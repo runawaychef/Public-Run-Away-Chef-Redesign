@@ -461,6 +461,7 @@ async function copyOrder(i) {
             // на будущее — если логика создания копии когда-нибудь изменится.
             for (const it of copy.items) {
                 const prod = products.find(p => p.id === it.product_id);
+                alert('ДИАГНОСТИКА copyOrder: позиция product_id=' + it.product_id + ', найден prod=' + (prod ? prod.name : 'НЕ НАЙДЕН') + ', shouldWriteOffNow=' + shouldWriteOffNow(copy.date));
                 if (!prod) continue;
                 await saveOrderItemIngredients(it.id, prod, it.quantity);
                 if (shouldWriteOffNow(copy.date)) {
