@@ -170,7 +170,7 @@ function displayOrders() {
             <td class=" p-0.5 table-text font-medium whitespace-nowrap" onclick="openOrderDetail(${order.id})">${payDot}${total}</td>
             <td class=" p-0.5 text-center" onclick="openOrderDetail(${order.id})"><span class="${flagClass}"></span></td>
             <td class=" p-0.5 text-center">
-                ${hasPermission('can_delete') ? svgDelete(`openDeleteModal(${realIdx},'order','заказ клиента «${order.customer}»')`) : ''}
+                ${hasPermission('can_delete') ? svgDeleteSafe('openDeleteModal', [realIdx, 'order', `заказ клиента «${order.customer}»`]) : ''}
                 ${svgCopy(`copyOrder(${realIdx})`)}
             </td>`;
         tbody.appendChild(row);
@@ -275,8 +275,10 @@ async function processPendingInventory() {
             const prod = products.find(p => p.id === it.product_id);
             if (prod) await writeOffInventoryForItem(prod, it.quantity, order.id);
         }
-        const { error } = await db.from('orders').update({ inventory_pending: false }).eq('id', order.id);
-        if (!error) order.inventory_pending = false;
+        try {
+            await updateChecked(db.from('orders').update({ inventory_pending: false }).eq('id', order.id));
+            order.inventory_pending = false;
+        } catch (e) { console.error('Не удалось снять inventory_pending:', e); }
     }
     displayOrders();
 }
@@ -464,8 +466,10 @@ async function copyOrder(i) {
                 if (shouldWriteOffNow(copy.date)) {
                     await writeOffInventoryForItem(prod, it.quantity, copy.id);
                 } else if (!copy.inventory_pending) {
-                    const { error: pendErr } = await db.from('orders').update({ inventory_pending: true }).eq('id', copy.id);
-                    if (!pendErr) copy.inventory_pending = true;
+                    try {
+                        await updateChecked(db.from('orders').update({ inventory_pending: true }).eq('id', copy.id));
+                        copy.inventory_pending = true;
+                    } catch (e) { console.error('Не удалось отметить inventory_pending:', e); }
                 }
             }
         }
@@ -599,8 +603,7 @@ async function markOrderChecked() {
         .trim();
     showLoading();
     try {
-        const { error } = await db.from('orders').update({ notes: newNotes }).eq('id', order.id);
-        if (error) throw error;
+        await updateChecked(db.from('orders').update({ notes: newNotes }).eq('id', order.id));
         order.notes = newNotes;
         document.getElementById('detailNotes').value = newNotes;
         document.getElementById('markCheckedBtn').classList.add('hidden');
@@ -697,10 +700,7 @@ async function restoreOrder(orderId) {
     suppressRealtimeFor3s();
     showLoading();
     try {
-        const { error } = await db.from('orders')
-            .update({ deleted_at: null })
-            .eq('id', orderId);
-        if (error) throw error;
+        await updateChecked(db.from('orders').update({ deleted_at: null }).eq('id', orderId));
         closeModal();
         await loadAllData();
         logActivity('order', `Заказ №${orderId} восстановлен из корзины`);
@@ -794,10 +794,9 @@ async function saveDetailHeader() {
 
     showLoading();
     try {
-        const { error } = await db.from('orders').update({
+        await updateChecked(db.from('orders').update({
             customer_id: custId, order_date: date, status, discount, vat_exempt: vatExempt, employee_id: employeeId, notes
-        }).eq('id', order.id);
-        if (error) throw error;
+        }).eq('id', order.id));
         const emp = employees.find(e => e.id === employeeId);
         order.customer_id = custId;
         order.customer    = custName;
@@ -820,12 +819,12 @@ async function saveDetailHeader() {
                     const prod = products.find(p => p.id === it.product_id);
                     if (prod) await writeOffInventoryForItem(prod, it.quantity, order.id);
                 }
-                await db.from('orders').update({ inventory_pending: false }).eq('id', order.id);
+                await updateChecked(db.from('orders').update({ inventory_pending: false }).eq('id', order.id));
                 order.inventory_pending = false;
             } else if (!nowShould && !order.inventory_pending) {
                 // Дату отодвинули далеко вперёд — сторнируем то, что уже успели списать
                 await reverseInventoryForOrder(order.id);
-                await db.from('orders').update({ inventory_pending: true }).eq('id', order.id);
+                await updateChecked(db.from('orders').update({ inventory_pending: true }).eq('id', order.id));
                 order.inventory_pending = true;
             }
         }
@@ -938,8 +937,10 @@ async function addItemToOrder() {
         } else if (!order.inventory_pending) {
             // Заказ далеко вперёд — списание отложено до момента, когда до него
             // останется INVENTORY_PENDING_DAYS дней (см. processPendingInventory)
-            const { error: pendErr } = await db.from('orders').update({ inventory_pending: true }).eq('id', order.id);
-            if (!pendErr) order.inventory_pending = true;
+            try {
+                await updateChecked(db.from('orders').update({ inventory_pending: true }).eq('id', order.id));
+                order.inventory_pending = true;
+            } catch (e) { console.error('Не удалось отметить inventory_pending:', e); }
         }
 
         renderDetailItems(order);
@@ -1003,10 +1004,9 @@ async function saveItemEdit() {
     showLoading();
     try {
         const itemCost = parseFloat((productUnitCost(prod) * quantity).toFixed(4));
-        const { error } = await db.from('order_items').update({
+        await updateChecked(db.from('order_items').update({
             product_id: prod.id, quantity, price: parseFloat(price.toFixed(2)), item_cost: itemCost
-        }).eq('id', item.id);
-        if (error) throw error;
+        }).eq('id', item.id));
         order.items[editItemIdx] = { id: item.id, product_id: prod.id, product: prod.name, quantity, price: parseFloat(price.toFixed(2)), item_cost: itemCost };
         renderDetailItems(order);
         closeModal();
@@ -1184,8 +1184,10 @@ async function recalcOrderCostBreakdown() {
             const prod = products.find(p => p.id === item.product_id);
             if (prod) {
                 const newCost = parseFloat((productUnitCost(prod) * item.quantity).toFixed(4));
-                const { error } = await db.from('order_items').update({ item_cost: newCost }).eq('id', item.id);
-                if (!error) item.item_cost = newCost;
+                try {
+                    await updateChecked(db.from('order_items').update({ item_cost: newCost }).eq('id', item.id));
+                    item.item_cost = newCost;
+                } catch (e) { console.error('Не удалось обновить item_cost:', e); }
             }
         }
 
@@ -1222,10 +1224,9 @@ async function saveOrderEdit() {
 
     showLoading();
     try {
-        const { error } = await db.from('orders').update({
+        await updateChecked(db.from('orders').update({
             customer_id: cust.id, order_date: date, status
-        }).eq('id', order.id);
-        if (error) throw error;
+        }).eq('id', order.id));
         order.customer_id = cust.id;
         order.customer    = cust.name;
         order.date        = date;

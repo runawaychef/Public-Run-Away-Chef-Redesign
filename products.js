@@ -29,7 +29,7 @@ function displayProducts() {
             <td class=" p-0.5 table-text text-center ${hasUnit ? '' : 'text-red-600 font-semibold'}" onclick="openProductDetail(${p.id})">${unitLabel}</td>
             <td class=" p-0.5 table-text" onclick="openProductDetail(${p.id})">${p.price.toFixed(2)}</td>
             <td class=" p-0.5 text-center">
-                ${hasPermission('can_delete') ? svgDelete(`openDeleteModal(${i},'product','изделие «${p.name}»')`) : ''}
+                ${hasPermission('can_delete') ? svgDeleteSafe('openDeleteModal', [i, 'product', `изделие «${p.name}»`]) : ''}
                 ${svgCopy(`copyProduct(${i})`)}
             </td>`;
         tbody.appendChild(row);

@@ -105,6 +105,34 @@ function escapeHtml(str) {
         .replaceAll("'", '&#039;');
 }
 
+// ==================== БЕЗОПАСНЫЕ ОБРАБОТЧИКИ КЛИКОВ (data-fn/data-args) ====================
+// Проблема, которую это решает: раньше имена/названия вставлялись прямо в
+// строку onclick="..." — если в названии попадалась кавычка (частый случай:
+// "Торт «Наполеон»", O'Connor), атрибут ломался и в худшем случае позволял
+// выполнить произвольный код (XSS). escapeHtml() эту проблему НЕ решает —
+// он защищает HTML-текст, а не JS-код внутри onclick.
+//
+// Решение: данные передаются не как код, а как данные — через data-атрибуты
+// (которые браузер не пытается исполнять), а сам вызов функции идёт через
+// один общий обработчик кликов (event delegation), а не через onclick.
+//
+// Использование вместо onclick="myFunc(${id}, '${name}')":
+//   <span ${dataAction('myFunc', [id, name])}>...</span>
+// Работает для любой функции — не только для готовых иконок ниже.
+function dataAction(fnName, args) {
+    return `data-fn="${escapeHtml(fnName)}" data-args="${escapeHtml(JSON.stringify(args || []))}"`;
+}
+
+document.addEventListener('click', function(e) {
+    const el = e.target.closest('[data-fn]');
+    if (!el) return;
+    const fn = window[el.dataset.fn];
+    if (typeof fn !== 'function') { console.error('dataAction: функция не найдена —', el.dataset.fn); return; }
+    let args = [];
+    try { args = JSON.parse(el.dataset.args || '[]'); } catch (err) { console.error('dataAction: битые аргументы', err); }
+    fn(...args);
+});
+
 // ==================== ПОИСКОВЫЙ ВЫПАДАЮЩИЙ СПИСОК ====================
 // Заменяет нативный <select>/<datalist> своим вертикальным списком
 // (на iOS Safari datalist либо не работает, либо рисуется горизонтальной лентой).
@@ -264,6 +292,16 @@ function svgEdit(onclick) {
 function svgDelete(onclick) {
     return `<svg class="action-icon icon-delete inline mr-1 cursor-pointer" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" title="Удалить" onclick="${onclick}"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>`;
 }
+
+// ---- Безопасные версии (data-fn/data-args вместо inline onclick с именами) ----
+// Используются в файлах, уже переведённых на dataAction(). См. helpers.js
+// выше — блок "БЕЗОПАСНЫЕ ОБРАБОТЧИКИ КЛИКОВ" с объяснением, зачем это нужно.
+function svgEditSafe(fnName, args) {
+    return `<svg class="action-icon icon-edit inline mr-1 cursor-pointer" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" title="Редактировать" ${dataAction(fnName, args)}><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/></svg>`;
+}
+function svgDeleteSafe(fnName, args) {
+    return `<svg class="action-icon icon-delete inline mr-1 cursor-pointer" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" title="Удалить" ${dataAction(fnName, args)}><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>`;
+}
 // Универсальный способ поделиться текстом: системное меню "Отправить через..." на телефоне,
 // либо копирование в буфер обмена как запасной вариант (десктоп и т.п.)
 async function shareOrCopyText(text) {
@@ -313,4 +351,7 @@ async function updateChecked(query) {
 
 function svgCopy(onclick) {
     return `<svg class="action-icon icon-copy inline mr-1 cursor-pointer" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" title="Копировать" onclick="${onclick}"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124M15.75 17.25h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25"/></svg>`;
+}
+function svgCopySafe(fnName, args) {
+    return `<svg class="action-icon icon-copy inline mr-1 cursor-pointer" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" title="Копировать" ${dataAction(fnName, args)}><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124M15.75 17.25h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25"/></svg>`;
 }
