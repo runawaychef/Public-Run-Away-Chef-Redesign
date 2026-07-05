@@ -2,13 +2,15 @@
 // Чистые функции расчёта сумм, скидок и НДС. Зависят только от объекта order.
 // Обычный скрипт (без модулей) — функции доступны глобально, как раньше.
 
-const VAT_RATE = 0.21; // НДС 21% (Литва)
+// Ставка НДС теперь настраивается per-organization — см. currentOrgVatRate (employees.js),
+// заполняется из company.js (карточка "Информация о компании"). Дефолт 0.21 — на случай
+// организаций, где поле ещё не заполнено.
 
 // Символы валют — единая таблица соответствий, используется и в formatMoney(),
 // и в invoice.js (там валюта может браться не из текущей, а из снимка счёта).
 const CURRENCY_SYMBOLS = {
     EUR: '€', USD: '$', RUB: '₽', BYN: 'Br', KZT: '₸', KGS: 'с', UZS: 'сум',
-    TJS: 'SM', TMT: 'm', AZN: '₼', AMD: '֏', GEL: '₾', MDL: 'L', UAH: '₴'
+    TJS: 'SM', TMT: 'm', AZN: '₼', AMD: '֏', GEL: '₾', MDL: 'L', UAH: '₴', PLN: 'zł'
 };
 
 // Единая точка форматирования сумм — везде в приложении, где раньше было
@@ -38,7 +40,8 @@ function orderAfterDiscount(order) {
 
 function orderVatAmount(order) {
     if (order.vat_exempt) return 0;
-    return orderAfterDiscount(order) * VAT_RATE;
+    const rate = typeof currentOrgVatRate !== 'undefined' ? currentOrgVatRate : 0.21;
+    return orderAfterDiscount(order) * rate;
 }
 
 function orderGrandTotal(order) {

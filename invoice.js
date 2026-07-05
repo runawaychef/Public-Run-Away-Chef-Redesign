@@ -12,7 +12,7 @@
 // заново, сохранив тот же номер.
 //
 // Зависит от: db, currentOrgId, orders/customers (orders.js/customers.js),
-// VAT_RATE (money.js), formatDateDMY (dates.js),
+// currentOrgVatRate (employees.js), formatDateDMY (dates.js),
 // escapeHtml/showLoading/hideLoading/showInfo/updateChecked (helpers.js).
 
 // CURRENCY_SYMBOLS — общая таблица, теперь в money.js (загружается раньше).
@@ -188,9 +188,10 @@ function buildDocumentHtml(docType, snapshot) {
     const subtotalAll = items.reduce((s, it) => s + it.quantity * it.price, 0);
     const discountAll = subtotalAll * (Number(order.discount) || 0) / 100;
     const afterDiscountAll = subtotalAll - discountAll;
-    const vatAll = order.vat_exempt ? 0 : afterDiscountAll * VAT_RATE;
+    const vatRate = typeof currentOrgVatRate !== 'undefined' ? currentOrgVatRate : 0.21;
+    const vatAll = order.vat_exempt ? 0 : afterDiscountAll * vatRate;
     const grandAll = afterDiscountAll + vatAll;
-    const vatPctLabel = order.vat_exempt ? '0%' : (VAT_RATE * 100).toFixed(0) + '%';
+    const vatPctLabel = order.vat_exempt ? '0%' : (vatRate * 100).toFixed(0) + '%';
 
     let itemsHtml = '';
     let totalQty = 0;
@@ -198,7 +199,7 @@ function buildDocumentHtml(docType, snapshot) {
         const lineNet = item.quantity * item.price;
         const discShare = subtotalAll > 0 ? (lineNet / subtotalAll) * discountAll : 0;
         const lineNetAfterDiscount = lineNet - discShare;
-        const lineVat = order.vat_exempt ? 0 : lineNetAfterDiscount * VAT_RATE;
+        const lineVat = order.vat_exempt ? 0 : lineNetAfterDiscount * vatRate;
         const lineSubtotal = lineNetAfterDiscount + lineVat;
         totalQty += Number(item.quantity);
         itemsHtml += `<tr>
