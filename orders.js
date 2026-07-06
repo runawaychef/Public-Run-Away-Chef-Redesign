@@ -219,15 +219,12 @@ function renderOrderCard(order) {
         <div class="order-card-tap" onclick="openOrderDetail(${order.id})">
             <div class="stripe" style="background:${stripeColor}"></div>
             <div class="order-card-body">
-                <div class="left-col">
-                    <div class="oc-name">${escapeHtml(order.customer || '(без клиента)')}</div>
-                    <div class="oc-meta">${formatDateDMY(order.date)} · ${escapeHtml(oNum)}</div>
-                    ${payLine}
-                    ${overdueLine}
-                    ${itemsLine}
-                </div>
-                <div class="right-col">
+                <div class="oc-row">
+                    <span class="oc-name">${escapeHtml(order.customer || '(без клиента)')}</span>
                     <span class="oc-sum">${total}</span>
+                </div>
+                <div class="oc-row" style="margin-top:3px;">
+                    <span class="oc-meta">${formatDateDMY(order.date)} · ${escapeHtml(oNum)}</span>
                     <div style="position:relative;" onclick="event.stopPropagation();">
                         <button class="status-btn" style="background:${statusColor};" onclick="toggleOrderStatusDropdown(${order.id})">
                             ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}
@@ -236,6 +233,9 @@ function renderOrderCard(order) {
                         <div class="status-dropdown" id="statusDropdown-${order.id}">${statusOptions}</div>
                     </div>
                 </div>
+                ${payLine}
+                ${overdueLine}
+                ${itemsLine}
             </div>
         </div>
     </div>`;
@@ -301,7 +301,8 @@ function positionOrdersViewToggle() {
 
     const headerBottom = headerCard.getBoundingClientRect().bottom;
     const toggleHeight  = toggle.offsetHeight;
-    toggle.style.top = Math.round(headerBottom + GAP / 2 - toggleHeight / 2) + 'px';
+    // +10px — сдвиг чуть ниже геометрического центра зазора (по просьбе, "на глаз" смотрится лучше)
+    toggle.style.top = Math.round(headerBottom + GAP / 2 - toggleHeight / 2 + 10) + 'px';
 }
 window.addEventListener('resize', positionOrdersViewToggle);
 
