@@ -330,7 +330,7 @@ async function openInventoryModal() {
             : _shoppingList.some(r => r.ingredient_id === ing.id);
         const addBtn = inList
             ? `<span class="text-green-600 text-xs font-semibold"><svg class="w-3.5 h-3.5 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg></span>`
-            : `<button onclick="addRowToShoppingList(${isSf ? 'null' : ing.id}, ${isSf ? ing.id : 'null'})" class="btn bg-indigo-50 text-indigo-600 px-1 py-0.5 rounded text-xs hover:bg-indigo-100">+</button>`;
+            : `<button onclick="addRowToShoppingList(${isSf ? 'null' : ing.id}, ${isSf ? ing.id : 'null'})" class="btn bg-[#eef1ea] text-[#7c9473] px-1 py-0.5 rounded text-xs hover:bg-[#e0e6d9]">+</button>`;
         const detailClick = isSf
             ? `closeModal(); showTab('semiFinished'); openSemiFinishedDetail(${ing.id});`
             : `closeModal(); showTab('ingredients'); openIngredientDetail(${ing.id});`;

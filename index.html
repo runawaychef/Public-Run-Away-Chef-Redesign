@@ -255,15 +255,15 @@
         #fabAddBtn {
             position: fixed; right: 16px; bottom: calc(80px + env(safe-area-inset-bottom));
             width: 56px; height: 56px; border-radius: 50%;
-            background: linear-gradient(135deg, #6366f1, #4f46e5);
+            background: linear-gradient(135deg, #8fa885, #7c9473);
             color: white; border: none;
             display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 4px 16px rgba(79,70,229,0.45), 0 2px 6px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 16px rgba(124,148,115,0.45), 0 2px 6px rgba(0,0,0,0.15);
             z-index: 60; cursor: pointer;
             animation: fabIn 0.25s cubic-bezier(0.34,1.56,0.64,1) both;
             transition: box-shadow 0.2s, transform 0.2s;
         }
-        #fabAddBtn:active { transform: scale(0.92); box-shadow: 0 2px 8px rgba(79,70,229,0.3); }
+        #fabAddBtn:active { transform: scale(0.92); box-shadow: 0 2px 8px rgba(124,148,115,0.35); }
         #fabAddBtn.hidden { display: none; }
         @keyframes fabIn {
             from { opacity: 0; transform: scale(0.5) translateY(20px); }
@@ -312,7 +312,7 @@
 
         /* ── Карточный вид списка заказов ──────────────────────────────── */
         #ordersViewToggle {
-            position: fixed; top: calc(96px + env(safe-area-inset-top)); right: 6px;
+            position: fixed; right: 6px; /* top выставляется в JS — positionOrdersViewToggle() */
             display: flex; background: white; border: 1px solid #e5e7eb; border-radius: 999px;
             padding: 2px; gap: 2px; z-index: 150; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
         }
@@ -387,10 +387,9 @@
             letter-spacing: 0.04em; white-space: nowrap;
         }
 
-        /* Отступ сверху у списка заказов и у карточки заказа — чтобы верхний край
-           контента не оказывался под плавающими иконками/переключателем вида. */
-        #ordersList { padding-top: 44px; }
-        #orderDetail { padding-top: 44px; }
+        /* Отступ сверху у списка заказов — чтобы верхняя карточка не оказывалась
+           под переключателем вида (высота отступа выставляется тем же JS, что
+           центрирует сам переключатель — см. positionOrdersViewToggle()). */
 
 
         /* Поля ввода и выпадающие списки — заливаем цветом фона страницы вместо
@@ -561,7 +560,7 @@
 
 <div class="container mx-auto max-w-2xl">
     <!-- Sticky шапка: логотип + меню вкладок -->
-    <div style="position:sticky; top:0; z-index:40; background:#f3f4f6; padding: 8px 8px 0; padding-top: max(8px, env(safe-area-inset-top));">
+    <div id="appStickyHeader" style="position:sticky; top:0; z-index:40; background:#f3f4f6; padding: 8px 8px 0; padding-top: max(8px, env(safe-area-inset-top));">
         <div class="bg-white rounded-xl shadow-md p-3 flex items-center gap-3 mb-2">
             <div>
                 <div id="orgNameHeader" class="text-xl font-bold text-gray-800 leading-tight">Runaway Chef Project</div>
@@ -1660,7 +1659,7 @@
                 <h2 class="text-xs font-semibold mb-2 text-gray-800">Сотрудники и права</h2>
                 <div id="employeesListContent" class="flex flex-col gap-1 mb-3" style="max-height:50vh;overflow-y:auto;"></div>
                 <div class="flex gap-1">
-                    <button onclick="openEmployeeEditModal(null)" class="btn bg-indigo-600 text-white p-1.5 rounded-xl hover:bg-indigo-700 flex-1 text-xs">+ Создать сотрудника</button>
+                    <button onclick="openEmployeeEditModal(null)" class="btn bg-[#7c9473] text-white p-1.5 rounded-xl hover:bg-[#6c8464] flex-1 text-xs">+ Создать сотрудника</button>
                     <button onclick="closeModal()" class="btn bg-[#7c9473] text-white p-1.5 rounded-xl hover:bg-[#6c8464] text-xs" style="width:80px;">Закрыть</button>
                 </div>
             </div>
@@ -1743,7 +1742,7 @@
                 <!-- Список покупок -->
                 <div id="inventoryTabShop" class="hidden">
                     <div class="flex gap-1 mb-2">
-                        <button onclick="addCriticalToShoppingList()" class="btn bg-indigo-50 text-indigo-700 px-2 py-1 rounded-xl hover:bg-indigo-100 text-xs flex-1">+ Добавить критичное</button>
+                        <button onclick="addCriticalToShoppingList()" class="btn bg-[#eef1ea] text-[#4f6349] px-2 py-1 rounded-xl hover:bg-[#e3e8df] text-xs flex-1">+ Добавить критичное</button>
                         <button onclick="clearShoppingList()" class="btn bg-[#f5e6e2] text-[#a8574c] px-2 py-1 rounded-xl hover:bg-[#eed6d0] text-xs">Очистить всё</button>
                     </div>
                     <div class="mb-2">
@@ -2116,12 +2115,12 @@
     <script src="auth.js?v=9"></script>
     <script src="employees.js?v=12"></script>
     <script src="company.js?v=6"></script>
-    <script src="inventory.js?v=17"></script>
+    <script src="inventory.js?v=18"></script>
 <script src="ingredients.js?v=14"></script>
 <script src="semifinished.js?v=11"></script>
 <script src="products.js?v=15"></script>
 <script src="customers.js?v=18"></script>
-<script src="orders.js?v=28"></script>
+<script src="orders.js?v=29"></script>
 <script src="invoice.js?v=7"></script>
 <script src="payments.js?v=9"></script>
 <script src="stats.js?v=9"></script>
@@ -2300,6 +2299,7 @@ function showTab(tabId) {
     closeModal();
     document.getElementById('statsBtn')?.classList.toggle('active', tabId === 'stats');
     document.getElementById('ordersViewToggle')?.classList.toggle('hidden', tabId !== 'orders');
+    if (tabId === 'orders' && typeof positionOrdersViewToggle === 'function') positionOrdersViewToggle();
 
     // Принудительно завершаем предыдущую анимацию если она ещё идёт
     const wrapper = document.getElementById('tabsWrapper');

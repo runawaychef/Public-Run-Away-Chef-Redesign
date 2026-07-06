@@ -278,6 +278,26 @@ function setOrdersViewMode(mode) {
     if (mode === 'cards') displayOrders();
 }
 
+// Ставит переключатель ровно посередине зазора между нижним краем шапки
+// (белая карточка с названием пекарни) и верхним краем первой карточки/таблицы
+// заказов. Считается по реальным координатам элементов на экране (а не
+// подобранными "на глаз" числами в CSS) — так расстояние остаётся верным
+// независимо от размера шрифта/устройства.
+function positionOrdersViewToggle() {
+    const headerCard = document.querySelector('#appStickyHeader .bg-white');
+    const toggle = document.getElementById('ordersViewToggle');
+    const list = document.getElementById('ordersList');
+    if (!headerCard || !toggle || !list || toggle.classList.contains('hidden')) return;
+
+    const GAP = 40; // желаемое расстояние между шапкой и первой карточкой
+    list.style.paddingTop = GAP + 'px';
+
+    const headerBottom = headerCard.getBoundingClientRect().bottom;
+    const toggleHeight  = toggle.offsetHeight;
+    toggle.style.top = Math.round(headerBottom + GAP / 2 - toggleHeight / 2) + 'px';
+}
+window.addEventListener('resize', positionOrdersViewToggle);
+
 // Считает сумму (с НДС) и общее кол-во изделий по подмножеству заказов, отобранных predicate
 function calcGroupTotals(allOrders, predicate) {
     let sum = 0, qty = 0, count = 0;
@@ -675,6 +695,7 @@ async function closeOrderDetail() {
     document.getElementById('ordersList').classList.remove('hidden');
     document.getElementById('orderDetail').classList.remove('active');
     document.getElementById('ordersViewToggle')?.classList.remove('hidden');
+    positionOrdersViewToggle();
     if (leavingId !== null) await cleanupOrderDraftIfEmpty(leavingId);
     displayOrders();
     refreshFab();
