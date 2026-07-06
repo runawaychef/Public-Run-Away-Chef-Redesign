@@ -416,7 +416,8 @@ function updateOrderCustomerFilter() {
         const row = document.createElement('div');
         row.className = 'status-option' + (selected ? ' selected' : '');
         row.style.justifyContent = 'flex-start';
-        row.style.gap = '8px';
+        row.style.gap = '4px';
+        row.style.padding = '9px 6px';
         row.dataset.fn = 'onOrderCustomerFilterChange';
         row.dataset.args = JSON.stringify([c.name]);
         row.innerHTML = `<svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg><span>${escapeHtml(c.name)}</span>`;
