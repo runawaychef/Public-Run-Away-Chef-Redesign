@@ -384,6 +384,7 @@
             border: 1px solid #eee; overflow: hidden; z-index: 250; max-height: 220px; overflow-y: auto;
         }
         .filter-dropdown.hidden { display: none; }
+        .order-filter-checkbox { accent-color: #7c9473; flex-shrink: 0; }
 
         .oc-group-label {
             font-size: 11px; font-weight: 700; color: #9a9488; text-transform: uppercase;
@@ -1159,9 +1160,9 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
                             </button>
                             <div id="orderFilterDropdown" class="filter-dropdown hidden">
-                                <label class="status-option" style="border-bottom:1px solid #f1efe9;">
+                                <label class="status-option" style="border-bottom:1px solid #f1efe9; justify-content:flex-start; gap:8px;">
+                                    <input type="checkbox" id="orderFilterAll" onchange="toggleAllOrderCustomersFilter(this)" checked class="w-4 h-4 order-filter-checkbox">
                                     <span>Все клиенты</span>
-                                    <input type="checkbox" id="orderFilterAll" onchange="toggleAllOrderCustomersFilter(this)" checked class="w-3.5 h-3.5">
                                 </label>
                                 <div id="orderFilterList"></div>
                             </div>
@@ -2153,15 +2154,15 @@
 <script src="dates.js?v=7"></script>
     <script src="money.js?v=9"></script>
     <script src="supabaseClient.js?v=7"></script>
-    <script src="auth.js?v=9"></script>
-    <script src="employees.js?v=12"></script>
+    <script src="auth.js?v=10"></script>
+    <script src="employees.js?v=13"></script>
     <script src="company.js?v=6"></script>
     <script src="inventory.js?v=18"></script>
 <script src="ingredients.js?v=14"></script>
 <script src="semifinished.js?v=11"></script>
 <script src="products.js?v=15"></script>
 <script src="customers.js?v=18"></script>
-<script src="orders.js?v=33"></script>
+<script src="orders.js?v=34"></script>
 <script src="invoice.js?v=7"></script>
 <script src="payments.js?v=9"></script>
 <script src="stats.js?v=9"></script>
