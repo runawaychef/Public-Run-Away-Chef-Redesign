@@ -10,43 +10,16 @@
 // ---- Список заказов ----
 
 function displayOrders() {
-    // Блок "На сегодня и завтра" — расширенные карточки (см. renderExtendedOrderCard)
     const today    = getLocalDateStr(0);
     const tomorrow = getLocalDateStr(1);
     const dayAfter = getLocalDateStr(2);
-    const summaryEl = document.getElementById('todaySummary');
-
-    function buildDaySummary(allDayOrders, label) {
-        // Напоминание — про то, что ещё нужно сделать, поэтому выполненные заказы
-        // сюда не включаем. Но если на день были заказы и все они уже выполнены —
-        // показываем явное подтверждение вместо того, чтобы блок просто исчезал.
-        const dayOrders = allDayOrders.filter(o => o.status !== 'выполнен');
-        if (!allDayOrders.length) return '';
-        if (!dayOrders.length) {
-            return `<div class="mb-2 last:mb-0 text-xs font-semibold text-center py-1" style="color:#4f6349;">
-                ${label}: все заказы выполнены ${icon('check', 'w-3.5 h-3.5 inline-block align-[-2px]')}
-            </div>`;
-        }
-        let cardsHtml = `<div class="oc-group-label">${label} · ${dayOrders.length} зак.</div>`;
-        dayOrders.forEach(o => { cardsHtml += renderOrderCard(o, true); });
-        return cardsHtml;
+    // Заказ считается "срочным" (попадает в самый верх карточного списка, за
+    // разделительной линией) если он на сегодня/завтра/послезавтра и ещё не выполнен.
+    function isUrgentOrder(o) {
+        return (o.date === today || o.date === tomorrow || o.date === dayAfter) && o.status !== 'выполнен';
     }
 
-    if (summaryEl) {
-        const todayOrders    = orders.filter(o => o.date === today);
-        const tomorrowOrders = orders.filter(o => o.date === tomorrow);
-        const dayAfterOrders = orders.filter(o => o.date === dayAfter);
-        if (todayOrders.length || tomorrowOrders.length || dayAfterOrders.length) {
-            summaryEl.innerHTML =
-                buildDaySummary(todayOrders, 'Сегодня') +
-                buildDaySummary(tomorrowOrders, 'Завтра') +
-                buildDaySummary(dayAfterOrders, 'Послезавтра');
-            summaryEl.classList.remove('hidden');
-        } else {
-            summaryEl.classList.add('hidden');
-            summaryEl.innerHTML = '';
-        }
-    }
+    // ---- Табличный вид: как и раньше, с фильтрами ----
     const filteredOrders = getFilteredOrdersForList();
     const sorted = [...filteredOrders].sort((a, b) => new Date(b.date) - new Date(a.date));
     const tbody = document.getElementById('orderTableBody');
@@ -100,30 +73,7 @@ function displayOrders() {
         tbody.appendChild(spacerRow);
     }
 
-    // ---- Карточный вид: та же группировка по неделям/месяцам, но карточками ----
-    const cardsBody = document.getElementById('orderCardsBody');
-    let cardsHtml = '';
-    function cardWeekSummaryHtml(weekKey) {
-        const monday = new Date(weekKey + 'T00:00:00');
-        const sunday = new Date(monday);
-        sunday.setDate(sunday.getDate() + 6);
-        const weekTotals = calcGroupTotals(sorted, o => keysFor(o).weekKey === weekKey);
-        const weekLabel = formatDateDMY(localStr(monday)) + ' – ' + formatDateDMY(localStr(sunday));
-        return `<div class="oc-group-label" style="color:#6b6659; background:#ece7db; padding:4px 8px; border-radius:8px; text-transform:none; letter-spacing:0;">
-            Неделя ${weekLabel} — ${weekTotals.count} зак., ${weekTotals.qty} шт., ${formatMoney(weekTotals.sum)}
-        </div>`;
-    }
-    function cardMonthSummaryHtml(monthKey) {
-        const [y, m] = monthKey.split('-').map(Number);
-        const monthTotals = calcGroupTotals(sorted, o => keysFor(o).monthKey === monthKey);
-        const monthLabel = `${MONTH_NAMES_RU[m - 1]} ${y}`;
-        return `<div class="oc-group-label" style="color:#fff; background:#4b4740; padding:5px 8px; border-radius:8px; text-transform:none; letter-spacing:0; font-weight:700;">
-            Итого за ${monthLabel} — ${monthTotals.count} зак., ${monthTotals.qty} шт., ${formatMoney(monthTotals.sum)}
-        </div>`;
-    }
-    let cardMonthKey = null, cardWeekKey = null;
-
-    sorted.forEach((order, idx) => {
+    sorted.forEach((order) => {
         const { monthKey, weekKey } = keysFor(order);
 
         const monthChanged = currentMonthKey !== null && monthKey !== currentMonthKey;
@@ -142,15 +92,6 @@ function displayOrders() {
 
         currentMonthKey = monthKey;
         currentWeekKey  = weekKey;
-
-        // -- Карточный вид: те же группы-разделители, что и в таблице --
-        const cardMonthChanged = cardMonthKey !== null && monthKey !== cardMonthKey;
-        const cardWeekChanged  = cardWeekKey  !== null && weekKey  !== cardWeekKey;
-        if (cardMonthChanged) cardsHtml += cardMonthSummaryHtml(cardMonthKey);
-        if (cardWeekChanged)  cardsHtml += cardWeekSummaryHtml(cardWeekKey);
-        cardMonthKey = monthKey;
-        cardWeekKey  = weekKey;
-        cardsHtml += renderOrderCard(order);
 
         const realIdx = orders.indexOf(order);
         const total = formatMoney(orderGrandTotal(order));
@@ -184,16 +125,67 @@ function displayOrders() {
         tbody.appendChild(row);
     });
 
-    // Закрываем последнюю неделю и месяц
+    // Закрываем последнюю неделю и месяц (таблица)
     if (currentWeekKey !== null) {
         appendWeekSummary(currentWeekKey);
         appendMonthSummary(currentMonthKey);
     }
-    if (cardWeekKey !== null) {
-        cardsHtml += cardWeekSummaryHtml(cardWeekKey);
-        cardsHtml += cardMonthSummaryHtml(cardMonthKey);
-    }
+
+    // ---- Карточный вид: полный список без фильтров, своя группировка ----
+    const cardsBody = document.getElementById('orderCardsBody');
     if (cardsBody) {
+        const sortedAll = [...orders].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        function cardWeekSummaryHtml(weekKey) {
+            const monday = new Date(weekKey + 'T00:00:00');
+            const sunday = new Date(monday);
+            sunday.setDate(sunday.getDate() + 6);
+            const weekTotals = calcGroupTotals(sortedAll, o => keysFor(o).weekKey === weekKey);
+            const weekLabel = formatDateDMY(localStr(monday)) + ' – ' + formatDateDMY(localStr(sunday));
+            return `<div class="oc-group-label" style="color:#6b6659; background:#ece7db; padding:4px 8px; border-radius:8px; text-transform:none; letter-spacing:0;">
+                Неделя ${weekLabel} — ${weekTotals.count} зак., ${weekTotals.qty} шт., ${formatMoney(weekTotals.sum)}
+            </div>`;
+        }
+        function cardMonthSummaryHtml(monthKey) {
+            const [y, m] = monthKey.split('-').map(Number);
+            const monthTotals = calcGroupTotals(sortedAll, o => keysFor(o).monthKey === monthKey);
+            const monthLabel = `${MONTH_NAMES_RU[m - 1]} ${y}`;
+            return `<div class="oc-group-label" style="color:#fff; background:#4b4740; padding:5px 8px; border-radius:8px; text-transform:none; letter-spacing:0; font-weight:700;">
+                Итого за ${monthLabel} — ${monthTotals.count} зак., ${monthTotals.qty} шт., ${formatMoney(monthTotals.sum)}
+            </div>`;
+        }
+        function urgentDividerHtml() {
+            return `<div class="oc-urgent-divider"><span>Остальные заказы</span></div>`;
+        }
+
+        let cardsHtml = '';
+        let cardMonthKey = null, cardWeekKey = null;
+        let inUrgentZone = true, urgentCount = 0;
+
+        sortedAll.forEach(order => {
+            const { monthKey, weekKey } = keysFor(order);
+            const cardMonthChanged = cardMonthKey !== null && monthKey !== cardMonthKey;
+            const cardWeekChanged  = cardWeekKey  !== null && weekKey  !== cardWeekKey;
+            if (cardMonthChanged) cardsHtml += cardMonthSummaryHtml(cardMonthKey);
+            if (cardWeekChanged)  cardsHtml += cardWeekSummaryHtml(cardWeekKey);
+            cardMonthKey = monthKey;
+            cardWeekKey  = weekKey;
+
+            // Разделитель: срочные заказы (сегодня/завтра/послезавтра, не выполненные)
+            // не дублируются отдельным блоком, а просто отделяются линией от остальных,
+            // как только в потоке встречается первый "несрочный" заказ.
+            const urgent = isUrgentOrder(order);
+            if (inUrgentZone) {
+                if (urgent) { urgentCount++; }
+                else {
+                    if (urgentCount > 0) cardsHtml += urgentDividerHtml();
+                    inUrgentZone = false;
+                }
+            }
+
+            cardsHtml += renderOrderCard(order);
+        });
+
         cardsBody.innerHTML = cardsHtml || `<p class="text-xs text-gray-400 text-center py-4">Заказов не найдено</p>`;
     }
 
@@ -214,9 +206,8 @@ function getPaymentStripeColor(payInfo) {
     return '#c0685c';
 }
 
-// extended=true — расширенная карточка (блок "Сегодня/Завтра/Послезавтра"): те же
-// данные + список позиций снизу.
-function renderOrderCard(order, extended) {
+// Позиции заказа теперь показываются во всех карточках без исключения.
+function renderOrderCard(order) {
     const payInfo = getOrderPaymentStatus(order);
     const stripeColor = getPaymentStripeColor(payInfo);
     const statusColor = ORDER_STATUS_COLORS[order.status] || ORDER_STATUS_COLORS['принят'];
@@ -231,7 +222,7 @@ function renderOrderCard(order, extended) {
     const overdueLine = payInfo.overdue ? `<div class="oc-pay-line" style="color:#8b3a3a; font-weight:700;">Просрочен платёж</div>` : '';
 
     let itemsLine = '';
-    if (extended && order.items && order.items.length) {
+    if (order.items && order.items.length) {
         itemsLine = `<div class="oc-items">` +
             order.items.map(it => `· ${escapeHtml(it.product)} — ${it.quantity} шт.`).join('<br>') +
             `</div>`;
@@ -306,8 +297,12 @@ async function quickSetOrderStatus(orderId, newStatus) {
 function setOrdersViewMode(mode) {
     document.getElementById('orderCardsWrap')?.classList.toggle('hidden', mode !== 'cards');
     document.getElementById('orderTableWrap')?.classList.toggle('hidden', mode !== 'table');
+    document.getElementById('orderFiltersPanel')?.classList.toggle('hidden', mode !== 'table');
     document.getElementById('ordersViewBtnCards')?.classList.toggle('active', mode === 'cards');
     document.getElementById('ordersViewBtnTable')?.classList.toggle('active', mode === 'table');
+    // В карточном виде фильтрация не применяется — сбрасываем на "все заказы",
+    // чтобы при возврате в таблицу не оставалось путаницы, что именно отфильтровано.
+    if (mode === 'cards') displayOrders();
 }
 
 // Считает сумму (с НДС) и общее кол-во изделий по подмножеству заказов, отобранных predicate
@@ -629,6 +624,8 @@ function openOrderDetail(orderId) {
     document.getElementById('ordersList').classList.add('hidden');
     document.getElementById('orderDetail').classList.add('active');
     document.getElementById('orderDetail').classList.add('fade-in'); setTimeout(() => document.getElementById('orderDetail').classList.remove('fade-in'), 300);
+    // Переключатель "Карточки/Таблица" бессмысленен внутри самой карточки заказа — прячем
+    document.getElementById('ordersViewToggle')?.classList.add('hidden');
 
     const _oNum = order.order_number || `#${orderId}`;
     document.getElementById('detailOrderId').textContent = `Заказ ${_oNum}`;
@@ -704,6 +701,7 @@ async function closeOrderDetail() {
     currentOrderId = null;
     document.getElementById('ordersList').classList.remove('hidden');
     document.getElementById('orderDetail').classList.remove('active');
+    document.getElementById('ordersViewToggle')?.classList.remove('hidden');
     if (leavingId !== null) await cleanupOrderDraftIfEmpty(leavingId);
     displayOrders();
     refreshFab();

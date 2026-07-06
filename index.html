@@ -372,6 +372,17 @@
         }
         .oc-group-label:first-child { margin-top: 2px; }
 
+        .oc-urgent-divider {
+            display: flex; align-items: center; gap: 10px; margin: 22px 2px 14px;
+        }
+        .oc-urgent-divider::before, .oc-urgent-divider::after {
+            content: ''; flex: 1; height: 2px; background: #d3ccb8; border-radius: 2px;
+        }
+        .oc-urgent-divider span {
+            font-size: 11px; font-weight: 700; color: #9a9488; text-transform: uppercase;
+            letter-spacing: 0.04em; white-space: nowrap;
+        }
+
 
         /* Поля ввода и выпадающие списки — заливаем цветом фона страницы вместо
            серого (серый оттенок раньше был не нашим классом, а нативной
@@ -1111,14 +1122,12 @@
 
             <!-- СПИСОК ЗАКАЗОВ -->
             <div id="ordersList">
-                <!-- Расширенные карточки: заказы на сегодня/завтра/послезавтра -->
-                <div id="todaySummary" class="hidden mb-1"></div>
 
-                <div class="bg-white p-2 rounded-xl shadow-md">
+                <div id="orderFiltersPanel" class="hidden bg-white p-2 rounded-xl shadow-md">
                     <h2 class="text-sm font-semibold mb-2 text-gray-800">Список заказов</h2>
                     <p class="text-xs text-gray-400 mb-2">Нажмите на заказ, чтобы открыть его</p>
 
-                    <!-- Фильтры -->
+                    <!-- Фильтры (только в табличном виде) -->
                     <div class="relative mb-1">
                         <button type="button" onclick="toggleOrderFilterDropdown()" id="orderFilterBtn" class="border p-1 rounded-xl w-full text-xs text-left bg-[#f4f1ea] flex justify-between items-center">
                             <span id="orderFilterLabel">Все клиенты</span>
@@ -2103,7 +2112,7 @@
 <script src="semifinished.js?v=11"></script>
 <script src="products.js?v=15"></script>
 <script src="customers.js?v=18"></script>
-<script src="orders.js?v=25"></script>
+<script src="orders.js?v=26"></script>
 <script src="invoice.js?v=7"></script>
 <script src="payments.js?v=9"></script>
 <script src="stats.js?v=9"></script>
