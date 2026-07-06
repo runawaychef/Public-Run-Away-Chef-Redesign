@@ -158,4 +158,6 @@ async function confirmDelete() {
 function closeModal() {
     document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
     editIndex = null; editItemIdx = null; deleteId = null; deleteType = null;
+    document.getElementById('inventoryBtn')?.classList.remove('active');
+    document.getElementById('settingsBtn')?.classList.remove('active');
 }

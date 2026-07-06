@@ -6,6 +6,8 @@
 const STOCK_LOW_DAYS = 7; // порог «критически мало» — менее N дней запаса
 
 function openSettingsModal() {
+    closeModal();
+    document.getElementById('settingsBtn').classList.add('active');
     document.getElementById('settingsCurrentEmployee').textContent = currentEmployee ? currentEmployee.name : '—';
     renderPlanInfo();
     document.getElementById('settingsModal').style.display = 'flex';
@@ -213,10 +215,12 @@ function updateInventoryAlertDot() {
 // ── Открытие окна склада ─────────────────────────────────────────────────────
 
 async function openInventoryModal() {
+    closeModal();
     if (!hasPermission('can_manage_inventory')) {
         showInfo('У вас нет доступа к складу. Обратитесь к владельцу пекарни.');
         return;
     }
+    document.getElementById('inventoryBtn').classList.add('active');
     showLoading('Загружаю склад...');
     await Promise.all([loadInventory(), loadShoppingList()]);
     hideLoading();

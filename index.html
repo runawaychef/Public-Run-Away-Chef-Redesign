@@ -218,27 +218,33 @@
             position: fixed; top: calc(6px + env(safe-area-inset-top)); right: 6px;
             background: white; border: 1px solid #e5e7eb; border-radius: 50%;
             width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
-            z-index: 50; box-shadow: 0 1px 3px rgba(0,0,0,0.08); cursor: pointer;
+            z-index: 150; box-shadow: 0 1px 3px rgba(0,0,0,0.08); cursor: pointer;
+            color: #9a9488;
         }
         #settingsBtn.hidden { display: none; }
+        #settingsBtn.active { color: #7c9473; border-color: #7c9473; }
 
         /* Иконка "Статистика" — та же стилистика, что и шестерёнка, левее неё */
         #statsBtn {
             position: fixed; top: calc(6px + env(safe-area-inset-top)); right: 46px;
             background: white; border: 1px solid #e5e7eb; border-radius: 50%;
             width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
-            z-index: 50; box-shadow: 0 1px 3px rgba(0,0,0,0.08); cursor: pointer;
+            z-index: 150; box-shadow: 0 1px 3px rgba(0,0,0,0.08); cursor: pointer;
+            color: #9a9488;
         }
         #statsBtn.hidden { display: none; }
+        #statsBtn.active { color: #7c9473; border-color: #7c9473; }
 
         /* Иконка "Склад" — корзина, левее статистики */
         #inventoryBtn {
             position: fixed; top: calc(6px + env(safe-area-inset-top)); right: 86px;
             background: white; border: 1px solid #e5e7eb; border-radius: 50%;
             width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
-            z-index: 50; box-shadow: 0 1px 3px rgba(0,0,0,0.08); cursor: pointer;
+            z-index: 150; box-shadow: 0 1px 3px rgba(0,0,0,0.08); cursor: pointer;
+            color: #9a9488;
         }
         #inventoryBtn.hidden { display: none !important; }
+        #inventoryBtn.active { color: #7c9473; border-color: #7c9473; }
 
         @keyframes pulse-dot {
             0%, 100% { opacity: 1; transform: scale(1); }
@@ -280,7 +286,7 @@
            onclick="showTab('...')", так что document.querySelector по onclick
            и TAB_ORDER продолжают работать как раньше. ── */
         #bottomNav {
-            position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
+            position: fixed; left: 0; right: 0; bottom: 0; z-index: 150;
             display: flex; background: #ffffff;
             box-shadow: 0 -1px 4px rgba(0,0,0,0.06);
             padding-bottom: env(safe-area-inset-bottom);
@@ -394,7 +400,7 @@
 
 <!-- Склад: корзина, доступна из любого раздела -->
 <button id="inventoryBtn" onclick="openInventoryModal()" title="Склад">
-    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#4b5563" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
         <path d="M1 1h4l2.68 13.39a2 2 0 001.98 1.61h9.72a2 2 0 001.98-1.61L23 6H6"/>
     </svg>
@@ -403,12 +409,12 @@
 
 <!-- Статистика: значок графика, доступен из любого раздела -->
 <button id="statsBtn" class="hidden" onclick="showTab('stats')" title="Статистика">
-    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#4b5563" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="13" width="3" height="5"/><rect x="12" y="9" width="3" height="9"/><rect x="17" y="5" width="3" height="13"/></svg>
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="13" width="3" height="5"/><rect x="12" y="9" width="3" height="9"/><rect x="17" y="5" width="3" height="13"/></svg>
 </button>
 
 <!-- Шестерёнка: служебные функции (доступна во всех разделах) -->
 <button id="settingsBtn" class="hidden" onclick="openSettingsModal()" title="Настройки">
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4b5563" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
 </button>
 
 <!-- Плавающая кнопка "+": создать заказ/клиента/изделие/ингредиент — контекстно по разделу -->
@@ -1995,7 +2001,7 @@
     <script src="auth.js?v=9"></script>
     <script src="employees.js?v=9"></script>
     <script src="company.js?v=4"></script>
-    <script src="inventory.js?v=14"></script>
+    <script src="inventory.js?v=15"></script>
 <script src="ingredients.js?v=11"></script>
 <script src="semifinished.js?v=10"></script>
 <script src="products.js?v=15"></script>
@@ -2005,7 +2011,7 @@
 <script src="payments.js?v=9"></script>
 <script src="stats.js?v=8"></script>
 <script src="history.js?v=7"></script>
-<script src="modals.js?v=8"></script>
+<script src="modals.js?v=9"></script>
 <script src="demoData.js?v=7"></script>
 <script src="helpers.js?v=9"></script>
 <script>
@@ -2174,6 +2180,11 @@ function showTab(tabId) {
         showInfo('У вас нет доступа к статистике. Обратитесь к владельцу пекарни.');
         return;
     }
+    // Переход по нижнему меню/иконкам должен сам закрывать любую открытую
+    // модалку (Склад, Настройки) — не требуя сначала жать "Закрыть".
+    closeModal();
+    document.getElementById('statsBtn')?.classList.toggle('active', tabId === 'stats');
+
     // Принудительно завершаем предыдущую анимацию если она ещё идёт
     const wrapper = document.getElementById('tabsWrapper');
     if (wrapper) {
