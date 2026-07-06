@@ -316,7 +316,7 @@
            файлы исключены — им заливка не нужна и испортит вид. */
         input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]),
         select, textarea {
-            background-color: #f4f1ea;
+            background-color: #ece3d1;
         }
 
         /* Контент не должен прятаться под нижним таб-баром — см. правило body выше */
@@ -1361,7 +1361,7 @@
         <div id="deleteModal" class="modal">
             <div class="modal-content">
                 <p id="deleteModalText" class="mb-2 text-xs text-gray-700">Вы уверены, что хотите удалить этот элемент?</p>
-                <button onclick="confirmDelete()" class="btn bg-red-500 text-white p-0.5 rounded-xl hover:bg-red-600 mr-1 text-xs">Удалить</button>
+                <button onclick="confirmDelete()" class="btn bg-[#c0685c] text-white p-0.5 rounded-xl hover:bg-[#a85950] mr-1 text-xs">Удалить</button>
                 <button onclick="closeModal()" class="btn bg-[#7c9473] text-white p-0.5 rounded-xl hover:bg-[#6c8464] text-xs">Отмена</button>
             </div>
         </div>
@@ -1593,7 +1593,7 @@
                 </div>
 
                 <div class="flex gap-1">
-                    <button id="employeeDeleteBtn" onclick="deleteEmployee()" class="btn bg-red-50 text-red-600 p-1.5 rounded-xl hover:bg-red-100 text-xs hidden" style="width:80px;">Удалить</button>
+                    <button id="employeeDeleteBtn" onclick="deleteEmployee()" class="btn bg-[#f5e6e2] text-[#a8574c] p-1.5 rounded-xl hover:bg-[#eed6d0] text-xs hidden" style="width:80px;">Удалить</button>
                     <button onclick="saveEmployee()" class="btn bg-indigo-600 text-white p-1.5 rounded-xl hover:bg-indigo-700 flex-1 text-xs">Сохранить</button>
                     <button onclick="openEmployeesModal()" class="btn bg-[#7c9473] text-white p-1.5 rounded-xl hover:bg-[#6c8464] text-xs" style="width:80px;">Назад</button>
                 </div>
@@ -1623,7 +1623,7 @@
                 <input id="paymentNote" type="text" class="border p-1 rounded-xl text-xs w-full mb-3" placeholder="Например, депозит">
 
                 <div class="flex gap-1">
-                    <button id="paymentDeleteBtn" onclick="deletePayment()" class="btn bg-red-50 text-red-600 p-1.5 rounded-xl hover:bg-red-100 text-xs hidden" style="width:80px;">Удалить</button>
+                    <button id="paymentDeleteBtn" onclick="deletePayment()" class="btn bg-[#f5e6e2] text-[#a8574c] p-1.5 rounded-xl hover:bg-[#eed6d0] text-xs hidden" style="width:80px;">Удалить</button>
                     <button onclick="savePayment()" class="btn bg-indigo-600 text-white p-1.5 rounded-xl hover:bg-indigo-700 flex-1 text-xs">Сохранить</button>
                     <button onclick="document.getElementById('addPaymentModal').style.display='none'" class="btn bg-[#7c9473] text-white p-1.5 rounded-xl hover:bg-[#6c8464] text-xs" style="width:80px;">Отмена</button>
                 </div>
@@ -1647,7 +1647,7 @@
                 <div id="inventoryTabShop" class="hidden">
                     <div class="flex gap-1 mb-2">
                         <button onclick="addCriticalToShoppingList()" class="btn bg-indigo-50 text-indigo-700 px-2 py-1 rounded-xl hover:bg-indigo-100 text-xs flex-1">+ Добавить критичное</button>
-                        <button onclick="clearShoppingList()" class="btn bg-red-50 text-red-600 px-2 py-1 rounded-xl hover:bg-red-100 text-xs">Очистить всё</button>
+                        <button onclick="clearShoppingList()" class="btn bg-[#f5e6e2] text-[#a8574c] px-2 py-1 rounded-xl hover:bg-[#eed6d0] text-xs">Очистить всё</button>
                     </div>
                     <div class="mb-2">
                         <button onclick="shareShoppingList()" class="btn bg-indigo-600 text-white px-2 py-1 rounded-xl hover:bg-indigo-700 text-xs w-full flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0-12l-4 4m4-4l4 4M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6"/></svg>Поделиться списком</button>
@@ -1714,7 +1714,7 @@
                 <label class="text-xs text-gray-500">Причина (необязательно)</label>
                 <input id="sfWriteOffNote" type="text" class="border p-0.5 rounded-xl mb-3 w-full text-xs" placeholder="Например: испортилось">
                 <div class="flex gap-1">
-                    <button onclick="saveSfWriteOff()" class="btn bg-red-500 text-white p-1 rounded-xl hover:bg-red-600 text-xs flex-1">Списать</button>
+                    <button onclick="saveSfWriteOff()" class="btn bg-[#c0685c] text-white p-1 rounded-xl hover:bg-[#a85950] text-xs flex-1">Списать</button>
                     <button onclick="closeModal()" class="btn bg-[#7c9473] text-white p-1 rounded-xl hover:bg-[#6c8464] text-xs flex-1">Отмена</button>
                 </div>
             </div>
@@ -1749,7 +1749,7 @@
                 <h2 id="trashOrderActionsTitle" class="text-sm font-semibold mb-3 text-gray-800"></h2>
                 <div class="flex flex-col gap-2">
                     <button id="trashRestoreBtn" class="btn bg-indigo-600 text-white p-2 rounded-xl hover:bg-indigo-700 text-xs inline-flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/></svg>Восстановить заказ</button>
-                    <button id="trashDeleteBtn" class="btn bg-red-50 text-red-600 p-2 rounded-xl hover:bg-red-100 text-xs inline-flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>Удалить навсегда</button>
+                    <button id="trashDeleteBtn" class="btn bg-[#f5e6e2] text-[#a8574c] p-2 rounded-xl hover:bg-[#eed6d0] text-xs inline-flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>Удалить навсегда</button>
                     <button onclick="document.getElementById('trashOrderActionsModal').style.display='none'" class="btn bg-[#7c9473] text-white p-2 rounded-xl hover:bg-[#6c8464] text-xs">Отмена</button>
                 </div>
             </div>
@@ -1800,7 +1800,7 @@
                 <input id="editInventoryNotes" type="text" class="border p-0.5 rounded-xl mb-3 w-full text-xs">
                 <div class="flex gap-1">
                     <button onclick="saveInventoryEdit()" class="btn bg-[#7c9473] text-white p-1 rounded-xl hover:bg-[#6c8464] text-xs flex-1">Сохранить</button>
-                    <button onclick="deleteInventoryRecord(Number(document.getElementById('editInventoryId').value))" class="btn bg-red-500 text-white p-1 rounded-xl hover:bg-red-600 text-xs flex-1">Удалить</button>
+                    <button onclick="deleteInventoryRecord(Number(document.getElementById('editInventoryId').value))" class="btn bg-[#c0685c] text-white p-1 rounded-xl hover:bg-[#a85950] text-xs flex-1">Удалить</button>
                     <button onclick="closeModal()" class="btn bg-[#7c9473] text-white p-1 rounded-xl hover:bg-[#6c8464] text-xs flex-1">Отмена</button>
                 </div>
             </div>
@@ -1823,7 +1823,7 @@
                 </select>
                 <input id="writeOffNote" type="text" class="border p-0.5 rounded-xl mb-3 w-full text-xs hidden" placeholder="Уточните причину...">
                 <div class="flex gap-1">
-                    <button onclick="saveWriteOff()" class="btn bg-red-500 text-white p-1 rounded-xl hover:bg-red-600 text-xs flex-1">Списать</button>
+                    <button onclick="saveWriteOff()" class="btn bg-[#c0685c] text-white p-1 rounded-xl hover:bg-[#a85950] text-xs flex-1">Списать</button>
                     <button onclick="closeModal()" class="btn bg-[#7c9473] text-white p-1 rounded-xl hover:bg-[#6c8464] text-xs flex-1">Отмена</button>
                 </div>
             </div>
