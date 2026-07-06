@@ -411,8 +411,8 @@ function updateOrderCustomerFilter() {
     customers.sort((a,b)=>(a.name||"").localeCompare(b.name||"")).forEach(c => {
         const checked = selectedOrderCustomers.includes(c.name) ? 'checked' : '';
         const label = document.createElement('label');
-        label.className = 'flex items-center gap-2 px-1 py-1 text-xs hover:bg-gray-50 rounded';
-        label.innerHTML = `<input type="checkbox" value="${escapeHtml(c.name)}" onchange="onOrderCustomerFilterChange(this)" ${checked}> ${escapeHtml(c.name)}`;
+        label.className = 'status-option';
+        label.innerHTML = `<span>${escapeHtml(c.name)}</span><input type="checkbox" value="${escapeHtml(c.name)}" onchange="onOrderCustomerFilterChange(this)" ${checked} class="w-3.5 h-3.5">`;
         list.appendChild(label);
     });
     updateOrderFilterLabel();
@@ -429,10 +429,51 @@ function updateOrderEmployeeFilter() {
         if (String(e.id) === prev) opt.selected = true;
         sel.appendChild(opt);
     });
+    renderOrderEmployeeFilterList();
 }
 
-function toggleOrderFilterDropdown() {
-    document.getElementById('orderFilterDropdown').classList.toggle('hidden');
+function renderOrderEmployeeFilterList() {
+    const list = document.getElementById('orderEmployeeFilterList');
+    if (!list) return;
+    const current = document.getElementById('orderEmployeeFilter').value;
+    let html = `<div class="status-option${current === '' ? ' selected' : ''}" onclick="setOrderEmployeeFilter('')"><span>Все мастера</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>`;
+    employees.forEach(e => {
+        html += `<div class="status-option${String(e.id) === current ? ' selected' : ''}" onclick="setOrderEmployeeFilter('${e.id}')"><span>${escapeHtml(e.name)}</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>`;
+    });
+    list.innerHTML = html;
+}
+
+function setOrderEmployeeFilter(employeeId) {
+    document.getElementById('orderEmployeeFilter').value = employeeId;
+    renderOrderEmployeeFilterList();
+    closeAllFilterDropdowns();
+    applyOrderFilter();
+}
+
+function setOrderDateRangeFilter(range) {
+    document.getElementById('orderDateRangeFilter').value = range;
+    document.querySelectorAll('#orderPeriodDropdown .status-option').forEach(o => o.classList.remove('selected'));
+    event.currentTarget.classList.add('selected');
+    toggleOrderDateRange();
+    if (range !== 'custom') closeAllFilterDropdowns();
+    applyOrderFilter();
+}
+
+function setOrderPaymentFilter(status) {
+    document.getElementById('orderPaymentFilter').value = status;
+    document.querySelectorAll('#orderPaymentDropdown .status-option').forEach(o => o.classList.remove('selected'));
+    event.currentTarget.classList.add('selected');
+    closeAllFilterDropdowns();
+    applyOrderFilter();
+}
+
+function toggleFilterDropdown(id) {
+    document.querySelectorAll('.filter-dropdown').forEach(d => { if (d.id !== id) d.classList.add('hidden'); });
+    document.getElementById(id).classList.toggle('hidden');
+}
+
+function closeAllFilterDropdowns() {
+    document.querySelectorAll('.filter-dropdown').forEach(d => d.classList.add('hidden'));
 }
 
 function toggleAllOrderCustomersFilter(checkbox) {
@@ -455,17 +496,11 @@ function onOrderCustomerFilterChange(checkbox) {
     displayOrders();
 }
 
-function updateOrderFilterLabel() {
-    const label = document.getElementById('orderFilterLabel');
-    if (!label) return;
-    if (selectedOrderCustomers.length === 0) {
-        label.textContent = 'Все клиенты';
-    } else if (selectedOrderCustomers.length === 1) {
-        label.textContent = selectedOrderCustomers[0];
-    } else {
-        label.textContent = `Выбрано клиентов: ${selectedOrderCustomers.length}`;
-    }
-}
+// Кнопка "Клиенты" больше не показывает выбранное значение (по решению Сержа —
+// без предустановленных значений на кнопках фильтров), поэтому текст не меняем.
+// Функция оставлена как есть (вызывается из нескольких мест), чтобы не трогать
+// остальную логику фильтра клиентов.
+function updateOrderFilterLabel() {}
 
 function toggleOrderDateRange() {
     const range = document.getElementById('orderDateRangeFilter').value;
@@ -476,14 +511,12 @@ function applyOrderFilter() {
     displayOrders();
 }
 
-// Закрытие выпадающего списка фильтра заказов по клику снаружи
+// Закрытие любой открытой панели фильтра заказов по клику снаружи её самой
 document.addEventListener('click', function(e) {
-    const dropdown = document.getElementById('orderFilterDropdown');
-    const btn = document.getElementById('orderFilterBtn');
-    if (!dropdown || dropdown.classList.contains('hidden')) return;
-    if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
-        dropdown.classList.add('hidden');
-    }
+    document.querySelectorAll('.filter-dropdown:not(.hidden)').forEach(dropdown => {
+        const wrapper = dropdown.closest('.relative');
+        if (wrapper && !wrapper.contains(e.target)) dropdown.classList.add('hidden');
+    });
 });
 
 // ---- Создание и копирование заказа ----
