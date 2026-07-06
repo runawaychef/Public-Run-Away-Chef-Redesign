@@ -10,65 +10,41 @@
 // ---- Список заказов ----
 
 function displayOrders() {
-    // Блок "На сегодня и завтра"
+    // Блок "На сегодня и завтра" — расширенные карточки (см. renderExtendedOrderCard)
     const today    = getLocalDateStr(0);
     const tomorrow = getLocalDateStr(1);
     const dayAfter = getLocalDateStr(2);
     const summaryEl = document.getElementById('todaySummary');
-    const contentEl = document.getElementById('todaySummaryContent');
 
     function buildDaySummary(allDayOrders, label) {
-        if (!allDayOrders.length) return '';
         // Напоминание — про то, что ещё нужно сделать, поэтому выполненные заказы
         // сюда не включаем. Но если на день были заказы и все они уже выполнены —
         // показываем явное подтверждение вместо того, чтобы блок просто исчезал.
         const dayOrders = allDayOrders.filter(o => o.status !== 'выполнен');
+        if (!allDayOrders.length) return '';
         if (!dayOrders.length) {
-            return `<div class="mb-2 last:mb-0">
-                <div class="font-semibold text-green-700 mb-0.5">${label}: все заказы выполнены ${icon('check', 'w-3.5 h-3.5 inline-block align-[-2px]')}</div>
+            return `<div class="mb-2 last:mb-0 text-xs font-semibold text-center py-1" style="color:#4f6349;">
+                ${label}: все заказы выполнены ${icon('check', 'w-3.5 h-3.5 inline-block align-[-2px]')}
             </div>`;
         }
-        const totalSum = dayOrders.reduce((s, o) => s + orderGrandTotal(o), 0);
-        const totalQty = dayOrders.reduce((s, o) => s + (o.items || []).reduce((q, it) => q + Number(it.quantity || 0), 0), 0);
-        // Подсчёт статусов
-        const countPriniat  = dayOrders.filter(o => o.status === 'принят').length;
-        const countVRabote  = dayOrders.filter(o => o.status === 'в работе').length;
-        const countVypolnen = dayOrders.filter(o => o.status === 'выполнен').length;
-        const statusLabel = '';
-
-        // Разбивка по клиентам с изделиями — кликабельные строки
-        let clientLines = '';
-        dayOrders.forEach(o => {
-            const clientQty = (o.items || []).reduce((q, it) => q + Number(it.quantity || 0), 0);
-            const clientSum = orderGrandTotal(o);
-            const statusColor = o.status === 'выполнен' ? '#22c55e' : o.status === 'в работе' ? '#d97706' : '#ef4444';
-            const statusText  = o.status === 'выполнен' ? 'выполнен' : o.status === 'в работе' ? 'в работе' : 'принят';
-            clientLines += `<div class="pl-1 mt-0.5 cursor-pointer hover:bg-indigo-50 rounded px-1 -mx-1 transition-colors" onclick="openOrderDetail(${o.id})">
-                <span class="text-indigo-600 font-medium">${escapeHtml(o.customer || '(без клиента)')}:</span> ${clientQty} шт. · ${formatMoney(clientSum)} · <span style="color:${statusColor};font-weight:500">${statusText}</span>
-            </div>`;
-            (o.items || []).forEach(it => {
-                clientLines += `<div class="pl-3 text-gray-500">· ${escapeHtml(it.product)} — ${it.quantity} шт.</div>`;
-            });
-        });
-
-        return `<div class="mb-2 last:mb-0">
-            <div class="font-semibold text-indigo-700 mb-0.5">${label}: ${dayOrders.length} зак. · ${totalQty} шт. · ${formatMoney(totalSum)}</div>
-            ${clientLines}
-        </div>`;
+        let cardsHtml = `<div class="oc-group-label">${label} · ${dayOrders.length} зак.</div>`;
+        dayOrders.forEach(o => { cardsHtml += renderOrderCard(o, true); });
+        return cardsHtml;
     }
 
-    if (summaryEl && contentEl) {
+    if (summaryEl) {
         const todayOrders    = orders.filter(o => o.date === today);
         const tomorrowOrders = orders.filter(o => o.date === tomorrow);
         const dayAfterOrders = orders.filter(o => o.date === dayAfter);
         if (todayOrders.length || tomorrowOrders.length || dayAfterOrders.length) {
-            contentEl.innerHTML =
-                buildDaySummary(todayOrders, icon('clipboard') + 'Сегодня') +
-                buildDaySummary(tomorrowOrders, icon('clipboard') + 'Завтра') +
-                buildDaySummary(dayAfterOrders, icon('clipboard') + 'Послезавтра');
+            summaryEl.innerHTML =
+                buildDaySummary(todayOrders, 'Сегодня') +
+                buildDaySummary(tomorrowOrders, 'Завтра') +
+                buildDaySummary(dayAfterOrders, 'Послезавтра');
             summaryEl.classList.remove('hidden');
         } else {
             summaryEl.classList.add('hidden');
+            summaryEl.innerHTML = '';
         }
     }
     const filteredOrders = getFilteredOrdersForList();
@@ -124,6 +100,29 @@ function displayOrders() {
         tbody.appendChild(spacerRow);
     }
 
+    // ---- Карточный вид: та же группировка по неделям/месяцам, но карточками ----
+    const cardsBody = document.getElementById('orderCardsBody');
+    let cardsHtml = '';
+    function cardWeekSummaryHtml(weekKey) {
+        const monday = new Date(weekKey + 'T00:00:00');
+        const sunday = new Date(monday);
+        sunday.setDate(sunday.getDate() + 6);
+        const weekTotals = calcGroupTotals(sorted, o => keysFor(o).weekKey === weekKey);
+        const weekLabel = formatDateDMY(localStr(monday)) + ' – ' + formatDateDMY(localStr(sunday));
+        return `<div class="oc-group-label" style="color:#6b6659; background:#ece7db; padding:4px 8px; border-radius:8px; text-transform:none; letter-spacing:0;">
+            Неделя ${weekLabel} — ${weekTotals.count} зак., ${weekTotals.qty} шт., ${formatMoney(weekTotals.sum)}
+        </div>`;
+    }
+    function cardMonthSummaryHtml(monthKey) {
+        const [y, m] = monthKey.split('-').map(Number);
+        const monthTotals = calcGroupTotals(sorted, o => keysFor(o).monthKey === monthKey);
+        const monthLabel = `${MONTH_NAMES_RU[m - 1]} ${y}`;
+        return `<div class="oc-group-label" style="color:#fff; background:#4b4740; padding:5px 8px; border-radius:8px; text-transform:none; letter-spacing:0; font-weight:700;">
+            Итого за ${monthLabel} — ${monthTotals.count} зак., ${monthTotals.qty} шт., ${formatMoney(monthTotals.sum)}
+        </div>`;
+    }
+    let cardMonthKey = null, cardWeekKey = null;
+
     sorted.forEach((order, idx) => {
         const { monthKey, weekKey } = keysFor(order);
 
@@ -143,6 +142,15 @@ function displayOrders() {
 
         currentMonthKey = monthKey;
         currentWeekKey  = weekKey;
+
+        // -- Карточный вид: те же группы-разделители, что и в таблице --
+        const cardMonthChanged = cardMonthKey !== null && monthKey !== cardMonthKey;
+        const cardWeekChanged  = cardWeekKey  !== null && weekKey  !== cardWeekKey;
+        if (cardMonthChanged) cardsHtml += cardMonthSummaryHtml(cardMonthKey);
+        if (cardWeekChanged)  cardsHtml += cardWeekSummaryHtml(cardWeekKey);
+        cardMonthKey = monthKey;
+        cardWeekKey  = weekKey;
+        cardsHtml += renderOrderCard(order);
 
         const realIdx = orders.indexOf(order);
         const total = formatMoney(orderGrandTotal(order));
@@ -181,8 +189,125 @@ function displayOrders() {
         appendWeekSummary(currentWeekKey);
         appendMonthSummary(currentMonthKey);
     }
+    if (cardWeekKey !== null) {
+        cardsHtml += cardWeekSummaryHtml(cardWeekKey);
+        cardsHtml += cardMonthSummaryHtml(cardMonthKey);
+    }
+    if (cardsBody) {
+        cardsBody.innerHTML = cardsHtml || `<p class="text-xs text-gray-400 text-center py-4">Заказов не найдено</p>`;
+    }
 
     updateTotals(filteredOrders);
+}
+
+// ==================== КАРТОЧНЫЙ ВИД СПИСКА ЗАКАЗОВ ====================
+
+// Цвет полосы слева = статус оплаты. Цвет кнопки статуса исполнения — те же
+// 3 оттенка (терракота/охра/шалфей), уже используемые в остальном интерфейсе.
+const ORDER_STATUS_COLORS = { 'принят': '#c0685c', 'в работе': '#d9a441', 'выполнен': '#7c9473' };
+const ORDER_STATUS_LIST = ['принят', 'в работе', 'выполнен'];
+
+function getPaymentStripeColor(payInfo) {
+    if (payInfo.overdue) return '#8b3a3a';
+    if (payInfo.status === 'paid') return '#7c9473';
+    if (payInfo.status === 'partial') return '#d9a441';
+    return '#c0685c';
+}
+
+// extended=true — расширенная карточка (блок "Сегодня/Завтра/Послезавтра"): те же
+// данные + список позиций снизу.
+function renderOrderCard(order, extended) {
+    const payInfo = getOrderPaymentStatus(order);
+    const stripeColor = getPaymentStripeColor(payInfo);
+    const statusColor = ORDER_STATUS_COLORS[order.status] || ORDER_STATUS_COLORS['принят'];
+    const oNum = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
+    const total = formatMoney(orderGrandTotal(order));
+
+    let payLine = '';
+    if (payInfo.status === 'partial' || payInfo.overdue) {
+        const pending = Math.max(0, payInfo.grandAmt - payInfo.paidAmt);
+        payLine = `<div class="oc-pay-line"><span style="color:#4f6349">${formatMoney(payInfo.paidAmt)} оплачено</span> · <span style="color:#c0685c">${formatMoney(pending)} осталось</span></div>`;
+    }
+    const overdueLine = payInfo.overdue ? `<div class="oc-pay-line" style="color:#8b3a3a; font-weight:700;">Просрочен платёж</div>` : '';
+
+    let itemsLine = '';
+    if (extended && order.items && order.items.length) {
+        itemsLine = `<div class="oc-items">` +
+            order.items.map(it => `· ${escapeHtml(it.product)} — ${it.quantity} шт.`).join('<br>') +
+            `</div>`;
+    }
+
+    const statusOptions = ORDER_STATUS_LIST.map(s => `
+        <div class="status-option${s === order.status ? ' selected' : ''}" onclick="event.stopPropagation(); quickSetOrderStatus(${order.id}, '${s}')">
+            <span><span class="dot" style="background:${ORDER_STATUS_COLORS[s]}"></span> ${s.charAt(0).toUpperCase() + s.slice(1)}</span>
+            <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+        </div>`).join('');
+
+    return `
+    <div class="order-card" id="orderCard-${order.id}">
+        <div class="order-card-tap" onclick="openOrderDetail(${order.id})">
+            <div class="stripe" style="background:${stripeColor}"></div>
+            <div class="order-card-body">
+                <div class="left-col">
+                    <div class="oc-name">${escapeHtml(order.customer || '(без клиента)')}</div>
+                    <div class="oc-meta">${formatDateDMY(order.date)} · ${escapeHtml(oNum)}</div>
+                    ${payLine}
+                    ${overdueLine}
+                    ${itemsLine}
+                </div>
+                <div class="right-col">
+                    <span class="oc-sum">${total}</span>
+                    <div style="position:relative;" onclick="event.stopPropagation();">
+                        <button class="status-btn" style="background:${statusColor};" onclick="toggleOrderStatusDropdown(${order.id})">
+                            ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
+                        </button>
+                        <div class="status-dropdown" id="statusDropdown-${order.id}">${statusOptions}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>`;
+}
+
+function closeAllOrderStatusDropdowns() {
+    document.querySelectorAll('.status-dropdown.open').forEach(d => d.classList.remove('open'));
+}
+// Закрываем дропдаун статуса при тапе где угодно ещё на странице.
+document.addEventListener('click', closeAllOrderStatusDropdowns);
+
+function toggleOrderStatusDropdown(orderId) {
+    const dd = document.getElementById('statusDropdown-' + orderId);
+    if (!dd) return;
+    const isOpen = dd.classList.contains('open');
+    closeAllOrderStatusDropdowns();
+    if (!isOpen) dd.classList.add('open');
+}
+
+async function quickSetOrderStatus(orderId, newStatus) {
+    closeAllOrderStatusDropdowns();
+    const order = orders.find(o => o.id === orderId);
+    if (!order || order.status === newStatus) return;
+    const oldStatus = order.status;
+    order.status = newStatus; // оптимистичное обновление — сразу перерисовываем
+    displayOrders();
+    try {
+        await updateChecked(db.from('orders').update({ status: newStatus }).eq('id', orderId));
+        const oNum = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
+        logActivity('order', `Заказ ${oNum}: статус «${oldStatus}» → «${newStatus}»`, orderId);
+    } catch (e) {
+        order.status = oldStatus; // откат при ошибке сети/сохранения
+        displayOrders();
+        showInfo('Не удалось изменить статус. Проверьте соединение и попробуйте ещё раз.');
+    }
+}
+
+// Переключатель "Карточки / Таблица" — верхний правый угол экрана.
+function setOrdersViewMode(mode) {
+    document.getElementById('orderCardsWrap')?.classList.toggle('hidden', mode !== 'cards');
+    document.getElementById('orderTableWrap')?.classList.toggle('hidden', mode !== 'table');
+    document.getElementById('ordersViewBtnCards')?.classList.toggle('active', mode === 'cards');
+    document.getElementById('ordersViewBtnTable')?.classList.toggle('active', mode === 'table');
 }
 
 // Считает сумму (с НДС) и общее кол-во изделий по подмножеству заказов, отобранных predicate

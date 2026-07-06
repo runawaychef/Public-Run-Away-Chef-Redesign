@@ -310,6 +310,69 @@
         table.table-clean thead tr:first-child th:first-child { border-top-left-radius: 12px; }
         table.table-clean thead tr:first-child th:last-child { border-top-right-radius: 12px; }
 
+        /* ── Карточный вид списка заказов ──────────────────────────────── */
+        #ordersViewToggle {
+            position: fixed; top: calc(46px + env(safe-area-inset-top)); right: 6px;
+            display: flex; background: white; border: 1px solid #e5e7eb; border-radius: 999px;
+            padding: 2px; gap: 2px; z-index: 150; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+        #ordersViewToggle.hidden { display: none; }
+        .view-toggle-btn {
+            width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            color: #9a9488; cursor: pointer; border: none; background: none; transition: all 0.15s ease;
+        }
+        .view-toggle-btn svg { width: 16px; height: 16px; }
+        .view-toggle-btn.active { background: #7c9473; color: #fff; }
+
+        .order-card {
+            background: #fff; border-radius: 16px; display: flex; overflow: visible;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid rgba(0,0,0,0.035);
+            margin-bottom: 10px; position: relative;
+        }
+        .order-card-tap { flex: 1; display: flex; cursor: pointer; }
+        .order-card .stripe { width: 5px; flex-shrink: 0; border-radius: 16px 0 0 16px; }
+        .order-card-body { flex: 1; padding: 12px 14px; display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+        .order-card .left-col { min-width: 0; }
+        .order-card .oc-name { font-size: 15px; font-weight: 700; color: #322f28; overflow-wrap: break-word; }
+        .order-card .oc-meta { font-size: 11.5px; color: #a29c8c; letter-spacing: 0.01em; margin-top: 3px; }
+        .order-card .right-col { flex-shrink: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; min-width: 88px; }
+        .order-card .oc-sum { font-size: 15px; font-weight: 700; color: #322f28; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .order-card .oc-pay-line { font-size: 11.5px; margin-top: 6px; }
+        .order-card .oc-items { margin-top: 8px; padding-top: 8px; border-top: 1px solid #f1efe9; font-size: 11.5px; color: #7a7568; }
+
+        .status-btn {
+            border: none; cursor: pointer; border-radius: 10px; padding: 5px 8px 5px 10px;
+            font-size: 11.5px; font-weight: 700; color: #fff; white-space: nowrap;
+            display: inline-flex; align-items: center; gap: 4px;
+            transition: all 0.15s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.12);
+        }
+        .status-btn:active { transform: scale(0.96); opacity: 0.88; }
+        .status-btn svg { width: 11px; height: 11px; }
+        .status-dropdown {
+            position: absolute; top: calc(100% + 4px); right: 0;
+            background: #fff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.16);
+            border: 1px solid #eee; width: 148px; overflow: hidden; z-index: 250;
+            display: none;
+        }
+        .status-dropdown.open { display: block; }
+        .status-option {
+            display: flex; align-items: center; justify-content: space-between; gap: 6px;
+            padding: 9px 12px; font-size: 12.5px; font-weight: 600; color: #4b4740; cursor: pointer;
+        }
+        .status-option + .status-option { border-top: 1px solid #f1efe9; }
+        .status-option:active { background: #f7f5ef; }
+        .status-option .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+        .status-option .check { width: 13px; height: 13px; color: #7c9473; flex-shrink: 0; visibility: hidden; }
+        .status-option.selected .check { visibility: visible; }
+
+        .oc-group-label {
+            font-size: 11px; font-weight: 700; color: #9a9488; text-transform: uppercase;
+            letter-spacing: 0.03em; margin: 14px 2px 6px;
+        }
+        .oc-group-label:first-child { margin-top: 2px; }
+
+
         /* Поля ввода и выпадающие списки — заливаем цветом фона страницы вместо
            серого (серый оттенок раньше был не нашим классом, а нативной
            отрисовкой Android/Chrome для пустых полей форм). Чекбоксы/радио/
@@ -440,6 +503,16 @@
 <button id="fabAddBtn" class="hidden" title="Добавить">
     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
 </button>
+
+<!-- Переключатель вида списка заказов: карточки / таблица. Виден только на вкладке "Заказы" (управляется в showTab()). -->
+<div id="ordersViewToggle" class="hidden">
+    <button class="view-toggle-btn active" id="ordersViewBtnCards" onclick="setOrdersViewMode('cards')" title="Карточки">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+    </button>
+    <button class="view-toggle-btn" id="ordersViewBtnTable" onclick="setOrdersViewMode('table')" title="Таблица">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+</div>
 
 <!-- Нижний таб-бар: иконка + подпись, те же 4 раздела, что и раньше.
      onclick специально оставлен идентичным старым кнопкам в шапке — showTab()
@@ -1038,14 +1111,12 @@
 
             <!-- СПИСОК ЗАКАЗОВ -->
             <div id="ordersList">
-                <div id="todaySummary" class="bg-white rounded-xl shadow-md mb-3 hidden" style="border-left: 4px solid #4f46e5;">
-                    <div class="p-2">
-                    <div id="todaySummaryContent" class="text-xs text-gray-700"></div>
-                    </div>
-                </div>
+                <!-- Расширенные карточки: заказы на сегодня/завтра/послезавтра -->
+                <div id="todaySummary" class="hidden mb-1"></div>
+
                 <div class="bg-white p-2 rounded-xl shadow-md">
                     <h2 class="text-sm font-semibold mb-2 text-gray-800">Список заказов</h2>
-                    <p class="text-xs text-gray-400 mb-2">Нажмите на строку заказа, чтобы открыть его</p>
+                    <p class="text-xs text-gray-400 mb-2">Нажмите на заказ, чтобы открыть его</p>
 
                     <!-- Фильтры -->
                     <div class="relative mb-1">
@@ -1094,7 +1165,15 @@
                             </div>
                         </div>
                     </div>
+                </div>
 
+                <!-- Карточный вид (по умолчанию) -->
+                <div id="orderCardsWrap">
+                    <div id="orderCardsBody"></div>
+                </div>
+
+                <!-- Табличный вид (переключается кнопкой вверху экрана) -->
+                <div id="orderTableWrap" class="hidden bg-white p-2 rounded-xl shadow-md">
                     <table class="w-full table-auto table-clean">
                         <thead><tr class="bg-gray-100">
                             <th class="p-1 text-xs w-[17%]">Дата</th>
@@ -2017,14 +2096,14 @@
     <script src="money.js?v=9"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="auth.js?v=9"></script>
-    <script src="employees.js?v=11"></script>
+    <script src="employees.js?v=12"></script>
     <script src="company.js?v=6"></script>
     <script src="inventory.js?v=17"></script>
 <script src="ingredients.js?v=14"></script>
 <script src="semifinished.js?v=11"></script>
 <script src="products.js?v=15"></script>
 <script src="customers.js?v=18"></script>
-<script src="orders.js?v=24"></script>
+<script src="orders.js?v=25"></script>
 <script src="invoice.js?v=7"></script>
 <script src="payments.js?v=9"></script>
 <script src="stats.js?v=9"></script>
@@ -2202,6 +2281,7 @@ function showTab(tabId) {
     // модалку (Склад, Настройки) — не требуя сначала жать "Закрыть".
     closeModal();
     document.getElementById('statsBtn')?.classList.toggle('active', tabId === 'stats');
+    document.getElementById('ordersViewToggle')?.classList.toggle('hidden', tabId !== 'orders');
 
     // Принудительно завершаем предыдущую анимацию если она ещё идёт
     const wrapper = document.getElementById('tabsWrapper');

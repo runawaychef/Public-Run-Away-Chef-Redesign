@@ -229,6 +229,7 @@ async function selectEmployee(emp) {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('appContent').classList.remove('app-locked');
     document.getElementById('settingsBtn').classList.remove('hidden');
+    document.getElementById('ordersViewToggle')?.classList.remove('hidden');
     applyScreenAccessPermissions();
     document.getElementById('employeesManageBtn').classList.toggle('hidden', !emp.is_owner);
     document.getElementById('companyInfoBtnBlock').classList.toggle('hidden', !emp.is_owner);
@@ -265,6 +266,7 @@ async function logoutEmployee() {
     document.getElementById('settingsBtn').classList.add('hidden');
     document.getElementById('statsBtn').classList.add('hidden');
     document.getElementById('inventoryBtn').classList.add('hidden');
+    document.getElementById('ordersViewToggle')?.classList.add('hidden');
 }
 
 // ==================== НАЗВАНИЕ ПЕКАРНИ ====================
