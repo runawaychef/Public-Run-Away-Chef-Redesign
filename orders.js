@@ -405,15 +405,22 @@ async function processPendingInventory() {
 }
 
 function updateOrderCustomerFilter() {
+    const allRow = document.getElementById('orderFilterAllRow');
+    if (allRow) allRow.classList.toggle('selected', selectedOrderCustomers.length === 0);
+
     const list = document.getElementById('orderFilterList');
     if (!list) return;
     list.innerHTML = '';
     customers.sort((a,b)=>(a.name||"").localeCompare(b.name||"")).forEach(c => {
-        const checked = selectedOrderCustomers.includes(c.name) ? 'checked' : '';
-        const label = document.createElement('label');
-        label.className = 'status-option';
-        label.innerHTML = `<span>${escapeHtml(c.name)}</span><input type="checkbox" value="${escapeHtml(c.name)}" onchange="onOrderCustomerFilterChange(this)" ${checked} class="w-3.5 h-3.5">`;
-        list.appendChild(label);
+        const selected = selectedOrderCustomers.includes(c.name);
+        const row = document.createElement('div');
+        row.className = 'status-option' + (selected ? ' selected' : '');
+        row.style.justifyContent = 'flex-start';
+        row.style.gap = '8px';
+        row.dataset.fn = 'onOrderCustomerFilterChange';
+        row.dataset.args = JSON.stringify([c.name]);
+        row.innerHTML = `<svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg><span>${escapeHtml(c.name)}</span>`;
+        list.appendChild(row);
     });
     updateOrderFilterLabel();
 }
@@ -476,23 +483,19 @@ function closeAllFilterDropdowns() {
     document.querySelectorAll('.filter-dropdown').forEach(d => d.classList.add('hidden'));
 }
 
-function toggleAllOrderCustomersFilter(checkbox) {
-    if (checkbox.checked) {
-        selectedOrderCustomers = [];
-        document.querySelectorAll('#orderFilterList input[type=checkbox]').forEach(cb => cb.checked = false);
-    }
-    updateOrderFilterLabel();
+function toggleAllOrderCustomersFilter() {
+    selectedOrderCustomers = [];
+    updateOrderCustomerFilter();
     displayOrders();
 }
 
-function onOrderCustomerFilterChange(checkbox) {
-    if (checkbox.checked) {
-        if (!selectedOrderCustomers.includes(checkbox.value)) selectedOrderCustomers.push(checkbox.value);
+function onOrderCustomerFilterChange(name) {
+    if (selectedOrderCustomers.includes(name)) {
+        selectedOrderCustomers = selectedOrderCustomers.filter(n => n !== name);
     } else {
-        selectedOrderCustomers = selectedOrderCustomers.filter(n => n !== checkbox.value);
+        selectedOrderCustomers.push(name);
     }
-    document.getElementById('orderFilterAll').checked = selectedOrderCustomers.length === 0;
-    updateOrderFilterLabel();
+    updateOrderCustomerFilter();
     displayOrders();
 }
 

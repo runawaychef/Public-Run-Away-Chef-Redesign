@@ -384,7 +384,6 @@
             border: 1px solid #eee; overflow: hidden; z-index: 250; max-height: 220px; overflow-y: auto;
         }
         .filter-dropdown.hidden { display: none; }
-        .order-filter-checkbox { accent-color: #7c9473; flex-shrink: 0; }
 
         .oc-group-label {
             font-size: 11px; font-weight: 700; color: #9a9488; text-transform: uppercase;
@@ -1160,10 +1159,10 @@
                                 <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
                             </button>
                             <div id="orderFilterDropdown" class="filter-dropdown hidden">
-                                <label class="status-option" style="border-bottom:1px solid #f1efe9; justify-content:flex-start; gap:8px;">
-                                    <input type="checkbox" id="orderFilterAll" onchange="toggleAllOrderCustomersFilter(this)" checked class="w-4 h-4 order-filter-checkbox">
+                                <div class="status-option selected" id="orderFilterAllRow" onclick="toggleAllOrderCustomersFilter()" style="border-bottom:1px solid #f1efe9; justify-content:flex-start; gap:8px;">
+                                    <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
                                     <span>Все клиенты</span>
-                                </label>
+                                </div>
                                 <div id="orderFilterList"></div>
                             </div>
                         </div>
@@ -2162,7 +2161,7 @@
 <script src="semifinished.js?v=11"></script>
 <script src="products.js?v=15"></script>
 <script src="customers.js?v=18"></script>
-<script src="orders.js?v=34"></script>
+<script src="orders.js?v=35"></script>
 <script src="invoice.js?v=7"></script>
 <script src="payments.js?v=9"></script>
 <script src="stats.js?v=9"></script>
