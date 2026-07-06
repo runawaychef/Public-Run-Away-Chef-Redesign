@@ -374,12 +374,12 @@
 
 <!-- Экран выбора сотрудника -->
 <div id="loginScreen" class="hidden">
-    <div class="bg-white p-4 rounded-md shadow-md w-full max-w-xs text-center">
+    <div class="bg-white p-4 rounded-xl shadow-md w-full max-w-xs text-center">
         <h1 class="text-lg font-bold mb-3 text-gray-800">Runaway Chef Project</h1>
         <p class="text-sm text-gray-600 mb-3">Кто вводит данные?</p>
         <div id="employeeList" class="flex flex-col gap-2"></div>
         <p id="loginError" class="text-xs text-red-500 mt-2 hidden">Не удалось загрузить список сотрудников. Проверьте подключение к интернету.</p>
-        <button id="loginRetryBtn" onclick="showAuthedApp()" class="btn bg-gray-700 text-white px-3 py-1 rounded-md hover:bg-gray-800 text-xs mt-2 hidden inline-flex items-center gap-1"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>Повторить попытку</button>
+        <button id="loginRetryBtn" onclick="showAuthedApp()" class="btn bg-gray-700 text-white px-3 py-1 rounded-xl hover:bg-gray-800 text-xs mt-2 hidden inline-flex items-center gap-1"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>Повторить попытку</button>
         <p class="text-xs text-gray-400 mt-3 cursor-pointer underline" onclick="signOutAccount()">Сменить аккаунт</p>
     </div>
 </div>
@@ -450,7 +450,7 @@
 <div class="container mx-auto max-w-2xl">
     <!-- Sticky шапка: логотип + меню вкладок -->
     <div style="position:sticky; top:0; z-index:40; background:#f3f4f6; padding: 8px 8px 0; padding-top: max(8px, env(safe-area-inset-top));">
-        <div class="bg-white rounded-md shadow-md p-3 flex items-center gap-3 mb-2">
+        <div class="bg-white rounded-xl shadow-md p-3 flex items-center gap-3 mb-2">
             <img src="icon-192.png" alt="Runaway Chef" style="width:48px;height:48px;border-radius:10px;flex-shrink:0;">
             <div>
                 <div id="orgNameHeader" class="text-xl font-bold text-gray-800 leading-tight">Runaway Chef Project</div>
@@ -467,10 +467,10 @@
         <!-- ===== ИЗДЕЛИЯ ===== -->
         <div id="products" class="tab-content hidden">
             <div id="productsList">
-                <div class="bg-white p-2 rounded-md shadow-md">
+                <div class="bg-white p-2 rounded-xl shadow-md">
                     <h2 class="text-sm font-semibold mb-2 text-gray-800">Ассортимент</h2>
                     <p class="text-xs text-gray-400 mb-2">Нажмите на строку изделия, чтобы открыть рецептуру</p>
-                    <p id="productsUnitWarning" class="text-xs text-red-600 bg-red-50 border border-red-200 rounded-md p-1.5 mb-2 hidden"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>У некоторых изделий не выбрана единица измерения или не подтверждён рецепт. Откройте их и проверьте.</p>
+                    <p id="productsUnitWarning" class="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl p-1.5 mb-2 hidden"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>У некоторых изделий не выбрана единица измерения или не подтверждён рецепт. Откройте их и проверьте.</p>
                     <table class="w-full table-auto table-clean">
                         <thead><tr class="bg-gray-100">
                             <th class="p-1 text-xs w-[57%]">Название</th>
@@ -485,26 +485,26 @@
 
             <!-- ДЕТАЛЬНЫЙ ВИД ИЗДЕЛИЯ / РЕЦЕПТУРА -->
             <div id="productDetail">
-                <div class="bg-white p-2 rounded-md shadow-md mb-3">
+                <div class="bg-white p-2 rounded-xl shadow-md mb-3">
                     <div class="flex items-center justify-between mb-2">
-                        <button onclick="closeProductDetail()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 flex items-center gap-1">
+                        <button onclick="closeProductDetail()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-xl hover:bg-gray-300 flex items-center gap-1">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                             Назад к изделиям
                         </button>
-                        <button onclick="deleteCurrentProduct()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 perm-delete">Удалить изделие</button>
+                        <button onclick="deleteCurrentProduct()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-xl hover:bg-gray-300 perm-delete">Удалить изделие</button>
                     </div>
                     <p class="text-[11px] text-gray-400 mb-1">Изменения сохраняются автоматически</p>
-                    <div id="pdUnitWarning" class="hidden bg-red-50 border border-red-200 text-red-700 text-xs rounded-md p-1.5 mb-2">
+                    <div id="pdUnitWarning" class="hidden bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl p-1.5 mb-2">
                         <svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>Для этого изделия не выбрана единица измерения. Пожалуйста, выберите «шт» или «кг».
                     </div>
                     <div class="grid grid-cols-2 gap-1 mb-2">
                         <div>
                             <label class="table-text text-gray-500">Название</label>
-                            <input id="pdName" type="text" onblur="savePdHeader()" class="border p-0.5 rounded-md w-full table-text text-gray-900">
+                            <input id="pdName" type="text" onblur="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text text-gray-900">
                         </div>
                         <div>
                             <label class="table-text text-gray-500">Единица продажи</label>
-                            <select id="pdUnit" onchange="savePdHeader()" class="border p-0.5 rounded-md w-full table-text">
+                            <select id="pdUnit" onchange="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                                 <option value="">— выберите —</option>
                                 <option value="pcs">за штуку (шт)</option>
                                 <option value="kg">на вес (кг)</option>
@@ -512,26 +512,26 @@
                         </div>
                         <div>
                             <label class="table-text text-gray-500">Продажная цена <span id="pdPriceUnitHint" class="text-gray-400"></span></label>
-                            <input id="pdPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" onchange="savePdHeader()" class="border p-0.5 rounded-md w-full table-text">
+                            <input id="pdPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" onchange="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                         <div>
                             <label class="table-text text-gray-500">Размер партии</label>
-                            <input id="pdBatchSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" onchange="savePdHeader()" class="border p-0.5 rounded-md w-full table-text">
+                            <input id="pdBatchSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" onchange="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                         <div class="col-span-2">
                             <label class="table-text text-gray-500">Прочие расходы на партию</label>
-                            <input id="pdOtherCosts" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" onchange="savePdHeader()" class="border p-0.5 rounded-md w-full table-text">
+                            <input id="pdOtherCosts" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" onchange="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                     </div>
-                    <button id="pdSaveNewBtn" onclick="saveNewProduct()" class="hidden btn bg-gray-500 text-white w-full py-1.5 rounded-md text-sm mt-2 hover:bg-gray-600">Сохранить</button>
+                    <button id="pdSaveNewBtn" onclick="saveNewProduct()" class="hidden btn bg-gray-500 text-white w-full py-1.5 rounded-xl text-sm mt-2 hover:bg-gray-600">Сохранить</button>
                 </div>
 
-                <div id="pdRecipeBlock" class="bg-white p-2 rounded-md shadow-md">
+                <div id="pdRecipeBlock" class="bg-white p-2 rounded-xl shadow-md">
                     <h2 class="text-xs font-semibold text-gray-800 mb-2">Рецептура (на партию)</h2>
-                    <div class="bg-gray-50 border border-dashed border-gray-300 rounded-md p-2 mb-2">
+                    <div class="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-2 mb-2">
                         <label class="table-text text-gray-500">Скопировать рецепт из другого изделия</label>
                         <div class="search-input-wrap">
-                            <input id="copyRecipeFromInput" placeholder="— выберите изделие —" autocomplete="off" class="border p-1 rounded-md table-text w-full">
+                            <input id="copyRecipeFromInput" placeholder="— выберите изделие —" autocomplete="off" class="border p-1 rounded-xl table-text w-full">
                             <div id="copyRecipeFromDropdown" class="search-dropdown hidden"></div>
                         </div>
                     </div>
@@ -544,15 +544,15 @@
                         </tr></thead>
                         <tbody id="recipeItemsBody"></tbody>
                     </table>
-                    <div class="bg-blue-50 rounded-md p-2 mb-2">
+                    <div class="bg-blue-50 rounded-xl p-2 mb-2">
                         <label class="table-text text-gray-500">Добавить в рецепт</label>
                         <div class="search-input-wrap mb-1">
-                            <input id="newRecipeIngredient" placeholder="— ингредиент / полуфабрикат —" autocomplete="off" class="border p-1 rounded-md table-text w-full">
+                            <input id="newRecipeIngredient" placeholder="— ингредиент / полуфабрикат —" autocomplete="off" class="border p-1 rounded-xl table-text w-full">
                             <div id="newRecipeIngredientDropdown" class="search-dropdown hidden"></div>
                         </div>
                         <div class="flex gap-1">
-                            <input id="newRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="Количество" class="border p-1 rounded-md table-text flex-1">
-                            <button onclick="addIngredientToRecipe()" class="btn bg-gray-500 text-white px-3 py-1 rounded-md text-xs hover:bg-gray-600 whitespace-nowrap">+ Добавить</button>
+                            <input id="newRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="Количество" class="border p-1 rounded-xl table-text flex-1">
+                            <button onclick="addIngredientToRecipe()" class="btn bg-gray-500 text-white px-3 py-1 rounded-xl text-xs hover:bg-gray-600 whitespace-nowrap">+ Добавить</button>
                         </div>
                     </div>
                     <label class="flex items-center gap-2 table-text text-gray-700 border-t pt-2 mb-1 cursor-pointer">
@@ -571,7 +571,7 @@
                 </div>
 
                 <!-- График динамики себестоимости изделия -->
-                <div class="bg-white p-2 rounded-md shadow-md mt-3 perm-view-costs">
+                <div class="bg-white p-2 rounded-xl shadow-md mt-3 perm-view-costs">
                     <h3 class="text-xs font-semibold text-gray-700 mb-2">Динамика себестоимости</h3>
                     <canvas id="productCostChart" style="max-height:180px;"></canvas>
                     <p id="productCostChartEmpty" class="text-xs text-gray-400 hidden">Недостаточно данных — нужно минимум 2 точки изменения цен</p>
@@ -582,12 +582,12 @@
         <!-- ===== ИНГРЕДИЕНТЫ ===== -->
         <div id="ingredients" class="tab-content hidden">
             <div id="ingredientsList">
-                <div class="bg-white p-2 rounded-md shadow-md">
+                <div class="bg-white p-2 rounded-xl shadow-md">
                     <div class="flex items-center justify-between mb-2">
                         <h2 class="text-sm font-semibold text-gray-800">Склад</h2>
                         <div class="flex gap-1">
-                            <button onclick="openInventarizationModal()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 inline-flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Инвентаризация</button>
-                            <button onclick="showTab('semiFinished')" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300">Полуфабрикаты →</button>
+                            <button onclick="openInventarizationModal()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-xl hover:bg-gray-300 inline-flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Инвентаризация</button>
+                            <button onclick="showTab('semiFinished')" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-xl hover:bg-gray-300">Полуфабрикаты →</button>
                         </div>
                     </div>
                     <p class="text-xs text-gray-400 mb-2">Нажмите на строку, чтобы открыть карточку</p>
@@ -606,23 +606,23 @@
             <!-- Карточка ингредиента -->
             <div id="ingredientDetail">
                 <!-- Блок 1: Навигация + название + единица измерения -->
-                <div class="bg-white p-2 rounded-md shadow-md mb-3">
+                <div class="bg-white p-2 rounded-xl shadow-md mb-3">
                     <div class="flex items-center justify-between mb-2">
-                        <button onclick="closeIngredientDetail()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 flex items-center gap-1">
+                        <button onclick="closeIngredientDetail()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-xl hover:bg-gray-300 flex items-center gap-1">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                             Назад к складу
                         </button>
-                        <button onclick="deleteCurrentIngredient()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 perm-delete">Удалить ингредиент</button>
+                        <button onclick="deleteCurrentIngredient()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-xl hover:bg-gray-300 perm-delete">Удалить ингредиент</button>
                     </div>
                     <p class="text-[11px] text-gray-400 mb-1">Изменения сохраняются автоматически</p>
                     <div class="grid grid-cols-2 gap-1 mt-1">
                         <div>
                             <label class="table-text text-gray-500">Название</label>
-                            <input id="idNameInput" type="text" onblur="saveIngredientHeader()" class="border border-gray-300 p-0.5 rounded-md w-full table-text" placeholder="Например: Мука пшеничная">
+                            <input id="idNameInput" type="text" onblur="saveIngredientHeader()" class="border border-gray-300 p-0.5 rounded-xl w-full table-text" placeholder="Например: Мука пшеничная">
                         </div>
                         <div>
                             <label class="table-text text-gray-500">Единица</label>
-                            <select id="idUnitInput" onchange="saveIngredientHeader()" class="border border-gray-300 p-0.5 rounded-md w-full table-text">
+                            <select id="idUnitInput" onchange="saveIngredientHeader()" class="border border-gray-300 p-0.5 rounded-xl w-full table-text">
                                 <option value="g">г</option>
                                 <option value="kg">кг</option>
                                 <option value="ml">мл</option>
@@ -631,11 +631,11 @@
                             </select>
                         </div>
                     </div>
-                    <button id="idSaveNewBtn" onclick="saveNewIngredient()" class="hidden btn bg-gray-500 text-white w-full py-1.5 rounded-md text-sm mt-2 hover:bg-gray-600">Сохранить</button>
+                    <button id="idSaveNewBtn" onclick="saveNewIngredient()" class="hidden btn bg-gray-500 text-white w-full py-1.5 rounded-xl text-sm mt-2 hover:bg-gray-600">Сохранить</button>
                 </div>
 
                 <!-- Блок 2: Пополнить склад (остаток + новая цена) -->
-                <div id="ingStockBlock" class="bg-white p-2 rounded-md shadow-md mb-3">
+                <div id="ingStockBlock" class="bg-white p-2 rounded-xl shadow-md mb-3">
                     <h3 class="text-xs font-semibold text-gray-700 mb-2">Склад</h3>
 
                     <!-- Текущий остаток -->
@@ -652,41 +652,41 @@
                     <div class="grid grid-cols-2 gap-1 mb-2">
                         <div>
                             <label class="table-text text-gray-500">Дата</label>
-                            <input id="idNewPriceDate" type="date" class="border p-0.5 rounded-md w-full table-text">
+                            <input id="idNewPriceDate" type="date" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                         <div>
                             <label class="table-text text-gray-500">Количество (<span id="ingQtyUnit"></span>)</label>
-                            <input id="idStockQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-0.5 rounded-md table-text w-full" placeholder="0">
+                            <input id="idStockQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-0.5 rounded-xl table-text w-full" placeholder="0">
                         </div>
                         <div>
                             <label class="table-text text-gray-500">Цена за упаковку</label>
-                            <input id="idPackagePrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" onchange="renderIngredientUnitPricePreview()" class="border p-0.5 rounded-md w-full table-text">
+                            <input id="idPackagePrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" onchange="renderIngredientUnitPricePreview()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                         <div>
                             <label class="table-text text-gray-500">Размер упаковки</label>
-                            <input id="idPackageSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" onchange="renderIngredientUnitPricePreview()" class="border p-0.5 rounded-md w-full table-text">
+                            <input id="idPackageSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" onchange="renderIngredientUnitPricePreview()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                         <div class="col-span-2">
                             <span class="table-text text-gray-500">Цена за ед.: <span id="idUnitPrice" class="font-semibold text-gray-900">0.0000</span></span>
                         </div>
                     </div>
-                    <button onclick="saveStockAndPrice()" class="btn bg-gray-500 text-white p-1 rounded-md hover:bg-gray-600 text-xs w-full">Сохранить</button>
-                    <button onclick="openWriteOffModal()" class="btn bg-gray-200 text-gray-700 p-1 rounded-md hover:bg-gray-300 text-xs w-full mt-1">— Списать (корректировка)</button>
-                    <button onclick="closeIngredientDetail(); openInventarizationModal();" class="btn bg-gray-200 text-gray-700 p-1 rounded-md hover:bg-gray-300 text-xs w-full mt-1 flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Инвентаризация</button>
+                    <button onclick="saveStockAndPrice()" class="btn bg-gray-500 text-white p-1 rounded-xl hover:bg-gray-600 text-xs w-full">Сохранить</button>
+                    <button onclick="openWriteOffModal()" class="btn bg-gray-200 text-gray-700 p-1 rounded-xl hover:bg-gray-300 text-xs w-full mt-1">— Списать (корректировка)</button>
+                    <button onclick="closeIngredientDetail(); openInventarizationModal();" class="btn bg-gray-200 text-gray-700 p-1 rounded-xl hover:bg-gray-300 text-xs w-full mt-1 flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Инвентаризация</button>
 
                     <!-- История пополнений -->
                     <div id="ingStockHistory" class="mt-2"></div>
                 </div>
 
                 <!-- Блок 3: График изменения цены -->
-                <div class="bg-white p-2 rounded-md shadow-md mb-3">
+                <div class="bg-white p-2 rounded-xl shadow-md mb-3">
                     <h3 class="text-xs font-semibold text-gray-700  mb-2">Динамика цены</h3>
                     <canvas id="ingredientPriceChart" style="max-height:180px;"></canvas>
                     <p id="ingredientPriceChartEmpty" class="text-xs text-gray-400 hidden">Недостаточно данных — нужно минимум 2 записи</p>
                 </div>
 
                 <!-- Блок 4: История цен -->
-                <div class="bg-white p-2 rounded-md shadow-md mb-3">
+                <div class="bg-white p-2 rounded-xl shadow-md mb-3">
                     <h3 class="text-xs font-semibold text-gray-700 mb-2">История цен</h3>
                     <div id="idPriceHistory"><p class="text-xs text-gray-400">Загрузка...</p></div>
                 </div>
@@ -697,21 +697,21 @@
         <div id="semiFinished" class="tab-content hidden">
             <div id="semiFinishedList">
                 <div class="flex justify-start mb-2">
-                    <button onclick="showTab('ingredients')" class="btn bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 text-xs flex items-center gap-1">
+                    <button onclick="showTab('ingredients')" class="btn bg-gray-200 text-gray-700 px-2 py-1 rounded-xl hover:bg-gray-300 text-xs flex items-center gap-1">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                         Назад к ингредиентам
                     </button>
                 </div>
-                <div class="bg-white p-2 rounded-md shadow-md">
+                <div class="bg-white p-2 rounded-xl shadow-md">
                     <div class="flex items-center justify-between mb-2">
                         <h2 class="text-sm font-semibold text-gray-800">Полуфабрикаты</h2>
                         <div class="flex gap-1">
-                            <button onclick="openSfInventarizationModal()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 inline-flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Инвентаризация</button>
-                            <button onclick="showTab('ingredients')" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300">← Склад</button>
+                            <button onclick="openSfInventarizationModal()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-xl hover:bg-gray-300 inline-flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Инвентаризация</button>
+                            <button onclick="showTab('ingredients')" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-xl hover:bg-gray-300">← Склад</button>
                         </div>
                     </div>
                     <p class="text-xs text-gray-400 mb-2">Нажмите на строку, чтобы открыть рецептуру</p>
-                    <p id="semiFinishedRecipeWarning" class="text-xs text-red-600 bg-red-50 border border-red-200 rounded-md p-1.5 mb-2 hidden"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>У некоторых полуфабрикатов не подтверждён рецепт. Откройте их и проверьте.</p>
+                    <p id="semiFinishedRecipeWarning" class="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl p-1.5 mb-2 hidden"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>У некоторых полуфабрикатов не подтверждён рецепт. Откройте их и проверьте.</p>
                     <table class="w-full table-auto">
                         <thead><tr class="bg-gray-100">
                             <th class="p-1 text-xs w-[35%]">Название</th>
@@ -726,27 +726,27 @@
 
             <!-- ДЕТАЛЬНЫЙ ВИД ПОЛУФАБРИКАТА -->
             <div id="semiFinishedDetail">
-                <div class="bg-white p-2 rounded-md shadow-md mb-3">
+                <div class="bg-white p-2 rounded-xl shadow-md mb-3">
                     <div class="flex items-center justify-between mb-2">
-                        <button onclick="closeSemiFinishedDetail()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 flex items-center gap-1">
+                        <button onclick="closeSemiFinishedDetail()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-xl hover:bg-gray-300 flex items-center gap-1">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                             Назад к полуфабрикатам
                         </button>
-                        <button onclick="deleteCurrentSemiFinished()" class="text-xs px-2 py-1 rounded-md text-gray-700 perm-delete" style="background-color:#e5e7eb;">Удалить полуфабрикат</button>
+                        <button onclick="deleteCurrentSemiFinished()" class="text-xs px-2 py-1 rounded-xl text-gray-700 perm-delete" style="background-color:#e5e7eb;">Удалить полуфабрикат</button>
                     </div>
                     <p class="text-[11px] text-gray-400 mb-1">Изменения сохраняются автоматически</p>
                     <div class="grid grid-cols-2 gap-1 mb-2">
                         <div class="col-span-2">
                             <label class="table-text text-gray-500">Название</label>
-                            <input id="sfdName" type="text" onblur="saveSfdHeader()" class="border p-0.5 rounded-md w-full table-text text-gray-900">
+                            <input id="sfdName" type="text" onblur="saveSfdHeader()" class="border p-0.5 rounded-xl w-full table-text text-gray-900">
                         </div>
                         <div>
                             <label class="table-text text-gray-500">Размер партии</label>
-                            <input id="sfdBatchSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" onchange="saveSfdHeader()" class="border p-0.5 rounded-md w-full table-text">
+                            <input id="sfdBatchSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" onchange="saveSfdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                         <div>
                             <label class="table-text text-gray-500">Единица</label>
-                            <select id="sfdUnit" onchange="saveSfdHeader()" class="border p-0.5 rounded-md w-full table-text">
+                            <select id="sfdUnit" onchange="saveSfdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                                 <option value="g">граммы (г)</option>
                                 <option value="kg">килограммы (кг)</option>
                                 <option value="ml">миллилитры (мл)</option>
@@ -755,13 +755,13 @@
                         </div>
                         <div class="col-span-2">
                             <label class="table-text text-gray-500">Прочие расходы на партию</label>
-                            <input id="sfdOtherCosts" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" onchange="saveSfdHeader()" class="border p-0.5 rounded-md w-full table-text">
+                            <input id="sfdOtherCosts" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" onchange="saveSfdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                     </div>
                 </div>
 
                 <!-- Блок склада полуфабриката — вверху карточки -->
-                <div class="bg-white p-2 rounded-md shadow-md mb-3">
+                <div class="bg-white p-2 rounded-xl shadow-md mb-3">
                     <div class="flex items-center justify-between">
                         <div>
                             <span class="table-text text-gray-500">Остаток:</span>
@@ -773,12 +773,12 @@
 
                 </div>
 
-                <div class="bg-white p-2 rounded-md shadow-md">
+                <div class="bg-white p-2 rounded-xl shadow-md">
                     <h2 class="text-xs font-semibold text-gray-800 mb-2">Рецептура (на партию)</h2>
-                    <div class="bg-gray-50 border border-dashed border-gray-300 rounded-md p-2 mb-2">
+                    <div class="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-2 mb-2">
                         <label class="table-text text-gray-500">Скопировать рецепт из другого полуфабриката</label>
                         <div class="search-input-wrap">
-                            <input id="copySfRecipeFromInput" placeholder="— выберите полуфабрикат —" autocomplete="off" class="border p-1 rounded-md table-text w-full">
+                            <input id="copySfRecipeFromInput" placeholder="— выберите полуфабрикат —" autocomplete="off" class="border p-1 rounded-xl table-text w-full">
                             <div id="copySfRecipeFromDropdown" class="search-dropdown hidden"></div>
                         </div>
                     </div>
@@ -792,19 +792,19 @@
                     <p class="table-text text-gray-400 mb-1">Нажмите на звёздочку, чтобы отметить основной ингредиент для расчёта производства.</p>
                         <tbody id="sfRecipeItemsBody"></tbody>
                     </table>
-                    <div class="bg-blue-50 rounded-md p-2 mb-2">
+                    <div class="bg-blue-50 rounded-xl p-2 mb-2">
                         <label class="table-text text-gray-500">Добавить в рецепт</label>
                         <div class="search-input-wrap mb-1">
-                            <input id="newSfRecipeIngredient" placeholder="— ингредиент —" autocomplete="off" class="border p-1 rounded-md table-text w-full">
+                            <input id="newSfRecipeIngredient" placeholder="— ингредиент —" autocomplete="off" class="border p-1 rounded-xl table-text w-full">
                             <div id="newSfRecipeIngredientDropdown" class="search-dropdown hidden"></div>
                         </div>
                         <div class="flex gap-1">
-                            <input id="newSfRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="Количество" class="border p-1 rounded-md table-text flex-1">
-                            <button onclick="addIngredientToSfRecipe()" class="btn bg-gray-500 text-white px-3 py-1 rounded-md text-xs hover:bg-gray-600 whitespace-nowrap">+ Добавить</button>
+                            <input id="newSfRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="Количество" class="border p-1 rounded-xl table-text flex-1">
+                            <button onclick="addIngredientToSfRecipe()" class="btn bg-gray-500 text-white px-3 py-1 rounded-xl text-xs hover:bg-gray-600 whitespace-nowrap">+ Добавить</button>
                         </div>
                     </div>
-                    <button onclick="produceSfBatch()" class="btn bg-gray-100 text-gray-700 border border-gray-300 px-2 py-1 rounded-md hover:bg-gray-200 text-xs w-full mb-2 flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"/></svg>Произвести партию</button>
-                    <button onclick="openSfWriteOffModal()" class="btn bg-gray-100 text-gray-700 border border-gray-300 px-2 py-1 rounded-md hover:bg-gray-200 text-xs w-full mb-2">— Списать (корректировка)</button>
+                    <button onclick="produceSfBatch()" class="btn bg-gray-100 text-gray-700 border border-gray-300 px-2 py-1 rounded-xl hover:bg-gray-200 text-xs w-full mb-2 flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"/></svg>Произвести партию</button>
+                    <button onclick="openSfWriteOffModal()" class="btn bg-gray-100 text-gray-700 border border-gray-300 px-2 py-1 rounded-xl hover:bg-gray-200 text-xs w-full mb-2">— Списать (корректировка)</button>
                     <label class="flex items-center gap-2 table-text text-gray-700 border-t pt-2 mb-1 cursor-pointer">
                         <input type="checkbox" id="sfdRecipeConfirmed" onchange="toggleSfRecipeConfirmed()">
                         Рецепт заполнен полностью
@@ -820,7 +820,7 @@
                 </div>
 
                 <!-- Динамика себестоимости и история производства — внизу карточки -->
-                <div class="bg-white p-2 rounded-md shadow-md mb-3">
+                <div class="bg-white p-2 rounded-xl shadow-md mb-3">
                     <div class="perm-view-costs">
                         <p class="text-xs font-semibold text-gray-700 mb-1">Динамика себестоимости партии</p>
                         <canvas id="sfCostChart" height="160" style="display:none;"></canvas>
@@ -835,10 +835,10 @@
         <!-- ===== КЛИЕНТЫ ===== -->
         <div id="customers" class="tab-content hidden">
             <div id="customersList">
-                <div class="bg-white p-2 rounded-md shadow-md">
+                <div class="bg-white p-2 rounded-xl shadow-md">
                     <h2 class="text-sm font-semibold mb-2 text-gray-800">Список клиентов</h2>
                     <p class="text-xs text-gray-400 mb-2">Нажмите на строку, чтобы открыть карточку клиента</p>
-                    <p id="customersNameWarning" class="text-xs text-red-600 bg-red-50 border border-red-200 rounded-md p-1.5 mb-2 hidden"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>У некоторых клиентов не указано имя. Откройте их карточку и заполните имя — без этого их заказы будут отображаться некорректно.</p>
+                    <p id="customersNameWarning" class="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl p-1.5 mb-2 hidden"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>У некоторых клиентов не указано имя. Откройте их карточку и заполните имя — без этого их заказы будут отображаться некорректно.</p>
                     <table class="w-full table-auto table-clean">
                         <thead><tr class="bg-gray-100">
                             <th class="p-1 text-xs w-[32%]">Имя</th>
@@ -853,27 +853,27 @@
 
             <!-- Карточка клиента -->
             <div id="customerDetail">
-                <div class="bg-white p-2 rounded-md shadow-md mb-3">
+                <div class="bg-white p-2 rounded-xl shadow-md mb-3">
                     <div class="flex items-center justify-between mb-2">
-                        <button onclick="closeCustomerDetail()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 flex items-center gap-1">
+                        <button onclick="closeCustomerDetail()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-xl hover:bg-gray-300 flex items-center gap-1">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                             Назад к клиентам
                         </button>
-                        <button onclick="deleteCurrentCustomer()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 perm-delete">Удалить клиента</button>
+                        <button onclick="deleteCurrentCustomer()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-xl hover:bg-gray-300 perm-delete">Удалить клиента</button>
                     </div>
                     <p class="text-[11px] text-gray-400 mb-1">Изменения сохраняются автоматически</p>
                     <div class="grid grid-cols-2 gap-1 mb-2">
                         <div>
                             <label class="table-text text-gray-500">Имя</label>
-                            <input id="cdName" type="text" onblur="saveCdHeader()" class="border p-0.5 rounded-md w-full table-text">
+                            <input id="cdName" type="text" onblur="saveCdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                         <div>
                             <label class="table-text text-gray-500">Контакты</label>
-                            <input id="cdContact" type="text" onblur="saveCdHeader()" class="border p-0.5 rounded-md w-full table-text">
+                            <input id="cdContact" type="text" onblur="saveCdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                         <div>
                             <label class="table-text text-gray-500">Скидка (%)</label>
-                            <input id="cdDiscount" type="number" autocomplete="off" inputmode="decimal" step="0.01" onchange="saveCdHeader()" class="border p-0.5 rounded-md w-full table-text">
+                            <input id="cdDiscount" type="number" autocomplete="off" inputmode="decimal" step="0.01" onchange="saveCdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                         <div class="flex items-end pb-1">
                             <label class="flex items-center gap-2 table-text text-gray-700">
@@ -881,53 +881,53 @@
                             </label>
                         </div>
                     </div>
-                    <button onclick="applyVatExemptToAllOrders()" class="btn bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 text-xs w-full">Применить текущий статус НДС ко всем заказам клиента</button>
+                    <button onclick="applyVatExemptToAllOrders()" class="btn bg-gray-200 text-gray-700 px-2 py-1 rounded-xl hover:bg-gray-300 text-xs w-full">Применить текущий статус НДС ко всем заказам клиента</button>
 
                     <!-- Реквизиты для счетов/накладных -->
                     <div class="border-t pt-2 mt-2">
                         <label class="table-text text-gray-500 mb-1 block">Тип лица (для счетов)</label>
                         <div class="flex gap-1 mb-2">
-                            <button id="cdEntityIndividualBtn" onclick="setCustomerEntityType('individual')" class="btn flex-1 text-xs py-1 rounded-md border">Физ. лицо</button>
-                            <button id="cdEntityCompanyBtn" onclick="setCustomerEntityType('company')" class="btn flex-1 text-xs py-1 rounded-md border">Юр. лицо</button>
+                            <button id="cdEntityIndividualBtn" onclick="setCustomerEntityType('individual')" class="btn flex-1 text-xs py-1 rounded-xl border">Физ. лицо</button>
+                            <button id="cdEntityCompanyBtn" onclick="setCustomerEntityType('company')" class="btn flex-1 text-xs py-1 rounded-xl border">Юр. лицо</button>
                         </div>
                         <div class="mb-2">
                             <label class="table-text text-gray-500">Адрес</label>
-                            <input id="cdAddress" type="text" autocomplete="off" onblur="saveCdHeader()" class="border p-0.5 rounded-md w-full table-text">
+                            <input id="cdAddress" type="text" autocomplete="off" onblur="saveCdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                         <div id="cdCompanyFields" class="grid grid-cols-2 gap-1 mb-1">
                             <div>
                                 <label class="table-text text-gray-500">Рег. номер</label>
-                                <input id="cdRegNumber" type="text" autocomplete="off" onblur="saveCdHeader()" class="border p-0.5 rounded-md w-full table-text">
+                                <input id="cdRegNumber" type="text" autocomplete="off" onblur="saveCdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                             </div>
                             <div>
                                 <label class="table-text text-gray-500">Код НДС</label>
-                                <input id="cdVatCode" type="text" autocomplete="off" onblur="saveCdHeader()" class="border p-0.5 rounded-md w-full table-text">
+                                <input id="cdVatCode" type="text" autocomplete="off" onblur="saveCdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                             </div>
                         </div>
                         <div id="cdIndividualFields" class="mb-1">
                             <label class="table-text text-gray-500">Личный код</label>
-                            <input id="cdPersonalCode" type="text" autocomplete="off" onblur="saveCdHeader()" class="border p-0.5 rounded-md w-full table-text">
+                            <input id="cdPersonalCode" type="text" autocomplete="off" onblur="saveCdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                     </div>
 
                     <div class="mt-2">
                         <label class="table-text text-gray-500">Заметки (аллергии, особые условия, контакты...)</label>
-                        <textarea id="cdNotes" rows="3" onblur="saveCdHeader()" class="border p-0.5 rounded-md table-text w-full resize-none" placeholder="Например: оплата по счёту, аллергия на орехи..."></textarea>
+                        <textarea id="cdNotes" rows="3" onblur="saveCdHeader()" class="border p-0.5 rounded-xl table-text w-full resize-none" placeholder="Например: оплата по счёту, аллергия на орехи..."></textarea>
                     </div>
                 </div>
 
-                <div class="bg-white p-2 rounded-md shadow-md mb-3">
-                    <div class="grid grid-cols-3 gap-1 text-center bg-gray-50 rounded-md p-2">
+                <div class="bg-white p-2 rounded-xl shadow-md mb-3">
+                    <div class="grid grid-cols-3 gap-1 text-center bg-gray-50 rounded-xl p-2">
                         <div><p class="table-text text-gray-500">Заказов всего</p><p id="cdOrderCount" class="table-text font-bold text-gray-800">0</p></div>
                         <div><p class="table-text text-gray-500">Сумма за всё время</p><p id="cdTotalSum" class="table-text font-bold text-gray-800">0.00</p></div>
                         <div><p class="table-text text-gray-500">Последний заказ</p><p id="cdLastOrderDate" class="table-text font-bold text-gray-800">—</p></div>
                     </div>
                 </div>
 
-                <div class="bg-white p-2 rounded-md shadow-md">
+                <div class="bg-white p-2 rounded-xl shadow-md">
                     <div class="flex justify-between items-center mb-2">
                         <h2 class="text-xs font-semibold text-gray-800">Заказы клиента</h2>
-                        <select id="cdDateRange" onchange="renderCustomerOrders()" class="border p-0.5 rounded-md table-text">
+                        <select id="cdDateRange" onchange="renderCustomerOrders()" class="border p-0.5 rounded-xl table-text">
                             <option value="all">Весь период</option>
                             <option value="week">Текущая неделя</option>
                             <option value="month">Текущий месяц</option>
@@ -935,7 +935,7 @@
                         </select>
                     </div>
                     <div id="cdOrdersList" style="max-height:280px;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
-                    <button onclick="openCustomerReportPreview()" class="btn bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 text-xs w-full mt-2 flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12l-3-3m0 0l-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>Сводный отчёт по изделиям за период</button>
+                    <button onclick="openCustomerReportPreview()" class="btn bg-gray-200 text-gray-700 px-2 py-1 rounded-xl hover:bg-gray-300 text-xs w-full mt-2 flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m6.75 12l-3-3m0 0l-3 3m3-3v6m-1.5-15H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>Сводный отчёт по изделиям за период</button>
                 </div>
             </div>
         </div>
@@ -945,8 +945,8 @@
             <div class="modal-content" style="max-width:480px;">
                 <div id="customerReportContent" style="background:white;"></div>
                 <div class="flex gap-1 mt-3">
-                    <button id="downloadReportPdfBtn" onclick="downloadCustomerReportPdf()" class="btn bg-gray-700 text-white p-1 rounded-md hover:bg-gray-800 text-xs flex-1 inline-flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>Скачать PDF</button>
-                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs flex-1">Закрыть</button>
+                    <button id="downloadReportPdfBtn" onclick="downloadCustomerReportPdf()" class="btn bg-gray-700 text-white p-1 rounded-xl hover:bg-gray-800 text-xs flex-1 inline-flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>Скачать PDF</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-xl hover:bg-gray-500 text-xs flex-1">Закрыть</button>
                 </div>
             </div>
         </div>
@@ -956,9 +956,9 @@
             <div class="modal-content" style="max-width:340px;">
                 <h2 class="text-xs font-semibold mb-3 text-gray-800">Какой документ сформировать?</h2>
                 <div class="flex flex-col gap-2">
-                    <button onclick="openOrderDocumentPreview('invoice')" class="btn bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700 text-xs">Счёт</button>
-                    <button onclick="openOrderDocumentPreview('delivery_note')" class="btn bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700 text-xs">Накладная</button>
-                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs">Закрыть</button>
+                    <button onclick="openOrderDocumentPreview('invoice')" class="btn bg-indigo-600 text-white p-2 rounded-xl hover:bg-indigo-700 text-xs">Счёт</button>
+                    <button onclick="openOrderDocumentPreview('delivery_note')" class="btn bg-indigo-600 text-white p-2 rounded-xl hover:bg-indigo-700 text-xs">Накладная</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-xl hover:bg-gray-500 text-xs">Закрыть</button>
                 </div>
             </div>
         </div>
@@ -968,8 +968,8 @@
             <div class="modal-content" style="max-width:520px;">
                 <div id="orderDocumentContent" style="background:white;"></div>
                 <div class="flex gap-1 mt-3">
-                    <button id="sendOrderDocumentBtn" onclick="shareOrderDocumentPdf()" class="btn bg-indigo-600 text-white p-1 rounded-md hover:bg-indigo-700 text-xs flex-1 inline-flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"/></svg>Отправить</button>
-                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs flex-1">Закрыть</button>
+                    <button id="sendOrderDocumentBtn" onclick="shareOrderDocumentPdf()" class="btn bg-indigo-600 text-white p-1 rounded-xl hover:bg-indigo-700 text-xs flex-1 inline-flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"/></svg>Отправить</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-xl hover:bg-gray-500 text-xs flex-1">Закрыть</button>
                 </div>
                 <button onclick="refreshDocumentSnapshot()" class="text-xs text-gray-400 hover:text-indigo-600 mt-2 w-full text-center underline">Обновить снимок данных</button>
             </div>
@@ -978,21 +978,21 @@
 
         <!-- ===== ИСТОРИЯ ===== -->
         <div id="history" class="tab-content hidden">
-            <div class="bg-white p-2 rounded-md shadow-md">
+            <div class="bg-white p-2 rounded-xl shadow-md">
                 <div class="flex items-center justify-between mb-2">
                     <h2 class="text-sm font-semibold text-gray-800">Журнал действий</h2>
-                    <button onclick="closeHistoryScreen()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 flex items-center gap-1">
+                    <button onclick="closeHistoryScreen()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-xl hover:bg-gray-300 flex items-center gap-1">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                         Назад
                     </button>
                 </div>
                 <div class="mb-2">
-                    <select id="historyEmployeeFilter" onchange="loadHistory()" class="border p-0.5 rounded-md w-full text-xs">
+                    <select id="historyEmployeeFilter" onchange="loadHistory()" class="border p-0.5 rounded-xl w-full text-xs">
                         <option value="">Все сотрудники</option>
                     </select>
                 </div>
                 <div class="mb-2">
-                    <select id="historyActionFilter" onchange="loadHistory()" class="border p-0.5 rounded-md w-full text-xs">
+                    <select id="historyActionFilter" onchange="loadHistory()" class="border p-0.5 rounded-xl w-full text-xs">
                         <option value="">Все действия</option>
                         <option value="order">Заказы</option>
                         <option value="item">Позиции заказа</option>
@@ -1012,7 +1012,7 @@
                     <tbody id="historyTableBody"></tbody>
                 </table>
                 <div class="text-center mt-2">
-                    <button id="historyLoadMoreBtn" onclick="loadMoreHistory()" class="btn bg-gray-200 text-gray-700 px-3 py-1 rounded-md hover:bg-gray-300 text-xs hidden">Показать ещё</button>
+                    <button id="historyLoadMoreBtn" onclick="loadMoreHistory()" class="btn bg-gray-200 text-gray-700 px-3 py-1 rounded-xl hover:bg-gray-300 text-xs hidden">Показать ещё</button>
                 </div>
             </div>
         </div>
@@ -1020,22 +1020,22 @@
 
             <!-- СПИСОК ЗАКАЗОВ -->
             <div id="ordersList">
-                <div id="todaySummary" class="bg-white rounded-md shadow-md mb-3 hidden" style="border-left: 4px solid #4f46e5;">
+                <div id="todaySummary" class="bg-white rounded-xl shadow-md mb-3 hidden" style="border-left: 4px solid #4f46e5;">
                     <div class="p-2">
                     <div id="todaySummaryContent" class="text-xs text-gray-700"></div>
                     </div>
                 </div>
-                <div class="bg-white p-2 rounded-md shadow-md">
+                <div class="bg-white p-2 rounded-xl shadow-md">
                     <h2 class="text-sm font-semibold mb-2 text-gray-800">Список заказов</h2>
                     <p class="text-xs text-gray-400 mb-2">Нажмите на строку заказа, чтобы открыть его</p>
 
                     <!-- Фильтры -->
                     <div class="relative mb-1">
-                        <button type="button" onclick="toggleOrderFilterDropdown()" id="orderFilterBtn" class="border p-1 rounded-md w-full text-xs text-left bg-white flex justify-between items-center">
+                        <button type="button" onclick="toggleOrderFilterDropdown()" id="orderFilterBtn" class="border p-1 rounded-xl w-full text-xs text-left bg-white flex justify-between items-center">
                             <span id="orderFilterLabel">Все клиенты</span>
                             <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
-                        <div id="orderFilterDropdown" class="hidden absolute z-10 bg-white border rounded-md shadow-md w-full mt-1 max-h-40 overflow-y-auto p-1">
+                        <div id="orderFilterDropdown" class="hidden absolute z-10 bg-white border rounded-xl shadow-md w-full mt-1 max-h-40 overflow-y-auto p-1">
                             <label class="flex items-center gap-2 px-1 py-1 text-xs border-b mb-1 font-medium">
                                 <input type="checkbox" id="orderFilterAll" onchange="toggleAllOrderCustomersFilter(this)" checked> Все клиенты
                             </label>
@@ -1043,7 +1043,7 @@
                         </div>
                     </div>
                     <div class="mb-2">
-                        <select id="orderDateRangeFilter" onchange="toggleOrderDateRange(); applyOrderFilter();" class="border p-0.5 rounded-md w-full text-xs">
+                        <select id="orderDateRangeFilter" onchange="toggleOrderDateRange(); applyOrderFilter();" class="border p-0.5 rounded-xl w-full text-xs">
                             <option value="all">Весь период</option>
                             <option value="week">Текущая неделя</option>
                             <option value="month">Текущий месяц</option>
@@ -1051,12 +1051,12 @@
                         </select>
                     </div>
                     <div class="mb-2">
-                        <select id="orderEmployeeFilter" onchange="applyOrderFilter()" class="border p-0.5 rounded-md w-full text-xs">
+                        <select id="orderEmployeeFilter" onchange="applyOrderFilter()" class="border p-0.5 rounded-xl w-full text-xs">
                             <option value="">Все исполнители</option>
                         </select>
                     </div>
                     <div class="mb-2">
-                        <select id="orderPaymentFilter" onchange="applyOrderFilter()" class="border p-0.5 rounded-md w-full text-xs">
+                        <select id="orderPaymentFilter" onchange="applyOrderFilter()" class="border p-0.5 rounded-xl w-full text-xs">
                             <option value="">Оплата: все</option>
                             <option value="unpaid">Не оплачен</option>
                             <option value="partial">Частично оплачен</option>
@@ -1068,11 +1068,11 @@
                         <div class="flex gap-1">
                             <div class="flex-1">
                                 <label class="text-xs text-gray-500">От</label>
-                                <input id="orderDateFrom" type="date" onchange="applyOrderFilter()" class="border p-0.5 rounded-md w-full text-xs">
+                                <input id="orderDateFrom" type="date" onchange="applyOrderFilter()" class="border p-0.5 rounded-xl w-full text-xs">
                             </div>
                             <div class="flex-1">
                                 <label class="text-xs text-gray-500">До</label>
-                                <input id="orderDateTo" type="date" onchange="applyOrderFilter()" class="border p-0.5 rounded-md w-full text-xs">
+                                <input id="orderDateTo" type="date" onchange="applyOrderFilter()" class="border p-0.5 rounded-xl w-full text-xs">
                             </div>
                         </div>
                     </div>
@@ -1093,9 +1093,9 @@
 
             <!-- ДЕТАЛЬНЫЙ ВИД ЗАКАЗА -->
             <div id="orderDetail">
-                <div class="bg-white p-2 rounded-md shadow-md mb-3">
+                <div class="bg-white p-2 rounded-xl shadow-md mb-3">
                     <div class="flex items-center justify-between mb-2">
-                        <button onclick="closeOrderDetail()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300 flex items-center gap-1">
+                        <button onclick="closeOrderDetail()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-xl hover:bg-gray-300 flex items-center gap-1">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                             Назад к заказам
                         </button>
@@ -1106,7 +1106,7 @@
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>
                             </button>
                             <!-- Карточка клиента -->
-                            <button onclick="goToCustomerFromOrder()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-300">Карточка клиента</button>
+                            <button onclick="goToCustomerFromOrder()" class="btn text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-xl hover:bg-gray-300">Карточка клиента</button>
                             <!-- Поделиться заказом -->
                             <button onclick="shareOrderInfo()" title="Поделиться заказом" class="text-gray-400 hover:text-indigo-600">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0-12l-4 4m4-4l4 4M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6"/></svg>
@@ -1124,17 +1124,17 @@
                         <div>
                             <label class="table-text text-gray-500">Клиент</label>
                             <div class="search-input-wrap">
-                                <input id="detailCustomer" placeholder="Выберите" autocomplete="off" class="border p-0.5 rounded-md w-full table-text">
+                                <input id="detailCustomer" placeholder="Выберите" autocomplete="off" class="border p-0.5 rounded-xl w-full table-text">
                                 <div id="detailCustomerDropdown" class="search-dropdown hidden"></div>
                             </div>
                         </div>
                         <div>
                             <label class="table-text text-gray-500">Дата</label>
-                            <input id="detailDate" type="date" onchange="saveDetailHeader()" class="border p-0.5 rounded-md w-full table-text">
+                            <input id="detailDate" type="date" onchange="saveDetailHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                         <div>
                             <label class="table-text text-gray-500">Статус</label>
-                            <select id="detailStatus" onchange="saveDetailHeader()" class="border p-0.5 rounded-md w-full table-text">
+                            <select id="detailStatus" onchange="saveDetailHeader()" class="border p-0.5 rounded-xl w-full table-text">
                                 <option value="принят">Принят</option>
                                 <option value="в работе">В работе</option>
                                 <option value="выполнен">Выполнен</option>
@@ -1142,11 +1142,11 @@
                         </div>
                         <div>
                             <label class="table-text text-gray-500">Скидка (%)</label>
-                            <input id="detailDiscount" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" max="100" onchange="saveDetailHeader()" class="border p-0.5 rounded-md w-full table-text">
+                            <input id="detailDiscount" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" max="100" onchange="saveDetailHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                         <div>
                             <label class="table-text text-gray-500">Исполнитель</label>
-                            <select id="detailEmployee" onchange="saveDetailHeader()" class="border p-0.5 rounded-md w-full table-text">
+                            <select id="detailEmployee" onchange="saveDetailHeader()" class="border p-0.5 rounded-xl w-full table-text">
                                 <option value="">—</option>
                             </select>
                         </div>
@@ -1157,13 +1157,13 @@
                         </div>
                         <div class="col-span-2">
                             <label class="table-text text-gray-500">Комментарий к заказу</label>
-                            <textarea id="detailNotes" onblur="saveDetailHeader()" rows="2" placeholder="Например: особые пожелания, время доставки..." class="border p-1 rounded-md table-text w-full resize-none font-semibold text-blue-700"></textarea>
+                            <textarea id="detailNotes" onblur="saveDetailHeader()" rows="2" placeholder="Например: особые пожелания, время доставки..." class="border p-1 rounded-xl table-text w-full resize-none font-semibold text-blue-700"></textarea>
                         </div>
                     </div>
                 </div>
 
                 <!-- Оплата (кратко) -->
-                <div class="bg-white p-2 rounded-md shadow-md mb-3 cursor-pointer" onclick="openPaymentModal()">
+                <div class="bg-white p-2 rounded-xl shadow-md mb-3 cursor-pointer" onclick="openPaymentModal()">
                     <div class="flex justify-between items-center">
                         <h2 class="text-xs font-semibold text-gray-800">Оплата</h2>
                         <span id="paymentStatusBadge" class="text-xs font-semibold px-2 py-0.5 rounded-full">—</span>
@@ -1174,7 +1174,7 @@
                     </div>
                 </div>
 
-                <div class="bg-white p-2 rounded-md shadow-md">
+                <div class="bg-white p-2 rounded-xl shadow-md">
                     <div class="flex justify-between items-center mb-2">
                         <h2 class="text-xs font-semibold text-gray-800">Позиции заказа</h2>
                     </div>
@@ -1212,7 +1212,7 @@
                         <div class="perm-view-costs pt-1 border-t mt-1">
                             <div>Себестоимость: <span id="detailCost" class="font-medium text-gray-700">0.00</span></div>
                             <div>Прибыль: <span id="detailProfit" class="font-semibold text-green-700">0.00</span> (<span id="detailProfitPct">0.0</span>%)</div>
-                            <button onclick="openOrderCostBreakdown()" class="btn bg-gray-100 text-gray-700 px-2 py-1 rounded-md hover:bg-gray-200 text-xs w-full mt-1 flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>Детализация себестоимости</button>
+                            <button onclick="openOrderCostBreakdown()" class="btn bg-gray-100 text-gray-700 px-2 py-1 rounded-xl hover:bg-gray-200 text-xs w-full mt-1 flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>Детализация себестоимости</button>
                         </div>
                     </div>
                 </div>
@@ -1237,7 +1237,7 @@
                     <div id="paymentOverpaidRow" class="hidden">Переплата: <span id="paymentOverpaidAmount" class="font-semibold text-indigo-600">0.00</span></div>
                     <div class="flex items-center gap-1 pt-1">
                         <span>Оплатить до:</span>
-                        <input id="orderDueDate" type="date" class="border p-0.5 rounded-md text-xs" onchange="saveDueDate()">
+                        <input id="orderDueDate" type="date" class="border p-0.5 rounded-xl text-xs" onchange="saveDueDate()">
                         <span id="dueDateOverdueTag" class="text-red-600 font-semibold hidden"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>просрочено</span>
                     </div>
                 </div>
@@ -1245,10 +1245,10 @@
                 <div id="paymentsListContent" class="mb-2"></div>
 
                 <div class="flex gap-1 mb-1">
-                    <button onclick="openAddPaymentModal()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs flex-1 border border-gray-200">+ Добавить оплату</button>
-                    <button id="payRemainingBtn" onclick="openAddPaymentModal(true)" class="btn bg-green-50 text-green-700 px-2 py-1.5 rounded-md hover:bg-green-100 text-xs flex-1 border border-green-200 hidden items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0018.75 4.5H5.25A2.25 2.25 0 003 6.75v10.5A2.25 2.25 0 005.25 19.5z"/></svg>Внести остаток</button>
+                    <button onclick="openAddPaymentModal()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-xl hover:bg-gray-200 text-xs flex-1 border border-gray-200">+ Добавить оплату</button>
+                    <button id="payRemainingBtn" onclick="openAddPaymentModal(true)" class="btn bg-green-50 text-green-700 px-2 py-1.5 rounded-xl hover:bg-green-100 text-xs flex-1 border border-green-200 hidden items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0018.75 4.5H5.25A2.25 2.25 0 003 6.75v10.5A2.25 2.25 0 005.25 19.5z"/></svg>Внести остаток</button>
                 </div>
-                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1.5 rounded-md hover:bg-gray-500 text-xs w-full">Закрыть</button>
+                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1.5 rounded-xl hover:bg-gray-500 text-xs w-full">Закрыть</button>
             </div>
         </div>
 
@@ -1258,10 +1258,10 @@
         <div id="editProductModal" class="modal">
             <div class="modal-content">
                 <h2 class="text-xs font-semibold mb-2 text-gray-800">Редактировать изделие</h2>
-                <input id="editProductName" type="text" placeholder="Название изделия" class="border p-0.5 rounded-md mb-1 w-full text-xs">
-                <input id="editProductPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="Продажная цена" class="border p-0.5 rounded-md mb-2 w-full text-xs">
-                <button onclick="saveProductEdit()" class="btn bg-gray-500 text-white p-0.5 rounded-md hover:bg-gray-600 mr-1 text-xs">Сохранить</button>
-                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-0.5 rounded-md hover:bg-gray-500 text-xs">Отмена</button>
+                <input id="editProductName" type="text" placeholder="Название изделия" class="border p-0.5 rounded-xl mb-1 w-full text-xs">
+                <input id="editProductPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="Продажная цена" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
+                <button onclick="saveProductEdit()" class="btn bg-gray-500 text-white p-0.5 rounded-xl hover:bg-gray-600 mr-1 text-xs">Сохранить</button>
+                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-0.5 rounded-xl hover:bg-gray-500 text-xs">Отмена</button>
             </div>
         </div>
 
@@ -1273,13 +1273,13 @@
             <div class="modal-content">
                 <h2 class="text-xs font-semibold mb-2 text-gray-800">Редактировать ингредиент рецепта</h2>
                 <label class="text-xs text-gray-600">Ингредиент</label>
-                <select id="editRecipeIngredient" class="border p-0.5 rounded-md mb-1 w-full text-xs">
+                <select id="editRecipeIngredient" class="border p-0.5 rounded-xl mb-1 w-full text-xs">
                     <option value="">Выберите ингредиент</option>
                 </select>
                 <label class="text-xs text-gray-600">Количество</label>
-                <input id="editRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-0.5 rounded-md mb-2 w-full text-xs">
-                <button onclick="saveRecipeItemEdit()" class="btn bg-gray-500 text-white p-0.5 rounded-md hover:bg-gray-600 mr-1 text-xs">Сохранить</button>
-                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-0.5 rounded-md hover:bg-gray-500 text-xs">Отмена</button>
+                <input id="editRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
+                <button onclick="saveRecipeItemEdit()" class="btn bg-gray-500 text-white p-0.5 rounded-xl hover:bg-gray-600 mr-1 text-xs">Сохранить</button>
+                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-0.5 rounded-xl hover:bg-gray-500 text-xs">Отмена</button>
             </div>
         </div>
 
@@ -1288,13 +1288,13 @@
             <div class="modal-content">
                 <h2 class="text-xs font-semibold mb-2 text-gray-800">Редактировать ингредиент рецепта</h2>
                 <label class="text-xs text-gray-600">Ингредиент</label>
-                <select id="editSfRecipeIngredient" class="border p-0.5 rounded-md mb-1 w-full text-xs">
+                <select id="editSfRecipeIngredient" class="border p-0.5 rounded-xl mb-1 w-full text-xs">
                     <option value="">Выберите ингредиент</option>
                 </select>
                 <label class="text-xs text-gray-600">Количество</label>
-                <input id="editSfRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-0.5 rounded-md mb-2 w-full text-xs">
-                <button onclick="saveSfRecipeItemEdit()" class="btn bg-gray-500 text-white p-0.5 rounded-md hover:bg-gray-600 mr-1 text-xs">Сохранить</button>
-                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-0.5 rounded-md hover:bg-gray-500 text-xs">Отмена</button>
+                <input id="editSfRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
+                <button onclick="saveSfRecipeItemEdit()" class="btn bg-gray-500 text-white p-0.5 rounded-xl hover:bg-gray-600 mr-1 text-xs">Сохранить</button>
+                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-0.5 rounded-xl hover:bg-gray-500 text-xs">Отмена</button>
             </div>
         </div>
 
@@ -1305,15 +1305,15 @@
                 <h2 class="text-xs font-semibold mb-2 text-gray-800">Редактировать позицию</h2>
                 <label class="text-xs text-gray-600">Изделие</label>
                 <div class="search-input-wrap">
-                    <input id="editItemProduct" oninput="autoFillEditItemPrice()" placeholder="Выберите изделие" autocomplete="off" class="border p-0.5 rounded-md mb-1 w-full text-xs">
+                    <input id="editItemProduct" oninput="autoFillEditItemPrice()" placeholder="Выберите изделие" autocomplete="off" class="border p-0.5 rounded-xl mb-1 w-full text-xs">
                     <div id="editItemProductDropdown" class="search-dropdown hidden"></div>
                 </div>
                 <label class="text-xs text-gray-600">Количество</label>
-                <input id="editItemQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" class="border p-0.5 rounded-md mb-1 w-full text-xs">
+                <input id="editItemQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" class="border p-0.5 rounded-xl mb-1 w-full text-xs">
                 <label class="text-xs text-gray-600">Цена</label>
-                <input id="editItemPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" class="border p-0.5 rounded-md mb-2 w-full text-xs">
-                <button onclick="saveItemEdit()" class="btn bg-gray-500 text-white p-0.5 rounded-md hover:bg-gray-600 mr-1 text-xs">Сохранить</button>
-                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-0.5 rounded-md hover:bg-gray-500 text-xs">Отмена</button>
+                <input id="editItemPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
+                <button onclick="saveItemEdit()" class="btn bg-gray-500 text-white p-0.5 rounded-xl hover:bg-gray-600 mr-1 text-xs">Сохранить</button>
+                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-0.5 rounded-xl hover:bg-gray-500 text-xs">Отмена</button>
             </div>
         </div>
 
@@ -1323,19 +1323,19 @@
                 <h2 class="text-xs font-semibold mb-2 text-gray-800">Редактировать заказ</h2>
                 <label class="text-xs text-gray-600">Клиент</label>
                 <div class="search-input-wrap mb-1">
-                    <input id="editOrderCustomer" placeholder="Выберите клиента" autocomplete="off" class="border p-0.5 rounded-md w-full text-xs">
+                    <input id="editOrderCustomer" placeholder="Выберите клиента" autocomplete="off" class="border p-0.5 rounded-xl w-full text-xs">
                     <div id="editOrderCustomerDropdown" class="search-dropdown hidden"></div>
                 </div>
                 <label class="text-xs text-gray-600">Дата</label>
-                <input id="editOrderDate" type="date" class="border p-0.5 rounded-md mb-1 w-full text-xs">
+                <input id="editOrderDate" type="date" class="border p-0.5 rounded-xl mb-1 w-full text-xs">
                 <label class="text-xs text-gray-600">Статус</label>
-                <select id="editOrderStatus" class="border p-0.5 rounded-md mb-2 w-full text-xs">
+                <select id="editOrderStatus" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
                     <option value="принят">Принят</option>
                     <option value="в работе">В работе</option>
                     <option value="выполнен">Выполнен</option>
                 </select>
-                <button onclick="saveOrderEdit()" class="btn bg-gray-500 text-white p-0.5 rounded-md hover:bg-gray-600 mr-1 text-xs">Сохранить</button>
-                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-0.5 rounded-md hover:bg-gray-500 text-xs">Отмена</button>
+                <button onclick="saveOrderEdit()" class="btn bg-gray-500 text-white p-0.5 rounded-xl hover:bg-gray-600 mr-1 text-xs">Сохранить</button>
+                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-0.5 rounded-xl hover:bg-gray-500 text-xs">Отмена</button>
             </div>
         </div>
 
@@ -1343,8 +1343,8 @@
         <div id="deleteModal" class="modal">
             <div class="modal-content">
                 <p id="deleteModalText" class="mb-2 text-xs text-gray-700">Вы уверены, что хотите удалить этот элемент?</p>
-                <button onclick="confirmDelete()" class="btn bg-red-500 text-white p-0.5 rounded-md hover:bg-red-600 mr-1 text-xs">Удалить</button>
-                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-0.5 rounded-md hover:bg-gray-500 text-xs">Отмена</button>
+                <button onclick="confirmDelete()" class="btn bg-red-500 text-white p-0.5 rounded-xl hover:bg-red-600 mr-1 text-xs">Удалить</button>
+                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-0.5 rounded-xl hover:bg-gray-500 text-xs">Отмена</button>
             </div>
         </div>
 
@@ -1353,8 +1353,8 @@
             <div class="modal-content text-center">
                 <p id="confirmMessage" class="text-sm text-gray-800 mb-4" style="white-space: pre-line;"></p>
                 <div class="flex justify-center gap-2">
-                    <button id="confirmCancelBtn" class="btn bg-gray-300 text-gray-800 px-4 py-1.5 rounded-md hover:bg-gray-400 text-sm">Отмена</button>
-                    <button id="confirmOkBtn" class="btn bg-gray-700 text-white px-4 py-1.5 rounded-md hover:bg-gray-800 text-sm">OK</button>
+                    <button id="confirmCancelBtn" class="btn bg-gray-300 text-gray-800 px-4 py-1.5 rounded-xl hover:bg-gray-400 text-sm">Отмена</button>
+                    <button id="confirmOkBtn" class="btn bg-gray-700 text-white px-4 py-1.5 rounded-xl hover:bg-gray-800 text-sm">OK</button>
                 </div>
             </div>
         </div>
@@ -1365,7 +1365,7 @@
                 <h2 class="text-xs font-semibold mb-1 text-gray-800">Настройки</h2>
                 <p class="text-xs text-gray-500 mb-3">Текущий сотрудник: <b id="settingsCurrentEmployee" class="text-gray-800"></b></p>
 
-                <div class="flex flex-col gap-1 mb-3 border rounded-md p-2 bg-gray-50">
+                <div class="flex flex-col gap-1 mb-3 border rounded-xl p-2 bg-gray-50">
                     <div class="flex justify-between items-center">
                         <span class="text-xs text-gray-500">Тариф</span>
                         <span id="settingsPlanBadge" class="text-xs font-semibold px-2 py-0.5 rounded-full">—</span>
@@ -1374,27 +1374,27 @@
                 </div>
 
                 <div id="companyInfoBtnBlock" class="flex flex-col gap-1 mb-3 hidden">
-                    <button onclick="openCompanyInfoModal()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs text-left border border-gray-200 flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21"/></svg>Информация о компании</button>
+                    <button onclick="openCompanyInfoModal()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-xl hover:bg-gray-200 text-xs text-left border border-gray-200 flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21"/></svg>Информация о компании</button>
                 </div>
 
                 <div class="flex flex-col gap-1 mb-3">
-                    <button onclick="downloadBackup()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs text-left border border-gray-200 flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>Скачать резервную копию</button>
-                    <button onclick="openHistoryScreen()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs text-left border border-gray-200 perm-owner-only flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Журнал действий</button>
-                    <button onclick="loadAllData()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs text-left border border-gray-200 flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>Обновить данные</button>
-                    <button onclick="openOrdersTrash()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs text-left border border-gray-200 perm-delete flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>Корзина удалённых заказов</button>
-                    <button onclick="confirmClearDemoData()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs text-left border border-gray-200 perm-owner-only flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42"/></svg>Удалить демо-данные и начать заново</button>
+                    <button onclick="downloadBackup()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-xl hover:bg-gray-200 text-xs text-left border border-gray-200 flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>Скачать резервную копию</button>
+                    <button onclick="openHistoryScreen()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-xl hover:bg-gray-200 text-xs text-left border border-gray-200 perm-owner-only flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Журнал действий</button>
+                    <button onclick="loadAllData()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-xl hover:bg-gray-200 text-xs text-left border border-gray-200 flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>Обновить данные</button>
+                    <button onclick="openOrdersTrash()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-xl hover:bg-gray-200 text-xs text-left border border-gray-200 perm-delete flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>Корзина удалённых заказов</button>
+                    <button onclick="confirmClearDemoData()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-xl hover:bg-gray-200 text-xs text-left border border-gray-200 perm-owner-only flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42"/></svg>Удалить демо-данные и начать заново</button>
                 </div>
 
                 <div class="flex flex-col gap-1 mb-3 border-t pt-2">
-                    <button id="employeesManageBtn" onclick="openEmployeesModal()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs text-left border border-gray-200 hidden items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>Сотрудники и права</button>
+                    <button id="employeesManageBtn" onclick="openEmployeesModal()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-xl hover:bg-gray-200 text-xs text-left border border-gray-200 hidden items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>Сотрудники и права</button>
                 </div>
 
                 <div class="flex flex-col gap-1 mb-3 border-t pt-2">
-                    <button onclick="logoutEmployee()" class="btn bg-gray-200 text-gray-800 px-2 py-1.5 rounded-md hover:bg-gray-300 text-xs text-left flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Сменить сотрудника</button>
-                    <button onclick="signOutAccount()" class="btn bg-gray-200 text-gray-800 px-2 py-1.5 rounded-md hover:bg-gray-300 text-xs text-left flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15 9V5.25A2.25 2.25 0 0012.75 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 006.75 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"/></svg>Выйти из аккаунта</button>
+                    <button onclick="logoutEmployee()" class="btn bg-gray-200 text-gray-800 px-2 py-1.5 rounded-xl hover:bg-gray-300 text-xs text-left flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Сменить сотрудника</button>
+                    <button onclick="signOutAccount()" class="btn bg-gray-200 text-gray-800 px-2 py-1.5 rounded-xl hover:bg-gray-300 text-xs text-left flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15 9V5.25A2.25 2.25 0 0012.75 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 006.75 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"/></svg>Выйти из аккаунта</button>
                 </div>
 
-                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 w-full text-xs">Закрыть</button>
+                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-xl hover:bg-gray-500 w-full text-xs">Закрыть</button>
             </div>
         </div>
 
@@ -1406,17 +1406,17 @@
 
                 <div class="mb-3">
                     <label class="table-text text-gray-500">Название пекарни</label>
-                    <input id="cmpOrgName" type="text" onblur="saveCompanyInfo('name', this.value)" class="border p-1 rounded-md w-full table-text" placeholder="Например, Пекарня Анны">
+                    <input id="cmpOrgName" type="text" onblur="saveCompanyInfo('name', this.value)" class="border p-1 rounded-xl w-full table-text" placeholder="Например, Пекарня Анны">
                 </div>
 
                 <div class="mb-3">
                     <label class="table-text text-gray-500">Страна</label>
                     <div class="relative">
-                        <button type="button" onclick="toggleCountryDropdown()" id="cmpCountryBtn" class="border p-1 rounded-md w-full table-text text-left bg-white flex justify-between items-center">
+                        <button type="button" onclick="toggleCountryDropdown()" id="cmpCountryBtn" class="border p-1 rounded-xl w-full table-text text-left bg-white flex justify-between items-center">
                             <span id="cmpCountryLabel">Не указана</span>
                             <svg class="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                         </button>
-                        <div id="cmpCountryDropdown" class="hidden absolute z-10 bg-white border rounded-md shadow-md w-full mt-1 max-h-52 overflow-y-auto p-1"></div>
+                        <div id="cmpCountryDropdown" class="hidden absolute z-10 bg-white border rounded-xl shadow-md w-full mt-1 max-h-52 overflow-y-auto p-1"></div>
                     </div>
                     <p class="text-[11px] text-gray-400 mt-0.5">При выборе страны валюта и ставка НДС ниже подставятся автоматически — их можно изменить вручную</p>
                 </div>
@@ -1425,39 +1425,39 @@
                     <div>
                         <label class="table-text text-gray-500">Валюта расчёта</label>
                         <div class="relative">
-                            <button type="button" onclick="toggleCurrencyDropdown()" id="cmpCurrencyBtn" class="border p-1 rounded-md w-full table-text text-left bg-white flex justify-between items-center">
+                            <button type="button" onclick="toggleCurrencyDropdown()" id="cmpCurrencyBtn" class="border p-1 rounded-xl w-full table-text text-left bg-white flex justify-between items-center">
                                 <span id="cmpCurrencyLabel">Евро</span>
                                 <svg class="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                             </button>
-                            <div id="cmpCurrencyDropdown" class="hidden absolute z-10 bg-white border rounded-md shadow-md w-full mt-1 max-h-52 overflow-y-auto p-1"></div>
+                            <div id="cmpCurrencyDropdown" class="hidden absolute z-10 bg-white border rounded-xl shadow-md w-full mt-1 max-h-52 overflow-y-auto p-1"></div>
                         </div>
                     </div>
                     <div>
                         <label class="table-text text-gray-500">Ставка НДС, %</label>
-                        <input id="cmpVatRate" type="number" inputmode="decimal" min="0" max="100" step="0.1" autocomplete="off" onblur="saveVatRatePercent(this.value)" class="border p-1 rounded-md w-full table-text" placeholder="21">
+                        <input id="cmpVatRate" type="number" inputmode="decimal" min="0" max="100" step="0.1" autocomplete="off" onblur="saveVatRatePercent(this.value)" class="border p-1 rounded-xl w-full table-text" placeholder="21">
                     </div>
                 </div>
 
                 <div class="mb-3">
                     <label class="table-text text-gray-500 mb-1 block">Тип лица</label>
                     <div class="flex gap-1">
-                        <button id="cmpEntityIndividualBtn" onclick="setCompanyEntityType('individual')" class="btn flex-1 text-xs py-1 rounded-md border">Физ. лицо</button>
-                        <button id="cmpEntityCompanyBtn" onclick="setCompanyEntityType('company')" class="btn flex-1 text-xs py-1 rounded-md border">Юр. лицо</button>
+                        <button id="cmpEntityIndividualBtn" onclick="setCompanyEntityType('individual')" class="btn flex-1 text-xs py-1 rounded-xl border">Физ. лицо</button>
+                        <button id="cmpEntityCompanyBtn" onclick="setCompanyEntityType('company')" class="btn flex-1 text-xs py-1 rounded-xl border">Юр. лицо</button>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-1 mb-3">
                     <div>
                         <label class="table-text text-gray-500">Телефон</label>
-                        <input id="cmpPhone" type="text" autocomplete="off" onblur="saveCompanyInfo('phone', this.value)" class="border p-1 rounded-md w-full table-text">
+                        <input id="cmpPhone" type="text" autocomplete="off" onblur="saveCompanyInfo('phone', this.value)" class="border p-1 rounded-xl w-full table-text">
                     </div>
                     <div>
                         <label class="table-text text-gray-500">Email</label>
-                        <input id="cmpEmail" type="email" autocomplete="off" onblur="saveCompanyInfo('email', this.value)" class="border p-1 rounded-md w-full table-text">
+                        <input id="cmpEmail" type="email" autocomplete="off" onblur="saveCompanyInfo('email', this.value)" class="border p-1 rounded-xl w-full table-text">
                     </div>
                     <div class="col-span-2">
                         <label class="table-text text-gray-500">Адрес</label>
-                        <input id="cmpAddress" type="text" autocomplete="off" onblur="saveCompanyInfo('address', this.value)" class="border p-1 rounded-md w-full table-text">
+                        <input id="cmpAddress" type="text" autocomplete="off" onblur="saveCompanyInfo('address', this.value)" class="border p-1 rounded-xl w-full table-text">
                     </div>
                 </div>
 
@@ -1466,19 +1466,19 @@
                     <div class="grid grid-cols-2 gap-1">
                         <div class="col-span-2">
                             <label class="table-text text-gray-500">Юридическое название</label>
-                            <input id="cmpLegalName" type="text" autocomplete="off" onblur="saveCompanyInfo('legal_name', this.value)" class="border p-1 rounded-md w-full table-text" placeholder="Например, MB Runaway Chef">
+                            <input id="cmpLegalName" type="text" autocomplete="off" onblur="saveCompanyInfo('legal_name', this.value)" class="border p-1 rounded-xl w-full table-text" placeholder="Например, MB Runaway Chef">
                         </div>
                         <div>
                             <label class="table-text text-gray-500">Рег. номер</label>
-                            <input id="cmpRegNumber" type="text" autocomplete="off" onblur="saveCompanyInfo('reg_number', this.value)" class="border p-1 rounded-md w-full table-text">
+                            <input id="cmpRegNumber" type="text" autocomplete="off" onblur="saveCompanyInfo('reg_number', this.value)" class="border p-1 rounded-xl w-full table-text">
                         </div>
                         <div>
                             <label class="table-text text-gray-500">Код НДС / PVM</label>
-                            <input id="cmpVatCode" type="text" autocomplete="off" onblur="saveCompanyInfo('vat_code', this.value)" class="border p-1 rounded-md w-full table-text">
+                            <input id="cmpVatCode" type="text" autocomplete="off" onblur="saveCompanyInfo('vat_code', this.value)" class="border p-1 rounded-xl w-full table-text">
                         </div>
                         <div class="col-span-2">
                             <label class="table-text text-gray-500">Директор / представитель</label>
-                            <input id="cmpDirectorName" type="text" autocomplete="off" onblur="saveCompanyInfo('director_name', this.value)" class="border p-1 rounded-md w-full table-text">
+                            <input id="cmpDirectorName" type="text" autocomplete="off" onblur="saveCompanyInfo('director_name', this.value)" class="border p-1 rounded-xl w-full table-text">
                         </div>
                     </div>
                 </div>
@@ -1486,7 +1486,7 @@
                 <!-- Только для физического лица -->
                 <div id="cmpIndividualFields" class="border-t pt-2 mb-3">
                     <label class="table-text text-gray-500">Личный код</label>
-                    <input id="cmpPersonalCode" type="text" autocomplete="off" onblur="saveCompanyInfo('personal_code', this.value)" class="border p-1 rounded-md w-full table-text">
+                    <input id="cmpPersonalCode" type="text" autocomplete="off" onblur="saveCompanyInfo('personal_code', this.value)" class="border p-1 rounded-xl w-full table-text">
                 </div>
 
                 <!-- Банковские реквизиты — общие для обоих типов -->
@@ -1495,20 +1495,20 @@
                     <div class="grid grid-cols-2 gap-1">
                         <div class="col-span-2">
                             <label class="table-text text-gray-500">Банк</label>
-                            <input id="cmpBankName" type="text" autocomplete="off" onblur="saveCompanyInfo('bank_name', this.value)" class="border p-1 rounded-md w-full table-text">
+                            <input id="cmpBankName" type="text" autocomplete="off" onblur="saveCompanyInfo('bank_name', this.value)" class="border p-1 rounded-xl w-full table-text">
                         </div>
                         <div>
                             <label class="table-text text-gray-500">IBAN / счёт</label>
-                            <input id="cmpBankAccount" type="text" autocomplete="off" onblur="saveCompanyInfo('bank_account', this.value)" class="border p-1 rounded-md w-full table-text">
+                            <input id="cmpBankAccount" type="text" autocomplete="off" onblur="saveCompanyInfo('bank_account', this.value)" class="border p-1 rounded-xl w-full table-text">
                         </div>
                         <div>
                             <label class="table-text text-gray-500">SWIFT / BIC</label>
-                            <input id="cmpBankSwift" type="text" autocomplete="off" onblur="saveCompanyInfo('bank_swift', this.value)" class="border p-1 rounded-md w-full table-text">
+                            <input id="cmpBankSwift" type="text" autocomplete="off" onblur="saveCompanyInfo('bank_swift', this.value)" class="border p-1 rounded-xl w-full table-text">
                         </div>
                     </div>
                 </div>
 
-                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 w-full text-xs">Закрыть</button>
+                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-xl hover:bg-gray-500 w-full text-xs">Закрыть</button>
             </div>
         </div>
 
@@ -1519,8 +1519,8 @@
                 <p id="orderCostBreakdownSubtitle" class="text-xs text-gray-500 mb-2"></p>
                 <div id="orderCostBreakdownContent" style="max-height:60vh;overflow-y:auto;"></div>
                 <div class="flex gap-1 mt-3">
-                    <button onclick="recalcOrderCostBreakdown()" class="btn bg-indigo-50 text-indigo-700 p-1 rounded-md hover:bg-indigo-100 flex-1 text-xs">↻ Пересчитать по актуальному рецепту</button>
-                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs" style="width:80px;">Закрыть</button>
+                    <button onclick="recalcOrderCostBreakdown()" class="btn bg-indigo-50 text-indigo-700 p-1 rounded-xl hover:bg-indigo-100 flex-1 text-xs">↻ Пересчитать по актуальному рецепту</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-xl hover:bg-gray-500 text-xs" style="width:80px;">Закрыть</button>
                 </div>
             </div>
         </div>
@@ -1530,12 +1530,12 @@
             <div class="modal-content" style="max-width:320px;">
                 <h2 class="text-sm font-semibold mb-1 text-gray-800">Добро пожаловать!</h2>
                 <p class="text-xs text-gray-500 mb-3">Как называется ваша пекарня? Это название будет отображаться в шапке приложения. Изменить его можно позже в настройках.</p>
-                <input id="orgNameSetupInput" type="text" class="border p-1.5 rounded-md text-sm w-full mb-3" placeholder="Например, Пекарня Анны">
+                <input id="orgNameSetupInput" type="text" class="border p-1.5 rounded-xl text-sm w-full mb-3" placeholder="Например, Пекарня Анны">
                 <label class="flex items-start gap-2 text-xs text-gray-600 mb-3">
                     <input id="orgNameSetupDemoCheckbox" type="checkbox" class="mt-0.5">
                     <span>Заполнить примером (2 клиента, 2 изделия с рецептами, 1 полуфабрикат, немного склада, 1 заказ) — чтобы сразу посмотреть, как всё выглядит и как считается склад. Позже можно удалить одной кнопкой в настройках.</span>
                 </label>
-                <button onclick="saveOrgNameSetup()" class="btn bg-indigo-600 text-white p-1.5 rounded-md hover:bg-indigo-700 w-full text-xs">Начать работу</button>
+                <button onclick="saveOrgNameSetup()" class="btn bg-indigo-600 text-white p-1.5 rounded-xl hover:bg-indigo-700 w-full text-xs">Начать работу</button>
             </div>
         </div>
 
@@ -1545,8 +1545,8 @@
                 <h2 class="text-xs font-semibold mb-2 text-gray-800">Сотрудники и права</h2>
                 <div id="employeesListContent" class="flex flex-col gap-1 mb-3" style="max-height:50vh;overflow-y:auto;"></div>
                 <div class="flex gap-1">
-                    <button onclick="openEmployeeEditModal(null)" class="btn bg-indigo-600 text-white p-1.5 rounded-md hover:bg-indigo-700 flex-1 text-xs">+ Создать сотрудника</button>
-                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1.5 rounded-md hover:bg-gray-500 text-xs" style="width:80px;">Закрыть</button>
+                    <button onclick="openEmployeeEditModal(null)" class="btn bg-indigo-600 text-white p-1.5 rounded-xl hover:bg-indigo-700 flex-1 text-xs">+ Создать сотрудника</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1.5 rounded-xl hover:bg-gray-500 text-xs" style="width:80px;">Закрыть</button>
                 </div>
             </div>
         </div>
@@ -1558,11 +1558,11 @@
                 <input type="hidden" id="employeeEditId">
                 <input type="hidden" id="employeeEditUserId">
                 <label class="text-xs text-gray-500">Имя сотрудника</label>
-                <input id="employeeEditName" type="text" class="border p-1 rounded-md text-xs w-full mb-2" placeholder="Например, Анна">
+                <input id="employeeEditName" type="text" class="border p-1 rounded-xl text-xs w-full mb-2" placeholder="Например, Анна">
 
                 <div id="employeeEditEmailBlock">
                     <label class="text-xs text-gray-500">Email для личного входа (необязательно)</label>
-                    <input id="employeeEditEmail" type="email" class="border p-1 rounded-md text-xs w-full mb-1" placeholder="Оставьте пустым для входа по имени на общем устройстве">
+                    <input id="employeeEditEmail" type="email" class="border p-1 rounded-xl text-xs w-full mb-1" placeholder="Оставьте пустым для входа по имени на общем устройстве">
                     <p class="text-xs text-gray-400 mb-3">Если указать email — сотрудник сможет установить приложение на свой телефон и войти под собой. Он должен зарегистрироваться в приложении именно на этот email.</p>
                 </div>
 
@@ -1575,9 +1575,9 @@
                 </div>
 
                 <div class="flex gap-1">
-                    <button id="employeeDeleteBtn" onclick="deleteEmployee()" class="btn bg-red-50 text-red-600 p-1.5 rounded-md hover:bg-red-100 text-xs hidden" style="width:80px;">Удалить</button>
-                    <button onclick="saveEmployee()" class="btn bg-indigo-600 text-white p-1.5 rounded-md hover:bg-indigo-700 flex-1 text-xs">Сохранить</button>
-                    <button onclick="openEmployeesModal()" class="btn bg-gray-400 text-white p-1.5 rounded-md hover:bg-gray-500 text-xs" style="width:80px;">Назад</button>
+                    <button id="employeeDeleteBtn" onclick="deleteEmployee()" class="btn bg-red-50 text-red-600 p-1.5 rounded-xl hover:bg-red-100 text-xs hidden" style="width:80px;">Удалить</button>
+                    <button onclick="saveEmployee()" class="btn bg-indigo-600 text-white p-1.5 rounded-xl hover:bg-indigo-700 flex-1 text-xs">Сохранить</button>
+                    <button onclick="openEmployeesModal()" class="btn bg-gray-400 text-white p-1.5 rounded-xl hover:bg-gray-500 text-xs" style="width:80px;">Назад</button>
                 </div>
             </div>
         </div>
@@ -1589,25 +1589,25 @@
                 <input type="hidden" id="paymentEditId">
 
                 <label class="text-xs text-gray-500">Сумма</label>
-                <input id="paymentAmount" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-1 rounded-md text-xs w-full mb-2" placeholder="0.00">
+                <input id="paymentAmount" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-1 rounded-xl text-xs w-full mb-2" placeholder="0.00">
 
                 <label class="text-xs text-gray-500">Дата</label>
-                <input id="paymentDate" type="date" class="border p-1 rounded-md text-xs w-full mb-2">
+                <input id="paymentDate" type="date" class="border p-1 rounded-xl text-xs w-full mb-2">
 
                 <label class="text-xs text-gray-500">Способ оплаты</label>
-                <select id="paymentMethod" class="border p-1 rounded-md text-xs w-full mb-2">
+                <select id="paymentMethod" class="border p-1 rounded-xl text-xs w-full mb-2">
                     <option value="наличные">Наличные</option>
                     <option value="карта">Карта</option>
                     <option value="перевод">Перевод</option>
                 </select>
 
                 <label class="text-xs text-gray-500">Заметка (необязательно)</label>
-                <input id="paymentNote" type="text" class="border p-1 rounded-md text-xs w-full mb-3" placeholder="Например, депозит">
+                <input id="paymentNote" type="text" class="border p-1 rounded-xl text-xs w-full mb-3" placeholder="Например, депозит">
 
                 <div class="flex gap-1">
-                    <button id="paymentDeleteBtn" onclick="deletePayment()" class="btn bg-red-50 text-red-600 p-1.5 rounded-md hover:bg-red-100 text-xs hidden" style="width:80px;">Удалить</button>
-                    <button onclick="savePayment()" class="btn bg-indigo-600 text-white p-1.5 rounded-md hover:bg-indigo-700 flex-1 text-xs">Сохранить</button>
-                    <button onclick="document.getElementById('addPaymentModal').style.display='none'" class="btn bg-gray-400 text-white p-1.5 rounded-md hover:bg-gray-500 text-xs" style="width:80px;">Отмена</button>
+                    <button id="paymentDeleteBtn" onclick="deletePayment()" class="btn bg-red-50 text-red-600 p-1.5 rounded-xl hover:bg-red-100 text-xs hidden" style="width:80px;">Удалить</button>
+                    <button onclick="savePayment()" class="btn bg-indigo-600 text-white p-1.5 rounded-xl hover:bg-indigo-700 flex-1 text-xs">Сохранить</button>
+                    <button onclick="document.getElementById('addPaymentModal').style.display='none'" class="btn bg-gray-400 text-white p-1.5 rounded-xl hover:bg-gray-500 text-xs" style="width:80px;">Отмена</button>
                 </div>
             </div>
         </div>
@@ -1628,17 +1628,17 @@
                 <!-- Список покупок -->
                 <div id="inventoryTabShop" class="hidden">
                     <div class="flex gap-1 mb-2">
-                        <button onclick="addCriticalToShoppingList()" class="btn bg-indigo-50 text-indigo-700 px-2 py-1 rounded-md hover:bg-indigo-100 text-xs flex-1">+ Добавить критичное</button>
-                        <button onclick="clearShoppingList()" class="btn bg-red-50 text-red-600 px-2 py-1 rounded-md hover:bg-red-100 text-xs">Очистить всё</button>
+                        <button onclick="addCriticalToShoppingList()" class="btn bg-indigo-50 text-indigo-700 px-2 py-1 rounded-xl hover:bg-indigo-100 text-xs flex-1">+ Добавить критичное</button>
+                        <button onclick="clearShoppingList()" class="btn bg-red-50 text-red-600 px-2 py-1 rounded-xl hover:bg-red-100 text-xs">Очистить всё</button>
                     </div>
                     <div class="mb-2">
-                        <button onclick="shareShoppingList()" class="btn bg-indigo-600 text-white px-2 py-1 rounded-md hover:bg-indigo-700 text-xs w-full flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0-12l-4 4m4-4l4 4M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6"/></svg>Поделиться списком</button>
+                        <button onclick="shareShoppingList()" class="btn bg-indigo-600 text-white px-2 py-1 rounded-xl hover:bg-indigo-700 text-xs w-full flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0-12l-4 4m4-4l4 4M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6"/></svg>Поделиться списком</button>
                     </div>
                     <div id="shopListContent" style="max-height:52vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;">
                         <p class="text-xs text-gray-400 text-center py-4">Список пуст</p>
                     </div>
                 </div>
-                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 w-full text-xs mt-3">Закрыть</button>
+                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-xl hover:bg-gray-500 w-full text-xs mt-3">Закрыть</button>
             </div>
         </div>
 
@@ -1656,8 +1656,8 @@
                     </div>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="sfProduceCalc()" class="btn bg-gray-500 text-white p-1 rounded-md hover:bg-gray-600 text-xs flex-1">Рассчитать →</button>
-                    <button onclick="closeModal()" class="btn bg-gray-200 text-gray-700 p-1 rounded-md hover:bg-gray-300 text-xs flex-1">Отмена</button>
+                    <button onclick="sfProduceCalc()" class="btn bg-gray-500 text-white p-1 rounded-xl hover:bg-gray-600 text-xs flex-1">Рассчитать →</button>
+                    <button onclick="closeModal()" class="btn bg-gray-200 text-gray-700 p-1 rounded-xl hover:bg-gray-300 text-xs flex-1">Отмена</button>
                 </div>
             </div>
         </div>
@@ -1680,8 +1680,8 @@
                     <p class="text-xs text-gray-400 mt-1">Расчётное значение подставлено автоматически. Измените если фактический выход отличается.</p>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="confirmSfProduce()" class="btn bg-gray-500 text-white p-1 rounded-md hover:bg-gray-600 text-xs flex-1">Подтвердить</button>
-                    <button onclick="closeModal()" class="btn bg-gray-200 text-gray-700 p-1 rounded-md hover:bg-gray-300 text-xs flex-1">Отмена</button>
+                    <button onclick="confirmSfProduce()" class="btn bg-gray-500 text-white p-1 rounded-xl hover:bg-gray-600 text-xs flex-1">Подтвердить</button>
+                    <button onclick="closeModal()" class="btn bg-gray-200 text-gray-700 p-1 rounded-xl hover:bg-gray-300 text-xs flex-1">Отмена</button>
                 </div>
             </div>
         </div>
@@ -1692,12 +1692,12 @@
                 <h2 class="text-base font-semibold mb-3 text-gray-800">Списание п/ф (корректировка)</h2>
                 <p id="sfWriteOffName" class="text-xs text-gray-500 mb-3"></p>
                 <label class="text-xs text-gray-500">Количество (<span id="sfWriteOffUnit"></span>)</label>
-                <input id="sfWriteOffQty" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-0.5 rounded-md mb-2 w-full text-xs">
+                <input id="sfWriteOffQty" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
                 <label class="text-xs text-gray-500">Причина (необязательно)</label>
-                <input id="sfWriteOffNote" type="text" class="border p-0.5 rounded-md mb-3 w-full text-xs" placeholder="Например: испортилось">
+                <input id="sfWriteOffNote" type="text" class="border p-0.5 rounded-xl mb-3 w-full text-xs" placeholder="Например: испортилось">
                 <div class="flex gap-1">
-                    <button onclick="saveSfWriteOff()" class="btn bg-red-500 text-white p-1 rounded-md hover:bg-red-600 text-xs flex-1">Списать</button>
-                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs flex-1">Отмена</button>
+                    <button onclick="saveSfWriteOff()" class="btn bg-red-500 text-white p-1 rounded-xl hover:bg-red-600 text-xs flex-1">Списать</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-xl hover:bg-gray-500 text-xs flex-1">Отмена</button>
                 </div>
             </div>
         </div>
@@ -1709,8 +1709,8 @@
                 <p class="text-xs text-gray-500 mb-3">Введите фактическое количество. Пустые поля — пропускаются.</p>
                 <div id="sfInventarizationContent" style="max-height:60vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
                 <div class="flex gap-1 mt-3">
-                    <button onclick="saveSfInventarization()" class="btn bg-gray-700 text-white p-1 rounded-md hover:bg-gray-800 text-xs flex-1">Сохранить</button>
-                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs" style="width:80px;">Отмена</button>
+                    <button onclick="saveSfInventarization()" class="btn bg-gray-700 text-white p-1 rounded-xl hover:bg-gray-800 text-xs flex-1">Сохранить</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-xl hover:bg-gray-500 text-xs" style="width:80px;">Отмена</button>
                 </div>
             </div>
         </div>
@@ -1721,7 +1721,7 @@
                 <h2 class="text-base font-semibold mb-1 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>Корзина удалённых заказов</h2>
                 <p class="text-xs text-gray-500 mb-3">Удалённые заказы хранятся 30 дней. Нажмите на заказ для восстановления или окончательного удаления.</p>
                 <div id="ordersTrashContent" style="max-height:65vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
-                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 w-full text-xs mt-3">Закрыть</button>
+                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-xl hover:bg-gray-500 w-full text-xs mt-3">Закрыть</button>
             </div>
         </div>
 
@@ -1730,9 +1730,9 @@
             <div class="modal-content" style="max-width:340px;">
                 <h2 id="trashOrderActionsTitle" class="text-sm font-semibold mb-3 text-gray-800"></h2>
                 <div class="flex flex-col gap-2">
-                    <button id="trashRestoreBtn" class="btn bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700 text-xs inline-flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/></svg>Восстановить заказ</button>
-                    <button id="trashDeleteBtn" class="btn bg-red-50 text-red-600 p-2 rounded-md hover:bg-red-100 text-xs inline-flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>Удалить навсегда</button>
-                    <button onclick="document.getElementById('trashOrderActionsModal').style.display='none'" class="btn bg-gray-200 text-gray-700 p-2 rounded-md hover:bg-gray-300 text-xs">Отмена</button>
+                    <button id="trashRestoreBtn" class="btn bg-indigo-600 text-white p-2 rounded-xl hover:bg-indigo-700 text-xs inline-flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/></svg>Восстановить заказ</button>
+                    <button id="trashDeleteBtn" class="btn bg-red-50 text-red-600 p-2 rounded-xl hover:bg-red-100 text-xs inline-flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>Удалить навсегда</button>
+                    <button onclick="document.getElementById('trashOrderActionsModal').style.display='none'" class="btn bg-gray-200 text-gray-700 p-2 rounded-xl hover:bg-gray-300 text-xs">Отмена</button>
                 </div>
             </div>
         </div>
@@ -1744,8 +1744,8 @@
                 <p class="text-xs text-gray-500 mb-3">Введите фактическое количество. Пустые поля — пропускаются. Разница запишется автоматически.</p>
                 <div id="inventarizationContent" style="max-height:60vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
                 <div class="flex gap-1 mt-3">
-                    <button onclick="saveInventarization()" class="btn bg-gray-700 text-white p-1 rounded-md hover:bg-gray-800 text-xs flex-1">Сохранить инвентаризацию</button>
-                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs" style="width:80px;">Отмена</button>
+                    <button onclick="saveInventarization()" class="btn bg-gray-700 text-white p-1 rounded-xl hover:bg-gray-800 text-xs flex-1">Сохранить инвентаризацию</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-xl hover:bg-gray-500 text-xs" style="width:80px;">Отмена</button>
                 </div>
             </div>
         </div>
@@ -1755,9 +1755,9 @@
             <div class="modal-content" style="max-width:480px;">
                 <h2 class="text-base font-semibold mb-3 text-gray-800">Редактировать ингредиент</h2>
                 <label class="text-xs text-gray-500">Название</label>
-                <input id="editIngName" type="text" class="border p-0.5 rounded-md mb-2 w-full text-sm">
+                <input id="editIngName" type="text" class="border p-0.5 rounded-xl mb-2 w-full text-sm">
                 <label class="text-xs text-gray-500">Единица измерения</label>
-                <select id="editIngUnit" class="border p-0.5 rounded-md mb-3 w-full text-sm">
+                <select id="editIngUnit" class="border p-0.5 rounded-xl mb-3 w-full text-sm">
                     <option value="g">граммы (г)</option>
                     <option value="kg">килограммы (кг)</option>
                     <option value="ml">миллилитры (мл)</option>
@@ -1765,8 +1765,8 @@
                     <option value="pcs">штуки (шт)</option>
                 </select>
                 <div class="flex gap-1">
-                    <button onclick="saveIngredientHeader()" class="btn bg-gray-700 text-white p-1 rounded-md hover:bg-gray-800 text-xs flex-1">Сохранить</button>
-                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs flex-1">Отмена</button>
+                    <button onclick="saveIngredientHeader()" class="btn bg-gray-700 text-white p-1 rounded-xl hover:bg-gray-800 text-xs flex-1">Сохранить</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-xl hover:bg-gray-500 text-xs flex-1">Отмена</button>
                 </div>
             </div>
         </div>
@@ -1777,13 +1777,13 @@
                 <h2 class="text-base font-semibold mb-3 text-gray-800">Редактировать запись</h2>
                 <input type="hidden" id="editInventoryId">
                 <label class="text-xs text-gray-500">Количество</label>
-                <input id="editInventoryQty" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-0.5 rounded-md mb-2 w-full text-xs">
+                <input id="editInventoryQty" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
                 <label class="text-xs text-gray-500">Заметка</label>
-                <input id="editInventoryNotes" type="text" class="border p-0.5 rounded-md mb-3 w-full text-xs">
+                <input id="editInventoryNotes" type="text" class="border p-0.5 rounded-xl mb-3 w-full text-xs">
                 <div class="flex gap-1">
-                    <button onclick="saveInventoryEdit()" class="btn bg-gray-700 text-white p-1 rounded-md hover:bg-gray-800 text-xs flex-1">Сохранить</button>
-                    <button onclick="deleteInventoryRecord(Number(document.getElementById('editInventoryId').value))" class="btn bg-red-500 text-white p-1 rounded-md hover:bg-red-600 text-xs flex-1">Удалить</button>
-                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs flex-1">Отмена</button>
+                    <button onclick="saveInventoryEdit()" class="btn bg-gray-700 text-white p-1 rounded-xl hover:bg-gray-800 text-xs flex-1">Сохранить</button>
+                    <button onclick="deleteInventoryRecord(Number(document.getElementById('editInventoryId').value))" class="btn bg-red-500 text-white p-1 rounded-xl hover:bg-red-600 text-xs flex-1">Удалить</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-xl hover:bg-gray-500 text-xs flex-1">Отмена</button>
                 </div>
             </div>
         </div>
@@ -1794,19 +1794,19 @@
                 <h2 class="text-base font-semibold mb-3 text-gray-800">Списание (корректировка)</h2>
                 <p id="writeOffIngName" class="text-xs text-gray-500 mb-3"></p>
                 <label class="text-xs text-gray-500">Количество (<span id="writeOffUnit"></span>)</label>
-                <input id="writeOffQty" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-0.5 rounded-md mb-2 w-full text-xs">
+                <input id="writeOffQty" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
                 <label class="text-xs text-gray-500">Причина (необязательно)</label>
-                <select id="writeOffReason" class="border p-0.5 rounded-md mb-2 w-full text-xs">
+                <select id="writeOffReason" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
                     <option value="">— выберите причину —</option>
                     <option value="Испортилось">Испортилось</option>
                     <option value="Личное использование">Личное использование</option>
                     <option value="Пересчёт остатков">Пересчёт остатков</option>
                     <option value="Другое">Другое</option>
                 </select>
-                <input id="writeOffNote" type="text" class="border p-0.5 rounded-md mb-3 w-full text-xs hidden" placeholder="Уточните причину...">
+                <input id="writeOffNote" type="text" class="border p-0.5 rounded-xl mb-3 w-full text-xs hidden" placeholder="Уточните причину...">
                 <div class="flex gap-1">
-                    <button onclick="saveWriteOff()" class="btn bg-red-500 text-white p-1 rounded-md hover:bg-red-600 text-xs flex-1">Списать</button>
-                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs flex-1">Отмена</button>
+                    <button onclick="saveWriteOff()" class="btn bg-red-500 text-white p-1 rounded-xl hover:bg-red-600 text-xs flex-1">Списать</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-xl hover:bg-gray-500 text-xs flex-1">Отмена</button>
                 </div>
             </div>
         </div>
@@ -1817,12 +1817,12 @@
                 <h2 class="text-base font-semibold mb-3 text-gray-800" id="inventoryAddTitle">Пополнить склад</h2>
                 <input type="hidden" id="inventoryAddIngId">
                 <label class="text-xs text-gray-500">Количество (<span id="inventoryAddUnit"></span>)</label>
-                <input id="inventoryAddQty" type="number" inputmode="decimal" step="0.01" class="border p-0.5 rounded-md mb-2 w-full text-xs">
+                <input id="inventoryAddQty" type="number" inputmode="decimal" step="0.01" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
                 <label class="text-xs text-gray-500">Заметка (необязательно)</label>
-                <input id="inventoryAddNotes" type="text" class="border p-0.5 rounded-md mb-3 w-full text-xs" placeholder="Например: купил в Maxima">
+                <input id="inventoryAddNotes" type="text" class="border p-0.5 rounded-xl mb-3 w-full text-xs" placeholder="Например: купил в Maxima">
                 <div class="flex gap-1">
-                    <button onclick="saveInventoryAdd()" class="btn bg-gray-700 text-white p-1 rounded-md hover:bg-gray-800 text-xs flex-1">Сохранить</button>
-                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs flex-1">Отмена</button>
+                    <button onclick="saveInventoryAdd()" class="btn bg-gray-700 text-white p-1 rounded-xl hover:bg-gray-800 text-xs flex-1">Сохранить</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-xl hover:bg-gray-500 text-xs flex-1">Отмена</button>
                 </div>
             </div>
         </div>
@@ -1833,14 +1833,14 @@
                 <h2 class="text-xs font-semibold mb-3 text-gray-800" id="priceHistoryModalTitle">Запись истории цен</h2>
                 <input type="hidden" id="priceHistoryRecordId">
                 <label class="text-xs text-gray-500">Дата (с какого числа действует цена)</label>
-                <input id="priceHistoryDate" type="date" class="border p-0.5 rounded-md mb-2 w-full text-xs">
+                <input id="priceHistoryDate" type="date" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
                 <label class="text-xs text-gray-500">Цена за упаковку</label>
-                <input id="priceHistoryPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" class="border p-0.5 rounded-md mb-2 w-full text-xs">
+                <input id="priceHistoryPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
                 <label class="text-xs text-gray-500">Размер упаковки</label>
-                <input id="priceHistorySize" type="number" autocomplete="off" inputmode="decimal" step="0.01" class="border p-0.5 rounded-md mb-3 w-full text-xs">
+                <input id="priceHistorySize" type="number" autocomplete="off" inputmode="decimal" step="0.01" class="border p-0.5 rounded-xl mb-3 w-full text-xs">
                 <div class="flex gap-1">
-                    <button onclick="savePriceHistoryRecord()" class="btn bg-gray-700 text-white p-1 rounded-md hover:bg-gray-800 text-xs flex-1">Сохранить</button>
-                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs flex-1">Отмена</button>
+                    <button onclick="savePriceHistoryRecord()" class="btn bg-gray-700 text-white p-1 rounded-xl hover:bg-gray-800 text-xs flex-1">Сохранить</button>
+                    <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-xl hover:bg-gray-500 text-xs flex-1">Отмена</button>
                 </div>
             </div>
         </div>
@@ -1850,42 +1850,42 @@
             <div class="modal-content">
                 <h2 class="text-base font-semibold mb-2 text-gray-800">Новый ингредиент</h2>
                 <label class="text-xs text-gray-600">Название</label>
-                <input id="qaiName" class="border p-1 rounded-md mb-1 w-full text-xs">
+                <input id="qaiName" class="border p-1 rounded-xl mb-1 w-full text-xs">
                 <div class="grid grid-cols-2 gap-2">
                     <div>
                         <label class="text-xs text-gray-600">Цена упаковки</label>
-                        <input id="qaiPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-1 rounded-md mb-1 w-full text-xs">
+                        <input id="qaiPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-1 rounded-xl mb-1 w-full text-xs">
                     </div>
                     <div>
                         <label class="text-xs text-gray-600">Размер упаковки</label>
-                        <input id="qaiSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" class="border p-1 rounded-md mb-1 w-full text-xs">
+                        <input id="qaiSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" class="border p-1 rounded-xl mb-1 w-full text-xs">
                     </div>
                 </div>
                 <label class="text-xs text-gray-600">Единица измерения</label>
-                <select id="qaiUnit" class="border p-1 rounded-md mb-2 w-full text-xs">
+                <select id="qaiUnit" class="border p-1 rounded-xl mb-2 w-full text-xs">
                     <option value="g">граммы (г)</option>
                     <option value="kg">килограммы (кг)</option>
                     <option value="ml">миллилитры (мл)</option>
                     <option value="l">литры (л)</option>
                     <option value="pcs">штуки (шт)</option>
                 </select>
-                <button onclick="confirmQuickAddIngredient()" class="btn bg-gray-700 text-white p-1 rounded-md hover:bg-gray-800 text-xs mr-1">Создать</button>
-                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-md hover:bg-gray-500 text-xs">Отмена</button>
+                <button onclick="confirmQuickAddIngredient()" class="btn bg-gray-700 text-white p-1 rounded-xl hover:bg-gray-800 text-xs mr-1">Создать</button>
+                <button onclick="closeModal()" class="btn bg-gray-400 text-white p-1 rounded-xl hover:bg-gray-500 text-xs">Отмена</button>
             </div>
         </div>
 
         <!-- Статистика -->
         <div id="stats" class="tab-content hidden">
-            <div class="bg-white rounded-md shadow-md p-2 mb-3">
+            <div class="bg-white rounded-xl shadow-md p-2 mb-3">
                 <h2 class="text-base font-semibold mb-2 text-gray-800">Статистика</h2>
 
                 <!-- Фильтры -->
                 <div class="relative mb-1">
-                    <button type="button" onclick="toggleCustomerFilterDropdown()" id="customerFilterBtn" class="border p-1 rounded-md w-full text-xs text-left bg-white flex justify-between items-center">
+                    <button type="button" onclick="toggleCustomerFilterDropdown()" id="customerFilterBtn" class="border p-1 rounded-xl w-full text-xs text-left bg-white flex justify-between items-center">
                         <span id="customerFilterLabel">Все клиенты</span>
                         <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
-                    <div id="customerFilterDropdown" class="hidden absolute z-10 bg-white border rounded-md shadow-md w-full mt-1 max-h-40 overflow-y-auto p-1">
+                    <div id="customerFilterDropdown" class="hidden absolute z-10 bg-white border rounded-xl shadow-md w-full mt-1 max-h-40 overflow-y-auto p-1">
                         <label class="flex items-center gap-2 px-1 py-1 text-xs border-b mb-1 font-medium">
                             <input type="checkbox" id="customerFilterAll" onchange="toggleAllCustomersFilter(this)" checked> Все клиенты
                         </label>
@@ -1893,7 +1893,7 @@
                     </div>
                 </div>
                 <div class="mb-1">
-                    <select id="statsDateRange" onchange="toggleDateRange(); applyFilter();" class="border p-0.5 rounded-md w-full text-xs">
+                    <select id="statsDateRange" onchange="toggleDateRange(); applyFilter();" class="border p-0.5 rounded-xl w-full text-xs">
                         <option value="all">Весь период</option>
                         <option value="week">Текущая неделя</option>
                         <option value="month">Текущий месяц</option>
@@ -1905,36 +1905,36 @@
                     <div class="flex gap-1">
                         <div class="flex-1">
                             <label class="text-xs text-gray-500">От</label>
-                            <input id="statsDateFrom" type="date" onchange="applyFilter()" class="border p-0.5 rounded-md w-full text-xs">
+                            <input id="statsDateFrom" type="date" onchange="applyFilter()" class="border p-0.5 rounded-xl w-full text-xs">
                         </div>
                         <div class="flex-1">
                             <label class="text-xs text-gray-500">До</label>
-                            <input id="statsDateTo" type="date" onchange="applyFilter()" class="border p-0.5 rounded-md w-full text-xs">
+                            <input id="statsDateTo" type="date" onchange="applyFilter()" class="border p-0.5 rounded-xl w-full text-xs">
                         </div>
                     </div>
                 </div>
             </div>
 
                 <!-- Таблица по клиентам -->
-                <div class="bg-white rounded-md shadow-md p-2 mb-5">
+                <div class="bg-white rounded-xl shadow-md p-2 mb-5">
                     <h3 class="text-xs font-semibold text-gray-700 mb-1 ">Сумма по клиентам (с НДС)</h3>
                     <div id="statsCustomerTableScroll" style="max-height:240px;overflow-y:auto; touch-action:pan-y; overscroll-behavior:contain;"></div>
                     <div id="statsCustomerTableTotal" class="border-t mb-2"></div>
                 </div>
 
                 <!-- Круговая диаграмма -->
-                <div class="bg-white rounded-md shadow-md p-2 mb-5">
+                <div class="bg-white rounded-xl shadow-md p-2 mb-5">
                     <h3 class="text-xs font-semibold text-gray-700 mb-1 ">Доля клиентов (с НДС)</h3>
                     <div class="flex justify-center mb-1">
                         <canvas id="chartCanvas" width="200" height="200"></canvas>
                     </div>
                     <!-- Легенда отдельно, со скроллом -->
-                    <div id="chartLegend" style="max-height:120px;overflow-y:auto; touch-action:pan-y; overscroll-behavior:contain;" class="border rounded-md p-2 bg-gray-50"></div>
+                    <div id="chartLegend" style="max-height:120px;overflow-y:auto; touch-action:pan-y; overscroll-behavior:contain;" class="border rounded-xl p-2 bg-gray-50"></div>
                 </div>
 
                 <!-- Общие цифры -->
-                <div class="bg-white rounded-md shadow-md p-2 mb-5">
-                    <div class="bg-gray-50 rounded-md p-2 mb-2 grid grid-cols-2 gap-1 text-center">
+                <div class="bg-white rounded-xl shadow-md p-2 mb-5">
+                    <div class="bg-gray-50 rounded-xl p-2 mb-2 grid grid-cols-2 gap-1 text-center">
                         <div><p class="text-xs text-gray-500">Всего (с НДС)</p><p id="totalPrice" class="text-xs font-bold text-gray-800">0.00</p></div>
                         <div><p class="text-xs text-gray-500">в т.ч. НДС</p><p id="totalVatModal" class="text-sm font-bold text-blue-700">0.00</p></div>
                         <div><p class="text-xs text-gray-500">Неделя (с НДС)</p><p id="weekTotalModal" class="text-xs font-bold text-gray-800">0.00</p></div>
@@ -1948,13 +1948,13 @@
                 </div>
 
                 <!-- Динамика по месяцам -->
-                <div class="bg-white rounded-md shadow-md p-2 mb-5 perm-view-costs">
+                <div class="bg-white rounded-xl shadow-md p-2 mb-5 perm-view-costs">
                     <h3 class="text-xs font-semibold text-gray-700 mb-1 ">Динамика по месяцам: выручка и прибыль</h3>
                     <canvas id="monthlyCanvas" style="width:100%;height:140px;"></canvas>
                 </div>
 
                 <!-- Выручка по дням (свайп влево/вправо двигает окно на неделю) -->
-                <div class="bg-white rounded-md shadow-md p-2 mb-5">
+                <div class="bg-white rounded-xl shadow-md p-2 mb-5">
                     <div class="flex justify-between items-center mb-1">
                         <h3 class="text-xs font-semibold text-gray-700 ">Выручка по дням</h3>
                         <span id="dailyChartRange" class="text-xs text-gray-400"></span>
@@ -1967,14 +1967,14 @@
                 </div>
 
                 <!-- Топ изделий -->
-                <div class="bg-white rounded-md shadow-md p-2 mb-5">
+                <div class="bg-white rounded-xl shadow-md p-2 mb-5">
                     <h3 class="text-xs font-semibold text-gray-700 mb-1 ">Топ изделий по сумме</h3>
                     <div id="statsProductTable"></div>
                 </div>
 
                 <!-- Рентабельность за период + топ изделий по рентабельности -->
-                <div class="bg-white rounded-md shadow-md p-2 mb-5 perm-view-costs">
-                    <div class="bg-gray-50 rounded-md p-2 mb-2 grid grid-cols-3 gap-1 text-center">
+                <div class="bg-white rounded-xl shadow-md p-2 mb-5 perm-view-costs">
+                    <div class="bg-gray-50 rounded-xl p-2 mb-2 grid grid-cols-3 gap-1 text-center">
                         <div><p class="text-xs text-gray-500">Себестоимость</p><p id="statsTotalCost" class="text-xs font-bold text-gray-800">0.00</p></div>
                         <div><p class="text-xs text-gray-500">Прибыль</p><p id="statsTotalProfit" class="text-sm font-bold text-green-700">0.00</p></div>
                         <div><p class="text-xs text-gray-500">Рентабельность</p><p id="statsProfitPct" class="text-sm font-bold text-gray-800">0.0%</p></div>
@@ -1999,13 +1999,13 @@
     <script src="money.js?v=9"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="auth.js?v=9"></script>
-    <script src="employees.js?v=9"></script>
-    <script src="company.js?v=4"></script>
-    <script src="inventory.js?v=15"></script>
+    <script src="employees.js?v=10"></script>
+    <script src="company.js?v=5"></script>
+    <script src="inventory.js?v=16"></script>
 <script src="ingredients.js?v=11"></script>
 <script src="semifinished.js?v=10"></script>
 <script src="products.js?v=15"></script>
-<script src="customers.js?v=15"></script>
+<script src="customers.js?v=16"></script>
 <script src="orders.js?v=23"></script>
 <script src="invoice.js?v=7"></script>
 <script src="payments.js?v=9"></script>
@@ -2598,9 +2598,9 @@ function showUpdateBanner(reg) {
     if (document.getElementById('updateBanner')) return; // уже показан
     const banner = document.createElement('div');
     banner.id = 'updateBanner';
-    banner.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#1f2937;color:#fff;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;';
+    banner.style.cssText = 'position:fixed;left:10px;right:10px;bottom:calc(66px + env(safe-area-inset-bottom));z-index:9999;background:#fff;color:#2b2a28;padding:12px 14px;border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;box-shadow:0 4px 16px rgba(0,0,0,0.14);';
     banner.innerHTML = `<span>Доступна новая версия приложения</span>
-        <button style="background:#4f46e5;color:#fff;border:none;padding:6px 10px;border-radius:6px;font-size:12px;">Обновить</button>`;
+        <button style="background:#7c9473;color:#fff;border:none;padding:7px 14px;border-radius:999px;font-size:13px;font-weight:600;flex-shrink:0;">Обновить</button>`;
     banner.querySelector('button').onclick = () => {
         const waiting = reg.waiting;
         if (waiting) waiting.postMessage({ type: 'SKIP_WAITING' });

@@ -332,8 +332,8 @@ function setCustomerEntityType(type, skipSave) {
 
     const companyBtn    = document.getElementById('cdEntityCompanyBtn');
     const individualBtn = document.getElementById('cdEntityIndividualBtn');
-    companyBtn.className    = 'btn flex-1 text-xs py-1 rounded-md border' + (isCompany ? ' bg-indigo-600 text-white border-indigo-600' : ' bg-white text-gray-700');
-    individualBtn.className = 'btn flex-1 text-xs py-1 rounded-md border' + (!isCompany ? ' bg-indigo-600 text-white border-indigo-600' : ' bg-white text-gray-700');
+    companyBtn.className    = 'btn flex-1 text-xs py-1 rounded-xl border' + (isCompany ? ' bg-indigo-600 text-white border-indigo-600' : ' bg-white text-gray-700');
+    individualBtn.className = 'btn flex-1 text-xs py-1 rounded-xl border' + (!isCompany ? ' bg-indigo-600 text-white border-indigo-600' : ' bg-white text-gray-700');
 
     if (!skipSave) saveCdHeader();
 }

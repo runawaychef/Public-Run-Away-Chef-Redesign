@@ -393,7 +393,7 @@ async function openInventoryModal() {
     // Сам блок с деталями остаётся внизу, чтобы не оттеснять "Критично" по важности.
     let html = '';
     if (pendingRows.length) {
-        html += `<div onclick="document.getElementById('pendingWriteOffBlock').scrollIntoView({behavior:'smooth'})" class="mb-2 p-1.5 bg-indigo-50 border border-indigo-200 rounded-md text-xs text-indigo-700 cursor-pointer flex items-center justify-between">
+        html += `<div onclick="document.getElementById('pendingWriteOffBlock').scrollIntoView({behavior:'smooth'})" class="mb-2 p-1.5 bg-indigo-50 border border-indigo-200 rounded-xl text-xs text-indigo-700 cursor-pointer flex items-center justify-between">
             <span>📅 Запланировано списаний: ${pendingRows.length} · ближайшее ${formatDateDMY(pendingRows[0].earliestDate)}</span>
             <span class="text-indigo-400">Показать ↓</span>
         </div>`;

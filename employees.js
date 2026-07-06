@@ -134,7 +134,7 @@ async function initLogin() {
 
         employees.forEach(emp => {
             const btn = document.createElement('button');
-            btn.className = 'btn bg-gray-500 text-white p-2 rounded-md hover:bg-gray-600 text-sm';
+            btn.className = 'btn bg-gray-500 text-white p-2 rounded-xl hover:bg-gray-600 text-sm';
             btn.textContent = emp.name;
             btn.onclick = () => selectEmployee(emp);
             list.appendChild(btn);
@@ -350,7 +350,7 @@ async function openEmployeesModal() {
 
     employees.forEach(emp => {
         const row = document.createElement('button');
-        row.className = 'btn bg-gray-100 text-gray-800 px-2 py-1.5 rounded-md hover:bg-gray-200 text-xs text-left border border-gray-200 flex justify-between items-center';
+        row.className = 'btn bg-gray-100 text-gray-800 px-2 py-1.5 rounded-xl hover:bg-gray-200 text-xs text-left border border-gray-200 flex justify-between items-center';
         const badge = emp.is_owner ? 'Владелец' : (emp.user_id ? 'Личный вход' : 'Общее устройство');
         row.innerHTML = `<span>${escapeHtml(emp.name)}</span><span class="text-gray-400">${badge}</span>`;
         row.onclick = () => openEmployeeEditModal(emp);
@@ -359,7 +359,7 @@ async function openEmployeesModal() {
 
     pendingInvitations.forEach(inv => {
         const row = document.createElement('div');
-        row.className = 'px-2 py-1.5 rounded-md text-xs text-left border border-dashed border-gray-300 bg-gray-50';
+        row.className = 'px-2 py-1.5 rounded-xl text-xs text-left border border-dashed border-gray-300 bg-gray-50';
         row.innerHTML = `
             <div class="flex justify-between items-center">
                 <span>${escapeHtml(inv.name)} <span class="text-gray-400">(${escapeHtml(inv.email)})</span></span>
