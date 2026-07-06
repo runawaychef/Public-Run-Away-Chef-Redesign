@@ -290,11 +290,30 @@ function setOrdersViewMode(mode) {
 // заказов. Считается по реальным координатам элементов на экране (а не
 // подобранными "на глаз" числами в CSS) — так расстояние остаётся верным
 // независимо от размера шрифта/устройства.
+//
+// Заодно это ЕДИНЫЙ источник истины для самой видимости переключателя.
+// Раньше show/hide были раскиданы по всему коду (вход, выход, смена вкладки,
+// открытие/закрытие карточки заказа) — и как только где-то отрисовка списка
+// срабатывала в обход одного из этих мест (например, realtime-обновление
+// после любого обращения к базе), переключатель мог "залипнуть" видимым не
+// на своём месте. Карточка заказа — это под-экран ВНУТРИ вкладки "Заказы"
+// (currentTabId остаётся 'orders', даже когда открыта именно карточка), поэтому
+// проверки одного currentTabId было недостаточно. Теперь видимость всегда
+// пересчитывается заново из реального состояния экрана при каждом вызове —
+// а вызывается эта функция при каждой перерисовке списка заказов, то есть
+// в том числе и после любого realtime-обновления.
 function positionOrdersViewToggle() {
-    const headerCard = document.querySelector('#appStickyHeader .bg-white');
     const toggle = document.getElementById('ordersViewToggle');
+    if (!toggle) return;
+
+    const isOrderDetailOpen = document.getElementById('orderDetail')?.classList.contains('active');
+    const shouldShow = (typeof currentTabId === 'undefined' || currentTabId === 'orders') && !isOrderDetailOpen;
+    toggle.classList.toggle('hidden', !shouldShow);
+    if (!shouldShow) return;
+
+    const headerCard = document.querySelector('#appStickyHeader .bg-white');
     const list = document.getElementById('ordersList');
-    if (!headerCard || !toggle || !list || toggle.classList.contains('hidden')) return;
+    if (!headerCard || !list) return;
 
     const GAP = 40; // желаемое расстояние между шапкой и первой карточкой
     list.style.paddingTop = GAP + 'px';
