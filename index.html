@@ -300,6 +300,25 @@
         .bottom-nav-item.active { color: #7c9473; }
         .bottom-nav-item.active svg { stroke: #7c9473; stroke-width: 2.1; }
 
+        /* Скругление таблиц данных (клиенты/изделия/ингредиенты/п-ф/заказы и т.д.) —
+           белая карточка-обёртка вокруг таблицы уже скруглена, но заголовок таблицы
+           (серая строка с названиями колонок) заливался прямоугольником без
+           скругления, из-за чего верхние углы выглядели квадратными изнутри.
+           border-collapse: separate обязателен — иначе border-radius на ячейках
+           не применяется в браузерах. */
+        table.table-clean { border-collapse: separate; border-spacing: 0; }
+        table.table-clean thead tr:first-child th:first-child { border-top-left-radius: 12px; }
+        table.table-clean thead tr:first-child th:last-child { border-top-right-radius: 12px; }
+
+        /* Поля ввода и выпадающие списки — заливаем цветом фона страницы вместо
+           серого (серый оттенок раньше был не нашим классом, а нативной
+           отрисовкой Android/Chrome для пустых полей форм). Чекбоксы/радио/
+           файлы исключены — им заливка не нужна и испортит вид. */
+        input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]),
+        select, textarea {
+            background-color: #f4f1ea;
+        }
+
         /* Контент не должен прятаться под нижним таб-баром — см. правило body выше */
 
         /* FAB и тосты сдвинуты вверх ровно на высоту нижнего таб-бара (~64px),
@@ -451,7 +470,6 @@
     <!-- Sticky шапка: логотип + меню вкладок -->
     <div style="position:sticky; top:0; z-index:40; background:#f3f4f6; padding: 8px 8px 0; padding-top: max(8px, env(safe-area-inset-top));">
         <div class="bg-white rounded-xl shadow-md p-3 flex items-center gap-3 mb-2">
-            <img src="icon-192.png" alt="Runaway Chef" style="width:48px;height:48px;border-radius:10px;flex-shrink:0;">
             <div>
                 <div id="orgNameHeader" class="text-xl font-bold text-gray-800 leading-tight">Runaway Chef Project</div>
                 <div class="text-xs text-gray-400">Учёт заказов и рецептур</div>
@@ -535,7 +553,7 @@
                             <div id="copyRecipeFromDropdown" class="search-dropdown hidden"></div>
                         </div>
                     </div>
-                    <table class="w-full table-auto mb-2">
+                    <table class="w-full table-auto table-clean mb-2">
                         <thead><tr class="bg-gray-100">
                             <th class="p-1 text-xs w-[40%]">Ингредиент</th>
                             <th class="p-1 text-xs w-[25%]">Кол-во</th>
@@ -591,7 +609,7 @@
                         </div>
                     </div>
                     <p class="text-xs text-gray-400 mb-2">Нажмите на строку, чтобы открыть карточку</p>
-                    <table class="w-full table-auto">
+                    <table class="w-full table-auto table-clean">
                         <thead><tr class="bg-gray-100">
                             <th class="p-1 text-xs w-[35%]">Название</th>
                             <th class="p-1 text-xs w-[20%]">Цена за ед.</th>
@@ -712,7 +730,7 @@
                     </div>
                     <p class="text-xs text-gray-400 mb-2">Нажмите на строку, чтобы открыть рецептуру</p>
                     <p id="semiFinishedRecipeWarning" class="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl p-1.5 mb-2 hidden"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>У некоторых полуфабрикатов не подтверждён рецепт. Откройте их и проверьте.</p>
-                    <table class="w-full table-auto">
+                    <table class="w-full table-auto table-clean">
                         <thead><tr class="bg-gray-100">
                             <th class="p-1 text-xs w-[35%]">Название</th>
                             <th class="p-1 text-xs w-[20%]">Цена за ед.</th>
@@ -782,7 +800,7 @@
                             <div id="copySfRecipeFromDropdown" class="search-dropdown hidden"></div>
                         </div>
                     </div>
-                    <table class="w-full table-auto mb-2">
+                    <table class="w-full table-auto table-clean mb-2">
                         <thead><tr class="bg-gray-100">
                             <th class="p-1 text-xs w-[40%]">Ингредиент</th>
                             <th class="p-1 text-xs w-[25%]">Кол-во</th>
@@ -1178,7 +1196,7 @@
                     <div class="flex justify-between items-center mb-2">
                         <h2 class="text-xs font-semibold text-gray-800">Позиции заказа</h2>
                     </div>
-                    <table class="w-full table-auto mb-2">
+                    <table class="w-full table-auto table-clean mb-2">
                         <thead><tr class="bg-gray-100">
                             <th class="p-1 text-xs w-[46%]">Изделие</th>
                             <th class="p-1 text-xs w-[10%]">Кол-во</th>
@@ -2001,15 +2019,15 @@
     <script src="auth.js?v=9"></script>
     <script src="employees.js?v=10"></script>
     <script src="company.js?v=5"></script>
-    <script src="inventory.js?v=16"></script>
-<script src="ingredients.js?v=11"></script>
-<script src="semifinished.js?v=10"></script>
+    <script src="inventory.js?v=17"></script>
+<script src="ingredients.js?v=12"></script>
+<script src="semifinished.js?v=11"></script>
 <script src="products.js?v=15"></script>
-<script src="customers.js?v=16"></script>
-<script src="orders.js?v=23"></script>
+<script src="customers.js?v=17"></script>
+<script src="orders.js?v=24"></script>
 <script src="invoice.js?v=7"></script>
 <script src="payments.js?v=9"></script>
-<script src="stats.js?v=8"></script>
+<script src="stats.js?v=9"></script>
 <script src="history.js?v=7"></script>
 <script src="modals.js?v=9"></script>
 <script src="demoData.js?v=7"></script>
@@ -2598,7 +2616,7 @@ function showUpdateBanner(reg) {
     if (document.getElementById('updateBanner')) return; // уже показан
     const banner = document.createElement('div');
     banner.id = 'updateBanner';
-    banner.style.cssText = 'position:fixed;left:10px;right:10px;bottom:calc(66px + env(safe-area-inset-bottom));z-index:9999;background:#fff;color:#2b2a28;padding:12px 14px;border-radius:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;box-shadow:0 4px 16px rgba(0,0,0,0.14);';
+    banner.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#fff;color:#2b2a28;padding:12px 16px;padding-bottom:calc(12px + env(safe-area-inset-bottom));border-radius:16px 16px 0 0;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;box-shadow:0 -2px 12px rgba(0,0,0,0.12);';
     banner.innerHTML = `<span>Доступна новая версия приложения</span>
         <button style="background:#7c9473;color:#fff;border:none;padding:7px 14px;border-radius:999px;font-size:13px;font-weight:600;flex-shrink:0;">Обновить</button>`;
     banner.querySelector('button').onclick = () => {

@@ -1081,7 +1081,7 @@ async function openOrderCostBreakdown() {
             return;
         }
 
-        let html = '<table class="w-full stats-table" style="table-layout:fixed;">';
+        let html = '<table class="w-full stats-table table-clean" style="table-layout:fixed;">';
         html += '<thead><tr class="bg-gray-100"><th class="p-1 text-left" style="width:40%;">Ингредиент</th><th class="p-1 text-right" style="width:20%;">Кол-во</th><th class="p-1 text-right" style="width:20%;">Цена/ед.</th><th class="p-1 text-right" style="width:20%;">Сумма</th></tr></thead><tbody>';
         rows.forEach(r => {
             const unitLabel = UNIT_LABELS[r.unit] || r.unit;

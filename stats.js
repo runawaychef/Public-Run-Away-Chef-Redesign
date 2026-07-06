@@ -229,12 +229,12 @@ function drawCustomerTable(filtered) {
         return;
     }
 
-    let html = '<table class="w-full stats-table" style="table-layout:fixed;"><thead><tr class="bg-gray-100" style="position:sticky;top:0;"><th class="p-0.5 text-left" style="width:40%;">Клиент</th><th class="p-0.5 text-right" style="width:15%;">Кол-во</th><th class="p-0.5 text-right" style="width:20%;">Сумма (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:15%;">НДС (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:10%;">Доля</th></tr></thead><tbody>';
+    let html = '<table class="w-full stats-table table-clean" style="table-layout:fixed;"><thead><tr class="bg-gray-100" style="position:sticky;top:0;"><th class="p-0.5 text-left" style="width:40%;">Клиент</th><th class="p-0.5 text-right" style="width:15%;">Кол-во</th><th class="p-0.5 text-right" style="width:20%;">Сумма (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:15%;">НДС (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:10%;">Доля</th></tr></thead><tbody>';
     html += buildCustomerRowsHtml(sorted, totals, vats, qtys, grandTotal);
     html += '</tbody></table>';
     container.innerHTML = html;
     totalContainer.innerHTML =
-        `<table class="w-full stats-table" style="table-layout:fixed;"><tr class="bg-gray-50 font-semibold"><td class="p-0.5" style="width:40%">Итого</td><td class="p-0.5 text-right" style="width:15%">${grandQty}</td><td class="p-0.5 text-right" style="width:20%">${grandTotal.toFixed(2)}</td><td class="p-0.5 text-right text-blue-700" style="width:15%">${grandVat.toFixed(2)}</td><td class="p-0.5" style="width:10%"></td></tr></table>`;
+        `<table class="w-full stats-table table-clean" style="table-layout:fixed;"><tr class="bg-gray-50 font-semibold"><td class="p-0.5" style="width:40%">Итого</td><td class="p-0.5 text-right" style="width:15%">${grandQty}</td><td class="p-0.5 text-right" style="width:20%">${grandTotal.toFixed(2)}</td><td class="p-0.5 text-right text-blue-700" style="width:15%">${grandVat.toFixed(2)}</td><td class="p-0.5" style="width:10%"></td></tr></table>`;
 }
 
 // --- Топ изделий ---
@@ -253,7 +253,7 @@ function drawProductTable(filtered) {
         return;
     }
     const max = sorted[0][1];
-    let html = '<table class="w-full stats-table"><thead><tr class="bg-gray-100"><th class="p-0.5 text-left">Изделие</th><th class="p-0.5 text-right">Кол-во</th><th class="p-0.5 text-right">Сумма (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th></tr></thead><tbody>';
+    let html = '<table class="w-full stats-table table-clean"><thead><tr class="bg-gray-100"><th class="p-0.5 text-left">Изделие</th><th class="p-0.5 text-right">Кол-во</th><th class="p-0.5 text-right">Сумма (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th></tr></thead><tbody>';
     sorted.forEach(([name, val]) => {
         const barW = max > 0 ? Math.round(val/max*100) : 0;
         html += `<tr class="border-b"><td class="p-0.5">
@@ -312,7 +312,7 @@ function drawProductProfitabilityTable() {
         : `Топ-${sorted.length} по рентабельности`;
 
     let html = `<p class="text-xs text-gray-500 mb-1">${title}</p>`;
-    html += '<table class="w-full stats-table" style="table-layout:fixed;"><thead><tr class="bg-gray-100"><th class="p-0.5 text-left" style="width:46%;">Изделие</th><th class="p-0.5 text-right" style="width:18%;">Себест. (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:18%;">Цена (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:18%;">Рент.</th></tr></thead><tbody>';
+    html += '<table class="w-full stats-table table-clean" style="table-layout:fixed;"><thead><tr class="bg-gray-100"><th class="p-0.5 text-left" style="width:46%;">Изделие</th><th class="p-0.5 text-right" style="width:18%;">Себест. (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:18%;">Цена (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:18%;">Рент.</th></tr></thead><tbody>';
     sorted.forEach(p => {
         const cost = productUnitCost(p);
         const pct  = productProfitPct(p);

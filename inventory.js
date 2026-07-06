@@ -399,7 +399,7 @@ async function openInventoryModal() {
         </div>`;
     }
 
-    html += '<table class="w-full text-xs"><thead><tr class="bg-gray-100 sticky top-0"><th class="p-1 text-left">Ингредиент</th><th class="p-1 text-right">Остаток</th><th class="p-1 text-right">Хватит</th><th class="p-1 text-center">Список</th></tr></thead><tbody>';
+    html += '<table class="w-full text-xs table-clean"><thead><tr class="bg-gray-100 sticky top-0"><th class="p-1 text-left">Ингредиент</th><th class="p-1 text-right">Остаток</th><th class="p-1 text-right">Хватит</th><th class="p-1 text-center">Список</th></tr></thead><tbody>';
 
     // 🔴 Критично: ингредиенты
     if (red.length) {
@@ -440,7 +440,7 @@ async function openInventoryModal() {
     // Остальные полуфабрикаты — внизу отдельной таблицей
     if (sfRest.length) {
         html += `<p class="text-xs font-semibold text-gray-600 mt-3 mb-1">Полуфабрикаты</p>`;
-        html += '<table class="w-full text-xs"><thead><tr class="bg-gray-100 sticky top-0"><th class="p-1 text-left">Название</th><th class="p-1 text-right">Остаток</th><th class="p-1 text-right">Хватит</th><th class="p-1 text-center">Список</th></tr></thead><tbody>';
+        html += '<table class="w-full text-xs table-clean"><thead><tr class="bg-gray-100 sticky top-0"><th class="p-1 text-left">Название</th><th class="p-1 text-right">Остаток</th><th class="p-1 text-right">Хватит</th><th class="p-1 text-center">Список</th></tr></thead><tbody>';
         sfRest.sort((a, b) => {
             if (a.daysLeft === null && b.daysLeft === null) return 0;
             if (a.daysLeft === null) return 1;
@@ -454,7 +454,7 @@ async function openInventoryModal() {
     // 📅 Плановый расход — сам блок, внизу (бейдж наверху уже даёт о нём знать)
     if (pendingRows.length) {
         html += `<p id="pendingWriteOffBlock" class="text-xs font-semibold text-indigo-700 mt-3 mb-1">📅 Плановый расход</p>`;
-        html += '<table class="w-full text-xs"><thead><tr class="bg-gray-100 sticky top-0"><th class="p-1 text-left">Ингредиент</th><th class="p-1 text-right">Количество</th><th class="p-1 text-right">Дата списания</th></tr></thead><tbody>';
+        html += '<table class="w-full text-xs table-clean"><thead><tr class="bg-gray-100 sticky top-0"><th class="p-1 text-left">Ингредиент</th><th class="p-1 text-right">Количество</th><th class="p-1 text-right">Дата списания</th></tr></thead><tbody>';
         pendingRows.forEach(r => {
             html += `<tr class="border-b"><td class="p-1 table-text">${escapeHtml(r.name)}</td><td class="p-1 table-text text-right">${r.qty.toFixed(2)} ${r.unit}</td><td class="p-1 table-text text-right">${formatDateDMY(r.earliestDate)}</td></tr>`;
         });
@@ -472,7 +472,7 @@ function openInventarizationModal() {
     const sorted = ingredients.slice().sort((a, b) => (a.name||'').localeCompare(b.name||''));
     const today  = getLocalDateStr(0);
 
-    let html = '<table class="w-full text-xs">';
+    let html = '<table class="w-full text-xs table-clean">';
     html += '<thead><tr class="bg-gray-100"><th class="p-1 text-left">Ингредиент</th><th class="p-1 text-right">Текущий остаток</th><th class="p-1 text-right">Фактически</th></tr></thead><tbody>';
     sorted.forEach(ing => {
         const unitLabel = UNIT_LABELS[ing.unit] || ing.unit;
@@ -730,7 +730,7 @@ function renderShoppingList() {
         return;
     }
 
-    let html = '<table class="w-full text-xs" style="table-layout:fixed;">';
+    let html = '<table class="w-full text-xs table-clean" style="table-layout:fixed;">';
     html += '<thead><tr class="bg-gray-100"><th class="p-1 text-left" style="width:38%;">Название</th><th class="p-1 text-right" style="width:20%;">Есть</th><th class="p-1 text-right" style="width:24%;">Купить</th><th class="p-1 text-center" style="width:18%;"></th></tr></thead><tbody>';
 
     _shoppingList.forEach(row => {

@@ -622,7 +622,7 @@ async function renderIngredientStockBlock(ing) {
         });
 
         const table = `<div id="ingHistTableWrap" style="max-height:260px;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;">
-            <table class="w-full table-text">
+            <table class="w-full table-text table-clean">
                 <thead><tr class="bg-gray-100 sticky top-0 text-xs">
                     <th class="p-1 text-left">Дата</th>
                     <th class="p-1 text-right">Кол-во</th>
@@ -751,7 +751,7 @@ function renderIngredientPriceHistory(ingredientId) {
     if (!history.length) { container.innerHTML = '<p class="table-text text-gray-400">История цен пуста</p>'; return; }
     const ing = ingredients.find(i => i.id === ingredientId);
     const unitLabel = ing ? (UNIT_LABELS[ing.unit] || ing.unit) : '';
-    let html = '<table class="w-full table-text"><thead><tr class="bg-gray-100 text-xs"><th class="p-0.5 text-left">С даты</th><th class="p-0.5 text-right">Цена упак.</th><th class="p-0.5 text-right">Цена за ед.</th><th class="p-0.5 w-12"></th></tr></thead><tbody>';
+    let html = '<table class="w-full table-text table-clean"><thead><tr class="bg-gray-100 text-xs"><th class="p-0.5 text-left">С даты</th><th class="p-0.5 text-right">Цена упак.</th><th class="p-0.5 text-right">Цена за ед.</th><th class="p-0.5 w-12"></th></tr></thead><tbody>';
     history.forEach((h, i) => {
         const unitPrice = h.package_size ? (h.package_price / h.package_size).toFixed(4) : '—';
         const isCurrent = i === 0;

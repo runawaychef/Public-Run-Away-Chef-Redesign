@@ -411,7 +411,7 @@ function renderCustomerOrders() {
     }
 
     const statusFlag = { 'принят': 'flag-red', 'в работе': 'flag-yellow', 'выполнен': 'flag-green' };
-    let html = '<table class="w-full table-text" style="table-layout:fixed;"><thead><tr class="bg-gray-100 text-xs"><th class="p-1 text-left" style="width:28%;">№</th><th class="p-1 text-left" style="width:20%;">Дата</th><th class="p-1 text-right" style="width:28%;">Сумма (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-1 text-center" style="width:24%;">Статус</th></tr></thead><tbody>';
+    let html = '<table class="w-full table-text table-clean" style="table-layout:fixed;"><thead><tr class="bg-gray-100 text-xs"><th class="p-1 text-left" style="width:28%;">№</th><th class="p-1 text-left" style="width:20%;">Дата</th><th class="p-1 text-right" style="width:28%;">Сумма (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-1 text-center" style="width:24%;">Статус</th></tr></thead><tbody>';
     custOrders.forEach(o => {
         const oNum = o.order_number || `#${o.id}`;
         const payInfo = getOrderPaymentStatus(o);

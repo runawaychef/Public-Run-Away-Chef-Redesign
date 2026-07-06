@@ -470,7 +470,7 @@ async function renderSfStockBlock(sf) {
         const totalIn = data.filter(r => r.type === 'приход').reduce((s, r) => s + Number(r.quantity), 0);
         let html = `<p class="table-text text-gray-500 font-semibold mt-2 mb-1">История (произведено: ${totalIn.toFixed(2)} ${unitLabel})</p>`;
         html += '<div style="max-height:224px;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;">';
-        html += '<table class="w-full table-text"><thead><tr class="bg-gray-100 text-xs"><th class="p-1 text-left">Дата</th><th class="p-1 text-right">Кол-во</th><th class="p-1 text-left">Заметка</th></tr></thead><tbody>';
+        html += '<table class="w-full table-text table-clean"><thead><tr class="bg-gray-100 text-xs"><th class="p-1 text-left">Дата</th><th class="p-1 text-right">Кол-во</th><th class="p-1 text-left">Заметка</th></tr></thead><tbody>';
         data.forEach(r => {
             const date = new Date(r.created_at).toLocaleDateString('ru-LT');
             const isIn = r.type === 'приход';
@@ -704,7 +704,7 @@ function editSfInventoryRecord(id, qty, notes) {
 function openSfInventarizationModal() {
     const UNIT_LABELS = { g: 'г', kg: 'кг', ml: 'мл', l: 'л', pcs: 'шт' };
     const sorted = semiFinished.slice().sort((a, b) => (a.name||'').localeCompare(b.name||''));
-    let html = '<table class="w-full text-xs">';
+    let html = '<table class="w-full text-xs table-clean">';
     html += '<thead><tr class="bg-gray-100"><th class="p-1 text-left">Полуфабрикат</th><th class="p-1 text-right">Текущий остаток</th><th class="p-1 text-right">Фактически</th></tr></thead><tbody>';
     sorted.forEach(sf => {
         const unitLabel = UNIT_LABELS[sf.unit] || sf.unit;
