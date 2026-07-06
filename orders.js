@@ -163,6 +163,13 @@ function displayOrders() {
     }
 
     updateTotals(filteredOrders);
+
+    // Пересчитываем позицию переключателя вида при каждой перерисовке списка —
+    // не полагаемся на одноразовый расчёт при входе, который мог сработать
+    // до того, как реальная раскладка страницы устоялась.
+    if (typeof positionOrdersViewToggle === 'function') {
+        requestAnimationFrame(positionOrdersViewToggle);
+    }
 }
 
 // ==================== КАРТОЧНЫЙ ВИД СПИСКА ЗАКАЗОВ ====================
