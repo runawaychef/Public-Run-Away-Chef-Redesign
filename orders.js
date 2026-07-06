@@ -136,41 +136,14 @@ function displayOrders() {
     if (cardsBody) {
         const sortedAll = [...orders].sort((a, b) => new Date(b.date) - new Date(a.date));
 
-        function cardWeekSummaryHtml(weekKey) {
-            const monday = new Date(weekKey + 'T00:00:00');
-            const sunday = new Date(monday);
-            sunday.setDate(sunday.getDate() + 6);
-            const weekTotals = calcGroupTotals(sortedAll, o => keysFor(o).weekKey === weekKey);
-            const weekLabel = formatDateDMY(localStr(monday)) + ' – ' + formatDateDMY(localStr(sunday));
-            return `<div class="oc-group-label" style="color:#6b6659; background:#ece7db; padding:4px 8px; border-radius:8px; text-transform:none; letter-spacing:0;">
-                Неделя ${weekLabel} — ${weekTotals.count} зак., ${weekTotals.qty} шт., ${formatMoney(weekTotals.sum)}
-            </div>`;
-        }
-        function cardMonthSummaryHtml(monthKey) {
-            const [y, m] = monthKey.split('-').map(Number);
-            const monthTotals = calcGroupTotals(sortedAll, o => keysFor(o).monthKey === monthKey);
-            const monthLabel = `${MONTH_NAMES_RU[m - 1]} ${y}`;
-            return `<div class="oc-group-label" style="color:#fff; background:#4b4740; padding:5px 8px; border-radius:8px; text-transform:none; letter-spacing:0; font-weight:700;">
-                Итого за ${monthLabel} — ${monthTotals.count} зак., ${monthTotals.qty} шт., ${formatMoney(monthTotals.sum)}
-            </div>`;
-        }
         function urgentDividerHtml() {
             return `<div class="oc-urgent-divider"><span>Остальные заказы</span></div>`;
         }
 
         let cardsHtml = '';
-        let cardMonthKey = null, cardWeekKey = null;
         let inUrgentZone = true, urgentCount = 0;
 
         sortedAll.forEach(order => {
-            const { monthKey, weekKey } = keysFor(order);
-            const cardMonthChanged = cardMonthKey !== null && monthKey !== cardMonthKey;
-            const cardWeekChanged  = cardWeekKey  !== null && weekKey  !== cardWeekKey;
-            if (cardMonthChanged) cardsHtml += cardMonthSummaryHtml(cardMonthKey);
-            if (cardWeekChanged)  cardsHtml += cardWeekSummaryHtml(cardWeekKey);
-            cardMonthKey = monthKey;
-            cardWeekKey  = weekKey;
-
             // Разделитель: срочные заказы (сегодня/завтра/послезавтра, не выполненные)
             // не дублируются отдельным блоком, а просто отделяются линией от остальных,
             // как только в потоке встречается первый "несрочный" заказ.
@@ -224,7 +197,7 @@ function renderOrderCard(order) {
     let itemsLine = '';
     if (order.items && order.items.length) {
         itemsLine = `<div class="oc-items">` +
-            order.items.map(it => `· ${escapeHtml(it.product)} — ${it.quantity} шт.`).join('<br>') +
+            order.items.map(it => `<div class="oc-item-row"><span class="oc-item-name">· ${escapeHtml(it.product)}</span><span class="oc-item-qty">${it.quantity} шт.</span></div>`).join('') +
             `</div>`;
     }
 
