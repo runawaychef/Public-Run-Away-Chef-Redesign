@@ -590,7 +590,7 @@ async function renderIngredientStockBlock(ing) {
 
         // Фильтр-табы
         const tabs = `<div class="flex gap-1 mb-2 flex-wrap">
-            <button onclick="filterIngHistory('all')" id="histTab_all" class="hist-tab hist-tab-active text-xs px-2 py-0.5 rounded-full border border-gray-300 bg-gray-700 text-white">Все</button>
+            <button onclick="filterIngHistory('all')" id="histTab_all" class="hist-tab hist-tab-active text-xs px-2 py-0.5 rounded-full border border-gray-300 bg-[#7c9473] text-white">Все</button>
             <button onclick="filterIngHistory('in')" id="histTab_in" class="hist-tab text-xs px-2 py-0.5 rounded-full border border-gray-300 bg-white text-gray-600">+ Приходы</button>
             <button onclick="filterIngHistory('order')" id="histTab_order" class="hist-tab text-xs px-2 py-0.5 rounded-full border border-gray-300 bg-white text-gray-600">− Заказы</button>
             <button onclick="filterIngHistory('personal')" id="histTab_personal" class="hist-tab text-xs px-2 py-0.5 rounded-full border border-gray-300 bg-white text-gray-600">− Личное</button>
@@ -895,12 +895,12 @@ async function confirmQuickAddIngredient() {
 function filterIngHistory(cat) {
     // Переключаем табы
     document.querySelectorAll('.hist-tab').forEach(btn => {
-        btn.classList.remove('bg-gray-700', 'text-white', 'hist-tab-active');
+        btn.classList.remove('bg-[#7c9473]', 'text-white', 'hist-tab-active');
         btn.classList.add('bg-white', 'text-gray-600');
     });
     const activeBtn = document.getElementById(`histTab_${cat}`);
     if (activeBtn) {
-        activeBtn.classList.add('bg-gray-700', 'text-white', 'hist-tab-active');
+        activeBtn.classList.add('bg-[#7c9473]', 'text-white', 'hist-tab-active');
         activeBtn.classList.remove('bg-white', 'text-gray-600');
     }
     // Фильтруем строки

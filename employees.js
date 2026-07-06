@@ -134,7 +134,7 @@ async function initLogin() {
 
         employees.forEach(emp => {
             const btn = document.createElement('button');
-            btn.className = 'btn bg-gray-500 text-white p-2 rounded-xl hover:bg-gray-600 text-sm';
+            btn.className = 'btn bg-[#7c9473] text-white p-2 rounded-xl hover:bg-[#6c8464] text-sm';
             btn.textContent = emp.name;
             btn.onclick = () => selectEmployee(emp);
             list.appendChild(btn);
