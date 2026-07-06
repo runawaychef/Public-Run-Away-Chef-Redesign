@@ -302,7 +302,7 @@ function positionOrdersViewToggle() {
     const headerBottom = headerCard.getBoundingClientRect().bottom;
     const toggleHeight  = toggle.offsetHeight;
     // +10px — сдвиг чуть ниже геометрического центра зазора (по просьбе, "на глаз" смотрится лучше)
-    toggle.style.top = Math.round(headerBottom + GAP / 2 - toggleHeight / 2 + 10) + 'px';
+    toggle.style.top = Math.round(headerBottom + GAP / 2 - toggleHeight / 2 + 6) + 'px';
 }
 window.addEventListener('resize', positionOrdersViewToggle);
 
