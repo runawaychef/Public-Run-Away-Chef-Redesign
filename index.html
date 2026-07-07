@@ -1155,7 +1155,7 @@
                 <div class="flex flex-col gap-2">
                     <button onclick="openOrderDocumentPreview('invoice')" class="pill-btn-secondary">Счёт</button>
                     <button onclick="openOrderDocumentPreview('delivery_note')" class="pill-btn-secondary">Накладная</button>
-                    <button onclick="closeModal()" class="pill-btn">Закрыть</button>
+                    <button onclick="closeModal()" class="pill-btn justify-center">Закрыть</button>
                 </div>
             </div>
         </div>
@@ -1535,18 +1535,20 @@
         <!-- Редактировать позицию заказа -->
         <div id="editItemModal" class="modal">
             <div class="modal-content">
-                <h2 class="text-xs font-semibold mb-2 text-gray-800">Редактировать позицию</h2>
-                <label class="text-xs text-gray-600">Изделие</label>
+                <h2 class="text-sm font-semibold mb-2 text-gray-800">Редактировать позицию</h2>
+                <label class="text-xs text-gray-500">Изделие</label>
                 <div class="search-input-wrap">
-                    <input id="editItemProduct" oninput="autoFillEditItemPrice()" placeholder="Выберите изделие" autocomplete="off" class="border p-0.5 rounded-xl mb-1 w-full text-xs">
+                    <input id="editItemProduct" oninput="autoFillEditItemPrice()" placeholder="Выберите изделие" autocomplete="off" class="border p-1 rounded-xl mb-2 w-full text-xs" style="background:#f4f1ea;">
                     <div id="editItemProductDropdown" class="search-dropdown hidden"></div>
                 </div>
-                <label class="text-xs text-gray-600">Количество</label>
-                <input id="editItemQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" class="border p-0.5 rounded-xl mb-1 w-full text-xs">
-                <label class="text-xs text-gray-600">Цена</label>
-                <input id="editItemPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
-                <button onclick="saveItemEdit()" class="btn bg-[#7c9473] text-white p-0.5 rounded-xl hover:bg-[#6c8464] mr-1 text-xs">Сохранить</button>
-                <button onclick="closeModal()" class="btn bg-[#7c9473] text-white p-0.5 rounded-xl hover:bg-[#6c8464] text-xs">Отмена</button>
+                <label class="text-xs text-gray-500">Количество</label>
+                <input id="editItemQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" class="border p-1 rounded-xl mb-2 w-full text-xs" style="background:#f4f1ea;">
+                <label class="text-xs text-gray-500">Цена</label>
+                <input id="editItemPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" class="border p-1 rounded-xl mb-3 w-full text-xs" style="background:#f4f1ea;">
+                <div class="flex gap-2">
+                    <button onclick="saveItemEdit()" class="pill-btn flex-1 justify-center">Сохранить</button>
+                    <button onclick="closeModal()" class="pill-btn-secondary" style="width:90px;">Отмена</button>
+                </div>
             </div>
         </div>
 
@@ -2241,7 +2243,7 @@
 <script src="semifinished.js?v=11"></script>
 <script src="products.js?v=15"></script>
 <script src="customers.js?v=18"></script>
-<script src="orders.js?v=45"></script>
+<script src="orders.js?v=46"></script>
 <script src="invoice.js?v=7"></script>
 <script src="payments.js?v=10"></script>
 <script src="stats.js?v=9"></script>

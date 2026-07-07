@@ -1387,19 +1387,19 @@ async function openOrderCostBreakdown() {
         }
 
         let html = '<table class="w-full stats-table table-clean" style="table-layout:fixed;">';
-        html += '<thead><tr style="background-color:#e3e8df;"><th class="p-1 text-left" style="width:40%;">Ингредиент</th><th class="p-1 text-right" style="width:20%;">Кол-во</th><th class="p-1 text-right" style="width:20%;">Цена/ед.</th><th class="p-1 text-right" style="width:20%;">Сумма</th></tr></thead><tbody>';
+        html += '<thead><tr style="background-color:#e3e8df;"><th class="p-1 text-xs text-left" style="width:40%;">Ингредиент</th><th class="p-1 text-xs text-right" style="width:20%;">Кол-во</th><th class="p-1 text-xs text-right" style="width:20%;">Цена/ед.</th><th class="p-1 text-xs text-right" style="width:20%;">Сумма</th></tr></thead><tbody>';
         rows.forEach(r => {
             const unitLabel = UNIT_LABELS[r.unit] || r.unit;
             html += `<tr class="border-b">
-                <td class="p-0.5" style="word-break:break-word;">${escapeHtml(r.name)}</td>
-                <td class="p-0.5 text-right whitespace-nowrap">${r.qty.toFixed(2)} ${unitLabel}</td>
-                <td class="p-0.5 text-right whitespace-nowrap">${formatMoney(r.unit_price, 4)}</td>
-                <td class="p-0.5 text-right whitespace-nowrap">${formatMoney(r.total, 4)}</td>
+                <td class="p-0.5 table-text" style="word-break:break-word;">${escapeHtml(r.name)}</td>
+                <td class="p-0.5 table-text text-right whitespace-nowrap">${r.qty.toFixed(2)} ${unitLabel}</td>
+                <td class="p-0.5 table-text text-right whitespace-nowrap">${formatMoney(r.unit_price, 4)}</td>
+                <td class="p-0.5 table-text text-right whitespace-nowrap">${formatMoney(r.total, 4)}</td>
             </tr>`;
         });
         html += `</tbody><tfoot><tr style="background-color:#e3e8df;" class="font-semibold">
-            <td class="p-0.5" colspan="3">Итого себестоимость</td>
-            <td class="p-0.5 text-right">${grandCost > 0 ? formatMoney(grandCost) : formatMoney(grandIngCost)}</td>
+            <td class="p-0.5 table-text" colspan="3">Итого себестоимость</td>
+            <td class="p-0.5 table-text text-right">${grandCost > 0 ? formatMoney(grandCost) : formatMoney(grandIngCost)}</td>
         </tr></tfoot></table>`;
 
         document.getElementById('orderCostBreakdownSubtitle').textContent =
