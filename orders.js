@@ -12,11 +12,12 @@
 function displayOrders() {
     const today    = getLocalDateStr(0);
     const tomorrow = getLocalDateStr(1);
-    const dayAfter = getLocalDateStr(2);
-    // Заказ считается "срочным" (попадает в самый верх карточного списка, за
-    // разделительной линией) если он на сегодня/завтра/послезавтра и ещё не выполнен.
+    // Заказ считается "срочным" (раздел "Заказы в работе") если он на сегодня
+    // или завтра и ещё не выполнен. Раньше сюда попадал ещё и послезавтра —
+    // сократили до двух дней, чтобы заказы, принятые сильно заранее, не
+    // выглядели как уже "в работе".
     function isUrgentOrder(o) {
-        return (o.date === today || o.date === tomorrow || o.date === dayAfter) && o.status !== 'выполнен';
+        return (o.date === today || o.date === tomorrow) && o.status !== 'выполнен';
     }
 
     // ---- Табличный вид: как и раньше, с фильтрами ----
@@ -135,37 +136,26 @@ function displayOrders() {
     const cardsBody = document.getElementById('orderCardsBody');
     if (cardsBody) {
         const sortedAll = [...orders].sort((a, b) => new Date(b.date) - new Date(a.date));
-        const activeOrders = sortedAll.filter(o => o.status !== 'выполнен');
-        const doneOrders   = sortedAll.filter(o => o.status === 'выполнен');
+        const urgentOrders  = sortedAll.filter(o => isUrgentOrder(o));
+        const plannedOrders = sortedAll.filter(o => o.status !== 'выполнен' && !isUrgentOrder(o));
+        const doneOrders    = sortedAll.filter(o => o.status === 'выполнен');
 
-        function urgentDividerHtml() {
-            return `<div class="oc-urgent-divider"><span>Остальные заказы</span></div>`;
-        }
         function sectionDividerHtml(label, iconSvg) {
             return `<div class="oc-section-divider"><span class="label">${iconSvg}${label}</span></div>`;
         }
 
         let cardsHtml = '';
 
-        if (activeOrders.length) {
+        if (urgentOrders.length) {
             cardsHtml += sectionDividerHtml('Заказы в работе',
                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>');
+            urgentOrders.forEach(order => { cardsHtml += renderOrderCard(order); });
+        }
 
-            // Разделитель: срочные заказы (сегодня/завтра/послезавтра, не выполненные)
-            // не дублируются отдельным блоком, а просто отделяются линией от остальных,
-            // как только в потоке встречается первый "несрочный" заказ.
-            let inUrgentZone = true, urgentCount = 0;
-            activeOrders.forEach(order => {
-                const urgent = isUrgentOrder(order);
-                if (inUrgentZone) {
-                    if (urgent) { urgentCount++; }
-                    else {
-                        if (urgentCount > 0) cardsHtml += urgentDividerHtml();
-                        inUrgentZone = false;
-                    }
-                }
-                cardsHtml += renderOrderCard(order);
-            });
+        if (plannedOrders.length) {
+            cardsHtml += sectionDividerHtml('Принятые',
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>');
+            plannedOrders.forEach(order => { cardsHtml += renderOrderCard(order); });
         }
 
         if (doneOrders.length) {
