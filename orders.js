@@ -569,7 +569,7 @@ function closeAllFilterDropdowns() {
 function toggleAllOrderCustomersFilter() {
     selectedOrderCustomers = [];
     updateOrderCustomerFilter();
-    displayOrders();
+    applyOrderFilter();
 }
 
 function onOrderCustomerFilterChange(name) {
@@ -579,7 +579,7 @@ function onOrderCustomerFilterChange(name) {
         selectedOrderCustomers.push(name);
     }
     updateOrderCustomerFilter();
-    displayOrders();
+    applyOrderFilter();
 }
 
 // Кнопка "Клиенты" больше не показывает выбранное значение (по решению Сержа —
@@ -594,7 +594,22 @@ function toggleOrderDateRange() {
 }
 
 function applyOrderFilter() {
+    updateOrderFilterButtonsState();
     displayOrders();
+}
+
+// Кнопка фильтра заливается фисташковым, если в ней реально что-то выбрано —
+// так видно, какие фильтры сейчас активны, без необходимости менять текст
+// на самой кнопке (особенно неудобно для "Клиенты", где выбор мог быть множественный).
+function updateOrderFilterButtonsState() {
+    const clientsBtn  = document.getElementById('orderFilterBtn');
+    const periodBtn   = document.getElementById('orderPeriodBtn');
+    const employeeBtn = document.getElementById('orderEmployeeBtn');
+    const paymentBtn  = document.getElementById('orderPaymentBtn');
+    if (clientsBtn)  clientsBtn.classList.toggle('active', selectedOrderCustomers.length > 0);
+    if (periodBtn)   periodBtn.classList.toggle('active', document.getElementById('orderDateRangeFilter').value !== 'all');
+    if (employeeBtn) employeeBtn.classList.toggle('active', document.getElementById('orderEmployeeFilter').value !== '');
+    if (paymentBtn)  paymentBtn.classList.toggle('active', document.getElementById('orderPaymentFilter').value !== '');
 }
 
 // Закрытие любой открытой панели фильтра заказов по клику снаружи её самой
