@@ -174,7 +174,7 @@ function openCustomerReportPreview() {
         <div style="padding:6px;">
             <h2 style="font-size:16px;font-weight:700;color:#1f2937;margin:0 0 2px;">${escapeHtml(cust.name)}</h2>
             <p style="font-size:11px;color:#6b7280;margin:0 0 12px;">Сводный отчёт по изделиям · ${RANGE_LABELS[range]} (${periodLabel})</p>
-            <table style="width:100%;border-collapse:collapse;font-size:12px;">
+            <table style="width:100%;border-collapse:separate;border-spacing:0;font-size:12px;">
                 <thead><tr style="background:#e3e8df;">
                     <th style="text-align:left;padding:4px;border-bottom:1px solid #e5e7eb;">Изделие</th>
                     <th style="text-align:right;padding:4px;border-bottom:1px solid #e5e7eb;">Кол-во</th>
@@ -190,7 +190,7 @@ function openCustomerReportPreview() {
                 <td style="text-align:right;padding:4px;">${totalSum.toFixed(2)}</td>
             </tr></tfoot>
             </table>
-            <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:10px;">
+            <table style="width:100%;border-collapse:separate;border-spacing:0;font-size:12px;margin-top:10px;">
                 <tr><td style="padding:2px 4px;color:#6b7280;">Сумма по позициям</td><td style="text-align:right;padding:2px 4px;">${formatMoney(totalSum)}</td></tr>
                 ${totalDiscount > 0 ? `<tr><td style="padding:2px 4px;color:#6b7280;">Скидка${discountLabel}</td><td style="text-align:right;padding:2px 4px;color:#c0685c;">−${formatMoney(totalDiscount)}</td></tr>` : ''}
                 <tr><td style="padding:2px 4px;color:#6b7280;">НДС (21%)</td><td style="text-align:right;padding:2px 4px;color:#6b7280;">${formatMoney(totalVat)}</td></tr>
