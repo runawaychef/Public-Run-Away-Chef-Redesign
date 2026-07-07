@@ -378,6 +378,28 @@
         }
         .of-filter-btn:active { transform: scale(0.96); opacity: 0.88; }
         .of-filter-btn svg { width: 9px; height: 9px; flex-shrink: 0; }
+
+        /* ── Карточка заказа: кнопки верхней панели и поле "Исполнитель" ─── */
+        .pill-btn {
+            border: none; cursor: pointer; border-radius: 10px; padding: 7px 12px;
+            font-size: 11.5px; font-weight: 700; color: #fff; background: #7c9473;
+            display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.12); transition: all 0.15s ease;
+        }
+        .pill-btn:active { transform: scale(0.96); opacity: 0.88; }
+        .pill-btn svg { width: 12px; height: 12px; }
+        .icon-btn-detail {
+            background: white; border: 1px solid #e5e7eb; border-radius: 50%;
+            width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+            color: #9a9488; flex-shrink: 0; transition: all 0.15s ease;
+        }
+        .icon-btn-detail:active { background: #f6f8f4; transform: scale(0.94); }
+        .field-select-btn {
+            border: 1px solid #e2ddd0; cursor: pointer; border-radius: 10px; padding: 6px 8px;
+            font-size: 12px; font-weight: 600; color: #3d3a33; background: #f4f1ea;
+            display: flex; align-items: center; justify-content: space-between; width: 100%;
+        }
+        .field-select-btn svg { width: 11px; height: 11px; color: #9a9488; flex-shrink: 0; }
         .filter-dropdown {
             position: absolute; top: calc(100% + 4px); left: 0; right: 0;
             background: #fff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.16);
@@ -1283,31 +1305,29 @@
             <!-- ДЕТАЛЬНЫЙ ВИД ЗАКАЗА -->
             <div id="orderDetail">
                 <div class="bg-white p-2 rounded-xl shadow-md mb-3">
-                    <div class="flex items-center justify-between mb-2">
-                        <button onclick="closeOrderDetail()" class="btn text-xs bg-[#7c9473] text-white px-2 py-1 rounded-xl hover:bg-[#6c8464] flex items-center gap-1">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                            Назад к заказам
-                        </button>
-                        <span id="detailOrderId" class="text-xs text-gray-400"></span>
-                        <div class="flex gap-2 items-center">
+                    <div class="flex items-center justify-between gap-1.5">
+                        <div class="flex gap-1.5">
+                            <button onclick="closeOrderDetail()" class="pill-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                                Назад
+                            </button>
+                            <button onclick="goToCustomerFromOrder()" class="pill-btn">Карточка клиента</button>
+                        </div>
+                        <div class="flex gap-1.5 items-center">
                             <!-- Проверен (только для объединённых) -->
-                            <button id="markCheckedBtn" onclick="markOrderChecked()" title="Проверен" class="hidden text-green-600 hover:text-green-800">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>
+                            <button id="markCheckedBtn" onclick="markOrderChecked()" title="Проверен" class="hidden icon-btn-detail" style="color:#4f6349;">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>
                             </button>
-                            <!-- Карточка клиента -->
-                            <button onclick="goToCustomerFromOrder()" class="btn text-xs bg-[#7c9473] text-white px-2 py-1 rounded-xl hover:bg-[#6c8464]">Карточка клиента</button>
-                            <!-- Поделиться заказом -->
-                            <button onclick="shareOrderInfo()" title="Поделиться заказом" class="text-gray-400 hover:text-indigo-600">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0-12l-4 4m4-4l4 4M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6"/></svg>
+                            <button onclick="shareOrderInfo()" title="Поделиться заказом" class="icon-btn-detail">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0-12l-4 4m4-4l4 4M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6"/></svg>
                             </button>
-                            <!-- Счёт / Накладная -->
-                            <button onclick="openDocumentTypeModal()" title="Счёт / накладная" class="text-gray-400 hover:text-indigo-600">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h6m-6 4h6m-8 5h10a2 2 0 002-2V7.828a2 2 0 00-.586-1.414l-3.828-3.828A2 2 0 0012.172 2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                            <button onclick="openDocumentTypeModal()" title="Счёт / накладная" class="icon-btn-detail">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h6m-6 4h6m-8 5h10a2 2 0 002-2V7.828a2 2 0 00-.586-1.414l-3.828-3.828A2 2 0 0012.172 2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                             </button>
-                            <!-- Удалить заказ -->
-                            <button onclick="deleteCurrentOrder()" title="Удалить заказ" class="text-gray-400 hover:text-red-600 perm-delete"><svg class="w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg></button>
+                            <button onclick="deleteCurrentOrder()" title="Удалить заказ" class="icon-btn-detail perm-delete" style="color:#c0685c;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg></button>
                         </div>
                     </div>
+                    <p id="detailOrderId" class="text-sm font-semibold text-gray-600 mt-2 mb-1"></p>
                     <p class="text-[11px] text-gray-400 mb-1">Изменения сохраняются автоматически</p>
                     <div class="grid grid-cols-2 gap-1 mb-2">
                         <div>
@@ -1321,27 +1341,35 @@
                             <label class="table-text text-gray-500">Дата</label>
                             <input id="detailDate" type="date" onchange="saveDetailHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
-                        <div>
+                        <div style="position:relative;" onclick="event.stopPropagation();">
                             <label class="table-text text-gray-500">Статус</label>
-                            <select id="detailStatus" onchange="saveDetailHeader()" class="border p-0.5 rounded-xl w-full table-text">
-                                <option value="принят">Принят</option>
-                                <option value="в работе">В работе</option>
-                                <option value="выполнен">Выполнен</option>
-                            </select>
+                            <select id="detailStatus" class="hidden"><option value="принят">Принят</option><option value="в работе">В работе</option><option value="выполнен">Выполнен</option></select>
+                            <button type="button" class="status-btn" id="detailStatusBtn" style="width:100%; justify-content:space-between;" onclick="toggleDetailStatusDropdown()">
+                                <span id="detailStatusBtnLabel">Принят</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
+                            </button>
+                            <div class="status-dropdown" id="detailStatusDropdown">
+                                <div class="status-option" onclick="setDetailStatus('принят')"><span><span class="dot" style="background:#c0685c;display:inline-block;margin-right:6px;"></span>Принят</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+                                <div class="status-option" onclick="setDetailStatus('в работе')"><span><span class="dot" style="background:#d9a441;display:inline-block;margin-right:6px;"></span>В работе</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+                                <div class="status-option" onclick="setDetailStatus('выполнен')"><span><span class="dot" style="background:#7c9473;display:inline-block;margin-right:6px;"></span>Выполнен</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+                            </div>
                         </div>
                         <div>
                             <label class="table-text text-gray-500">Скидка (%)</label>
                             <input id="detailDiscount" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" max="100" onchange="saveDetailHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
-                        <div>
+                        <div style="position:relative;" onclick="event.stopPropagation();">
                             <label class="table-text text-gray-500">Исполнитель</label>
-                            <select id="detailEmployee" onchange="saveDetailHeader()" class="border p-0.5 rounded-xl w-full table-text">
-                                <option value="">—</option>
-                            </select>
+                            <select id="detailEmployee" class="hidden"><option value="">—</option></select>
+                            <button type="button" class="field-select-btn" id="detailEmployeeBtn" onclick="toggleDetailEmployeeDropdown()">
+                                <span id="detailEmployeeBtnLabel">—</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
+                            </button>
+                            <div class="status-dropdown" id="detailEmployeeDropdown"></div>
                         </div>
                         <div class="col-span-2">
                             <label class="flex items-center gap-2 table-text text-gray-700">
-                                <input id="detailVatExempt" type="checkbox" onchange="saveDetailHeader()"> Без НДС для этого заказа
+                                <input id="detailVatExempt" type="checkbox" onchange="saveDetailHeader()" class="w-4 h-4" style="accent-color:#7c9473;"> Без НДС для этого заказа
                             </label>
                         </div>
                         <div class="col-span-2">
@@ -1368,7 +1396,7 @@
                         <h2 class="text-xs font-semibold text-gray-800">Позиции заказа</h2>
                     </div>
                     <table class="w-full table-auto table-clean mb-2">
-                        <thead><tr class="bg-gray-100">
+                        <thead><tr style="background-color:#e3e8df;">
                             <th class="p-1 text-xs w-[46%]">Изделие</th>
                             <th class="p-1 text-xs w-[10%]">Кол-во</th>
                             <th class="p-1 text-xs w-[14%]">Цена</th>
@@ -2195,9 +2223,9 @@
 <script src="semifinished.js?v=11"></script>
 <script src="products.js?v=15"></script>
 <script src="customers.js?v=18"></script>
-<script src="orders.js?v=42"></script>
+<script src="orders.js?v=43"></script>
 <script src="invoice.js?v=7"></script>
-<script src="payments.js?v=9"></script>
+<script src="payments.js?v=10"></script>
 <script src="stats.js?v=9"></script>
 <script src="history.js?v=7"></script>
 <script src="modals.js?v=9"></script>
