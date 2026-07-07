@@ -292,6 +292,8 @@ function openCustomerDetail(custId) {
     document.getElementById('cdVatExempt').checked = !!cust.vat_exempt;
     document.getElementById('cdNotes').value = cust.notes || '';
     document.getElementById('cdDateRange').value = 'all';
+    document.getElementById('cdDateRangeBtnLabel').textContent = 'Весь период';
+    document.querySelectorAll('#cdDateRangeDropdown .status-option').forEach((opt, i) => opt.classList.toggle('selected', i === 0));
     document.getElementById('cdAddress').value = cust.address || '';
     document.getElementById('cdRegNumber').value = cust.reg_number || '';
     document.getElementById('cdVatCode').value = cust.vat_code || '';
@@ -332,8 +334,8 @@ function setCustomerEntityType(type, skipSave) {
 
     const companyBtn    = document.getElementById('cdEntityCompanyBtn');
     const individualBtn = document.getElementById('cdEntityIndividualBtn');
-    companyBtn.className    = 'btn flex-1 text-xs py-1 rounded-xl border' + (isCompany ? ' bg-indigo-600 text-white border-indigo-600' : ' bg-[#f4f1ea] text-gray-700');
-    individualBtn.className = 'btn flex-1 text-xs py-1 rounded-xl border' + (!isCompany ? ' bg-indigo-600 text-white border-indigo-600' : ' bg-[#f4f1ea] text-gray-700');
+    companyBtn.classList.toggle('active', isCompany);
+    individualBtn.classList.toggle('active', !isCompany);
 
     if (!skipSave) saveCdHeader();
 }
@@ -382,6 +384,25 @@ function renderCustomerStats(cust) {
 }
 
 // Список заказов клиента с фильтром по периоду (Весь период/Неделя/Месяц/Год)
+const CD_DATE_RANGE_LABELS = { all: 'Весь период', week: 'Текущая неделя', month: 'Текущий месяц', year: 'Текущий год' };
+
+function toggleCdDateRangeDropdown() {
+    const dd = document.getElementById('cdDateRangeDropdown');
+    if (!dd) return;
+    const isOpen = dd.classList.contains('open');
+    closeAllOrderStatusDropdowns();
+    if (!isOpen) dd.classList.add('open');
+}
+
+function setCdDateRange(range) {
+    document.getElementById('cdDateRange').value = range;
+    document.getElementById('cdDateRangeBtnLabel').textContent = CD_DATE_RANGE_LABELS[range];
+    document.querySelectorAll('#cdDateRangeDropdown .status-option').forEach(opt => opt.classList.remove('selected'));
+    event.currentTarget.classList.add('selected');
+    closeAllOrderStatusDropdowns();
+    renderCustomerOrders();
+}
+
 function renderCustomerOrders() {
     const cust = customers.find(c => c.id === currentCustomerId);
     const container = document.getElementById('cdOrdersList');
@@ -411,18 +432,14 @@ function renderCustomerOrders() {
     }
 
     const statusFlag = { 'принят': 'flag-red', 'в работе': 'flag-yellow', 'выполнен': 'flag-green' };
-    let html = '<table class="w-full table-text table-clean" style="table-layout:fixed;"><thead><tr class="bg-gray-100 text-xs"><th class="p-1 text-left" style="width:28%;">№</th><th class="p-1 text-left" style="width:20%;">Дата</th><th class="p-1 text-right" style="width:28%;">Сумма (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-1 text-center" style="width:24%;">Статус</th></tr></thead><tbody>';
+    let html = '<table class="w-full table-text table-clean" style="table-layout:fixed;"><thead><tr style="background-color:#e3e8df;" class="text-xs"><th class="p-1 text-left" style="width:28%;">№</th><th class="p-1 text-left" style="width:20%;">Дата</th><th class="p-1 text-right" style="width:28%;">Сумма (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-1 text-center" style="width:24%;">Статус</th></tr></thead><tbody>';
     custOrders.forEach(o => {
         const oNum = o.order_number || `#${o.id}`;
         const payInfo = getOrderPaymentStatus(o);
-        let payDotColor = 'bg-red-500';
-        if (payInfo.status === 'partial') payDotColor = 'bg-amber-400';
-        else if (payInfo.status === 'paid') payDotColor = 'bg-green-500';
-        if (payInfo.overdue) payDotColor = 'bg-red-700';
         html += `<tr class="border-b order-row" onclick="goToOrderFromCustomer(${o.id})">
             <td class="p-0.5 whitespace-nowrap">${escapeHtml(oNum)}</td>
             <td class="p-0.5">${formatDateDMY(o.date)}</td>
-            <td class="p-0.5 text-right font-semibold"><span class="inline-block w-2 h-2 rounded-full ${payDotColor} mr-1"></span>${orderGrandTotal(o).toFixed(2)}</td>
+            <td class="p-0.5 text-right font-semibold"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background-color:${getPaymentStripeColor(payInfo)};"></span>${orderGrandTotal(o).toFixed(2)}</td>
             <td class="p-0.5 text-center"><span class="flag ${statusFlag[o.status] || ''}"></span> ${escapeHtml(o.status)}</td>
         </tr>`;
     });
