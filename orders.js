@@ -754,6 +754,7 @@ function openOrderDetail(orderId) {
     fillDetailCustomerSelect(order.customer);
     document.getElementById('detailDate').value     = order.date;
     document.getElementById('detailStatus').value   = order.status;
+    renderDetailStatusButton(order.status);
     document.getElementById('detailDiscount').value = (order.discount || 0);
     document.getElementById('detailVatExempt').checked = !!order.vat_exempt;
     document.getElementById('detailNotes').value = order.notes || '';
@@ -782,6 +783,68 @@ function fillDetailEmployeeSelect(selectedId) {
         if (selectedId && String(e.id) === String(selectedId)) opt.selected = true;
         sel.appendChild(opt);
     });
+    renderDetailEmployeeDropdownList(selectedId);
+    const current = employees.find(e => String(e.id) === String(selectedId));
+    const lbl = document.getElementById('detailEmployeeBtnLabel');
+    if (lbl) lbl.textContent = current ? current.name : '—';
+}
+
+// ---- Статус в карточке заказа: тот же цветной дропдаун, что и в карточках списка ----
+const DETAIL_STATUS_COLORS = { 'принят': '#c0685c', 'в работе': '#d9a441', 'выполнен': '#7c9473' };
+
+function renderDetailStatusButton(status) {
+    const btn = document.getElementById('detailStatusBtn');
+    const lbl = document.getElementById('detailStatusBtnLabel');
+    if (!btn || !lbl) return;
+    btn.style.background = DETAIL_STATUS_COLORS[status] || DETAIL_STATUS_COLORS['принят'];
+    lbl.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+    document.querySelectorAll('#detailStatusDropdown .status-option').forEach((opt, i) => {
+        const optStatus = ['принят', 'в работе', 'выполнен'][i];
+        opt.classList.toggle('selected', optStatus === status);
+    });
+}
+
+function toggleDetailStatusDropdown() {
+    const dd = document.getElementById('detailStatusDropdown');
+    if (!dd) return;
+    const isOpen = dd.classList.contains('open');
+    closeAllOrderStatusDropdowns();
+    if (!isOpen) dd.classList.add('open');
+}
+
+function setDetailStatus(status) {
+    document.getElementById('detailStatus').value = status;
+    renderDetailStatusButton(status);
+    closeAllOrderStatusDropdowns();
+    saveDetailHeader();
+}
+
+// ---- Исполнитель в карточке заказа: свой нейтральный дропдаун (не цветной) ----
+function renderDetailEmployeeDropdownList(selectedId) {
+    const list = document.getElementById('detailEmployeeDropdown');
+    if (!list) return;
+    let html = `<div class="status-option${!selectedId ? ' selected' : ''}" onclick="setDetailEmployee('')"><span>—</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>`;
+    employees.forEach(e => {
+        html += `<div class="status-option${String(e.id) === String(selectedId) ? ' selected' : ''}" onclick="setDetailEmployee('${e.id}')"><span>${escapeHtml(e.name)}</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>`;
+    });
+    list.innerHTML = html;
+}
+
+function toggleDetailEmployeeDropdown() {
+    const dd = document.getElementById('detailEmployeeDropdown');
+    if (!dd) return;
+    const isOpen = dd.classList.contains('open');
+    closeAllOrderStatusDropdowns();
+    if (!isOpen) dd.classList.add('open');
+}
+
+function setDetailEmployee(employeeId) {
+    document.getElementById('detailEmployee').value = employeeId;
+    const current = employees.find(e => String(e.id) === String(employeeId));
+    document.getElementById('detailEmployeeBtnLabel').textContent = current ? current.name : '—';
+    renderDetailEmployeeDropdownList(employeeId);
+    closeAllOrderStatusDropdowns();
+    saveDetailHeader();
 }
 
 function onDetailCustomerChange() {

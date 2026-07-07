@@ -80,13 +80,16 @@ function renderPayments() {
         if (!b) return;
         if (paid <= 0) {
             b.textContent = 'Не оплачен';
-            b.className = 'text-xs font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-600';
+            b.className = 'text-xs font-semibold px-2 py-0.5 rounded-full';
+            b.style.cssText = 'background:#f3ded9; color:#a3493d;';
         } else if (paid < total) {
             b.textContent = 'Частично оплачен';
-            b.className = 'text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700';
+            b.className = 'text-xs font-semibold px-2 py-0.5 rounded-full';
+            b.style.cssText = 'background:#f7e6c4; color:#96712a;';
         } else {
             b.textContent = 'Оплачен';
-            b.className = 'text-xs font-semibold px-2 py-0.5 rounded-full bg-green-50 text-green-700';
+            b.className = 'text-xs font-semibold px-2 py-0.5 rounded-full';
+            b.style.cssText = 'background:#e3e8df; color:#4f6349;';
         }
     });
 
