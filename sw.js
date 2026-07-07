@@ -1,4 +1,4 @@
-const CACHE_NAME = 'runwaychef-public-cache-v65';
+const CACHE_NAME = 'runwaychef-public-cache-v101';
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -53,6 +53,16 @@ self.addEventListener('fetch', (event) => {
 
   // Supabase — никогда не кэшируем, всегда сеть
   if (req.url.includes('supabase.co')) {
+    return;
+  }
+
+  // Внешние CDN (шрифты, библиотеки) — тоже не трогаем вообще, отдаём браузеру
+  // как есть. Раньше кросс-доменные запросы шли через ту же кэширующую логику,
+  // что и собственные файлы приложения, и на некоторых из них (в частности —
+  // на новой загрузке шрифта для PDF) это стабильно ломало запрос, хотя сам
+  // внешний сервер отвечал нормально. Кэшировать чужие домены в свой офлайн-кэш
+  // нам и не нужно — только собственные файлы приложения (см. ниже).
+  if (self.location.origin && !req.url.startsWith(self.location.origin)) {
     return;
   }
 
