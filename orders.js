@@ -61,7 +61,7 @@ function displayOrders() {
         const monthTotals = calcGroupTotals(sorted, o => keysFor(o).monthKey === monthKey);
         const monthLabel = `${MONTH_NAMES_RU[m - 1]} ${y}`;
         const monthRow = document.createElement('tr');
-        monthRow.innerHTML = `<td colspan="6" class="text-xs font-semibold p-0.5.5" style="background-color:#4f6349; color:#fff;">
+        monthRow.innerHTML = `<td colspan="6" class="text-xs font-semibold p-0.5.5" style="background-color:#d9a441; color:#fff;">
             Итого за ${monthLabel} — ${monthTotals.count} зак., ${monthTotals.qty} шт., ${formatMoney(monthTotals.sum)}
         </td>`;
         tbody.appendChild(monthRow);
