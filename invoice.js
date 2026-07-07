@@ -130,7 +130,7 @@ async function freezeDocumentSnapshot(order, docType, reuseNumber) {
 // телефона он умещается целиком за счёт CSS-трансформации масштаба).
 function renderDocumentPreviewThumbnail() {
     const container = document.getElementById('orderDocumentContent');
-    container.innerHTML = `<div id="orderDocumentPreviewWrap" style="overflow:hidden;margin:0 auto;background:#f3f4f6;">
+    container.innerHTML = `<div id="orderDocumentPreviewWrap" style="overflow:hidden;margin:0 auto;background:#f4f1ea;">
         <div id="orderDocumentInner" style="transform-origin:top left;">${buildDocumentHtml(_docPreview.docType, _docPreview.snapshot)}</div>
     </div>`;
 
@@ -248,7 +248,7 @@ function buildDocumentHtml(docType, snapshot) {
 
         <table style="width:100%;border-collapse:collapse;font-size:15px;table-layout:fixed;">
             <thead>
-                <tr style="background:#f3f4f6;">
+                <tr style="background:#e3e8df;">
                     <th style="padding:10px 8px;text-align:left;width:32%;">Наименование</th>
                     <th style="padding:10px 8px;text-align:center;width:8%;">Кол-во</th>
                     <th style="padding:10px 8px;text-align:right;width:14%;">Цена без НДС</th>
