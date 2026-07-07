@@ -50,7 +50,7 @@ function displayOrders() {
         const weekTotals = calcGroupTotals(sorted, o => keysFor(o).weekKey === weekKey);
         const weekLabel = formatDateDMY(localStr(monday)) + ' – ' + formatDateDMY(localStr(sunday));
         const weekRow = document.createElement('tr');
-        weekRow.innerHTML = `<td colspan="6" class="bg-gray-200 text-gray-700 text-xs font-medium p-0.5">
+        weekRow.innerHTML = `<td colspan="6" class="text-xs font-medium p-0.5" style="background-color:#7c9473; color:#fff;">
             Неделя ${weekLabel} — ${weekTotals.count} зак., ${weekTotals.qty} шт., ${formatMoney(weekTotals.sum)}
         </td>`;
         tbody.appendChild(weekRow);
@@ -61,7 +61,7 @@ function displayOrders() {
         const monthTotals = calcGroupTotals(sorted, o => keysFor(o).monthKey === monthKey);
         const monthLabel = `${MONTH_NAMES_RU[m - 1]} ${y}`;
         const monthRow = document.createElement('tr');
-        monthRow.innerHTML = `<td colspan="6" class="bg-gray-700 text-white text-xs font-semibold p-0.5.5">
+        monthRow.innerHTML = `<td colspan="6" class="text-xs font-semibold p-0.5.5" style="background-color:#4f6349; color:#fff;">
             Итого за ${monthLabel} — ${monthTotals.count} зак., ${monthTotals.qty} шт., ${formatMoney(monthTotals.sum)}
         </td>`;
         tbody.appendChild(monthRow);
@@ -103,11 +103,11 @@ function displayOrders() {
 
         // Статус оплаты — цветная точка рядом с суммой (не оплачен/частично/оплачен/просрочен)
         const payInfo = getOrderPaymentStatus(order);
-        let payDotColor = 'bg-red-500', payDotTitle = 'Не оплачен';
-        if (payInfo.status === 'partial') { payDotColor = 'bg-amber-400'; payDotTitle = 'Частично оплачен'; }
-        else if (payInfo.status === 'paid') { payDotColor = 'bg-green-500'; payDotTitle = 'Оплачен'; }
-        if (payInfo.overdue) { payDotColor = 'bg-red-700'; payDotTitle += ' · просрочен'; }
-        const payDot = `<span class="inline-block w-2 h-2 rounded-full ${payDotColor} mr-1" title="${payDotTitle}"></span>`;
+        let payDotTitle = 'Не оплачен';
+        if (payInfo.status === 'partial') payDotTitle = 'Частично оплачен';
+        else if (payInfo.status === 'paid') payDotTitle = 'Оплачен';
+        if (payInfo.overdue) payDotTitle += ' · просрочен';
+        const payDot = `<span class="inline-block w-2 h-2 rounded-full mr-1" style="background-color:${getPaymentStripeColor(payInfo)};" title="${payDotTitle}"></span>`;
 
         const isMerged = order.notes && order.notes.includes('⚠ объединён, требует проверки');
         const row = document.createElement('tr');

@@ -64,9 +64,9 @@
            этим). Если приживётся — раскатим на остальные таблицы. */
         .table-text { font-size: 12px; font-family: inherit; }
         .flag { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin: 0; vertical-align: middle; }
-        .flag-red { background-color: #ef4444; }
-        .flag-yellow { background-color: #facc15; }
-        .flag-green { background-color: #22c55e; }
+        .flag-red { background-color: #c0685c; }
+        .flag-yellow { background-color: #d9a441; }
+        .flag-green { background-color: #7c9473; }
         svg { cursor: pointer; }
         input::placeholder, select:invalid { color: #6b7280; opacity: 1; }
         select option { color: #1f2937; }
@@ -1146,7 +1146,7 @@
             <!-- СПИСОК ЗАКАЗОВ -->
             <div id="ordersList">
 
-                <div id="orderFiltersPanel" class="hidden bg-white p-2 rounded-xl shadow-md">
+                <div id="orderFiltersPanel" class="hidden bg-white p-2 rounded-xl shadow-md mb-3">
                     <h2 class="text-sm font-semibold mb-2 text-gray-800">Список заказов</h2>
                     <p class="text-xs text-gray-400 mb-2">Нажмите на заказ, чтобы открыть его</p>
 
@@ -1233,7 +1233,7 @@
                 <!-- Табличный вид (переключается кнопкой вверху экрана) -->
                 <div id="orderTableWrap" class="hidden bg-white p-2 rounded-xl shadow-md">
                     <table class="w-full table-auto table-clean">
-                        <thead><tr class="bg-gray-100">
+                        <thead><tr style="background-color:#e3e8df;">
                             <th class="p-1 text-xs w-[17%]">Дата</th>
                             <th class="p-1 text-xs w-[28%]">Клиент</th>
                             <th class="p-1 text-xs w-[7%]">Позиций</th>
@@ -2161,7 +2161,7 @@
 <script src="semifinished.js?v=11"></script>
 <script src="products.js?v=15"></script>
 <script src="customers.js?v=18"></script>
-<script src="orders.js?v=37"></script>
+<script src="orders.js?v=38"></script>
 <script src="invoice.js?v=7"></script>
 <script src="payments.js?v=9"></script>
 <script src="stats.js?v=9"></script>
