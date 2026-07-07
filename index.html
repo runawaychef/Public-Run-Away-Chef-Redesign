@@ -2154,7 +2154,7 @@
     <script src="money.js?v=9"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="auth.js?v=10"></script>
-    <script src="employees.js?v=13"></script>
+    <script src="employees.js?v=14"></script>
     <script src="company.js?v=6"></script>
     <script src="inventory.js?v=18"></script>
 <script src="ingredients.js?v=14"></script>
@@ -2209,8 +2209,11 @@ function showLoading(message) {
 function hideLoading() { document.getElementById('loadingOverlay').classList.add('hidden'); }
 
 // ==================== ЗАГРУЗКА ВСЕХ ДАННЫХ ====================
-async function loadAllData() {
-    showLoading();
+// silent=true — для фоновых обновлений (realtime-событие, полуночная проверка даты),
+// где пользователь ничего не запрашивал и не должен видеть оверлей загрузки.
+// По умолчанию (silent=false) — как раньше, для действий, где пользователь реально ждёт.
+async function loadAllData(silent) {
+    if (!silent) showLoading();
     try {
         const [pRes, cRes, oRes, oiRes, eRes, ingRes, piRes, sfRes, sfiRes, opRes] = await Promise.all([
             db.from('products').select('id, name, price, batch_size, other_costs, unit, recipe_confirmed, track_stock').eq('org_id', currentOrgId).order('name').limit(5000),
@@ -2323,9 +2326,9 @@ async function loadAllData() {
         await processPendingInventory();
     } catch (e) {
         console.error(e);
-        alert('Ошибка загрузки данных. Проверьте подключение к интернету.');
+        if (!silent) alert('Ошибка загрузки данных. Проверьте подключение к интернету.');
     } finally {
-        hideLoading();
+        if (!silent) hideLoading();
     }
 }
 
@@ -2631,7 +2634,7 @@ async function handleRealtimeEvent() {
     setTimeout(async () => {
         _realtimePending = false;
         if (_suppressRealtime) return;
-        await loadAllData();
+        await loadAllData(true);
     }, 1500);
 }
 
