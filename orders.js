@@ -247,10 +247,28 @@ function renderOrderCard(order) {
 }
 
 function closeAllOrderStatusDropdowns() {
-    document.querySelectorAll('.status-dropdown.open').forEach(d => d.classList.remove('open'));
+    document.querySelectorAll('.status-dropdown.open').forEach(d => {
+        d.classList.remove('open');
+        d.style.top = ''; d.style.bottom = ''; // сброс "умного" позиционирования
+    });
 }
 // Закрываем дропдаун статуса при тапе где угодно ещё на странице.
 document.addEventListener('click', closeAllOrderStatusDropdowns);
+
+// Открывает выпадающий список и проверяет, хватает ли места снизу экрана —
+// если нет, открывает его вверх от кнопки вместо вниз. Иначе на кнопках
+// ближе к низу страницы список обрезался бы краем экрана без возможности
+// докрутить (сама панель растёт через position:absolute и не увеличивает
+// прокручиваемую высоту страницы).
+function openSmartDropdown(dd) {
+    dd.classList.add('open');
+    dd.style.top = ''; dd.style.bottom = '';
+    const rect = dd.getBoundingClientRect();
+    if (rect.bottom > window.innerHeight - 8) {
+        dd.style.top = 'auto';
+        dd.style.bottom = 'calc(100% + 4px)';
+    }
+}
 
 // Компактная приглушённая карточка выполненного заказа. Полоса оплаты и кнопка
 // статуса не нужны (заказ закрыт) — вместо них маленькая зелёная галочка.
@@ -305,7 +323,7 @@ function toggleOrderStatusDropdown(orderId) {
     if (!dd) return;
     const isOpen = dd.classList.contains('open');
     closeAllOrderStatusDropdowns();
-    if (!isOpen) dd.classList.add('open');
+    if (!isOpen) openSmartDropdown(dd);
 }
 
 async function quickSetOrderStatus(orderId, newStatus) {
@@ -811,7 +829,7 @@ function toggleDetailStatusDropdown() {
     if (!dd) return;
     const isOpen = dd.classList.contains('open');
     closeAllOrderStatusDropdowns();
-    if (!isOpen) dd.classList.add('open');
+    if (!isOpen) openSmartDropdown(dd);
 }
 
 function setDetailStatus(status) {
@@ -837,7 +855,7 @@ function toggleDetailEmployeeDropdown() {
     if (!dd) return;
     const isOpen = dd.classList.contains('open');
     closeAllOrderStatusDropdowns();
-    if (!isOpen) dd.classList.add('open');
+    if (!isOpen) openSmartDropdown(dd);
 }
 
 function setDetailEmployee(employeeId) {

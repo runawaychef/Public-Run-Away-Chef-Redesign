@@ -175,7 +175,7 @@ function openCustomerReportPreview() {
             <h2 style="font-size:16px;font-weight:700;color:#1f2937;margin:0 0 2px;">${escapeHtml(cust.name)}</h2>
             <p style="font-size:11px;color:#6b7280;margin:0 0 12px;">Сводный отчёт по изделиям · ${RANGE_LABELS[range]} (${periodLabel})</p>
             <table style="width:100%;border-collapse:collapse;font-size:12px;">
-                <thead><tr style="background:#f3f4f6;">
+                <thead><tr style="background:#e3e8df;">
                     <th style="text-align:left;padding:4px;border-bottom:1px solid #e5e7eb;">Изделие</th>
                     <th style="text-align:right;padding:4px;border-bottom:1px solid #e5e7eb;">Кол-во</th>
                     <th style="text-align:right;padding:4px;border-bottom:1px solid #e5e7eb;">Сумма (${CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency})</th>
@@ -184,7 +184,7 @@ function openCustomerReportPreview() {
         html += `<tr><td style="padding:4px;border-bottom:1px solid #f3f4f6;">${escapeHtml(name)}</td><td style="text-align:right;padding:4px;border-bottom:1px solid #f3f4f6;">${v.qty}</td><td style="text-align:right;padding:4px;border-bottom:1px solid #f3f4f6;">${v.sum.toFixed(2)}</td></tr>`;
     });
     html += `</tbody>
-            <tfoot><tr style="font-weight:700;background:#f9fafb;">
+            <tfoot><tr style="font-weight:700;background:#e3e8df;">
                 <td style="padding:4px;">Итого</td>
                 <td style="text-align:right;padding:4px;">${totalQty}</td>
                 <td style="text-align:right;padding:4px;">${totalSum.toFixed(2)}</td>
@@ -192,8 +192,8 @@ function openCustomerReportPreview() {
             </table>
             <table style="width:100%;border-collapse:collapse;font-size:12px;margin-top:10px;">
                 <tr><td style="padding:2px 4px;color:#6b7280;">Сумма по позициям</td><td style="text-align:right;padding:2px 4px;">${formatMoney(totalSum)}</td></tr>
-                ${totalDiscount > 0 ? `<tr><td style="padding:2px 4px;color:#6b7280;">Скидка${discountLabel}</td><td style="text-align:right;padding:2px 4px;color:#dc2626;">−${formatMoney(totalDiscount)}</td></tr>` : ''}
-                <tr><td style="padding:2px 4px;color:#6b7280;">НДС (21%)</td><td style="text-align:right;padding:2px 4px;color:#2563eb;">${formatMoney(totalVat)}</td></tr>
+                ${totalDiscount > 0 ? `<tr><td style="padding:2px 4px;color:#6b7280;">Скидка${discountLabel}</td><td style="text-align:right;padding:2px 4px;color:#c0685c;">−${formatMoney(totalDiscount)}</td></tr>` : ''}
+                <tr><td style="padding:2px 4px;color:#6b7280;">НДС (21%)</td><td style="text-align:right;padding:2px 4px;color:#6b7280;">${formatMoney(totalVat)}</td></tr>
                 <tr style="font-weight:700;"><td style="padding:4px;border-top:1px solid #e5e7eb;">Итого к оплате</td><td style="text-align:right;padding:4px;border-top:1px solid #e5e7eb;">${formatMoney(grandTotal)}</td></tr>
             </table>
             <p style="font-size:10px;color:#9ca3af;margin-top:10px;">Заказов за период: ${custOrders.length}. В таблице по изделиям — цены позиций без скидки и НДС, финансовая сводка ниже — уже с их учётом.</p>
@@ -391,7 +391,7 @@ function toggleCdDateRangeDropdown() {
     if (!dd) return;
     const isOpen = dd.classList.contains('open');
     closeAllOrderStatusDropdowns();
-    if (!isOpen) dd.classList.add('open');
+    if (!isOpen) openSmartDropdown(dd);
 }
 
 function setCdDateRange(range) {
