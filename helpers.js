@@ -392,45 +392,32 @@ async function createPdfDoc() {
 }
 
 let _cyrillicFontBase64 = null; // кэш на текущую сессию (чтобы не скачивать заново на каждый PDF)
-const CYRILLIC_FONT_CACHE_KEY = 'pdfCyrillicFontRoboto_v1';
+const CYRILLIC_FONT_CACHE_KEY = 'pdfCyrillicFontRoboto_v2'; // v2 — переехали со стороннего CDN на свой файл в репозитории
 
 async function ensureCyrillicFont(pdf) {
     if (!_cyrillicFontBase64) {
         // Постоянный кэш в localStorage — переживает перезагрузку страницы,
-        // так что шрифт реально скачивается один раз за всё время использования
-        // приложения на этом устройстве, а не при каждом открытии.
+        // так что шрифт реально читается с диска один раз за всё время
+        // использования приложения на этом устройстве, а не при каждом открытии.
         try {
             const cached = localStorage.getItem(CYRILLIC_FONT_CACHE_KEY);
             if (cached) _cyrillicFontBase64 = cached;
-        } catch (e) { /* localStorage недоступен (приватный режим и т.п.) — не критично, скачаем заново */ }
+        } catch (e) { /* localStorage недоступен (приватный режим и т.п.) — не критично, прочитаем заново */ }
     }
     if (!_cyrillicFontBase64) {
-        // Внешний CDN иногда недоступен целиком в конкретной сети (не просто
-        // "не ответил один раз") — пробуем два независимых источника с разной
-        // инфраструктурой, а не только повторяем один и тот же адрес.
-        const urls = [
-            'https://cdn.jsdelivr.net/gh/google/fonts@main/apache/roboto/static/Roboto-Regular.ttf',
-            'https://raw.githubusercontent.com/google/fonts/main/apache/roboto/static/Roboto-Regular.ttf',
-        ];
-        let lastError = null;
-        outer:
-        for (const url of urls) {
-            for (let attempt = 1; attempt <= 2; attempt++) {
-                try {
-                    const res = await fetch(url);
-                    if (!res.ok) throw new Error('HTTP ' + res.status);
-                    const buf = await res.arrayBuffer();
-                    _cyrillicFontBase64 = arrayBufferToBase64(buf);
-                    try { localStorage.setItem(CYRILLIC_FONT_CACHE_KEY, _cyrillicFontBase64); } catch (e) { /* не критично */ }
-                    lastError = null;
-                    break outer;
-                } catch (e) {
-                    lastError = e;
-                    if (attempt < 2) await new Promise(r => setTimeout(r, 500));
-                }
-            }
+        // Свой файл в репозитории (Roboto-Regular.ttf, лежит рядом с index.html) —
+        // раньше грузили с внешнего CDN, но сторонние серверы оказались ненадёжны
+        // в некоторых сетях. Свой файл — часть самого приложения, всегда "под
+        // рукой", ничего стороннего скачивать не нужно.
+        try {
+            const res = await fetch('Roboto-Regular.ttf');
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const buf = await res.arrayBuffer();
+            _cyrillicFontBase64 = arrayBufferToBase64(buf);
+            try { localStorage.setItem(CYRILLIC_FONT_CACHE_KEY, _cyrillicFontBase64); } catch (e) { /* не критично */ }
+        } catch (e) {
+            throw new Error('Не удалось загрузить шрифт для PDF (кириллица). Убедитесь, что файл Roboto-Regular.ttf загружен в репозиторий рядом с index.html.');
         }
-        if (lastError) throw new Error('Не удалось загрузить шрифт для PDF (кириллица) — проверьте интернет и попробуйте ещё раз.');
     }
     pdf.addFileToVFS('Roboto-Regular.ttf', _cyrillicFontBase64);
     pdf.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');

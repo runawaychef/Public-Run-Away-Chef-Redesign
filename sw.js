@@ -1,4 +1,4 @@
-const CACHE_NAME = 'runwaychef-public-cache-v101';
+const CACHE_NAME = 'runwaychef-public-cache-v102';
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -22,7 +22,8 @@ const ASSETS = [
   './inventory.js',
   './stats.js',
   './history.js',
-  './demoData.js'
+  './demoData.js',
+  './Roboto-Regular.ttf'
 ];
 
 self.addEventListener('install', (event) => {
