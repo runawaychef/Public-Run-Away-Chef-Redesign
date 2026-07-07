@@ -232,6 +232,12 @@ async function downloadCustomerReportPdf() {
     clone.style.cssText = 'position:absolute; top:0; left:-9999px; width:480px; background:white;';
     document.body.appendChild(clone);
 
+    // Даём браузеру два кадра на пересчёт раскладки скрытой копии, прежде чем
+    // снимать её html2canvas'ом — без этой паузы иногда попадали "на лету",
+    // когда вёрстка (особенно высоты строк таблицы) ещё не устоялась, и в
+    // итоговом PDF строки съезжали/наезжали друг на друга.
+    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
     function withTimeout(promise, ms, label) {
         return Promise.race([
             promise,
