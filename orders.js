@@ -281,13 +281,10 @@ function renderDoneOrderCard(order) {
     <div class="order-card done-card muted" id="orderCard-${order.id}">
         <div class="stripe" style="background:${stripeColor}; display:none;" data-role="stripe"></div>
         <div class="order-card-tap" onclick="handleDoneCardTap(event, ${order.id})">
-            <div class="order-card-body">
+            <div class="order-card-body" style="padding-right:34px;">
                 <div class="oc-row">
                     <span class="oc-name">${escapeHtml(order.customer || '(без клиента)')}</span>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <span class="oc-sum">${total}</span>
-                        <span class="done-check" data-role="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>
-                    </div>
+                    <span class="oc-sum">${total}</span>
                 </div>
                 <div class="oc-meta">${formatDateDMY(order.date)} · ${escapeHtml(oNum)}</div>
                 <div class="oc-items" data-role="items" style="display:none;">${itemsLine}</div>
