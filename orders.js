@@ -1208,7 +1208,8 @@ function renderDetailItems(order) {
     if (costEl) costEl.textContent = formatMoney(cost);
     if (profitEl) {
         profitEl.textContent = formatMoney(profit);
-        profitEl.className = profit >= 0 ? 'font-semibold text-green-700' : 'font-semibold text-red-600';
+        profitEl.style.color = profit >= 0 ? '#4f6349' : '#c0685c';
+        profitEl.className = 'font-semibold';
     }
     if (profitPctEl) profitPctEl.textContent = profitPct.toFixed(1);
 }
@@ -1386,7 +1387,7 @@ async function openOrderCostBreakdown() {
         }
 
         let html = '<table class="w-full stats-table table-clean" style="table-layout:fixed;">';
-        html += '<thead><tr class="bg-gray-100"><th class="p-1 text-left" style="width:40%;">Ингредиент</th><th class="p-1 text-right" style="width:20%;">Кол-во</th><th class="p-1 text-right" style="width:20%;">Цена/ед.</th><th class="p-1 text-right" style="width:20%;">Сумма</th></tr></thead><tbody>';
+        html += '<thead><tr style="background-color:#e3e8df;"><th class="p-1 text-left" style="width:40%;">Ингредиент</th><th class="p-1 text-right" style="width:20%;">Кол-во</th><th class="p-1 text-right" style="width:20%;">Цена/ед.</th><th class="p-1 text-right" style="width:20%;">Сумма</th></tr></thead><tbody>';
         rows.forEach(r => {
             const unitLabel = UNIT_LABELS[r.unit] || r.unit;
             html += `<tr class="border-b">
@@ -1396,7 +1397,7 @@ async function openOrderCostBreakdown() {
                 <td class="p-0.5 text-right whitespace-nowrap">${formatMoney(r.total, 4)}</td>
             </tr>`;
         });
-        html += `</tbody><tfoot><tr class="bg-gray-50 font-semibold">
+        html += `</tbody><tfoot><tr style="background-color:#e3e8df;" class="font-semibold">
             <td class="p-0.5" colspan="3">Итого себестоимость</td>
             <td class="p-0.5 text-right">${grandCost > 0 ? formatMoney(grandCost) : formatMoney(grandIngCost)}</td>
         </tr></tfoot></table>`;

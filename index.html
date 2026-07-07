@@ -388,6 +388,21 @@
         }
         .pill-btn:active { transform: scale(0.96); opacity: 0.88; }
         .pill-btn svg { width: 12px; height: 12px; }
+        .pill-btn-secondary {
+            border: none; cursor: pointer; border-radius: 10px; padding: 7px 12px;
+            font-size: 11.5px; font-weight: 700; color: #4f6349; background: #e3e8df;
+            display: inline-flex; align-items: center; justify-content: center; gap: 5px; white-space: nowrap;
+            transition: all 0.15s ease;
+        }
+        .pill-btn-secondary:active { transform: scale(0.96); opacity: 0.85; }
+        .pill-btn-secondary svg { width: 12px; height: 12px; }
+        .pill-btn-danger {
+            border: none; cursor: pointer; border-radius: 10px; padding: 7px 12px;
+            font-size: 11.5px; font-weight: 700; color: #fff; background: #c0685c;
+            display: inline-flex; align-items: center; justify-content: center; gap: 5px; white-space: nowrap;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.12); transition: all 0.15s ease;
+        }
+        .pill-btn-danger:active { transform: scale(0.96); opacity: 0.88; }
         .icon-btn-detail {
             background: white; border: 1px solid #e5e7eb; border-radius: 50%;
             width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
@@ -1136,11 +1151,11 @@
         <!-- Выбор типа документа: счёт или накладная -->
         <div id="documentTypeModal" class="modal">
             <div class="modal-content" style="max-width:340px;">
-                <h2 class="text-xs font-semibold mb-3 text-gray-800">Какой документ сформировать?</h2>
+                <h2 class="text-sm font-semibold mb-3 text-gray-800">Какой документ сформировать?</h2>
                 <div class="flex flex-col gap-2">
-                    <button onclick="openOrderDocumentPreview('invoice')" class="btn bg-indigo-600 text-white p-2 rounded-xl hover:bg-indigo-700 text-xs">Счёт</button>
-                    <button onclick="openOrderDocumentPreview('delivery_note')" class="btn bg-indigo-600 text-white p-2 rounded-xl hover:bg-indigo-700 text-xs">Накладная</button>
-                    <button onclick="closeModal()" class="btn bg-[#7c9473] text-white p-1 rounded-xl hover:bg-[#6c8464] text-xs">Закрыть</button>
+                    <button onclick="openOrderDocumentPreview('invoice')" class="pill-btn-secondary">Счёт</button>
+                    <button onclick="openOrderDocumentPreview('delivery_note')" class="pill-btn-secondary">Накладная</button>
+                    <button onclick="closeModal()" class="pill-btn">Закрыть</button>
                 </div>
             </div>
         </div>
@@ -1424,7 +1439,7 @@
                     <div class="text-right text-xs text-gray-600 space-y-0.5">
                         <div>Всего изделий: <span id="detailItemsCount" class="font-semibold text-gray-700">0</span> шт.</div>
                         <div>Сумма позиций: <span id="detailSubtotal" class="font-medium text-gray-800">0.00</span></div>
-                        <div id="detailDiscountRow">Скидка (<span id="detailDiscountPct">0</span>%): <span id="detailDiscountAmount" class="font-medium text-red-600">-0.00</span></div>
+                        <div id="detailDiscountRow">Скидка (<span id="detailDiscountPct">0</span>%): <span id="detailDiscountAmount" class="font-medium" style="color:#c0685c;">-0.00</span></div>
                         <div>НДС (21%): <span id="detailVatAmount" class="font-medium text-gray-800">0.00</span></div>
                         <div class="text-xs font-semibold text-gray-900 pt-1 border-t mt-1">Итого к оплате: <span id="detailTotal">0.00</span></div>
                         <div class="perm-view-costs pt-1 border-t mt-1">
@@ -1441,32 +1456,32 @@
         <div id="paymentDetailModal" class="modal">
             <div class="modal-content" style="max-width:360px;">
                 <div class="flex justify-between items-center mb-2">
-                    <h2 class="text-xs font-semibold text-gray-800">Оплата</h2>
+                    <h2 class="text-sm font-semibold text-gray-800">Оплата</h2>
                     <span id="paymentStatusBadge2" class="text-xs font-semibold px-2 py-0.5 rounded-full">—</span>
                 </div>
 
-                <div class="w-full bg-gray-100 rounded-full h-1.5 mb-2 overflow-hidden">
-                    <div id="paymentProgressBar" class="h-1.5 bg-green-500 rounded-full" style="width:0%"></div>
+                <div class="w-full rounded-full h-1.5 mb-2 overflow-hidden" style="background:#ece7db;">
+                    <div id="paymentProgressBar" class="h-1.5 rounded-full" style="width:0%; background:#7c9473;"></div>
                 </div>
 
                 <div class="text-xs text-gray-600 space-y-0.5 mb-2">
                     <div>Оплачено: <span id="paymentPaidAmount" class="font-medium text-gray-800">0.00</span></div>
                     <div>Осталось: <span id="paymentRemainingAmount" class="font-semibold text-gray-900">0.00</span></div>
-                    <div id="paymentOverpaidRow" class="hidden">Переплата: <span id="paymentOverpaidAmount" class="font-semibold text-indigo-600">0.00</span></div>
+                    <div id="paymentOverpaidRow" class="hidden">Переплата: <span id="paymentOverpaidAmount" class="font-semibold" style="color:#4f6349;">0.00</span></div>
                     <div class="flex items-center gap-1 pt-1">
                         <span>Оплатить до:</span>
-                        <input id="orderDueDate" type="date" class="border p-0.5 rounded-xl text-xs" onchange="saveDueDate()">
-                        <span id="dueDateOverdueTag" class="text-red-600 font-semibold hidden"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>просрочено</span>
+                        <input id="orderDueDate" type="date" class="border p-0.5 rounded-xl text-xs" style="background:#f4f1ea;" onchange="saveDueDate()">
+                        <span id="dueDateOverdueTag" class="font-semibold hidden" style="color:#8b3a3a;"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>просрочено</span>
                     </div>
                 </div>
 
                 <div id="paymentsListContent" class="mb-2"></div>
 
-                <div class="flex gap-1 mb-1">
-                    <button onclick="openAddPaymentModal()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-xl hover:bg-gray-200 text-xs flex-1 border border-gray-200">+ Добавить оплату</button>
-                    <button id="payRemainingBtn" onclick="openAddPaymentModal(true)" class="btn bg-green-50 text-green-700 px-2 py-1.5 rounded-xl hover:bg-green-100 text-xs flex-1 border border-green-200 hidden items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0018.75 4.5H5.25A2.25 2.25 0 003 6.75v10.5A2.25 2.25 0 005.25 19.5z"/></svg>Внести остаток</button>
+                <div class="flex gap-2 mb-2">
+                    <button onclick="openAddPaymentModal()" class="pill-btn-secondary flex-1">+ Добавить оплату</button>
+                    <button id="payRemainingBtn" onclick="openAddPaymentModal(true)" class="pill-btn-secondary flex-1 hidden"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0018.75 4.5H5.25A2.25 2.25 0 003 6.75v10.5A2.25 2.25 0 005.25 19.5z"/></svg>Внести остаток</button>
                 </div>
-                <button onclick="closeModal()" class="btn bg-[#7c9473] text-white p-1.5 rounded-xl hover:bg-[#6c8464] text-xs w-full">Закрыть</button>
+                <button onclick="closeModal()" class="pill-btn w-full justify-center">Закрыть</button>
             </div>
         </div>
 
@@ -1560,9 +1575,11 @@
         <!-- Подтверждение удаления -->
         <div id="deleteModal" class="modal">
             <div class="modal-content">
-                <p id="deleteModalText" class="mb-2 text-xs text-gray-700">Вы уверены, что хотите удалить этот элемент?</p>
-                <button onclick="confirmDelete()" class="btn bg-[#c0685c] text-white p-0.5 rounded-xl hover:bg-[#a85950] mr-1 text-xs">Удалить</button>
-                <button onclick="closeModal()" class="btn bg-[#7c9473] text-white p-0.5 rounded-xl hover:bg-[#6c8464] text-xs">Отмена</button>
+                <p id="deleteModalText" class="mb-3 text-sm text-gray-800">Вы уверены, что хотите удалить этот элемент?</p>
+                <div class="flex gap-2">
+                    <button onclick="confirmDelete()" class="pill-btn-danger">Удалить</button>
+                    <button onclick="closeModal()" class="pill-btn">Отмена</button>
+                </div>
             </div>
         </div>
 
@@ -1733,12 +1750,12 @@
         <!-- Детализация себестоимости заказа -->
         <div id="orderCostBreakdownModal" class="modal">
             <div class="modal-content" style="max-width:480px;">
-                <h2 class="text-xs font-semibold mb-1 text-gray-800">Детализация себестоимости</h2>
+                <h2 class="text-sm font-semibold mb-1 text-gray-800">Детализация себестоимости</h2>
                 <p id="orderCostBreakdownSubtitle" class="text-xs text-gray-500 mb-2"></p>
                 <div id="orderCostBreakdownContent" style="max-height:60vh;overflow-y:auto;"></div>
-                <div class="flex gap-1 mt-3">
-                    <button onclick="recalcOrderCostBreakdown()" class="btn bg-indigo-50 text-indigo-700 p-1 rounded-xl hover:bg-indigo-100 flex-1 text-xs">↻ Пересчитать по актуальному рецепту</button>
-                    <button onclick="closeModal()" class="btn bg-[#7c9473] text-white p-1 rounded-xl hover:bg-[#6c8464] text-xs" style="width:80px;">Закрыть</button>
+                <div class="flex gap-2 mt-3">
+                    <button onclick="recalcOrderCostBreakdown()" class="pill-btn-secondary flex-1">↻ Пересчитать по актуальному рецепту</button>
+                    <button onclick="closeModal()" class="pill-btn" style="width:80px; justify-content:center;">Закрыть</button>
                 </div>
             </div>
         </div>
@@ -1803,29 +1820,29 @@
         <!-- Внесение / редактирование платежа по заказу -->
         <div id="addPaymentModal" class="modal">
             <div class="modal-content" style="max-width:320px;">
-                <h2 id="paymentModalTitle" class="text-xs font-semibold mb-2 text-gray-800">Добавить оплату</h2>
+                <h2 id="paymentModalTitle" class="text-sm font-semibold mb-2 text-gray-800">Добавить оплату</h2>
                 <input type="hidden" id="paymentEditId">
 
                 <label class="text-xs text-gray-500">Сумма</label>
-                <input id="paymentAmount" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-1 rounded-xl text-xs w-full mb-2" placeholder="0.00">
+                <input id="paymentAmount" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-1 rounded-xl text-xs w-full mb-2" style="background:#f4f1ea;" placeholder="0.00">
 
                 <label class="text-xs text-gray-500">Дата</label>
-                <input id="paymentDate" type="date" class="border p-1 rounded-xl text-xs w-full mb-2">
+                <input id="paymentDate" type="date" class="border p-1 rounded-xl text-xs w-full mb-2" style="background:#f4f1ea;">
 
                 <label class="text-xs text-gray-500">Способ оплаты</label>
-                <select id="paymentMethod" class="border p-1 rounded-xl text-xs w-full mb-2">
+                <select id="paymentMethod" class="border p-1 rounded-xl text-xs w-full mb-2" style="background:#f4f1ea;">
                     <option value="наличные">Наличные</option>
                     <option value="карта">Карта</option>
                     <option value="перевод">Перевод</option>
                 </select>
 
                 <label class="text-xs text-gray-500">Заметка (необязательно)</label>
-                <input id="paymentNote" type="text" class="border p-1 rounded-xl text-xs w-full mb-3" placeholder="Например, депозит">
+                <input id="paymentNote" type="text" class="border p-1 rounded-xl text-xs w-full mb-3" style="background:#f4f1ea;" placeholder="Например, депозит">
 
-                <div class="flex gap-1">
-                    <button id="paymentDeleteBtn" onclick="deletePayment()" class="btn bg-[#f5e6e2] text-[#a8574c] p-1.5 rounded-xl hover:bg-[#eed6d0] text-xs hidden" style="width:80px;">Удалить</button>
-                    <button onclick="savePayment()" class="btn bg-indigo-600 text-white p-1.5 rounded-xl hover:bg-indigo-700 flex-1 text-xs">Сохранить</button>
-                    <button onclick="document.getElementById('addPaymentModal').style.display='none'" class="btn bg-[#7c9473] text-white p-1.5 rounded-xl hover:bg-[#6c8464] text-xs" style="width:80px;">Отмена</button>
+                <div class="flex gap-2">
+                    <button id="paymentDeleteBtn" onclick="deletePayment()" class="pill-btn-danger hidden" style="background:#f3ded9; color:#a3493d; box-shadow:none; width:80px;">Удалить</button>
+                    <button onclick="savePayment()" class="pill-btn flex-1 justify-center">Сохранить</button>
+                    <button onclick="document.getElementById('addPaymentModal').style.display='none'" class="pill-btn-secondary" style="width:80px;">Отмена</button>
                 </div>
             </div>
         </div>
@@ -2224,7 +2241,7 @@
 <script src="semifinished.js?v=11"></script>
 <script src="products.js?v=15"></script>
 <script src="customers.js?v=18"></script>
-<script src="orders.js?v=44"></script>
+<script src="orders.js?v=45"></script>
 <script src="invoice.js?v=7"></script>
 <script src="payments.js?v=10"></script>
 <script src="stats.js?v=9"></script>
