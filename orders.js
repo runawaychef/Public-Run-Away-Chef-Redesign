@@ -789,14 +789,11 @@ function fillDetailEmployeeSelect(selectedId) {
     if (lbl) lbl.textContent = current ? current.name : '—';
 }
 
-// ---- Статус в карточке заказа: тот же цветной дропдаун, что и в карточках списка ----
-const DETAIL_STATUS_COLORS = { 'принят': '#c0685c', 'в работе': '#d9a441', 'выполнен': '#7c9473' };
+// ---- Статус в карточке заказа: свой дропдаун (нейтральный, без цвета) ----
 
 function renderDetailStatusButton(status) {
-    const btn = document.getElementById('detailStatusBtn');
     const lbl = document.getElementById('detailStatusBtnLabel');
-    if (!btn || !lbl) return;
-    btn.style.background = DETAIL_STATUS_COLORS[status] || DETAIL_STATUS_COLORS['принят'];
+    if (!lbl) return;
     lbl.textContent = status.charAt(0).toUpperCase() + status.slice(1);
     document.querySelectorAll('#detailStatusDropdown .status-option').forEach((opt, i) => {
         const optStatus = ['принят', 'в работе', 'выполнен'][i];
@@ -1168,14 +1165,14 @@ function renderDetailItems(order) {
             const prod = products.find(p => p.id === item.product_id);
             const unitLabel = prod && prod.unit ? (UNIT_PRODUCT_LABELS[prod.unit] || '') : '';
             const row = document.createElement('tr');
-            row.className = 'border-b';
+            row.className = 'border-b cursor-pointer';
+            row.onclick = () => openEditItemModal(i);
             row.innerHTML = `
                 <td class="p-0.5 table-text">${escapeHtml(item.product)}</td>
                 <td class="p-0.5 table-text text-center">${item.quantity}${unitLabel ? ' ' + unitLabel : ''}</td>
                 <td class="p-0.5 table-text text-center">${formatMoney(item.price)}</td>
                 <td class="p-0.5 table-text text-center font-medium">${total}</td>
-                <td class="p-0.5 text-center">
-                    ${svgEdit(`openEditItemModal(${i})`)}
+                <td class="p-0.5 text-center" onclick="event.stopPropagation()">
                     ${hasPermission('can_delete') ? svgDelete(`deleteItem(${i})`) : ''}
                 </td>`;
             tbody.appendChild(row);
