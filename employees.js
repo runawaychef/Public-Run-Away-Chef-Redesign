@@ -229,7 +229,15 @@ async function selectEmployee(emp) {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('appContent').classList.remove('app-locked');
     document.getElementById('settingsBtn').classList.remove('hidden');
-    document.getElementById('ordersViewToggle')?.classList.remove('hidden');
+    // Безусловный remove('hidden') был багом: selectEmployee() вызывается повторно
+    // не только при первом входе, но и когда Supabase тихо обновляет сессию и
+    // заново эмитит SIGNED_IN (в частности — при возврате приложения из фона).
+    // Переключатель должен появляться только если мы реально на вкладке "Заказы",
+    // иначе он всплывает поверх любого другого открытого экрана.
+    if (typeof currentTabId === 'undefined' || currentTabId === 'orders') {
+        document.getElementById('ordersViewToggle')?.classList.remove('hidden');
+    }
+    if (typeof positionOrdersViewToggle === 'function') setTimeout(positionOrdersViewToggle, 150);
     applyScreenAccessPermissions();
     document.getElementById('employeesManageBtn').classList.toggle('hidden', !emp.is_owner);
     document.getElementById('companyInfoBtnBlock').classList.toggle('hidden', !emp.is_owner);
@@ -247,7 +255,7 @@ async function selectEmployee(emp) {
         const currentDate = new Date().toISOString().slice(0, 10);
         if (currentDate !== _lastKnownDate) {
             _lastKnownDate = currentDate;
-            loadAllData();
+            loadAllData(true);
         } else {
             displayOrders();
         }
