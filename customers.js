@@ -214,68 +214,93 @@ async function downloadCustomerReportPdf() {
     const cust = customers.find(c => c.id === currentCustomerId);
     if (!cust) { _reportPdfInProgress = false; if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.innerHTML = icon('download') + 'Скачать PDF'; } return; }
     const { range, custOrders } = getCustomerOrdersForRange(cust);
+    if (!custOrders.length) { _reportPdfInProgress = false; if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.innerHTML = icon('download') + 'Скачать PDF'; } return; }
+
     const dates = custOrders.map(o => o.date).sort();
     const periodTag = dates.length
         ? (dates[0] === dates[dates.length-1] ? dates[0] : `${dates[0]}_${dates[dates.length-1]}`)
         : range;
     const safeName = cust.name.replace(/[^\p{L}\p{N}]+/gu, '_').replace(/^_+|_+$/g, '') || 'клиент';
     const filename = `${safeName}_${periodTag}.pdf`;
+    const periodLabel = dates.length
+        ? (dates[0] === dates[dates.length-1] ? formatDateDMY(dates[0]) : `${formatDateDMY(dates[0])} – ${formatDateDMY(dates[dates.length-1])}`)
+        : RANGE_LABELS[range];
 
-    const el = document.getElementById('customerReportContent');
-    showLoading('Формируется PDF, подождите — это может занять до 30 секунд...');
+    // Пересчитываем те же данные, что и в предпросмотре — их не храним отдельно
+    // между открытием попапа и нажатием "Скачать", чтобы не рассинхронизироваться,
+    // если пользователь успел что-то поменять в заказах, пока попап был открыт.
+    const byProduct = {};
+    custOrders.forEach(o => {
+        (o.items || []).forEach(it => {
+            if (!byProduct[it.product]) byProduct[it.product] = { qty: 0, sum: 0 };
+            byProduct[it.product].qty += Number(it.quantity) || 0;
+            byProduct[it.product].sum += (Number(it.quantity) || 0) * (Number(it.price) || 0);
+        });
+    });
+    const rows = Object.entries(byProduct).sort((a, b) => b[1].sum - a[1].sum);
+    const totalSum = rows.reduce((s, [, v]) => s + v.sum, 0);
+    const totalQty = rows.reduce((s, [, v]) => s + v.qty, 0);
+    const totalDiscount = custOrders.reduce((s, o) => s + orderDiscountAmount(o), 0);
+    const totalVat = custOrders.reduce((s, o) => s + orderVatAmount(o), 0);
+    const grandTotal = custOrders.reduce((s, o) => s + orderGrandTotal(o), 0);
+    const discountPercents = [...new Set(custOrders.map(o => o.discount || 0).filter(d => d > 0))];
+    const discountLabel = discountPercents.length === 1 ? ` (${discountPercents[0]}%)` : discountPercents.length > 1 ? ' (разная по заказам)' : '';
+    const sym = CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency;
 
-    // Снимок делаем не из элемента внутри попапа (с прокруткой/центрированием —
-    // на некоторых мобильных браузерах это вызывает зависание html2canvas),
-    // а из простой скрытой копии прямо в <body>, без сложного позиционирования.
-    const clone = el.cloneNode(true);
-    clone.id = 'customerReportClone';
-    clone.style.cssText = 'position:absolute; top:0; left:-9999px; width:480px; background:white;';
-    document.body.appendChild(clone);
-
-    // Даём браузеру два кадра на пересчёт раскладки скрытой копии, прежде чем
-    // снимать её html2canvas'ом — без этой паузы иногда попадали "на лету",
-    // когда вёрстка (особенно высоты строк таблицы) ещё не устоялась, и в
-    // итоговом PDF строки съезжали/наезжали друг на друга.
-    await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-
-    function withTimeout(promise, ms, label) {
-        return Promise.race([
-            promise,
-            new Promise((_, reject) => setTimeout(() => reject(new Error(`${label}: превышено время ожидания`)), ms))
-        ]);
-    }
-
+    showLoading('Формируется PDF, подождите...');
     try {
-        if (typeof html2canvas === 'undefined' || !window.jspdf) {
-            throw new Error('Библиотеки для PDF не загрузились (html2canvas/jsPDF). Проверьте интернет и обновите страницу.');
-        }
-        const canvas = await withTimeout(html2canvas(clone, { scale: 1.5, backgroundColor: '#ffffff' }), 15000, 'Создание снимка отчёта');
-        const imgData = canvas.toDataURL('image/png');
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('p', 'mm', 'a4');
+        const pdf = await createPdfDoc();
         const pageW = pdf.internal.pageSize.getWidth();
-        const pageH = pdf.internal.pageSize.getHeight();
-        const imgW = pageW - 20; // отступы по 10мм
-        const imgH = (canvas.height * imgW) / canvas.width;
+        const marginX = 14;
 
-        let heightLeft = imgH;
-        let position = 10;
-        pdf.addImage(imgData, 'PNG', 10, position, imgW, imgH);
-        heightLeft -= (pageH - 20);
-        while (heightLeft > 0) {
-            position = heightLeft - imgH + 10;
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 10, position, imgW, imgH);
-            heightLeft -= (pageH - 20);
-        }
-        pdf.save(filename);
-        await showInfo(`Готово: файл «${filename}» сохранён.`);
+        pdf.setFontSize(15); pdf.setFont('Roboto', 'bold');
+        pdf.text(cust.name, marginX, 18);
+        pdf.setFontSize(10); pdf.setFont('Roboto', 'normal'); pdf.setTextColor(...PDF_COLORS.textGray);
+        pdf.text(`Сводный отчёт по изделиям · ${RANGE_LABELS[range]} (${periodLabel})`, marginX, 24);
+        pdf.setTextColor(...PDF_COLORS.textDark);
+
+        pdf.autoTable({
+            startY: 30,
+            margin: { left: marginX, right: marginX },
+            head: [['Изделие', 'Кол-во', `Сумма (${sym})`]],
+            body: rows.map(([name, v]) => [name, String(v.qty), v.sum.toFixed(2)]),
+            foot: [['Итого', String(totalQty), totalSum.toFixed(2)]],
+            headStyles: PDF_TABLE_HEAD_STYLE,
+            footStyles: { fillColor: PDF_COLORS.sageLight, textColor: PDF_COLORS.textDark, fontStyle: 'bold', font: 'Roboto' },
+            columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' } },
+            styles: { fontSize: 10, cellPadding: 2.5, font: 'Roboto' },
+        });
+
+        let y = pdf.lastAutoTable.finalY + 8;
+        const summaryRows = [['Сумма по позициям', formatMoney(totalSum)]];
+        if (totalDiscount > 0) summaryRows.push([`Скидка${discountLabel}`, '−' + formatMoney(totalDiscount)]);
+        summaryRows.push(['НДС (21%)', formatMoney(totalVat)]);
+
+        pdf.autoTable({
+            startY: y,
+            margin: { left: marginX, right: marginX },
+            body: summaryRows,
+            styles: { fontSize: 10, cellPadding: 1.5, textColor: PDF_COLORS.textGray, font: 'Roboto' },
+            columnStyles: { 1: { halign: 'right', textColor: PDF_COLORS.textDark } },
+            theme: 'plain',
+        });
+        y = pdf.lastAutoTable.finalY + 2;
+        pdf.setDrawColor(229, 231, 235); pdf.line(marginX, y, pageW - marginX, y);
+        y += 6;
+        pdf.setFontSize(12); pdf.setFont('Roboto', 'bold'); pdf.setTextColor(...PDF_COLORS.textDark);
+        pdf.text('Итого к оплате', marginX, y);
+        pdf.text(formatMoney(grandTotal), pageW - marginX, y, { align: 'right' });
+
+        y += 10;
+        pdf.setFontSize(8.5); pdf.setFont('Roboto', 'normal'); pdf.setTextColor(...PDF_COLORS.textGray);
+        pdf.text(`Заказов за период: ${custOrders.length}. В таблице по изделиям — цены позиций без скидки и НДС, финансовая сводка выше — уже с их учётом.`, marginX, y, { maxWidth: pageW - marginX * 2 });
+
+        await pdfSaveOrShare(pdf, filename);
     } catch (e) {
         console.error(e);
         showInfo('Не удалось сформировать PDF: ' + (e && e.message ? e.message : 'неизвестная ошибка') + '. Проверьте подключение и попробуйте ещё раз.');
     }
     finally {
-        clone.remove();
         hideLoading();
         _reportPdfInProgress = false;
         if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.innerHTML = icon('download') + 'Скачать PDF'; }

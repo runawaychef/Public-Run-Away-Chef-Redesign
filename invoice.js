@@ -275,70 +275,149 @@ function buildDocumentHtml(docType, snapshot) {
     </div>`;
 }
 
-// Шаг 2: превращаем предпросмотр в PDF и пытаемся отправить (иначе — скачиваем)
+// Строит счёт/накладную нативно через jsPDF+autoTable (см. helpers.js) —
+// используется для скачивания/отправки; buildDocumentHtml() выше остаётся
+// только для превью на экране телефона (это HTML, ему не нужна точность PDF).
+async function buildDocumentPdf(docType, snapshot) {
+    const { order, org, cust, number, issueDate, dueDate, customerNameFallback } = snapshot;
+    const isInvoice = docType === 'invoice';
+    const title = isInvoice ? (org.vat_code ? 'СЧЁТ-ФАКТУРА (НДС)' : 'СЧЁТ') : 'НАКЛАДНАЯ';
+    const sym = CURRENCY_SYMBOLS[org.currency_code] || org.currency_code || '€';
+    const money = n => Number(n).toFixed(2) + ' ' + sym;
+
+    const sellerName = org.entity_type === 'individual' ? (org.name || '') : (org.legal_name || org.name || '');
+    const sellerIdLine = org.entity_type === 'individual'
+        ? (org.personal_code ? `Личный код: ${org.personal_code}` : '')
+        : (org.reg_number ? `Рег. номер: ${org.reg_number}` : '');
+    const sellerLines = [
+        sellerIdLine,
+        org.vat_code ? `Код НДС: ${org.vat_code}` : '',
+        org.address || '',
+        [org.phone, org.email].filter(Boolean).join(' · '),
+        org.bank_name ? `${org.bank_name}${org.bank_account ? ' — ' + org.bank_account : ''}` : '',
+        org.bank_swift ? `SWIFT: ${org.bank_swift}` : '',
+    ].filter(Boolean);
+
+    const buyerName = cust ? cust.name : customerNameFallback;
+    const buyerIdLine = cust && cust.entity_type === 'individual'
+        ? (cust.personal_code ? `Личный код: ${cust.personal_code}` : '')
+        : (cust && cust.reg_number ? `Рег. номер: ${cust.reg_number}` : '');
+    const buyerLines = cust ? [
+        buyerIdLine,
+        cust.vat_code ? `Код НДС: ${cust.vat_code}` : '',
+        cust.address || '',
+        cust.contact || '',
+    ].filter(Boolean) : [];
+
+    const items = order.items || [];
+    const subtotalAll = items.reduce((s, it) => s + it.quantity * it.price, 0);
+    const discountAll = subtotalAll * (Number(order.discount) || 0) / 100;
+    const afterDiscountAll = subtotalAll - discountAll;
+    const vatRate = typeof currentOrgVatRate !== 'undefined' ? currentOrgVatRate : 0.21;
+    const vatAll = order.vat_exempt ? 0 : afterDiscountAll * vatRate;
+    const grandAll = afterDiscountAll + vatAll;
+    const vatPctLabel = order.vat_exempt ? '0%' : (vatRate * 100).toFixed(0) + '%';
+
+    let totalQty = 0;
+    const bodyRows = items.map(item => {
+        const lineNet = item.quantity * item.price;
+        const discShare = subtotalAll > 0 ? (lineNet / subtotalAll) * discountAll : 0;
+        const lineNetAfterDiscount = lineNet - discShare;
+        const lineVat = order.vat_exempt ? 0 : lineNetAfterDiscount * vatRate;
+        const lineSubtotal = lineNetAfterDiscount + lineVat;
+        totalQty += Number(item.quantity);
+        return [
+            item.product, String(item.quantity), money(item.price),
+            money(lineNetAfterDiscount), money(lineVat), vatPctLabel, money(lineSubtotal),
+        ];
+    });
+
+    const pdf = await createPdfDoc();
+    const pageW = pdf.internal.pageSize.getWidth();
+    const marginX = 14;
+
+    // ---- Заголовок: тип документа слева, номер/даты справа ----
+    pdf.setFontSize(18); pdf.setFont('Roboto', 'bold'); pdf.setTextColor(...PDF_COLORS.textDark);
+    pdf.text(title, marginX, 20);
+    pdf.setFontSize(10); pdf.setFont('Roboto', 'normal'); pdf.setTextColor(...PDF_COLORS.textGray);
+    pdf.text(`Номер: ${number}`, pageW - marginX, 14, { align: 'right' });
+    pdf.text(`Дата: ${formatDateDMY(issueDate)}`, pageW - marginX, 19, { align: 'right' });
+    if (isInvoice) pdf.text(`Срок оплаты: ${formatDateDMY(dueDate)}`, pageW - marginX, 24, { align: 'right' });
+
+    // ---- Продавец / Покупатель — две колонки ----
+    const colW = (pageW - marginX * 2 - 10) / 2;
+    const col2X = marginX + colW + 10;
+    let y = 34;
+
+    function drawParty(label, name, lines, x) {
+        pdf.setFontSize(9); pdf.setFont('Roboto', 'bold'); pdf.setTextColor(...PDF_COLORS.textGray);
+        pdf.text(label, x, y);
+        pdf.setFontSize(11); pdf.setFont('Roboto', 'bold'); pdf.setTextColor(...PDF_COLORS.textDark);
+        pdf.text(name || '', x, y + 5, { maxWidth: colW });
+        pdf.setFontSize(9.5); pdf.setFont('Roboto', 'normal'); pdf.setTextColor(...PDF_COLORS.textGray);
+        let ly = y + 10;
+        lines.forEach(line => {
+            const split = pdf.splitTextToSize(line, colW);
+            pdf.text(split, x, ly);
+            ly += 4.5 * split.length;
+        });
+        return ly;
+    }
+    const yAfterSeller = drawParty('ПРОДАВЕЦ', sellerName, sellerLines, marginX);
+    const yAfterBuyer  = drawParty('ПОКУПАТЕЛЬ', buyerName, buyerLines, col2X);
+    pdf.setTextColor(...PDF_COLORS.textDark);
+
+    // ---- Таблица позиций ----
+    pdf.autoTable({
+        startY: Math.max(yAfterSeller, yAfterBuyer) + 6,
+        margin: { left: marginX, right: marginX },
+        head: [['Наименование', 'Кол-во', 'Цена без НДС', 'Сумма без НДС', 'НДС', 'НДС %', 'Итого']],
+        body: bodyRows,
+        headStyles: { ...PDF_TABLE_HEAD_STYLE, fontSize: 9 },
+        columnStyles: {
+            1: { halign: 'center' }, 2: { halign: 'right' }, 3: { halign: 'right' },
+            4: { halign: 'right' }, 5: { halign: 'center' }, 6: { halign: 'right' },
+        },
+        styles: { fontSize: 9, cellPadding: 2.2, font: 'Roboto' },
+    });
+
+    // ---- Итоги (справа) ----
+    y = pdf.lastAutoTable.finalY + 8;
+    pdf.setFontSize(10); pdf.setFont('Roboto', 'normal'); pdf.setTextColor(...PDF_COLORS.textGray);
+    const totalsRight = pageW - marginX;
+    pdf.text(`Итого кол-во: ${totalQty}`, totalsRight, y, { align: 'right' }); y += 5;
+    pdf.text(`Итого без НДС: ${money(afterDiscountAll)}`, totalsRight, y, { align: 'right' }); y += 5;
+    pdf.text(`Сумма НДС: ${money(vatAll)}`, totalsRight, y, { align: 'right' }); y += 7;
+    pdf.setFontSize(13); pdf.setFont('Roboto', 'bold'); pdf.setTextColor(...PDF_COLORS.textDark);
+    pdf.text(`Итого к оплате: ${money(grandAll)}`, totalsRight, y, { align: 'right' });
+
+    // ---- Подписи ----
+    y += 20;
+    pdf.setFontSize(9.5); pdf.setFont('Roboto', 'normal'); pdf.setTextColor(...PDF_COLORS.textGray);
+    pdf.text(`Выставил: ${org.director_name || sellerName}`, marginX, y);
+    pdf.text('Принято: _______________________', pageW - marginX, y, { align: 'right' });
+
+    return pdf;
+}
+
+// Шаг 2: превращаем предпросмотр в PDF (нативно, через jsPDF+autoTable — см.
+// helpers.js) и пытаемся отправить через системное меню "Поделиться".
 async function shareOrderDocumentPdf() {
     if (!_docPreview) return;
     const btn = document.getElementById('sendOrderDocumentBtn');
     if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
 
-    const clone = document.createElement('div');
-    clone.id = 'orderDocumentClone';
-    clone.style.cssText = 'position:absolute; top:0; left:-9999px;';
-    clone.innerHTML = buildDocumentHtml(_docPreview.docType, _docPreview.snapshot);
-    document.body.appendChild(clone);
-
-    function withTimeout(promise, ms, label) {
-        return Promise.race([
-            promise,
-            new Promise((_, reject) => setTimeout(() => reject(new Error(`${label}: превышено время ожидания`)), ms))
-        ]);
-    }
-
     const { docType, snapshot } = _docPreview;
     const filename = `${docType === 'invoice' ? 'schet' : 'nakladnaya'}_${snapshot.number}.pdf`;
 
-    showLoading('Формируется PDF, подождите — это может занять до 30 секунд...');
+    showLoading('Формируется PDF, подождите...');
     try {
-        if (typeof html2canvas === 'undefined' || !window.jspdf) {
-            throw new Error('Библиотеки для PDF не загрузились (html2canvas/jsPDF). Проверьте интернет и обновите страницу.');
-        }
-        const canvas = await withTimeout(html2canvas(clone, { scale: 1.5, backgroundColor: '#ffffff' }), 15000, 'Создание снимка документа');
-        const imgData = canvas.toDataURL('image/png');
-        const { jsPDF } = window.jspdf;
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pageW = pdf.internal.pageSize.getWidth();
-        const pageH = pdf.internal.pageSize.getHeight();
-        const imgW = pageW - 20;
-        const imgH = (canvas.height * imgW) / canvas.width;
-
-        let heightLeft = imgH;
-        let position = 10;
-        pdf.addImage(imgData, 'PNG', 10, position, imgW, imgH);
-        heightLeft -= (pageH - 20);
-        while (heightLeft > 0) {
-            position = heightLeft - imgH + 10;
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 10, position, imgW, imgH);
-            heightLeft -= (pageH - 20);
-        }
-
-        // Пробуем отправить сам файл через системное меню "Поделиться".
-        // Поддерживается не всеми браузерами — если нет, просто скачиваем.
-        const blob = pdf.output('blob');
-        const file = new File([blob], filename, { type: 'application/pdf' });
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            try {
-                await navigator.share({ files: [file], title: filename });
-            } catch (e) { /* пользователь закрыл меню — ничего не делаем */ }
-        } else {
-            pdf.save(filename);
-            await showInfo(`Готово: файл «${filename}» сохранён.`);
-        }
+        const pdf = await buildDocumentPdf(docType, snapshot);
+        await pdfSaveOrShare(pdf, filename);
     } catch (e) {
         console.error(e);
         showInfo('Не удалось сформировать документ: ' + (e && e.message ? e.message : 'неизвестная ошибка') + '. Проверьте подключение и попробуйте ещё раз.');
     } finally {
-        clone.remove();
         hideLoading();
         if (btn) { btn.disabled = false; btn.style.opacity = ''; }
     }

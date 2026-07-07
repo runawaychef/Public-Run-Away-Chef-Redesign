@@ -355,3 +355,85 @@ function svgCopy(onclick) {
 function svgCopySafe(fnName, args) {
     return `<svg class="action-icon icon-copy inline mr-1 cursor-pointer" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" title="Копировать" ${dataAction(fnName, args)}><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124M15.75 17.25h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25"/></svg>`;
 }
+
+// ==================== ГЕНЕРАЦИЯ PDF (нативно, без html2canvas) ====================
+// html2canvas превращает HTML-разметку в картинку — при этом периодически
+// неверно считает высоту строк таблиц (известное ограничение библиотеки),
+// из-за чего в готовом PDF "плывут" строки. jsPDF + плагин autoTable рисуют
+// таблицу по-настоящему — линиями и текстом внутри самого PDF, а не как
+// снимок экрана. Так строки в принципе не могут разъехаться, а текст в PDF
+// становится чётким и выделяемым.
+//
+// Используем этот способ для ЛЮБОЙ новой генерации PDF в проекте — html2canvas
+// для итоговых документов (не для снимков экрана интерфейса, это другое) больше
+// не подключаем.
+
+// Наша цветовая палитра в формате [R,G,B] — то, что принимает jsPDF/autoTable
+// (fillColor/textColor не понимают HEX, только RGB-массивы или 0-255 int).
+const PDF_COLORS = {
+    sageLight: [227, 232, 223],   // #e3e8df — светлый шалфей, шапки таблиц
+    sage:      [124, 148, 115],   // #7c9473 — основной фисташковый
+    sageDark:  [79, 99, 73],      // #4f6349 — тёмный шалфей
+    terracotta:[192, 104, 92],    // #c0685c
+    textDark:  [61, 58, 51],      // #3d3a33
+    textGray:  [107, 114, 128],   // #6b7280
+};
+
+// Создаёт новый документ jsPDF с нашими стандартными настройками (A4, мм)
+// и подключённым кириллическим шрифтом (см. ensureCyrillicFont ниже) —
+// встроенные шрифты jsPDF (Helvetica и т.д.) кириллицу не поддерживают
+// вообще, текст на русском вышел бы нечитаемым набором символов.
+async function createPdfDoc() {
+    if (!window.jspdf) throw new Error('Библиотека jsPDF не загрузилась. Проверьте интернет и обновите страницу.');
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'mm', 'a4');
+    await ensureCyrillicFont(pdf);
+    return pdf;
+}
+
+let _cyrillicFontBase64 = null; // кэш, чтобы не скачивать шрифт заново на каждый PDF
+
+async function ensureCyrillicFont(pdf) {
+    if (!_cyrillicFontBase64) {
+        const res = await fetch('https://cdn.jsdelivr.net/gh/google/fonts@main/apache/roboto/static/Roboto-Regular.ttf');
+        if (!res.ok) throw new Error('Не удалось загрузить шрифт для PDF (кириллица). Проверьте интернет.');
+        const buf = await res.arrayBuffer();
+        _cyrillicFontBase64 = arrayBufferToBase64(buf);
+    }
+    pdf.addFileToVFS('Roboto-Regular.ttf', _cyrillicFontBase64);
+    pdf.addFont('Roboto-Regular.ttf', 'Roboto', 'normal');
+    pdf.addFont('Roboto-Regular.ttf', 'Roboto', 'bold'); // отдельного жирного файла не грузим — используем тот же
+    pdf.setFont('Roboto', 'normal');
+}
+
+// btoa() на строке из String.fromCharCode(...bigArray) падает на больших файлах
+// (превышение лимита аргументов) — кодируем по частям.
+function arrayBufferToBase64(buffer) {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    const chunkSize = 8192;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+    }
+    return btoa(binary);
+}
+
+// Стандартные настройки шапки таблицы в нашей палитре — передаётся как
+// headStyles в pdf.autoTable({ ...  headStyles: PDF_TABLE_HEAD_STYLE }).
+const PDF_TABLE_HEAD_STYLE = { fillColor: PDF_COLORS.sageLight, textColor: PDF_COLORS.textDark, fontStyle: 'bold', font: 'Roboto' };
+
+// Пытается отправить готовый PDF через системное меню "Поделиться" (не на
+// всех браузерах поддерживается) — если нет, просто скачивает файл и
+// показывает подтверждение.
+async function pdfSaveOrShare(pdf, filename) {
+    const blob = pdf.output('blob');
+    const file = new File([blob], filename, { type: 'application/pdf' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+            await navigator.share({ files: [file], title: filename });
+            return;
+        } catch (e) { /* пользователь закрыл меню "Поделиться" — просто скачиваем ниже */ }
+    }
+    pdf.save(filename);
+    await showInfo(`Готово: файл «${filename}» сохранён.`);
+}
