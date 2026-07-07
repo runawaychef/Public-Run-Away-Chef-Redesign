@@ -135,29 +135,44 @@ function displayOrders() {
     const cardsBody = document.getElementById('orderCardsBody');
     if (cardsBody) {
         const sortedAll = [...orders].sort((a, b) => new Date(b.date) - new Date(a.date));
+        const activeOrders = sortedAll.filter(o => o.status !== 'выполнен');
+        const doneOrders   = sortedAll.filter(o => o.status === 'выполнен');
 
         function urgentDividerHtml() {
             return `<div class="oc-urgent-divider"><span>Остальные заказы</span></div>`;
         }
+        function sectionDividerHtml(label, iconSvg) {
+            return `<div class="oc-section-divider"><span class="label">${iconSvg}${label}</span></div>`;
+        }
 
         let cardsHtml = '';
-        let inUrgentZone = true, urgentCount = 0;
 
-        sortedAll.forEach(order => {
+        if (activeOrders.length) {
+            cardsHtml += sectionDividerHtml('Заказы в работе',
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>');
+
             // Разделитель: срочные заказы (сегодня/завтра/послезавтра, не выполненные)
             // не дублируются отдельным блоком, а просто отделяются линией от остальных,
             // как только в потоке встречается первый "несрочный" заказ.
-            const urgent = isUrgentOrder(order);
-            if (inUrgentZone) {
-                if (urgent) { urgentCount++; }
-                else {
-                    if (urgentCount > 0) cardsHtml += urgentDividerHtml();
-                    inUrgentZone = false;
+            let inUrgentZone = true, urgentCount = 0;
+            activeOrders.forEach(order => {
+                const urgent = isUrgentOrder(order);
+                if (inUrgentZone) {
+                    if (urgent) { urgentCount++; }
+                    else {
+                        if (urgentCount > 0) cardsHtml += urgentDividerHtml();
+                        inUrgentZone = false;
+                    }
                 }
-            }
+                cardsHtml += renderOrderCard(order);
+            });
+        }
 
-            cardsHtml += renderOrderCard(order);
-        });
+        if (doneOrders.length) {
+            cardsHtml += sectionDividerHtml('Выполненные',
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>');
+            doneOrders.forEach(order => { cardsHtml += renderDoneOrderCard(order); });
+        }
 
         cardsBody.innerHTML = cardsHtml || `<p class="text-xs text-gray-400 text-center py-4">Заказов не найдено</p>`;
     }
@@ -246,6 +261,57 @@ function closeAllOrderStatusDropdowns() {
 }
 // Закрываем дропдаун статуса при тапе где угодно ещё на странице.
 document.addEventListener('click', closeAllOrderStatusDropdowns);
+
+// Компактная приглушённая карточка выполненного заказа. Полоса оплаты и кнопка
+// статуса не нужны (заказ закрыт) — вместо них маленькая зелёная галочка.
+// Разворачивается стрелкой в углу до обычного вида (с позициями), тап по самой
+// карточке по-прежнему открывает полную карточку заказа.
+function renderDoneOrderCard(order) {
+    const payInfo = getOrderPaymentStatus(order);
+    const stripeColor = getPaymentStripeColor(payInfo);
+    const oNum = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
+    const total = formatMoney(orderGrandTotal(order));
+
+    let itemsLine = '';
+    if (order.items && order.items.length) {
+        itemsLine = order.items.map(it => `<div class="oc-item-row"><span class="oc-item-name">· ${escapeHtml(it.product)}</span><span class="oc-item-qty">${it.quantity} шт.</span></div>`).join('');
+    }
+
+    return `
+    <div class="order-card done-card muted" id="orderCard-${order.id}">
+        <div class="stripe" style="background:${stripeColor}; display:none;" data-role="stripe"></div>
+        <div class="order-card-tap" onclick="handleDoneCardTap(event, ${order.id})">
+            <div class="order-card-body">
+                <div class="oc-row">
+                    <span class="oc-name">${escapeHtml(order.customer || '(без клиента)')}</span>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span class="oc-sum">${total}</span>
+                        <span class="done-check" data-role="check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></span>
+                    </div>
+                </div>
+                <div class="oc-meta">${formatDateDMY(order.date)} · ${escapeHtml(oNum)}</div>
+                <div class="oc-items" data-role="items" style="display:none;">${itemsLine}</div>
+            </div>
+        </div>
+        <div class="expand-btn" onclick="event.stopPropagation(); toggleDoneCardExpand(${order.id})" title="Развернуть">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </div>
+    </div>`;
+}
+
+function handleDoneCardTap(e, orderId) {
+    if (e.target.closest('.expand-btn')) return;
+    openOrderDetail(orderId);
+}
+
+function toggleDoneCardExpand(orderId) {
+    const card = document.getElementById('orderCard-' + orderId);
+    if (!card) return;
+    const expanded = card.classList.toggle('expanded');
+    card.classList.toggle('muted', !expanded);
+    card.querySelector('[data-role="stripe"]').style.display = expanded ? '' : 'none';
+    card.querySelector('[data-role="items"]').style.display = expanded ? 'block' : 'none';
+}
 
 function toggleOrderStatusDropdown(orderId) {
     const dd = document.getElementById('statusDropdown-' + orderId);

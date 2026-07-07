@@ -402,6 +402,45 @@
             letter-spacing: 0.04em; white-space: nowrap;
         }
 
+        /* ── Разделитель секций "Заказы в работе" / "Выполненные" ────────── */
+        .oc-section-divider {
+            display: flex; align-items: center; gap: 10px; margin: 26px 2px 14px;
+        }
+        .oc-section-divider:first-child { margin-top: 2px; }
+        .oc-section-divider::before, .oc-section-divider::after {
+            content: ''; flex: 1; height: 2px; background: #d3ccb8; border-radius: 2px;
+        }
+        .oc-section-divider .label {
+            display: flex; align-items: center; gap: 5px;
+            font-size: 11px; font-weight: 700; color: #9a9488; text-transform: uppercase;
+            letter-spacing: 0.04em; white-space: nowrap;
+        }
+        .oc-section-divider .label svg { width: 13px; height: 13px; color: #7c9473; flex-shrink: 0; }
+
+        /* ── Приглушённая свёрнутая карточка выполненного заказа ─────────── */
+        .order-card { -webkit-tap-highlight-color: rgba(124,148,115,0.25); }
+        .order-card:active { background-color: #f6f8f4; }
+        .order-card.muted {
+            opacity: 0.62; box-shadow: 0 1px 2px rgba(0,0,0,0.03); border-color: rgba(0,0,0,0.02);
+            transition: opacity 0.2s ease;
+        }
+        .order-card.muted .oc-name { font-size: 14px; font-weight: 600; color: #57534a; }
+        .order-card.muted .oc-sum { font-size: 14px; font-weight: 600; color: #57534a; }
+        .order-card.muted .oc-meta { color: #b7b1a3; }
+        .order-card.muted:active { opacity: 0.8; }
+        .done-check {
+            width: 20px; height: 20px; border-radius: 50%; background: #e3e8df; color: #4f6349;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .done-check svg { width: 12px; height: 12px; }
+        .expand-btn {
+            position: absolute; top: 8px; right: 8px; width: 22px; height: 22px; border-radius: 50%;
+            background: #f4f1ea; display: flex; align-items: center; justify-content: center; color: #9a9488;
+            transition: transform 0.2s ease;
+        }
+        .expand-btn svg { width: 11px; height: 11px; }
+        .order-card.expanded .expand-btn { transform: rotate(180deg); }
+
         /* Отступ сверху у списка заказов — чтобы верхняя карточка не оказывалась
            под переключателем вида (высота отступа выставляется тем же JS, что
            центрирует сам переключатель — см. positionOrdersViewToggle()). */
@@ -2161,7 +2200,7 @@
 <script src="semifinished.js?v=11"></script>
 <script src="products.js?v=15"></script>
 <script src="customers.js?v=18"></script>
-<script src="orders.js?v=40"></script>
+<script src="orders.js?v=41"></script>
 <script src="invoice.js?v=7"></script>
 <script src="payments.js?v=9"></script>
 <script src="stats.js?v=9"></script>
