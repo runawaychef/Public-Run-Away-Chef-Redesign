@@ -29,12 +29,13 @@ function displayCustomers() {
         const nameLabel = hasName ? escapeHtml(c.name) : icon('warning', 'w-3 h-3 inline-block align-[-1px] mr-0.5') + '(имя не указано)';
         const debt = customerDebt(c);
         const debtLabel = debt > 0.01
-            ? `<span class="text-red-600">${formatMoney(debt)}</span>`
+            ? `<span style="color:#c0685c;">${formatMoney(debt)}</span>`
             : `<span class="text-gray-400">—</span>`;
         const row = document.createElement('tr');
-        row.className = 'order-row border-b' + (hasName ? '' : ' bg-red-50');
+        row.className = 'order-row border-b';
+        row.style.background = hasName ? '' : '#f3ded9';
         row.innerHTML = `
-            <td class=" p-0.5 table-text ${hasName ? '' : 'text-red-600 font-semibold'}" onclick="openCustomerDetail(${c.id})">${nameLabel}</td>
+            <td class=" p-0.5 table-text" style="${hasName ? '' : 'color:#a3493d; font-weight:600;'}" onclick="openCustomerDetail(${c.id})">${nameLabel}</td>
             <td class=" p-0.5 table-text" onclick="openCustomerDetail(${c.id})">${escapeHtml(c.contact)}</td>
             <td class=" p-0.5 table-text" onclick="openCustomerDetail(${c.id})">${c.discount.toFixed(2)}</td>
             <td class=" p-0.5 table-text" onclick="openCustomerDetail(${c.id})">${debtLabel}</td>`;
