@@ -146,16 +146,16 @@ function displayOrders() {
 
         let cardsHtml = '';
 
-        if (urgentOrders.length) {
-            cardsHtml += sectionDividerHtml('Заказы в работе',
-                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>');
-            urgentOrders.forEach(order => { cardsHtml += renderOrderCard(order); });
-        }
-
         if (plannedOrders.length) {
             cardsHtml += sectionDividerHtml('Принятые',
                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>');
             plannedOrders.forEach(order => { cardsHtml += renderOrderCard(order); });
+        }
+
+        if (urgentOrders.length) {
+            cardsHtml += sectionDividerHtml('Заказы в работе',
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>');
+            urgentOrders.forEach(order => { cardsHtml += renderOrderCard(order); });
         }
 
         if (doneOrders.length) {
