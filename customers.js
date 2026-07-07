@@ -200,6 +200,7 @@ function openCustomerReportPreview() {
         </div>`;
 
     document.getElementById('customerReportContent').innerHTML = html;
+    document.querySelectorAll('#customerReportContent table').forEach(t => t.style.touchAction = 'pan-y');
     document.getElementById('customerReportModal').style.display = 'flex';
 }
 
