@@ -120,6 +120,7 @@ async function createDraftProductAndOpen() {
 
     document.getElementById('productsList').classList.add('hidden');
     document.getElementById('productDetail').classList.add('active');
+    if (typeof positionStickySearchBar === 'function') positionStickySearchBar('productsSearchBar', 'productsList', 'productDetail');
 
     document.getElementById('pdName').value = '';
     document.getElementById('pdUnit').value = 'pcs';
@@ -375,6 +376,7 @@ function openProductDetail(productId) {
     document.getElementById('productsList').classList.add('hidden');
     document.getElementById('productDetail').classList.add('active');
     document.getElementById('productDetail').classList.add('fade-in'); setTimeout(() => document.getElementById('productDetail').classList.remove('fade-in'), 300);
+    if (typeof positionStickySearchBar === 'function') positionStickySearchBar('productsSearchBar', 'productsList', 'productDetail');
 
     document.getElementById('pdName').value = prod.name;
     document.getElementById('pdUnit').value = prod.unit || '';
@@ -405,6 +407,7 @@ async function closeProductDetail() {
     _isNewProduct = false;
     document.getElementById('productsList').classList.remove('hidden');
     document.getElementById('productDetail').classList.remove('active');
+    if (typeof positionStickySearchBar === 'function') positionStickySearchBar('productsSearchBar', 'productsList', 'productDetail');
     // Восстанавливаем UI на случай если был новый
     const saveBtn = document.getElementById('pdSaveNewBtn');
     if (saveBtn) saveBtn.classList.add('hidden');

@@ -2325,7 +2325,7 @@
     <script src="inventory.js?v=20"></script>
 <script src="ingredients.js?v=17"></script>
 <script src="semifinished.js?v=13"></script>
-<script src="products.js?v=18"></script>
+<script src="products.js?v=20"></script>
 <script src="customers.js?v=26"></script>
 <script src="orders.js?v=52"></script>
 <script src="invoice.js?v=10"></script>
@@ -2581,7 +2581,7 @@ function showTab(tabId) {
     if (tabId !== 'semiFinished') closeSemiFinishedDetailSilent();
 
     if (tabId === 'orders')    { closeOrderDetail(); displayOrders(); }
-    if (tabId === 'products')  { closeProductDetailSilent(); displayProducts(); positionStickySearchBar('productsSearchBar', 'productsList'); }
+    if (tabId === 'products')  { closeProductDetailSilent(); displayProducts(); positionStickySearchBar('productsSearchBar', 'productsList', 'productDetail'); }
     if (tabId === 'customers') { closeCustomerDetailSilent(); displayCustomers(); }
     if (tabId === 'ingredients') { closeIngredientDetailSilent(); displayIngredients(); }
     if (tabId === 'semiFinished') { closeSemiFinishedDetailSilent(); displaySemiFinished(); }
@@ -2590,22 +2590,31 @@ function showTab(tabId) {
     refreshFab();
 }
 
-// Ставит плавающую панель поиска+переключателя (изделия/ингредиенты) ровно
-// под нижним краем шапки приложения — считает по реальной высоте шапки, а не
-// подобранным "на глаз" числом. Раз панель убрана из потока документа
-// (position:fixed — так же, как и переключатель вида заказов), отдельно
-// проставляет отступ сверху списку под ней, чтобы контент не заезжал под неё.
-function positionStickySearchBar(barId, contentWrapId) {
+// Ставит плавающую панель поиска+переключателя (изделия/ингредиенты) —
+// той же формулой, что и переключатель заказов (positionOrdersViewToggle),
+// чтобы зазор от шапки был визуально идентичным. Сама проверяет, не открыта
+// ли сейчас полная карточка записи — тот же принцип, что и у заказов
+// (проверка внутри функции, а не раскиданные вручную show/hide по разным
+// местам открытия карточки — так не забудем скрыть панель на каком-то из путей).
+function positionStickySearchBar(barId, contentWrapId, detailId) {
     const bar = document.getElementById(barId);
-    const header = document.getElementById('appStickyHeader');
+    const header = document.querySelector('#appStickyHeader .bg-white');
     if (!bar || !header) return;
-    const headerBottom = header.getBoundingClientRect().height;
-    bar.style.top = headerBottom + 'px';
+
+    const isDetailOpen = detailId ? document.getElementById(detailId)?.classList.contains('active') : false;
+    bar.classList.toggle('hidden', isDetailOpen);
+    if (isDetailOpen) return;
+
+    const GAP = 40; // тот же зазор, что и у переключателя заказов
     const content = contentWrapId ? document.getElementById(contentWrapId) : null;
-    if (content) content.style.paddingTop = (bar.offsetHeight + 8) + 'px';
+    if (content) content.style.paddingTop = GAP + 'px';
+
+    const headerBottom = header.getBoundingClientRect().bottom;
+    const barHeight = bar.offsetHeight;
+    bar.style.top = Math.round(headerBottom + GAP / 2 - barHeight / 2 + 6) + 'px';
 }
 window.addEventListener('resize', () => {
-    if (typeof currentTabId !== 'undefined' && currentTabId === 'products') positionStickySearchBar('productsSearchBar', 'productsList');
+    if (typeof currentTabId !== 'undefined' && currentTabId === 'products') positionStickySearchBar('productsSearchBar', 'productsList', 'productDetail');
 });
 
 // ==================== ПЛАВАЮЩАЯ КНОПКА "+" ====================
