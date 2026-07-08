@@ -448,6 +448,19 @@
         .sf-star-btn { color: #d3ccb8; }
         .sf-star-btn:hover { color: #e0bd6e; }
         .sf-star-btn.active { color: #d9a441; }
+        .settings-row-btn {
+            display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
+            background: #f4f1ea; border: 1px solid #e2ddd0; border-radius: 12px;
+            padding: 9px 10px; font-size: 12px; font-weight: 600; color: #3d3a33;
+            transition: background .15s ease;
+        }
+        .settings-row-btn:active { background: #ece7db; }
+        .settings-row-btn svg { width: 15px; height: 15px; flex-shrink: 0; color: #9a9488; }
+        .settings-row-btn.danger { background: #f3ded9; border-color: #e8c4bb; color: #a3493d; }
+        .settings-row-btn.danger svg { color: #c0685c; }
+        .settings-row-btn.danger:active { background: #eccbc0; }
+        .invite-share-btn { color: #7c9473; }
+        .invite-cancel-btn:active { color: #c0685c; }
         #detailItemsBody tr.cursor-pointer:active { background: #f6f8f4; }
         .filter-dropdown {
             position: absolute; top: calc(100% + 4px); left: 0; right: 0;
@@ -1198,8 +1211,8 @@
             <div class="bg-white p-2 rounded-xl shadow-md">
                 <div class="flex items-center justify-between mb-2">
                     <h2 class="text-sm font-semibold text-gray-800">Журнал действий</h2>
-                    <button onclick="closeHistoryScreen()" class="btn text-xs bg-[#7c9473] text-white px-2 py-1 rounded-xl hover:bg-[#6c8464] flex items-center gap-1">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    <button onclick="closeHistoryScreen()" class="pill-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
                         Назад
                     </button>
                 </div>
@@ -1220,7 +1233,7 @@
                 </div>
                 <p class="text-xs text-gray-400 mb-2">Записи о заказах можно открыть нажатием (кроме удалённых)</p>
                 <table class="w-full table-auto table-clean">
-                    <thead><tr class="bg-gray-100">
+                    <thead><tr style="background-color:#e3e8df;">
                         <th class="p-1 text-xs w-[15%]">Дата</th>
                         <th class="p-1 text-xs w-[10%]">Время</th>
                         <th class="p-1 text-xs w-[20%]">Сотрудник</th>
@@ -1229,7 +1242,7 @@
                     <tbody id="historyTableBody"></tbody>
                 </table>
                 <div class="text-center mt-2">
-                    <button id="historyLoadMoreBtn" onclick="loadMoreHistory()" class="btn bg-[#7c9473] text-white px-3 py-1 rounded-xl hover:bg-[#6c8464] text-xs hidden">Показать ещё</button>
+                    <button id="historyLoadMoreBtn" onclick="loadMoreHistory()" class="pill-btn-secondary hidden">Показать ещё</button>
                 </div>
             </div>
         </div>
@@ -1619,46 +1632,53 @@
         <!-- Настройки (шестерёнка) — служебные функции, доступны из любого раздела -->
         <div id="settingsModal" class="modal">
             <div class="modal-content" style="max-width:320px;">
-                <h2 class="text-xs font-semibold mb-1 text-gray-800">Настройки</h2>
+                <h2 class="text-sm font-semibold mb-1 text-gray-800">Настройки</h2>
                 <p class="text-xs text-gray-500 mb-3">Текущий сотрудник: <b id="settingsCurrentEmployee" class="text-gray-800"></b></p>
 
-                <div class="flex flex-col gap-1 mb-3 border rounded-xl p-2 bg-gray-50">
+                <!-- Группа 1: аккаунт / бизнес -->
+                <div class="flex flex-col gap-1 mb-3 rounded-xl p-2" style="background:#e3e8df;">
                     <div class="flex justify-between items-center">
                         <span class="text-xs text-gray-500">Тариф</span>
                         <span id="settingsPlanBadge" class="text-xs font-semibold px-2 py-0.5 rounded-full">—</span>
                     </div>
                     <div id="settingsPlanUsage" class="text-xs text-gray-500 mt-1"></div>
                 </div>
-
                 <div id="companyInfoBtnBlock" class="flex flex-col gap-1 mb-3 hidden">
-                    <button onclick="openCompanyInfoModal()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-xl hover:bg-gray-200 text-xs text-left border border-gray-200 flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21"/></svg>Информация о компании</button>
+                    <button onclick="openCompanyInfoModal()" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21"/></svg>Информация о компании</button>
                 </div>
 
+                <!-- Группа 2: рутинное обслуживание -->
                 <div class="flex flex-col gap-1 mb-3">
-                    <button onclick="downloadBackup()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-xl hover:bg-gray-200 text-xs text-left border border-gray-200 flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>Скачать резервную копию</button>
-                    <button onclick="openHistoryScreen()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-xl hover:bg-gray-200 text-xs text-left border border-gray-200 perm-owner-only flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Журнал действий</button>
-                    <button onclick="loadAllData()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-xl hover:bg-gray-200 text-xs text-left border border-gray-200 flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>Обновить данные</button>
-                    <button onclick="openOrdersTrash()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-xl hover:bg-gray-200 text-xs text-left border border-gray-200 perm-delete flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>Корзина удалённых заказов</button>
-                    <button onclick="confirmClearDemoData()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-xl hover:bg-gray-200 text-xs text-left border border-gray-200 perm-owner-only flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42"/></svg>Удалить демо-данные и начать заново</button>
+                    <button onclick="downloadBackup()" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>Скачать резервную копию</button>
+                    <button onclick="openHistoryScreen()" class="settings-row-btn perm-owner-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Журнал действий</button>
+                    <button onclick="loadAllData()" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>Обновить данные</button>
+                    <button onclick="openOrdersTrash()" class="settings-row-btn perm-delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>Корзина удалённых заказов</button>
                 </div>
 
+                <!-- Группа 3: необратимое действие — отдельно и заметно -->
                 <div class="flex flex-col gap-1 mb-3 border-t pt-2">
-                    <button id="employeesManageBtn" onclick="openEmployeesModal()" class="btn bg-gray-100 text-gray-700 px-2 py-1.5 rounded-xl hover:bg-gray-200 text-xs text-left border border-gray-200 hidden items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>Сотрудники и права</button>
+                    <button onclick="confirmClearDemoData()" class="settings-row-btn danger perm-owner-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42"/></svg>Удалить демо-данные и начать заново</button>
                 </div>
 
+                <!-- Группа 4: команда -->
                 <div class="flex flex-col gap-1 mb-3 border-t pt-2">
-                    <button onclick="logoutEmployee()" class="btn bg-gray-200 text-gray-800 px-2 py-1.5 rounded-xl hover:bg-[#6c8464] text-xs text-left flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Сменить сотрудника</button>
-                    <button onclick="signOutAccount()" class="btn bg-gray-200 text-gray-800 px-2 py-1.5 rounded-xl hover:bg-[#6c8464] text-xs text-left flex items-center gap-1"><svg class="w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15 9V5.25A2.25 2.25 0 0012.75 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 006.75 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"/></svg>Выйти из аккаунта</button>
+                    <button id="employeesManageBtn" onclick="openEmployeesModal()" class="settings-row-btn hidden"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>Сотрудники и права</button>
                 </div>
 
-                <button onclick="closeModal()" class="btn bg-[#7c9473] text-white p-1 rounded-xl hover:bg-[#6c8464] w-full text-xs">Закрыть</button>
+                <!-- Группа 5: сессия -->
+                <div class="flex flex-col gap-1 mb-3 border-t pt-2">
+                    <button onclick="logoutEmployee()" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Сменить сотрудника</button>
+                    <button onclick="signOutAccount()" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15 9V5.25A2.25 2.25 0 0012.75 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 006.75 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"/></svg>Выйти из аккаунта</button>
+                </div>
+
+                <button onclick="closeModal()" class="pill-btn w-full justify-center">Закрыть</button>
             </div>
         </div>
 
         <!-- Информация о компании -->
         <div id="companyInfoModal" class="modal">
             <div class="modal-content" style="max-width:400px;max-height:85vh;overflow-y:auto;">
-                <h2 class="text-xs font-semibold mb-1 text-gray-800">Информация о компании</h2>
+                <h2 class="text-sm font-semibold mb-1 text-gray-800">Информация о компании</h2>
                 <p class="text-[11px] text-gray-400 mb-3">Изменения сохраняются автоматически</p>
 
                 <div class="mb-3">
@@ -1669,9 +1689,9 @@
                 <div class="mb-3">
                     <label class="table-text text-gray-500">Страна</label>
                     <div class="relative">
-                        <button type="button" onclick="toggleCountryDropdown()" id="cmpCountryBtn" class="border p-1 rounded-xl w-full table-text text-left bg-[#f4f1ea] flex justify-between items-center">
+                        <button type="button" onclick="toggleCountryDropdown()" id="cmpCountryBtn" class="field-select-btn">
                             <span id="cmpCountryLabel">Не указана</span>
-                            <svg class="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
                         </button>
                         <div id="cmpCountryDropdown" class="hidden absolute z-10 bg-white border rounded-xl shadow-md w-full mt-1 max-h-52 overflow-y-auto p-1"></div>
                     </div>
@@ -1682,9 +1702,9 @@
                     <div>
                         <label class="table-text text-gray-500">Валюта расчёта</label>
                         <div class="relative">
-                            <button type="button" onclick="toggleCurrencyDropdown()" id="cmpCurrencyBtn" class="border p-1 rounded-xl w-full table-text text-left bg-[#f4f1ea] flex justify-between items-center">
+                            <button type="button" onclick="toggleCurrencyDropdown()" id="cmpCurrencyBtn" class="field-select-btn">
                                 <span id="cmpCurrencyLabel">Евро</span>
-                                <svg class="w-3 h-3 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
                             </button>
                             <div id="cmpCurrencyDropdown" class="hidden absolute z-10 bg-white border rounded-xl shadow-md w-full mt-1 max-h-52 overflow-y-auto p-1"></div>
                         </div>
@@ -1697,9 +1717,9 @@
 
                 <div class="mb-3">
                     <label class="table-text text-gray-500 mb-1 block">Тип лица</label>
-                    <div class="flex gap-1">
-                        <button id="cmpEntityIndividualBtn" onclick="setCompanyEntityType('individual')" class="btn flex-1 text-xs py-1 rounded-xl border">Физ. лицо</button>
-                        <button id="cmpEntityCompanyBtn" onclick="setCompanyEntityType('company')" class="btn flex-1 text-xs py-1 rounded-xl border">Юр. лицо</button>
+                    <div class="flex gap-2">
+                        <button id="cmpEntityIndividualBtn" onclick="setCompanyEntityType('individual')" class="field-select-btn flex-1" style="justify-content:center;">Физ. лицо</button>
+                        <button id="cmpEntityCompanyBtn" onclick="setCompanyEntityType('company')" class="field-select-btn flex-1" style="justify-content:center;">Юр. лицо</button>
                     </div>
                 </div>
 
@@ -1765,7 +1785,7 @@
                     </div>
                 </div>
 
-                <button onclick="closeModal()" class="btn bg-[#7c9473] text-white p-1 rounded-xl hover:bg-[#6c8464] w-full text-xs">Закрыть</button>
+                <button onclick="closeModal()" class="pill-btn w-full justify-center">Закрыть</button>
             </div>
         </div>
 
@@ -1799,11 +1819,11 @@
         <!-- Список сотрудников и их прав (только для владельца) -->
         <div id="employeesModal" class="modal">
             <div class="modal-content" style="max-width:360px;">
-                <h2 class="text-xs font-semibold mb-2 text-gray-800">Сотрудники и права</h2>
+                <h2 class="text-sm font-semibold mb-2 text-gray-800">Сотрудники и права</h2>
                 <div id="employeesListContent" class="flex flex-col gap-1 mb-3" style="max-height:50vh;overflow-y:auto;"></div>
-                <div class="flex gap-1">
-                    <button onclick="openEmployeeEditModal(null)" class="btn bg-[#7c9473] text-white p-1.5 rounded-xl hover:bg-[#6c8464] flex-1 text-xs">+ Создать сотрудника</button>
-                    <button onclick="closeModal()" class="btn bg-[#7c9473] text-white p-1.5 rounded-xl hover:bg-[#6c8464] text-xs" style="width:80px;">Закрыть</button>
+                <div class="flex gap-2">
+                    <button onclick="openEmployeeEditModal(null)" class="pill-btn flex-1 justify-center">+ Создать сотрудника</button>
+                    <button onclick="closeModal()" class="pill-btn-secondary" style="width:80px;">Закрыть</button>
                 </div>
             </div>
         </div>
@@ -1811,7 +1831,7 @@
         <!-- Создание / редактирование сотрудника -->
         <div id="employeeEditModal" class="modal">
             <div class="modal-content" style="max-width:340px;">
-                <h2 id="employeeEditTitle" class="text-xs font-semibold mb-2 text-gray-800">Новый сотрудник</h2>
+                <h2 id="employeeEditTitle" class="text-sm font-semibold mb-2 text-gray-800">Новый сотрудник</h2>
                 <input type="hidden" id="employeeEditId">
                 <input type="hidden" id="employeeEditUserId">
                 <label class="text-xs text-gray-500">Имя сотрудника</label>
@@ -1825,16 +1845,16 @@
 
                 <p class="text-xs text-gray-500 mb-1">Полномочия:</p>
                 <div class="flex flex-col gap-1.5 mb-3 text-xs text-gray-800">
-                    <label class="flex items-center gap-2"><input type="checkbox" id="permViewCosts"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182 1.106-.879 2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Видеть себестоимость и маржу</label>
-                    <label class="flex items-center gap-2"><input type="checkbox" id="permDelete"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg> Удаление заказов и клиентов</label>
-                    <label class="flex items-center gap-2"><input type="checkbox" id="permInventory"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg> Управление складом и ассортиментом</label>
-                    <label class="flex items-center gap-2"><input type="checkbox" id="permReports"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg> Просмотр отчётов и статистики</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" id="permViewCosts" style="accent-color:#7c9473;"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182 1.106-.879 2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Видеть себестоимость и маржу</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" id="permDelete" style="accent-color:#7c9473;"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg> Удаление заказов и клиентов</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" id="permInventory" style="accent-color:#7c9473;"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z"/></svg> Управление складом и ассортиментом</label>
+                    <label class="flex items-center gap-2"><input type="checkbox" id="permReports" style="accent-color:#7c9473;"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg> Просмотр отчётов и статистики</label>
                 </div>
 
-                <div class="flex gap-1">
-                    <button id="employeeDeleteBtn" onclick="deleteEmployee()" class="btn bg-[#f5e6e2] text-[#a8574c] p-1.5 rounded-xl hover:bg-[#eed6d0] text-xs hidden" style="width:80px;">Удалить</button>
-                    <button onclick="saveEmployee()" class="btn bg-indigo-600 text-white p-1.5 rounded-xl hover:bg-indigo-700 flex-1 text-xs">Сохранить</button>
-                    <button onclick="openEmployeesModal()" class="btn bg-[#7c9473] text-white p-1.5 rounded-xl hover:bg-[#6c8464] text-xs" style="width:80px;">Назад</button>
+                <div class="flex gap-2">
+                    <button id="employeeDeleteBtn" onclick="deleteEmployee()" class="pill-btn-danger hidden" style="background:#f3ded9; color:#a3493d; box-shadow:none; width:80px;">Удалить</button>
+                    <button onclick="saveEmployee()" class="pill-btn flex-1 justify-center">Сохранить</button>
+                    <button onclick="openEmployeesModal()" class="pill-btn-secondary" style="width:80px;">Назад</button>
                 </div>
             </div>
         </div>
@@ -1872,7 +1892,7 @@
         <!-- Модалка склада -->
         <div id="inventoryModal" class="modal">
             <div class="modal-content" style="max-width:480px;">
-                <h2 id="inventoryModalTitle" class="text-base font-semibold mb-2 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.836l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.98-4.706 2.545-7.187.075-.323-.174-.63-.53-.63H5.106M7.5 14.25L5.106 5.653M7.5 14.25L5.25 20.25m9-6l2.25 6"/></svg>Аналитика склада</h2>
+                <h2 id="inventoryModalTitle" class="text-sm font-semibold mb-2 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.836l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.98-4.706 2.545-7.187.075-.323-.174-.63-.53-.63H5.106M7.5 14.25L5.106 5.653M7.5 14.25L5.25 20.25m9-6l2.25 6"/></svg>Аналитика склада</h2>
                 <!-- Вкладки -->
                 <div class="flex gap-3 border-b mb-3">
                     <button id="invTabStock" onclick="switchInventoryTab('stock')" class="tab active text-xs pb-1">Склад</button>
@@ -1902,7 +1922,7 @@
         <!-- Модалка производства п/ф — шаг 1: количество основного ингредиента -->
         <div id="sfProduceModal" class="modal">
             <div class="modal-content" style="max-width:480px;">
-                <h2 class="text-base font-semibold mb-3 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"/></svg>Произвести партию — шаг 1</h2>
+                <h2 class="text-sm font-semibold mb-3 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"/></svg>Произвести партию — шаг 1</h2>
                 <p class="text-xs text-gray-500 mb-3">Введите количество основного ингредиента.</p>
                 <div class="mb-4">
                     <label class="text-xs text-gray-600 block mb-1">Основной ингредиент: <span id="sfProduceIngName" class="font-semibold text-gray-800"></span></label>
@@ -1922,7 +1942,7 @@
         <!-- Модалка производства п/ф — шаг 2: подтверждение выхода -->
         <div id="sfConfirmModal" class="modal">
             <div class="modal-content" style="max-width:480px;">
-                <h2 class="text-base font-semibold mb-3 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"/></svg>Подтвердите производство</h2>
+                <h2 class="text-sm font-semibold mb-3 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"/></svg>Подтвердите производство</h2>
                 <div class="rounded-xl p-2 mb-3 text-xs text-gray-700" style="background:#e3e8df;">
                     <p class="mb-1">Будет списано:</p>
                     <p class="font-semibold" id="sfConfirmIngLine"></p>
@@ -1946,7 +1966,7 @@
         <!-- Модалка списания полуфабриката -->
         <div id="sfWriteOffModal" class="modal">
             <div class="modal-content" style="max-width:480px;">
-                <h2 class="text-base font-semibold mb-3 text-gray-800">Списание п/ф (корректировка)</h2>
+                <h2 class="text-sm font-semibold mb-3 text-gray-800">Списание п/ф (корректировка)</h2>
                 <p id="sfWriteOffName" class="text-xs text-gray-500 mb-3"></p>
                 <label class="text-xs text-gray-500">Количество (<span id="sfWriteOffUnit"></span>)</label>
                 <input id="sfWriteOffQty" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
@@ -1962,7 +1982,7 @@
         <!-- Модалка инвентаризации полуфабрикатов -->
         <div id="sfInventarizationModal" class="modal">
             <div class="modal-content" style="max-width:480px;">
-                <h2 class="text-base font-semibold mb-1 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Инвентаризация п/ф</h2>
+                <h2 class="text-sm font-semibold mb-1 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Инвентаризация п/ф</h2>
                 <p class="text-xs text-gray-500 mb-3">Введите фактическое количество. Пустые поля — пропускаются.</p>
                 <div id="sfInventarizationContent" style="max-height:60vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
                 <div class="flex gap-2 mt-3">
@@ -1975,10 +1995,10 @@
         <!-- Корзина удалённых заказов -->
         <div id="ordersTrashModal" class="modal">
             <div class="modal-content" style="max-width:480px;">
-                <h2 class="text-base font-semibold mb-1 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>Корзина удалённых заказов</h2>
+                <h2 class="text-sm font-semibold mb-1 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>Корзина удалённых заказов</h2>
                 <p class="text-xs text-gray-500 mb-3">Удалённые заказы хранятся 30 дней. Нажмите на заказ для восстановления или окончательного удаления.</p>
                 <div id="ordersTrashContent" style="max-height:65vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
-                <button onclick="closeModal()" class="btn bg-[#7c9473] text-white p-1 rounded-xl hover:bg-[#6c8464] w-full text-xs mt-3">Закрыть</button>
+                <button onclick="closeModal()" class="pill-btn w-full justify-center mt-3">Закрыть</button>
             </div>
         </div>
 
@@ -1987,9 +2007,9 @@
             <div class="modal-content" style="max-width:340px;">
                 <h2 id="trashOrderActionsTitle" class="text-sm font-semibold mb-3 text-gray-800"></h2>
                 <div class="flex flex-col gap-2">
-                    <button id="trashRestoreBtn" class="btn bg-indigo-600 text-white p-2 rounded-xl hover:bg-indigo-700 text-xs inline-flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/></svg>Восстановить заказ</button>
-                    <button id="trashDeleteBtn" class="btn bg-[#f5e6e2] text-[#a8574c] p-2 rounded-xl hover:bg-[#eed6d0] text-xs inline-flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>Удалить навсегда</button>
-                    <button onclick="document.getElementById('trashOrderActionsModal').style.display='none'" class="btn bg-[#7c9473] text-white p-2 rounded-xl hover:bg-[#6c8464] text-xs">Отмена</button>
+                    <button id="trashRestoreBtn" class="pill-btn justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/></svg>Восстановить заказ</button>
+                    <button id="trashDeleteBtn" class="pill-btn-danger justify-center" style="background:#f3ded9; color:#a3493d; box-shadow:none;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>Удалить навсегда</button>
+                    <button onclick="document.getElementById('trashOrderActionsModal').style.display='none'" class="pill-btn-secondary justify-center">Отмена</button>
                 </div>
             </div>
         </div>
@@ -1997,7 +2017,7 @@
         <!-- Модалка инвентаризации -->
         <div id="inventarizationModal" class="modal">
             <div class="modal-content" style="max-width:480px;">
-                <h2 class="text-base font-semibold mb-1 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Инвентаризация</h2>
+                <h2 class="text-sm font-semibold mb-1 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Инвентаризация</h2>
                 <p class="text-xs text-gray-500 mb-3">Введите фактическое количество. Пустые поля — пропускаются. Разница запишется автоматически.</p>
                 <div id="inventarizationContent" style="max-height:60vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
                 <div class="flex gap-2 mt-3">
@@ -2071,7 +2091,7 @@
         <!-- Модалка пополнения склада -->
         <div id="inventoryAddModal" class="modal">
             <div class="modal-content" style="max-width:480px;">
-                <h2 class="text-base font-semibold mb-3 text-gray-800" id="inventoryAddTitle">Пополнить склад</h2>
+                <h2 class="text-sm font-semibold mb-3 text-gray-800" id="inventoryAddTitle">Пополнить склад</h2>
                 <input type="hidden" id="inventoryAddIngId">
                 <label class="text-xs text-gray-500">Количество (<span id="inventoryAddUnit"></span>)</label>
                 <input id="inventoryAddQty" type="number" inputmode="decimal" step="0.01" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
@@ -2105,7 +2125,7 @@
         <!-- Быстрое создание нового ингредиента прямо из карточки рецепта -->
         <div id="quickAddIngredientModal" class="modal">
             <div class="modal-content">
-                <h2 class="text-base font-semibold mb-2 text-gray-800">Новый ингредиент</h2>
+                <h2 class="text-sm font-semibold mb-2 text-gray-800">Новый ингредиент</h2>
                 <label class="text-xs text-gray-600">Название</label>
                 <input id="qaiName" class="border p-1 rounded-xl mb-1 w-full text-xs">
                 <div class="grid grid-cols-2 gap-2">
@@ -2126,15 +2146,17 @@
                     <option value="l">литры (л)</option>
                     <option value="pcs">штуки (шт)</option>
                 </select>
-                <button onclick="confirmQuickAddIngredient()" class="btn bg-[#7c9473] text-white p-1 rounded-xl hover:bg-[#6c8464] text-xs mr-1">Создать</button>
-                <button onclick="closeModal()" class="btn bg-[#7c9473] text-white p-1 rounded-xl hover:bg-[#6c8464] text-xs">Отмена</button>
+                <div class="flex gap-2">
+                    <button onclick="confirmQuickAddIngredient()" class="pill-btn flex-1 justify-center">Создать</button>
+                    <button onclick="closeModal()" class="pill-btn-secondary flex-1">Отмена</button>
+                </div>
             </div>
         </div>
 
         <!-- Статистика -->
         <div id="stats" class="tab-content hidden">
             <div class="bg-white rounded-xl shadow-md p-2 mb-3">
-                <h2 class="text-base font-semibold mb-2 text-gray-800">Статистика</h2>
+                <h2 class="text-sm font-semibold mb-2 text-gray-800">Статистика</h2>
 
                 <!-- Фильтры -->
                 <div class="grid grid-cols-2 gap-1.5 mb-1">
@@ -2264,9 +2286,9 @@
     <script src="money.js?v=9"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="auth.js?v=10"></script>
-    <script src="employees.js?v=14"></script>
-    <script src="company.js?v=6"></script>
-    <script src="inventory.js?v=19"></script>
+    <script src="employees.js?v=15"></script>
+    <script src="company.js?v=7"></script>
+    <script src="inventory.js?v=20"></script>
 <script src="ingredients.js?v=17"></script>
 <script src="semifinished.js?v=13"></script>
 <script src="products.js?v=17"></script>
@@ -2275,7 +2297,7 @@
 <script src="invoice.js?v=10"></script>
 <script src="payments.js?v=10"></script>
 <script src="stats.js?v=10"></script>
-<script src="history.js?v=7"></script>
+<script src="history.js?v=8"></script>
 <script src="modals.js?v=9"></script>
 <script src="demoData.js?v=7"></script>
 <script src="helpers.js?v=13"></script>

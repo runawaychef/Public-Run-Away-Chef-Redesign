@@ -39,7 +39,7 @@ function formatHistoryRow(entry) {
         <td class="p-0.5 text-xs whitespace-nowrap">${dateStr}</td>
         <td class="p-0.5 text-xs whitespace-nowrap">${timeStr}</td>
         <td class="p-0.5 text-xs">${escapeHtml(entry.employee_name || '—')}</td>
-        <td class="p-0.5 text-xs">${escapeHtml(entry.description || '')}${orderExists ? ' <span class="text-indigo-500">→</span>' : ''}</td>
+        <td class="p-0.5 text-xs">${escapeHtml(entry.description || '')}${orderExists ? ' <span class="text-[#7c9473]">→</span>' : ''}</td>
     </tr>`;
 }
 
@@ -93,6 +93,6 @@ async function fetchHistoryPage(replace) {
     } catch (e) {
         console.error(e);
         const tbody = document.getElementById('historyTableBody');
-        if (replace) tbody.innerHTML = `<tr><td colspan="4" class="text-center text-xs text-red-500 py-2">Ошибка загрузки журнала</td></tr>`;
+        if (replace) tbody.innerHTML = `<tr><td colspan="4" class="text-center text-xs text-[#c0685c] py-2">Ошибка загрузки журнала</td></tr>`;
     }
 }

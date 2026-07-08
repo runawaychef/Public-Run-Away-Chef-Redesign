@@ -199,8 +199,8 @@ function setCompanyEntityType(type, skipSave) {
 
     const companyBtn    = document.getElementById('cmpEntityCompanyBtn');
     const individualBtn = document.getElementById('cmpEntityIndividualBtn');
-    companyBtn.className    = 'btn flex-1 text-xs py-1 rounded-xl border' + (isCompany ? ' bg-indigo-600 text-white border-indigo-600' : ' bg-[#f4f1ea] text-gray-700');
-    individualBtn.className = 'btn flex-1 text-xs py-1 rounded-xl border' + (!isCompany ? ' bg-indigo-600 text-white border-indigo-600' : ' bg-[#f4f1ea] text-gray-700');
+    companyBtn.classList.toggle('active', isCompany);
+    individualBtn.classList.toggle('active', !isCompany);
 
     if (!skipSave) saveCompanyInfo('entity_type', type);
 }

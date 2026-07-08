@@ -360,7 +360,8 @@ async function openEmployeesModal() {
 
     employees.forEach(emp => {
         const row = document.createElement('button');
-        row.className = 'btn bg-gray-100 text-gray-800 px-2 py-1.5 rounded-xl hover:bg-gray-200 text-xs text-left border border-gray-200 flex justify-between items-center';
+        row.className = 'settings-row-btn';
+        row.style.justifyContent = 'space-between';
         const badge = emp.is_owner ? 'Владелец' : (emp.user_id ? 'Личный вход' : 'Общее устройство');
         row.innerHTML = `<span>${escapeHtml(emp.name)}</span><span class="text-gray-400">${badge}</span>`;
         row.onclick = () => openEmployeeEditModal(emp);
@@ -369,23 +370,24 @@ async function openEmployeesModal() {
 
     pendingInvitations.forEach(inv => {
         const row = document.createElement('div');
-        row.className = 'px-2 py-1.5 rounded-xl text-xs text-left border border-dashed border-gray-300 bg-gray-50';
+        row.className = 'px-2 py-1.5 rounded-xl text-xs text-left';
+        row.style.cssText = 'background:#f4f1ea; border:1px dashed #d8d2c4;';
         row.innerHTML = `
             <div class="flex justify-between items-center">
                 <span>${escapeHtml(inv.name)} <span class="text-gray-400">(${escapeHtml(inv.email)})</span></span>
-                <span class="text-amber-600 flex-shrink-0 ml-1 inline-flex items-center">${icon('clock')}Ждём регистрации</span>
+                <span style="color:#96712a;" class="flex-shrink-0 ml-1 inline-flex items-center">${icon('clock')}Ждём регистрации</span>
             </div>`;
         const actionsRow = document.createElement('div');
         actionsRow.className = 'flex gap-2 mt-1';
 
         const shareBtn = document.createElement('button');
         shareBtn.innerHTML = icon('share') + 'Поделиться';
-        shareBtn.className = 'text-indigo-600 hover:text-indigo-800 text-xs inline-flex items-center';
+        shareBtn.className = 'text-xs inline-flex items-center invite-share-btn';
         shareBtn.onclick = (e) => { e.stopPropagation(); shareInvitation(inv); };
 
         const cancelBtn = document.createElement('button');
         cancelBtn.innerHTML = icon('close') + 'Отменить';
-        cancelBtn.className = 'text-gray-400 hover:text-red-500 text-xs inline-flex items-center';
+        cancelBtn.className = 'text-gray-400 text-xs inline-flex items-center invite-cancel-btn';
         cancelBtn.onclick = (e) => { e.stopPropagation(); cancelInvitation(inv.id); };
 
         actionsRow.appendChild(shareBtn);

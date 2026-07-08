@@ -24,21 +24,23 @@ function renderPlanInfo() {
     const isFree = currentOrgPlan === 'free';
     if (isFree) {
         badge.textContent = 'Бесплатный';
-        badge.className = 'text-xs font-semibold px-2 py-0.5 rounded-full bg-gray-200 text-gray-700';
+        badge.className = 'text-xs font-semibold px-2 py-0.5 rounded-full';
+        badge.style.cssText = 'background:#ece7db; color:#6b6355;';
 
         const custLimit = 5, orderLimit = 50;
         const custCount = (customers || []).length;
         const orderCount = (orders || []).length;
 
-        const custColor = custCount >= custLimit ? 'text-red-600' : custCount >= custLimit * 0.8 ? 'text-amber-600' : 'text-gray-500';
-        const orderColor = orderCount >= orderLimit ? 'text-red-600' : orderCount >= orderLimit * 0.8 ? 'text-amber-600' : 'text-gray-500';
+        const custColor = custCount >= custLimit ? '#c0685c' : custCount >= custLimit * 0.8 ? '#96712a' : '#6b7280';
+        const orderColor = orderCount >= orderLimit ? '#c0685c' : orderCount >= orderLimit * 0.8 ? '#96712a' : '#6b7280';
 
         usage.innerHTML = `
-            <div class="${custColor}">Клиенты: ${custCount} из ${custLimit}</div>
-            <div class="${orderColor}">Заказы: ${orderCount} из ${orderLimit}</div>`;
+            <div style="color:${custColor};">Клиенты: ${custCount} из ${custLimit}</div>
+            <div style="color:${orderColor};">Заказы: ${orderCount} из ${orderLimit}</div>`;
     } else {
         badge.textContent = 'Платный';
-        badge.className = 'text-xs font-semibold px-2 py-0.5 rounded-full bg-green-50 text-green-700';
+        badge.className = 'text-xs font-semibold px-2 py-0.5 rounded-full';
+        badge.style.cssText = 'background:#e3e8df; color:#4f6349;';
         usage.innerHTML = '<div>Лимиты не действуют.</div>';
     }
 }
