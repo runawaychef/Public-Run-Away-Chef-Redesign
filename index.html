@@ -675,6 +675,25 @@
     </div>
 </div>
 
+<!-- Поиск + переключатель вида для Клиентов — тот же принцип. -->
+<div id="customersSearchBar" class="hidden" style="position:fixed; left:50%; transform:translateX(-50%); width:100%; max-width:42rem; z-index:30; box-sizing:border-box; padding:0 8px;">
+    <div class="flex gap-2 items-center" style="background:#f4f1ea; padding:6px 0;">
+        <div class="search-input-wrap" style="flex:1; position:relative;">
+            <input id="customerSearchInput" type="text" placeholder="Поиск по имени..." oninput="filterCustomersList()" class="border p-1.5 rounded-xl w-full table-text" style="padding-right:30px;">
+            <svg id="customerSearchIcon" class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:#a29c8c; pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+            <svg id="customerSearchClear" onclick="clearCustomerSearch()" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:#9a9488; cursor:pointer;"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+        </div>
+        <div class="view-toggle-pill">
+            <button class="view-toggle-btn active" id="customersViewBtnCards" onclick="setCustomersViewMode('cards')" title="Карточки">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+            </button>
+            <button class="view-toggle-btn" id="customersViewBtnTable" onclick="setCustomersViewMode('table')" title="Таблица">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Нижний таб-бар: иконка + подпись, те же 4 раздела, что и раньше.
      onclick специально оставлен идентичным старым кнопкам в шапке — showTab()
      ищет кнопку через document.querySelector('button[onclick="showTab(...)"]')
@@ -1092,19 +1111,27 @@
         <!-- ===== КЛИЕНТЫ ===== -->
         <div id="customers" class="tab-content hidden">
             <div id="customersList">
-                <div class="bg-white p-2 rounded-xl shadow-md">
-                    <h2 class="text-sm font-semibold mb-2 text-gray-800">Список клиентов</h2>
-                    <p class="text-xs text-gray-400 mb-2">Нажмите на строку, чтобы открыть карточку клиента</p>
+                <div class="p-2 rounded-xl shadow-md" style="background:#f4f1ea;">
                     <p id="customersNameWarning" class="text-xs mb-2 hidden" style="color:#a3493d; background:#f3ded9; border:1px solid #e8c4bb; border-radius:12px; padding:6px;"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>У некоторых клиентов не указано имя. Откройте их карточку и заполните имя — без этого их заказы будут отображаться некорректно.</p>
-                    <table class="w-full table-auto table-clean">
-                        <thead><tr style="background-color:#e3e8df;">
-                            <th class="p-1 text-xs w-[32%]">Имя</th>
-                            <th class="p-1 text-xs w-[30%]">Контакты</th>
-                            <th class="p-1 text-xs w-[14%]">Скидка (%)</th>
-                            <th class="p-1 text-xs w-[24%]">Задолженность</th>
-                        </tr></thead>
-                        <tbody id="customerTableBody"></tbody>
-                    </table>
+
+                    <!-- Карточный вид (по умолчанию) -->
+                    <div id="customerCardsWrap">
+                        <div id="customerCardsBody"></div>
+                        <p id="customerCardsEmpty" class="text-xs text-gray-400 text-center py-4 hidden">Ничего не найдено</p>
+                    </div>
+
+                    <!-- Табличный вид -->
+                    <div id="customerTableWrap" class="hidden">
+                        <table class="w-full table-auto table-clean">
+                            <thead><tr style="background-color:#e3e8df;">
+                                <th class="p-1 text-xs w-[32%]">Имя</th>
+                                <th class="p-1 text-xs w-[30%]">Контакты</th>
+                                <th class="p-1 text-xs w-[14%]">Скидка (%)</th>
+                                <th class="p-1 text-xs w-[24%]">Задолженность</th>
+                            </tr></thead>
+                            <tbody id="customerTableBody"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -2326,7 +2353,7 @@
 <script src="ingredients.js?v=17"></script>
 <script src="semifinished.js?v=13"></script>
 <script src="products.js?v=20"></script>
-<script src="customers.js?v=26"></script>
+<script src="customers.js?v=27"></script>
 <script src="orders.js?v=52"></script>
 <script src="invoice.js?v=10"></script>
 <script src="payments.js?v=10"></script>
@@ -2511,6 +2538,7 @@ function showTab(tabId) {
     document.getElementById('ordersViewToggle')?.classList.toggle('hidden', tabId !== 'orders');
     if (tabId === 'orders' && typeof positionOrdersViewToggle === 'function') positionOrdersViewToggle();
     document.getElementById('productsSearchBar')?.classList.toggle('hidden', tabId !== 'products');
+    document.getElementById('customersSearchBar')?.classList.toggle('hidden', tabId !== 'customers');
 
     // Принудительно завершаем предыдущую анимацию если она ещё идёт
     const wrapper = document.getElementById('tabsWrapper');
@@ -2582,7 +2610,7 @@ function showTab(tabId) {
 
     if (tabId === 'orders')    { closeOrderDetail(); displayOrders(); }
     if (tabId === 'products')  { closeProductDetailSilent(); displayProducts(); positionStickySearchBar('productsSearchBar', 'productsList', 'productDetail'); }
-    if (tabId === 'customers') { closeCustomerDetailSilent(); displayCustomers(); }
+    if (tabId === 'customers') { closeCustomerDetailSilent(); displayCustomers(); positionStickySearchBar('customersSearchBar', 'customersList', 'customerDetail'); }
     if (tabId === 'ingredients') { closeIngredientDetailSilent(); displayIngredients(); }
     if (tabId === 'semiFinished') { closeSemiFinishedDetailSilent(); displaySemiFinished(); }
     if (tabId === 'history')   { updateHistoryEmployeeFilter(); loadHistory(); }
@@ -2614,7 +2642,9 @@ function positionStickySearchBar(barId, contentWrapId, detailId) {
     bar.style.top = Math.round(headerBottom + GAP / 2 - barHeight / 2 + 6) + 'px';
 }
 window.addEventListener('resize', () => {
-    if (typeof currentTabId !== 'undefined' && currentTabId === 'products') positionStickySearchBar('productsSearchBar', 'productsList', 'productDetail');
+    if (typeof currentTabId === 'undefined') return;
+    if (currentTabId === 'products') positionStickySearchBar('productsSearchBar', 'productsList', 'productDetail');
+    if (currentTabId === 'customers') positionStickySearchBar('customersSearchBar', 'customersList', 'customerDetail');
 });
 
 // ==================== ПЛАВАЮЩАЯ КНОПКА "+" ====================

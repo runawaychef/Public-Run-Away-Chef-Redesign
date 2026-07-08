@@ -34,6 +34,7 @@ function displayCustomers() {
         const row = document.createElement('tr');
         row.className = 'order-row border-b';
         row.style.background = hasName ? '' : '#f3ded9';
+        row.dataset.name = (c.name || '').toLowerCase();
         row.innerHTML = `
             <td class=" p-0.5 table-text" style="${hasName ? '' : 'color:#a3493d; font-weight:600;'}" onclick="openCustomerDetail(${c.id})">${nameLabel}</td>
             <td class=" p-0.5 table-text" onclick="openCustomerDetail(${c.id})">${escapeHtml(c.contact)}</td>
@@ -46,6 +47,70 @@ function displayCustomers() {
     updateCustomerSelects();
     updateStatsCustomerFilter();
     updateOrderCustomerFilter();
+    renderCustomerCards();
+    filterCustomersList();
+}
+
+// ---- Карточный вид (тот же принцип, что у изделий) ----
+function renderCustomerCards() {
+    const body = document.getElementById('customerCardsBody');
+    if (!body) return;
+    let html = '';
+    customers.forEach(c => {
+        const hasName = !!(c.name && c.name.trim());
+        const debt = customerDebt(c);
+        const stripe = !hasName ? `<div class="stripe" style="background:#c0685c;"></div>` : '';
+        const nameText = hasName ? escapeHtml(c.name) : '(имя не указано)';
+        const debtHtml = debt > 0.01 ? `<span class="oc-sum" style="color:#c0685c;">${formatMoney(debt)}</span>` : '';
+        const contactText = c.contact && c.contact.trim() ? escapeHtml(c.contact) : '—';
+        html += `
+        <div class="order-card" data-name="${escapeHtml((c.name || '').toLowerCase())}" style="cursor:pointer;" onclick="openCustomerDetail(${c.id})">
+            ${stripe}
+            <div class="order-card-body">
+                <div class="oc-row">
+                    <span class="oc-name" style="${hasName ? '' : 'color:#a3493d;'}">${nameText}</span>
+                    ${debtHtml}
+                </div>
+                <div class="oc-meta">${contactText}</div>
+            </div>
+        </div>`;
+    });
+    body.innerHTML = html;
+}
+
+// ---- Переключатель Карточки / Таблица ----
+function setCustomersViewMode(mode) {
+    document.getElementById('customerCardsWrap')?.classList.toggle('hidden', mode !== 'cards');
+    document.getElementById('customerTableWrap')?.classList.toggle('hidden', mode !== 'table');
+    document.getElementById('customersViewBtnCards')?.classList.toggle('active', mode === 'cards');
+    document.getElementById('customersViewBtnTable')?.classList.toggle('active', mode === 'table');
+}
+
+// ---- Поиск по имени — работает одинаково в обоих видах ----
+function filterCustomersList() {
+    const input = document.getElementById('customerSearchInput');
+    const q = input ? input.value.trim().toLowerCase() : '';
+    document.getElementById('customerSearchClear')?.classList.toggle('hidden', !q);
+    document.getElementById('customerSearchIcon')?.classList.toggle('hidden', !!q);
+
+    let visibleCards = 0;
+    document.querySelectorAll('#customerCardsBody .order-card').forEach(card => {
+        const match = !q || card.dataset.name.includes(q);
+        card.style.display = match ? 'flex' : 'none';
+        if (match) visibleCards++;
+    });
+    document.getElementById('customerCardsEmpty')?.classList.toggle('hidden', visibleCards !== 0);
+
+    document.querySelectorAll('#customerTableBody tr').forEach(row => {
+        const match = !q || (row.dataset.name || '').includes(q);
+        row.style.display = match ? '' : 'none';
+    });
+}
+
+function clearCustomerSearch() {
+    const input = document.getElementById('customerSearchInput');
+    if (input) input.value = '';
+    filterCustomersList();
 }
 
 // Кнопка "+": сразу создаёт черновик клиента и открывает его карточку
@@ -318,6 +383,7 @@ function openCustomerDetail(custId) {
     document.getElementById('customersList').classList.add('hidden');
     document.getElementById('customerDetail').classList.add('active');
     document.getElementById('customerDetail').classList.add('fade-in'); setTimeout(() => document.getElementById('customerDetail').classList.remove('fade-in'), 300);
+    if (typeof positionStickySearchBar === 'function') positionStickySearchBar('customersSearchBar', 'customersList', 'customerDetail');
 
     document.getElementById('cdName').value = cust.name;
     document.getElementById('cdContact').value = cust.contact;
@@ -343,6 +409,7 @@ async function closeCustomerDetail() {
     currentCustomerId = null;
     document.getElementById('customersList').classList.remove('hidden');
     document.getElementById('customerDetail').classList.remove('active');
+    if (typeof positionStickySearchBar === 'function') positionStickySearchBar('customersSearchBar', 'customersList', 'customerDetail');
     if (leavingId !== null) await cleanupCustomerDraftIfEmpty(leavingId);
     displayCustomers();
     refreshFab();
