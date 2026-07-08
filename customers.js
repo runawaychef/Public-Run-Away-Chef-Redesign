@@ -18,8 +18,25 @@ function customerDebt(c) {
     return debt;
 }
 
+// Сумма всех покупок клиента за всё время — та же логика сопоставления
+// заказов, что и в customerDebt() (учитывает и старые заказы, у которых
+// клиент привязан по имени, а не по customer_id).
+function customerTotalSpent(c) {
+    let total = 0;
+    orders.forEach(o => {
+        const matches = o.customer_id != null ? o.customer_id === c.id : o.customer === c.name;
+        if (matches) total += orderGrandTotal(o);
+    });
+    return total;
+}
+
 function displayCustomers() {
-    customers.sort((a, b) => (a.name||"").localeCompare(b.name||""));
+    // Сначала клиенты с задолженностью, потом остальные — внутри каждой
+    // группы по алфавиту.
+    customers.sort((a, b) => {
+        const debtDiff = (customerDebt(b) > 0.01 ? 1 : 0) - (customerDebt(a) > 0.01 ? 1 : 0);
+        return debtDiff !== 0 ? debtDiff : (a.name||"").localeCompare(b.name||"");
+    });
     const tbody = document.getElementById('customerTableBody');
     tbody.innerHTML = '';
     let warningCount = 0;
@@ -59,6 +76,7 @@ function renderCustomerCards() {
     customers.forEach(c => {
         const hasName = !!(c.name && c.name.trim());
         const debt = customerDebt(c);
+        const totalSpent = customerTotalSpent(c);
         const stripe = !hasName ? `<div class="stripe" style="background:#c0685c;"></div>` : '';
         const nameText = hasName ? escapeHtml(c.name) : '(имя не указано)';
         const debtHtml = debt > 0.01 ? `<span class="oc-sum" style="color:#c0685c;">${formatMoney(debt)}</span>` : '';
@@ -71,7 +89,10 @@ function renderCustomerCards() {
                     <span class="oc-name" style="${hasName ? '' : 'color:#a3493d;'}">${nameText}</span>
                     ${debtHtml}
                 </div>
-                <div class="oc-meta">${contactText}</div>
+                <div class="oc-row" style="margin-top:2px;">
+                    <span class="oc-meta">${contactText}</span>
+                    <span class="oc-meta" style="flex-shrink:0;">${formatMoney(totalSpent)}</span>
+                </div>
             </div>
         </div>`;
     });
