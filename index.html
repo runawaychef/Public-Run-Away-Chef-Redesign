@@ -327,10 +327,13 @@
         /* ── Карточный вид списка заказов ──────────────────────────────── */
         #ordersViewToggle {
             position: fixed; right: 6px; /* top выставляется в JS — positionOrdersViewToggle() */
-            display: flex; background: white; border: 1px solid #e5e7eb; border-radius: 999px;
-            padding: 2px; gap: 2px; z-index: 150; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            z-index: 150;
         }
         #ordersViewToggle.hidden { display: none; }
+        .view-toggle-pill {
+            display: flex; background: white; border: 1px solid #e5e7eb; border-radius: 999px;
+            padding: 2px; gap: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
         .view-toggle-btn {
             width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
             color: #9a9488; cursor: pointer; border: none; background: none; transition: all 0.15s ease;
@@ -640,7 +643,7 @@
 </button>
 
 <!-- Переключатель вида списка заказов: карточки / таблица. Виден только на вкладке "Заказы" (управляется в showTab()). -->
-<div id="ordersViewToggle" class="hidden">
+<div id="ordersViewToggle" class="hidden view-toggle-pill">
     <button class="view-toggle-btn active" id="ordersViewBtnCards" onclick="setOrdersViewMode('cards')" title="Карточки">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
     </button>
@@ -693,15 +696,14 @@
         <!-- ===== ИЗДЕЛИЯ ===== -->
         <div id="products" class="tab-content hidden">
             <div id="productsList">
-                <div class="p-2 rounded-xl shadow-md" style="background:#f4f1ea;">
-                    <h2 class="text-sm font-semibold mb-2 text-gray-800">Ассортимент</h2>
-                    <div class="flex gap-2 items-center mb-2">
+                <div id="productsSearchBar" style="position:sticky; z-index:30; background:#f4f1ea; padding:8px 8px 6px; margin:0 -8px;">
+                    <div class="flex gap-2 items-center">
                         <div class="search-input-wrap" style="flex:1; position:relative;">
                             <input id="productSearchInput" type="text" placeholder="Поиск по названию..." oninput="filterProductsList()" class="border p-1.5 rounded-xl w-full table-text" style="padding-right:30px;">
                             <svg id="productSearchIcon" class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:#a29c8c; pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
                             <svg id="productSearchClear" onclick="clearProductSearch()" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:#9a9488; cursor:pointer;"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
                         </div>
-                        <div style="display:flex; gap:4px; flex-shrink:0;">
+                        <div class="view-toggle-pill">
                             <button class="view-toggle-btn active" id="productsViewBtnCards" onclick="setProductsViewMode('cards')" title="Карточки">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
                             </button>
@@ -710,6 +712,8 @@
                             </button>
                         </div>
                     </div>
+                </div>
+                <div class="p-2 rounded-xl shadow-md" style="background:#f4f1ea; margin-top:-4px;">
                     <p id="productsUnitWarning" class="text-xs mb-2 hidden" style="color:#a3493d; background:#f3ded9; border:1px solid #e8c4bb; border-radius:12px; padding:6px;"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>У некоторых изделий не выбрана единица измерения или не подтверждён рецепт. Откройте их и проверьте.</p>
 
                     <!-- Карточный вид (по умолчанию) -->
@@ -2570,7 +2574,7 @@ function showTab(tabId) {
     if (tabId !== 'semiFinished') closeSemiFinishedDetailSilent();
 
     if (tabId === 'orders')    { closeOrderDetail(); displayOrders(); }
-    if (tabId === 'products')  { closeProductDetailSilent(); displayProducts(); }
+    if (tabId === 'products')  { closeProductDetailSilent(); displayProducts(); positionStickySearchBar('productsSearchBar'); }
     if (tabId === 'customers') { closeCustomerDetailSilent(); displayCustomers(); }
     if (tabId === 'ingredients') { closeIngredientDetailSilent(); displayIngredients(); }
     if (tabId === 'semiFinished') { closeSemiFinishedDetailSilent(); displaySemiFinished(); }
@@ -2578,6 +2582,20 @@ function showTab(tabId) {
     if (tabId === 'stats')     { updateStatsCustomerFilter(); toggleDateRange(); applyFilter(); updateInfoCounts(); initDailyRevenueChart(); }
     refreshFab();
 }
+
+// Ставит прилипающую строку поиска+переключателя (в изделиях/ингредиентах)
+// ровно под нижним краем шапки приложения — считает по реальной высоте шапки,
+// а не подобранным "на глаз" числом, так что не съедет при переносе строк
+// в названии пекарни или другом размере шрифта на устройстве.
+function positionStickySearchBar(barId) {
+    const bar = document.getElementById(barId);
+    const header = document.getElementById('appStickyHeader');
+    if (!bar || !header) return;
+    bar.style.top = header.getBoundingClientRect().height + 'px';
+}
+window.addEventListener('resize', () => {
+    if (typeof currentTabId !== 'undefined' && currentTabId === 'products') positionStickySearchBar('productsSearchBar');
+});
 
 // ==================== ПЛАВАЮЩАЯ КНОПКА "+" ====================
 // Видна только на 4 разделах со списками (Заказы/Клиенты/Изделия/Ингредиенты)
