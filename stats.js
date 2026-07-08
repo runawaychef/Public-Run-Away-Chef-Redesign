@@ -93,39 +93,47 @@ function calculateStats(filteredOrders) {
 let selectedStatsCustomers = []; // пусто = все клиенты
 
 function updateStatsCustomerFilter() {
+    const allRow = document.getElementById('statsFilterAllRow');
+    if (allRow) allRow.classList.toggle('selected', selectedStatsCustomers.length === 0);
+
     const list = document.getElementById('customerFilterList');
     list.innerHTML = '';
     customers.sort((a,b)=>(a.name||"").localeCompare(b.name||"")).forEach(c => {
-        const checked = selectedStatsCustomers.includes(c.name) ? 'checked' : '';
-        const label = document.createElement('label');
-        label.className = 'flex items-center gap-2 px-1 py-1 text-xs hover:bg-gray-50 rounded';
-        label.innerHTML = `<input type="checkbox" value="${c.name}" onchange="onCustomerFilterChange(this)" ${checked}> ${c.name}`;
-        list.appendChild(label);
+        const selected = selectedStatsCustomers.includes(c.name);
+        const row = document.createElement('div');
+        row.className = 'status-option' + (selected ? ' selected' : '');
+        row.style.justifyContent = 'flex-start';
+        row.style.gap = '8px';
+        row.dataset.fn = 'onCustomerFilterChange';
+        row.dataset.args = JSON.stringify([c.name]);
+        row.innerHTML = `<svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg><span>${escapeHtml(c.name)}</span>`;
+        list.appendChild(row);
     });
     updateCustomerFilterLabel();
 }
 
 function toggleCustomerFilterDropdown() {
-    document.getElementById('customerFilterDropdown').classList.toggle('hidden');
+    const dd = document.getElementById('customerFilterDropdown');
+    if (!dd) return;
+    const isOpen = dd.classList.contains('open');
+    closeAllOrderStatusDropdowns();
+    if (!isOpen) openSmartDropdown(dd);
 }
 
-function toggleAllCustomersFilter(checkbox) {
-    if (checkbox.checked) {
-        selectedStatsCustomers = [];
-        document.querySelectorAll('#customerFilterList input[type=checkbox]').forEach(cb => cb.checked = false);
-    }
-    updateCustomerFilterLabel();
+function toggleAllCustomersFilter() {
+    selectedStatsCustomers = [];
+    updateStatsCustomerFilter();
+    closeAllOrderStatusDropdowns();
     applyFilter();
 }
 
-function onCustomerFilterChange(checkbox) {
-    if (checkbox.checked) {
-        if (!selectedStatsCustomers.includes(checkbox.value)) selectedStatsCustomers.push(checkbox.value);
+function onCustomerFilterChange(name) {
+    if (selectedStatsCustomers.includes(name)) {
+        selectedStatsCustomers = selectedStatsCustomers.filter(n => n !== name);
     } else {
-        selectedStatsCustomers = selectedStatsCustomers.filter(n => n !== checkbox.value);
+        selectedStatsCustomers.push(name);
     }
-    document.getElementById('customerFilterAll').checked = selectedStatsCustomers.length === 0;
-    updateCustomerFilterLabel();
+    updateStatsCustomerFilter();
     applyFilter();
 }
 
@@ -136,19 +144,29 @@ function updateCustomerFilterLabel() {
     } else if (selectedStatsCustomers.length === 1) {
         label.textContent = selectedStatsCustomers[0];
     } else {
-        label.textContent = `Выбрано клиентов: ${selectedStatsCustomers.length}`;
+        label.textContent = `Клиентов: ${selectedStatsCustomers.length}`;
     }
 }
 
-// Закрытие выпадающего списка по клику снаружи
-document.addEventListener('click', function(e) {
-    const dropdown = document.getElementById('customerFilterDropdown');
-    const btn = document.getElementById('customerFilterBtn');
-    if (!dropdown || dropdown.classList.contains('hidden')) return;
-    if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
-        dropdown.classList.add('hidden');
-    }
-});
+const STATS_DATE_RANGE_LABELS = { all: 'Весь период', week: 'Текущая неделя', month: 'Текущий месяц', year: 'Текущий год', custom: 'От – До' };
+
+function toggleStatsDateRangeDropdown() {
+    const dd = document.getElementById('statsDateRangeDropdown');
+    if (!dd) return;
+    const isOpen = dd.classList.contains('open');
+    closeAllOrderStatusDropdowns();
+    if (!isOpen) openSmartDropdown(dd);
+}
+
+function setStatsDateRange(range) {
+    document.getElementById('statsDateRange').value = range;
+    document.getElementById('statsDateRangeBtnLabel').textContent = STATS_DATE_RANGE_LABELS[range];
+    document.querySelectorAll('#statsDateRangeDropdown .status-option').forEach(opt => opt.classList.remove('selected'));
+    event.currentTarget.classList.add('selected');
+    closeAllOrderStatusDropdowns();
+    toggleDateRange();
+    applyFilter();
+}
 
 function toggleDateRange() {
     const range = document.getElementById('statsDateRange').value;
@@ -200,7 +218,7 @@ function buildCustomerRowsHtml(sorted, totals, vats, qtys, grandTotal) {
     sorted.forEach(([name, val], i) => {
         const pct = grandTotal > 0 ? (val/grandTotal*100).toFixed(1) : '0.0';
         const color = `hsl(${i * 360 / sorted.length}, 60%, 50%)`;
-        html += `<tr class="border-b"><td class="p-0.5 flex items-center gap-1"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></span>${escapeHtml(name)}</td><td class="p-0.5 text-right">${qtys[name] || 0}</td><td class="p-0.5 text-right stats-num">${val.toFixed(2)}</td><td class="p-0.5 text-right text-blue-700">${(vats[name]||0).toFixed(2)}</td><td class="p-0.5 text-right stats-pct">${pct}%</td></tr>`;
+        html += `<tr class="border-b"><td class="p-0.5 flex items-center gap-1"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></span>${escapeHtml(name)}</td><td class="p-0.5 text-right">${qtys[name] || 0}</td><td class="p-0.5 text-right stats-num">${val.toFixed(2)}</td><td class="p-0.5 text-right" style="color:#6b7280;">${(vats[name]||0).toFixed(2)}</td><td class="p-0.5 text-right stats-pct">${pct}%</td></tr>`;
     });
     return html;
 }
@@ -229,12 +247,12 @@ function drawCustomerTable(filtered) {
         return;
     }
 
-    let html = '<table class="w-full stats-table table-clean" style="table-layout:fixed;"><thead><tr class="bg-gray-100" style="position:sticky;top:0;"><th class="p-0.5 text-left" style="width:40%;">Клиент</th><th class="p-0.5 text-right" style="width:15%;">Кол-во</th><th class="p-0.5 text-right" style="width:20%;">Сумма (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:15%;">НДС (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:10%;">Доля</th></tr></thead><tbody>';
+    let html = '<table class="w-full stats-table table-clean" style="table-layout:fixed;"><thead><tr style="background-color:#e3e8df;position:sticky;top:0;"><th class="p-0.5 text-left" style="width:40%;">Клиент</th><th class="p-0.5 text-right" style="width:15%;">Кол-во</th><th class="p-0.5 text-right" style="width:20%;">Сумма (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:15%;">НДС (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:10%;">Доля</th></tr></thead><tbody>';
     html += buildCustomerRowsHtml(sorted, totals, vats, qtys, grandTotal);
     html += '</tbody></table>';
     container.innerHTML = html;
     totalContainer.innerHTML =
-        `<table class="w-full stats-table table-clean" style="table-layout:fixed;"><tr class="bg-gray-50 font-semibold"><td class="p-0.5" style="width:40%">Итого</td><td class="p-0.5 text-right" style="width:15%">${grandQty}</td><td class="p-0.5 text-right" style="width:20%">${grandTotal.toFixed(2)}</td><td class="p-0.5 text-right text-blue-700" style="width:15%">${grandVat.toFixed(2)}</td><td class="p-0.5" style="width:10%"></td></tr></table>`;
+        `<table class="w-full stats-table table-clean" style="table-layout:fixed;"><tr style="background-color:#e3e8df;" class="font-semibold"><td class="p-0.5" style="width:40%">Итого</td><td class="p-0.5 text-right" style="width:15%">${grandQty}</td><td class="p-0.5 text-right" style="width:20%">${grandTotal.toFixed(2)}</td><td class="p-0.5 text-right" style="width:15%;color:#6b7280;">${grandVat.toFixed(2)}</td><td class="p-0.5" style="width:10%"></td></tr></table>`;
 }
 
 // --- Топ изделий ---
@@ -253,7 +271,7 @@ function drawProductTable(filtered) {
         return;
     }
     const max = sorted[0][1];
-    let html = '<table class="w-full stats-table table-clean"><thead><tr class="bg-gray-100"><th class="p-0.5 text-left">Изделие</th><th class="p-0.5 text-right">Кол-во</th><th class="p-0.5 text-right">Сумма (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th></tr></thead><tbody>';
+    let html = '<table class="w-full stats-table table-clean"><thead><tr style="background-color:#e3e8df;"><th class="p-0.5 text-left">Изделие</th><th class="p-0.5 text-right">Кол-во</th><th class="p-0.5 text-right">Сумма (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th></tr></thead><tbody>';
     sorted.forEach(([name, val]) => {
         const barW = max > 0 ? Math.round(val/max*100) : 0;
         html += `<tr class="border-b"><td class="p-0.5">
@@ -280,7 +298,8 @@ function drawProfitabilitySummary(filtered) {
     if (costEl) costEl.textContent = formatMoney(totalCost);
     if (profitEl) {
         profitEl.textContent = formatMoney(totalProfit);
-        profitEl.className = totalProfit >= 0 ? 'text-sm font-bold text-green-700' : 'text-sm font-bold text-red-600';
+        profitEl.className = 'text-sm font-bold';
+        profitEl.style.color = totalProfit >= 0 ? '#4f6349' : '#c0685c';
     }
     if (profitPctEl) profitPctEl.textContent = profitPct.toFixed(1) + '%';
 }
@@ -312,12 +331,12 @@ function drawProductProfitabilityTable() {
         : `Топ-${sorted.length} по рентабельности`;
 
     let html = `<p class="text-xs text-gray-500 mb-1">${title}</p>`;
-    html += '<table class="w-full stats-table table-clean" style="table-layout:fixed;"><thead><tr class="bg-gray-100"><th class="p-0.5 text-left" style="width:46%;">Изделие</th><th class="p-0.5 text-right" style="width:18%;">Себест. (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:18%;">Цена (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:18%;">Рент.</th></tr></thead><tbody>';
+    html += '<table class="w-full stats-table table-clean" style="table-layout:fixed;"><thead><tr style="background-color:#e3e8df;"><th class="p-0.5 text-left" style="width:46%;">Изделие</th><th class="p-0.5 text-right" style="width:18%;">Себест. (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:18%;">Цена (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:18%;">Рент.</th></tr></thead><tbody>';
     sorted.forEach(p => {
         const cost = productUnitCost(p);
         const pct  = productProfitPct(p);
-        const pctClass = pct >= 0 ? 'text-green-700' : 'text-red-600';
-        html += `<tr class="border-b"><td class="p-0.5" style="word-break:break-word;">${escapeHtml(p.name)}</td><td class="p-0.5 text-right whitespace-nowrap">${cost.toFixed(2)}</td><td class="p-0.5 text-right whitespace-nowrap">${p.price.toFixed(2)}</td><td class="p-0.5 text-right font-semibold whitespace-nowrap ${pctClass}">${pct.toFixed(1)}%</td></tr>`;
+        const pctColor = pct >= 0 ? '#4f6349' : '#c0685c';
+        html += `<tr class="border-b"><td class="p-0.5" style="word-break:break-word;">${escapeHtml(p.name)}</td><td class="p-0.5 text-right whitespace-nowrap">${cost.toFixed(2)}</td><td class="p-0.5 text-right whitespace-nowrap">${p.price.toFixed(2)}</td><td class="p-0.5 text-right font-semibold whitespace-nowrap" style="color:${pctColor};">${pct.toFixed(1)}%</td></tr>`;
     });
     html += '</tbody></table>';
     container.innerHTML = html;
@@ -374,7 +393,7 @@ function drawMonthlyChart(filtered) {
         const x   = pad.left + i * ((W - pad.left - pad.right) / keys.length) + 2;
         const h   = maxV > 0 ? (revenueVals[i] / maxV) * chartH : 0;
         const y   = pad.top + chartH - h;
-        ctx.fillStyle = `hsl(${210 + i*15}, 55%, 55%)`;
+        ctx.fillStyle = '#d9a441';
         ctx.fillRect(x, y, bW, h);
         points.push({ x: x + bW / 2, y: pad.top + chartH - (maxV > 0 ? (profitVals[i] / maxV) * chartH : 0) });
         // Подпись месяца
@@ -387,7 +406,7 @@ function drawMonthlyChart(filtered) {
     // Линия прибыли поверх столбиков
     if (points.length) {
         ctx.beginPath();
-        ctx.strokeStyle = '#16a34a';
+        ctx.strokeStyle = '#4f6349';
         ctx.lineWidth = 2;
         points.forEach((p, i) => { if (i === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y); });
         ctx.stroke();
@@ -395,18 +414,18 @@ function drawMonthlyChart(filtered) {
         points.forEach(p => {
             ctx.beginPath();
             ctx.arc(p.x, p.y, 2.5, 0, 2 * Math.PI);
-            ctx.fillStyle = '#16a34a';
+            ctx.fillStyle = '#4f6349';
             ctx.fill();
         });
     }
 
     // Легенда графика
     ctx.font = '9px sans-serif'; ctx.textAlign = 'left';
-    ctx.fillStyle = `hsl(210, 55%, 55%)`;
+    ctx.fillStyle = '#d9a441';
     ctx.fillRect(pad.left, 2, 8, 8);
     ctx.fillStyle = '#374151';
     ctx.fillText('Выручка', pad.left + 11, 9);
-    ctx.strokeStyle = '#16a34a'; ctx.lineWidth = 2;
+    ctx.strokeStyle = '#4f6349'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(pad.left + 65, 6); ctx.lineTo(pad.left + 80, 6); ctx.stroke();
     ctx.fillStyle = '#374151';
     ctx.fillText('Прибыль', pad.left + 84, 9);
@@ -582,9 +601,9 @@ function drawDailyRevenueChart() {
         const dow = d.getDay(); // 0=Вс, 6=Сб
         if (dow === 0 || dow === 6) {
             const x = pad.left + i * stepX - stepX/2;
-            ctx.fillStyle = 'rgba(99,102,241,0.13)';
+            ctx.fillStyle = 'rgba(192,104,92,0.13)';
             ctx.fillRect(x, pad.top, stepX, chartH);
-            ctx.fillStyle = '#6366f1';
+            ctx.fillStyle = '#c0685c';
             ctx.fillRect(x, pad.top + chartH - 2, stepX, 2);
         }
     });
@@ -603,7 +622,7 @@ function drawDailyRevenueChart() {
         const x = pad.left + i * stepX;
         const dow = d.getDay();
         ctx.font = '7px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillStyle = (dow === 0 || dow === 6) ? '#6366f1' : '#9ca3af';
+        ctx.fillStyle = (dow === 0 || dow === 6) ? '#c0685c' : '#9ca3af';
         ctx.fillText(WEEKDAY_NAMES_SHORT[dow], x, H - 3);
     });
     // Дата — только по понедельникам (опорные точки для ориентира по неделям)
@@ -621,14 +640,14 @@ function drawDailyRevenueChart() {
         y: pad.top + chartH - (values[i] / maxV) * chartH,
         date: isoDate(d), value: values[i], dow: d.getDay()
     }));
-    ctx.strokeStyle = '#4f46e5'; ctx.lineWidth = 1.5;
+    ctx.strokeStyle = '#d9a441'; ctx.lineWidth = 1.5;
     ctx.beginPath();
     points.forEach((p, i) => { i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y); });
     ctx.stroke();
 
     // Точки
     points.forEach(p => {
-        ctx.fillStyle = p.value > 0 ? '#4f46e5' : '#d1d5db';
+        ctx.fillStyle = p.value > 0 ? '#d9a441' : '#d1d5db';
         ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI*2); ctx.fill();
     });
 
@@ -645,7 +664,7 @@ function drawDailyRevenueChart() {
 
         // Вертикальная пунктирная линия через всю высоту графика
         ctx.save();
-        ctx.strokeStyle = '#ef4444';
+        ctx.strokeStyle = '#c0685c';
         ctx.lineWidth = 2;
         ctx.setLineDash([3, 3]);
         ctx.beginPath();
@@ -655,7 +674,7 @@ function drawDailyRevenueChart() {
         ctx.restore();
 
         // Увеличенная точка поверх линии — видно, какой день выбран
-        ctx.fillStyle = '#4f46e5';
+        ctx.fillStyle = '#d9a441';
         ctx.beginPath(); ctx.arc(nearest.x, nearest.y, 4, 0, Math.PI*2); ctx.fill();
         ctx.fillStyle = 'white';
         ctx.beginPath(); ctx.arc(nearest.x, nearest.y, 1.5, 0, Math.PI*2); ctx.fill();

@@ -2122,26 +2122,34 @@
                 <h2 class="text-base font-semibold mb-2 text-gray-800">Статистика</h2>
 
                 <!-- Фильтры -->
-                <div class="relative mb-1">
-                    <button type="button" onclick="toggleCustomerFilterDropdown()" id="customerFilterBtn" class="border p-1 rounded-xl w-full text-xs text-left bg-[#f4f1ea] flex justify-between items-center">
-                        <span id="customerFilterLabel">Все клиенты</span>
-                        <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                    </button>
-                    <div id="customerFilterDropdown" class="hidden absolute z-10 bg-white border rounded-xl shadow-md w-full mt-1 max-h-40 overflow-y-auto p-1">
-                        <label class="flex items-center gap-2 px-1 py-1 text-xs border-b mb-1 font-medium">
-                            <input type="checkbox" id="customerFilterAll" onchange="toggleAllCustomersFilter(this)" checked> Все клиенты
-                        </label>
-                        <div id="customerFilterList"></div>
+                <div class="grid grid-cols-2 gap-1.5 mb-1">
+                    <div style="position:relative;" onclick="event.stopPropagation();">
+                        <button type="button" onclick="toggleCustomerFilterDropdown()" id="customerFilterBtn" class="field-select-btn">
+                            <span id="customerFilterLabel">Все клиенты</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
+                        </button>
+                        <div id="customerFilterDropdown" class="status-dropdown">
+                            <div class="status-option selected" id="statsFilterAllRow" onclick="toggleAllCustomersFilter()" style="justify-content:flex-start; gap:8px; border-bottom:1px solid #f1efe9;">
+                                <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+                                <span>Все клиенты</span>
+                            </div>
+                            <div id="customerFilterList"></div>
+                        </div>
                     </div>
-                </div>
-                <div class="mb-1">
-                    <select id="statsDateRange" onchange="toggleDateRange(); applyFilter();" class="border p-0.5 rounded-xl w-full text-xs">
-                        <option value="all">Весь период</option>
-                        <option value="week">Текущая неделя</option>
-                        <option value="month">Текущий месяц</option>
-                        <option value="year">Текущий год</option>
-                        <option value="custom">От - До</option>
-                    </select>
+                    <div style="position:relative;" onclick="event.stopPropagation();">
+                        <select id="statsDateRange" class="hidden"><option value="all">Весь период</option><option value="week">Текущая неделя</option><option value="month">Текущий месяц</option><option value="year">Текущий год</option><option value="custom">От - До</option></select>
+                        <button type="button" class="field-select-btn" id="statsDateRangeBtn" onclick="toggleStatsDateRangeDropdown()">
+                            <span id="statsDateRangeBtnLabel">Весь период</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
+                        </button>
+                        <div class="status-dropdown" id="statsDateRangeDropdown">
+                            <div class="status-option selected" onclick="setStatsDateRange('all')"><span>Весь период</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+                            <div class="status-option" onclick="setStatsDateRange('week')"><span>Текущая неделя</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+                            <div class="status-option" onclick="setStatsDateRange('month')"><span>Текущий месяц</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+                            <div class="status-option" onclick="setStatsDateRange('year')"><span>Текущий год</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+                            <div class="status-option" onclick="setStatsDateRange('custom')"><span>От – До</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+                        </div>
+                    </div>
                 </div>
                 <div id="customDateRange" class="hidden mb-1">
                     <div class="flex gap-1">
@@ -2171,14 +2179,14 @@
                         <canvas id="chartCanvas" width="200" height="200"></canvas>
                     </div>
                     <!-- Легенда отдельно, со скроллом -->
-                    <div id="chartLegend" style="max-height:120px;overflow-y:auto; touch-action:pan-y; overscroll-behavior:contain;" class="border rounded-xl p-2 bg-gray-50"></div>
+                    <div id="chartLegend" style="max-height:120px;overflow-y:auto; touch-action:pan-y; overscroll-behavior:contain; background:#e3e8df;" class="border rounded-xl p-2"></div>
                 </div>
 
                 <!-- Общие цифры -->
                 <div class="bg-white rounded-xl shadow-md p-2 mb-5">
-                    <div class="bg-gray-50 rounded-xl p-2 mb-2 grid grid-cols-2 gap-1 text-center">
+                    <div class="rounded-xl p-2 mb-2 grid grid-cols-2 gap-1 text-center" style="background:#e3e8df;">
                         <div><p class="text-xs text-gray-500">Всего (с НДС)</p><p id="totalPrice" class="text-xs font-bold text-gray-800">0.00</p></div>
-                        <div><p class="text-xs text-gray-500">в т.ч. НДС</p><p id="totalVatModal" class="text-sm font-bold text-blue-700">0.00</p></div>
+                        <div><p class="text-xs text-gray-500">в т.ч. НДС</p><p id="totalVatModal" class="text-sm font-bold" style="color:#6b7280;">0.00</p></div>
                         <div><p class="text-xs text-gray-500">Неделя (с НДС)</p><p id="weekTotalModal" class="text-xs font-bold text-gray-800">0.00</p></div>
                         <div><p class="text-xs text-gray-500">Месяц (с НДС)</p><p id="monthTotalModal" class="text-xs font-bold text-gray-800">0.00</p></div>
                     </div>
@@ -2216,9 +2224,9 @@
 
                 <!-- Рентабельность за период + топ изделий по рентабельности -->
                 <div class="bg-white rounded-xl shadow-md p-2 mb-5 perm-view-costs">
-                    <div class="bg-gray-50 rounded-xl p-2 mb-2 grid grid-cols-3 gap-1 text-center">
+                    <div class="rounded-xl p-2 mb-2 grid grid-cols-3 gap-1 text-center" style="background:#e3e8df;">
                         <div><p class="text-xs text-gray-500">Себестоимость</p><p id="statsTotalCost" class="text-xs font-bold text-gray-800">0.00</p></div>
-                        <div><p class="text-xs text-gray-500">Прибыль</p><p id="statsTotalProfit" class="text-sm font-bold text-green-700">0.00</p></div>
+                        <div><p class="text-xs text-gray-500">Прибыль</p><p id="statsTotalProfit" class="text-sm font-bold" style="color:#4f6349;">0.00</p></div>
                         <div><p class="text-xs text-gray-500">Рентабельность</p><p id="statsProfitPct" class="text-sm font-bold text-gray-800">0.0%</p></div>
                     </div>
                     <div class="flex items-center gap-2 mb-2">
@@ -2251,7 +2259,7 @@
 <script src="orders.js?v=50"></script>
 <script src="invoice.js?v=9"></script>
 <script src="payments.js?v=10"></script>
-<script src="stats.js?v=9"></script>
+<script src="stats.js?v=10"></script>
 <script src="history.js?v=7"></script>
 <script src="modals.js?v=9"></script>
 <script src="demoData.js?v=7"></script>
