@@ -86,6 +86,7 @@ function displaySemiFinished() {
         const row = document.createElement('tr');
         row.className = 'order-row border-b';
         row.style.cursor = 'pointer';
+        row.dataset.name = (sf.name || '').toLowerCase();
         row.innerHTML = `
             <td class=" p-0.5 table-text relative ${nameCellPad}" onclick="openSemiFinishedDetail(${sf.id})">${accentBar}${escapeHtml(sf.name)}</td>
             <td class=" p-0.5 table-text text-center" onclick="openSemiFinishedDetail(${sf.id})">${formatMoney(unitCost, 4)}/${unitLabel}</td>
@@ -96,6 +97,98 @@ function displaySemiFinished() {
     const warningEl = document.getElementById('semiFinishedRecipeWarning');
     if (warningEl) warningEl.classList.toggle('hidden', warningCount === 0);
     updateSemiFinishedSelects();
+    renderSemiFinishedCards();
+    filterSemiFinishedList();
+}
+
+// ---- Карточный вид (тот же принцип, что у ингредиентов) ----
+function renderSemiFinishedCards() {
+    const body = document.getElementById('semiFinishedCardsBody');
+    if (!body) return;
+
+    const today = typeof getLocalDateStr === 'function' ? getLocalDateStr(0) : new Date().toISOString().slice(0, 10);
+    const neededForOrders = {};
+    (orders || []).filter(o => o.status !== 'выполнен' && o.date >= today).forEach(o => {
+        (o.items || []).forEach(item => {
+            const prod = products.find(p => p.id === item.product_id);
+            if (!prod || !prod.ingredients) return;
+            const factor = 1 / Number(prod.batch_size || 1);
+            prod.ingredients.forEach(ri => {
+                if (!ri.semi_finished_id) return;
+                neededForOrders[ri.semi_finished_id] = (neededForOrders[ri.semi_finished_id] || 0) +
+                    Number(ri.quantity) * Number(item.quantity) * factor;
+            });
+        });
+    });
+
+    let html = '';
+    semiFinished.forEach(sf => {
+        const unitLabel = SF_UNIT_LABELS[sf.unit] || sf.unit;
+        const unitCost  = semiFinishedUnitCost(sf);
+        const balance   = typeof getSemiFinishedBalance === 'function' ? getSemiFinishedBalance(sf.id) : null;
+        const daily     = typeof avgDailySfUsage === 'function' ? avgDailySfUsage(sf.id) : 0;
+        const daysLeft  = (balance !== null && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
+        const needed    = neededForOrders[sf.id] || 0;
+        const shortage  = needed > 0 && (balance === null || balance < needed);
+
+        const isCritical = shortage || (balance !== null && balance <= 0) || (daysLeft !== null && daysLeft < 3);
+        const isWarning  = !isCritical && daysLeft !== null && daysLeft < 7;
+        const notConfirmed = !sf.recipe_confirmed;
+        const accentColor = (isCritical || notConfirmed) ? '#c0685c' : isWarning ? '#d9a441' : '';
+        const daysColor = isCritical ? '#c0685c' : isWarning ? '#96712a' : '#4f6349';
+        const daysText = daysLeft !== null ? `Хватит: ${daysLeft} дн.` : shortage ? 'Хватит: нехватка' : '';
+        const balanceText = balance !== null ? `Остаток: ${Number(balance).toFixed(1)} ${unitLabel}` : 'Остаток: —';
+        const priceText = `${formatMoney(unitCost, 4)}/${unitLabel}`;
+        const stripe = accentColor ? `<div class="stripe" style="background:${accentColor};"></div>` : '';
+
+        html += `
+        <div class="order-card" data-name="${escapeHtml((sf.name || '').toLowerCase())}" style="cursor:pointer;" onclick="openSemiFinishedDetail(${sf.id})">
+            ${stripe}
+            <div class="order-card-body">
+                <div class="oc-row">
+                    <span class="oc-name">${escapeHtml(sf.name || '(без названия)')}</span>
+                    ${daysText ? `<span class="oc-sum" style="color:${daysColor};">${daysText}</span>` : ''}
+                </div>
+                <div class="oc-meta">${balanceText} · ${priceText}</div>
+            </div>
+        </div>`;
+    });
+    body.innerHTML = html;
+}
+
+// ---- Переключатель Карточки / Таблица ----
+function setSemiFinishedViewMode(mode) {
+    document.getElementById('semiFinishedCardsWrap')?.classList.toggle('hidden', mode !== 'cards');
+    document.getElementById('semiFinishedTableWrap')?.classList.toggle('hidden', mode !== 'table');
+    document.getElementById('semiFinishedViewBtnCards')?.classList.toggle('active', mode === 'cards');
+    document.getElementById('semiFinishedViewBtnTable')?.classList.toggle('active', mode === 'table');
+}
+
+// ---- Поиск по названию — работает одинаково в обоих видах ----
+function filterSemiFinishedList() {
+    const input = document.getElementById('semiFinishedSearchInput');
+    const q = input ? input.value.trim().toLowerCase() : '';
+    document.getElementById('semiFinishedSearchClear')?.classList.toggle('hidden', !q);
+    document.getElementById('semiFinishedSearchIcon')?.classList.toggle('hidden', !!q);
+
+    let visibleCards = 0;
+    document.querySelectorAll('#semiFinishedCardsBody .order-card').forEach(card => {
+        const match = !q || card.dataset.name.includes(q);
+        card.style.display = match ? 'flex' : 'none';
+        if (match) visibleCards++;
+    });
+    document.getElementById('semiFinishedCardsEmpty')?.classList.toggle('hidden', visibleCards !== 0);
+
+    document.querySelectorAll('#semiFinishedTableBody tr').forEach(row => {
+        const match = !q || (row.dataset.name || '').includes(q);
+        row.style.display = match ? '' : 'none';
+    });
+}
+
+function clearSemiFinishedSearch() {
+    const input = document.getElementById('semiFinishedSearchInput');
+    if (input) input.value = '';
+    filterSemiFinishedList();
 }
 
 // Кнопка "+": сразу создаёт черновик полуфабриката и открывает его карточку
@@ -139,6 +232,7 @@ function openSemiFinishedDetail(sfId) {
     document.getElementById('semiFinishedList').classList.add('hidden');
     document.getElementById('semiFinishedDetail').classList.add('active');
     document.getElementById('semiFinishedDetail').classList.add('fade-in'); setTimeout(() => document.getElementById('semiFinishedDetail').classList.remove('fade-in'), 300);
+    if (typeof positionStickySearchBar === 'function') positionStickySearchBar('semiFinishedSearchBar', 'semiFinishedList', 'semiFinishedDetail');
 
     document.getElementById('sfdName').value = sf.name;
     document.getElementById('sfdBatchSize').value = sf.batch_size;
@@ -160,6 +254,7 @@ async function closeSemiFinishedDetail() {
     currentSemiFinishedId = null;
     document.getElementById('semiFinishedList').classList.remove('hidden');
     document.getElementById('semiFinishedDetail').classList.remove('active');
+    if (typeof positionStickySearchBar === 'function') positionStickySearchBar('semiFinishedSearchBar', 'semiFinishedList', 'semiFinishedDetail');
     if (leavingId !== null) await cleanupSemiFinishedDraftIfEmpty(leavingId);
     displaySemiFinished();
     refreshFab();

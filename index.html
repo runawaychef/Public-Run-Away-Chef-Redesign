@@ -694,6 +694,44 @@
     </div>
 </div>
 
+<!-- Поиск + переключатель вида для Ингредиентов (Склад) -->
+<div id="ingredientsSearchBar" class="hidden" style="position:fixed; left:50%; transform:translateX(-50%); width:100%; max-width:42rem; z-index:30; box-sizing:border-box; padding:0 8px;">
+    <div class="flex gap-2 items-center" style="background:#f4f1ea; padding:6px 0;">
+        <div class="search-input-wrap" style="flex:1; position:relative;">
+            <input id="ingredientSearchInput" type="text" placeholder="Поиск по названию..." oninput="filterIngredientsList()" class="border p-1.5 rounded-xl w-full table-text" style="padding-right:30px;">
+            <svg id="ingredientSearchIcon" class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:#a29c8c; pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+            <svg id="ingredientSearchClear" onclick="clearIngredientSearch()" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:#9a9488; cursor:pointer;"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+        </div>
+        <div class="view-toggle-pill">
+            <button class="view-toggle-btn active" id="ingredientsViewBtnCards" onclick="setIngredientsViewMode('cards')" title="Карточки">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+            </button>
+            <button class="view-toggle-btn" id="ingredientsViewBtnTable" onclick="setIngredientsViewMode('table')" title="Таблица">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Поиск + переключатель вида для Полуфабрикатов -->
+<div id="semiFinishedSearchBar" class="hidden" style="position:fixed; left:50%; transform:translateX(-50%); width:100%; max-width:42rem; z-index:30; box-sizing:border-box; padding:0 8px;">
+    <div class="flex gap-2 items-center" style="background:#f4f1ea; padding:6px 0;">
+        <div class="search-input-wrap" style="flex:1; position:relative;">
+            <input id="semiFinishedSearchInput" type="text" placeholder="Поиск по названию..." oninput="filterSemiFinishedList()" class="border p-1.5 rounded-xl w-full table-text" style="padding-right:30px;">
+            <svg id="semiFinishedSearchIcon" class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:#a29c8c; pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+            <svg id="semiFinishedSearchClear" onclick="clearSemiFinishedSearch()" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:#9a9488; cursor:pointer;"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+        </div>
+        <div class="view-toggle-pill">
+            <button class="view-toggle-btn active" id="semiFinishedViewBtnCards" onclick="setSemiFinishedViewMode('cards')" title="Карточки">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+            </button>
+            <button class="view-toggle-btn" id="semiFinishedViewBtnTable" onclick="setSemiFinishedViewMode('table')" title="Таблица">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Нижний таб-бар: иконка + подпись, те же 4 раздела, что и раньше.
      onclick специально оставлен идентичным старым кнопкам в шапке — showTab()
      ищет кнопку через document.querySelector('button[onclick="showTab(...)"]')
@@ -861,24 +899,32 @@
         <!-- ===== ИНГРЕДИЕНТЫ ===== -->
         <div id="ingredients" class="tab-content hidden">
             <div id="ingredientsList">
-                <div class="bg-white p-2 rounded-xl shadow-md">
-                    <div class="flex items-center justify-between mb-2">
-                        <h2 class="text-sm font-semibold text-gray-800">Склад</h2>
+                <div class="p-2 rounded-xl shadow-md" style="background:#f4f1ea;">
+                    <div class="flex items-center justify-end mb-2">
                         <div class="flex gap-2">
                             <button onclick="openInventarizationModal()" class="pill-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Инвентаризация</button>
                             <button onclick="showTab('semiFinished')" class="pill-btn-secondary">Полуфабрикаты →</button>
                         </div>
                     </div>
-                    <p class="text-xs text-gray-400 mb-2">Нажмите на строку, чтобы открыть карточку</p>
-                    <table class="w-full table-auto table-clean">
-                        <thead><tr style="background-color:#e3e8df;">
-                            <th class="p-1 text-xs w-[35%]">Название</th>
-                            <th class="p-1 text-xs w-[20%]">Цена за ед.</th>
-                            <th class="p-1 text-xs w-[25%]">Остаток</th>
-                            <th class="p-1 text-xs w-[20%]">Хватит</th>
-                        </tr></thead>
-                        <tbody id="ingredientTableBody"></tbody>
-                    </table>
+
+                    <!-- Карточный вид (по умолчанию) -->
+                    <div id="ingredientCardsWrap">
+                        <div id="ingredientCardsBody"></div>
+                        <p id="ingredientCardsEmpty" class="text-xs text-gray-400 text-center py-4 hidden">Ничего не найдено</p>
+                    </div>
+
+                    <!-- Табличный вид -->
+                    <div id="ingredientTableWrap" class="hidden">
+                        <table class="w-full table-auto table-clean">
+                            <thead><tr style="background-color:#e3e8df;">
+                                <th class="p-1 text-xs w-[35%]">Название</th>
+                                <th class="p-1 text-xs w-[20%]">Цена за ед.</th>
+                                <th class="p-1 text-xs w-[25%]">Остаток</th>
+                                <th class="p-1 text-xs w-[20%]">Хватит</th>
+                            </tr></thead>
+                            <tbody id="ingredientTableBody"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -981,22 +1027,30 @@
                         Назад к ингредиентам
                     </button>
                 </div>
-                <div class="bg-white p-2 rounded-xl shadow-md">
-                    <div class="flex items-center justify-between mb-2">
-                        <h2 class="text-sm font-semibold text-gray-800">Полуфабрикаты</h2>
+                <div class="p-2 rounded-xl shadow-md" style="background:#f4f1ea;">
+                    <div class="flex items-center justify-end mb-2">
                         <button onclick="openSfInventarizationModal()" class="pill-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Инвентаризация</button>
                     </div>
-                    <p class="text-xs text-gray-400 mb-2">Нажмите на строку, чтобы открыть рецептуру</p>
                     <p id="semiFinishedRecipeWarning" class="text-xs mb-2 hidden" style="color:#a3493d; background:#f3ded9; border:1px solid #e8c4bb; border-radius:12px; padding:6px;"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>У некоторых полуфабрикатов не подтверждён рецепт. Откройте их и проверьте.</p>
-                    <table class="w-full table-auto table-clean">
-                        <thead><tr style="background-color:#e3e8df;">
-                            <th class="p-1 text-xs w-[35%]">Название</th>
-                            <th class="p-1 text-xs w-[20%]">Цена за ед.</th>
-                            <th class="p-1 text-xs w-[25%]">Остаток</th>
-                            <th class="p-1 text-xs w-[20%]">Хватит</th>
-                        </tr></thead>
-                        <tbody id="semiFinishedTableBody"></tbody>
-                    </table>
+
+                    <!-- Карточный вид (по умолчанию) -->
+                    <div id="semiFinishedCardsWrap">
+                        <div id="semiFinishedCardsBody"></div>
+                        <p id="semiFinishedCardsEmpty" class="text-xs text-gray-400 text-center py-4 hidden">Ничего не найдено</p>
+                    </div>
+
+                    <!-- Табличный вид -->
+                    <div id="semiFinishedTableWrap" class="hidden">
+                        <table class="w-full table-auto table-clean">
+                            <thead><tr style="background-color:#e3e8df;">
+                                <th class="p-1 text-xs w-[35%]">Название</th>
+                                <th class="p-1 text-xs w-[20%]">Цена за ед.</th>
+                                <th class="p-1 text-xs w-[25%]">Остаток</th>
+                                <th class="p-1 text-xs w-[20%]">Хватит</th>
+                            </tr></thead>
+                            <tbody id="semiFinishedTableBody"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -2350,8 +2404,8 @@
     <script src="employees.js?v=15"></script>
     <script src="company.js?v=7"></script>
     <script src="inventory.js?v=20"></script>
-<script src="ingredients.js?v=17"></script>
-<script src="semifinished.js?v=13"></script>
+<script src="ingredients.js?v=18"></script>
+<script src="semifinished.js?v=14"></script>
 <script src="products.js?v=20"></script>
 <script src="customers.js?v=27"></script>
 <script src="orders.js?v=52"></script>
@@ -2539,6 +2593,8 @@ function showTab(tabId) {
     if (tabId === 'orders' && typeof positionOrdersViewToggle === 'function') positionOrdersViewToggle();
     document.getElementById('productsSearchBar')?.classList.toggle('hidden', tabId !== 'products');
     document.getElementById('customersSearchBar')?.classList.toggle('hidden', tabId !== 'customers');
+    document.getElementById('ingredientsSearchBar')?.classList.toggle('hidden', tabId !== 'ingredients');
+    document.getElementById('semiFinishedSearchBar')?.classList.toggle('hidden', tabId !== 'semiFinished');
 
     // Принудительно завершаем предыдущую анимацию если она ещё идёт
     const wrapper = document.getElementById('tabsWrapper');
@@ -2611,8 +2667,8 @@ function showTab(tabId) {
     if (tabId === 'orders')    { closeOrderDetail(); displayOrders(); }
     if (tabId === 'products')  { closeProductDetailSilent(); displayProducts(); positionStickySearchBar('productsSearchBar', 'productsList', 'productDetail'); }
     if (tabId === 'customers') { closeCustomerDetailSilent(); displayCustomers(); positionStickySearchBar('customersSearchBar', 'customersList', 'customerDetail'); }
-    if (tabId === 'ingredients') { closeIngredientDetailSilent(); displayIngredients(); }
-    if (tabId === 'semiFinished') { closeSemiFinishedDetailSilent(); displaySemiFinished(); }
+    if (tabId === 'ingredients') { closeIngredientDetailSilent(); displayIngredients(); positionStickySearchBar('ingredientsSearchBar', 'ingredientsList', 'ingredientDetail'); }
+    if (tabId === 'semiFinished') { closeSemiFinishedDetailSilent(); displaySemiFinished(); positionStickySearchBar('semiFinishedSearchBar', 'semiFinishedList', 'semiFinishedDetail'); }
     if (tabId === 'history')   { updateHistoryEmployeeFilter(); loadHistory(); }
     if (tabId === 'stats')     { updateStatsCustomerFilter(); toggleDateRange(); applyFilter(); updateInfoCounts(); initDailyRevenueChart(); }
     refreshFab();
@@ -2645,6 +2701,8 @@ window.addEventListener('resize', () => {
     if (typeof currentTabId === 'undefined') return;
     if (currentTabId === 'products') positionStickySearchBar('productsSearchBar', 'productsList', 'productDetail');
     if (currentTabId === 'customers') positionStickySearchBar('customersSearchBar', 'customersList', 'customerDetail');
+    if (currentTabId === 'ingredients') positionStickySearchBar('ingredientsSearchBar', 'ingredientsList', 'ingredientDetail');
+    if (currentTabId === 'semiFinished') positionStickySearchBar('semiFinishedSearchBar', 'semiFinishedList', 'semiFinishedDetail');
 });
 
 // ==================== ПЛАВАЮЩАЯ КНОПКА "+" ====================

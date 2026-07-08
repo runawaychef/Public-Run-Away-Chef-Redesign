@@ -81,6 +81,7 @@ function displayIngredients() {
 
         const row = document.createElement('tr');
         row.className = 'order-row';
+        row.dataset.name = (ing.name || '').toLowerCase();
         row.innerHTML = `
             <td class="border p-0.5 table-text relative ${nameCellPad}" onclick="openIngredientDetail(${ing.id})">${accentBar}${escapeHtml(ing.name)}</td>
             <td class="border p-0.5 table-text text-center" onclick="openIngredientDetail(${ing.id})">${formatMoney(unitPrice, 4)}/${unitLabel}</td>
@@ -88,6 +89,97 @@ function displayIngredients() {
             <td class="border p-0.5 table-text text-center" onclick="openIngredientDetail(${ing.id})">${daysStr}</td>`;
         tbody.appendChild(row);
     });
+    renderIngredientCards();
+    filterIngredientsList();
+}
+
+// ---- Карточный вид (тот же принцип, что у изделий/клиентов) ----
+function renderIngredientCards() {
+    const body = document.getElementById('ingredientCardsBody');
+    if (!body) return;
+
+    const today = typeof getLocalDateStr === 'function' ? getLocalDateStr(0) : new Date().toISOString().slice(0, 10);
+    const neededForOrders = {};
+    (orders || []).filter(o => o.status !== 'выполнен' && o.date >= today).forEach(o => {
+        (o.items || []).forEach(item => {
+            const prod = products.find(p => p.id === item.product_id);
+            if (!prod || !prod.ingredients) return;
+            const factor = 1 / Number(prod.batch_size || 1);
+            prod.ingredients.forEach(ri => {
+                if (!ri.ingredient_id) return;
+                const qty = Number(ri.quantity) * Number(item.quantity) * factor;
+                neededForOrders[ri.ingredient_id] = (neededForOrders[ri.ingredient_id] || 0) + qty;
+            });
+        });
+    });
+
+    let html = '';
+    ingredients.forEach(ing => {
+        const unitPrice = ingredientUnitPrice(ing);
+        const unitLabel = UNIT_LABELS[ing.unit] || ing.unit;
+        const balance  = typeof getIngredientBalance === 'function' ? getIngredientBalance(ing.id) : null;
+        const daily    = typeof avgDailyUsage === 'function' ? avgDailyUsage(ing.id) : 0;
+        const daysLeft = (balance !== null && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
+        const needed   = neededForOrders[ing.id] || 0;
+        const shortfall = needed > 0 && (balance === null || balance < needed);
+
+        const isCritical = shortfall || (balance !== null && balance <= 0) || (daysLeft !== null && daysLeft < 3);
+        const isWarning  = !isCritical && daysLeft !== null && daysLeft < 7;
+        const accentColor = isCritical ? '#c0685c' : isWarning ? '#d9a441' : '';
+        const daysColor = isCritical ? '#c0685c' : isWarning ? '#96712a' : '#4f6349';
+        const daysText = daysLeft !== null ? `Хватит: ${daysLeft} дн.` : shortfall ? 'Хватит: нехватка' : '';
+        const balanceText = balance !== null ? `Остаток: ${Number(balance).toFixed(1)} ${unitLabel}` : 'Остаток: —';
+        const priceText = `${formatMoney(unitPrice, 4)}/${unitLabel}`;
+        const stripe = accentColor ? `<div class="stripe" style="background:${accentColor};"></div>` : '';
+
+        html += `
+        <div class="order-card" data-name="${escapeHtml((ing.name || '').toLowerCase())}" style="cursor:pointer;" onclick="openIngredientDetail(${ing.id})">
+            ${stripe}
+            <div class="order-card-body">
+                <div class="oc-row">
+                    <span class="oc-name">${escapeHtml(ing.name || '(без названия)')}</span>
+                    ${daysText ? `<span class="oc-sum" style="color:${daysColor};">${daysText}</span>` : ''}
+                </div>
+                <div class="oc-meta">${balanceText} · ${priceText}</div>
+            </div>
+        </div>`;
+    });
+    body.innerHTML = html;
+}
+
+// ---- Переключатель Карточки / Таблица ----
+function setIngredientsViewMode(mode) {
+    document.getElementById('ingredientCardsWrap')?.classList.toggle('hidden', mode !== 'cards');
+    document.getElementById('ingredientTableWrap')?.classList.toggle('hidden', mode !== 'table');
+    document.getElementById('ingredientsViewBtnCards')?.classList.toggle('active', mode === 'cards');
+    document.getElementById('ingredientsViewBtnTable')?.classList.toggle('active', mode === 'table');
+}
+
+// ---- Поиск по названию — работает одинаково в обоих видах ----
+function filterIngredientsList() {
+    const input = document.getElementById('ingredientSearchInput');
+    const q = input ? input.value.trim().toLowerCase() : '';
+    document.getElementById('ingredientSearchClear')?.classList.toggle('hidden', !q);
+    document.getElementById('ingredientSearchIcon')?.classList.toggle('hidden', !!q);
+
+    let visibleCards = 0;
+    document.querySelectorAll('#ingredientCardsBody .order-card').forEach(card => {
+        const match = !q || card.dataset.name.includes(q);
+        card.style.display = match ? 'flex' : 'none';
+        if (match) visibleCards++;
+    });
+    document.getElementById('ingredientCardsEmpty')?.classList.toggle('hidden', visibleCards !== 0);
+
+    document.querySelectorAll('#ingredientTableBody tr').forEach(row => {
+        const match = !q || (row.dataset.name || '').includes(q);
+        row.style.display = match ? '' : 'none';
+    });
+}
+
+function clearIngredientSearch() {
+    const input = document.getElementById('ingredientSearchInput');
+    if (input) input.value = '';
+    filterIngredientsList();
 }
 
 // Кнопка "+": попап для создания нового ингредиента
@@ -110,6 +202,7 @@ async function createDraftIngredientAndOpen() {
 
     document.getElementById('ingredientsList').classList.add('hidden');
     document.getElementById('ingredientDetail').classList.add('active');
+    if (typeof positionStickySearchBar === 'function') positionStickySearchBar('ingredientsSearchBar', 'ingredientsList', 'ingredientDetail');
 
     const nameInput = document.getElementById('idNameInput');
     const unitInput = document.getElementById('idUnitInput');
@@ -199,6 +292,7 @@ async function openIngredientDetail(ingId) {
     document.getElementById('ingredientsList').classList.add('hidden');
     document.getElementById('ingredientDetail').classList.add('active');
     document.getElementById('ingredientDetail').classList.add('fade-in'); setTimeout(() => document.getElementById('ingredientDetail').classList.remove('fade-in'), 300);
+    if (typeof positionStickySearchBar === 'function') positionStickySearchBar('ingredientsSearchBar', 'ingredientsList', 'ingredientDetail');
 
 
     // Заголовок карточки — inline поля
@@ -443,6 +537,7 @@ async function closeIngredientDetail() {
     _isNewIngredient = false;
     document.getElementById('ingredientsList').classList.remove('hidden');
     document.getElementById('ingredientDetail').classList.remove('active');
+    if (typeof positionStickySearchBar === 'function') positionStickySearchBar('ingredientsSearchBar', 'ingredientsList', 'ingredientDetail');
     // Показываем кнопку удаления на случай если была скрыта — но только если есть право
     const delBtn = document.querySelector('#ingredientDetail button[onclick="deleteCurrentIngredient()"]');
     if (delBtn) delBtn.classList.toggle('hidden', !hasPermission('can_delete'));
