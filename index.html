@@ -337,9 +337,6 @@
         }
         .view-toggle-btn svg { width: 16px; height: 16px; }
         .view-toggle-btn.active { background: #7c9473; color: #fff; }
-        .view-toggle-group { display: flex; background: #f4f1ea; border: 1px solid #e2ddd0; border-radius: 12px; padding: 2px; gap: 2px; flex-shrink: 0; }
-        .view-toggle-group .view-toggle-btn { width: 28px; height: 28px; border-radius: 9px; }
-        .view-toggle-group .view-toggle-btn svg { width: 14px; height: 14px; }
 
         .order-card {
             background: #fff; border-radius: 16px; display: flex; overflow: visible;
@@ -696,7 +693,7 @@
         <!-- ===== ИЗДЕЛИЯ ===== -->
         <div id="products" class="tab-content hidden">
             <div id="productsList">
-                <div class="bg-white p-2 rounded-xl shadow-md">
+                <div class="p-2 rounded-xl shadow-md" style="background:#f4f1ea;">
                     <h2 class="text-sm font-semibold mb-2 text-gray-800">Ассортимент</h2>
                     <div class="flex gap-2 items-center mb-2">
                         <div class="search-input-wrap" style="flex:1; position:relative;">
@@ -704,7 +701,7 @@
                             <svg id="productSearchIcon" class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:#a29c8c; pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
                             <svg id="productSearchClear" onclick="clearProductSearch()" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:#9a9488; cursor:pointer;"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
                         </div>
-                        <div class="view-toggle-group">
+                        <div style="display:flex; gap:4px; flex-shrink:0;">
                             <button class="view-toggle-btn active" id="productsViewBtnCards" onclick="setProductsViewMode('cards')" title="Карточки">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
                             </button>
