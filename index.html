@@ -675,9 +675,9 @@
                 <div class="bg-white p-2 rounded-xl shadow-md">
                     <h2 class="text-sm font-semibold mb-2 text-gray-800">Ассортимент</h2>
                     <p class="text-xs text-gray-400 mb-2">Нажмите на строку изделия, чтобы открыть рецептуру</p>
-                    <p id="productsUnitWarning" class="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl p-1.5 mb-2 hidden"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>У некоторых изделий не выбрана единица измерения или не подтверждён рецепт. Откройте их и проверьте.</p>
+                    <p id="productsUnitWarning" class="text-xs mb-2 hidden" style="color:#a3493d; background:#f3ded9; border:1px solid #e8c4bb; border-radius:12px; padding:6px;"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>У некоторых изделий не выбрана единица измерения или не подтверждён рецепт. Откройте их и проверьте.</p>
                     <table class="w-full table-auto table-clean">
-                        <thead><tr class="bg-gray-100">
+                        <thead><tr style="background-color:#e3e8df;">
                             <th class="p-1 text-xs w-[57%]">Название</th>
                             <th class="p-1 text-xs w-[10%]">Ед.</th>
                             <th class="p-1 text-xs w-[15%]">Цена</th>
@@ -692,14 +692,14 @@
             <div id="productDetail">
                 <div class="bg-white p-2 rounded-xl shadow-md mb-3">
                     <div class="flex items-center justify-between mb-2">
-                        <button onclick="closeProductDetail()" class="btn text-xs bg-[#7c9473] text-white px-2 py-1 rounded-xl hover:bg-[#6c8464] flex items-center gap-1">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                        <button onclick="closeProductDetail()" class="pill-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
                             Назад к изделиям
                         </button>
-                        <button onclick="deleteCurrentProduct()" class="btn text-xs bg-[#c0685c] text-white px-2 py-1 rounded-xl hover:bg-[#a85950] perm-delete">Удалить изделие</button>
+                        <button onclick="deleteCurrentProduct()" class="pill-btn-danger perm-delete">Удалить изделие</button>
                     </div>
                     <p class="text-[11px] text-gray-400 mb-1">Изменения сохраняются автоматически</p>
-                    <div id="pdUnitWarning" class="hidden bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl p-1.5 mb-2">
+                    <div id="pdUnitWarning" class="hidden text-xs rounded-xl p-1.5 mb-2" style="color:#a3493d; background:#f3ded9; border:1px solid #e8c4bb;">
                         <svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>Для этого изделия не выбрана единица измерения. Пожалуйста, выберите «шт» или «кг».
                     </div>
                     <div class="grid grid-cols-2 gap-1 mb-2">
@@ -728,7 +728,7 @@
                             <input id="pdOtherCosts" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" onchange="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                     </div>
-                    <button id="pdSaveNewBtn" onclick="saveNewProduct()" class="hidden btn bg-[#7c9473] text-white w-full py-1.5 rounded-xl text-sm mt-2 hover:bg-[#6c8464]">Сохранить</button>
+                    <button id="pdSaveNewBtn" onclick="saveNewProduct()" class="hidden pill-btn w-full justify-center mt-2">Сохранить</button>
                 </div>
 
                 <div id="pdRecipeBlock" class="bg-white p-2 rounded-xl shadow-md">
@@ -741,7 +741,7 @@
                         </div>
                     </div>
                     <table class="w-full table-auto table-clean mb-2">
-                        <thead><tr class="bg-gray-100">
+                        <thead><tr style="background-color:#e3e8df;">
                             <th class="p-1 text-xs w-[40%]">Ингредиент</th>
                             <th class="p-1 text-xs w-[25%]">Кол-во</th>
                             <th class="p-1 text-xs w-[20%]">Стоимость</th>
@@ -749,29 +749,29 @@
                         </tr></thead>
                         <tbody id="recipeItemsBody"></tbody>
                     </table>
-                    <div class="bg-blue-50 rounded-xl p-2 mb-2">
+                    <div class="rounded-xl p-2 mb-2" style="background:#f4f1ea; border:1px solid #e2ddd0;">
                         <label class="table-text text-gray-500">Добавить в рецепт</label>
                         <div class="search-input-wrap mb-1">
                             <input id="newRecipeIngredient" placeholder="— ингредиент / полуфабрикат —" autocomplete="off" class="border p-1 rounded-xl table-text w-full">
                             <div id="newRecipeIngredientDropdown" class="search-dropdown hidden"></div>
                         </div>
-                        <div class="flex gap-1">
+                        <div class="flex gap-2">
                             <input id="newRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="Количество" class="border p-1 rounded-xl table-text flex-1">
-                            <button onclick="addIngredientToRecipe()" class="btn bg-[#7c9473] text-white px-3 py-1 rounded-xl text-xs hover:bg-[#6c8464] whitespace-nowrap">+ Добавить</button>
+                            <button onclick="addIngredientToRecipe()" class="pill-btn whitespace-nowrap">+ Добавить</button>
                         </div>
                     </div>
                     <label class="flex items-center gap-2 table-text text-gray-700 border-t pt-2 mb-1 cursor-pointer">
-                        <input type="checkbox" id="pdRecipeConfirmed" onchange="toggleRecipeConfirmed()">
+                        <input type="checkbox" id="pdRecipeConfirmed" onchange="toggleRecipeConfirmed()" style="accent-color:#7c9473;">
                         Рецепт заполнен полностью
                     </label>
                     <label class="flex items-center gap-2 table-text text-gray-700 mb-1 cursor-pointer">
-                        <input type="checkbox" id="pdTrackStock" onchange="toggleTrackStock()">
+                        <input type="checkbox" id="pdTrackStock" onchange="toggleTrackStock()" style="accent-color:#7c9473;">
                         Отслеживать остатки постоянно (включить в аналитику склада)
                     </label>
                     <div class="text-right table-text text-gray-600 space-y-0.5 border-t pt-1 perm-view-costs">
                         <div>Себестоимость партии: <span id="pdBatchCost" class="font-medium text-gray-800">0.00</span></div>
                         <div>Себестоимость 1 шт: <span id="pdUnitCost" class="font-semibold text-gray-900">0.00</span></div>
-                        <div>Прибыль с 1 шт: <span id="pdProfit" class="font-semibold text-green-700">0.00</span> (<span id="pdProfitPct">0.0</span>%)</div>
+                        <div>Прибыль с 1 шт: <span id="pdProfit" class="font-semibold" style="color:#4f6349;">0.00</span> (<span id="pdProfitPct">0.0</span>%)</div>
                     </div>
                 </div>
 
@@ -985,7 +985,7 @@
                         </div>
                     </div>
                     <table class="w-full table-auto table-clean mb-2">
-                        <thead><tr class="bg-gray-100">
+                        <thead><tr style="background-color:#e3e8df;">
                             <th class="p-1 text-xs w-[40%]">Ингредиент</th>
                             <th class="p-1 text-xs w-[25%]">Кол-во</th>
                             <th class="p-1 text-xs w-[20%]">Стоимость</th>
@@ -994,25 +994,25 @@
                     <p class="table-text text-gray-400 mb-1">Нажмите на звёздочку, чтобы отметить основной ингредиент для расчёта производства.</p>
                         <tbody id="sfRecipeItemsBody"></tbody>
                     </table>
-                    <div class="bg-blue-50 rounded-xl p-2 mb-2">
+                    <div class="rounded-xl p-2 mb-2" style="background:#f4f1ea; border:1px solid #e2ddd0;">
                         <label class="table-text text-gray-500">Добавить в рецепт</label>
                         <div class="search-input-wrap mb-1">
                             <input id="newSfRecipeIngredient" placeholder="— ингредиент —" autocomplete="off" class="border p-1 rounded-xl table-text w-full">
                             <div id="newSfRecipeIngredientDropdown" class="search-dropdown hidden"></div>
                         </div>
-                        <div class="flex gap-1">
+                        <div class="flex gap-2">
                             <input id="newSfRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="Количество" class="border p-1 rounded-xl table-text flex-1">
-                            <button onclick="addIngredientToSfRecipe()" class="btn bg-[#7c9473] text-white px-3 py-1 rounded-xl text-xs hover:bg-[#6c8464] whitespace-nowrap">+ Добавить</button>
+                            <button onclick="addIngredientToSfRecipe()" class="pill-btn whitespace-nowrap">+ Добавить</button>
                         </div>
                     </div>
-                    <button onclick="produceSfBatch()" class="btn bg-gray-100 text-gray-700 border border-gray-300 px-2 py-1 rounded-xl hover:bg-gray-200 text-xs w-full mb-2 flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"/></svg>Произвести партию</button>
-                    <button onclick="openSfWriteOffModal()" class="btn bg-gray-100 text-gray-700 border border-gray-300 px-2 py-1 rounded-xl hover:bg-gray-200 text-xs w-full mb-2">— Списать (корректировка)</button>
+                    <button onclick="produceSfBatch()" class="pill-btn-secondary w-full justify-center mb-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"/></svg>Произвести партию</button>
+                    <button onclick="openSfWriteOffModal()" class="pill-btn-secondary w-full justify-center mb-2">— Списать (корректировка)</button>
                     <label class="flex items-center gap-2 table-text text-gray-700 border-t pt-2 mb-1 cursor-pointer">
-                        <input type="checkbox" id="sfdRecipeConfirmed" onchange="toggleSfRecipeConfirmed()">
+                        <input type="checkbox" id="sfdRecipeConfirmed" onchange="toggleSfRecipeConfirmed()" style="accent-color:#7c9473;">
                         Рецепт заполнен полностью
                     </label>
                     <label class="flex items-center gap-2 table-text text-gray-700 mb-1 cursor-pointer">
-                        <input type="checkbox" id="sfdTrackStock" onchange="toggleSfTrackStock()">
+                        <input type="checkbox" id="sfdTrackStock" onchange="toggleSfTrackStock()" style="accent-color:#7c9473;">
                         Отслеживать остатки постоянно (включить в аналитику склада)
                     </label>
                     <div class="text-right table-text text-gray-600 space-y-0.5 border-t pt-1 perm-view-costs">
@@ -1434,7 +1434,7 @@
                         <tbody id="detailItemsBody"></tbody>
                         <!-- Строка добавления новой позиции -->
                         <tbody>
-                            <tr class="new-item-row bg-blue-50">
+                            <tr class="new-item-row" style="background:#f4f1ea;">
                                 <td><div class="search-input-wrap">
                                     <input id="newItemProduct" oninput="autoFillNewItemPrice()" placeholder="— изделие —" autocomplete="off" class="table-text">
                                     <div id="newItemProductDropdown" class="search-dropdown hidden"></div>
@@ -2261,7 +2261,7 @@
     <script src="inventory.js?v=19"></script>
 <script src="ingredients.js?v=16"></script>
 <script src="semifinished.js?v=13"></script>
-<script src="products.js?v=15"></script>
+<script src="products.js?v=16"></script>
 <script src="customers.js?v=25"></script>
 <script src="orders.js?v=50"></script>
 <script src="invoice.js?v=9"></script>

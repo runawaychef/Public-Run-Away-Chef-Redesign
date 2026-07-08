@@ -17,16 +17,16 @@ function displayProducts() {
         const recipeOk = !!p.recipe_confirmed;
         const needsAttention = !hasUnit || !recipeOk;
         if (needsAttention) warningCount++;
-        const unitLabel = hasUnit ? UNIT_PRODUCT_LABELS[p.unit] : icon('warning', 'w-3.5 h-3.5 text-red-500 inline-block');
+        const unitLabel = hasUnit ? UNIT_PRODUCT_LABELS[p.unit] : icon('warning', 'w-3.5 h-3.5 inline-block text-[#c0685c]');
         const row = document.createElement('tr');
         row.className = 'order-row border-b';
         const nameCellPad = needsAttention ? 'pl-2.5' : '';
         const accentBar = needsAttention
-            ? `<span class="absolute left-0 top-1 bottom-1 w-0.5 rounded-full bg-red-500"></span>`
+            ? `<span class="absolute left-0 top-1 bottom-1 w-0.5 rounded-full" style="background:#c0685c;"></span>`
             : '';
         row.innerHTML = `
             <td class=" p-0.5 table-text relative ${nameCellPad}" onclick="openProductDetail(${p.id})">${accentBar}${escapeHtml(p.name)}</td>
-            <td class=" p-0.5 table-text text-center ${hasUnit ? '' : 'text-red-600 font-semibold'}" onclick="openProductDetail(${p.id})">${unitLabel}</td>
+            <td class=" p-0.5 table-text text-center" style="${hasUnit ? '' : 'color:#c0685c; font-weight:600;'}" onclick="openProductDetail(${p.id})">${unitLabel}</td>
             <td class=" p-0.5 table-text" onclick="openProductDetail(${p.id})">${formatMoney(p.price)}</td>
             <td class=" p-0.5 text-center">
                 ${hasPermission('can_delete') ? svgDeleteSafe('openDeleteModal', [i, 'product', `изделие «${p.name}»`]) : ''}
