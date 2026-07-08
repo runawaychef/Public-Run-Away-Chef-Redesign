@@ -18,10 +18,10 @@ function ingredientUnitPrice(ing) {
 // Возвращает CSS-класс цвета по количеству дней запаса
 // Красный < 3 дней, жёлтый 3-7 дней, серый > 7 дней
 function stockColorClass(daysLeft, prefix) {
-    if (daysLeft === null) return `${prefix}gray-400`;
-    if (daysLeft < 3)  return `${prefix}red-600`;
-    if (daysLeft < 7)  return `${prefix}yellow-500`;
-    return `${prefix}green-700`;
+    if (daysLeft === null) return 'text-gray-400';
+    if (daysLeft < 3)  return 'stock-critical';
+    if (daysLeft < 7)  return 'stock-low';
+    return 'stock-ok';
 }
 
 function displayIngredients() {
