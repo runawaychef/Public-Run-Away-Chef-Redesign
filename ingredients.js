@@ -58,24 +58,24 @@ function displayIngredients() {
         const balanceStr = balance !== null && balance > 0
             ? `${Number(balance).toFixed(1)} ${unitLabel}`
             : balance !== null && balance <= 0
-                ? `<span class="text-red-600 font-semibold">${Number(balance).toFixed(1)} ${unitLabel}</span>`
+                ? `<span style="color:#c0685c;" class="font-semibold">${Number(balance).toFixed(1)} ${unitLabel}</span>`
                 : '<span class="text-gray-400">—</span>';
 
-        const colorClass = shortfall || (balance !== null && balance <= 0) || daysLeft !== null && daysLeft < 3
-            ? 'text-red-600'
-            : daysLeft !== null && daysLeft < 7 ? 'text-yellow-600' : 'text-gray-600';
+        const colorStyle = shortfall || (balance !== null && balance <= 0) || daysLeft !== null && daysLeft < 3
+            ? 'color:#c0685c;'
+            : daysLeft !== null && daysLeft < 7 ? 'color:#96712a;' : 'color:#4b5563;';
 
         const daysStr = daysLeft !== null
-            ? `<span class="${colorClass} font-semibold">${daysLeft} дн.</span>`
-            : shortfall ? '<span class="text-red-600 font-semibold">нехватка</span>'
+            ? `<span style="${colorStyle}" class="font-semibold">${daysLeft} дн.</span>`
+            : shortfall ? '<span style="color:#c0685c;" class="font-semibold">нехватка</span>'
             : '<span class="text-gray-400">—</span>';
 
         // Полоска-акцент вместо сплошного фона строки
         const isCritical = shortfall || (balance !== null && balance <= 0) || (daysLeft !== null && daysLeft < 3);
         const isWarning  = !isCritical && daysLeft !== null && daysLeft < 7;
-        const accentColor = isCritical ? 'bg-red-500' : isWarning ? 'bg-amber-400' : '';
+        const accentColor = isCritical ? '#c0685c' : isWarning ? '#d9a441' : '';
         const accentBar = accentColor
-            ? `<span class="absolute left-0 top-1 bottom-1 w-0.5 rounded-full ${accentColor}"></span>`
+            ? `<span class="absolute left-0 top-1 bottom-1 w-0.5 rounded-full" style="background:${accentColor};"></span>`
             : '';
         const nameCellPad = accentColor ? 'pl-2.5' : '';
 
@@ -583,9 +583,9 @@ async function renderIngredientStockBlock(ing) {
 
         // Итоговая строка
         let summary = `<div class="table-text text-gray-600 mt-2 mb-2 space-y-0.5">`;
-        summary += `<div><span class="inline-block w-2 h-2 rounded-full bg-green-500 mr-1"></span>Куплено: <span class="font-semibold text-green-700">${totals.in.qty.toFixed(2)} ${unitLabel}</span> · ${formatMoney(totals.in.cost)}</div>`;
-        if (totals.order.qty > 0) summary += `<div><span class="inline-block w-2 h-2 rounded-full bg-blue-500 mr-1"></span>На заказы: <span class="font-semibold text-blue-700">${totals.order.qty.toFixed(2)} ${unitLabel}</span> · ${formatMoney(totals.order.cost)}</div>`;
-        if (totals.personal.qty > 0) summary += `<div><span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>Личное/потери: <span class="font-semibold text-red-600">${totals.personal.qty.toFixed(2)} ${unitLabel}</span> · ${formatMoney(totals.personal.cost)}</div>`;
+        summary += `<div><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#7c9473;"></span>Куплено: <span class="font-semibold" style="color:#4f6349;">${totals.in.qty.toFixed(2)} ${unitLabel}</span> · ${formatMoney(totals.in.cost)}</div>`;
+        if (totals.order.qty > 0) summary += `<div><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#d9a441;"></span>На заказы: <span class="font-semibold" style="color:#96712a;">${totals.order.qty.toFixed(2)} ${unitLabel}</span> · ${formatMoney(totals.order.cost)}</div>`;
+        if (totals.personal.qty > 0) summary += `<div><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#c0685c;"></span>Личное/потери: <span class="font-semibold" style="color:#c0685c;">${totals.personal.qty.toFixed(2)} ${unitLabel}</span> · ${formatMoney(totals.personal.cost)}</div>`;
         summary += `</div>`;
 
         // Фильтр-табы
@@ -610,12 +610,12 @@ async function renderIngredientStockBlock(ing) {
             const isIn = r.type === 'приход';
             const isStorno = r.type === 'сторно';
             const sign = isIn || isStorno ? '+' : '−';
-            const color = isIn ? 'text-green-700' : isStorno ? 'text-green-600' : (cat === 'order' ? 'text-blue-700' : 'text-red-600');
+            const color = isIn ? 'color:#4f6349;' : isStorno ? 'color:#7c9473;' : (cat === 'order' ? 'color:#96712a;' : 'color:#c0685c;');
             const notes = escapeHtml(r.notes || '').replace('Корректировка: ', '').replace('Закупка ', '');
             const rowCat = isStorno ? 'order' : cat; // сторно фильтруется вместе с заказами
-            rows += `<tr class="border-b hover:bg-gray-50" data-cat="${rowCat}">
+            rows += `<tr class="border-b ing-hist-row" data-cat="${rowCat}">
                 <td class="p-1 whitespace-nowrap">${date}</td>
-                <td class="p-1 text-right ${color} font-semibold whitespace-nowrap">${sign}${qty.toFixed(2)} ${unitLabel}</td>
+                <td class="p-1 text-right font-semibold whitespace-nowrap" style="${color}">${sign}${qty.toFixed(2)} ${unitLabel}</td>
                 <td class="p-1 text-right text-gray-500 whitespace-nowrap">${formatMoney(cost)}</td>
                 <td class="p-1 text-gray-400">${notes}</td>
             </tr>`;
@@ -623,7 +623,7 @@ async function renderIngredientStockBlock(ing) {
 
         const table = `<div id="ingHistTableWrap" style="max-height:260px;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;">
             <table class="w-full table-text table-clean">
-                <thead><tr class="bg-gray-100 sticky top-0 text-xs">
+                <thead><tr style="background-color:#e3e8df;" class="sticky top-0 text-xs">
                     <th class="p-1 text-left">Дата</th>
                     <th class="p-1 text-right">Кол-во</th>
                     <th class="p-1 text-right">Сумма</th>
@@ -751,17 +751,17 @@ function renderIngredientPriceHistory(ingredientId) {
     if (!history.length) { container.innerHTML = '<p class="table-text text-gray-400">История цен пуста</p>'; return; }
     const ing = ingredients.find(i => i.id === ingredientId);
     const unitLabel = ing ? (UNIT_LABELS[ing.unit] || ing.unit) : '';
-    let html = '<table class="w-full table-text table-clean"><thead><tr class="bg-gray-100 text-xs"><th class="p-0.5 text-left">С даты</th><th class="p-0.5 text-right">Цена упак.</th><th class="p-0.5 text-right">Цена за ед.</th><th class="p-0.5 w-12"></th></tr></thead><tbody>';
+    let html = '<table class="w-full table-text table-clean"><thead><tr style="background-color:#e3e8df;" class="text-xs"><th class="p-0.5 text-left">С даты</th><th class="p-0.5 text-right">Цена упак.</th><th class="p-0.5 text-right">Цена за ед.</th><th class="p-0.5 w-12"></th></tr></thead><tbody>';
     history.forEach((h, i) => {
         const unitPrice = h.package_size ? (h.package_price / h.package_size).toFixed(4) : '—';
         const isCurrent = i === 0;
-        html += `<tr class="${isCurrent ? 'bg-indigo-50 font-semibold' : 'border-b'}">
-            <td class="p-0.5">${formatDateDMY(h.valid_from)}${isCurrent ? ' <span class="text-indigo-600">(текущая)</span>' : ''}</td>
+        html += `<tr style="${isCurrent ? 'background:#e3e8df;' : ''}" class="${isCurrent ? 'font-semibold' : 'border-b'}">
+            <td class="p-0.5">${formatDateDMY(h.valid_from)}${isCurrent ? ' <span style="color:#4f6349;">(текущая)</span>' : ''}</td>
             <td class="p-0.5 text-right">${formatMoney(h.package_price)}</td>
             <td class="p-0.5 text-right">${unitPrice === '—' ? '—' : formatMoney(unitPrice, 4) + '/' + unitLabel}</td>
             <td class="p-0.5 text-center whitespace-nowrap">
-                <button onclick="openEditPriceHistoryModal(${h.id},'${h.valid_from}',${h.package_price},${h.package_size})" class="text-gray-400 hover:text-indigo-600 mr-1">${icon('edit', 'w-3.5 h-3.5')}</button>
-                ${hasPermission('can_delete') ? `<button onclick="deletePriceHistoryRecord(${h.id})" class="text-gray-400 hover:text-red-600">${icon('trash', 'w-3.5 h-3.5')}</button>` : ''}
+                <button onclick="openEditPriceHistoryModal(${h.id},'${h.valid_from}',${h.package_price},${h.package_size})" class="text-gray-400 price-hist-edit-btn mr-1">${icon('edit', 'w-3.5 h-3.5')}</button>
+                ${hasPermission('can_delete') ? `<button onclick="deletePriceHistoryRecord(${h.id})" class="text-gray-400 price-hist-del-btn">${icon('trash', 'w-3.5 h-3.5')}</button>` : ''}
             </td>
         </tr>`;
     });

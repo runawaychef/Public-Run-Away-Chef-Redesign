@@ -64,22 +64,22 @@ function displaySemiFinished() {
         const balanceStr = balance !== null && balance > 0
             ? `${Number(balance).toFixed(1)} ${unitLabel}`
             : balance !== null && balance <= 0
-                ? `<span class="text-red-600 font-semibold">${Number(balance).toFixed(1)} ${unitLabel}</span>`
+                ? `<span style="color:#c0685c;" class="font-semibold">${Number(balance).toFixed(1)} ${unitLabel}</span>`
                 : '<span class="text-gray-400">—</span>';
 
-        const colorClass = shortage || (balance !== null && balance <= 0) || (daysLeft !== null && daysLeft < 3)
-            ? 'text-red-600' : daysLeft !== null && daysLeft < 7 ? 'text-yellow-600' : 'text-gray-600';
+        const colorStyle = shortage || (balance !== null && balance <= 0) || (daysLeft !== null && daysLeft < 3)
+            ? 'color:#c0685c;' : daysLeft !== null && daysLeft < 7 ? 'color:#96712a;' : 'color:#4b5563;';
 
         const daysStr = daysLeft !== null
-            ? `<span class="${colorClass} font-semibold">${daysLeft} дн.</span>`
-            : shortage ? '<span class="text-red-600 font-semibold">нехватка</span>'
+            ? `<span style="${colorStyle}" class="font-semibold">${daysLeft} дн.</span>`
+            : shortage ? '<span style="color:#c0685c;" class="font-semibold">нехватка</span>'
             : '<span class="text-gray-400">—</span>';
 
         const isCritical = shortage || (balance !== null && balance <= 0) || (daysLeft !== null && daysLeft < 3);
         const isWarning  = !isCritical && daysLeft !== null && daysLeft < 7;
-        const accentColor = isCritical ? 'bg-red-500' : isWarning ? 'bg-amber-400' : '';
+        const accentColor = isCritical ? '#c0685c' : isWarning ? '#d9a441' : '';
         const accentBar = accentColor
-            ? `<span class="absolute left-0 top-1 bottom-1 w-0.5 rounded-full ${accentColor}"></span>`
+            ? `<span class="absolute left-0 top-1 bottom-1 w-0.5 rounded-full" style="background:${accentColor};"></span>`
             : '';
         const nameCellPad = accentColor ? 'pl-2.5' : '';
 
@@ -216,7 +216,7 @@ function renderSemiFinishedRecipe(sf) {
             const unitPrice = ing ? ingredientUnitPrice(ing) : 0;
             const lineCost = unitPrice * ri.quantity;
             const isPrimary = !!ri.is_primary;
-            const starBtn = `<button onclick="setSfPrimaryIngredient(${i})" title="Сделать основным" class="inline-flex ${isPrimary ? 'text-yellow-400' : 'text-gray-300 hover:text-yellow-300'}"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="${isPrimary ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.562.562 0 00-.586 0L6.98 21.539a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"/></svg></button>`;
+            const starBtn = `<button onclick="setSfPrimaryIngredient(${i})" title="Сделать основным" class="inline-flex sf-star-btn${isPrimary ? ' active' : ''}"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="${isPrimary ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.562.562 0 00-.586 0L6.98 21.539a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"/></svg></button>`;
             const row = document.createElement('tr');
             row.className = 'border-b';
             row.innerHTML = `
@@ -430,13 +430,14 @@ async function renderSfStockBlock(sf) {
         if (balance !== null && balance > 0) {
             const days = daily > 0 ? Math.floor(balance / daily) : null;
             balEl.textContent = Number(balance).toFixed(2);
-            // Цвет: красный < 3 дней, жёлтый < 14 дней, зелёный — норма
-            if (days !== null && days < 3)      balEl.className = 'text-lg font-bold text-red-600';
-            else if (days !== null && days < 7) balEl.className = 'text-lg font-bold text-yellow-600';
-            else                                balEl.className = 'text-lg font-bold text-green-700';
+            // Цвет: терракота < 3 дней, охра < 14 дней, шалфей — норма
+            if (days !== null && days < 3) { balEl.className = 'text-lg font-bold'; balEl.style.color = '#c0685c'; }
+            else if (days !== null && days < 7) { balEl.className = 'text-lg font-bold'; balEl.style.color = '#96712a'; }
+            else { balEl.className = 'text-lg font-bold'; balEl.style.color = '#4f6349'; }
         } else {
             balEl.textContent = '0';
-            balEl.className = 'text-lg font-bold text-red-600';
+            balEl.className = 'text-lg font-bold';
+            balEl.style.color = '#c0685c';
         }
     }
     if (unitEl) unitEl.textContent = unitLabel;
@@ -444,12 +445,13 @@ async function renderSfStockBlock(sf) {
         if (balance !== null && balance > 0 && daily > 0) {
             const days = Math.floor(balance / daily);
             daysEl.textContent = `~${days} дн. запаса`;
-            if (days < 3)      daysEl.className = 'table-text text-red-600 font-semibold';
-            else if (days < 7) daysEl.className = 'table-text text-yellow-600 font-semibold';
-            else               daysEl.className = 'table-text text-green-700';
+            if (days < 3)      { daysEl.className = 'table-text font-semibold'; daysEl.style.color = '#c0685c'; }
+            else if (days < 7) { daysEl.className = 'table-text font-semibold'; daysEl.style.color = '#96712a'; }
+            else               { daysEl.className = 'table-text'; daysEl.style.color = '#4f6349'; }
         } else {
             daysEl.textContent = daily > 0 ? 'нет запаса' : 'недостаточно истории';
             daysEl.className = 'table-text text-gray-400';
+            daysEl.style.color = '';
         }
     }
 
@@ -470,15 +472,15 @@ async function renderSfStockBlock(sf) {
         const totalIn = data.filter(r => r.type === 'приход').reduce((s, r) => s + Number(r.quantity), 0);
         let html = `<p class="table-text text-gray-500 font-semibold mt-2 mb-1">История (произведено: ${totalIn.toFixed(2)} ${unitLabel})</p>`;
         html += '<div style="max-height:224px;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;">';
-        html += '<table class="w-full table-text table-clean"><thead><tr class="bg-gray-100 text-xs"><th class="p-1 text-left">Дата</th><th class="p-1 text-right">Кол-во</th><th class="p-1 text-left">Заметка</th></tr></thead><tbody>';
+        html += '<table class="w-full table-text table-clean"><thead><tr style="background-color:#e3e8df;" class="text-xs"><th class="p-1 text-left">Дата</th><th class="p-1 text-right">Кол-во</th><th class="p-1 text-left">Заметка</th></tr></thead><tbody>';
         data.forEach(r => {
             const date = new Date(r.created_at).toLocaleDateString('ru-LT');
             const isIn = r.type === 'приход';
             const sign = isIn ? '+' : '−';
-            const color = isIn ? 'text-green-700' : 'text-red-600';
-            html += `<tr class="border-b cursor-pointer hover:bg-gray-50" onclick="editSfInventoryRecord(${r.id}, ${Number(r.quantity)}, '${escapeHtml(r.notes || '')}')">
+            const color = isIn ? '#4f6349' : '#c0685c';
+            html += `<tr class="border-b ing-hist-row" onclick="editSfInventoryRecord(${r.id}, ${Number(r.quantity)}, '${escapeHtml(r.notes || '')}')">
                 <td class="p-0.5">${date}</td>
-                <td class="p-0.5 text-right ${color} font-semibold">${sign}${Number(r.quantity).toFixed(2)} ${unitLabel}</td>
+                <td class="p-0.5 text-right font-semibold" style="color:${color};">${sign}${Number(r.quantity).toFixed(2)} ${unitLabel}</td>
                 <td class="p-0.5 text-gray-500">${escapeHtml(r.notes || '')}</td>
             </tr>`;
         });

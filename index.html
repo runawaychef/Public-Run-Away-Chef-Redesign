@@ -432,6 +432,13 @@
         .field-select-btn.active svg { color: #fff; }
         .stock-critical { color: #c0685c; }
         .stock-low { color: #d9a441; }
+        .ing-hist-row:hover { background: #f6f8f4; }
+        .ing-hist-row:active { background: #e3e8df; }
+        .price-hist-edit-btn:hover { color: #7c9473; }
+        .price-hist-del-btn:hover { color: #c0685c; }
+        .sf-star-btn { color: #d3ccb8; }
+        .sf-star-btn:hover { color: #e0bd6e; }
+        .sf-star-btn.active { color: #d9a441; }
         #detailItemsBody tr.cursor-pointer:active { background: #f6f8f4; }
         .filter-dropdown {
             position: absolute; top: calc(100% + 4px); left: 0; right: 0;
@@ -782,14 +789,14 @@
                 <div class="bg-white p-2 rounded-xl shadow-md">
                     <div class="flex items-center justify-between mb-2">
                         <h2 class="text-sm font-semibold text-gray-800">Склад</h2>
-                        <div class="flex gap-1">
-                            <button onclick="openInventarizationModal()" class="btn text-xs bg-[#7c9473] text-white px-2 py-1 rounded-xl hover:bg-[#6c8464] inline-flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Инвентаризация</button>
-                            <button onclick="showTab('semiFinished')" class="btn text-xs bg-[#7c9473] text-white px-2 py-1 rounded-xl hover:bg-[#6c8464]">Полуфабрикаты →</button>
+                        <div class="flex gap-2">
+                            <button onclick="openInventarizationModal()" class="pill-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Инвентаризация</button>
+                            <button onclick="showTab('semiFinished')" class="pill-btn-secondary">Полуфабрикаты →</button>
                         </div>
                     </div>
                     <p class="text-xs text-gray-400 mb-2">Нажмите на строку, чтобы открыть карточку</p>
                     <table class="w-full table-auto table-clean">
-                        <thead><tr class="bg-gray-100">
+                        <thead><tr style="background-color:#e3e8df;">
                             <th class="p-1 text-xs w-[35%]">Название</th>
                             <th class="p-1 text-xs w-[20%]">Цена за ед.</th>
                             <th class="p-1 text-xs w-[25%]">Остаток</th>
@@ -894,23 +901,20 @@
         <div id="semiFinished" class="tab-content hidden">
             <div id="semiFinishedList">
                 <div class="flex justify-start mb-2">
-                    <button onclick="showTab('ingredients')" class="btn bg-[#7c9473] text-white px-2 py-1 rounded-xl hover:bg-[#6c8464] text-xs flex items-center gap-1">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    <button onclick="showTab('ingredients')" class="pill-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
                         Назад к ингредиентам
                     </button>
                 </div>
                 <div class="bg-white p-2 rounded-xl shadow-md">
                     <div class="flex items-center justify-between mb-2">
                         <h2 class="text-sm font-semibold text-gray-800">Полуфабрикаты</h2>
-                        <div class="flex gap-1">
-                            <button onclick="openSfInventarizationModal()" class="btn text-xs bg-[#7c9473] text-white px-2 py-1 rounded-xl hover:bg-[#6c8464] inline-flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Инвентаризация</button>
-                            <button onclick="showTab('ingredients')" class="btn text-xs bg-[#7c9473] text-white px-2 py-1 rounded-xl hover:bg-[#6c8464]">← Склад</button>
-                        </div>
+                        <button onclick="openSfInventarizationModal()" class="pill-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Инвентаризация</button>
                     </div>
                     <p class="text-xs text-gray-400 mb-2">Нажмите на строку, чтобы открыть рецептуру</p>
-                    <p id="semiFinishedRecipeWarning" class="text-xs text-red-600 bg-red-50 border border-red-200 rounded-xl p-1.5 mb-2 hidden"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>У некоторых полуфабрикатов не подтверждён рецепт. Откройте их и проверьте.</p>
+                    <p id="semiFinishedRecipeWarning" class="text-xs mb-2 hidden" style="color:#a3493d; background:#f3ded9; border:1px solid #e8c4bb; border-radius:12px; padding:6px;"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>У некоторых полуфабрикатов не подтверждён рецепт. Откройте их и проверьте.</p>
                     <table class="w-full table-auto table-clean">
-                        <thead><tr class="bg-gray-100">
+                        <thead><tr style="background-color:#e3e8df;">
                             <th class="p-1 text-xs w-[35%]">Название</th>
                             <th class="p-1 text-xs w-[20%]">Цена за ед.</th>
                             <th class="p-1 text-xs w-[25%]">Остаток</th>
@@ -2254,8 +2258,8 @@
     <script src="employees.js?v=14"></script>
     <script src="company.js?v=6"></script>
     <script src="inventory.js?v=19"></script>
-<script src="ingredients.js?v=14"></script>
-<script src="semifinished.js?v=12"></script>
+<script src="ingredients.js?v=15"></script>
+<script src="semifinished.js?v=13"></script>
 <script src="products.js?v=15"></script>
 <script src="customers.js?v=25"></script>
 <script src="orders.js?v=50"></script>
