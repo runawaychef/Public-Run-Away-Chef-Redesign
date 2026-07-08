@@ -87,6 +87,7 @@ function displaySemiFinished() {
         row.className = 'order-row border-b';
         row.style.cursor = 'pointer';
         row.dataset.name = (sf.name || '').toLowerCase();
+        row.dataset.critical = accentColor ? '1' : '0';
         row.innerHTML = `
             <td class=" p-0.5 table-text relative ${nameCellPad}" onclick="openSemiFinishedDetail(${sf.id})">${accentBar}${escapeHtml(sf.name)}</td>
             <td class=" p-0.5 table-text text-center" onclick="openSemiFinishedDetail(${sf.id})">${formatMoney(unitCost, 4)}/${unitLabel}</td>
@@ -142,7 +143,7 @@ function renderSemiFinishedCards() {
         const stripe = accentColor ? `<div class="stripe" style="background:${accentColor};"></div>` : '';
 
         html += `
-        <div class="order-card" data-name="${escapeHtml((sf.name || '').toLowerCase())}" style="cursor:pointer;" onclick="openSemiFinishedDetail(${sf.id})">
+        <div class="order-card" data-name="${escapeHtml((sf.name || '').toLowerCase())}" data-critical="${accentColor ? '1' : '0'}" style="cursor:pointer;" onclick="openSemiFinishedDetail(${sf.id})">
             ${stripe}
             <div class="order-card-body">
                 <div class="oc-row">
@@ -164,6 +165,15 @@ function setSemiFinishedViewMode(mode) {
     document.getElementById('semiFinishedViewBtnTable')?.classList.toggle('active', mode === 'table');
 }
 
+// ---- Фильтр "Только критичные" — сочетается с поиском по имени ----
+let _semiFinishedCriticalOnly = false;
+
+function toggleSemiFinishedCriticalFilter() {
+    _semiFinishedCriticalOnly = !_semiFinishedCriticalOnly;
+    document.getElementById('semiFinishedCriticalFilterBtn')?.classList.toggle('active', _semiFinishedCriticalOnly);
+    filterSemiFinishedList();
+}
+
 // ---- Поиск по названию — работает одинаково в обоих видах ----
 function filterSemiFinishedList() {
     const input = document.getElementById('semiFinishedSearchInput');
@@ -173,14 +183,14 @@ function filterSemiFinishedList() {
 
     let visibleCards = 0;
     document.querySelectorAll('#semiFinishedCardsBody .order-card').forEach(card => {
-        const match = !q || card.dataset.name.includes(q);
+        const match = (!q || card.dataset.name.includes(q)) && (!_semiFinishedCriticalOnly || card.dataset.critical === '1');
         card.style.display = match ? 'flex' : 'none';
         if (match) visibleCards++;
     });
     document.getElementById('semiFinishedCardsEmpty')?.classList.toggle('hidden', visibleCards !== 0);
 
     document.querySelectorAll('#semiFinishedTableBody tr').forEach(row => {
-        const match = !q || (row.dataset.name || '').includes(q);
+        const match = (!q || (row.dataset.name || '').includes(q)) && (!_semiFinishedCriticalOnly || row.dataset.critical === '1');
         row.style.display = match ? '' : 'none';
     });
 }

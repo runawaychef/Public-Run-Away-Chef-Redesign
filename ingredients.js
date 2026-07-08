@@ -82,6 +82,7 @@ function displayIngredients() {
         const row = document.createElement('tr');
         row.className = 'order-row';
         row.dataset.name = (ing.name || '').toLowerCase();
+        row.dataset.critical = accentColor ? '1' : '0';
         row.innerHTML = `
             <td class="border p-0.5 table-text relative ${nameCellPad}" onclick="openIngredientDetail(${ing.id})">${accentBar}${escapeHtml(ing.name)}</td>
             <td class="border p-0.5 table-text text-center" onclick="openIngredientDetail(${ing.id})">${formatMoney(unitPrice, 4)}/${unitLabel}</td>
@@ -133,7 +134,7 @@ function renderIngredientCards() {
         const stripe = accentColor ? `<div class="stripe" style="background:${accentColor};"></div>` : '';
 
         html += `
-        <div class="order-card" data-name="${escapeHtml((ing.name || '').toLowerCase())}" style="cursor:pointer;" onclick="openIngredientDetail(${ing.id})">
+        <div class="order-card" data-name="${escapeHtml((ing.name || '').toLowerCase())}" data-critical="${accentColor ? '1' : '0'}" style="cursor:pointer;" onclick="openIngredientDetail(${ing.id})">
             ${stripe}
             <div class="order-card-body">
                 <div class="oc-row">
@@ -155,6 +156,15 @@ function setIngredientsViewMode(mode) {
     document.getElementById('ingredientsViewBtnTable')?.classList.toggle('active', mode === 'table');
 }
 
+// ---- Фильтр "Только критичные" — сочетается с поиском по имени (оба условия сразу) ----
+let _ingredientsCriticalOnly = false;
+
+function toggleIngredientsCriticalFilter() {
+    _ingredientsCriticalOnly = !_ingredientsCriticalOnly;
+    document.getElementById('ingredientsCriticalFilterBtn')?.classList.toggle('active', _ingredientsCriticalOnly);
+    filterIngredientsList();
+}
+
 // ---- Поиск по названию — работает одинаково в обоих видах ----
 function filterIngredientsList() {
     const input = document.getElementById('ingredientSearchInput');
@@ -164,14 +174,14 @@ function filterIngredientsList() {
 
     let visibleCards = 0;
     document.querySelectorAll('#ingredientCardsBody .order-card').forEach(card => {
-        const match = !q || card.dataset.name.includes(q);
+        const match = (!q || card.dataset.name.includes(q)) && (!_ingredientsCriticalOnly || card.dataset.critical === '1');
         card.style.display = match ? 'flex' : 'none';
         if (match) visibleCards++;
     });
     document.getElementById('ingredientCardsEmpty')?.classList.toggle('hidden', visibleCards !== 0);
 
     document.querySelectorAll('#ingredientTableBody tr').forEach(row => {
-        const match = !q || (row.dataset.name || '').includes(q);
+        const match = (!q || (row.dataset.name || '').includes(q)) && (!_ingredientsCriticalOnly || row.dataset.critical === '1');
         row.style.display = match ? '' : 'none';
     });
 }
