@@ -696,51 +696,39 @@
 
 <!-- Поиск + переключатель вида для Ингредиентов (Склад) -->
 <div id="ingredientsSearchBar" class="hidden" style="position:fixed; left:50%; transform:translateX(-50%); width:100%; max-width:42rem; z-index:30; box-sizing:border-box; padding:0 8px;">
-    <div style="background:#f4f1ea; padding:6px 0;">
-        <div class="flex gap-2 items-center mb-1.5">
-            <div class="search-input-wrap" style="flex:1; position:relative;">
-                <input id="ingredientSearchInput" type="text" placeholder="Поиск по названию..." oninput="filterIngredientsList()" class="border p-1.5 rounded-xl w-full table-text" style="padding-right:30px;">
-                <svg id="ingredientSearchIcon" class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:#a29c8c; pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
-                <svg id="ingredientSearchClear" onclick="clearIngredientSearch()" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:#9a9488; cursor:pointer;"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
-            </div>
-            <div class="view-toggle-pill">
-                <button class="view-toggle-btn active" id="ingredientsViewBtnCards" onclick="setIngredientsViewMode('cards')" title="Карточки">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-                </button>
-                <button class="view-toggle-btn" id="ingredientsViewBtnTable" onclick="setIngredientsViewMode('table')" title="Таблица">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-                </button>
-            </div>
+    <div class="flex gap-2 items-center" style="background:#f4f1ea; padding:6px 0;">
+        <div class="search-input-wrap" style="flex:1; position:relative;">
+            <input id="ingredientSearchInput" type="text" placeholder="Поиск по названию..." oninput="filterIngredientsList()" class="border p-1.5 rounded-xl w-full table-text" style="padding-right:30px;">
+            <svg id="ingredientSearchIcon" class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:#a29c8c; pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+            <svg id="ingredientSearchClear" onclick="clearIngredientSearch()" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:#9a9488; cursor:pointer;"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
         </div>
-        <button id="ingredientsCriticalFilterBtn" onclick="toggleIngredientsCriticalFilter()" class="of-filter-btn" style="width:auto; display:inline-flex; padding:5px 10px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
-            Только критичные
-        </button>
+        <div class="view-toggle-pill">
+            <button class="view-toggle-btn active" id="ingredientsViewBtnCards" onclick="setIngredientsViewMode('cards')" title="Карточки">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+            </button>
+            <button class="view-toggle-btn" id="ingredientsViewBtnTable" onclick="setIngredientsViewMode('table')" title="Таблица">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+            </button>
+        </div>
     </div>
 </div>
 
 <!-- Поиск + переключатель вида для Полуфабрикатов -->
 <div id="semiFinishedSearchBar" class="hidden" style="position:fixed; left:50%; transform:translateX(-50%); width:100%; max-width:42rem; z-index:30; box-sizing:border-box; padding:0 8px;">
-    <div style="background:#f4f1ea; padding:6px 0;">
-        <div class="flex gap-2 items-center mb-1.5">
-            <div class="search-input-wrap" style="flex:1; position:relative;">
-                <input id="semiFinishedSearchInput" type="text" placeholder="Поиск по названию..." oninput="filterSemiFinishedList()" class="border p-1.5 rounded-xl w-full table-text" style="padding-right:30px;">
-                <svg id="semiFinishedSearchIcon" class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:#a29c8c; pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
-                <svg id="semiFinishedSearchClear" onclick="clearSemiFinishedSearch()" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:#9a9488; cursor:pointer;"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
-            </div>
-            <div class="view-toggle-pill">
-                <button class="view-toggle-btn active" id="semiFinishedViewBtnCards" onclick="setSemiFinishedViewMode('cards')" title="Карточки">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-                </button>
-                <button class="view-toggle-btn" id="semiFinishedViewBtnTable" onclick="setSemiFinishedViewMode('table')" title="Таблица">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-                </button>
-            </div>
+    <div class="flex gap-2 items-center" style="background:#f4f1ea; padding:6px 0;">
+        <div class="search-input-wrap" style="flex:1; position:relative;">
+            <input id="semiFinishedSearchInput" type="text" placeholder="Поиск по названию..." oninput="filterSemiFinishedList()" class="border p-1.5 rounded-xl w-full table-text" style="padding-right:30px;">
+            <svg id="semiFinishedSearchIcon" class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:#a29c8c; pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
+            <svg id="semiFinishedSearchClear" onclick="clearSemiFinishedSearch()" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:#9a9488; cursor:pointer;"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
         </div>
-        <button id="semiFinishedCriticalFilterBtn" onclick="toggleSemiFinishedCriticalFilter()" class="of-filter-btn" style="width:auto; display:inline-flex; padding:5px 10px;">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
-            Только критичные
-        </button>
+        <div class="view-toggle-pill">
+            <button class="view-toggle-btn active" id="semiFinishedViewBtnCards" onclick="setSemiFinishedViewMode('cards')" title="Карточки">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+            </button>
+            <button class="view-toggle-btn" id="semiFinishedViewBtnTable" onclick="setSemiFinishedViewMode('table')" title="Таблица">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+            </button>
+        </div>
     </div>
 </div>
 
@@ -2417,8 +2405,8 @@
     <script src="employees.js?v=15"></script>
     <script src="company.js?v=7"></script>
     <script src="inventory.js?v=20"></script>
-<script src="ingredients.js?v=19"></script>
-<script src="semifinished.js?v=15"></script>
+<script src="ingredients.js?v=20"></script>
+<script src="semifinished.js?v=16"></script>
 <script src="products.js?v=20"></script>
 <script src="customers.js?v=27"></script>
 <script src="orders.js?v=52"></script>

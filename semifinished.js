@@ -27,8 +27,20 @@ function semiFinishedUnitCost(sf) {
     return semiFinishedBatchCost(sf) / batchSize;
 }
 
+// Уровень критичности полуфабриката: 0 — критично (терракота, включая
+// неподтверждённый рецепт), 1 — заканчивается (охра), 2 — норма.
+function semiFinishedSeverity(sf, neededForOrders) {
+    const balance  = typeof getSemiFinishedBalance === 'function' ? getSemiFinishedBalance(sf.id) : null;
+    const daily    = typeof avgDailySfUsage === 'function' ? avgDailySfUsage(sf.id) : 0;
+    const daysLeft = (balance !== null && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
+    const needed   = neededForOrders[sf.id] || 0;
+    const shortage = needed > 0 && (balance === null || balance < needed);
+    const isCritical = shortage || (balance !== null && balance <= 0) || (daysLeft !== null && daysLeft < 3) || !sf.recipe_confirmed;
+    const isWarning  = !isCritical && daysLeft !== null && daysLeft < 7;
+    return isCritical ? 0 : isWarning ? 1 : 2;
+}
+
 function displaySemiFinished() {
-    semiFinished.sort((a, b) => (a.name||"").localeCompare(b.name||""));
     const tbody = document.getElementById('semiFinishedTableBody');
     if (!tbody) return;
     tbody.innerHTML = '';
@@ -48,6 +60,13 @@ function displaySemiFinished() {
                     Number(ri.quantity) * Number(item.quantity) * factor;
             });
         });
+    });
+
+    // Сортировка: сначала критичные, потом заканчивающиеся, потом остальные —
+    // внутри каждой группы по алфавиту.
+    semiFinished.sort((a, b) => {
+        const sevDiff = semiFinishedSeverity(a, neededForOrders) - semiFinishedSeverity(b, neededForOrders);
+        return sevDiff !== 0 ? sevDiff : (a.name||"").localeCompare(b.name||"");
     });
 
     semiFinished.forEach((sf, i) => {
@@ -75,7 +94,7 @@ function displaySemiFinished() {
             : shortage ? '<span style="color:#c0685c;" class="font-semibold">нехватка</span>'
             : '<span class="text-gray-400">—</span>';
 
-        const isCritical = shortage || (balance !== null && balance <= 0) || (daysLeft !== null && daysLeft < 3);
+        const isCritical = shortage || (balance !== null && balance <= 0) || (daysLeft !== null && daysLeft < 3) || !sf.recipe_confirmed;
         const isWarning  = !isCritical && daysLeft !== null && daysLeft < 7;
         const accentColor = isCritical ? '#c0685c' : isWarning ? '#d9a441' : '';
         const accentBar = accentColor
@@ -165,15 +184,6 @@ function setSemiFinishedViewMode(mode) {
     document.getElementById('semiFinishedViewBtnTable')?.classList.toggle('active', mode === 'table');
 }
 
-// ---- Фильтр "Только критичные" — сочетается с поиском по имени ----
-let _semiFinishedCriticalOnly = false;
-
-function toggleSemiFinishedCriticalFilter() {
-    _semiFinishedCriticalOnly = !_semiFinishedCriticalOnly;
-    document.getElementById('semiFinishedCriticalFilterBtn')?.classList.toggle('active', _semiFinishedCriticalOnly);
-    filterSemiFinishedList();
-}
-
 // ---- Поиск по названию — работает одинаково в обоих видах ----
 function filterSemiFinishedList() {
     const input = document.getElementById('semiFinishedSearchInput');
@@ -183,14 +193,14 @@ function filterSemiFinishedList() {
 
     let visibleCards = 0;
     document.querySelectorAll('#semiFinishedCardsBody .order-card').forEach(card => {
-        const match = (!q || card.dataset.name.includes(q)) && (!_semiFinishedCriticalOnly || card.dataset.critical === '1');
+        const match = !q || card.dataset.name.includes(q);
         card.style.display = match ? 'flex' : 'none';
         if (match) visibleCards++;
     });
     document.getElementById('semiFinishedCardsEmpty')?.classList.toggle('hidden', visibleCards !== 0);
 
     document.querySelectorAll('#semiFinishedTableBody tr').forEach(row => {
-        const match = (!q || (row.dataset.name || '').includes(q)) && (!_semiFinishedCriticalOnly || row.dataset.critical === '1');
+        const match = !q || (row.dataset.name || '').includes(q);
         row.style.display = match ? '' : 'none';
     });
 }

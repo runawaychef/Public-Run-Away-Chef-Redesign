@@ -24,8 +24,22 @@ function stockColorClass(daysLeft, prefix) {
     return 'stock-ok';
 }
 
+// Уровень критичности ингредиента: 0 — критично (терракота), 1 — заканчивается
+// (охра), 2 — норма. Та же логика, что и раскраска полоски/цифры "Хватит" в
+// таблице/карточках — вынесена отдельно, чтобы сортировка списка (см. ниже)
+// использовала ровно те же условия, а не рисковала разойтись с окраской.
+function ingredientSeverity(ing, neededForOrders) {
+    const balance  = typeof getIngredientBalance === 'function' ? getIngredientBalance(ing.id) : null;
+    const daily    = typeof avgDailyUsage === 'function' ? avgDailyUsage(ing.id) : 0;
+    const daysLeft = (balance !== null && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
+    const needed   = neededForOrders[ing.id] || 0;
+    const shortfall = needed > 0 && (balance === null || balance < needed);
+    const isCritical = shortfall || (balance !== null && balance <= 0) || (daysLeft !== null && daysLeft < 3);
+    const isWarning  = !isCritical && daysLeft !== null && daysLeft < 7;
+    return isCritical ? 0 : isWarning ? 1 : 2;
+}
+
 function displayIngredients() {
-    ingredients.sort((a, b) => (a.name||"").localeCompare(b.name||""));
     const tbody = document.getElementById('ingredientTableBody');
     if (!tbody) return;
     tbody.innerHTML = '';
@@ -44,6 +58,13 @@ function displayIngredients() {
                 neededForOrders[ri.ingredient_id] = (neededForOrders[ri.ingredient_id] || 0) + qty;
             });
         });
+    });
+
+    // Сортировка: сначала критичные (терракота), потом заканчивающиеся (охра),
+    // потом остальные — внутри каждой группы по алфавиту.
+    ingredients.sort((a, b) => {
+        const sevDiff = ingredientSeverity(a, neededForOrders) - ingredientSeverity(b, neededForOrders);
+        return sevDiff !== 0 ? sevDiff : (a.name||"").localeCompare(b.name||"");
     });
 
     ingredients.forEach((ing) => {
@@ -156,15 +177,6 @@ function setIngredientsViewMode(mode) {
     document.getElementById('ingredientsViewBtnTable')?.classList.toggle('active', mode === 'table');
 }
 
-// ---- Фильтр "Только критичные" — сочетается с поиском по имени (оба условия сразу) ----
-let _ingredientsCriticalOnly = false;
-
-function toggleIngredientsCriticalFilter() {
-    _ingredientsCriticalOnly = !_ingredientsCriticalOnly;
-    document.getElementById('ingredientsCriticalFilterBtn')?.classList.toggle('active', _ingredientsCriticalOnly);
-    filterIngredientsList();
-}
-
 // ---- Поиск по названию — работает одинаково в обоих видах ----
 function filterIngredientsList() {
     const input = document.getElementById('ingredientSearchInput');
@@ -174,14 +186,14 @@ function filterIngredientsList() {
 
     let visibleCards = 0;
     document.querySelectorAll('#ingredientCardsBody .order-card').forEach(card => {
-        const match = (!q || card.dataset.name.includes(q)) && (!_ingredientsCriticalOnly || card.dataset.critical === '1');
+        const match = !q || card.dataset.name.includes(q);
         card.style.display = match ? 'flex' : 'none';
         if (match) visibleCards++;
     });
     document.getElementById('ingredientCardsEmpty')?.classList.toggle('hidden', visibleCards !== 0);
 
     document.querySelectorAll('#ingredientTableBody tr').forEach(row => {
-        const match = (!q || (row.dataset.name || '').includes(q)) && (!_ingredientsCriticalOnly || row.dataset.critical === '1');
+        const match = !q || (row.dataset.name || '').includes(q);
         row.style.display = match ? '' : 'none';
     });
 }
