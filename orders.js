@@ -975,14 +975,14 @@ async function openOrdersTrash() {
         if (!data || !data.length) {
             content.innerHTML = '<p class="text-xs text-gray-400 text-center py-4">Корзина пуста</p>';
         } else {
-            let html = '<table class="w-full text-xs"><thead><tr class="bg-gray-100"><th class="p-1 text-left">Дата заказа</th><th class="p-1 text-left">Клиент</th><th class="p-1 text-left">Удалён</th></tr></thead><tbody>';
+            let html = '<table class="w-full text-xs table-clean"><thead><tr style="background-color:#e3e8df;"><th class="p-1 text-left">Дата заказа</th><th class="p-1 text-left">Клиент</th><th class="p-1 text-left">Удалён</th></tr></thead><tbody>';
             data.forEach(o => {
                 const cust = customers.find(c => c.id === o.customer_id);
                 const custName = cust ? cust.name : '(неизвестно)';
                 const deletedDate = new Date(o.deleted_at).toLocaleDateString('ru-LT');
                 const orderDate = formatDateDMY(o.order_date || o.date);
                 const orderNum = o.order_number || `#${o.id}`;
-                html += `<tr class="border-b cursor-pointer hover:bg-gray-50 active:bg-gray-100"
+                html += `<tr class="border-b order-row"
                     onclick="openTrashOrderActions(${o.id}, '${escapeHtml(custName)}', '${orderDate}', '${escapeHtml(orderNum)}')">
                     <td class="p-0.5">${orderDate}</td>
                     <td class="p-0.5">${escapeHtml(custName)}</td>

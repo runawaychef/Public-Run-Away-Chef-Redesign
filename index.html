@@ -315,6 +315,14 @@
         table.table-clean { border-collapse: separate; border-spacing: 0; }
         table.table-clean thead tr:first-child th:first-child { border-top-left-radius: 12px; }
         table.table-clean thead tr:first-child th:last-child { border-top-right-radius: 12px; }
+        /* Низ таблицы: если есть tfoot (итоговая строка) — скругляем его,
+           иначе — последнюю строку последнего tbody. Оба правила безопасно
+           применить одновременно: если tfoot есть, tbody-правило просто не
+           будет заметно (та строка визуально выше итоговой). */
+        table.table-clean > tbody:last-of-type > tr:last-child > td:first-child { border-bottom-left-radius: 12px; }
+        table.table-clean > tbody:last-of-type > tr:last-child > td:last-child { border-bottom-right-radius: 12px; }
+        table.table-clean > tfoot > tr:last-child > td:first-child { border-bottom-left-radius: 12px; }
+        table.table-clean > tfoot > tr:last-child > td:last-child { border-bottom-right-radius: 12px; }
 
         /* ── Карточный вид списка заказов ──────────────────────────────── */
         #ordersViewToggle {
@@ -2262,9 +2270,9 @@
 <script src="ingredients.js?v=17"></script>
 <script src="semifinished.js?v=13"></script>
 <script src="products.js?v=17"></script>
-<script src="customers.js?v=25"></script>
-<script src="orders.js?v=50"></script>
-<script src="invoice.js?v=9"></script>
+<script src="customers.js?v=26"></script>
+<script src="orders.js?v=51"></script>
+<script src="invoice.js?v=10"></script>
 <script src="payments.js?v=10"></script>
 <script src="stats.js?v=10"></script>
 <script src="history.js?v=7"></script>

@@ -246,7 +246,7 @@ function buildDocumentHtml(docType, snapshot) {
             </div>
         </div>
 
-        <table style="width:100%;border-collapse:collapse;font-size:15px;table-layout:fixed;">
+        <table class="table-clean" style="width:100%;border-collapse:separate;border-spacing:0;font-size:15px;table-layout:fixed;">
             <thead>
                 <tr style="background:#e3e8df;">
                     <th style="padding:10px 8px;text-align:left;width:32%;">Наименование</th>

@@ -175,7 +175,7 @@ function openCustomerReportPreview() {
         <div style="padding:6px;">
             <h2 style="font-size:16px;font-weight:700;color:#1f2937;margin:0 0 2px;">${escapeHtml(cust.name)}</h2>
             <p style="font-size:11px;color:#6b7280;margin:0 0 12px;">Сводный отчёт по изделиям · ${RANGE_LABELS[range]} (${periodLabel})</p>
-            <table style="width:100%;border-collapse:separate;border-spacing:0;font-size:12px;">
+            <table class="table-clean" style="width:100%;border-collapse:separate;border-spacing:0;font-size:12px;">
                 <thead><tr style="background:#e3e8df;">
                     <th style="text-align:left;padding:4px;border-bottom:1px solid #e5e7eb;">Изделие</th>
                     <th style="text-align:right;padding:4px;border-bottom:1px solid #e5e7eb;">Кол-во</th>
