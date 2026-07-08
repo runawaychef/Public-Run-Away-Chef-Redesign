@@ -20,6 +20,7 @@ function displayProducts() {
         const unitLabel = hasUnit ? UNIT_PRODUCT_LABELS[p.unit] : icon('warning', 'w-3.5 h-3.5 inline-block text-[#c0685c]');
         const row = document.createElement('tr');
         row.className = 'order-row border-b';
+        row.dataset.name = (p.name || '').toLowerCase();
         const nameCellPad = needsAttention ? 'pl-2.5' : '';
         const accentBar = needsAttention
             ? `<span class="absolute left-0 top-1 bottom-1 w-0.5 rounded-full" style="background:#c0685c;"></span>`
@@ -37,6 +38,73 @@ function displayProducts() {
     const warningEl = document.getElementById('productsUnitWarning');
     if (warningEl) warningEl.classList.toggle('hidden', warningCount === 0);
     updateProductSelects();
+    renderProductCards();
+    filterProductsList();
+}
+
+// ---- Карточный вид (по тому же принципу, что и карточки заказов) ----
+function renderProductCards() {
+    const body = document.getElementById('productCardsBody');
+    if (!body) return;
+    let html = '';
+    products.forEach(p => {
+        const hasUnit = !!p.unit;
+        const recipeOk = !!p.recipe_confirmed;
+        const needsAttention = !hasUnit || !recipeOk;
+        const unitLabel = hasUnit ? UNIT_PRODUCT_LABELS[p.unit] : '';
+        const unitCost = hasUnit ? productUnitCost(p) : null;
+        const costLine = unitCost !== null
+            ? `Себестоимость: ${formatMoney(unitCost)}/${unitLabel}`
+            : 'Себестоимость: —';
+        const stripe = needsAttention ? `<div class="stripe" style="background:#c0685c;"></div>` : '';
+        html += `
+        <div class="order-card" data-name="${escapeHtml((p.name || '').toLowerCase())}" style="cursor:pointer;" onclick="openProductDetail(${p.id})">
+            ${stripe}
+            <div class="order-card-body">
+                <div class="oc-row">
+                    <span class="oc-name">${escapeHtml(p.name || '(без названия)')}</span>
+                    <span class="oc-sum">${formatMoney(p.price)}</span>
+                </div>
+                <div class="oc-meta">${costLine}</div>
+            </div>
+        </div>`;
+    });
+    body.innerHTML = html;
+}
+
+// ---- Переключатель Карточки / Таблица ----
+function setProductsViewMode(mode) {
+    document.getElementById('productCardsWrap')?.classList.toggle('hidden', mode !== 'cards');
+    document.getElementById('productTableWrap')?.classList.toggle('hidden', mode !== 'table');
+    document.getElementById('productsViewBtnCards')?.classList.toggle('active', mode === 'cards');
+    document.getElementById('productsViewBtnTable')?.classList.toggle('active', mode === 'table');
+}
+
+// ---- Поиск по названию — работает одинаково в обоих видах разом ----
+function filterProductsList() {
+    const input = document.getElementById('productSearchInput');
+    const q = input ? input.value.trim().toLowerCase() : '';
+    document.getElementById('productSearchClear')?.classList.toggle('hidden', !q);
+    document.getElementById('productSearchIcon')?.classList.toggle('hidden', !!q);
+
+    let visibleCards = 0;
+    document.querySelectorAll('#productCardsBody .order-card').forEach(card => {
+        const match = !q || card.dataset.name.includes(q);
+        card.style.display = match ? 'flex' : 'none';
+        if (match) visibleCards++;
+    });
+    document.getElementById('productCardsEmpty')?.classList.toggle('hidden', visibleCards !== 0);
+
+    document.querySelectorAll('#productTableBody tr').forEach(row => {
+        const match = !q || (row.dataset.name || '').includes(q);
+        row.style.display = match ? '' : 'none';
+    });
+}
+
+function clearProductSearch() {
+    const input = document.getElementById('productSearchInput');
+    if (input) input.value = '';
+    filterProductsList();
 }
 
 // Кнопка "+": попап для создания нового изделия
