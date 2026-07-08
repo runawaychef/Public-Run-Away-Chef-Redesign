@@ -378,7 +378,8 @@ function positionOrdersViewToggle() {
     if (!toggle) return;
 
     const isOrderDetailOpen = document.getElementById('orderDetail')?.classList.contains('active');
-    const shouldShow = (typeof currentTabId === 'undefined' || currentTabId === 'orders') && !isOrderDetailOpen;
+    const isAnyModalOpen = Array.from(document.querySelectorAll('.modal')).some(m => getComputedStyle(m).display !== 'none');
+    const shouldShow = (typeof currentTabId === 'undefined' || currentTabId === 'orders') && !isOrderDetailOpen && !isAnyModalOpen;
     toggle.classList.toggle('hidden', !shouldShow);
     if (!shouldShow) return;
 

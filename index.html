@@ -2293,7 +2293,7 @@
 <script src="semifinished.js?v=13"></script>
 <script src="products.js?v=17"></script>
 <script src="customers.js?v=26"></script>
-<script src="orders.js?v=51"></script>
+<script src="orders.js?v=52"></script>
 <script src="invoice.js?v=10"></script>
 <script src="payments.js?v=10"></script>
 <script src="stats.js?v=10"></script>
@@ -2709,6 +2709,17 @@ function closeHistoryScreen() {
         const el = document.getElementById(id);
         if (el) el.classList.remove('hidden');
     });
+
+    // Переключатель вида заказов (карточки/таблица) должен прятаться, когда
+    // открыта ЛЮБАЯ модалка — иначе он остаётся висеть с прошлого состояния
+    // экрана поверх модалки. Отслеживаем открытие/закрытие всех модалок разом,
+    // а не дёргаем этот пересчёт вручную из каждого места, где что-то открывается.
+    if (typeof positionOrdersViewToggle === 'function') {
+        document.querySelectorAll('.modal').forEach(m => {
+            new MutationObserver(() => positionOrdersViewToggle()).observe(m, { attributes: true, attributeFilter: ['style'] });
+        });
+    }
+
     await initAuth();
 })();
 
