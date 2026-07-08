@@ -132,6 +132,12 @@ async function createDraftIngredientAndOpen() {
     const stockBlock = document.getElementById('ingStockBlock');
     if (stockBlock) stockBlock.classList.add('hidden');
 
+    // Скрываем графики/историю — тоже нечего показывать до первого сохранения
+    const chartBlock = document.getElementById('ingPriceChartBlock');
+    if (chartBlock) chartBlock.classList.add('hidden');
+    const histBlock = document.getElementById('ingPriceHistoryBlock');
+    if (histBlock) histBlock.classList.add('hidden');
+
     // Очищаем историю движений
     const histEl = document.getElementById('ingStockHistory');
     if (histEl) histEl.innerHTML = '';
@@ -444,6 +450,10 @@ async function closeIngredientDetail() {
     if (saveBtn) saveBtn.classList.add('hidden');
     const stockBlock = document.getElementById('ingStockBlock');
     if (stockBlock) stockBlock.classList.remove('hidden');
+    const chartBlock = document.getElementById('ingPriceChartBlock');
+    if (chartBlock) chartBlock.classList.remove('hidden');
+    const histBlock = document.getElementById('ingPriceHistoryBlock');
+    if (histBlock) histBlock.classList.remove('hidden');
     if (leavingId !== null) await cleanupIngredientDraftIfEmpty(leavingId);
     displayIngredients();
     refreshFab();

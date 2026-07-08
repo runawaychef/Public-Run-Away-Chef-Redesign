@@ -68,6 +68,8 @@ async function createDraftProductAndOpen() {
     if (delBtn) delBtn.classList.add('hidden');
     const recipeBlock = document.getElementById('pdRecipeBlock');
     if (recipeBlock) recipeBlock.classList.add('hidden');
+    const costChartBlock = document.getElementById('pdCostChartBlock');
+    if (costChartBlock) costChartBlock.classList.add('hidden');
 
     updatePdUnitUI('pcs');
     refreshFab();
@@ -342,6 +344,8 @@ async function closeProductDetail() {
     if (delBtn) delBtn.classList.remove('hidden');
     const recipeBlock = document.getElementById('pdRecipeBlock');
     if (recipeBlock) recipeBlock.classList.remove('hidden');
+    const costChartBlock = document.getElementById('pdCostChartBlock');
+    if (costChartBlock) costChartBlock.classList.remove('hidden');
     if (leavingId !== null) await cleanupProductDraftIfEmpty(leavingId);
     displayProducts();
     refreshFab();
