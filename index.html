@@ -49,8 +49,8 @@
 
         /* ── Вкладки — нижняя синяя черта вместо серой заливки ── */
         .tab:not(.bottom-nav-item) { cursor: pointer; position: relative; background: transparent !important; color: #6b7280 !important; border-radius: 0 !important; padding-bottom: 6px !important; border-bottom: 2px solid transparent; transition: color 0.2s, border-color 0.2s; font-size: 14px; font-weight: 500; }
-        .tab.active:not(.bottom-nav-item) { color: #4f46e5 !important; font-weight: 600; position: relative; }
-        .tab.active:not(.bottom-nav-item)::after { content: ""; position: absolute; bottom: -2px; left: 10%; right: 10%; height: 3px; background: #4f46e5; border-radius: 9999px; }
+        .tab.active:not(.bottom-nav-item) { color: #7c9473 !important; font-weight: 600; position: relative; }
+        .tab.active:not(.bottom-nav-item)::after { content: ""; position: absolute; bottom: -2px; left: 10%; right: 10%; height: 3px; background: #7c9473; border-radius: 9999px; }
         .tab:hover:not(.active):not(.bottom-nav-item) { color: #374151 !important; }
 
         /* Единый стиль таблиц — сетка как в Складе */
@@ -430,6 +430,8 @@
             background: #7c9473; color: #fff; border-color: transparent;
         }
         .field-select-btn.active svg { color: #fff; }
+        .stock-critical { color: #c0685c; }
+        .stock-low { color: #d9a441; }
         #detailItemsBody tr.cursor-pointer:active { background: #f6f8f4; }
         .filter-dropdown {
             position: absolute; top: calc(100% + 4px); left: 0; right: 0;
@@ -1861,7 +1863,7 @@
                 <!-- Вкладки -->
                 <div class="flex gap-3 border-b mb-3">
                     <button id="invTabStock" onclick="switchInventoryTab('stock')" class="tab active text-xs pb-1">Склад</button>
-                    <button id="invTabShop" onclick="switchInventoryTab('shop')" class="tab text-xs pb-1">Список покупок <span id="shopListBadge" class="hidden bg-indigo-600 text-white rounded-full px-1.5 py-0.5 text-xs ml-1"></span></button>
+                    <button id="invTabShop" onclick="switchInventoryTab('shop')" class="tab text-xs pb-1">Список покупок <span id="shopListBadge" class="hidden text-white rounded-full px-1.5 py-0.5 text-xs ml-1" style="background:#7c9473;"></span></button>
                 </div>
                 <!-- Склад -->
                 <div id="inventoryTabStock">
@@ -1869,18 +1871,18 @@
                 </div>
                 <!-- Список покупок -->
                 <div id="inventoryTabShop" class="hidden">
-                    <div class="flex gap-1 mb-2">
-                        <button onclick="addCriticalToShoppingList()" class="btn bg-[#eef1ea] text-[#4f6349] px-2 py-1 rounded-xl hover:bg-[#e3e8df] text-xs flex-1">+ Добавить критичное</button>
-                        <button onclick="clearShoppingList()" class="btn bg-[#f5e6e2] text-[#a8574c] px-2 py-1 rounded-xl hover:bg-[#eed6d0] text-xs">Очистить всё</button>
+                    <div class="flex gap-2 mb-2">
+                        <button onclick="addCriticalToShoppingList()" class="pill-btn-secondary flex-1">+ Добавить критичное</button>
+                        <button onclick="clearShoppingList()" class="pill-btn-danger" style="background:#f3ded9; color:#a3493d; box-shadow:none;">Очистить всё</button>
                     </div>
                     <div class="mb-2">
-                        <button onclick="shareShoppingList()" class="btn bg-indigo-600 text-white px-2 py-1 rounded-xl hover:bg-indigo-700 text-xs w-full flex items-center justify-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0-12l-4 4m4-4l4 4M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6"/></svg>Поделиться списком</button>
+                        <button onclick="shareShoppingList()" class="pill-btn w-full justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0-12l-4 4m4-4l4 4M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6"/></svg>Поделиться списком</button>
                     </div>
                     <div id="shopListContent" style="max-height:52vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;">
                         <p class="text-xs text-gray-400 text-center py-4">Список пуст</p>
                     </div>
                 </div>
-                <button onclick="closeModal()" class="btn bg-[#7c9473] text-white p-1 rounded-xl hover:bg-[#6c8464] w-full text-xs mt-3">Закрыть</button>
+                <button onclick="closeModal()" class="pill-btn w-full justify-center mt-3">Закрыть</button>
             </div>
         </div>
 
@@ -1898,8 +1900,8 @@
                     </div>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="sfProduceCalc()" class="btn bg-[#7c9473] text-white p-1 rounded-xl hover:bg-[#6c8464] text-xs flex-1">Рассчитать →</button>
-                    <button onclick="closeModal()" class="btn bg-[#7c9473] text-white p-1 rounded-xl hover:bg-[#6c8464] text-xs flex-1">Отмена</button>
+                    <button onclick="sfProduceCalc()" class="pill-btn flex-1 justify-center">Рассчитать →</button>
+                    <button onclick="closeModal()" class="pill-btn-secondary flex-1">Отмена</button>
                 </div>
             </div>
         </div>
@@ -1908,7 +1910,7 @@
         <div id="sfConfirmModal" class="modal">
             <div class="modal-content" style="max-width:480px;">
                 <h2 class="text-base font-semibold mb-3 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"/></svg>Подтвердите производство</h2>
-                <div class="bg-gray-50 rounded p-2 mb-3 text-xs text-gray-700">
+                <div class="rounded-xl p-2 mb-3 text-xs text-gray-700" style="background:#e3e8df;">
                     <p class="mb-1">Будет списано:</p>
                     <p class="font-semibold" id="sfConfirmIngLine"></p>
                 </div>
@@ -1922,8 +1924,8 @@
                     <p class="text-xs text-gray-400 mt-1">Расчётное значение подставлено автоматически. Измените если фактический выход отличается.</p>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="confirmSfProduce()" class="btn bg-[#7c9473] text-white p-1 rounded-xl hover:bg-[#6c8464] text-xs flex-1">Подтвердить</button>
-                    <button onclick="closeModal()" class="btn bg-[#7c9473] text-white p-1 rounded-xl hover:bg-[#6c8464] text-xs flex-1">Отмена</button>
+                    <button onclick="confirmSfProduce()" class="pill-btn flex-1 justify-center">Подтвердить</button>
+                    <button onclick="closeModal()" class="pill-btn-secondary flex-1">Отмена</button>
                 </div>
             </div>
         </div>
@@ -1937,9 +1939,9 @@
                 <input id="sfWriteOffQty" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
                 <label class="text-xs text-gray-500">Причина (необязательно)</label>
                 <input id="sfWriteOffNote" type="text" class="border p-0.5 rounded-xl mb-3 w-full text-xs" placeholder="Например: испортилось">
-                <div class="flex gap-1">
-                    <button onclick="saveSfWriteOff()" class="btn bg-[#c0685c] text-white p-1 rounded-xl hover:bg-[#a85950] text-xs flex-1">Списать</button>
-                    <button onclick="closeModal()" class="btn bg-[#7c9473] text-white p-1 rounded-xl hover:bg-[#6c8464] text-xs flex-1">Отмена</button>
+                <div class="flex gap-2">
+                    <button onclick="saveSfWriteOff()" class="pill-btn-danger flex-1">Списать</button>
+                    <button onclick="closeModal()" class="pill-btn-secondary flex-1">Отмена</button>
                 </div>
             </div>
         </div>
@@ -1950,9 +1952,9 @@
                 <h2 class="text-base font-semibold mb-1 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Инвентаризация п/ф</h2>
                 <p class="text-xs text-gray-500 mb-3">Введите фактическое количество. Пустые поля — пропускаются.</p>
                 <div id="sfInventarizationContent" style="max-height:60vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
-                <div class="flex gap-1 mt-3">
-                    <button onclick="saveSfInventarization()" class="btn bg-[#7c9473] text-white p-1 rounded-xl hover:bg-[#6c8464] text-xs flex-1">Сохранить</button>
-                    <button onclick="closeModal()" class="btn bg-[#7c9473] text-white p-1 rounded-xl hover:bg-[#6c8464] text-xs" style="width:80px;">Отмена</button>
+                <div class="flex gap-2 mt-3">
+                    <button onclick="saveSfInventarization()" class="pill-btn flex-1 justify-center">Сохранить</button>
+                    <button onclick="closeModal()" class="pill-btn-secondary" style="width:80px;">Отмена</button>
                 </div>
             </div>
         </div>
@@ -1985,9 +1987,9 @@
                 <h2 class="text-base font-semibold mb-1 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Инвентаризация</h2>
                 <p class="text-xs text-gray-500 mb-3">Введите фактическое количество. Пустые поля — пропускаются. Разница запишется автоматически.</p>
                 <div id="inventarizationContent" style="max-height:60vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
-                <div class="flex gap-1 mt-3">
-                    <button onclick="saveInventarization()" class="btn bg-[#7c9473] text-white p-1 rounded-xl hover:bg-[#6c8464] text-xs flex-1">Сохранить инвентаризацию</button>
-                    <button onclick="closeModal()" class="btn bg-[#7c9473] text-white p-1 rounded-xl hover:bg-[#6c8464] text-xs" style="width:80px;">Отмена</button>
+                <div class="flex gap-2 mt-3">
+                    <button onclick="saveInventarization()" class="pill-btn flex-1 justify-center">Сохранить инвентаризацию</button>
+                    <button onclick="closeModal()" class="pill-btn-secondary" style="width:80px;">Отмена</button>
                 </div>
             </div>
         </div>
@@ -2062,9 +2064,9 @@
                 <input id="inventoryAddQty" type="number" inputmode="decimal" step="0.01" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
                 <label class="text-xs text-gray-500">Заметка (необязательно)</label>
                 <input id="inventoryAddNotes" type="text" class="border p-0.5 rounded-xl mb-3 w-full text-xs" placeholder="Например: купил в Maxima">
-                <div class="flex gap-1">
-                    <button onclick="saveInventoryAdd()" class="btn bg-[#7c9473] text-white p-1 rounded-xl hover:bg-[#6c8464] text-xs flex-1">Сохранить</button>
-                    <button onclick="closeModal()" class="btn bg-[#7c9473] text-white p-1 rounded-xl hover:bg-[#6c8464] text-xs flex-1">Отмена</button>
+                <div class="flex gap-2">
+                    <button onclick="saveInventoryAdd()" class="pill-btn flex-1 justify-center">Сохранить</button>
+                    <button onclick="closeModal()" class="pill-btn-secondary flex-1">Отмена</button>
                 </div>
             </div>
         </div>
@@ -2251,9 +2253,9 @@
     <script src="auth.js?v=10"></script>
     <script src="employees.js?v=14"></script>
     <script src="company.js?v=6"></script>
-    <script src="inventory.js?v=18"></script>
+    <script src="inventory.js?v=19"></script>
 <script src="ingredients.js?v=14"></script>
-<script src="semifinished.js?v=11"></script>
+<script src="semifinished.js?v=12"></script>
 <script src="products.js?v=15"></script>
 <script src="customers.js?v=25"></script>
 <script src="orders.js?v=50"></script>

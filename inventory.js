@@ -329,7 +329,7 @@ async function openInventoryModal() {
             ? _shoppingList.some(r => r.semi_finished_id === ing.id)
             : _shoppingList.some(r => r.ingredient_id === ing.id);
         const addBtn = inList
-            ? `<span class="text-green-600 text-xs font-semibold"><svg class="w-3.5 h-3.5 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg></span>`
+            ? `<span style="color:#4f6349;" class="text-xs font-semibold"><svg class="w-3.5 h-3.5 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg></span>`
             : `<button onclick="addRowToShoppingList(${isSf ? 'null' : ing.id}, ${isSf ? ing.id : 'null'})" class="btn bg-[#eef1ea] text-[#7c9473] px-1 py-0.5 rounded text-xs hover:bg-[#e0e6d9]">+</button>`;
         const detailClick = isSf
             ? `closeModal(); showTab('semiFinished'); openSemiFinishedDetail(${ing.id});`
@@ -393,33 +393,33 @@ async function openInventoryModal() {
     // Сам блок с деталями остаётся внизу, чтобы не оттеснять "Критично" по важности.
     let html = '';
     if (pendingRows.length) {
-        html += `<div onclick="document.getElementById('pendingWriteOffBlock').scrollIntoView({behavior:'smooth'})" class="mb-2 p-1.5 bg-indigo-50 border border-indigo-200 rounded-xl text-xs text-indigo-700 cursor-pointer flex items-center justify-between">
+        html += `<div onclick="document.getElementById('pendingWriteOffBlock').scrollIntoView({behavior:'smooth'})" class="mb-2 p-1.5 rounded-xl text-xs cursor-pointer flex items-center justify-between" style="background:#e3e8df; border:1px solid #d3ddce; color:#4f6349;">
             <span>📅 Запланировано списаний: ${pendingRows.length} · ближайшее ${formatDateDMY(pendingRows[0].earliestDate)}</span>
-            <span class="text-indigo-400">Показать ↓</span>
+            <span style="color:#7c9473;">Показать ↓</span>
         </div>`;
     }
 
-    html += '<table class="w-full text-xs table-clean"><thead><tr class="bg-gray-100 sticky top-0"><th class="p-1 text-left">Ингредиент</th><th class="p-1 text-right">Остаток</th><th class="p-1 text-right">Хватит</th><th class="p-1 text-center">Список</th></tr></thead><tbody>';
+    html += '<table class="w-full text-xs table-clean"><thead><tr style="background-color:#e3e8df;" class="sticky top-0"><th class="p-1 text-left">Ингредиент</th><th class="p-1 text-right">Остаток</th><th class="p-1 text-right">Хватит</th><th class="p-1 text-center">Список</th></tr></thead><tbody>';
 
     // 🔴 Критично: ингредиенты
     if (red.length) {
-        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold text-red-600"><span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>Критично</td></tr>`;
-        red.forEach(item => { html += renderRow(item, null, 'text-red-600', false); });
+        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold" style="color:#c0685c;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#c0685c;"></span>Критично</td></tr>`;
+        red.forEach(item => { html += renderRow(item, null, 'stock-critical', false); });
     }
     // 🔴 Критично: полуфабрикаты
     if (sfRed.length) {
-        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold text-red-600"><span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>Критично — п/ф</td></tr>`;
-        sfRed.forEach(item => { html += renderRow(item, null, 'text-red-600', true); });
+        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold" style="color:#c0685c;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#c0685c;"></span>Критично — п/ф</td></tr>`;
+        sfRed.forEach(item => { html += renderRow(item, null, 'stock-critical', true); });
     }
     // 🟡 Заканчивается: ингредиенты
     if (yellow.length) {
-        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold text-yellow-700"><span class="inline-block w-2 h-2 rounded-full bg-yellow-500 mr-1"></span>Заканчивается</td></tr>`;
-        yellow.forEach(item => { html += renderRow(item, null, 'text-yellow-700', false); });
+        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold" style="color:#96712a;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#d9a441;"></span>Заканчивается</td></tr>`;
+        yellow.forEach(item => { html += renderRow(item, null, 'stock-low', false); });
     }
     // 🟡 Заканчивается: полуфабрикаты
     if (sfYellow.length) {
-        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold text-yellow-700"><span class="inline-block w-2 h-2 rounded-full bg-yellow-500 mr-1"></span>Заканчивается — п/ф</td></tr>`;
-        sfYellow.forEach(item => { html += renderRow(item, null, 'text-yellow-700', true); });
+        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold" style="color:#96712a;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#d9a441;"></span>Заканчивается — п/ф</td></tr>`;
+        sfYellow.forEach(item => { html += renderRow(item, null, 'stock-low', true); });
     }
     // Остальные ингредиенты
     if (rest.length) {
@@ -440,7 +440,7 @@ async function openInventoryModal() {
     // Остальные полуфабрикаты — внизу отдельной таблицей
     if (sfRest.length) {
         html += `<p class="text-xs font-semibold text-gray-600 mt-3 mb-1">Полуфабрикаты</p>`;
-        html += '<table class="w-full text-xs table-clean"><thead><tr class="bg-gray-100 sticky top-0"><th class="p-1 text-left">Название</th><th class="p-1 text-right">Остаток</th><th class="p-1 text-right">Хватит</th><th class="p-1 text-center">Список</th></tr></thead><tbody>';
+        html += '<table class="w-full text-xs table-clean"><thead><tr style="background-color:#e3e8df;" class="sticky top-0"><th class="p-1 text-left">Название</th><th class="p-1 text-right">Остаток</th><th class="p-1 text-right">Хватит</th><th class="p-1 text-center">Список</th></tr></thead><tbody>';
         sfRest.sort((a, b) => {
             if (a.daysLeft === null && b.daysLeft === null) return 0;
             if (a.daysLeft === null) return 1;
@@ -453,8 +453,8 @@ async function openInventoryModal() {
 
     // 📅 Плановый расход — сам блок, внизу (бейдж наверху уже даёт о нём знать)
     if (pendingRows.length) {
-        html += `<p id="pendingWriteOffBlock" class="text-xs font-semibold text-indigo-700 mt-3 mb-1">📅 Плановый расход</p>`;
-        html += '<table class="w-full text-xs table-clean"><thead><tr class="bg-gray-100 sticky top-0"><th class="p-1 text-left">Ингредиент</th><th class="p-1 text-right">Количество</th><th class="p-1 text-right">Дата списания</th></tr></thead><tbody>';
+        html += `<p id="pendingWriteOffBlock" class="text-xs font-semibold mt-3 mb-1" style="color:#4f6349;">📅 Плановый расход</p>`;
+        html += '<table class="w-full text-xs table-clean"><thead><tr style="background-color:#e3e8df;" class="sticky top-0"><th class="p-1 text-left">Ингредиент</th><th class="p-1 text-right">Количество</th><th class="p-1 text-right">Дата списания</th></tr></thead><tbody>';
         pendingRows.forEach(r => {
             html += `<tr class="border-b"><td class="p-1 table-text">${escapeHtml(r.name)}</td><td class="p-1 table-text text-right">${r.qty.toFixed(2)} ${r.unit}</td><td class="p-1 table-text text-right">${formatDateDMY(r.earliestDate)}</td></tr>`;
         });
@@ -473,7 +473,7 @@ function openInventarizationModal() {
     const today  = getLocalDateStr(0);
 
     let html = '<table class="w-full text-xs table-clean">';
-    html += '<thead><tr class="bg-gray-100"><th class="p-1 text-left">Ингредиент</th><th class="p-1 text-right">Текущий остаток</th><th class="p-1 text-right">Фактически</th></tr></thead><tbody>';
+    html += '<thead><tr style="background-color:#e3e8df;"><th class="p-1 text-left">Ингредиент</th><th class="p-1 text-right">Текущий остаток</th><th class="p-1 text-right">Фактически</th></tr></thead><tbody>';
     sorted.forEach(ing => {
         const unitLabel = UNIT_LABELS[ing.unit] || ing.unit;
         const balance   = getIngredientBalance(ing.id);
@@ -731,7 +731,7 @@ function renderShoppingList() {
     }
 
     let html = '<table class="w-full text-xs table-clean" style="table-layout:fixed;">';
-    html += '<thead><tr class="bg-gray-100"><th class="p-1 text-left" style="width:38%;">Название</th><th class="p-1 text-right" style="width:20%;">Есть</th><th class="p-1 text-right" style="width:24%;">Купить</th><th class="p-1 text-center" style="width:18%;"></th></tr></thead><tbody>';
+    html += '<thead><tr style="background-color:#e3e8df;"><th class="p-1 text-left" style="width:38%;">Название</th><th class="p-1 text-right" style="width:20%;">Есть</th><th class="p-1 text-right" style="width:24%;">Купить</th><th class="p-1 text-center" style="width:18%;"></th></tr></thead><tbody>';
 
     _shoppingList.forEach(row => {
         let name = '—', balanceStr = '—', unit = '';
@@ -759,7 +759,7 @@ function renderShoppingList() {
         html += `<tr class="border-b ${rowBg}">
             <td class="p-1 ${doneClass}" style="word-break:break-word;">
                 <label class="flex items-center gap-1 cursor-pointer">
-                    <input type="checkbox" ${row.is_bought ? 'checked' : ''} onchange="toggleShopItem(${row.id}, this.checked)" class="shrink-0">
+                    <input type="checkbox" ${row.is_bought ? 'checked' : ''} onchange="toggleShopItem(${row.id}, this.checked)" class="shrink-0" style="accent-color:#7c9473;">
                     <span>${escapeHtml(name)}</span>
                 </label>
             </td>
@@ -771,7 +771,7 @@ function renderShoppingList() {
                     class="border rounded p-0.5 text-xs w-full text-right ${row.is_bought ? 'text-gray-400' : ''}">
             </td>
             <td class="p-1 text-center">
-                <button onclick="removeShopItem(${row.id})" class="text-gray-300 hover:text-red-500" title="Удалить">${icon('close', 'w-3.5 h-3.5')}</button>
+                <button onclick="removeShopItem(${row.id})" class="text-gray-300" style="transition:color .15s;" onmouseover="this.style.color='#c0685c'" onmouseout="this.style.color=''" title="Удалить">${icon('close', 'w-3.5 h-3.5')}</button>
             </td>
         </tr>`;
     });

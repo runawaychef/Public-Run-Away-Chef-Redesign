@@ -705,7 +705,7 @@ function openSfInventarizationModal() {
     const UNIT_LABELS = { g: 'г', kg: 'кг', ml: 'мл', l: 'л', pcs: 'шт' };
     const sorted = semiFinished.slice().sort((a, b) => (a.name||'').localeCompare(b.name||''));
     let html = '<table class="w-full text-xs table-clean">';
-    html += '<thead><tr class="bg-gray-100"><th class="p-1 text-left">Полуфабрикат</th><th class="p-1 text-right">Текущий остаток</th><th class="p-1 text-right">Фактически</th></tr></thead><tbody>';
+    html += '<thead><tr style="background-color:#e3e8df;"><th class="p-1 text-left">Полуфабрикат</th><th class="p-1 text-right">Текущий остаток</th><th class="p-1 text-right">Фактически</th></tr></thead><tbody>';
     sorted.forEach(sf => {
         const unitLabel = UNIT_LABELS[sf.unit] || sf.unit;
         const balance   = getSemiFinishedBalance(sf.id);
