@@ -384,8 +384,8 @@
         .status-dropdown {
             position: absolute; top: calc(100% + 4px); right: 0;
             background: #fff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.16);
-            border: 1px solid #eee; width: 148px; overflow: hidden; z-index: 250;
-            display: none;
+            border: 1px solid #eee; width: 148px; overflow-y: auto; overflow-x: hidden; z-index: 250;
+            display: none; max-height: 360px;
         }
         .status-dropdown.open { display: block; }
         .status-option {
@@ -480,7 +480,7 @@
         .filter-dropdown {
             position: absolute; top: calc(100% + 4px); left: 0; right: 0;
             background: #fff; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.16);
-            border: 1px solid #eee; overflow: hidden; z-index: 250; max-height: 220px; overflow-y: auto;
+            border: 1px solid #eee; overflow: hidden; z-index: 250; max-height: 360px; overflow-y: auto;
         }
         .filter-dropdown.hidden { display: none; }
 
