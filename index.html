@@ -2216,6 +2216,26 @@
             </div>
         </div>
 
+        <!-- Модалка редактирования партии (FIFO) -->
+        <div id="editBatchModal" class="modal">
+            <div class="modal-content" style="max-width:480px;">
+                <h2 class="text-sm font-semibold mb-3 text-gray-800">Редактировать партию</h2>
+                <input type="hidden" id="editBatchId">
+                <input type="hidden" id="editBatchItemType">
+                <p id="editBatchDate" class="table-text text-gray-500 mb-3"></p>
+                <label class="text-xs text-gray-500">Остаток (<span id="editBatchUnit"></span>)</label>
+                <input id="editBatchQty" type="number" inputmode="decimal" step="0.01" min="0" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
+                <label class="text-xs text-gray-500">Цена за единицу</label>
+                <input id="editBatchPrice" type="number" inputmode="decimal" step="0.0001" min="0" class="border p-0.5 rounded-xl mb-3 w-full text-xs">
+                <div class="flex gap-2">
+                    <button onclick="saveBatchEdit()" class="pill-btn flex-1 justify-center">Сохранить</button>
+                    <button onclick="deleteBatch()" class="pill-btn-danger" style="width:80px;">Удалить</button>
+                    <button onclick="closeModal()" class="pill-btn-secondary" style="width:80px;">Отмена</button>
+                </div>
+            </div>
+        </div>
+
+
         <!-- Модалка ручного списания со склада -->
         <div id="writeOffModal" class="modal">
             <div class="modal-content" style="max-width:480px;">
@@ -2441,7 +2461,7 @@
     <script src="company.js?v=7"></script>
     <script src="inventory.js?v=21"></script>
 <script src="ingredients.js?v=22"></script>
-<script src="batches.js?v=2"></script>
+<script src="batches.js?v=3"></script>
 <script src="semifinished.js?v=19"></script>
 <script src="products.js?v=20"></script>
 <script src="customers.js?v=28"></script>
