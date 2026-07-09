@@ -502,7 +502,7 @@ function updateOrderCustomerFilter() {
     const list = document.getElementById('orderFilterList');
     if (!list) return;
     list.innerHTML = '';
-    customers.sort((a,b)=>(a.name||"").localeCompare(b.name||"")).forEach(c => {
+    customers.slice().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).forEach(c => {
         const selected = selectedOrderCustomers.includes(c.name);
         const row = document.createElement('div');
         row.className = 'status-option' + (selected ? ' selected' : '');

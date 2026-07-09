@@ -98,7 +98,7 @@ function updateStatsCustomerFilter() {
 
     const list = document.getElementById('customerFilterList');
     list.innerHTML = '';
-    customers.sort((a,b)=>(a.name||"").localeCompare(b.name||"")).forEach(c => {
+    customers.slice().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).forEach(c => {
         const selected = selectedStatsCustomers.includes(c.name);
         const row = document.createElement('div');
         row.className = 'status-option' + (selected ? ' selected' : '');
