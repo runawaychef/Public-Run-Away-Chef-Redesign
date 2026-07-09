@@ -115,7 +115,7 @@ function renderPayments() {
     let html = '<div class="flex flex-col gap-1">';
     _orderPayments.forEach(p => {
         const emp = employees.find(e => e.id === p.created_by);
-        html += `<div class="flex justify-between items-center text-xs border-b pb-1 cursor-pointer" onclick='openEditPaymentModal(${JSON.stringify(p).replace(/'/g, "&#39;")})'>
+        html += `<div class="flex justify-between items-center text-xs border-b pb-1 cursor-pointer" ${dataAction('openEditPaymentModal', [p.id])}>
             <div>
                 <div class="font-medium text-gray-800">${formatMoney(p.amount)} · ${escapeHtml(p.method || '—')}</div>
                 <div class="text-gray-400">${formatDateDMY(p.paid_at)}${emp ? ' · ' + escapeHtml(emp.name) : ''}${p.note ? ' · ' + escapeHtml(p.note) : ''}</div>
@@ -165,7 +165,9 @@ function openAddPaymentModal(fillRemaining) {
     document.getElementById('addPaymentModal').style.display = 'flex';
 }
 
-function openEditPaymentModal(p) {
+function openEditPaymentModal(paymentId) {
+    const p = _orderPayments.find(pay => pay.id === paymentId);
+    if (!p) { console.error('openEditPaymentModal: платёж не найден —', paymentId); return; }
     document.getElementById('paymentEditId').value = p.id;
     document.getElementById('paymentModalTitle').textContent = 'Редактировать платёж';
     document.getElementById('paymentDeleteBtn').classList.toggle('hidden', !hasPermission('can_delete'));
