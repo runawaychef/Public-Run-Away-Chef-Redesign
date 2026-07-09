@@ -316,6 +316,14 @@ async function openIngredientDetail(ingId) {
     document.getElementById('ingredientDetail').classList.add('fade-in'); setTimeout(() => document.getElementById('ingredientDetail').classList.remove('fade-in'), 300);
     if (typeof positionStickySearchBar === 'function') positionStickySearchBar('ingredientsSearchBar', 'ingredientsList', 'ingredientDetail');
 
+    // Сворачиваем блок партий (мог остаться развёрнут от предыдущей карточки)
+    const batchesList = document.getElementById('ingBatchesList');
+    if (batchesList) batchesList.classList.add('hidden');
+    const batchesChevron = document.getElementById('ingBatchesChevron');
+    if (batchesChevron) batchesChevron.style.transform = '';
+    const batchesLabel = document.getElementById('ingBatchesToggleLabel');
+    if (batchesLabel) batchesLabel.textContent = 'Партии';
+
 
     // Заголовок карточки — inline поля
     const nameInput = document.getElementById('idNameInput');

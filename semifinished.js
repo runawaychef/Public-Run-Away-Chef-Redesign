@@ -254,6 +254,14 @@ function openSemiFinishedDetail(sfId) {
     document.getElementById('semiFinishedDetail').classList.add('fade-in'); setTimeout(() => document.getElementById('semiFinishedDetail').classList.remove('fade-in'), 300);
     if (typeof positionStickySearchBar === 'function') positionStickySearchBar('semiFinishedSearchBar', 'semiFinishedList', 'semiFinishedDetail');
 
+    // Сворачиваем блок партий (мог остаться развёрнут от предыдущей карточки)
+    const sfBatchesList = document.getElementById('sfBatchesList');
+    if (sfBatchesList) sfBatchesList.classList.add('hidden');
+    const sfBatchesChevron = document.getElementById('sfBatchesChevron');
+    if (sfBatchesChevron) sfBatchesChevron.style.transform = '';
+    const sfBatchesLabel = document.getElementById('sfBatchesToggleLabel');
+    if (sfBatchesLabel) sfBatchesLabel.textContent = 'Партии';
+
     document.getElementById('sfdName').value = sf.name;
     document.getElementById('sfdBatchSize').value = sf.batch_size;
     document.getElementById('sfdUnit').value = sf.unit;
