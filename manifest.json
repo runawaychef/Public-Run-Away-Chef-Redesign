@@ -1,6 +1,6 @@
 {
-  "name": "Runaway Chef",
-  "short_name": "Runaway Chef",
+  "name": "Simple Bake",
+  "short_name": "Simple Bake",
   "description": "Учёт заказов, клиентов и изделий",
   "start_url": "./index.html",
   "scope": "./",

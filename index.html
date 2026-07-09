@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Runaway Chef Project</title>
+    <title>Simple Bake</title>
 
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
@@ -12,7 +12,11 @@
     <link rel="apple-touch-icon" href="icon-180.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="RunawayChef">
+    <meta name="apple-mobile-web-app-title" content="Simple Bake">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600&display=swap" rel="stylesheet">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -762,9 +766,13 @@
     <!-- Sticky шапка: логотип + меню вкладок -->
     <div id="appStickyHeader" style="position:sticky; top:0; z-index:40; background:#f3f4f6; padding: 8px 8px 0; padding-top: max(8px, env(safe-area-inset-top));">
         <div class="bg-white rounded-xl shadow-md p-3 flex items-center gap-3 mb-2">
-            <div>
-                <div id="orgNameHeader" class="text-xl font-bold text-gray-800 leading-tight">Runaway Chef Project</div>
-                <div class="text-xs text-gray-400">Учёт заказов и рецептур</div>
+            <div style="display:flex; flex-direction:column; align-items:flex-end; flex-shrink:0; line-height:1.15;">
+                <div style="font-family:'Fraunces',serif; font-weight:600; font-size:21px; color:#322f28;">Simple bake</div>
+                <div style="font-size:11px; color:#a29c8c; letter-spacing:0.04em; margin-top:2px;">by Runaway Chef</div>
+            </div>
+            <div style="flex:1; text-align:center; min-width:0;">
+                <div id="orgNameHeader" class="text-sm font-semibold text-gray-500 leading-tight" style="overflow-wrap:break-word;">Runaway Chef Project</div>
+                <div class="text-[11px] text-gray-400">Учёт заказов и рецептур</div>
             </div>
         </div>
     </div>
