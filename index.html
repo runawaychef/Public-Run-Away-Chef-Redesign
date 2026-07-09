@@ -2332,7 +2332,7 @@
 
                 <!-- Фильтры -->
                 <div class="grid grid-cols-2 gap-1.5 mb-1">
-                    <div style="position:relative;" onclick="event.stopPropagation();">
+                    <div style="position:relative;" onclick="if (!event.target.closest('[data-fn]')) event.stopPropagation();">
                         <button type="button" onclick="toggleCustomerFilterDropdown()" id="customerFilterBtn" class="field-select-btn">
                             <span id="customerFilterLabel">Все клиенты</span>
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
