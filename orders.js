@@ -458,10 +458,15 @@ function getFilteredOrdersForList() {
     if (selectedOrderCustomers.length > 0) filtered = filtered.filter(o => selectedOrderCustomers.includes(o.customer));
     if (employeeFilter) filtered = filtered.filter(o => String(o.employee_id) === employeeFilter);
     if (paymentFilter) {
-        filtered = filtered.filter(o => {
-            const info = getOrderPaymentStatus(o);
-            return paymentFilter === 'overdue' ? info.overdue : info.status === paymentFilter;
-        });
+        try {
+            filtered = filtered.filter(o => {
+                const info = getOrderPaymentStatus(o);
+                return paymentFilter === 'overdue' ? info.overdue : info.status === paymentFilter;
+            });
+        } catch (e) {
+            console.error('Ошибка фильтра оплаты:', e);
+            if (typeof showInfo === 'function') showInfo('ВРЕМЕННАЯ ДИАГНОСТИКА — ошибка фильтра оплаты:\n' + e.message);
+        }
     }
     if (dateRange === 'week' || dateRange === 'month') {
         const today = new Date();
@@ -619,8 +624,13 @@ function toggleOrderDateRange() {
 }
 
 function applyOrderFilter() {
-    updateOrderFilterButtonsState();
-    displayOrders();
+    try {
+        updateOrderFilterButtonsState();
+        displayOrders();
+    } catch (e) {
+        console.error('Ошибка applyOrderFilter:', e);
+        if (typeof showInfo === 'function') showInfo('ВРЕМЕННАЯ ДИАГНОСТИКА — ошибка при обновлении списка:\n' + e.message);
+    }
 }
 
 // Кнопка фильтра заливается фисташковым, если в ней реально что-то выбрано —
