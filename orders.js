@@ -280,6 +280,14 @@ function renderDoneOrderCard(order) {
     const oNum = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
     const total = formatMoney(orderGrandTotal(order));
 
+    // Точка статуса оплаты — тот же элемент, что и в табличном виде (payDot),
+    // чтобы выполненный, но ещё не оплаченный заказ не терялся в приглушённой карточке.
+    let payDotTitle = 'Не оплачен';
+    if (payInfo.status === 'partial') payDotTitle = 'Частично оплачен';
+    else if (payInfo.status === 'paid') payDotTitle = 'Оплачен';
+    if (payInfo.overdue) payDotTitle += ' · просрочен';
+    const payDot = `<span class="inline-block w-2 h-2 rounded-full mr-1" style="background-color:${stripeColor};" title="${payDotTitle}"></span>`;
+
     let itemsLine = '';
     if (order.items && order.items.length) {
         itemsLine = order.items.map(it => `<div class="oc-item-row"><span class="oc-item-name">· ${escapeHtml(it.product)}</span><span class="oc-item-qty">${it.quantity} шт.</span></div>`).join('');
@@ -292,7 +300,7 @@ function renderDoneOrderCard(order) {
             <div class="order-card-body" style="padding-right:34px;">
                 <div class="oc-row">
                     <span class="oc-name">${escapeHtml(order.customer || '(без клиента)')}</span>
-                    <span class="oc-sum">${total}</span>
+                    <span class="oc-sum">${payDot}${total}</span>
                 </div>
                 <div class="oc-meta">${formatDateDMY(order.date)} · ${escapeHtml(oNum)}</div>
                 <div class="oc-items" data-role="items" style="display:none;">${itemsLine}</div>
