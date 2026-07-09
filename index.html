@@ -991,6 +991,15 @@
                         <div id="ingDaysLeft" class="table-text text-gray-500"></div>
                     </div>
 
+                    <!-- Партии (FIFO) — разворачиваемый блок -->
+                    <div class="mb-3 border-b pb-2">
+                        <div class="flex items-center justify-between cursor-pointer" onclick="toggleIngredientBatches()">
+                            <span id="ingBatchesToggleLabel" class="table-text text-gray-500">Партии</span>
+                            <svg id="ingBatchesChevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform .15s;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                        <div id="ingBatchesList" class="hidden mt-1.5"></div>
+                    </div>
+
                     <!-- Форма пополнения (количество + цена) -->
                     <div class="grid grid-cols-2 gap-1 mb-2">
                         <div>
@@ -1117,6 +1126,15 @@
                             <span id="sfBalanceUnit" class="table-text text-gray-500 ml-1"></span>
                         </div>
                         <div id="sfDaysLeft" class="table-text text-gray-500"></div>
+                    </div>
+
+                    <!-- Партии (FIFO) — разворачиваемый блок -->
+                    <div class="mt-2 pt-2 border-t">
+                        <div class="flex items-center justify-between cursor-pointer" onclick="toggleSfBatches()">
+                            <span id="sfBatchesToggleLabel" class="table-text text-gray-500">Партии</span>
+                            <svg id="sfBatchesChevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform .15s;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                        <div id="sfBatchesList" class="hidden mt-1.5"></div>
                     </div>
 
                 </div>
@@ -2422,9 +2440,9 @@
     <script src="employees.js?v=15"></script>
     <script src="company.js?v=7"></script>
     <script src="inventory.js?v=21"></script>
-<script src="ingredients.js?v=21"></script>
-<script src="batches.js?v=1"></script>
-<script src="semifinished.js?v=18"></script>
+<script src="ingredients.js?v=22"></script>
+<script src="batches.js?v=2"></script>
+<script src="semifinished.js?v=19"></script>
 <script src="products.js?v=20"></script>
 <script src="customers.js?v=28"></script>
 <script src="orders.js?v=55"></script>
