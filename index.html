@@ -1466,7 +1466,7 @@
                     <!-- Значения-носители для существующей логики фильтрации (getFilteredOrdersForList) — не отображаются -->
                     <select id="orderDateRangeFilter" class="hidden"><option value="all">Весь период</option><option value="week">Текущая неделя</option><option value="month">Текущий месяц</option><option value="custom">От - До</option></select>
                     <select id="orderEmployeeFilter" class="hidden"><option value="">Все исполнители</option></select>
-                    <select id="orderPaymentFilter" class="hidden"><option value="">Оплата: все</option></select>
+                    <select id="orderPaymentFilter" class="hidden"><option value="">Оплата: все</option><option value="unpaid">Не оплачен</option><option value="partial">Частично оплачен</option><option value="paid">Оплачен</option><option value="overdue">Просрочен</option></select>
 
                     <div id="orderCustomDateRange" class="hidden mb-2">
                         <div class="flex gap-1">
@@ -2466,7 +2466,7 @@
 <script src="semifinished.js?v=19"></script>
 <script src="products.js?v=20"></script>
 <script src="customers.js?v=28"></script>
-<script src="orders.js?v=58"></script>
+<script src="orders.js?v=59"></script>
 <script src="invoice.js?v=10"></script>
 <script src="payments.js?v=11"></script>
 <script src="stats.js?v=11"></script>
