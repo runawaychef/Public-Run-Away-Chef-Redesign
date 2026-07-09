@@ -280,6 +280,7 @@
             to   { opacity: 1; transform: scale(1) translateY(0); }
         }
         .search-input-wrap { position: relative; }
+        .search-input-wrap input { background: #fbfaf6; border-color: #e3ded0; box-shadow: 0 1px 3px rgba(120, 108, 76, 0.12); }
         .search-dropdown { position: absolute; top: 100%; left: 0; right: 0; z-index: 200; background: white; border: 1px solid #d1d5db; border-top: none; max-height: 180px; overflow-y: auto; box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
         .search-dropdown.hidden { display: none; }
         .search-dropdown-item { padding: 5px 6px; font-size: 12px; cursor: pointer; border-bottom: 1px solid #f3f4f6; }
@@ -776,7 +777,7 @@
 
 <div class="container mx-auto max-w-2xl">
     <!-- Sticky шапка: логотип + меню вкладок -->
-    <div id="appStickyHeader" style="position:sticky; top:0; z-index:40; background:#f3f4f6; padding: 8px 8px 0; padding-top: max(8px, env(safe-area-inset-top));">
+    <div id="appStickyHeader" style="position:sticky; top:0; z-index:40; background:#e3e8df; padding: 8px 8px 0; padding-top: max(8px, env(safe-area-inset-top));">
         <div class="bg-white rounded-xl shadow-md p-3 flex items-center gap-3 mb-2">
             <div style="display:flex; flex-direction:column; align-items:flex-end; flex-shrink:0; line-height:1.15;">
                 <div style="font-family:'Fraunces',serif; font-weight:600; font-size:15px; color:#7c9473;">Simple bake</div>
