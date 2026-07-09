@@ -397,7 +397,7 @@ async function saveStockAndPrice() {
             });
         }
 
-        // Если указано количество — добавляем приход на склад
+        // Если указано количество — добавляем приход на склад и создаём партию (FIFO)
         if (stockQty > 0) {
             await db.from('inventory').insert({
                 org_id: currentOrgId,
@@ -406,6 +406,8 @@ async function saveStockAndPrice() {
                 quantity:      parseFloat(stockQty.toFixed(4)),
                 notes:         `Закупка ${validFrom}`
             });
+            const unitPrice = packageSize > 0 ? packagePrice / packageSize : 0;
+            await createStockBatch('ingredient', ing.id, unitPrice, stockQty, 'приход', `Закупка ${validFrom}`);
             await loadInventory();
         }
 
@@ -488,12 +490,14 @@ async function saveWriteOff() {
 
     showLoading();
     try {
+        const { breakdown } = await consumeFIFO('ingredient', ing.id, qty);
         await db.from('inventory').insert({
             org_id: currentOrgId,
             ingredient_id: ing.id,
             type:          'расход',
             quantity:      parseFloat(qty.toFixed(4)),
-            notes
+            notes,
+            batch_breakdown: breakdown
         });
         await loadInventory();
         closeModal();

@@ -530,6 +530,21 @@ async function saveInventarization() {
         const rowsWithOrg = rows.map(r => ({ org_id: currentOrgId, ...r }));
         const { error } = await db.from('inventory').insert(rowsWithOrg);
         if (error) throw error;
+
+        // Инвентаризация всегда идёт по ТЕКУЩЕЙ цене (не по FIFO-партиям):
+        // излишек — новая партия по текущей цене; недостача — списание по
+        // текущей цене со старейших партий (без пересчёта фактической себестоимости).
+        for (const r of rows) {
+            const ing = ingredients.find(i => i.id === r.ingredient_id);
+            if (!ing) continue;
+            const price = ingredientUnitPrice(ing);
+            if (r.type === 'приход') {
+                await createStockBatch('ingredient', r.ingredient_id, price, r.quantity, 'инвентаризация', r.notes);
+            } else {
+                await consumeFIFO('ingredient', r.ingredient_id, r.quantity);
+            }
+        }
+
         await loadInventory();
         closeModal();
         displayIngredients();
@@ -568,8 +583,10 @@ async function saveInventoryAdd() {
             notes: notes || null
         });
         if (error) throw error;
-        closeModal();
         const ing = ingredients.find(i => i.id === ingId);
+        // Цена здесь не указывается отдельно — используем текущую цену ингредиента
+        if (ing) await createStockBatch('ingredient', ingId, ingredientUnitPrice(ing), qty, 'приход', notes || null);
+        closeModal();
         logActivity('inventory', `Пополнен склад: «${ing ? ing.name : ingId}» +${qty}`);
         await loadInventory();
         // Обновляем окно склада
@@ -580,11 +597,15 @@ async function saveInventoryAdd() {
 
 // ── Списание при создании заказа ─────────────────────────────────────────────
 
-// Вызывается при добавлении позиции в заказ
+// Вызывается при добавлении позиции в заказ.
+// Списывает ингредиенты/п/ф по FIFO (самая старая партия — первая) и возвращает
+// фактическую себестоимость списания (не "текущую цену", а то, что реально списалось
+// с учётом смешения старых и новых партий). Каждая строка "расход" хранит разбивку
+// по партиям (batch_breakdown) — она нужна для точного возврата при сторно.
 async function writeOffInventoryForItem(prod, itemQty, orderId, orderItemId = null) {
     const order = orders.find(o => o.id === orderId);
-    if (!order) return;
-    if (!prod || !prod.ingredients || !prod.ingredients.length) return;
+    if (!order) return 0;
+    if (!prod || !prod.ingredients || !prod.ingredients.length) return 0;
     const rows = [];
     const qtyFactor = 1 / Number(prod.batch_size || 1);
 
@@ -604,20 +625,29 @@ async function writeOffInventoryForItem(prod, itemQty, orderId, orderItemId = nu
         }
     });
 
-    if (!rows.length) return;
+    if (!rows.length) return 0;
+    let actualCost = 0;
     try {
-        await db.from('inventory').insert(rows.map(r => ({
-            org_id:           currentOrgId,
-            ingredient_id:    r.ingredient_id || null,
-            semi_finished_id: r.semi_finished_id || null,
-            type:     'расход',
-            quantity: parseFloat(r.quantity.toFixed(4)),
-            order_id: orderId,
-            order_item_id: orderItemId,
-            notes:    `Заказ #${orderId}`
-        })));
+        for (const r of rows) {
+            const itemType = r.semi_finished_id ? 'semi_finished' : 'ingredient';
+            const id = r.semi_finished_id || r.ingredient_id;
+            const { totalCost, breakdown } = await consumeFIFO(itemType, id, r.quantity);
+            actualCost += totalCost;
+            await db.from('inventory').insert({
+                org_id:           currentOrgId,
+                ingredient_id:    r.ingredient_id || null,
+                semi_finished_id: r.semi_finished_id || null,
+                type:     'расход',
+                quantity: parseFloat(r.quantity.toFixed(4)),
+                order_id: orderId,
+                order_item_id: orderItemId,
+                notes:    `Заказ #${orderId}`,
+                batch_breakdown: breakdown
+            });
+        }
         await loadInventory();
     } catch (e) { console.error('Ошибка списания со склада:', e); }
+    return parseFloat(actualCost.toFixed(4));
 }
 
 // Сторнирование при удалении/редактировании ОДНОЙ позиции заказа (в отличие от
@@ -628,10 +658,14 @@ async function writeOffInventoryForItem(prod, itemQty, orderId, orderItemId = nu
 async function reverseInventoryForOrderItem(orderItemId) {
     try {
         const { data, error } = await db.from('inventory')
-            .select('id, ingredient_id, semi_finished_id, quantity, order_id')
+            .select('id, ingredient_id, semi_finished_id, quantity, order_id, batch_breakdown')
             .eq('order_item_id', orderItemId)
             .eq('type', 'расход');
         if (error || !data || !data.length) return;
+
+        for (const r of data) {
+            if (r.batch_breakdown) await restoreFIFO(r.batch_breakdown);
+        }
 
         await db.from('inventory').insert(data.map(r => ({
             org_id:           currentOrgId,
@@ -651,10 +685,14 @@ async function reverseInventoryForOrderItem(orderItemId) {
 async function reverseInventoryForOrder(orderId) {
     try {
         const { data, error } = await db.from('inventory')
-            .select('id, ingredient_id, semi_finished_id, quantity')
+            .select('id, ingredient_id, semi_finished_id, quantity, batch_breakdown')
             .eq('order_id', orderId)
             .eq('type', 'расход');
         if (error || !data || !data.length) return;
+
+        for (const r of data) {
+            if (r.batch_breakdown) await restoreFIFO(r.batch_breakdown);
+        }
 
         await db.from('inventory').insert(data.map(r => ({
             org_id:           currentOrgId,

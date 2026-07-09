@@ -593,7 +593,7 @@ async function renderSfStockBlock(sf) {
             const isIn = r.type === 'приход';
             const sign = isIn ? '+' : '−';
             const color = isIn ? '#4f6349' : '#c0685c';
-            html += `<tr class="border-b ing-hist-row" onclick="editSfInventoryRecord(${r.id}, ${Number(r.quantity)}, '${escapeHtml(r.notes || '')}')">
+            html += `<tr class="border-b ing-hist-row" ${dataAction('editSfInventoryRecord', [r.id, Number(r.quantity), r.notes || ''])}>
                 <td class="p-0.5">${date}</td>
                 <td class="p-0.5 text-right font-semibold" style="color:${color};">${sign}${Number(r.quantity).toFixed(2)} ${unitLabel}</td>
                 <td class="p-0.5 text-gray-500">${escapeHtml(r.notes || '')}</td>
@@ -743,18 +743,22 @@ async function confirmSfProduce() {
     try {
         const today = getLocalDateStr(0);
         const rows = [];
+        let actualIngredientsCost = 0;
 
-        sf.ingredients.forEach(ri => {
-            if (ri.ingredient_id) {
-                rows.push({
-                    ingredient_id: ri.ingredient_id,
-                    semi_finished_id: null,
-                    type: 'расход',
-                    quantity: parseFloat((Number(ri.quantity) * factor).toFixed(4)),
-                    notes: `Производство п/ф «${sf.name}»`
-                });
-            }
-        });
+        for (const ri of sf.ingredients) {
+            if (!ri.ingredient_id) continue;
+            const qty = parseFloat((Number(ri.quantity) * factor).toFixed(4));
+            const { totalCost, breakdown } = await consumeFIFO('ingredient', ri.ingredient_id, qty);
+            actualIngredientsCost += totalCost;
+            rows.push({
+                ingredient_id: ri.ingredient_id,
+                semi_finished_id: null,
+                type: 'расход',
+                quantity: qty,
+                notes: `Производство п/ф «${sf.name}»`,
+                batch_breakdown: breakdown
+            });
+        }
 
         rows.push({
             ingredient_id: null,
@@ -766,6 +770,13 @@ async function confirmSfProduce() {
 
         const rowsWithOrg = rows.map(r => ({ org_id: currentOrgId, ...r }));
         await db.from('inventory').insert(rowsWithOrg);
+
+        // Фактическая себестоимость партии = фактически списанные ингредиенты (по FIFO)
+        // + прочие расходы (масштабированы тем же коэффициентом, что и рецепт)
+        const totalBatchCost = actualIngredientsCost + (sf.other_costs || 0) * factor;
+        const unitPrice = actualResult > 0 ? totalBatchCost / actualResult : 0;
+        await createStockBatch('semi_finished', sf.id, unitPrice, actualResult, 'производство', `Произведена партия ${today}`);
+
         await loadInventory();
         await renderSfStockBlock(sf);
         logActivity('inventory', `Произведена партия п/ф «${sf.name}» ${actualResult} ${unitLabel}`);
@@ -794,13 +805,15 @@ async function saveSfWriteOff() {
     if (isNaN(qty) || qty <= 0) { showInfo('Введите корректное количество!'); return; }
     showLoading();
     try {
+        const { breakdown } = await consumeFIFO('semi_finished', sf.id, qty);
         await db.from('inventory').insert({
             org_id: currentOrgId,
             semi_finished_id: sf.id,
             ingredient_id: null,
             type: 'расход',
             quantity: parseFloat(qty.toFixed(4)),
-            notes: `Корректировка: ${note || 'без причины'}`
+            notes: `Корректировка: ${note || 'без причины'}`,
+            batch_breakdown: breakdown
         });
         await loadInventory();
         closeModal();
@@ -869,6 +882,19 @@ async function saveSfInventarization() {
     try {
         const inventoryRows = rows.map(r => ({ org_id: currentOrgId, ...r }));
         await db.from('inventory').insert(inventoryRows);
+
+        // Как и у ингредиентов: излишек — новая партия по текущей расчётной
+        // себестоимости, недостача — списание по FIFO со старейших партий.
+        for (const r of rows) {
+            const sf = semiFinished.find(s => s.id === r.semi_finished_id);
+            if (!sf) continue;
+            if (r.type === 'приход') {
+                await createStockBatch('semi_finished', r.semi_finished_id, semiFinishedUnitCost(sf), r.quantity, 'инвентаризация', r.notes);
+            } else {
+                await consumeFIFO('semi_finished', r.semi_finished_id, r.quantity);
+            }
+        }
+
         await loadInventory();
         closeModal();
         logActivity('inventory', `Инвентаризация п/ф ${today}: ${rows.length} позиций`);

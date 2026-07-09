@@ -485,7 +485,12 @@ async function processPendingInventory() {
     for (const order of pending) {
         for (const it of (order.items || [])) {
             const prod = products.find(p => p.id === it.product_id);
-            if (prod) await writeOffInventoryForItem(prod, it.quantity, order.id, it.id);
+            if (!prod) continue;
+            const actualCost = await writeOffInventoryForItem(prod, it.quantity, order.id, it.id);
+            if (actualCost != null && Math.abs(actualCost - (it.item_cost || 0)) > 0.0001) {
+                await db.from('order_items').update({ item_cost: actualCost }).eq('id', it.id);
+                it.item_cost = actualCost;
+            }
         }
         try {
             await updateChecked(db.from('orders').update({ inventory_pending: false }).eq('id', order.id));
@@ -734,7 +739,11 @@ async function copyOrder(i) {
                 if (!prod) continue;
                 await saveOrderItemIngredients(it.id, prod, it.quantity);
                 if (shouldWriteOffNow(copy.date)) {
-                    await writeOffInventoryForItem(prod, it.quantity, copy.id, it.id);
+                    const actualCost = await writeOffInventoryForItem(prod, it.quantity, copy.id, it.id);
+                    if (actualCost != null && it.item_cost != null && Math.abs(actualCost - it.item_cost) > 0.0001) {
+                        await db.from('order_items').update({ item_cost: actualCost }).eq('id', it.id);
+                        it.item_cost = actualCost;
+                    }
                 } else if (!copy.inventory_pending) {
                     try {
                         await updateChecked(db.from('orders').update({ inventory_pending: true }).eq('id', copy.id));
@@ -984,7 +993,7 @@ async function openOrdersTrash() {
                 const orderDate = formatDateDMY(o.order_date || o.date);
                 const orderNum = o.order_number || `#${o.id}`;
                 html += `<tr class="border-b order-row"
-                    onclick="openTrashOrderActions(${o.id}, '${escapeHtml(custName)}', '${orderDate}', '${escapeHtml(orderNum)}')">
+                    ${dataAction('openTrashOrderActions', [o.id, custName, orderDate, orderNum])}>
                     <td class="p-0.5">${orderDate}</td>
                     <td class="p-0.5">${escapeHtml(custName)}</td>
                     <td class="p-0.5 text-gray-400">${deletedDate}</td>
@@ -1267,7 +1276,12 @@ async function addItemToOrder() {
         await saveOrderItemIngredients(data.id, prod, Number(data.quantity));
 
         if (shouldWriteOffNow(order.date)) {
-            await writeOffInventoryForItem(prod, Number(data.quantity), order.id, data.id);
+            const actualCost = await writeOffInventoryForItem(prod, Number(data.quantity), order.id, data.id);
+            if (actualCost != null && Math.abs(actualCost - itemCost) > 0.0001) {
+                await db.from('order_items').update({ item_cost: actualCost }).eq('id', data.id);
+                const pushedItem = order.items.find(it => it.id === data.id);
+                if (pushedItem) pushedItem.item_cost = actualCost;
+            }
         } else if (!order.inventory_pending) {
             // Заказ далеко вперёд — списание отложено до момента, когда до него
             // останется INVENTORY_PENDING_DAYS дней (см. processPendingInventory)
@@ -1356,7 +1370,11 @@ async function saveItemEdit() {
         // Новый снимок рецепта — нужен всегда, независимо от того, спишем ли склад сейчас
         await saveOrderItemIngredients(item.id, prod, quantity);
         if (!order.inventory_pending) {
-            await writeOffInventoryForItem(prod, quantity, order.id, item.id);
+            const actualCost = await writeOffInventoryForItem(prod, quantity, order.id, item.id);
+            if (actualCost != null && Math.abs(actualCost - itemCost) > 0.0001) {
+                await db.from('order_items').update({ item_cost: actualCost }).eq('id', item.id);
+                order.items[editItemIdx].item_cost = actualCost;
+            }
         }
 
         renderDetailItems(order);
