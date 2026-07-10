@@ -453,3 +453,81 @@ async function pdfSaveOrShare(pdf, filename) {
     pdf.save(filename);
     await showInfo(`Готово: файл «${filename}» сохранён.`);
 }
+
+// ==================== ПОРТАЛ ДЛЯ ВЫПАДАЮЩИХ МЕНЮ ====================
+// #tabsWrapper использует overflow:hidden + .tab-content{will-change:transform}
+// (ради анимации свайпа между вкладками) — из-за этого CSS-правила ЛЮБОЙ потомок
+// (даже position:fixed) обрезается по границе tabsWrapper, если физически остаётся
+// в его DOM-поддереве. Так уже обрезало попап-календарь (пофикшено переносом в
+// глобальный узел вне tabsWrapper) и так же обрезает обычные .status-dropdown /
+// .filter-dropdown, когда список результатов короче самого дропдауна.
+//
+// Единственный надёжный фикс — физически переносить открытый дропдаун в портал
+// #dropdownPortal (лежит вне tabsWrapper, см. index.html) на время, пока он открыт,
+// и вычислять его позицию через JS от кнопки-триггера (getBoundingClientRect),
+// а не через CSS top/right относительно родителя.
+
+// dd — сам .status-dropdown/.filter-dropdown элемент, triggerEl — кнопка, под которой
+// его нужно показать. Открывает(!) дропдаун — добавляет класс 'open' и позиционирует.
+// Управление классом 'hidden' (у .filter-dropdown) остаётся на вызывающей стороне.
+function openPortalDropdown(dd, triggerEl) {
+    if (!dd || !triggerEl) return;
+    const portal = document.getElementById('dropdownPortal');
+    if (portal && dd.parentElement !== portal) {
+        // Запоминаем, откуда забрали узел — вернём на место при закрытии, чтобы не
+        // плодить дубликаты id в местах, где разметка периодически перерисовывается
+        // (например статус-дропдаун карточки заказа при каждом displayOrders()).
+        dd._portalOriginalParent = dd.parentElement;
+        dd._portalOriginalNext = dd.nextSibling;
+        portal.appendChild(dd);
+    }
+    dd.classList.add('open');
+    positionPortalDropdown(dd, triggerEl);
+}
+
+function positionPortalDropdown(dd, triggerEl) {
+    const rect = triggerEl.getBoundingClientRect();
+    dd.style.position = 'fixed';
+    dd.style.right = 'auto'; dd.style.bottom = 'auto';
+    dd.style.visibility = 'hidden';
+    dd.style.left = '0px'; dd.style.top = '0px';
+    // .filter-dropdown раньше растягивался на всю ширину родителя через CSS
+    // left:0;right:0 (ширина = ширине кнопки-триггера в сетке фильтров) — с
+    // фиксированным позиционированием эта растяжка больше не работает, поэтому
+    // явно задаём ширину кнопки-триггера, как и было (кроме мест, где ширина
+    // уже задана вручную инлайн-стилем). .status-dropdown такое не трогаем —
+    // у него всегда была своя фиксированная ширина через CSS-класс.
+    if (dd.classList.contains('filter-dropdown') && !dd.style.width && !dd.style.minWidth) {
+        dd.style.width = rect.width + 'px';
+    }
+    const ddRect = dd.getBoundingClientRect();
+    let left = rect.left;
+    const maxLeft = window.innerWidth - ddRect.width - 8;
+    if (left > maxLeft) left = Math.max(8, maxLeft);
+    let top = rect.bottom + 4;
+    if (top + ddRect.height > window.innerHeight - 8) {
+        top = Math.max(8, rect.top - ddRect.height - 4);
+    }
+    dd.style.left = left + 'px';
+    dd.style.top = top + 'px';
+    dd.style.visibility = '';
+}
+
+// Закрывает дропдаун и возвращает его узел туда, откуда он был взят (если был
+// перенесён в портал) — важно делать это ДО следующей перерисовки родителя.
+function closePortalDropdown(dd) {
+    if (!dd) return;
+    dd.classList.remove('open');
+    dd.style.position = ''; dd.style.left = ''; dd.style.top = ''; dd.style.right = ''; dd.style.bottom = '';
+    dd.style.visibility = '';
+    if (dd.classList.contains('filter-dropdown')) dd.style.width = '';
+    if (dd._portalOriginalParent) {
+        if (dd._portalOriginalNext && dd._portalOriginalNext.parentElement === dd._portalOriginalParent) {
+            dd._portalOriginalParent.insertBefore(dd, dd._portalOriginalNext);
+        } else {
+            dd._portalOriginalParent.appendChild(dd);
+        }
+        dd._portalOriginalParent = null;
+        dd._portalOriginalNext = null;
+    }
+}

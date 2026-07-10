@@ -842,6 +842,13 @@
          обрезается и позиционируется не от экрана, а от этого контейнера. -->
     <div class="calendar-popup" id="globalCalendarPopup" onclick="event.stopPropagation();"></div>
 
+    <!-- Портал для .status-dropdown / .filter-dropdown — по той же причине, что и
+         globalCalendarPopup выше: открытые дропдауны при клике временно переносятся
+         сюда (за пределы #tabsWrapper) через openPortalDropdown()/closePortalDropdown()
+         в helpers.js, иначе overflow:hidden контейнера обрезает их, когда список
+         результатов короче самого дропдауна. -->
+    <div id="dropdownPortal" onclick="event.stopPropagation();"></div>
+
     <!-- Контент страницы -->
     <div class="p-2">
     <div id="tabsWrapper">
@@ -2513,16 +2520,16 @@
 <script src="batches.js?v=3"></script>
 <script src="semifinished.js?v=19"></script>
 <script src="products.js?v=20"></script>
-<script src="customers.js?v=30"></script>
+<script src="customers.js?v=31"></script>
 <script src="calendar.js?v=5"></script>
-<script src="orders.js?v=64"></script>
+<script src="orders.js?v=65"></script>
 <script src="invoice.js?v=10"></script>
 <script src="payments.js?v=12"></script>
-<script src="stats.js?v=13"></script>
+<script src="stats.js?v=14"></script>
 <script src="history.js?v=8"></script>
 <script src="modals.js?v=9"></script>
 <script src="demoData.js?v=7"></script>
-<script src="helpers.js?v=13"></script>
+<script src="helpers.js?v=14"></script>
 <script>
 // SUPABASE_URL, SUPABASE_KEY, db перенесены в supabaseClient.js
 

@@ -117,10 +117,7 @@ function toggleCustomerFilterDropdown() {
     if (!dd) return;
     const isOpen = dd.classList.contains('open');
     closeAllOrderStatusDropdowns();
-    // Этот фильтр всегда в самом верху страницы Статистики — места снизу
-    // всегда достаточно, поэтому не используем "умный" флип вверх (он тут
-    // срабатывал ошибочно и прятал список за шапкой).
-    if (!isOpen) { dd.style.top = ''; dd.style.bottom = ''; dd.classList.add('open'); }
+    if (!isOpen) openPortalDropdown(dd, event.currentTarget);
 }
 
 function toggleAllCustomersFilter() {
@@ -158,8 +155,7 @@ function toggleStatsDateRangeDropdown() {
     if (!dd) return;
     const isOpen = dd.classList.contains('open');
     closeAllOrderStatusDropdowns();
-    // Тот же случай, что и с фильтром клиентов выше — всегда открываем вниз.
-    if (!isOpen) { dd.style.top = ''; dd.style.bottom = ''; dd.classList.add('open'); }
+    if (!isOpen) openPortalDropdown(dd, event.currentTarget);
 }
 
 function setStatsDateRange(range) {

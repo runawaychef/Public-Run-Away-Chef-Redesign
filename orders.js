@@ -10,6 +10,12 @@
 // ---- Список заказов ----
 
 function displayOrders() {
+    // Список карточек сейчас перерисуется целиком — если у какого-то заказа был
+    // открыт статус-дропдаун (и портал увёл его из карточки наружу, см. helpers.js
+    // openPortalDropdown), его старый узел иначе останется висеть в портале с тем же
+    // id, что и у свежесозданного в новой разметке — убираем такие "сироты" заранее.
+    document.querySelectorAll('#dropdownPortal [id^="statusDropdown-"]').forEach(d => d.remove());
+
     const today    = getLocalDateStr(0);
     const tomorrow = getLocalDateStr(1);
     // Заказ считается "срочным" (раздел "Заказы в работе") если он на сегодня
@@ -246,29 +252,14 @@ function renderOrderCard(order) {
     </div>`;
 }
 
+// Открытие/закрытие статус-дропдаунов теперь идёт через общий портал
+// (openPortalDropdown/closePortalDropdown в helpers.js) — он же решает то, что раньше
+// решал "умный" флип вверх/вниз, плюс не даёт дропдауну обрезаться внутри #tabsWrapper.
 function closeAllOrderStatusDropdowns() {
-    document.querySelectorAll('.status-dropdown.open').forEach(d => {
-        d.classList.remove('open');
-        d.style.top = ''; d.style.bottom = ''; // сброс "умного" позиционирования
-    });
+    document.querySelectorAll('.status-dropdown.open').forEach(d => closePortalDropdown(d));
 }
 // Закрываем дропдаун статуса при тапе где угодно ещё на странице.
 document.addEventListener('click', closeAllOrderStatusDropdowns);
-
-// Открывает выпадающий список и проверяет, хватает ли места снизу экрана —
-// если нет, открывает его вверх от кнопки вместо вниз. Иначе на кнопках
-// ближе к низу страницы список обрезался бы краем экрана без возможности
-// докрутить (сама панель растёт через position:absolute и не увеличивает
-// прокручиваемую высоту страницы).
-function openSmartDropdown(dd) {
-    dd.classList.add('open');
-    dd.style.top = ''; dd.style.bottom = '';
-    const rect = dd.getBoundingClientRect();
-    if (rect.bottom > window.innerHeight - 8) {
-        dd.style.top = 'auto';
-        dd.style.bottom = 'calc(100% + 4px)';
-    }
-}
 
 // Компактная приглушённая карточка выполненного заказа. Полоса оплаты и кнопка
 // статуса не нужны (заказ закрыт) — вместо них маленькая зелёная галочка.
@@ -334,7 +325,7 @@ function toggleOrderStatusDropdown(orderId) {
     if (!dd) return;
     const isOpen = dd.classList.contains('open');
     closeAllOrderStatusDropdowns();
-    if (!isOpen) openSmartDropdown(dd);
+    if (!isOpen) openPortalDropdown(dd, event.currentTarget);
 }
 
 async function quickSetOrderStatus(orderId, newStatus) {
@@ -591,13 +582,29 @@ function setOrderPaymentFilter(status) {
     applyOrderFilter();
 }
 
-function toggleFilterDropdown(id) {
-    document.querySelectorAll('.filter-dropdown').forEach(d => { if (d.id !== id) d.classList.add('hidden'); });
-    document.getElementById(id).classList.toggle('hidden');
+function toggleFilterDropdown(id, triggerEl) {
+    // У этих кнопок (в отличие от .status-dropdown) нет обёртки со
+    // stopPropagation — без него клик по кнопке долетел бы до document и
+    // глобальный closeAllFilterDropdowns закрыл бы только что открытое меню
+    // в рамках того же клика.
+    if (typeof event !== 'undefined' && event) event.stopPropagation();
+    document.querySelectorAll('.filter-dropdown').forEach(d => {
+        if (d.id !== id) { d.classList.add('hidden'); closePortalDropdown(d); }
+    });
+    const dd = document.getElementById(id);
+    if (!dd) return;
+    const isHidden = dd.classList.contains('hidden');
+    if (isHidden) {
+        dd.classList.remove('hidden');
+        openPortalDropdown(dd, triggerEl || event.currentTarget);
+    } else {
+        dd.classList.add('hidden');
+        closePortalDropdown(dd);
+    }
 }
 
 function closeAllFilterDropdowns() {
-    document.querySelectorAll('.filter-dropdown').forEach(d => d.classList.add('hidden'));
+    document.querySelectorAll('.filter-dropdown').forEach(d => { d.classList.add('hidden'); closePortalDropdown(d); });
 }
 
 function toggleAllOrderCustomersFilter() {
@@ -646,13 +653,11 @@ function updateOrderFilterButtonsState() {
     if (paymentBtn)  paymentBtn.classList.toggle('active', document.getElementById('orderPaymentFilter').value !== '');
 }
 
-// Закрытие любой открытой панели фильтра заказов по клику снаружи её самой
-document.addEventListener('click', function(e) {
-    document.querySelectorAll('.filter-dropdown:not(.hidden)').forEach(dropdown => {
-        const wrapper = dropdown.closest('.relative');
-        if (wrapper && !wrapper.contains(e.target)) dropdown.classList.add('hidden');
-    });
-});
+// Закрытие любой открытой панели фильтра заказов по клику снаружи её самой —
+// раньше здесь была проверка "клик вне .relative-обёртки кнопки", но теперь
+// сам дропдаун при открытии переносится в #dropdownPortal (у которого свой
+// stopPropagation), так что просто: клик долетел до document — снаружи.
+document.addEventListener('click', closeAllFilterDropdowns);
 
 // ---- Создание и копирование заказа ----
 
@@ -860,7 +865,7 @@ function toggleDetailStatusDropdown() {
     if (!dd) return;
     const isOpen = dd.classList.contains('open');
     closeAllOrderStatusDropdowns();
-    if (!isOpen) openSmartDropdown(dd);
+    if (!isOpen) openPortalDropdown(dd, event.currentTarget);
 }
 
 function setDetailStatus(status) {
@@ -886,7 +891,7 @@ function toggleDetailEmployeeDropdown() {
     if (!dd) return;
     const isOpen = dd.classList.contains('open');
     closeAllOrderStatusDropdowns();
-    if (!isOpen) openSmartDropdown(dd);
+    if (!isOpen) openPortalDropdown(dd, event.currentTarget);
 }
 
 function setDetailEmployee(employeeId) {

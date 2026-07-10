@@ -520,7 +520,7 @@ function toggleCdDateRangeDropdown() {
     if (!dd) return;
     const isOpen = dd.classList.contains('open');
     closeAllOrderStatusDropdowns();
-    if (!isOpen) openSmartDropdown(dd);
+    if (!isOpen) openPortalDropdown(dd, event.currentTarget);
 }
 
 function setCdDateRange(range) {
