@@ -227,9 +227,6 @@ function updateCustomerSelects() {
     setupSearchDropdown('detailCustomer', 'detailCustomerDropdown',
         byPopularityThenAlpha,
         () => onDetailCustomerChange());
-
-    setupSearchDropdown('editOrderCustomer', 'editOrderCustomerDropdown',
-        byPopularityThenAlpha);
 }
 
 // Подставляет текущее значение клиента в поле детального просмотра заказа

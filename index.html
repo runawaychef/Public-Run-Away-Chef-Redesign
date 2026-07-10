@@ -453,6 +453,41 @@
             background: #7c9473; color: #fff; border-color: transparent; font-weight: 600;
         }
         .field-select-btn.active svg { color: #fff; }
+
+        /* ── Кастомный попап-календарь (замена системного <input type="date">) ── */
+        .calendar-popup {
+            position: absolute; top: calc(100% + 4px); left: 0;
+            background: #fff; border-radius: 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.16);
+            border: 1px solid #eee; width: 250px; z-index: 260; display: none; padding: 10px;
+        }
+        .calendar-popup.open { display: block; }
+        .calendar-popup .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+        .calendar-popup .cal-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 12.5px; color: #4f6349; }
+        .calendar-popup .cal-nav-btn {
+            width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+            border-radius: 8px; color: #9a9488; cursor: pointer;
+        }
+        .calendar-popup .cal-nav-btn:active { background: #f4f1ea; }
+        .calendar-popup .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 2px; }
+        .calendar-popup .cal-weekday { font-size: 9px; font-weight: 700; color: #9a9488; text-align: center; padding: 2px 0; }
+        .calendar-popup .cal-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+        .cal-day {
+            position: relative; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+            font-size: 11.5px; font-weight: 600; color: #3d3a33; border-radius: 8px; cursor: pointer;
+        }
+        .cal-day:active { background: #f4f1ea; }
+        .cal-day.other-month { color: #d3ccb8; font-weight: 400; }
+        .cal-day.today { box-shadow: inset 0 0 0 1.5px #7c9473; }
+        .cal-day.selected { background: #7c9473; color: #fff; }
+        .cal-day.selected.today { box-shadow: none; }
+        .cal-day-badge {
+            position: absolute; top: -3px; right: -3px; min-width: 13px; height: 13px; border-radius: 7px;
+            font-size: 8px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center;
+            padding: 0 3px; line-height: 1; box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        .cal-footer { display: flex; justify-content: center; margin-top: 4px; }
+        .cal-today-btn { font-size: 10.5px; font-weight: 700; color: #7c9473; padding: 3px 10px; border-radius: 8px; cursor: pointer; }
+        .cal-today-btn:active { background: #f4f1ea; }
         .stock-critical { color: #c0685c; }
         .stock-low { color: #d9a441; }
         .stock-ok { color: #4f6349; }
@@ -1551,9 +1586,14 @@
                                 <div id="detailCustomerDropdown" class="search-dropdown hidden"></div>
                             </div>
                         </div>
-                        <div>
+                        <div style="position:relative;" onclick="event.stopPropagation();">
                             <label class="table-text text-gray-500">Дата</label>
-                            <input id="detailDate" type="date" onchange="saveDetailHeader()" class="border p-0.5 rounded-xl w-full table-text">
+                            <input id="detailDate" type="hidden">
+                            <button type="button" class="field-select-btn" id="detailDateBtn" onclick="toggleCustomCalendar('detailDateCalendar','detailDate','detailDateBtnLabel',{onPick:onDetailDatePicked, badge:orderCountBadgeForDay})">
+                                <span id="detailDateBtnLabel">—</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/></svg>
+                            </button>
+                            <div class="calendar-popup" id="detailDateCalendar"></div>
                         </div>
                         <div style="position:relative;" onclick="event.stopPropagation();">
                             <label class="table-text text-gray-500">Статус</label>
@@ -1747,28 +1787,6 @@
                     <button onclick="saveItemEdit()" class="pill-btn flex-1 justify-center">Сохранить</button>
                     <button onclick="closeModal()" class="pill-btn-secondary" style="width:90px;">Отмена</button>
                 </div>
-            </div>
-        </div>
-
-        <!-- Редактировать заголовок заказа (из списка) -->
-        <div id="editOrderModal" class="modal">
-            <div class="modal-content">
-                <h2 class="text-xs font-semibold mb-2 text-gray-800">Редактировать заказ</h2>
-                <label class="text-xs text-gray-600">Клиент</label>
-                <div class="search-input-wrap mb-1">
-                    <input id="editOrderCustomer" placeholder="Выберите клиента" autocomplete="off" class="border p-0.5 rounded-xl w-full text-xs">
-                    <div id="editOrderCustomerDropdown" class="search-dropdown hidden"></div>
-                </div>
-                <label class="text-xs text-gray-600">Дата</label>
-                <input id="editOrderDate" type="date" class="border p-0.5 rounded-xl mb-1 w-full text-xs">
-                <label class="text-xs text-gray-600">Статус</label>
-                <select id="editOrderStatus" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
-                    <option value="принят">Принят</option>
-                    <option value="в работе">В работе</option>
-                    <option value="выполнен">Выполнен</option>
-                </select>
-                <button onclick="saveOrderEdit()" class="btn bg-[#7c9473] text-white p-0.5 rounded-xl hover:bg-[#6c8464] mr-1 text-xs">Сохранить</button>
-                <button onclick="closeModal()" class="btn bg-[#7c9473] text-white p-0.5 rounded-xl hover:bg-[#6c8464] text-xs">Отмена</button>
             </div>
         </div>
 
@@ -2479,7 +2497,8 @@
 <script src="semifinished.js?v=19"></script>
 <script src="products.js?v=20"></script>
 <script src="customers.js?v=29"></script>
-<script src="orders.js?v=59"></script>
+<script src="calendar.js?v=1"></script>
+<script src="orders.js?v=60"></script>
 <script src="invoice.js?v=10"></script>
 <script src="payments.js?v=11"></script>
 <script src="stats.js?v=12"></script>

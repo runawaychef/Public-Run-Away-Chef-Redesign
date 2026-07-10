@@ -796,7 +796,8 @@ function openOrderDetail(orderId) {
 
     // Заполнить шапку
     fillDetailCustomerSelect(order.customer);
-    document.getElementById('detailDate').value     = order.date;
+    document.getElementById('detailDate').value = order.date || '';
+    document.getElementById('detailDateBtnLabel').textContent = order.date ? formatDateDMY(order.date) : '—';
     document.getElementById('detailStatus').value   = order.status;
     renderDetailStatusButton(order.status);
     document.getElementById('detailDiscount').value = (order.discount || 0);
@@ -1582,41 +1583,4 @@ async function recalcOrderCostBreakdown() {
     }
 }
 
-function openEditOrderModal(i) {
-    editIndex = i;
-    const o = orders[i];
-    document.getElementById('editOrderCustomer').value = o.customer;
-    document.getElementById('editOrderDate').value   = o.date;
-    document.getElementById('editOrderStatus').value = o.status;
-    document.getElementById('editOrderModal').style.display = 'flex';
-}
 
-async function saveOrderEdit() {
-    suppressRealtimeFor3s();
-    const customerName = document.getElementById('editOrderCustomer').value;
-    const date     = document.getElementById('editOrderDate').value;
-    const status   = document.getElementById('editOrderStatus').value;
-    if (!customerName || !date) { showInfo('Заполните все поля!'); return; }
-    const cust = customers.find(c => c.name === customerName);
-    if (!cust) { showInfo('Клиент не найден!'); return; }
-    const order = orders[editIndex];
-    const old = { customer: order.customer, date: order.date, status: order.status };
-
-    showLoading();
-    try {
-        await updateChecked(db.from('orders').update({
-            customer_id: cust.id, order_date: date, status
-        }).eq('id', order.id));
-        order.customer_id = cust.id;
-        order.customer    = cust.name;
-        order.date        = date;
-        order.status      = status;
-        displayOrders(); closeModal();
-        const changes = [];
-        if (old.customer !== order.customer) changes.push(`клиент «${old.customer}» → «${order.customer}»`);
-        if (old.date !== order.date) changes.push(`дата ${formatDateDMY(old.date)} → ${formatDateDMY(order.date)}`);
-        if (old.status !== order.status) changes.push(`статус «${old.status}» → «${order.status}»`);
-        if (changes.length) logActivity('order', `Изменён заказ №${order.id}: ${changes.join(', ')}`, order.id);
-    } catch (e) { console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.'); }
-    finally { hideLoading(); }
-}
