@@ -24,7 +24,7 @@ async function loadOrderPayments(orderId) {
     // Подставляем срок оплаты из уже загруженного заказа
     const order = orders.find(o => o.id === orderId);
     const dueInput = document.getElementById('orderDueDate');
-    if (dueInput) dueInput.value = order && order.due_date ? order.due_date : '';
+    if (dueInput) calSetFieldValue('orderDueDate', 'orderDueDateBtnLabel', order && order.due_date ? order.due_date : '');
 
     renderPayments();
 
@@ -159,7 +159,7 @@ function openAddPaymentModal(fillRemaining) {
     const remaining = Math.max(0, total - paid);
 
     document.getElementById('paymentAmount').value = fillRemaining && remaining > 0 ? remaining.toFixed(2) : '';
-    document.getElementById('paymentDate').value = getLocalDateStr(0);
+    calSetFieldValue('paymentDate', 'paymentDateBtnLabel', getLocalDateStr(0));
     document.getElementById('paymentMethod').value = 'наличные';
     document.getElementById('paymentNote').value = '';
     document.getElementById('addPaymentModal').style.display = 'flex';
@@ -173,7 +173,7 @@ function openEditPaymentModal(paymentId) {
     document.getElementById('paymentDeleteBtn').classList.toggle('hidden', !hasPermission('can_delete'));
 
     document.getElementById('paymentAmount').value = Number(p.amount).toFixed(2);
-    document.getElementById('paymentDate').value = p.paid_at;
+    calSetFieldValue('paymentDate', 'paymentDateBtnLabel', p.paid_at);
     document.getElementById('paymentMethod').value = p.method || 'наличные';
     document.getElementById('paymentNote').value = p.note || '';
     document.getElementById('addPaymentModal').style.display = 'flex';
