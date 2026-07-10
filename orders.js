@@ -570,7 +570,11 @@ function setOrderDateRangeFilter(range) {
     document.querySelectorAll('#orderPeriodDropdown .status-option').forEach(o => o.classList.remove('selected'));
     event.currentTarget.classList.add('selected');
     toggleOrderDateRange();
-    if (range !== 'custom') closeAllFilterDropdowns();
+    // Меню закрываем всегда, включая "От – До" — раньше для custom оно
+    // намеренно оставалось открытым (когда ниже были системные <input type="date">,
+    // рисующиеся поверх всего браузером), но теперь там наша кнопка-календарь
+    // внутри страницы, и открытое меню (z-index 250) физически перекрывает её.
+    closeAllFilterDropdowns();
     applyOrderFilter();
 }
 
