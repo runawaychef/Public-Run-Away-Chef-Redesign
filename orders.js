@@ -138,10 +138,12 @@ function displayOrders() {
         appendMonthSummary(currentMonthKey);
     }
 
-    // ---- Карточный вид: полный список без фильтров, своя группировка ----
+    // ---- Карточный вид: та же фильтрация, что и в таблице (общее состояние
+    // фильтров теперь единое для обоих видов — включая новый календарь-фильтр
+    // по дате с бейджами, см. openOrdersCardFilterCalendar), плюс своя группировка ----
     const cardsBody = document.getElementById('orderCardsBody');
     if (cardsBody) {
-        const sortedAll = [...orders].sort((a, b) => new Date(b.date) - new Date(a.date));
+        const sortedAll = [...filteredOrders].sort((a, b) => new Date(b.date) - new Date(a.date));
         const urgentOrders  = sortedAll.filter(o => isUrgentOrder(o));
         const plannedOrders = sortedAll.filter(o => o.status !== 'выполнен' && !isUrgentOrder(o));
         const doneOrders    = sortedAll.filter(o => o.status === 'выполнен');
@@ -353,8 +355,8 @@ function setOrdersViewMode(mode) {
     document.getElementById('orderFiltersPanel')?.classList.toggle('hidden', mode !== 'table');
     document.getElementById('ordersViewBtnCards')?.classList.toggle('active', mode === 'cards');
     document.getElementById('ordersViewBtnTable')?.classList.toggle('active', mode === 'table');
-    // В карточном виде фильтрация не применяется — сбрасываем на "все заказы",
-    // чтобы при возврате в таблицу не оставалось путаницы, что именно отфильтровано.
+    // Фильтры теперь общие для карточного и табличного видов (см.
+    // openOrdersCardFilterCalendar) — просто перерисовываем список.
     if (mode === 'cards') displayOrders();
 }
 
@@ -639,6 +641,43 @@ function applyOrderFilter() {
     displayOrders();
 }
 
+// ==================== КАЛЕНДАРЬ-ФИЛЬТР ПО ДАТЕ (иконка в переключателе
+// Карточки/Таблица) ====================
+// Тот же попап-календарь, но с включёнными бейджами (сколько заказов в
+// какой день — orderCountBadgeForDay уже был написан для этого, просто не
+// использовался). Пишет в ТЕ ЖЕ orderDateFrom/orderDateTo/orderDateRangeFilter,
+// что и табличный фильтр "Период" — состояние общее для обоих видов.
+// Пока только один день; диапазон через эту иконку — следующий шаг.
+function openOrdersCardFilterCalendar() {
+    // stopPropagation — у этой кнопки, в отличие от большинства других триггеров
+    // календаря, нет обёртки с этим уже готовым — без него клик долетел бы до
+    // document и глобальный closeAllCalendarPopups закрыл бы только что открытый
+    // попап в рамках того же клика.
+    if (typeof event !== 'undefined' && event) event.stopPropagation();
+    toggleCustomCalendar('globalCalendarPopup', 'ordersCardFilterTempDate', 'ordersCardFilterTempLabel', {
+        onPick: onOrdersCardDatePicked,
+        badge: orderCountBadgeForDay,
+        allowClear: true
+    });
+}
+
+function onOrdersCardDatePicked(iso) {
+    const rangeSelect = document.getElementById('orderDateRangeFilter');
+    if (!iso) {
+        rangeSelect.value = 'all';
+        document.getElementById('orderDateFrom').value = '';
+        document.getElementById('orderDateTo').value = '';
+    } else {
+        rangeSelect.value = 'custom';
+        document.getElementById('orderDateFrom').value = iso;
+        document.getElementById('orderDateTo').value = iso;
+    }
+    // Держим табличные фильтры (селектор "Период" и его подсветку) в
+    // синхронизации, раз состояние теперь общее.
+    if (typeof toggleOrderDateRange === 'function') toggleOrderDateRange();
+    applyOrderFilter();
+}
+
 // Кнопка фильтра заливается фисташковым, если в ней реально что-то выбрано —
 // так видно, какие фильтры сейчас активны, без необходимости менять текст
 // на самой кнопке (особенно неудобно для "Клиенты", где выбор мог быть множественный).
@@ -647,10 +686,14 @@ function updateOrderFilterButtonsState() {
     const periodBtn   = document.getElementById('orderPeriodBtn');
     const employeeBtn = document.getElementById('orderEmployeeBtn');
     const paymentBtn  = document.getElementById('orderPaymentBtn');
+    const cardCalBtn  = document.getElementById('ordersCardCalendarBtn');
     if (clientsBtn)  clientsBtn.classList.toggle('active', selectedOrderCustomers.length > 0);
     if (periodBtn)   periodBtn.classList.toggle('active', document.getElementById('orderDateRangeFilter').value !== 'all');
     if (employeeBtn) employeeBtn.classList.toggle('active', document.getElementById('orderEmployeeFilter').value !== '');
     if (paymentBtn)  paymentBtn.classList.toggle('active', document.getElementById('orderPaymentFilter').value !== '');
+    // Иконка календаря в переключателе Карточки/Таблица — общее состояние с
+    // "Период" из табличных фильтров (сейчас общий фильтр на оба вида).
+    if (cardCalBtn)  cardCalBtn.classList.toggle('active', document.getElementById('orderDateRangeFilter').value !== 'all');
 }
 
 // Закрытие любой открытой панели фильтра заказов по клику снаружи её самой —

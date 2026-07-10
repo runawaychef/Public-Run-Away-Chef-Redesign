@@ -715,7 +715,11 @@
     <button class="view-toggle-btn" id="ordersViewBtnTable" onclick="setOrdersViewMode('table')" title="Таблица">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
     </button>
+    <button class="view-toggle-btn" id="ordersCardCalendarBtn" onclick="openOrdersCardFilterCalendar()" title="Фильтр по дате">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/></svg>
+    </button>
 </div>
+<input id="ordersCardFilterTempDate" type="hidden">
 
 <!-- Поиск + переключатель вида для Изделий/Ингредиентов — по тому же принципу,
      что и ordersViewToggle выше: живёт вне #tabsWrapper (у него overflow:hidden
@@ -2522,7 +2526,7 @@
 <script src="products.js?v=20"></script>
 <script src="customers.js?v=31"></script>
 <script src="calendar.js?v=5"></script>
-<script src="orders.js?v=65"></script>
+<script src="orders.js?v=66"></script>
 <script src="invoice.js?v=10"></script>
 <script src="payments.js?v=12"></script>
 <script src="stats.js?v=14"></script>
