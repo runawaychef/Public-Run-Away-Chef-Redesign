@@ -248,8 +248,20 @@ async function selectEmployee(emp) {
     setTimeout(refreshFab, 150);
     logActivity('auth', `Вход: ${emp.name}`);
 
-    // Обновляем данные каждую минуту.
-    // Если дата изменилась (перевалило за полночь) — перезагружаем всё.
+    startPeriodicRefresh();
+}
+
+// Раз в минуту проверяет, не наступила ли новая дата (перезагружает всё, если да)
+// и тихо сверяет права текущего сотрудника с базой. Вынесено в отдельную функцию
+// и защищено флагом, чтобы интервал заводился РОВНО ОДИН РАЗ за время жизни
+// страницы — иначе при мгновенном восстановлении из локального кэша (см. cache.js),
+// которое НЕ проходит через selectEmployee(), эта проверка вообще не запускалась бы,
+// а при обычном повторном вызове selectEmployee() (смена сотрудника без перезагрузки
+// страницы) интервалы бы задваивались.
+let _periodicRefreshStarted = false;
+function startPeriodicRefresh() {
+    if (_periodicRefreshStarted) return;
+    _periodicRefreshStarted = true;
     let _lastKnownDate = new Date().toISOString().slice(0, 10);
     setInterval(() => {
         const currentDate = new Date().toISOString().slice(0, 10);

@@ -25,16 +25,28 @@ async function initAuth() {
     document.getElementById('backToLoginLink').addEventListener('click', showLoginMode);
 
     let session = null;
+    let networkError = false;
     try {
         const { data, error } = await db.auth.getSession();
         if (error) throw error;
         session = data.session;
     } catch (e) {
         console.error('Auth check error:', e);
+        networkError = true;
     }
 
     if (session) {
         await showAuthedApp();
+    } else if (_instantRestoreDone) {
+        if (networkError) {
+            // Интерфейс уже показан мгновенно из локального кэша (см. cache.js) —
+            // не удалось проверить сессию (скорее всего, просто нет сети сейчас).
+            // Не трогаем уже показанное приложение, тихо остаёмся как есть.
+            return;
+        }
+        // Проверка прошла успешно, и сессии действительно нет — она реально
+        // истекла или была отозвана (не путать с временной проблемой сети).
+        await handleInstantRestoreSessionExpired();
     } else {
         showAuthScreen();
     }
@@ -66,6 +78,15 @@ function showAuthedApp() {
 
 async function _doShowAuthedApp() {
     document.getElementById('authScreen').classList.add('hidden');
+
+    if (_instantRestoreDone) {
+        // Интерфейс уже собран мгновенно из локального кэша (см. cache.js) —
+        // сессия подтвердилась валидной, просто тихо освежаем данные в фоне,
+        // без спиннера и без повторного экрана выбора сотрудника.
+        await backgroundRefreshAfterInstantRestore();
+        return;
+    }
+
     // Пока не выяснили, нужен ли реальный выбор сотрудника (или он определится
     // автоматически / возьмётся из кэша устройства) — держим нейтральный спиннер,
     // а не экран "Кто вводит данные?". Иначе он мелькает на экране при каждом
@@ -275,6 +296,8 @@ async function signOutAccount() {
     closeModal();
     try { await db.auth.signOut(); } catch (e) { console.error(e); }
     localStorage.removeItem('currentEmployee');
+    clearAppSnapshot();
+    _instantRestoreDone = false;
     currentEmployee = null;
     document.getElementById('settingsBtn').classList.add('hidden');
     document.getElementById('statsBtn').classList.add('hidden');

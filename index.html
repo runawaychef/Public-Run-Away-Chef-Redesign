@@ -2526,8 +2526,9 @@
 <script src="dates.js?v=7"></script>
     <script src="money.js?v=9"></script>
     <script src="supabaseClient.js?v=7"></script>
-    <script src="auth.js?v=10"></script>
-    <script src="employees.js?v=15"></script>
+    <script src="cache.js?v=1"></script>
+    <script src="auth.js?v=11"></script>
+    <script src="employees.js?v=16"></script>
     <script src="company.js?v=7"></script>
     <script src="inventory.js?v=21"></script>
 <script src="ingredients.js?v=23"></script>
@@ -2692,12 +2693,8 @@ async function loadAllData(silent) {
             };
         });
 
-        displayProducts();
-        displayCustomers();
-        displayIngredients();
-        displaySemiFinished();
-        updateOrderEmployeeFilter();
-        displayOrders();
+        saveAppSnapshot(); // кэш для мгновенного запуска (см. cache.js) — держим свежим после каждой успешной загрузки
+        renderAllScreens();
         await processPendingInventory();
     } catch (e) {
         console.error(e);
@@ -2705,6 +2702,19 @@ async function loadAllData(silent) {
     } finally {
         if (!silent) hideLoading();
     }
+}
+
+// Отрисовка всех основных экранов из уже загруженных (или восстановленных
+// из кэша) глобальных переменных данных — без обращения к серверу.
+// Используется и после реальной загрузки (loadAllData), и при мгновенном
+// восстановлении из локального кэша (restoreAppFromSnapshot в cache.js).
+function renderAllScreens() {
+    displayProducts();
+    displayCustomers();
+    displayIngredients();
+    displaySemiFinished();
+    updateOrderEmployeeFilter();
+    displayOrders();
 }
 
 // ==================== ТАБЫ ====================
@@ -2998,12 +3008,25 @@ function closeHistoryScreen() {
         });
     }
 
-    // Сплэш держим минимум 900мс (чтобы не мигал слишком быстро на мощных
-    // устройствах), но не дольше реальной инициализации — обе задержки идут
-    // параллельно, скрываем по более долгой из двух.
-    const minSplashTime = new Promise(resolve => setTimeout(resolve, 900));
-    await Promise.all([initAuth(), minSplashTime]);
-    document.getElementById('splashScreen')?.classList.add('hide');
+    // Мгновенный запуск: если есть локальный снимок данных с прошлого раза —
+    // собираем интерфейс из него СРАЗУ, без сплэша и без ожидания сети, а
+    // настоящую проверку сессии и свежие данные подгружаем тихо в фоне
+    // (initAuth ниже сам обнаружит _instantRestoreDone и пойдёт по тихому пути
+    // в _doShowAuthedApp, см. auth.js/cache.js). Без кэша — как раньше.
+    const snapshot = loadAppSnapshot();
+    if (snapshot) {
+        restoreAppFromSnapshot(snapshot);
+        _instantRestoreDone = true;
+        document.getElementById('splashScreen')?.classList.add('hide');
+        initAuth(); // намеренно без await — идёт в фоне, не блокируя уже показанный интерфейс
+    } else {
+        // Сплэш держим минимум 900мс (чтобы не мигал слишком быстро на мощных
+        // устройствах), но не дольше реальной инициализации — обе задержки идут
+        // параллельно, скрываем по более долгой из двух.
+        const minSplashTime = new Promise(resolve => setTimeout(resolve, 900));
+        await Promise.all([initAuth(), minSplashTime]);
+        document.getElementById('splashScreen')?.classList.add('hide');
+    }
 })();
 
 // ==================== REALTIME ====================

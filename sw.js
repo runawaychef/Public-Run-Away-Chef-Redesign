@@ -1,4 +1,4 @@
-const CACHE_NAME = 'runwaychef-public-cache-v169';
+const CACHE_NAME = 'runwaychef-public-cache-v170';
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -8,6 +8,7 @@ const ASSETS = [
   './icon-192.png',
   './icon-512.png',
   './supabaseClient.js',
+  './cache.js',
   './auth.js',
   './dates.js',
   './money.js',
