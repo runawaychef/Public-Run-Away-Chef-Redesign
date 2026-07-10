@@ -1302,7 +1302,7 @@
                 <div class="bg-white p-2 rounded-xl shadow-md">
                     <div class="flex justify-between items-center mb-2">
                         <h2 class="text-sm font-semibold text-gray-800">Заказы клиента</h2>
-                        <select id="cdDateRange" class="hidden"><option value="all">Весь период</option><option value="week">Текущая неделя</option><option value="month">Текущий месяц</option><option value="year">Текущий год</option></select>
+                        <select id="cdDateRange" class="hidden"><option value="all">Весь период</option><option value="week">Текущая неделя</option><option value="month">Текущий месяц</option><option value="year">Текущий год</option><option value="custom">От – До</option></select>
                         <div style="position:relative;" onclick="event.stopPropagation();">
                             <button type="button" class="field-select-btn" id="cdDateRangeBtn" onclick="toggleCdDateRangeDropdown()" style="min-width:130px;">
                                 <span id="cdDateRangeBtnLabel">Весь период</span>
@@ -1313,6 +1313,19 @@
                                 <div class="status-option" onclick="setCdDateRange('week')"><span>Текущая неделя</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
                                 <div class="status-option" onclick="setCdDateRange('month')"><span>Текущий месяц</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
                                 <div class="status-option" onclick="setCdDateRange('year')"><span>Текущий год</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+                                <div class="status-option" onclick="setCdDateRange('custom')"><span>От – До</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="cdCustomDateRange" class="hidden mb-2">
+                        <div class="flex gap-1">
+                            <div class="flex-1">
+                                <label class="text-xs text-gray-500">От</label>
+                                <input id="cdDateFrom" type="date" onchange="renderCustomerOrders()" class="border p-0.5 rounded-xl w-full text-xs">
+                            </div>
+                            <div class="flex-1">
+                                <label class="text-xs text-gray-500">До</label>
+                                <input id="cdDateTo" type="date" onchange="renderCustomerOrders()" class="border p-0.5 rounded-xl w-full text-xs">
                             </div>
                         </div>
                     </div>
@@ -2465,7 +2478,7 @@
 <script src="batches.js?v=3"></script>
 <script src="semifinished.js?v=19"></script>
 <script src="products.js?v=20"></script>
-<script src="customers.js?v=28"></script>
+<script src="customers.js?v=29"></script>
 <script src="orders.js?v=59"></script>
 <script src="invoice.js?v=10"></script>
 <script src="payments.js?v=11"></script>

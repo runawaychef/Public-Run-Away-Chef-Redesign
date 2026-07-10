@@ -213,11 +213,16 @@ function getCustomerOrdersForRange(cust) {
             start = new Date(today.getFullYear(), today.getMonth(), 1);
         }
         custOrders = custOrders.filter(o => new Date(o.date) >= start);
+    } else if (range === 'custom') {
+        const from = document.getElementById('cdDateFrom') ? document.getElementById('cdDateFrom').value : '';
+        const to   = document.getElementById('cdDateTo')   ? document.getElementById('cdDateTo').value   : '';
+        if (from) custOrders = custOrders.filter(o => o.date >= from);
+        if (to)   custOrders = custOrders.filter(o => o.date <= to);
     }
     return { range, custOrders };
 }
 
-const RANGE_LABELS = { all: 'Весь период', week: 'Текущая неделя', month: 'Текущий месяц', year: 'Текущий год' };
+const RANGE_LABELS = { all: 'Весь период', week: 'Текущая неделя', month: 'Текущий месяц', year: 'Текущий год', custom: 'От – До' };
 
 // ==================== СВОДНЫЙ ОТЧЁТ ПО ИЗДЕЛИЯМ ЗА ПЕРИОД ====================
 function openCustomerReportPreview() {
@@ -414,6 +419,9 @@ function openCustomerDetail(custId) {
     document.getElementById('cdDateRange').value = 'all';
     document.getElementById('cdDateRangeBtnLabel').textContent = 'Весь период';
     document.querySelectorAll('#cdDateRangeDropdown .status-option').forEach((opt, i) => opt.classList.toggle('selected', i === 0));
+    document.getElementById('cdCustomDateRange').classList.add('hidden');
+    document.getElementById('cdDateFrom').value = '';
+    document.getElementById('cdDateTo').value = '';
     document.getElementById('cdAddress').value = cust.address || '';
     document.getElementById('cdRegNumber').value = cust.reg_number || '';
     document.getElementById('cdVatCode').value = cust.vat_code || '';
@@ -505,7 +513,7 @@ function renderCustomerStats(cust) {
 }
 
 // Список заказов клиента с фильтром по периоду (Весь период/Неделя/Месяц/Год)
-const CD_DATE_RANGE_LABELS = { all: 'Весь период', week: 'Текущая неделя', month: 'Текущий месяц', year: 'Текущий год' };
+const CD_DATE_RANGE_LABELS = { all: 'Весь период', week: 'Текущая неделя', month: 'Текущий месяц', year: 'Текущий год', custom: 'От – До' };
 
 function toggleCdDateRangeDropdown() {
     const dd = document.getElementById('cdDateRangeDropdown');
@@ -521,6 +529,7 @@ function setCdDateRange(range) {
     document.querySelectorAll('#cdDateRangeDropdown .status-option').forEach(opt => opt.classList.remove('selected'));
     event.currentTarget.classList.add('selected');
     closeAllOrderStatusDropdowns();
+    document.getElementById('cdCustomDateRange').classList.toggle('hidden', range !== 'custom');
     renderCustomerOrders();
 }
 
@@ -543,6 +552,11 @@ function renderCustomerOrders() {
             startStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-01`;
         }
         custOrders = custOrders.filter(o => o.date >= startStr);
+    } else if (range === 'custom') {
+        const from = document.getElementById('cdDateFrom') ? document.getElementById('cdDateFrom').value : '';
+        const to   = document.getElementById('cdDateTo')   ? document.getElementById('cdDateTo').value   : '';
+        if (from) custOrders = custOrders.filter(o => o.date >= from);
+        if (to)   custOrders = custOrders.filter(o => o.date <= to);
     }
 
     custOrders.sort((a, b) => b.date.localeCompare(a.date));
