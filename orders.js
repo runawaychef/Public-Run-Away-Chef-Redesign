@@ -573,8 +573,10 @@ function setOrderDateRangeFilter(range) {
     closeAllFilterDropdowns();
     if (range === 'custom') {
         updateOrderFilterButtonsState();
-        // Открываем календарь диапазона сразу же, без дополнительного тапа —
-        // отдельная кнопка-триггер тут не нужна, сам пункт меню и есть триггер.
+        // stopPropagation — иначе этот же клик долетает до document и глобальный
+        // closeAllCalendarPopups() (закрытие календаря по тапу "снаружи") закрывает
+        // календарь сразу же, в рамках того же самого клика, которым мы его открыли.
+        event.stopPropagation();
         toggleCustomCalendarRange('orderDateRangeCalendar', 'orderDateFrom', 'orderDateTo', 'orderDateRangeFromLabel', 'orderDateRangeToLabel', { onApply: function () { applyOrderFilter(); } });
     } else {
         applyOrderFilter();
