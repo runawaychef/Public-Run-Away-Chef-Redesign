@@ -42,18 +42,11 @@ function toggleCustomCalendar(popupId, hiddenInputId, labelId, opts) {
     };
     renderCalendarPopup(popupId);
     popup.classList.add('open');
-    popup.style.top = ''; popup.style.bottom = '';
-    const rect = popup.getBoundingClientRect();
-    if (rect.bottom > window.innerHeight - 8) {
-        popup.style.top = 'auto';
-        popup.style.bottom = 'calc(100% + 4px)';
-    }
 }
 
 function closeAllCalendarPopups() {
     document.querySelectorAll('.calendar-popup.open').forEach(p => {
         p.classList.remove('open');
-        p.style.top = ''; p.style.bottom = '';
     });
 }
 document.addEventListener('click', closeAllCalendarPopups);
