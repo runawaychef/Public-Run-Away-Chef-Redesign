@@ -34,10 +34,45 @@ function toggleCustomCalendar(popupId, hiddenInputId, labelId, opts) {
     const currentVal = document.getElementById(hiddenInputId)?.value || '';
     const base = currentVal ? new Date(currentVal + 'T00:00:00') : new Date();
     _calInstances[popupId] = {
+        mode: 'single',
         hiddenInputId, labelId,
         onPick: opts && opts.onPick,
         badge: opts && opts.badge,
         allowClear: opts && opts.allowClear,
+        viewYear: base.getFullYear(),
+        viewMonth: base.getMonth()
+    };
+    renderCalendarPopup(popupId);
+    popup.classList.add('open');
+}
+
+// Режим диапазона (вариант А — тап-тап): первый тап ставит начало, второй —
+// конец (заливка между ними), третий тап начинает новый диапазон. Ничего
+// не пишется в скрытые input, пока не нажата "Применить" — иначе непонятно,
+// когда диапазон считается завершённым.
+//
+//   <input id="myFrom" type="hidden"><input id="myTo" type="hidden">
+//   <button onclick="toggleCustomCalendarRange('myPopup','myFrom','myTo','myFromLabel','myToLabel',{onApply:fn})">
+//   <div class="calendar-popup" id="myPopup"></div>
+//
+// opts.onApply(fromIso, toIso) — вызывается после нажатия "Применить"
+function toggleCustomCalendarRange(popupId, fromInputId, toInputId, fromLabelId, toLabelId, opts) {
+    const popup = document.getElementById(popupId);
+    if (!popup) return;
+    const wasOpen = popup.classList.contains('open');
+    closeAllCalendarPopups();
+    if (typeof closeAllOrderStatusDropdowns === 'function') closeAllOrderStatusDropdowns();
+    if (wasOpen) return;
+
+    const fromVal = document.getElementById(fromInputId)?.value || '';
+    const toVal = document.getElementById(toInputId)?.value || '';
+    const base = fromVal ? new Date(fromVal + 'T00:00:00') : new Date();
+    _calInstances[popupId] = {
+        mode: 'range',
+        fromInputId, toInputId, fromLabelId, toLabelId,
+        onApply: opts && opts.onApply,
+        tempFrom: fromVal || null,
+        tempTo: toVal || null,
         viewYear: base.getFullYear(),
         viewMonth: base.getMonth()
     };
@@ -82,12 +117,53 @@ function calPickDay(popupId, y, m, d) {
     if (typeof st.onPick === 'function') st.onPick(iso);
 }
 
+// Вариант А: тап1 = начало, тап2 (не раньше начала) = конец, тап3 = новый диапазон.
+// Тап раньше уже выбранного начала просто сдвигает начало (без сброса на "новый диапазон").
+function calPickRangeDay(popupId, y, m, d) {
+    const st = _calInstances[popupId];
+    if (!st) return;
+    const iso = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    if (!st.tempFrom || (st.tempFrom && st.tempTo)) {
+        st.tempFrom = iso;
+        st.tempTo = null;
+    } else if (iso < st.tempFrom) {
+        st.tempFrom = iso;
+    } else {
+        st.tempTo = iso;
+    }
+    renderCalendarPopup(popupId);
+}
+
+function calClearRange(popupId) {
+    const st = _calInstances[popupId];
+    if (!st) return;
+    st.tempFrom = null;
+    st.tempTo = null;
+    renderCalendarPopup(popupId);
+}
+
+function calApplyRange(popupId) {
+    const st = _calInstances[popupId];
+    if (!st || !st.tempFrom || !st.tempTo) return;
+    const fromInput = document.getElementById(st.fromInputId);
+    const toInput = document.getElementById(st.toInputId);
+    if (fromInput) fromInput.value = st.tempFrom;
+    if (toInput) toInput.value = st.tempTo;
+    const fromLbl = document.getElementById(st.fromLabelId);
+    const toLbl = document.getElementById(st.toLabelId);
+    if (fromLbl) fromLbl.textContent = formatDateDMY(st.tempFrom);
+    if (toLbl) toLbl.textContent = formatDateDMY(st.tempTo);
+    closeAllCalendarPopups();
+    if (typeof st.onApply === 'function') st.onApply(st.tempFrom, st.tempTo);
+}
+
 function renderCalendarPopup(popupId) {
     const st = _calInstances[popupId];
     const popup = document.getElementById(popupId);
     if (!st || !popup) return;
+    const isRange = st.mode === 'range';
 
-    const selectedIso = document.getElementById(st.hiddenInputId)?.value || '';
+    const selectedIso = !isRange ? (document.getElementById(st.hiddenInputId)?.value || '') : '';
     const now = new Date();
     const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
@@ -106,7 +182,13 @@ function renderCalendarPopup(popupId) {
         const iso = `${st.viewYear}-${String(st.viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         let cls = 'cal-day';
         if (iso === todayIso) cls += ' today';
-        if (iso === selectedIso) cls += ' selected';
+        if (isRange) {
+            if (iso === st.tempFrom) cls += ' selected range-start';
+            if (iso === st.tempTo) cls += ' selected range-end';
+            if (st.tempFrom && st.tempTo && iso > st.tempFrom && iso < st.tempTo) cls += ' in-range';
+        } else {
+            if (iso === selectedIso) cls += ' selected';
+        }
         let badgeHtml = '';
         if (typeof st.badge === 'function') {
             const b = st.badge(st.viewYear, st.viewMonth, d);
@@ -114,7 +196,8 @@ function renderCalendarPopup(popupId) {
                 badgeHtml = `<span class="cal-day-badge" style="background:${b.color}">${b.count}</span>`;
             }
         }
-        cellsHtml += `<div class="${cls}" onclick="calPickDay('${popupId}', ${st.viewYear}, ${st.viewMonth}, ${d})">${d}${badgeHtml}</div>`;
+        const clickFn = isRange ? 'calPickRangeDay' : 'calPickDay';
+        cellsHtml += `<div class="${cls}" onclick="${clickFn}('${popupId}', ${st.viewYear}, ${st.viewMonth}, ${d})">${d}${badgeHtml}</div>`;
     }
     const totalCells = startDay + daysInMonth;
     const tail = (7 - (totalCells % 7)) % 7;
@@ -122,18 +205,33 @@ function renderCalendarPopup(popupId) {
         cellsHtml += `<div class="cal-day other-month">${i}</div>`;
     }
 
+    const statusHtml = isRange
+        ? `<div class="cal-range-status">С ${st.tempFrom ? formatDateDMY(st.tempFrom) : '—'} &nbsp;по&nbsp; ${st.tempTo ? formatDateDMY(st.tempTo) : '—'}</div>`
+        : '';
+
+    const footerHtml = isRange
+        ? `<div class="cal-footer" style="justify-content:space-between;">
+               <div class="cal-today-btn" onclick="calGoToday('${popupId}')">Сегодня</div>
+               <div style="display:flex; gap:6px;">
+                   <div class="cal-today-btn" onclick="calClearRange('${popupId}')">Очистить</div>
+                   <div class="cal-apply-btn${(st.tempFrom && st.tempTo) ? '' : ' disabled'}" onclick="calApplyRange('${popupId}')">Применить</div>
+               </div>
+           </div>`
+        : `<div class="cal-footer">
+               <div class="cal-today-btn" onclick="calGoToday('${popupId}')">Сегодня</div>
+               ${st.allowClear ? `<div class="cal-today-btn" onclick="calClearDay('${popupId}')">Очистить</div>` : ''}
+           </div>`;
+
     popup.innerHTML = `
         <div class="cal-header">
             <div class="cal-nav-btn" onclick="calNavMonth('${popupId}', -1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6"/></svg></div>
             <div class="cal-title">${CAL_MONTH_NAMES[st.viewMonth]} ${st.viewYear}</div>
             <div class="cal-nav-btn" onclick="calNavMonth('${popupId}', 1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6"/></svg></div>
         </div>
+        ${statusHtml}
         <div class="cal-weekdays">${CAL_WEEKDAYS.map(w => `<div class="cal-weekday">${w}</div>`).join('')}</div>
         <div class="cal-days">${cellsHtml}</div>
-        <div class="cal-footer">
-            <div class="cal-today-btn" onclick="calGoToday('${popupId}')">Сегодня</div>
-            ${st.allowClear ? `<div class="cal-today-btn" onclick="calClearDay('${popupId}')">Очистить</div>` : ''}
-        </div>
+        ${footerHtml}
     `;
 }
 
