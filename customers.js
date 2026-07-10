@@ -530,7 +530,12 @@ function setCdDateRange(range) {
     event.currentTarget.classList.add('selected');
     closeAllOrderStatusDropdowns();
     document.getElementById('cdCustomDateRange').classList.toggle('hidden', range !== 'custom');
-    renderCustomerOrders();
+    if (range === 'custom') {
+        event.stopPropagation();
+        toggleCustomCalendarRange('globalCalendarPopup', 'cdDateFrom', 'cdDateTo', 'cdDateRangeFromLabel', 'cdDateRangeToLabel', { onApply: function () { renderCustomerOrders(); } });
+    } else {
+        renderCustomerOrders();
+    }
 }
 
 function renderCustomerOrders() {

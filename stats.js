@@ -169,7 +169,12 @@ function setStatsDateRange(range) {
     event.currentTarget.classList.add('selected');
     closeAllOrderStatusDropdowns();
     toggleDateRange();
-    applyFilter();
+    if (range === 'custom') {
+        event.stopPropagation();
+        toggleCustomCalendarRange('globalCalendarPopup', 'statsDateFrom', 'statsDateTo', 'statsDateRangeFromLabel', 'statsDateRangeToLabel', { onApply: function () { applyFilter(); } });
+    } else {
+        applyFilter();
+    }
 }
 
 function toggleDateRange() {
