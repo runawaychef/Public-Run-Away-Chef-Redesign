@@ -198,6 +198,12 @@ function getPaymentStripeColor(payInfo) {
     return '#c0685c';
 }
 
+const RU_MONTH_ABBR = ['ЯНВ', 'ФЕВ', 'МАР', 'АПР', 'МАЙ', 'ИЮН', 'ИЮЛ', 'АВГ', 'СЕН', 'ОКТ', 'НОЯ', 'ДЕК'];
+function orderDateBadgeParts(iso) {
+    const d = new Date(iso + 'T00:00:00');
+    return { month: RU_MONTH_ABBR[d.getMonth()], day: d.getDate() };
+}
+
 // Позиции заказа теперь показываются во всех карточках без исключения.
 function renderOrderCard(order) {
     const payInfo = getOrderPaymentStatus(order);
@@ -205,6 +211,7 @@ function renderOrderCard(order) {
     const statusColor = ORDER_STATUS_COLORS[order.status] || ORDER_STATUS_COLORS['принят'];
     const oNum = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
     const total = formatMoney(orderGrandTotal(order));
+    const dateBadge = orderDateBadgeParts(order.date);
 
     let payLine = '';
     if (payInfo.status === 'partial' || payInfo.overdue) {
@@ -212,6 +219,13 @@ function renderOrderCard(order) {
         payLine = `<div class="oc-pay-line"><span style="color:#4f6349">${formatMoney(payInfo.paidAmt)} оплачено</span> · <span style="color:#c0685c">${formatMoney(pending)} осталось</span></div>`;
     }
     const overdueLine = payInfo.overdue ? `<div class="oc-pay-line" style="color:#8b3a3a; font-weight:700;">Просрочен платёж</div>` : '';
+
+    // Заметка к заказу (готовность/доставка и т.п.) — то же поле order.notes,
+    // что и "Комментарий к заказу" в карточке; показываем только если заполнено.
+    let noteLine = '';
+    if (order.notes && order.notes.trim()) {
+        noteLine = `<div class="oc-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M12 7v5l3 3"/></svg><span>${escapeHtml(order.notes.trim())}</span></div>`;
+    }
 
     let itemsLine = '';
     if (order.items && order.items.length) {
@@ -231,20 +245,29 @@ function renderOrderCard(order) {
         <div class="order-card-tap" onclick="openOrderDetail(${order.id})">
             <div class="stripe" style="background:${stripeColor}"></div>
             <div class="order-card-body">
-                <div class="oc-row">
-                    <span class="oc-name">${escapeHtml(order.customer || '(без клиента)')}</span>
-                    <span class="oc-sum">${total}</span>
-                </div>
-                <div class="oc-row" style="margin-top:3px;">
-                    <span class="oc-meta">${formatDateDMY(order.date)} · ${escapeHtml(oNum)}</span>
-                    <div style="position:relative;" onclick="event.stopPropagation();">
-                        <button class="status-btn" style="background:${statusColor};" onclick="toggleOrderStatusDropdown(${order.id})">
-                            ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
-                        </button>
-                        <div class="status-dropdown" id="statusDropdown-${order.id}">${statusOptions}</div>
+                <div class="oc-header">
+                    <div class="oc-datebadge">
+                        <div class="oc-datebadge-month" style="background:${statusColor};">${dateBadge.month}</div>
+                        <div class="oc-datebadge-day">${dateBadge.day}</div>
+                    </div>
+                    <div style="flex:1; min-width:0;">
+                        <div class="oc-row">
+                            <span class="oc-name">${escapeHtml(order.customer || '(без клиента)')}</span>
+                            <span class="oc-sum">${total}</span>
+                        </div>
+                        <div class="oc-row" style="margin-top:3px;">
+                            <span class="oc-meta">${escapeHtml(oNum)}</span>
+                            <div style="position:relative;" onclick="event.stopPropagation();">
+                                <button class="status-btn" style="background:${statusColor};" onclick="toggleOrderStatusDropdown(${order.id})">
+                                    ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
+                                </button>
+                                <div class="status-dropdown" id="statusDropdown-${order.id}">${statusOptions}</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+                ${noteLine}
                 ${payLine}
                 ${overdueLine}
                 ${itemsLine}
