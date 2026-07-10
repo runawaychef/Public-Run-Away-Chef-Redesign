@@ -2528,21 +2528,21 @@
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=2"></script>
     <script src="auth.js?v=11"></script>
-    <script src="employees.js?v=16"></script>
+    <script src="employees.js?v=17"></script>
     <script src="company.js?v=7"></script>
     <script src="inventory.js?v=21"></script>
 <script src="ingredients.js?v=23"></script>
 <script src="batches.js?v=3"></script>
-<script src="semifinished.js?v=19"></script>
-<script src="products.js?v=20"></script>
+<script src="semifinished.js?v=20"></script>
+<script src="products.js?v=21"></script>
 <script src="customers.js?v=31"></script>
 <script src="calendar.js?v=6"></script>
 <script src="orders.js?v=69"></script>
 <script src="invoice.js?v=10"></script>
-<script src="payments.js?v=12"></script>
+<script src="payments.js?v=13"></script>
 <script src="stats.js?v=14"></script>
 <script src="history.js?v=8"></script>
-<script src="modals.js?v=9"></script>
+<script src="modals.js?v=10"></script>
 <script src="demoData.js?v=7"></script>
 <script src="helpers.js?v=14"></script>
 <script>
@@ -3030,8 +3030,10 @@ function closeHistoryScreen() {
 })();
 
 // ==================== REALTIME ====================
-// Подписка на изменения в таблицах orders, order_items, customers, ingredients.
-// При любом изменении — перезагружаем все данные и показываем тост.
+// Подписка на изменения в таблицах orders, order_items, customers, ingredients,
+// products, product_ingredients, semi_finished, semi_finished_ingredients,
+// employees, order_payments. При любом изменении — перезагружаем все данные
+// и показываем тост.
 
 let _realtimeToastTimer = null;
 
@@ -3056,6 +3058,12 @@ function initRealtime() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'order_items' },   () => handleRealtimeEvent())
         .on('postgres_changes', { event: '*', schema: 'public', table: 'customers' },     () => handleRealtimeEvent())
         .on('postgres_changes', { event: '*', schema: 'public', table: 'ingredients' },   () => handleRealtimeEvent())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'products' },              () => handleRealtimeEvent())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'product_ingredients' },    () => handleRealtimeEvent())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'semi_finished' },          () => handleRealtimeEvent())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'semi_finished_ingredients' }, () => handleRealtimeEvent())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'employees' },              () => handleRealtimeEvent())
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'order_payments' },         () => handleRealtimeEvent())
         .subscribe((status) => {
             if (status === 'SUBSCRIBED') console.log('[Realtime] подписка активна');
             else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') console.warn('[Realtime] ошибка:', status);

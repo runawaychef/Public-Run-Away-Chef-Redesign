@@ -215,6 +215,7 @@ function clearSemiFinishedSearch() {
 let _draftSemiFinishedIds = new Set();
 
 async function createDraftSemiFinishedAndOpen() {
+    suppressRealtimeFor3s();
     showLoading();
     try {
         const { data, error } = await db.from('semi_finished').insert({ org_id: currentOrgId, name: '', batch_size: 1, unit: 'g', other_costs: 0 }).select().single();
@@ -236,6 +237,7 @@ async function cleanupSemiFinishedDraftIfEmpty(sfId) {
     if (idx === -1) return;
     if (semiFinished[idx].name && semiFinished[idx].name.trim()) return; // название вписали — уже не пустой черновик
     try {
+        suppressRealtimeFor3s();
         await db.from('semi_finished').delete().eq('id', sfId);
         semiFinished.splice(idx, 1);
     } catch (e) { console.error('Не удалось удалить пустой черновик полуфабриката:', e); }
@@ -307,6 +309,7 @@ async function saveSfdHeader() {
 
     showLoading();
     try {
+        suppressRealtimeFor3s();
         const { error } = await db.from('semi_finished').update({
             name, batch_size: batchSize, unit, other_costs: parseFloat(otherCosts.toFixed(2))
         }).eq('id', sf.id);
@@ -375,6 +378,7 @@ async function addIngredientToSfRecipe() {
 
     showLoading();
     try {
+        suppressRealtimeFor3s();
         const { data, error } = await db.from('semi_finished_ingredients').insert({
             org_id: currentOrgId,
             semi_finished_id: sf.id, ingredient_id: ingredientId, quantity
@@ -423,6 +427,7 @@ async function saveSfRecipeItemEdit() {
 
     showLoading();
     try {
+        suppressRealtimeFor3s();
         const { error } = await db.from('semi_finished_ingredients').update({
             ingredient_id: ingredientId, quantity
         }).eq('id', ri.id);
@@ -450,6 +455,7 @@ async function toggleSfRecipeConfirmed() {
     const checked = document.getElementById('sfdRecipeConfirmed').checked;
     showLoading();
     try {
+        suppressRealtimeFor3s();
         const { error } = await db.from('semi_finished').update({ recipe_confirmed: checked }).eq('id', sf.id);
         if (error) throw error;
         sf.recipe_confirmed = checked;
@@ -466,6 +472,7 @@ async function toggleSfTrackStock() {
     const checked = document.getElementById('sfdTrackStock').checked;
     showLoading();
     try {
+        suppressRealtimeFor3s();
         const { error } = await db.from('semi_finished').update({ track_stock: checked }).eq('id', sf.id);
         if (error) throw error;
         sf.track_stock = checked;
@@ -483,6 +490,7 @@ async function resetSfRecipeConfirmed(sf) {
     const checkbox = document.getElementById('sfdRecipeConfirmed');
     if (checkbox) checkbox.checked = false;
     try {
+        suppressRealtimeFor3s();
         await db.from('semi_finished').update({ recipe_confirmed: false }).eq('id', sf.id);
     } catch (e) { console.error('Не удалось сбросить recipe_confirmed:', e); }
 }
@@ -519,6 +527,7 @@ async function copySfRecipeFromByName(sourceName) {
 
     showLoading();
     try {
+        suppressRealtimeFor3s();
         const rows = toCopy.map(ri => ({ semi_finished_id: sf.id, ingredient_id: ri.ingredient_id, quantity: ri.quantity }));
         const rowsWithOrg = rows.map(r => ({ org_id: currentOrgId, ...r }));
         const { data, error } = await db.from('semi_finished_ingredients').insert(rowsWithOrg).select();
@@ -639,6 +648,7 @@ async function setSfPrimaryIngredient(idx) {
     if (!sf) return;
     showLoading();
     try {
+        suppressRealtimeFor3s();
         // Снимаем is_primary со всех
         for (const ri of sf.ingredients) {
             if (ri.is_primary) {

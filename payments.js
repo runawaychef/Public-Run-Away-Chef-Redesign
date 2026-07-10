@@ -192,6 +192,7 @@ async function savePayment() {
 
     showLoading('Сохранение...');
     try {
+        suppressRealtimeFor3s();
         if (id) {
             await updateChecked(db.from('order_payments')
                 .update({ amount, method, paid_at: paidAt, note: note || null })
@@ -222,6 +223,7 @@ async function deletePayment() {
     if (!(await showConfirm('Удалить эту запись об оплате?'))) return;
     showLoading('Удаление...');
     try {
+        suppressRealtimeFor3s();
         const { error } = await db.from('order_payments').delete().eq('id', id);
         if (error) throw error;
         logActivity('order', 'Удалена запись об оплате', currentOrderId);

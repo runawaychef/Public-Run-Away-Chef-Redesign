@@ -150,6 +150,7 @@ async function saveNewProduct() {
     const price = parseFloat(document.getElementById('pdPrice')?.value) || 0;
     if (!name) { showInfo('Введите название изделия!'); return; }
 
+    suppressRealtimeFor3s();
     showLoading();
     try {
         const { data, error } = await db.from('products').insert({
@@ -183,6 +184,7 @@ async function cleanupProductDraftIfEmpty(prodId) {
     if (idx === -1) return;
     if (products[idx].name && products[idx].name.trim()) return; // название вписали — уже не пустой черновик
     try {
+        suppressRealtimeFor3s();
         await db.from('products').delete().eq('id', prodId);
         products.splice(idx, 1);
     } catch (e) { console.error('Не удалось удалить пустой черновик изделия:', e); }
@@ -201,6 +203,7 @@ async function saveProductEdit() {
     if (!name || isNaN(price)) { showInfo('Заполните все поля корректно!'); return; }
     const prod = products[editIndex];
     const oldName = prod.name, oldPrice = prod.price;
+    suppressRealtimeFor3s();
     showLoading();
     try {
         const { error } = await db.from('products').update({ name, price: parseFloat(price.toFixed(2)) }).eq('id', prod.id);
@@ -219,6 +222,7 @@ async function saveProductEdit() {
 // и сразу открывает карточку копии для донастройки.
 async function copyProduct(i) {
     const src = products[i];
+    suppressRealtimeFor3s();
     showLoading();
     try {
         const { data, error } = await db.from('products').insert({
@@ -441,6 +445,7 @@ async function savePdHeader() {
     const otherCosts = parseFloat(document.getElementById('pdOtherCosts').value) || 0;
     if (!name || isNaN(price)) { showInfo('Заполните название и цену корректно!'); return; }
 
+    suppressRealtimeFor3s();
     showLoading();
     try {
         const { error } = await db.from('products').update({
@@ -551,6 +556,7 @@ async function addIngredientToRecipe() {
 
     showLoading();
     try {
+        suppressRealtimeFor3s();
         const { data, error } = await db.from('product_ingredients').insert({ org_id: currentOrgId, ...insertRow }).select().single();
         if (error) throw error;
         if (!prod.ingredients) prod.ingredients = [];
@@ -623,6 +629,7 @@ async function saveRecipeItemEdit() {
 
     showLoading();
     try {
+        suppressRealtimeFor3s();
         const { error } = await db.from('product_ingredients').update(updateRow).eq('id', ri.id);
         if (error) throw error;
         prod.ingredients[editRecipeItemIdx] = {
@@ -664,6 +671,7 @@ async function toggleRecipeConfirmed() {
     const checked = document.getElementById('pdRecipeConfirmed').checked;
     showLoading();
     try {
+        suppressRealtimeFor3s();
         const { error } = await db.from('products').update({ recipe_confirmed: checked }).eq('id', prod.id);
         if (error) throw error;
         prod.recipe_confirmed = checked;
@@ -680,6 +688,7 @@ async function toggleTrackStock() {
     const checked = document.getElementById('pdTrackStock').checked;
     showLoading();
     try {
+        suppressRealtimeFor3s();
         const { error } = await db.from('products').update({ track_stock: checked }).eq('id', prod.id);
         if (error) throw error;
         prod.track_stock = checked;
@@ -700,6 +709,7 @@ async function resetProductRecipeConfirmed(prod) {
     const checkbox = document.getElementById('pdRecipeConfirmed');
     if (checkbox) checkbox.checked = false;
     try {
+        suppressRealtimeFor3s();
         await db.from('products').update({ recipe_confirmed: false }).eq('id', prod.id);
     } catch (e) { console.error('Не удалось сбросить recipe_confirmed:', e); }
 }
@@ -742,6 +752,7 @@ async function copyRecipeFromProductByName(sourceName) {
 
     showLoading();
     try {
+        suppressRealtimeFor3s();
         const rows = toCopy.map(ri => ri.semi_finished_id
             ? { org_id: currentOrgId, product_id: prod.id, semi_finished_id: ri.semi_finished_id, ingredient_id: null, quantity: ri.quantity }
             : { org_id: currentOrgId, product_id: prod.id, ingredient_id: ri.ingredient_id, semi_finished_id: null, quantity: ri.quantity });

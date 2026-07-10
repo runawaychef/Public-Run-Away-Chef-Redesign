@@ -26,6 +26,10 @@ async function confirmDelete() {
         return;
     }
     showLoading();
+    // Подавляем Realtime на все виды удаления через это окно — иначе собственное
+    // событие (в т.ч. от сторно склада при удалении заказа/позиции) прилетает
+    // обратно и вызывает лишнюю перезагрузку данных.
+    suppressRealtimeFor3s();
     try {
         if (deleteType === 'product') {
             const prod = products[deleteId];
@@ -58,9 +62,6 @@ async function confirmDelete() {
         } else if (deleteType === 'order') {
             const order = orders[deleteId];
             const wasOpenInDetail = order.id === currentOrderId;
-            // Подавляем Realtime перед сторно — иначе собственное сторно-событие
-            // прилетит обратно и вызовет лишнюю перезагрузку данных
-            suppressRealtimeFor3s();
             // Сторнируем списание со склада
             await reverseInventoryForOrder(order.id);
             // Soft delete — помечаем как удалённый, не удаляем физически

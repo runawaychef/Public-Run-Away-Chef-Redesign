@@ -447,6 +447,7 @@ async function saveEmployee() {
 
     showLoading('Сохранение...');
     try {
+        suppressRealtimeFor3s();
         if (id) {
             // Редактирование существующей записи (имя + права)
             const { error } = await db.from('employees').update({ name, ...permissions }).eq('id', id);
@@ -487,6 +488,7 @@ async function deleteEmployee() {
 
     showLoading('Удаление...');
     try {
+        suppressRealtimeFor3s();
         const { error } = await db.from('employees').delete().eq('id', id);
         if (error) throw error;
 
