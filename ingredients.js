@@ -232,7 +232,7 @@ async function createDraftIngredientAndOpen() {
     if (unitInput) unitInput.value = 'g';
 
     // Сбрасываем поля склада
-    document.getElementById('idNewPriceDate').value = new Date().toISOString().slice(0, 10);
+    calSetFieldValue('idNewPriceDate', 'idNewPriceDateBtnLabel', new Date().toISOString().slice(0, 10));
     document.getElementById('idPackagePrice').value = '0.00';
     document.getElementById('idPackageSize').value = '1';
     document.getElementById('idStockQty').value = '';
@@ -331,7 +331,7 @@ async function openIngredientDetail(ingId) {
     if (nameInput) { nameInput.value = ing.name; }
     if (unitInput) { unitInput.value = ing.unit || 'g'; }
     // Фокус на поле названия если это новый черновик
-    document.getElementById('idNewPriceDate').value = new Date().toISOString().slice(0, 10);
+    calSetFieldValue('idNewPriceDate', 'idNewPriceDateBtnLabel', new Date().toISOString().slice(0, 10));
     document.getElementById('idPackagePrice').value = ing.package_price.toFixed(2);
     document.getElementById('idPackageSize').value = ing.package_size;
     document.getElementById('idStockQty').value = '';
@@ -914,7 +914,7 @@ function openAddPriceHistoryModal() {
     if (!ing) return;
     document.getElementById('priceHistoryModalTitle').textContent = 'Добавить запись цены';
     document.getElementById('priceHistoryRecordId').value = '';
-    document.getElementById('priceHistoryDate').value = new Date().toISOString().slice(0, 10);
+    calSetFieldValue('priceHistoryDate', 'priceHistoryDateBtnLabel', new Date().toISOString().slice(0, 10));
     document.getElementById('priceHistoryPrice').value = ing.package_price.toFixed(2);
     document.getElementById('priceHistorySize').value = ing.package_size;
     document.getElementById('priceHistoryModal').style.display = 'flex';
@@ -924,7 +924,7 @@ function openAddPriceHistoryModal() {
 function openEditPriceHistoryModal(id, validFrom, price, size) {
     document.getElementById('priceHistoryModalTitle').textContent = 'Редактировать запись цены';
     document.getElementById('priceHistoryRecordId').value = id;
-    document.getElementById('priceHistoryDate').value = validFrom;
+    calSetFieldValue('priceHistoryDate', 'priceHistoryDateBtnLabel', validFrom);
     document.getElementById('priceHistoryPrice').value = Number(price).toFixed(2);
     document.getElementById('priceHistorySize').value = size;
     document.getElementById('priceHistoryModal').style.display = 'flex';
