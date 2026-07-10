@@ -37,6 +37,7 @@ function toggleCustomCalendar(popupId, hiddenInputId, labelId, opts) {
         hiddenInputId, labelId,
         onPick: opts && opts.onPick,
         badge: opts && opts.badge,
+        allowClear: opts && opts.allowClear,
         viewYear: base.getFullYear(),
         viewMonth: base.getMonth()
     };
@@ -129,8 +130,32 @@ function renderCalendarPopup(popupId) {
         </div>
         <div class="cal-weekdays">${CAL_WEEKDAYS.map(w => `<div class="cal-weekday">${w}</div>`).join('')}</div>
         <div class="cal-days">${cellsHtml}</div>
-        <div class="cal-footer"><div class="cal-today-btn" onclick="calGoToday('${popupId}')">Сегодня</div></div>
+        <div class="cal-footer">
+            <div class="cal-today-btn" onclick="calGoToday('${popupId}')">Сегодня</div>
+            ${st.allowClear ? `<div class="cal-today-btn" onclick="calClearDay('${popupId}')">Очистить</div>` : ''}
+        </div>
     `;
+}
+
+function calClearDay(popupId) {
+    const st = _calInstances[popupId];
+    if (!st) return;
+    const input = document.getElementById(st.hiddenInputId);
+    if (input) input.value = '';
+    const lbl = document.getElementById(st.labelId);
+    if (lbl) lbl.textContent = '—';
+    closeAllCalendarPopups();
+    if (typeof st.onPick === 'function') st.onPick('');
+}
+
+// Утилита для JS-кода, который выставляет дату программно (например,
+// дефолт "сегодня" при открытии модалки) — держит скрытый input и подпись
+// на кнопке синхронными без дублирования форматирования в каждом месте.
+function calSetFieldValue(hiddenInputId, labelId, iso) {
+    const input = document.getElementById(hiddenInputId);
+    if (input) input.value = iso || '';
+    const lbl = document.getElementById(labelId);
+    if (lbl) lbl.textContent = iso ? formatDateDMY(iso) : '—';
 }
 
 // ---- Место применения №1: поле "Дата" в карточке заказа ----
