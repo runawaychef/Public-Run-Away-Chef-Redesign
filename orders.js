@@ -292,8 +292,10 @@ document.addEventListener('click', closeAllOrderStatusDropdowns);
 function renderDoneOrderCard(order) {
     const payInfo = getOrderPaymentStatus(order);
     const stripeColor = getPaymentStripeColor(payInfo);
+    const statusColor = ORDER_STATUS_COLORS[order.status] || ORDER_STATUS_COLORS['принят'];
     const oNum = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
     const total = formatMoney(orderGrandTotal(order));
+    const dateBadge = orderDateBadgeParts(order.date);
 
     // Точка статуса оплаты — тот же элемент, что и в табличном виде (payDot),
     // чтобы выполненный, но ещё не оплаченный заказ не терялся в приглушённой карточке.
@@ -301,6 +303,19 @@ function renderDoneOrderCard(order) {
     if (payInfo.status === 'partial') payDotTitle = 'Частично оплачен';
     else if (payInfo.status === 'paid') payDotTitle = 'Оплачен';
     if (payInfo.overdue) payDotTitle += ' · просрочен';
+
+    // Заметка и полоса оплаты — те же блоки, что и в активной карточке
+    // (renderOrderCard), показываются только в развёрнутом виде.
+    let noteLine = '';
+    if (order.notes && order.notes.trim()) {
+        noteLine = `<div class="oc-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M12 7v5l3 3"/></svg><span>${escapeHtml(order.notes.trim())}</span></div>`;
+    }
+    let payLine = '';
+    if (payInfo.status === 'partial' || payInfo.overdue) {
+        const pending = Math.max(0, payInfo.grandAmt - payInfo.paidAmt);
+        payLine = `<div class="oc-pay-line"><span style="color:#4f6349">${formatMoney(payInfo.paidAmt)} оплачено</span> · <span style="color:#c0685c">${formatMoney(pending)} осталось</span></div>`;
+    }
+    const overdueLine = payInfo.overdue ? `<div class="oc-pay-line" style="color:#8b3a3a; font-weight:700;">Просрочен платёж</div>` : '';
 
     let itemsLine = '';
     if (order.items && order.items.length) {
@@ -312,15 +327,38 @@ function renderDoneOrderCard(order) {
         <div class="stripe" style="background:${stripeColor}; display:none;" data-role="stripe"></div>
         <div class="order-card-tap" onclick="handleDoneCardTap(event, ${order.id})">
             <div class="order-card-body" style="padding-right:34px;">
-                <div class="oc-row">
-                    <span class="oc-name">${escapeHtml(order.customer || '(без клиента)')}</span>
-                    <span class="oc-sum">${total}</span>
+                <div data-role="collapsed-header">
+                    <div class="oc-row">
+                        <span class="oc-name">${escapeHtml(order.customer || '(без клиента)')}</span>
+                        <span class="oc-sum">${total}</span>
+                    </div>
+                    <div class="oc-row" style="margin-top:1px;">
+                        <span></span>
+                        <span title="${payDotTitle}" style="width:8px; height:8px; border-radius:50%; background:${stripeColor}; display:inline-block;"></span>
+                    </div>
+                    <div class="oc-meta">${formatDateDMY(order.date)} · ${escapeHtml(oNum)}</div>
                 </div>
-                <div class="oc-row" style="margin-top:1px;">
-                    <span></span>
-                    <span title="${payDotTitle}" style="width:8px; height:8px; border-radius:50%; background:${stripeColor}; display:inline-block;"></span>
+                <div data-role="expanded-header" style="display:none;">
+                    <div class="oc-header">
+                        <div class="oc-datebadge">
+                            <div class="oc-datebadge-month" style="background:${statusColor};">${dateBadge.month}</div>
+                            <div class="oc-datebadge-day">${dateBadge.day}</div>
+                        </div>
+                        <div style="flex:1; min-width:0;">
+                            <div class="oc-row">
+                                <span class="oc-name">${escapeHtml(order.customer || '(без клиента)')}</span>
+                                <span class="oc-sum">${total}</span>
+                            </div>
+                            <div class="oc-row" style="margin-top:3px;">
+                                <span class="oc-meta">${escapeHtml(oNum)}</span>
+                                <span title="${payDotTitle}" style="width:8px; height:8px; border-radius:50%; background:${stripeColor}; display:inline-block;"></span>
+                            </div>
+                        </div>
+                    </div>
+                    ${noteLine}
+                    ${payLine}
+                    ${overdueLine}
                 </div>
-                <div class="oc-meta">${formatDateDMY(order.date)} · ${escapeHtml(oNum)}</div>
                 <div class="oc-items" data-role="items" style="display:none;">${itemsLine}</div>
             </div>
         </div>
@@ -342,6 +380,8 @@ function toggleDoneCardExpand(orderId) {
     card.classList.toggle('muted', !expanded);
     card.querySelector('[data-role="stripe"]').style.display = expanded ? '' : 'none';
     card.querySelector('[data-role="items"]').style.display = expanded ? 'block' : 'none';
+    card.querySelector('[data-role="collapsed-header"]').style.display = expanded ? 'none' : '';
+    card.querySelector('[data-role="expanded-header"]').style.display = expanded ? '' : 'none';
 }
 
 function toggleOrderStatusDropdown(orderId) {
