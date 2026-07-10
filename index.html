@@ -840,7 +840,7 @@
          overflow:hidden ради анимации свайпа, а .tab-content { will-change: transform } делает
          его containing block для потомков с position:fixed — такой fixed-попап внутри него
          обрезается и позиционируется не от экрана, а от этого контейнера. -->
-    <div class="calendar-popup" id="globalCalendarPopup"></div>
+    <div class="calendar-popup" id="globalCalendarPopup" onclick="event.stopPropagation();"></div>
 
     <!-- Контент страницы -->
     <div class="p-2">
