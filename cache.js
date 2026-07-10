@@ -94,6 +94,7 @@ function restoreAppFromSnapshot(snapshot) {
     if (typeof currentTabId === 'undefined' || currentTabId === 'orders') {
         document.getElementById('ordersViewToggle')?.classList.remove('hidden');
     }
+    if (typeof positionOrdersViewToggle === 'function') setTimeout(positionOrdersViewToggle, 150);
     document.getElementById('employeesManageBtn')?.classList.toggle('hidden', !currentEmployee.is_owner);
     document.getElementById('companyInfoBtnBlock')?.classList.toggle('hidden', !currentEmployee.is_owner);
 
