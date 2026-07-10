@@ -490,6 +490,17 @@
         .cal-footer { display: flex; justify-content: center; margin-top: 7px; }
         .cal-today-btn { font-size: 14px; font-weight: 700; color: #7c9473; padding: 5px 13px; border-radius: 10px; cursor: pointer; }
         .cal-today-btn:active { background: #f4f1ea; }
+        .cal-range-status { font-size: 12px; font-weight: 600; color: #7c9473; text-align: center; margin-bottom: 6px; }
+        .cal-day.in-range { background: #e3e8df; border-radius: 0; }
+        .cal-day.range-start { border-radius: 10px 0 0 10px; }
+        .cal-day.range-end { border-radius: 0 10px 10px 0; }
+        .cal-day.range-start.range-end { border-radius: 10px; }
+        .cal-apply-btn {
+            background: #7c9473; color: #fff; font-weight: 700; font-size: 13px;
+            padding: 5px 14px; border-radius: 10px; cursor: pointer;
+        }
+        .cal-apply-btn.disabled { background: #d8d3c5; cursor: default; }
+        .cal-apply-btn:not(.disabled):active { background: #6c8464; }
         .stock-critical { color: #c0685c; }
         .stock-low { color: #d9a441; }
         .stock-ok { color: #4f6349; }
@@ -1524,15 +1535,15 @@
                     <select id="orderPaymentFilter" class="hidden"><option value="">Оплата: все</option><option value="unpaid">Не оплачен</option><option value="partial">Частично оплачен</option><option value="paid">Оплачен</option><option value="overdue">Просрочен</option></select>
 
                     <div id="orderCustomDateRange" class="hidden mb-2">
-                        <div class="flex gap-1">
-                            <div class="flex-1">
-                                <label class="text-xs text-gray-500">От</label>
-                                <input id="orderDateFrom" type="date" onchange="applyOrderFilter()" class="border p-0.5 rounded-xl w-full text-xs">
-                            </div>
-                            <div class="flex-1">
-                                <label class="text-xs text-gray-500">До</label>
-                                <input id="orderDateTo" type="date" onchange="applyOrderFilter()" class="border p-0.5 rounded-xl w-full text-xs">
-                            </div>
+                        <label class="text-xs text-gray-500">Период</label>
+                        <div style="position:relative;" onclick="event.stopPropagation();">
+                            <input id="orderDateFrom" type="hidden">
+                            <input id="orderDateTo" type="hidden">
+                            <button type="button" class="field-select-btn" id="orderDateRangeBtn" onclick="toggleCustomCalendarRange('orderDateRangeCalendar','orderDateFrom','orderDateTo','orderDateRangeFromLabel','orderDateRangeToLabel',{onApply:function(){applyOrderFilter();}})">
+                                <span><span id="orderDateRangeFromLabel">—</span> – <span id="orderDateRangeToLabel">—</span></span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/></svg>
+                            </button>
+                            <div class="calendar-popup" id="orderDateRangeCalendar"></div>
                         </div>
                     </div>
                 </div>
@@ -2525,7 +2536,7 @@
 <script src="semifinished.js?v=19"></script>
 <script src="products.js?v=20"></script>
 <script src="customers.js?v=29"></script>
-<script src="calendar.js?v=3"></script>
+<script src="calendar.js?v=4"></script>
 <script src="orders.js?v=60"></script>
 <script src="invoice.js?v=10"></script>
 <script src="payments.js?v=12"></script>
