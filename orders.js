@@ -577,7 +577,7 @@ function setOrderDateRangeFilter(range) {
         // closeAllCalendarPopups() (закрытие календаря по тапу "снаружи") закрывает
         // календарь сразу же, в рамках того же самого клика, которым мы его открыли.
         event.stopPropagation();
-        toggleCustomCalendarRange('orderDateRangeCalendar', 'orderDateFrom', 'orderDateTo', 'orderDateRangeFromLabel', 'orderDateRangeToLabel', { onApply: function () { applyOrderFilter(); } });
+        toggleCustomCalendarRange('globalCalendarPopup', 'orderDateFrom', 'orderDateTo', 'orderDateRangeFromLabel', 'orderDateRangeToLabel', { onApply: function () { applyOrderFilter(); } });
     } else {
         applyOrderFilter();
     }

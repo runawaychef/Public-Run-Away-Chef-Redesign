@@ -2,17 +2,20 @@
 // Замена системного <input type="date"> собственным виджетом в палитре
 // приложения (вариант B из макетов: цветной бейдж с числом в углу клетки).
 //
-// Первое место применения — поле "Дата" в карточке заказа (#detailDate).
-// Задуман переиспользуемым для дальнейших мест (см. открытый бэклог по
-// календарю) — вся привязка к конкретному полю передаётся параметрами,
-// сам модуль ни от чего конкретного не зависит.
+// ВАЖНО: используется ОДИН общий DOM-узел popup на всё приложение —
+// <div class="calendar-popup" id="globalCalendarPopup"> лежит в index.html
+// вне #tabsWrapper (причина та же, что и у productsSearchBar/ordersViewToggle:
+// у tabsWrapper overflow:hidden ради анимации свайпа, а .tab-content
+// { will-change: transform } делает его containing block для потомков
+// с position:fixed — такой popup внутри него обрезался бы и позиционировался
+// не от экрана, а от этого контейнера). Поэтому все вызовы ниже всегда
+// передают popupId='globalCalendarPopup', а не создают свой div на каждое поле.
 //
 // Использование:
 //   <input id="myDate" type="hidden">
-//   <button onclick="toggleCustomCalendar('myPopup','myDate','myLabel',{onPick:fn, badge:fn})">
+//   <button onclick="toggleCustomCalendar('globalCalendarPopup','myDate','myLabel',{onPick:fn, badge:fn})">
 //       <span id="myLabel">—</span>
 //   </button>
-//   <div class="calendar-popup" id="myPopup"></div>
 //
 // opts.onPick(isoDate)   — вызывается сразу после выбора дня
 // opts.badge(y, m, d)    — необязательно; y — год, m — месяц 0-11, d — число;
@@ -52,8 +55,7 @@ function toggleCustomCalendar(popupId, hiddenInputId, labelId, opts) {
 // когда диапазон считается завершённым.
 //
 //   <input id="myFrom" type="hidden"><input id="myTo" type="hidden">
-//   <button onclick="toggleCustomCalendarRange('myPopup','myFrom','myTo','myFromLabel','myToLabel',{onApply:fn})">
-//   <div class="calendar-popup" id="myPopup"></div>
+//   <button onclick="toggleCustomCalendarRange('globalCalendarPopup','myFrom','myTo','myFromLabel','myToLabel',{onApply:fn})">
 //
 // opts.onApply(fromIso, toIso) — вызывается после нажатия "Применить"
 function toggleCustomCalendarRange(popupId, fromInputId, toInputId, fromLabelId, toLabelId, opts) {

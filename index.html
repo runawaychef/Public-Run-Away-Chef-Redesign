@@ -835,6 +835,13 @@
         </div>
     </div>
 
+    <!-- Единый попап-календарь (все поля дат используют его через toggleCustomCalendar*) —
+         живёт вне #tabsWrapper по той же причине, что productsSearchBar выше: у tabsWrapper
+         overflow:hidden ради анимации свайпа, а .tab-content { will-change: transform } делает
+         его containing block для потомков с position:fixed — такой fixed-попап внутри него
+         обрезается и позиционируется не от экрана, а от этого контейнера. -->
+    <div class="calendar-popup" id="globalCalendarPopup"></div>
+
     <!-- Контент страницы -->
     <div class="p-2">
     <div id="tabsWrapper">
@@ -1054,11 +1061,10 @@
                         <div style="position:relative;" onclick="event.stopPropagation();">
                             <label class="table-text text-gray-500">Дата</label>
                             <input id="idNewPriceDate" type="hidden">
-                            <button type="button" class="field-select-btn" id="idNewPriceDateBtn" onclick="toggleCustomCalendar('idNewPriceDateCalendar','idNewPriceDate','idNewPriceDateBtnLabel',{onPick:function(){}})">
+                            <button type="button" class="field-select-btn" id="idNewPriceDateBtn" onclick="toggleCustomCalendar('globalCalendarPopup','idNewPriceDate','idNewPriceDateBtnLabel',{onPick:function(){}})">
                                 <span id="idNewPriceDateBtnLabel">—</span>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/></svg>
                             </button>
-                            <div class="calendar-popup" id="idNewPriceDateCalendar"></div>
                         </div>
                         <div>
                             <label class="table-text text-gray-500">Количество (<span id="ingQtyUnit"></span>)</label>
@@ -1537,7 +1543,6 @@
                     <div id="orderCustomDateRange" class="hidden">
                         <input id="orderDateFrom" type="hidden">
                         <input id="orderDateTo" type="hidden">
-                        <div class="calendar-popup" id="orderDateRangeCalendar"></div>
                     </div>
                 </div>
 
@@ -1600,11 +1605,10 @@
                         <div style="position:relative;" onclick="event.stopPropagation();">
                             <label class="table-text text-gray-500">Дата</label>
                             <input id="detailDate" type="hidden">
-                            <button type="button" class="field-select-btn" id="detailDateBtn" onclick="toggleCustomCalendar('detailDateCalendar','detailDate','detailDateBtnLabel',{onPick:onDetailDatePicked})">
+                            <button type="button" class="field-select-btn" id="detailDateBtn" onclick="toggleCustomCalendar('globalCalendarPopup','detailDate','detailDateBtnLabel',{onPick:onDetailDatePicked})">
                                 <span id="detailDateBtnLabel">—</span>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/></svg>
                             </button>
-                            <div class="calendar-popup" id="detailDateCalendar"></div>
                         </div>
                         <div style="position:relative;" onclick="event.stopPropagation();">
                             <label class="table-text text-gray-500">Статус</label>
@@ -1721,11 +1725,10 @@
                         <span>Оплатить до:</span>
                         <div style="position:relative;" onclick="event.stopPropagation();">
                             <input id="orderDueDate" type="hidden">
-                            <button type="button" class="field-select-btn" id="orderDueDateBtn" style="width:auto; background:#fff;" onclick="toggleCustomCalendar('orderDueDateCalendar','orderDueDate','orderDueDateBtnLabel',{onPick:function(){saveDueDate();}, allowClear:true})">
+                            <button type="button" class="field-select-btn" id="orderDueDateBtn" style="width:auto; background:#fff;" onclick="toggleCustomCalendar('globalCalendarPopup','orderDueDate','orderDueDateBtnLabel',{onPick:function(){saveDueDate();}, allowClear:true})">
                                 <span id="orderDueDateBtnLabel">—</span>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/></svg>
                             </button>
-                            <div class="calendar-popup" id="orderDueDateCalendar"></div>
                         </div>
                         <span id="dueDateOverdueTag" class="font-semibold hidden" style="color:#8b3a3a;"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>просрочено</span>
                     </div>
@@ -2072,11 +2075,10 @@
                 <label class="text-xs text-gray-500">Дата</label>
                 <div style="position:relative; margin-bottom:8px;" onclick="event.stopPropagation();">
                     <input id="paymentDate" type="hidden">
-                    <button type="button" class="field-select-btn" id="paymentDateBtn" onclick="toggleCustomCalendar('paymentDateCalendar','paymentDate','paymentDateBtnLabel',{onPick:function(){}})">
+                    <button type="button" class="field-select-btn" id="paymentDateBtn" onclick="toggleCustomCalendar('globalCalendarPopup','paymentDate','paymentDateBtnLabel',{onPick:function(){}})">
                         <span id="paymentDateBtnLabel">—</span>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/></svg>
                     </button>
-                    <div class="calendar-popup" id="paymentDateCalendar"></div>
                 </div>
 
                 <label class="text-xs text-gray-500">Способ оплаты</label>
@@ -2340,11 +2342,10 @@
                 <label class="text-xs text-gray-500">Дата (с какого числа действует цена)</label>
                 <div style="position:relative; margin-bottom:8px;" onclick="event.stopPropagation();">
                     <input id="priceHistoryDate" type="hidden">
-                    <button type="button" class="field-select-btn" id="priceHistoryDateBtn" onclick="toggleCustomCalendar('priceHistoryDateCalendar','priceHistoryDate','priceHistoryDateBtnLabel',{onPick:function(){}})">
+                    <button type="button" class="field-select-btn" id="priceHistoryDateBtn" onclick="toggleCustomCalendar('globalCalendarPopup','priceHistoryDate','priceHistoryDateBtnLabel',{onPick:function(){}})">
                         <span id="priceHistoryDateBtnLabel">—</span>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/></svg>
                     </button>
-                    <div class="calendar-popup" id="priceHistoryDateCalendar"></div>
                 </div>
                 <label class="text-xs text-gray-500">Цена за упаковку</label>
                 <input id="priceHistoryPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
@@ -2529,8 +2530,8 @@
 <script src="semifinished.js?v=19"></script>
 <script src="products.js?v=20"></script>
 <script src="customers.js?v=29"></script>
-<script src="calendar.js?v=4"></script>
-<script src="orders.js?v=63"></script>
+<script src="calendar.js?v=5"></script>
+<script src="orders.js?v=64"></script>
 <script src="invoice.js?v=10"></script>
 <script src="payments.js?v=12"></script>
 <script src="stats.js?v=12"></script>
