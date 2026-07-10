@@ -455,28 +455,27 @@
         .field-select-btn.active svg { color: #fff; }
 
         /* ── Кастомный попап-календарь (замена системного <input type="date">) ──
-           Позиционируется фиксированно по центру экрана (не под кнопкой-триггером) —
-           иначе на узких колонках (например, поле "Дата" в правой половине сетки 2х2)
-           часть календаря уходит за край экрана и становится недоступна. */
+           Позиционируется фиксированно: по центру экрана горизонтально,
+           верхним краем на уровне строки "Клиент/Дата" в карточке заказа. */
         .calendar-popup {
-            position: fixed; left: 50%; top: 66%; transform: translate(-50%, -50%);
-            background: #fff; border-radius: 16px; box-shadow: 0 8px 28px rgba(0,0,0,0.22);
-            border: 1px solid #eee; width: 300px; z-index: 260; display: none; padding: 14px;
+            position: fixed; left: 50%; top: 22%; transform: translateX(-50%);
+            background: #fff; border-radius: 17px; box-shadow: 0 8px 28px rgba(0,0,0,0.22);
+            border: 1px solid #eee; width: 330px; z-index: 260; display: none; padding: 15px;
         }
         .calendar-popup.open { display: block; }
-        .calendar-popup .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-        .calendar-popup .cal-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 15px; color: #4f6349; }
+        .calendar-popup .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; }
+        .calendar-popup .cal-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 16.5px; color: #4f6349; }
         .calendar-popup .cal-nav-btn {
-            width: 27px; height: 27px; display: flex; align-items: center; justify-content: center;
-            border-radius: 9px; color: #9a9488; cursor: pointer;
+            width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
+            border-radius: 10px; color: #9a9488; cursor: pointer;
         }
         .calendar-popup .cal-nav-btn:active { background: #f4f1ea; }
         .calendar-popup .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 3px; }
-        .calendar-popup .cal-weekday { font-size: 11px; font-weight: 700; color: #9a9488; text-align: center; padding: 3px 0; }
+        .calendar-popup .cal-weekday { font-size: 12px; font-weight: 700; color: #9a9488; text-align: center; padding: 3px 0; }
         .calendar-popup .cal-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
         .cal-day {
             position: relative; aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-            font-size: 14px; font-weight: 600; color: #3d3a33; border-radius: 9px; cursor: pointer;
+            font-size: 15.5px; font-weight: 600; color: #3d3a33; border-radius: 10px; cursor: pointer;
         }
         .cal-day:active { background: #f4f1ea; }
         .cal-day.other-month { color: #d3ccb8; font-weight: 400; }
@@ -484,12 +483,12 @@
         .cal-day.selected { background: #7c9473; color: #fff; }
         .cal-day.selected.today { box-shadow: none; }
         .cal-day-badge {
-            position: absolute; top: -4px; right: -4px; min-width: 16px; height: 16px; border-radius: 8px;
-            font-size: 9.5px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center;
+            position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; border-radius: 9px;
+            font-size: 10.5px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center;
             padding: 0 3px; line-height: 1; box-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
-        .cal-footer { display: flex; justify-content: center; margin-top: 6px; }
-        .cal-today-btn { font-size: 12.5px; font-weight: 700; color: #7c9473; padding: 4px 12px; border-radius: 9px; cursor: pointer; }
+        .cal-footer { display: flex; justify-content: center; margin-top: 7px; }
+        .cal-today-btn { font-size: 14px; font-weight: 700; color: #7c9473; padding: 5px 13px; border-radius: 10px; cursor: pointer; }
         .cal-today-btn:active { background: #f4f1ea; }
         .stock-critical { color: #c0685c; }
         .stock-low { color: #d9a441; }
