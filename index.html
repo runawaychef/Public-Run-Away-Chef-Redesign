@@ -487,6 +487,11 @@
             font-size: 10.5px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center;
             padding: 0 3px; line-height: 1; box-shadow: 0 1px 2px rgba(0,0,0,0.2);
         }
+        .cal-day-dots {
+            position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 2px; pointer-events: none;
+        }
+        .cal-day-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
         .cal-footer { display: flex; justify-content: center; margin-top: 7px; }
         .cal-today-btn { font-size: 14px; font-weight: 700; color: #7c9473; padding: 5px 13px; border-radius: 10px; cursor: pointer; }
         .cal-today-btn:active { background: #f4f1ea; }
@@ -2525,7 +2530,7 @@
 <script src="semifinished.js?v=19"></script>
 <script src="products.js?v=20"></script>
 <script src="customers.js?v=31"></script>
-<script src="calendar.js?v=5"></script>
+<script src="calendar.js?v=6"></script>
 <script src="orders.js?v=66"></script>
 <script src="invoice.js?v=10"></script>
 <script src="payments.js?v=12"></script>

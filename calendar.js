@@ -192,14 +192,17 @@ function renderCalendarPopup(popupId) {
             if (iso === selectedIso) cls += ' selected';
         }
         let badgeHtml = '';
+        let dotsHtml = '';
         if (typeof st.badge === 'function') {
             const b = st.badge(st.viewYear, st.viewMonth, d);
-            if (b && b.count > 0) {
+            if (b && b.dots && b.dots.length) {
+                dotsHtml = `<div class="cal-day-dots">${b.dots.map(c => `<span class="cal-day-dot" style="background:${c}"></span>`).join('')}</div>`;
+            } else if (b && b.count > 0) {
                 badgeHtml = `<span class="cal-day-badge" style="background:${b.color}">${b.count}</span>`;
             }
         }
         const clickFn = isRange ? 'calPickRangeDay' : 'calPickDay';
-        cellsHtml += `<div class="${cls}" onclick="${clickFn}('${popupId}', ${st.viewYear}, ${st.viewMonth}, ${d})">${d}${badgeHtml}</div>`;
+        cellsHtml += `<div class="${cls}" onclick="${clickFn}('${popupId}', ${st.viewYear}, ${st.viewMonth}, ${d})">${d}${badgeHtml}${dotsHtml}</div>`;
     }
     const totalCells = startDay + daysInMonth;
     const tail = (7 - (totalCells % 7)) % 7;
@@ -260,18 +263,32 @@ function calSetFieldValue(hiddenInputId, labelId, iso) {
 
 // ---- Место применения №1: поле "Дата" в карточке заказа ----
 
-// Бейдж — количество заказов на этот день (любой статус; массив orders уже
-// не содержит мягко удалённых — фильтр deleted_at is null применён при загрузке).
-// Цвет по загруженности дня, по той же логике terracotta/honey/sage,
-// что используется в остальном приложении для критично/средне/норм.
+// Цвет "по статусу" одного конкретного заказа — просрочка оплаты перебивает
+// статус исполнения (самое критичное состояние из возможных для заказа).
+function orderSeverityColor(order) {
+    const payInfo = getOrderPaymentStatus(order);
+    if (payInfo.overdue) return '#8b3a3a'; // тёмно-красный — просрочен
+    if (order.status === 'принят') return '#c0685c';   // terracotta
+    if (order.status === 'в работе') return '#d9a441'; // honey
+    return '#7c9473'; // sage — выполнен
+}
+
+// Бейдж — заказы на этот день (любой статус; массив orders уже не содержит
+// мягко удалённых — фильтр deleted_at is null применён при загрузке).
+// До 3 заказов — точки под числом дня, цвет каждой точки = статус конкретного
+// заказа. Больше 3 — точки не помещаются, возвращаемся к числу в углу клетки;
+// его цвет — по самому критичному заказу дня (просрочен > принят > в работе > выполнен).
 function orderCountBadgeForDay(y, m, d) {
     const iso = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    const count = orders.filter(o => o.date === iso).length;
-    if (count === 0) return null;
-    let color = '#7c9473'; // sage
-    if (count >= 5) color = '#c0685c'; // terracotta
-    else if (count >= 3) color = '#d9a441'; // honey
-    return { count, color };
+    const dayOrders = orders.filter(o => o.date === iso);
+    if (!dayOrders.length) return null;
+    if (dayOrders.length <= 3) {
+        return { dots: dayOrders.map(orderSeverityColor) };
+    }
+    const priority = ['#8b3a3a', '#c0685c', '#d9a441', '#7c9473']; // просрочен > принят > в работе > выполнен
+    const colors = dayOrders.map(orderSeverityColor);
+    const color = priority.find(p => colors.includes(p)) || '#7c9473';
+    return { count: dayOrders.length, color };
 }
 
 function onDetailDatePicked(iso) {
