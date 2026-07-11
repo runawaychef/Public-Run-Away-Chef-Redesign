@@ -2852,13 +2852,35 @@ function positionStickySearchBar(barId, contentWrapId, detailId) {
     const barHeight = bar.offsetHeight;
     bar.style.top = Math.round(headerBottom + GAP / 2 - barHeight / 2 + 6) + 'px';
 }
-window.addEventListener('resize', () => {
+
+// Пересчитывает панель поиска+переключателя ТЕКУЩЕЙ активной вкладки (если у неё
+// вообще есть такая панель — у Заказов её нет, там отдельный positionOrdersViewToggle).
+function repositionCurrentTabSearchBar() {
     if (typeof currentTabId === 'undefined') return;
     if (currentTabId === 'products') positionStickySearchBar('productsSearchBar', 'productsList', 'productDetail');
     if (currentTabId === 'customers') positionStickySearchBar('customersSearchBar', 'customersList', 'customerDetail');
     if (currentTabId === 'ingredients') positionStickySearchBar('ingredientsSearchBar', 'ingredientsList', 'ingredientDetail');
     if (currentTabId === 'semiFinished') positionStickySearchBar('semiFinishedSearchBar', 'semiFinishedList', 'semiFinishedDetail');
-});
+}
+window.addEventListener('resize', repositionCurrentTabSearchBar);
+
+// Самокорректирующийся пересчёт — тот же принцип и та же причина, что и у
+// ResizeObserver в positionOrdersViewToggle (orders.js): расчёт "по требованию"
+// из конкретных мест кода не всегда поспевает за моментом, когда шапка реально
+// принимает окончательную высоту (особенно заметно при возврате из фона).
+// В отличие от наблюдателя в orders.js, этот включается СРАЗУ при старте
+// приложения (см. вызов в init() ниже), а не только при первом заходе на
+// вкладку "Заказы" — иначе, если пользователь вернулся из фона прямо на
+// "Клиенты"/"Изделия"/"Склад", наблюдатель ещё не существовал бы и не успел
+// поймать сдвиг шапки.
+let _searchBarHeaderObserver = null;
+function initSearchBarHeaderWatcher() {
+    if (_searchBarHeaderObserver || typeof ResizeObserver === 'undefined') return;
+    const header = document.querySelector('#appStickyHeader .bg-white');
+    if (!header) return;
+    _searchBarHeaderObserver = new ResizeObserver(repositionCurrentTabSearchBar);
+    _searchBarHeaderObserver.observe(header);
+}
 
 // ==================== ПЛАВАЮЩАЯ КНОПКА "+" ====================
 // Видна только на 4 разделах со списками (Заказы/Клиенты/Изделия/Ингредиенты)
@@ -3004,6 +3026,12 @@ function closeHistoryScreen() {
 // ==================== ИНИЦИАЛИЗАЦИЯ ====================
 
 (async function init() {
+    // Наблюдатель за реальной геометрией шапки — включаем сразу, до всего
+    // остального, чтобы он был готов независимо от того, на какой вкладке
+    // приложение окажется дальше (мгновенное восстановление из кэша может
+    // открыть любую вкладку, не только "Заказы").
+    initSearchBarHeaderWatcher();
+
     // Сбрасываем все detail-панели при старте — браузер мог сохранить их состояние
     // (класс 'active') если приложение было закрыто во время просмотра карточки.
     ['orderDetail','productDetail','customerDetail','ingredientDetail','semiFinishedDetail'].forEach(id => {
