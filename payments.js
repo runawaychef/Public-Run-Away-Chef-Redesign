@@ -49,6 +49,12 @@ function renderPayments() {
     const remaining = Math.max(0, total - paid);
     const overpaid = Math.max(0, paid - total);
 
+    // Сравнение сумм ведём в центах (округлённо) — иначе 21.70 + 4.56 = 26.259999999999998
+    // в JS оказывается МЕНЬШЕ total=26.26, и статус ошибочно остаётся "частично оплачен",
+    // хотя отображаемая (округлённая) сумма остатка уже показывает 0.00 €.
+    const totalCents = Math.round(total * 100);
+    const paidCents = Math.round(paid * 100);
+
     const paidEl = document.getElementById('paymentPaidAmount');
     const remEl = document.getElementById('paymentRemainingAmount');
     if (paidEl) paidEl.textContent = formatMoney(paid);
@@ -69,20 +75,20 @@ function renderPayments() {
     if (bar) {
         const pct = total > 0 ? Math.min(100, (paid / total) * 100) : (paid > 0 ? 100 : 0);
         bar.style.width = pct + '%';
-        bar.className = 'h-1.5 rounded-full ' + (paid <= 0 ? 'bg-gray-300' : paid < total ? 'bg-amber-400' : 'bg-green-500');
+        bar.className = 'h-1.5 rounded-full ' + (paidCents <= 0 ? 'bg-gray-300' : paidCents < totalCents ? 'bg-amber-400' : 'bg-green-500');
     }
 
-    const isFullyPaid = paid > 0 && paid >= total && total > 0;
+    const isFullyPaid = paidCents > 0 && paidCents >= totalCents && totalCents > 0;
 
     const badge = document.getElementById('paymentStatusBadge');
     const badge2 = document.getElementById('paymentStatusBadge2');
     [badge, badge2].forEach(b => {
         if (!b) return;
-        if (paid <= 0) {
+        if (paidCents <= 0) {
             b.textContent = 'Не оплачен';
             b.className = 'text-xs font-semibold px-2 py-0.5 rounded-full';
             b.style.cssText = 'background:#f3ded9; color:#a3493d;';
-        } else if (paid < total) {
+        } else if (paidCents < totalCents) {
             b.textContent = 'Частично оплачен';
             b.className = 'text-xs font-semibold px-2 py-0.5 rounded-full';
             b.style.cssText = 'background:#f7e6c4; color:#96712a;';
