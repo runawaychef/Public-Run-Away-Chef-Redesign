@@ -3102,16 +3102,24 @@ async function handleRealtimeEvent() {
     }, 1500);
 }
 
-// ==================== iOS: восстановление после смахивания ====================
-// На iOS Safari после смахивания страница восстанавливается из bfcache
-// (persisted: true) — DOMContentLoaded и init() не запускаются повторно.
-// Слушаем pageshow чтобы обновить FAB и данные после «разморозки».
+// ==================== Восстановление после смахивания/заморозки вкладки ====================
+// Браузер (не только iOS Safari — на Android Chrome/WebAPK такое тоже случается
+// при заморозке вкладки в фоне) может восстановить страницу из bfcache
+// (persisted: true) без повторного запуска DOMContentLoaded/init(). Раньше здесь
+// обновлялся только FAB — но позиция переключателя карточки/таблица считается
+// от реальной геометрии шапки (positionOrdersViewToggle), а её тоже нужно
+// пересчитывать заново после разморозки, иначе переключатель остаётся висеть
+// на координатах, посчитанных ещё до заморозки (и уезжает к самому верху экрана).
 window.addEventListener('pageshow', (e) => {
     if (e.persisted) {
-        // Страница восстановлена из кэша браузера (iOS bfcache)
+        // Страница восстановлена из кэша браузера (bfcache)
         requestAnimationFrame(() => {
             refreshFab();
             setTimeout(refreshFab, 300);
+            if (typeof positionOrdersViewToggle === 'function') {
+                positionOrdersViewToggle();
+                setTimeout(positionOrdersViewToggle, 300);
+            }
         });
     }
 });
