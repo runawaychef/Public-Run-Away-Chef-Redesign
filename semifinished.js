@@ -160,20 +160,30 @@ function renderSemiFinishedCards() {
         const balanceText = balance !== null ? `Остаток: ${Number(balance).toFixed(1)} ${unitLabel}` : 'Остаток: —';
         const priceText = `${formatMoney(unitCost, 4)}/${unitLabel}`;
         const stripe = accentColor ? `<div class="stripe" style="background:${accentColor};"></div>` : '';
+        const realIdx = semiFinished.indexOf(sf);
 
         html += `
-        <div class="order-card" data-name="${escapeHtml((sf.name || '').toLowerCase())}" data-critical="${accentColor ? '1' : '0'}" style="cursor:pointer;" onclick="openSemiFinishedDetail(${sf.id})">
-            ${stripe}
-            <div class="order-card-body">
-                <div class="oc-row">
-                    <span class="oc-name">${escapeHtml(sf.name || '(без названия)')}</span>
-                    ${daysText ? `<span class="oc-sum" style="color:${daysColor};">${daysText}</span>` : ''}
+        <div class="oc-swipe-wrap" data-name="${escapeHtml((sf.name || '').toLowerCase())}" data-critical="${accentColor ? '1' : '0'}" style="--oc-swipe-x:-72px;">
+            ${refCopySwipeBtnHtml(`quickCopySemiFinishedFromSwipe(${realIdx})`)}
+            <div class="order-card" style="cursor:pointer;" onclick="openSemiFinishedDetail(${sf.id})">
+                ${stripe}
+                <div class="order-card-body">
+                    <div class="oc-row">
+                        <span class="oc-name">${escapeHtml(sf.name || '(без названия)')}</span>
+                        ${daysText ? `<span class="oc-sum" style="color:${daysColor};">${daysText}</span>` : ''}
+                    </div>
+                    <div class="oc-meta">${balanceText} · ${priceText}</div>
                 </div>
-                <div class="oc-meta">${balanceText} · ${priceText}</div>
             </div>
         </div>`;
     });
     body.innerHTML = html;
+    initCopySwipeDelegation('semiFinishedCardsBody');
+}
+
+function quickCopySemiFinishedFromSwipe(realIdx) {
+    if (typeof closeAllCardSwipes === 'function') closeAllCardSwipes();
+    copySemiFinished(realIdx);
 }
 
 // ---- Переключатель Карточки / Таблица ----
@@ -192,9 +202,9 @@ function filterSemiFinishedList() {
     document.getElementById('semiFinishedSearchIcon')?.classList.toggle('hidden', !!q);
 
     let visibleCards = 0;
-    document.querySelectorAll('#semiFinishedCardsBody .order-card').forEach(card => {
-        const match = !q || card.dataset.name.includes(q);
-        card.style.display = match ? 'flex' : 'none';
+    document.querySelectorAll('#semiFinishedCardsBody .oc-swipe-wrap').forEach(wrap => {
+        const match = !q || wrap.dataset.name.includes(q);
+        wrap.style.display = match ? 'block' : 'none';
         if (match) visibleCards++;
     });
     document.getElementById('semiFinishedCardsEmpty')?.classList.toggle('hidden', visibleCards !== 0);
@@ -241,6 +251,33 @@ async function cleanupSemiFinishedDraftIfEmpty(sfId) {
         await db.from('semi_finished').delete().eq('id', sfId);
         semiFinished.splice(idx, 1);
     } catch (e) { console.error('Не удалось удалить пустой черновик полуфабриката:', e); }
+}
+
+// Копирует полуфабрикат (название/размер партии/единица/доп.расходы — без рецепта,
+// для рецепта уже есть отдельная функция "Скопировать рецепт" внутри карточки)
+// и сразу открывает карточку копии для донастройки. По тому же принципу,
+// что и copyProduct() в products.js.
+async function copySemiFinished(i) {
+    const src = semiFinished[i];
+    suppressRealtimeFor3s();
+    showLoading();
+    try {
+        const { data, error } = await db.from('semi_finished').insert({
+            org_id: currentOrgId, name: src.name + ' (копия)', batch_size: src.batch_size || 1,
+            unit: src.unit || 'g', other_costs: src.other_costs || 0
+        }).select().single();
+        if (error) throw error;
+        const newSf = {
+            id: data.id, name: data.name, batch_size: Number(data.batch_size || 1),
+            unit: data.unit || 'g', other_costs: Number(data.other_costs || 0),
+            recipe_confirmed: false, ingredients: []
+        };
+        semiFinished.push(newSf);
+        displaySemiFinished();
+        openSemiFinishedDetail(newSf.id);
+        logActivity('semiFinished', `Скопирован полуфабрикат «${src.name}» → «${newSf.name}»`);
+    } catch (e) { console.error(e); showInfo('Ошибка копирования. Проверьте подключение.'); }
+    finally { hideLoading(); }
 }
 
 // ==================== ДЕТАЛЬНЫЙ ВИД ПОЛУФАБРИКАТА / РЕЦЕПТУРА ====================

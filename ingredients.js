@@ -153,20 +153,30 @@ function renderIngredientCards() {
         const balanceText = balance !== null ? `Остаток: ${Number(balance).toFixed(1)} ${unitLabel}` : 'Остаток: —';
         const priceText = `${formatMoney(unitPrice, 4)}/${unitLabel}`;
         const stripe = accentColor ? `<div class="stripe" style="background:${accentColor};"></div>` : '';
+        const realIdx = ingredients.indexOf(ing);
 
         html += `
-        <div class="order-card" data-name="${escapeHtml((ing.name || '').toLowerCase())}" data-critical="${accentColor ? '1' : '0'}" style="cursor:pointer;" onclick="openIngredientDetail(${ing.id})">
-            ${stripe}
-            <div class="order-card-body">
-                <div class="oc-row">
-                    <span class="oc-name">${escapeHtml(ing.name || '(без названия)')}</span>
-                    ${daysText ? `<span class="oc-sum" style="color:${daysColor};">${daysText}</span>` : ''}
+        <div class="oc-swipe-wrap" data-name="${escapeHtml((ing.name || '').toLowerCase())}" data-critical="${accentColor ? '1' : '0'}" style="--oc-swipe-x:-72px;">
+            ${refCopySwipeBtnHtml(`quickCopyIngredientFromSwipe(${realIdx})`)}
+            <div class="order-card" style="cursor:pointer;" onclick="openIngredientDetail(${ing.id})">
+                ${stripe}
+                <div class="order-card-body">
+                    <div class="oc-row">
+                        <span class="oc-name">${escapeHtml(ing.name || '(без названия)')}</span>
+                        ${daysText ? `<span class="oc-sum" style="color:${daysColor};">${daysText}</span>` : ''}
+                    </div>
+                    <div class="oc-meta">${balanceText} · ${priceText}</div>
                 </div>
-                <div class="oc-meta">${balanceText} · ${priceText}</div>
             </div>
         </div>`;
     });
     body.innerHTML = html;
+    initCopySwipeDelegation('ingredientCardsBody');
+}
+
+function quickCopyIngredientFromSwipe(realIdx) {
+    if (typeof closeAllCardSwipes === 'function') closeAllCardSwipes();
+    copyIngredient(realIdx);
 }
 
 // ---- Переключатель Карточки / Таблица ----
@@ -185,9 +195,9 @@ function filterIngredientsList() {
     document.getElementById('ingredientSearchIcon')?.classList.toggle('hidden', !!q);
 
     let visibleCards = 0;
-    document.querySelectorAll('#ingredientCardsBody .order-card').forEach(card => {
-        const match = !q || card.dataset.name.includes(q);
-        card.style.display = match ? 'flex' : 'none';
+    document.querySelectorAll('#ingredientCardsBody .oc-swipe-wrap').forEach(wrap => {
+        const match = !q || wrap.dataset.name.includes(q);
+        wrap.style.display = match ? 'block' : 'none';
         if (match) visibleCards++;
     });
     document.getElementById('ingredientCardsEmpty')?.classList.toggle('hidden', visibleCards !== 0);
@@ -290,6 +300,32 @@ async function saveNewIngredient() {
         openIngredientDetail(newIng.id);
         logActivity('ingredient', `Создан ингредиент: «${name}»`);
     } catch (e) { console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.'); }
+    finally { hideLoading(); }
+}
+
+// Копирует ингредиент (название/цена упаковки/размер упаковки/единица измерения —
+// без истории цен, она начинается заново для копии) и сразу открывает карточку
+// копии для донастройки. По тому же принципу, что и copyProduct() в products.js.
+async function copyIngredient(i) {
+    const src = ingredients[i];
+    suppressRealtimeFor3s();
+    showLoading();
+    try {
+        const { data, error } = await db.from('ingredients').insert({
+            org_id: currentOrgId, name: src.name + ' (копия)',
+            package_price: src.package_price || 0, package_size: src.package_size || 1, unit: src.unit || 'g'
+        }).select().single();
+        if (error) throw error;
+        const newIng = {
+            id: data.id, name: data.name,
+            package_price: Number(data.package_price || 0), package_size: Number(data.package_size || 1),
+            unit: data.unit || 'g', priceHistory: []
+        };
+        ingredients.push(newIng);
+        displayIngredients();
+        openIngredientDetail(newIng.id);
+        logActivity('ingredient', `Скопирован ингредиент «${src.name}» → «${newIng.name}»`);
+    } catch (e) { console.error(e); showInfo('Ошибка копирования. Проверьте подключение.'); }
     finally { hideLoading(); }
 }
 

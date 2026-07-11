@@ -531,3 +531,82 @@ function closePortalDropdown(dd) {
         dd._portalOriginalNext = null;
     }
 }
+
+// ==================== СВАЙП "КОПИРОВАТЬ" НА КАРТОЧКАХ СПРАВОЧНИКОВ ====================
+// Тот же визуальный механизм (.oc-swipe-wrap/.oc-swipe-actions/.oc-swipe-btn — CSS
+// в index.html), что и у карточек заказов (см. orders.js), но упрощённый: здесь
+// всегда ровно одна кнопка — "Копировать". Используется в Изделиях, Ингредиентах
+// и Полуфабрикатах (products.js/ingredients.js/semifinished.js). Сознательно НЕ
+// переиспользует делегирование заказов напрямую — тот код плотно завязан на
+// заказ-специфичную логику (Оплатить/Удалить, приглушённые карточки и т.п.),
+// трогать его лишний раз незачем. Закрытие свайпа по тапу вне карточки уже
+// покрыто существующим общим document-листенером в orders.js (селектор
+// '.oc-swipe-wrap.swiped' не завязан на конкретный список).
+let _refCardSwipeStartX = 0, _refCardSwipeStartY = 0, _refCardSwipeWrapEl = null, _refCardSwipeDragging = false;
+const REF_CARD_SWIPE_MIN_X = 45;
+const REF_CARD_SWIPE_MAX_Y = 40;
+
+// containerId — id обёртки списка карточек (например 'productCardsBody').
+// Вызывать при каждой перерисовке списка — сама защищается от повторной инициализации.
+function initCopySwipeDelegation(containerId) {
+    const container = document.getElementById(containerId);
+    if (!container || container._swipeInit) return;
+    container._swipeInit = true;
+
+    container.addEventListener('touchstart', (e) => {
+        const wrap = e.target.closest('.oc-swipe-wrap');
+        if (!wrap) return;
+        _refCardSwipeWrapEl = wrap;
+        _refCardSwipeStartX = e.touches[0].clientX;
+        _refCardSwipeStartY = e.touches[0].clientY;
+        _refCardSwipeDragging = true;
+    }, { passive: true });
+
+    container.addEventListener('touchmove', (e) => {
+        if (!_refCardSwipeDragging || !_refCardSwipeWrapEl) return;
+        const dx = e.touches[0].clientX - _refCardSwipeStartX;
+        const dy = e.touches[0].clientY - _refCardSwipeStartY;
+        if (Math.abs(dy) > REF_CARD_SWIPE_MAX_Y) { _refCardSwipeDragging = false; return; }
+        if (Math.abs(dx) > 10) e.stopPropagation(); // не даём жесту уйти в переключение вкладок
+    }, { passive: true });
+
+    container.addEventListener('touchend', (e) => {
+        if (!_refCardSwipeDragging || !_refCardSwipeWrapEl) { _refCardSwipeDragging = false; return; }
+        _refCardSwipeDragging = false;
+        const wrap = _refCardSwipeWrapEl;
+        _refCardSwipeWrapEl = null;
+        const dx = e.changedTouches[0].clientX - _refCardSwipeStartX;
+        const dy = e.changedTouches[0].clientY - _refCardSwipeStartY;
+        if (Math.abs(dy) > REF_CARD_SWIPE_MAX_Y) return;
+        const isOpen = wrap.classList.contains('swiped');
+        if (!isOpen && dx < -REF_CARD_SWIPE_MIN_X) {
+            if (typeof closeAllCardSwipes === 'function') closeAllCardSwipes();
+            wrap.classList.add('swiped');
+            e.stopPropagation();
+        } else if (isOpen && dx > REF_CARD_SWIPE_MIN_X) {
+            wrap.classList.remove('swiped');
+            e.stopPropagation();
+        }
+    }, { passive: true });
+
+    // Тап по уже открытой (свайпнутой) карточке закрывает её вместо перехода в карточку записи.
+    container.addEventListener('click', (e) => {
+        const openWrap = container.querySelector('.oc-swipe-wrap.swiped');
+        if (openWrap && !e.target.closest('.oc-swipe-actions')) {
+            if (typeof closeAllCardSwipes === 'function') closeAllCardSwipes();
+            e.stopPropagation();
+            e.preventDefault();
+        }
+    }, true);
+}
+
+// Готовая разметка одной кнопки "Копировать" для .oc-swipe-actions — общая для
+// изделий/ингредиентов/полуфабрикатов, чтобы иконка и цвет не разъезжались.
+function refCopySwipeBtnHtml(onclickCall) {
+    return `<div class="oc-swipe-actions">
+        <button class="oc-swipe-btn oc-swipe-copy" onclick="event.stopPropagation(); ${onclickCall}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184"/></svg>
+            Копировать
+        </button>
+    </div>`;
+}

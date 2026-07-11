@@ -57,19 +57,29 @@ function renderProductCards() {
             ? `Себестоимость: ${formatMoney(unitCost)}/${unitLabel}`
             : 'Себестоимость: —';
         const stripe = needsAttention ? `<div class="stripe" style="background:#c0685c;"></div>` : '';
+        const realIdx = products.indexOf(p);
         html += `
-        <div class="order-card" data-name="${escapeHtml((p.name || '').toLowerCase())}" style="cursor:pointer;" onclick="openProductDetail(${p.id})">
-            ${stripe}
-            <div class="order-card-body">
-                <div class="oc-row">
-                    <span class="oc-name">${escapeHtml(p.name || '(без названия)')}</span>
-                    <span class="oc-sum">${formatMoney(p.price)}</span>
+        <div class="oc-swipe-wrap" data-name="${escapeHtml((p.name || '').toLowerCase())}" style="--oc-swipe-x:-72px;">
+            ${refCopySwipeBtnHtml(`quickCopyProductFromSwipe(${realIdx})`)}
+            <div class="order-card" style="cursor:pointer;" onclick="openProductDetail(${p.id})">
+                ${stripe}
+                <div class="order-card-body">
+                    <div class="oc-row">
+                        <span class="oc-name">${escapeHtml(p.name || '(без названия)')}</span>
+                        <span class="oc-sum">${formatMoney(p.price)}</span>
+                    </div>
+                    <div class="oc-meta">${costLine}</div>
                 </div>
-                <div class="oc-meta">${costLine}</div>
             </div>
         </div>`;
     });
     body.innerHTML = html;
+    initCopySwipeDelegation('productCardsBody');
+}
+
+function quickCopyProductFromSwipe(realIdx) {
+    if (typeof closeAllCardSwipes === 'function') closeAllCardSwipes();
+    copyProduct(realIdx);
 }
 
 // ---- Переключатель Карточки / Таблица ----
@@ -88,9 +98,9 @@ function filterProductsList() {
     document.getElementById('productSearchIcon')?.classList.toggle('hidden', !!q);
 
     let visibleCards = 0;
-    document.querySelectorAll('#productCardsBody .order-card').forEach(card => {
-        const match = !q || card.dataset.name.includes(q);
-        card.style.display = match ? 'flex' : 'none';
+    document.querySelectorAll('#productCardsBody .oc-swipe-wrap').forEach(wrap => {
+        const match = !q || wrap.dataset.name.includes(q);
+        wrap.style.display = match ? 'block' : 'none';
         if (match) visibleCards++;
     });
     document.getElementById('productCardsEmpty')?.classList.toggle('hidden', visibleCards !== 0);
