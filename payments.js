@@ -112,15 +112,14 @@ function renderPayments() {
         list.innerHTML = '<p class="text-xs text-gray-400">Платежей ещё не было</p>';
         return;
     }
-    let html = '<div class="flex flex-col gap-1">';
+    let html = '<div class="flex flex-col gap-1.5">';
     _orderPayments.forEach(p => {
         const emp = employees.find(e => e.id === p.created_by);
-        html += `<div class="flex justify-between items-center text-xs border-b pb-1 cursor-pointer" ${dataAction('openEditPaymentModal', [p.id])}>
-            <div>
-                <div class="font-medium text-gray-800">${formatMoney(p.amount)} · ${escapeHtml(p.method || '—')}</div>
-                <div class="text-gray-400">${formatDateDMY(p.paid_at)}${emp ? ' · ' + escapeHtml(emp.name) : ''}${p.note ? ' · ' + escapeHtml(p.note) : ''}</div>
-            </div>
-            <span class="text-gray-300">${icon('edit', 'w-3.5 h-3.5')}</span>
+        const parts = [formatDateDMY(p.paid_at), formatMoney(p.amount), escapeHtml(p.method || '—')];
+        if (emp) parts.push(escapeHtml(emp.name));
+        html += `<div class="flex justify-between items-center text-xs bg-[#f4f1ea] hover:bg-[#e3e8df] active:bg-[#e3e8df] rounded-lg px-3 py-2.5 cursor-pointer" ${dataAction('openEditPaymentModal', [p.id])}>
+            <div class="font-medium text-gray-800 truncate">${parts.join(' · ')}${p.note ? ' · ' + escapeHtml(p.note) : ''}</div>
+            <span class="action-icon icon-edit shrink-0 ml-2">${icon('edit', 'w-4 h-4')}</span>
         </div>`;
     });
     html += '</div>';
