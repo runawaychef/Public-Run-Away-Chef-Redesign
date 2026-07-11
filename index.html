@@ -371,6 +371,7 @@
         .oc-swipe-btn { width: 72px; border: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #fff; font-size: 11px; font-weight: 600; }
         .oc-swipe-btn svg { width: 20px; height: 20px; }
         .oc-swipe-btn.oc-swipe-pay { background: #7c9473; }
+        .oc-swipe-btn.oc-swipe-copy { background: #d9a441; }
         .oc-swipe-btn.oc-swipe-delete { background: #c0685c; }
         .order-card-body { flex: 1; padding: 12px 14px; display: flex; flex-direction: column; min-width: 0; }
         .order-card .oc-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
@@ -2554,7 +2555,7 @@
 <script src="products.js?v=21"></script>
 <script src="customers.js?v=31"></script>
 <script src="calendar.js?v=6"></script>
-<script src="orders.js?v=71"></script>
+<script src="orders.js?v=72"></script>
 <script src="invoice.js?v=10"></script>
 <script src="payments.js?v=13"></script>
 <script src="stats.js?v=14"></script>
@@ -3134,56 +3135,9 @@ window.addEventListener('pageshow', (e) => {
     }
 });
 
-// ==================== СВАЙП МЕЖДУ ВКЛАДКАМИ ====================
-// Горизонтальный свайп переключает вкладки: Заказы ↔ Клиенты ↔ Ассортимент ↔ Склад.
-// Свайп игнорируется если открыта карточка записи или модальное окно.
-
-(function initSwipeNavigation() {
-    const TAB_ORDER = ['orders', 'products', 'ingredients', 'customers'];
-    const MIN_SWIPE_X = 60;   // минимальная горизонтальная дистанция свайпа (px)
-    const MAX_SWIPE_Y = 80;   // максимальное вертикальное отклонение (px) — чтобы не путать со скроллом
-
-    let touchStartX = 0;
-    let touchStartY = 0;
-
-    document.addEventListener('touchstart', (e) => {
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
-    }, { passive: true });
-
-    document.addEventListener('touchend', (e) => {
-        const dx = e.changedTouches[0].clientX - touchStartX;
-        const dy = e.changedTouches[0].clientY - touchStartY;
-
-        // Игнорируем если движение больше вертикальное, чем горизонтальное
-        if (Math.abs(dx) < MIN_SWIPE_X || Math.abs(dy) > MAX_SWIPE_Y) return;
-
-        // Игнорируем если открыта карточка записи
-        const detailOpen =
-            document.getElementById('orderDetail')?.classList.contains('active') ||
-            document.getElementById('productDetail')?.classList.contains('active') ||
-            document.getElementById('customerDetail')?.classList.contains('active') ||
-            document.getElementById('ingredientDetail')?.classList.contains('active') ||
-            document.getElementById('semiFinishedDetail')?.classList.contains('active');
-        if (detailOpen) return;
-
-        // Игнорируем если открыто модальное окно
-        const modalOpen = document.querySelector('.modal[style*="flex"]');
-        if (modalOpen) return;
-
-        // Только основные 4 вкладки
-        const idx = TAB_ORDER.indexOf(currentTabId);
-        if (idx === -1) return;
-
-        if (dx < 0 && idx < TAB_ORDER.length - 1) {
-            // Свайп влево (справа налево) — следующая вкладка
-            showTab(TAB_ORDER[idx + 1]);
-        } else if (dx > 0 && idx > 0) {
-            // Свайп вправо (слева направо) — предыдущая вкладка
-            showTab(TAB_ORDER[idx - 1]);
-        }
-    }, { passive: true });
-})();
+// Свайп между вкладками (Заказы/Ассортимент/Склад/Клиенты) убран — заменён
+// свайп-действиями на карточках заказов (см. orders.js), которые пользователь
+// счёл более полезными и не хотел, чтобы два жеста конфликтовали друг с другом.
 
 // Отслеживание подключения к интернету — показываем заметный баннер при потере сети,
 // чтобы человек не гадал, баг это или просто пропал интернет.

@@ -234,9 +234,9 @@ function renderOrderCard(order) {
         </div>`).join('');
 
     // Свайп-действия (прототип): "Оплатить" показываем только если есть смысл
-    // (заказ ещё не оплачен полностью), "Удалить" — только при наличии права.
-    // Ширина панели (переменная --oc-swipe-x) зависит от того, сколько кнопок
-    // реально показано — 0, 1 или 2.
+    // (заказ ещё не оплачен полностью), "Копировать" — всегда, "Удалить" —
+    // только при наличии права. Ширина панели (переменная --oc-swipe-x)
+    // зависит от того, сколько кнопок реально показано.
     const realIdx = orders.indexOf(order);
     let swipeBtns = '';
     let swipeBtnCount = 0;
@@ -247,6 +247,11 @@ function renderOrderCard(order) {
             Оплатить
         </button>`;
     }
+    swipeBtnCount++;
+    swipeBtns += `<button class="oc-swipe-btn oc-swipe-copy" onclick="event.stopPropagation(); quickCopyFromSwipe(${realIdx})">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184"/></svg>
+        Копировать
+    </button>`;
     if (hasPermission('can_delete')) {
         swipeBtnCount++;
         swipeBtns += `<button class="oc-swipe-btn oc-swipe-delete" onclick="event.stopPropagation(); quickDeleteFromSwipe(${realIdx}, '${escapeHtml(order.customer || '').replace(/'/g, "\\'")}')">
@@ -377,6 +382,11 @@ async function quickPayFromSwipe(orderId) {
     openAddPaymentModal(true);
 }
 
+function quickCopyFromSwipe(realIdx) {
+    closeAllCardSwipes();
+    copyOrder(realIdx);
+}
+
 function quickDeleteFromSwipe(realIdx, customerName) {
     closeAllCardSwipes();
     openDeleteModal(realIdx, 'order', `заказ клиента «${customerName}»`);
@@ -433,54 +443,78 @@ function renderDoneOrderCard(order) {
             <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
         </div>`).join('');
 
+    // Свайп-действия — те же кнопки, что у активных карточек, кроме "Удалить"
+    // (заказ уже выполнен, удалять из свайпа этого экрана не даём — только из
+    // полной карточки, осознанно). Работает ТОЛЬКО в развёрнутом виде — см.
+    // data-no-swipe, переключается в toggleDoneCardExpand().
+    const realIdx = orders.indexOf(order);
+    let swipeBtns = '';
+    let swipeBtnCount = 0;
+    if (payInfo.status !== 'paid') {
+        swipeBtnCount++;
+        swipeBtns += `<button class="oc-swipe-btn oc-swipe-pay" onclick="event.stopPropagation(); quickPayFromSwipe(${order.id})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
+            Оплатить
+        </button>`;
+    }
+    swipeBtnCount++;
+    swipeBtns += `<button class="oc-swipe-btn oc-swipe-copy" onclick="event.stopPropagation(); quickCopyFromSwipe(${realIdx})">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184"/></svg>
+        Копировать
+    </button>`;
+    const swipeWrapStyle = ` style="--oc-swipe-x:-${swipeBtnCount * 72}px;"`;
+
     return `
-    <div class="order-card done-card muted" id="orderCard-${order.id}">
-        <div class="stripe" style="background:${stripeColor};" data-role="stripe"></div>
-        <div class="order-card-tap" onclick="handleDoneCardTap(event, ${order.id})">
-            <div class="order-card-body" style="padding-right:34px;">
-                <div data-role="collapsed-header">
-                    <div class="oc-row">
-                        <span class="oc-name">${escapeHtml(order.customer || '(без клиента)')}</span>
-                        <span class="oc-sum">${total}</span>
-                    </div>
-                    <div class="oc-row" style="margin-top:1px;">
-                        <span></span>
-                        <span title="${statusLabel}" style="width:8px; height:8px; border-radius:50%; background:${statusColor}; display:inline-block;"></span>
-                    </div>
-                    <div class="oc-meta">${formatDateDMY(order.date)} · ${escapeHtml(oNum)}</div>
-                </div>
-                <div data-role="expanded-header" style="display:none;">
-                    <div class="oc-header">
-                        <div class="oc-datebadge">
-                            <div class="oc-datebadge-month" style="background:${statusColor};">${dateBadge.month}</div>
-                            <div class="oc-datebadge-day">${dateBadge.day}</div>
+    <div class="oc-swipe-wrap" data-no-swipe="1"${swipeWrapStyle}>
+        <div class="oc-swipe-actions">${swipeBtns}</div>
+        <div class="order-card done-card muted" id="orderCard-${order.id}">
+            <div class="stripe" style="background:${stripeColor};" data-role="stripe"></div>
+            <div class="order-card-tap" onclick="handleDoneCardTap(event, ${order.id})">
+                <div class="order-card-body" style="padding-right:34px;">
+                    <div data-role="collapsed-header">
+                        <div class="oc-row">
+                            <span class="oc-name">${escapeHtml(order.customer || '(без клиента)')}</span>
+                            <span class="oc-sum">${total}</span>
                         </div>
-                        <div style="flex:1; min-width:0;">
-                            <div class="oc-row">
-                                <span class="oc-name">${escapeHtml(order.customer || '(без клиента)')}</span>
-                                <span class="oc-sum">${total}</span>
+                        <div class="oc-row" style="margin-top:1px;">
+                            <span></span>
+                            <span title="${statusLabel}" style="width:8px; height:8px; border-radius:50%; background:${statusColor}; display:inline-block;"></span>
+                        </div>
+                        <div class="oc-meta">${formatDateDMY(order.date)} · ${escapeHtml(oNum)}</div>
+                    </div>
+                    <div data-role="expanded-header" style="display:none;">
+                        <div class="oc-header">
+                            <div class="oc-datebadge">
+                                <div class="oc-datebadge-month" style="background:${statusColor};">${dateBadge.month}</div>
+                                <div class="oc-datebadge-day">${dateBadge.day}</div>
                             </div>
-                            <div class="oc-row" style="margin-top:3px;">
-                                <span class="oc-meta">${escapeHtml(oNum)}</span>
-                                <div style="position:relative;" onclick="event.stopPropagation();">
-                                    <button class="status-btn" style="background:${statusColor};" onclick="toggleOrderStatusDropdown(${order.id})">
-                                        ${statusLabel}
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
-                                    </button>
-                                    <div class="status-dropdown" id="statusDropdown-${order.id}">${statusOptions}</div>
+                            <div style="flex:1; min-width:0;">
+                                <div class="oc-row">
+                                    <span class="oc-name">${escapeHtml(order.customer || '(без клиента)')}</span>
+                                    <span class="oc-sum">${total}</span>
+                                </div>
+                                <div class="oc-row" style="margin-top:3px;">
+                                    <span class="oc-meta">${escapeHtml(oNum)}</span>
+                                    <div style="position:relative;" onclick="event.stopPropagation();">
+                                        <button class="status-btn" style="background:${statusColor};" onclick="toggleOrderStatusDropdown(${order.id})">
+                                            ${statusLabel}
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
+                                        </button>
+                                        <div class="status-dropdown" id="statusDropdown-${order.id}">${statusOptions}</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                        ${noteLine}
+                        ${payLine}
+                        ${overdueLine}
                     </div>
-                    ${noteLine}
-                    ${payLine}
-                    ${overdueLine}
+                    <div class="oc-items" data-role="items" style="display:none;">${itemsLine}</div>
                 </div>
-                <div class="oc-items" data-role="items" style="display:none;">${itemsLine}</div>
             </div>
-        </div>
-        <div class="expand-btn" onclick="event.stopPropagation(); toggleDoneCardExpand(${order.id})" title="Развернуть">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+            <div class="expand-btn" onclick="event.stopPropagation(); toggleDoneCardExpand(${order.id})" title="Развернуть">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+            </div>
         </div>
     </div>`;
 }
@@ -493,11 +527,22 @@ function handleDoneCardTap(e, orderId) {
 function toggleDoneCardExpand(orderId) {
     const card = document.getElementById('orderCard-' + orderId);
     if (!card) return;
+    const wrap = card.closest('.oc-swipe-wrap');
     const expanded = card.classList.toggle('expanded');
     card.classList.toggle('muted', !expanded);
     card.querySelector('[data-role="items"]').style.display = expanded ? 'block' : 'none';
     card.querySelector('[data-role="collapsed-header"]').style.display = expanded ? 'none' : '';
     card.querySelector('[data-role="expanded-header"]').style.display = expanded ? '' : 'none';
+    // Свайп-действия доступны только в развёрнутом виде — в свёрнутом закрываем
+    // панель, если она была открыта, и снова блокируем жест.
+    if (wrap) {
+        if (expanded) {
+            wrap.removeAttribute('data-no-swipe');
+        } else {
+            wrap.setAttribute('data-no-swipe', '1');
+            wrap.classList.remove('swiped');
+        }
+    }
 }
 
 function toggleOrderStatusDropdown(orderId) {
