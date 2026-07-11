@@ -69,7 +69,7 @@ async function loadCurrentOrg() {
 
 // ==================== ЭКРАН ВЫБОРА СОТРУДНИКА ====================
 
-const EMPLOYEE_SELECT_FIELDS = 'id, name, is_owner, user_id, can_view_costs, can_delete, can_manage_inventory, can_view_reports';
+const EMPLOYEE_SELECT_FIELDS = 'id, name, is_owner, user_id, can_view_costs, can_delete, can_manage_inventory, can_view_reports, can_manage_team';
 
 async function initLogin() {
     document.getElementById('loginError').classList.add('hidden');
@@ -211,6 +211,7 @@ async function refreshCurrentEmployeePermissions() {
         if (changed) {
             applyPermissions(currentEmployee);
             applyScreenAccessPermissions();
+            document.getElementById('employeesManageBtn')?.classList.toggle('hidden', !hasPermission('can_manage_team'));
             // Перерисовываем списки, где значок удаления решается в момент отрисовки
             // (hasPermission() в шаблоне), а не статичным CSS-классом.
             if (typeof displayOrders === 'function') displayOrders();
@@ -239,7 +240,7 @@ async function selectEmployee(emp) {
     }
     if (typeof positionOrdersViewToggle === 'function') setTimeout(positionOrdersViewToggle, 150);
     applyScreenAccessPermissions();
-    document.getElementById('employeesManageBtn').classList.toggle('hidden', !emp.is_owner);
+    document.getElementById('employeesManageBtn').classList.toggle('hidden', !hasPermission('can_manage_team'));
     document.getElementById('companyInfoBtnBlock').classList.toggle('hidden', !emp.is_owner);
     await loadAllData();
     await loadInventory();
@@ -337,12 +338,13 @@ async function saveOrgNameSetup() {
 
 // ==================== СОТРУДНИКИ И ПРАВА (только владелец) ====================
 
-const PERMISSION_FIELDS = ['can_view_costs', 'can_delete', 'can_manage_inventory', 'can_view_reports'];
+const PERMISSION_FIELDS = ['can_view_costs', 'can_delete', 'can_manage_inventory', 'can_view_reports', 'can_manage_team'];
 const PERMISSION_CHECKBOX_IDS = {
     can_view_costs: 'permViewCosts',
     can_delete: 'permDelete',
     can_manage_inventory: 'permInventory',
-    can_view_reports: 'permReports'
+    can_view_reports: 'permReports',
+    can_manage_team: 'permManageTeam'
 };
 
 let pendingInvitations = [];
@@ -357,7 +359,7 @@ async function reloadEmployeesList() {
 
     const { data: invData, error: invErr } = await db
         .from('invitations')
-        .select('id, email, name, can_view_costs, can_delete, can_manage_inventory, can_view_reports')
+        .select('id, email, name, can_view_costs, can_delete, can_manage_inventory, can_view_reports, can_manage_team')
         .eq('org_id', currentOrgId)
         .is('used_at', null)
         .order('created_at');
@@ -365,6 +367,7 @@ async function reloadEmployeesList() {
 }
 
 async function openEmployeesModal() {
+    if (!hasPermission('can_manage_team')) { showInfo('Раздел «Сотрудники и права» вам недоступен.'); return; }
     closeModal();
     await reloadEmployeesList();
     const content = document.getElementById('employeesListContent');
@@ -426,9 +429,21 @@ function openEmployeeEditModal(emp) {
         document.getElementById(PERMISSION_CHECKBOX_IDS[field]).checked = emp ? !!emp[field] : false;
     });
 
-    // Владельца нельзя ни удалить, ни ограничить в правах
+    // Владельца нельзя ни удалить, ни ограничить в правах.
     const isOwnerRow = emp && emp.is_owner;
-    PERMISSION_FIELDS.forEach(field => { document.getElementById(PERMISSION_CHECKBOX_IDS[field]).disabled = isOwnerRow; });
+    // Сотрудник с правом "Команда и доступ" (но не владелец) может приглашать новых
+    // сотрудников и настраивать им права ПРИ СОЗДАНИИ, а также удалять — но не может
+    // задним числом менять права УЖЕ существующего сотрудника (это осознанное решение,
+    // не техническое ограничение — см. обсуждение в чате).
+    const viewerIsOwner = !!(currentEmployee && currentEmployee.is_owner);
+    const editingExisting = !!emp;
+    const permissionsLocked = isOwnerRow || (editingExisting && !viewerIsOwner);
+    PERMISSION_FIELDS.forEach(field => { document.getElementById(PERMISSION_CHECKBOX_IDS[field]).disabled = permissionsLocked; });
+    // Право "Команда и доступ" может выдавать/снимать только сам владелец — иначе
+    // сотрудник с этим правом мог бы передать его дальше кому угодно, включая себя
+    // повторно на другом устройстве.
+    document.getElementById(PERMISSION_CHECKBOX_IDS.can_manage_team).disabled = permissionsLocked || !viewerIsOwner;
+    document.getElementById('employeePermissionsLockedNote')?.classList.toggle('hidden', !permissionsLocked);
     document.getElementById('employeeDeleteBtn').classList.toggle('hidden', !emp || isOwnerRow);
 
     document.getElementById('employeeEditModal').style.display = 'flex';

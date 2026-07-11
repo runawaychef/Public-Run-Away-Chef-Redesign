@@ -95,7 +95,7 @@ function restoreAppFromSnapshot(snapshot) {
         document.getElementById('ordersViewToggle')?.classList.remove('hidden');
     }
     if (typeof positionOrdersViewToggle === 'function') setTimeout(positionOrdersViewToggle, 150);
-    document.getElementById('employeesManageBtn')?.classList.toggle('hidden', !currentEmployee.is_owner);
+    document.getElementById('employeesManageBtn')?.classList.toggle('hidden', !hasPermission('can_manage_team'));
     document.getElementById('companyInfoBtnBlock')?.classList.toggle('hidden', !currentEmployee.is_owner);
 
     renderAllScreens();
