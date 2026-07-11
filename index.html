@@ -362,6 +362,16 @@
         }
         .order-card-tap { flex: 1; display: flex; cursor: pointer; min-width: 0; }
         .order-card .stripe { width: 5px; flex-shrink: 0; border-radius: 16px 0 0 16px; }
+        /* Свайп-действия на карточке заказа (прототип) — оборачивающий блок
+           обрезает и позиционирует панель кнопок позади сдвигаемой карточки. */
+        .oc-swipe-wrap { position: relative; border-radius: 16px; overflow: hidden; margin-bottom: 10px; }
+        .oc-swipe-wrap .order-card { margin-bottom: 0; position: relative; z-index: 1; transition: transform 0.22s ease; touch-action: pan-y; }
+        .oc-swipe-wrap.swiped .order-card { transform: translateX(var(--oc-swipe-x, -72px)); }
+        .oc-swipe-actions { position: absolute; top: 0; right: 0; bottom: 0; display: flex; }
+        .oc-swipe-btn { width: 72px; border: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #fff; font-size: 11px; font-weight: 600; }
+        .oc-swipe-btn svg { width: 20px; height: 20px; }
+        .oc-swipe-btn.oc-swipe-pay { background: #7c9473; }
+        .oc-swipe-btn.oc-swipe-delete { background: #c0685c; }
         .order-card-body { flex: 1; padding: 12px 14px; display: flex; flex-direction: column; min-width: 0; }
         .order-card .oc-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
         .order-card .oc-name { font-size: 15px; font-weight: 700; color: #322f28; overflow-wrap: break-word; min-width: 0; }
@@ -2544,7 +2554,7 @@
 <script src="products.js?v=21"></script>
 <script src="customers.js?v=31"></script>
 <script src="calendar.js?v=6"></script>
-<script src="orders.js?v=70"></script>
+<script src="orders.js?v=71"></script>
 <script src="invoice.js?v=10"></script>
 <script src="payments.js?v=13"></script>
 <script src="stats.js?v=14"></script>

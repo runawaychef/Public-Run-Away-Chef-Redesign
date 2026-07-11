@@ -164,6 +164,7 @@ function displayOrders() {
         }
 
         cardsBody.innerHTML = cardsHtml || `<p class="text-xs text-gray-400 text-center py-4">Заказов не найдено</p>`;
+        initOrderCardSwipeDelegation();
     }
 
     updateTotals(filteredOrders);
@@ -232,40 +233,153 @@ function renderOrderCard(order) {
             <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
         </div>`).join('');
 
+    // Свайп-действия (прототип): "Оплатить" показываем только если есть смысл
+    // (заказ ещё не оплачен полностью), "Удалить" — только при наличии права.
+    // Ширина панели (переменная --oc-swipe-x) зависит от того, сколько кнопок
+    // реально показано — 0, 1 или 2.
+    const realIdx = orders.indexOf(order);
+    let swipeBtns = '';
+    let swipeBtnCount = 0;
+    if (payInfo.status !== 'paid') {
+        swipeBtnCount++;
+        swipeBtns += `<button class="oc-swipe-btn oc-swipe-pay" onclick="event.stopPropagation(); quickPayFromSwipe(${order.id})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
+            Оплатить
+        </button>`;
+    }
+    if (hasPermission('can_delete')) {
+        swipeBtnCount++;
+        swipeBtns += `<button class="oc-swipe-btn oc-swipe-delete" onclick="event.stopPropagation(); quickDeleteFromSwipe(${realIdx}, '${escapeHtml(order.customer || '').replace(/'/g, "\\'")}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+            Удалить
+        </button>`;
+    }
+    const swipeWrapStyle = swipeBtnCount ? ` style="--oc-swipe-x:-${swipeBtnCount * 72}px;"` : '';
+    const swipeWrapOpen = swipeBtnCount ? '' : ' data-no-swipe="1"';
+
     return `
-    <div class="order-card" id="orderCard-${order.id}">
-        <div class="order-card-tap" onclick="openOrderDetail(${order.id})">
-            <div class="stripe" style="background:${stripeColor}"></div>
-            <div class="order-card-body">
-                <div class="oc-header">
-                    <div class="oc-datebadge">
-                        <div class="oc-datebadge-month" style="background:${statusColor};">${dateBadge.month}</div>
-                        <div class="oc-datebadge-day">${dateBadge.day}</div>
-                    </div>
-                    <div style="flex:1; min-width:0;">
-                        <div class="oc-row">
-                            <span class="oc-name">${escapeHtml(order.customer || '(без клиента)')}</span>
-                            <span class="oc-sum">${total}</span>
+    <div class="oc-swipe-wrap"${swipeWrapStyle}${swipeWrapOpen}>
+        ${swipeBtnCount ? `<div class="oc-swipe-actions">${swipeBtns}</div>` : ''}
+        <div class="order-card" id="orderCard-${order.id}">
+            <div class="order-card-tap" onclick="openOrderDetail(${order.id})">
+                <div class="stripe" style="background:${stripeColor}"></div>
+                <div class="order-card-body">
+                    <div class="oc-header">
+                        <div class="oc-datebadge">
+                            <div class="oc-datebadge-month" style="background:${statusColor};">${dateBadge.month}</div>
+                            <div class="oc-datebadge-day">${dateBadge.day}</div>
                         </div>
-                        <div class="oc-row" style="margin-top:3px;">
-                            <span class="oc-meta">${escapeHtml(oNum)}</span>
-                            <div style="position:relative;" onclick="event.stopPropagation();">
-                                <button class="status-btn" style="background:${statusColor};" onclick="toggleOrderStatusDropdown(${order.id})">
-                                    ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
-                                </button>
-                                <div class="status-dropdown" id="statusDropdown-${order.id}">${statusOptions}</div>
+                        <div style="flex:1; min-width:0;">
+                            <div class="oc-row">
+                                <span class="oc-name">${escapeHtml(order.customer || '(без клиента)')}</span>
+                                <span class="oc-sum">${total}</span>
+                            </div>
+                            <div class="oc-row" style="margin-top:3px;">
+                                <span class="oc-meta">${escapeHtml(oNum)}</span>
+                                <div style="position:relative;" onclick="event.stopPropagation();">
+                                    <button class="status-btn" style="background:${statusColor};" onclick="toggleOrderStatusDropdown(${order.id})">
+                                        ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
+                                    </button>
+                                    <div class="status-dropdown" id="statusDropdown-${order.id}">${statusOptions}</div>
+                                </div>
                             </div>
                         </div>
                     </div>
+                    ${noteLine}
+                    ${payLine}
+                    ${overdueLine}
+                    ${itemsLine}
                 </div>
-                ${noteLine}
-                ${payLine}
-                ${overdueLine}
-                ${itemsLine}
             </div>
         </div>
     </div>`;
+}
+
+// ==================== СВАЙП КАРТОЧКИ ЗАКАЗА — быстрые действия (прототип) ====================
+// Свайп влево открывает панель с кнопками "Оплатить"/"Удалить" позади карточки.
+// Реализовано через делегирование на общий контейнер (#orderCardsBody), а не
+// отдельные обработчики на каждой карточке — карточки создаются через innerHTML
+// при каждой перерисовке списка, а не поэлементно. stopPropagation() на самом
+// жесте не даёт глобальному свайпу между вкладками (initSwipeNavigation)
+// перехватить то же движение пальца как переключение вкладки.
+let _cardSwipeStartX = 0, _cardSwipeStartY = 0, _cardSwipeWrapEl = null, _cardSwipeDragging = false;
+const CARD_SWIPE_MIN_X = 45;
+const CARD_SWIPE_MAX_Y = 40;
+
+function closeAllCardSwipes() {
+    document.querySelectorAll('.oc-swipe-wrap.swiped').forEach(w => w.classList.remove('swiped'));
+}
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('.oc-swipe-wrap')) closeAllCardSwipes();
+});
+
+function initOrderCardSwipeDelegation() {
+    const container = document.getElementById('orderCardsBody');
+    if (!container || container._swipeInit) return;
+    container._swipeInit = true;
+
+    container.addEventListener('touchstart', (e) => {
+        const wrap = e.target.closest('.oc-swipe-wrap');
+        if (!wrap || wrap.dataset.noSwipe) return;
+        _cardSwipeWrapEl = wrap;
+        _cardSwipeStartX = e.touches[0].clientX;
+        _cardSwipeStartY = e.touches[0].clientY;
+        _cardSwipeDragging = true;
+    }, { passive: true });
+
+    container.addEventListener('touchmove', (e) => {
+        if (!_cardSwipeDragging || !_cardSwipeWrapEl) return;
+        const dx = e.touches[0].clientX - _cardSwipeStartX;
+        const dy = e.touches[0].clientY - _cardSwipeStartY;
+        if (Math.abs(dy) > CARD_SWIPE_MAX_Y) { _cardSwipeDragging = false; return; }
+        if (Math.abs(dx) > 10) e.stopPropagation(); // не даём жесту уйти в переключение вкладок
+    }, { passive: true });
+
+    container.addEventListener('touchend', (e) => {
+        if (!_cardSwipeDragging || !_cardSwipeWrapEl) { _cardSwipeDragging = false; return; }
+        _cardSwipeDragging = false;
+        const wrap = _cardSwipeWrapEl;
+        _cardSwipeWrapEl = null;
+        const dx = e.changedTouches[0].clientX - _cardSwipeStartX;
+        const dy = e.changedTouches[0].clientY - _cardSwipeStartY;
+        if (Math.abs(dy) > CARD_SWIPE_MAX_Y) return;
+        const isOpen = wrap.classList.contains('swiped');
+        if (!isOpen && dx < -CARD_SWIPE_MIN_X) {
+            closeAllCardSwipes();
+            wrap.classList.add('swiped');
+            e.stopPropagation();
+        } else if (isOpen && dx > CARD_SWIPE_MIN_X) {
+            wrap.classList.remove('swiped');
+            e.stopPropagation();
+        }
+    }, { passive: true });
+
+    // Тап по уже открытой (свайпнутой) карточке закрывает её вместо перехода в заказ.
+    container.addEventListener('click', (e) => {
+        const openWrap = container.querySelector('.oc-swipe-wrap.swiped');
+        if (openWrap && !e.target.closest('.oc-swipe-actions')) {
+            closeAllCardSwipes();
+            e.stopPropagation();
+            e.preventDefault();
+        }
+    }, true);
+}
+
+// "Оплатить" из свайпа: открываем карточку заказа (там уже есть вся нужная
+// логика загрузки платежей) и сразу поверх открываем форму добавления оплаты —
+// не полноценный "минуя карточку" сценарий конкурента, но заметно быстрее
+// обычного пути (не нужно самому искать и нажимать кнопку оплаты внутри).
+async function quickPayFromSwipe(orderId) {
+    closeAllCardSwipes();
+    openOrderDetail(orderId);
+    await loadOrderPayments(orderId);
+    openAddPaymentModal(true);
+}
+
+function quickDeleteFromSwipe(realIdx, customerName) {
+    closeAllCardSwipes();
+    openDeleteModal(realIdx, 'order', `заказ клиента «${customerName}»`);
 }
 
 // Открытие/закрытие статус-дропдаунов теперь идёт через общий портал
