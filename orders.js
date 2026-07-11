@@ -108,21 +108,13 @@ function displayOrders() {
         else if (order.status === 'в работе') flagClass += ' flag-yellow';
         else if (order.status === 'выполнен') flagClass += ' flag-green';
 
-        // Статус оплаты — цветная точка рядом с суммой (не оплачен/частично/оплачен/просрочен)
-        const payInfo = getOrderPaymentStatus(order);
-        let payDotTitle = 'Не оплачен';
-        if (payInfo.status === 'partial') payDotTitle = 'Частично оплачен';
-        else if (payInfo.status === 'paid') payDotTitle = 'Оплачен';
-        if (payInfo.overdue) payDotTitle += ' · просрочен';
-        const payDot = `<span class="inline-block w-2 h-2 rounded-full mr-1" style="background-color:${getPaymentStripeColor(payInfo)};" title="${payDotTitle}"></span>`;
-
         const row = document.createElement('tr');
         row.className = 'order-row border-b';
         row.innerHTML = `
             <td class=" p-0.5 table-text whitespace-nowrap" onclick="openOrderDetail(${order.id})">${formatDateDMY(order.date)}</td>
             <td class=" p-0.5 table-text" onclick="openOrderDetail(${order.id})">${escapeHtml(order.customer)}</td>
             <td class=" p-0.5 table-text text-center" onclick="openOrderDetail(${order.id})">${itemsCount}</td>
-            <td class=" p-0.5 table-text font-medium whitespace-nowrap" onclick="openOrderDetail(${order.id})">${payDot}${total}</td>
+            <td class=" p-0.5 table-text font-medium whitespace-nowrap" onclick="openOrderDetail(${order.id})">${total}</td>
             <td class=" p-0.5 text-center" onclick="openOrderDetail(${order.id})"><span class="${flagClass}"></span></td>
             <td class=" p-0.5 text-center">
                 ${hasPermission('can_delete') ? svgDeleteSafe('openDeleteModal', [realIdx, 'order', `заказ клиента «${order.customer}»`]) : ''}
@@ -285,10 +277,13 @@ function closeAllOrderStatusDropdowns() {
 // Закрываем дропдаун статуса при тапе где угодно ещё на странице.
 document.addEventListener('click', closeAllOrderStatusDropdowns);
 
-// Компактная приглушённая карточка выполненного заказа. Полоса оплаты и кнопка
-// статуса не нужны (заказ закрыт) — вместо них маленькая зелёная галочка.
-// Разворачивается стрелкой в углу до обычного вида (с позициями), тап по самой
-// карточке по-прежнему открывает полную карточку заказа.
+// Компактная приглушённая карточка выполненного заказа. Полоса оплаты теперь
+// видна всегда (приглушается вместе с остальной карточкой через CSS-прозрачность
+// у .order-card.muted .stripe, а не через display:none, как раньше) — статус
+// оплаты должен быть заметен даже для закрытых заказов. Точка справа красится
+// по статусу исполнения; при разворачивании превращается в ту же кликабельную
+// кнопку смены статуса, что и в активных карточках — иногда нужно быстро
+// поменять/откатить статус, не открывая полную карточку заказа.
 function renderDoneOrderCard(order) {
     const payInfo = getOrderPaymentStatus(order);
     const stripeColor = getPaymentStripeColor(payInfo);
@@ -296,13 +291,7 @@ function renderDoneOrderCard(order) {
     const oNum = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
     const total = formatMoney(orderGrandTotal(order));
     const dateBadge = orderDateBadgeParts(order.date);
-
-    // Точка статуса оплаты — тот же элемент, что и в табличном виде (payDot),
-    // чтобы выполненный, но ещё не оплаченный заказ не терялся в приглушённой карточке.
-    let payDotTitle = 'Не оплачен';
-    if (payInfo.status === 'partial') payDotTitle = 'Частично оплачен';
-    else if (payInfo.status === 'paid') payDotTitle = 'Оплачен';
-    if (payInfo.overdue) payDotTitle += ' · просрочен';
+    const statusLabel = order.status.charAt(0).toUpperCase() + order.status.slice(1);
 
     // Заметка и полоса оплаты — те же блоки, что и в активной карточке
     // (renderOrderCard), показываются только в развёрнутом виде.
@@ -322,9 +311,17 @@ function renderDoneOrderCard(order) {
         itemsLine = order.items.map(it => `<div class="oc-item-row"><span class="oc-item-name">· ${escapeHtml(it.product)}</span><span class="oc-item-qty">${it.quantity} шт.</span></div>`).join('');
     }
 
+    // Кнопка смены статуса — идентична той, что в активных карточках
+    // (renderOrderCard), включая выпадающее меню с тремя вариантами.
+    const statusOptions = ORDER_STATUS_LIST.map(s => `
+        <div class="status-option${s === order.status ? ' selected' : ''}" onclick="event.stopPropagation(); quickSetOrderStatus(${order.id}, '${s}')">
+            <span><span class="dot" style="background:${ORDER_STATUS_COLORS[s]}"></span> ${s.charAt(0).toUpperCase() + s.slice(1)}</span>
+            <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+        </div>`).join('');
+
     return `
     <div class="order-card done-card muted" id="orderCard-${order.id}">
-        <div class="stripe" style="background:${stripeColor}; display:none;" data-role="stripe"></div>
+        <div class="stripe" style="background:${stripeColor};" data-role="stripe"></div>
         <div class="order-card-tap" onclick="handleDoneCardTap(event, ${order.id})">
             <div class="order-card-body" style="padding-right:34px;">
                 <div data-role="collapsed-header">
@@ -334,7 +331,7 @@ function renderDoneOrderCard(order) {
                     </div>
                     <div class="oc-row" style="margin-top:1px;">
                         <span></span>
-                        <span title="${payDotTitle}" style="width:8px; height:8px; border-radius:50%; background:${stripeColor}; display:inline-block;"></span>
+                        <span title="${statusLabel}" style="width:8px; height:8px; border-radius:50%; background:${statusColor}; display:inline-block;"></span>
                     </div>
                     <div class="oc-meta">${formatDateDMY(order.date)} · ${escapeHtml(oNum)}</div>
                 </div>
@@ -351,7 +348,13 @@ function renderDoneOrderCard(order) {
                             </div>
                             <div class="oc-row" style="margin-top:3px;">
                                 <span class="oc-meta">${escapeHtml(oNum)}</span>
-                                <span title="${payDotTitle}" style="width:8px; height:8px; border-radius:50%; background:${stripeColor}; display:inline-block;"></span>
+                                <div style="position:relative;" onclick="event.stopPropagation();">
+                                    <button class="status-btn" style="background:${statusColor};" onclick="toggleOrderStatusDropdown(${order.id})">
+                                        ${statusLabel}
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
+                                    </button>
+                                    <div class="status-dropdown" id="statusDropdown-${order.id}">${statusOptions}</div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -378,7 +381,6 @@ function toggleDoneCardExpand(orderId) {
     if (!card) return;
     const expanded = card.classList.toggle('expanded');
     card.classList.toggle('muted', !expanded);
-    card.querySelector('[data-role="stripe"]').style.display = expanded ? '' : 'none';
     card.querySelector('[data-role="items"]').style.display = expanded ? 'block' : 'none';
     card.querySelector('[data-role="collapsed-header"]').style.display = expanded ? 'none' : '';
     card.querySelector('[data-role="expanded-header"]').style.display = expanded ? '' : 'none';
