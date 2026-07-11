@@ -621,8 +621,36 @@ function positionOrdersViewToggle() {
     const toggleHeight  = toggle.offsetHeight;
     // +10px — сдвиг чуть ниже геометрического центра зазора (по просьбе, "на глаз" смотрится лучше)
     toggle.style.top = Math.round(headerBottom + GAP / 2 - toggleHeight / 2 + 6) + 'px';
+
+    watchHeaderResize(headerCard);
 }
 window.addEventListener('resize', positionOrdersViewToggle);
+
+// Самокорректирующийся пересчёт: раньше позиция переключателя пересчитывалась
+// только "по требованию" — из конкретных мест кода (смена вкладки, pageshow
+// после разморозки вкладки, мгновенное восстановление из кэша и т.д.), каждое
+// со своим наспех подобранным таймаутом (150мс/300мс). Если в момент такого
+// вызова шапка ЕЩЁ не приняла окончательную высоту (например: имя организации
+// подставилось чуть позже, чем должно, или строка с шапкой на секунду шире
+// одну строку, а не две) — расчёт делался по неверным координатам и больше
+// никогда не переигрывался, пока не случится следующее из этих конкретных
+// событий. Это классический whack-a-mole: у каждого нового пути попадания
+// в приложение (новый способ восстановления из фона и т.п.) — своя, ранее не
+// учтённая гонка. ResizeObserver на самой шапке решает это раз и навсегда:
+// как только реальная высота шапки меняется (по любой причине), переключатель
+// сам пересчитывает позицию — независимо от того, что именно и когда его вызвало.
+let _headerResizeObserver = null;
+let _headerResizeObserverTarget = null;
+function watchHeaderResize(headerCard) {
+    if (typeof ResizeObserver === 'undefined' || !headerCard) return;
+    if (_headerResizeObserverTarget === headerCard) return; // уже наблюдаем именно за этим узлом
+    if (_headerResizeObserver) _headerResizeObserver.disconnect();
+    _headerResizeObserver = new ResizeObserver(() => {
+        if (typeof positionOrdersViewToggle === 'function') positionOrdersViewToggle();
+    });
+    _headerResizeObserver.observe(headerCard);
+    _headerResizeObserverTarget = headerCard;
+}
 
 // Считает сумму (с НДС) и общее кол-во изделий по подмножеству заказов, отобранных predicate
 function calcGroupTotals(allOrders, predicate) {
