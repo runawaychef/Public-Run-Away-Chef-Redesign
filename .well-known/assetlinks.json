@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.runawaychef.twa",
+      "sha256_cert_fingerprints": [
+        "20:6D:6D:00:ED:8F:1B:59:49:75:CD:1D:47:C9:EA:1E:EF:21:D1:30:8F:38:15:7D:BD:F8:57:96:2C:60:80:6D"
+      ]
+    }
+  }
+]
