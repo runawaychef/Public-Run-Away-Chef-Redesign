@@ -612,6 +612,19 @@
         /* FAB и тосты сдвинуты вверх ровно на высоту нижнего таб-бара (~64px),
            чтобы не перекрываться с ним — расстояние друг от друга и от края
            экрана осталось прежним, просто общий блок поднят выше. */
+        /* Chrome подсвечивает автозаполненные поля своим цветом поверх наших стилей —
+           единственный надёжный способ перекрасить их обратно под фирменный крем. */
+        #authEmail:-webkit-autofill,
+        #authEmail:-webkit-autofill:hover,
+        #authEmail:-webkit-autofill:focus,
+        #authPassword:-webkit-autofill,
+        #authPassword:-webkit-autofill:hover,
+        #authPassword:-webkit-autofill:focus {
+            -webkit-text-fill-color: #3c3a34;
+            -webkit-box-shadow: 0 0 0px 1000px #fbfaf6 inset;
+            box-shadow: 0 0 0px 1000px #fbfaf6 inset;
+            transition: background-color 5000s ease-in-out 0s;
+        }
     </style>
 </head>
 <body class="font-sans style-loading">
