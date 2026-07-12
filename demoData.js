@@ -133,6 +133,7 @@ async function createDemoData(orgId, employeeId) {
         { offset: 3,  status: 'принят',   customer: ivan, items: [[chocoCake, 2, 4.50], [berryTart, 1, 5.00]] }
     ];
 
+    const allCreatedItems = [];
     for (const o of demoOrders) {
         const orderDate = getLocalDateStr ? getLocalDateStr(o.offset) : today;
         const { data: orderNumberData, error: numErr } = await db.rpc('next_order_number', { p_org_id: orgId });
@@ -144,12 +145,25 @@ async function createDemoData(orgId, employeeId) {
         }).select().single();
         if (orderErr) throw orderErr;
 
-        const { error: itemsErr } = await db.from('order_items').insert(
+        const { data: itemsData, error: itemsErr } = await db.from('order_items').insert(
             o.items.map(([productId, quantity, price]) => ({
                 org_id: orgId, order_id: orderData.id, product_id: productId, quantity, price
             }))
-        );
+        ).select();
         if (itemsErr) throw itemsErr;
+        allCreatedItems.push(...(itemsData || []));
+    }
+
+    // Снимок себестоимости для "Детализации" на каждой позиции демо-заказов —
+    // без этого шага "Детализация себестоимости" будет недоступна для демо-заказов
+    // (та же логика, что срабатывает при обычном создании позиции в приложении;
+    // подгружаем свежие данные, чтобы у products/semiFinished были рецепты).
+    if (typeof loadAllData === 'function' && typeof saveOrderItemIngredients === 'function') {
+        await loadAllData(true);
+        for (const item of allCreatedItems) {
+            const prod = products.find(p => p.id === item.product_id);
+            if (prod) await saveOrderItemIngredients(item.id, prod, Number(item.quantity));
+        }
     }
 }
 
