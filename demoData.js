@@ -1,9 +1,11 @@
 // ==================== ДЕМО-ДАННЫЕ ДЛЯ ЗНАКОМСТВА С ПРИЛОЖЕНИЕМ ====================
 // Предлагаются на экране первого запуска (галочка "Показать пример").
-// Небольшой готовый набор: 2 клиента, 4 ингредиента, 1 полуфабрикат с рецептом,
-// 2 изделия с рецептами (одно из них использует полуфабрикат), немного движений
-// по складу (приход сырья + производство партии полуфабриката) и 1 заказ —
-// чтобы новый владелец сразу увидел весь цикл: ингредиент → полуфабрикат → изделие.
+// Набор: 2 клиента (сознательно не увеличиваем — не создавать лишней нагрузки
+// на лимиты), 10 ингредиентов, 2 полуфабриката с рецептами, 4 изделия с рецептами
+// (часть использует полуфабрикаты), движения по складу (приход сырья +
+// производство партий обоих полуфабрикатов) и 5 заказов на разные даты —
+// специально подобраны так, чтобы сразу были видны все три статуса
+// (принят / в работе / выполнен), а не только один.
 // Все демо-записи помечаются is_demo = true — это позволяет потом убрать
 // весь набор одной кнопкой в настройках, не трогая то, что ввёл сам пользователь.
 // Зависит от: db (supabaseClient.js), currentOrgId (employees.js).
@@ -21,38 +23,58 @@ async function createDemoData(orgId, employeeId) {
         { org_id: orgId, name: 'Мука пшеничная', package_price: 1.20, package_size: 1, unit: 'kg', is_demo: true },
         { org_id: orgId, name: 'Сахар', package_price: 1.50, package_size: 1, unit: 'kg', is_demo: true },
         { org_id: orgId, name: 'Масло сливочное', package_price: 4.00, package_size: 1, unit: 'kg', is_demo: true },
-        { org_id: orgId, name: 'Яйца', package_price: 3.00, package_size: 10, unit: 'pcs', is_demo: true }
+        { org_id: orgId, name: 'Яйца', package_price: 3.00, package_size: 10, unit: 'pcs', is_demo: true },
+        { org_id: orgId, name: 'Молоко', package_price: 1.10, package_size: 1, unit: 'l', is_demo: true },
+        { org_id: orgId, name: 'Ваниль (экстракт)', package_price: 18.00, package_size: 1, unit: 'l', is_demo: true },
+        { org_id: orgId, name: 'Шоколад тёмный', package_price: 9.50, package_size: 1, unit: 'kg', is_demo: true },
+        { org_id: orgId, name: 'Разрыхлитель', package_price: 6.00, package_size: 1, unit: 'kg', is_demo: true },
+        { org_id: orgId, name: 'Соль', package_price: 0.80, package_size: 1, unit: 'kg', is_demo: true },
+        { org_id: orgId, name: 'Орехи грецкие', package_price: 12.00, package_size: 1, unit: 'kg', is_demo: true }
     ]).select();
     if (ingErr) throw ingErr;
-    const flour = ingData.find(i => i.name === 'Мука пшеничная').id;
-    const sugar = ingData.find(i => i.name === 'Сахар').id;
-    const butter = ingData.find(i => i.name === 'Масло сливочное').id;
-    const eggs = ingData.find(i => i.name === 'Яйца').id;
+    const flour   = ingData.find(i => i.name === 'Мука пшеничная').id;
+    const sugar   = ingData.find(i => i.name === 'Сахар').id;
+    const butter  = ingData.find(i => i.name === 'Масло сливочное').id;
+    const eggs    = ingData.find(i => i.name === 'Яйца').id;
+    const milk    = ingData.find(i => i.name === 'Молоко').id;
+    const vanilla = ingData.find(i => i.name === 'Ваниль (экстракт)').id;
+    const choco   = ingData.find(i => i.name === 'Шоколад тёмный').id;
+    const baking  = ingData.find(i => i.name === 'Разрыхлитель').id;
+    const salt    = ingData.find(i => i.name === 'Соль').id;
+    const walnuts = ingData.find(i => i.name === 'Орехи грецкие').id;
 
     // Изделия
     const { data: prodData, error: prodErr } = await db.from('products').insert([
         { org_id: orgId, name: 'Круассан', price: 2.50, unit: 'pcs', batch_size: 10, other_costs: 1.00, is_demo: true },
-        { org_id: orgId, name: 'Медовик (кусок)', price: 3.20, unit: 'pcs', batch_size: 8, other_costs: 1.50, is_demo: true }
+        { org_id: orgId, name: 'Медовик (кусок)', price: 3.20, unit: 'pcs', batch_size: 8, other_costs: 1.50, is_demo: true },
+        { org_id: orgId, name: 'Шоколадный кекс', price: 4.50, unit: 'pcs', batch_size: 6, other_costs: 1.20, is_demo: true },
+        { org_id: orgId, name: 'Тарт с ягодами', price: 5.00, unit: 'pcs', batch_size: 6, other_costs: 1.80, is_demo: true }
     ]).select();
     if (prodErr) throw prodErr;
     const croissant = prodData.find(p => p.name === 'Круассан').id;
     const honeycake = prodData.find(p => p.name === 'Медовик (кусок)').id;
+    const chocoCake = prodData.find(p => p.name === 'Шоколадный кекс').id;
+    const berryTart = prodData.find(p => p.name === 'Тарт с ягодами').id;
 
-    // Полуфабрикат — крем, используется в рецепте "Медовика"
-    const { data: sfData, error: sfErr } = await db.from('semi_finished').insert({
-        org_id: orgId, name: 'Крем масляный', unit: 'kg', batch_size: 0.75, other_costs: 0.30, is_demo: true
-    }).select().single();
+    // Полуфабрикаты — крем (для "Медовика") и ганаш (для кекса и тарта)
+    const { data: sfData, error: sfErr } = await db.from('semi_finished').insert([
+        { org_id: orgId, name: 'Крем масляный', unit: 'kg', batch_size: 0.75, other_costs: 0.30, is_demo: true },
+        { org_id: orgId, name: 'Шоколадный ганаш', unit: 'kg', batch_size: 0.5, other_costs: 0.20, is_demo: true }
+    ]).select();
     if (sfErr) throw sfErr;
-    const cream = sfData.id;
+    const cream   = sfData.find(s => s.name === 'Крем масляный').id;
+    const ganache = sfData.find(s => s.name === 'Шоколадный ганаш').id;
 
-    // Рецепт полуфабриката: крем = масло + сахар
+    // Рецепты полуфабрикатов
     const { error: sfRiErr } = await db.from('semi_finished_ingredients').insert([
         { org_id: orgId, semi_finished_id: cream, ingredient_id: butter, quantity: 0.5 },
-        { org_id: orgId, semi_finished_id: cream, ingredient_id: sugar, quantity: 0.3 }
+        { org_id: orgId, semi_finished_id: cream, ingredient_id: sugar, quantity: 0.3 },
+        { org_id: orgId, semi_finished_id: ganache, ingredient_id: choco, quantity: 0.3 },
+        { org_id: orgId, semi_finished_id: ganache, ingredient_id: butter, quantity: 0.15 }
     ]);
     if (sfRiErr) throw sfRiErr;
 
-    // Рецептура изделий (у "Медовика" в составе — и сырые ингредиенты, и полуфабрикат)
+    // Рецептура изделий (сырые ингредиенты + полуфабрикаты в разных сочетаниях)
     const { error: riErr } = await db.from('product_ingredients').insert([
         { org_id: orgId, product_id: croissant, ingredient_id: flour, semi_finished_id: null, quantity: 0.5 },
         { org_id: orgId, product_id: croissant, ingredient_id: butter, semi_finished_id: null, quantity: 0.3 },
@@ -61,40 +83,74 @@ async function createDemoData(orgId, employeeId) {
         { org_id: orgId, product_id: honeycake, ingredient_id: flour, semi_finished_id: null, quantity: 0.4 },
         { org_id: orgId, product_id: honeycake, ingredient_id: sugar, semi_finished_id: null, quantity: 0.3 },
         { org_id: orgId, product_id: honeycake, ingredient_id: eggs, semi_finished_id: null, quantity: 4 },
-        { org_id: orgId, product_id: honeycake, ingredient_id: null, semi_finished_id: cream, quantity: 0.2 }
+        { org_id: orgId, product_id: honeycake, ingredient_id: null, semi_finished_id: cream, quantity: 0.2 },
+        { org_id: orgId, product_id: chocoCake, ingredient_id: flour, semi_finished_id: null, quantity: 0.3 },
+        { org_id: orgId, product_id: chocoCake, ingredient_id: sugar, semi_finished_id: null, quantity: 0.2 },
+        { org_id: orgId, product_id: chocoCake, ingredient_id: eggs, semi_finished_id: null, quantity: 3 },
+        { org_id: orgId, product_id: chocoCake, ingredient_id: milk, semi_finished_id: null, quantity: 0.1 },
+        { org_id: orgId, product_id: chocoCake, ingredient_id: baking, semi_finished_id: null, quantity: 0.01 },
+        { org_id: orgId, product_id: chocoCake, ingredient_id: null, semi_finished_id: ganache, quantity: 0.1 },
+        { org_id: orgId, product_id: berryTart, ingredient_id: flour, semi_finished_id: null, quantity: 0.25 },
+        { org_id: orgId, product_id: berryTart, ingredient_id: butter, semi_finished_id: null, quantity: 0.15 },
+        { org_id: orgId, product_id: berryTart, ingredient_id: sugar, semi_finished_id: null, quantity: 0.1 },
+        { org_id: orgId, product_id: berryTart, ingredient_id: eggs, semi_finished_id: null, quantity: 1 },
+        { org_id: orgId, product_id: berryTart, ingredient_id: walnuts, semi_finished_id: null, quantity: 0.05 },
+        { org_id: orgId, product_id: berryTart, ingredient_id: null, semi_finished_id: ganache, quantity: 0.05 }
     ]);
     if (riErr) throw riErr;
 
-    // Движения по складу: приход сырья + производство партии крема
-    // (списание масла/сахара на производство, приход готового крема) —
-    // чтобы в разделе "Склад" сразу было видно, как это работает.
+    // Движения по складу: приход сырья + производство партий обоих полуфабрикатов
     const today = getLocalDateStr ? getLocalDateStr(0) : new Date().toISOString().split('T')[0];
     const { error: invErr } = await db.from('inventory').insert([
-        { org_id: orgId, ingredient_id: flour, type: 'приход', quantity: 5, notes: 'Демо: закупка сырья' },
-        { org_id: orgId, ingredient_id: sugar, type: 'приход', quantity: 3, notes: 'Демо: закупка сырья' },
-        { org_id: orgId, ingredient_id: butter, type: 'приход', quantity: 2, notes: 'Демо: закупка сырья' },
-        { org_id: orgId, ingredient_id: eggs, type: 'приход', quantity: 30, notes: 'Демо: закупка сырья' },
+        { org_id: orgId, ingredient_id: flour, type: 'приход', quantity: 8, notes: 'Демо: закупка сырья' },
+        { org_id: orgId, ingredient_id: sugar, type: 'приход', quantity: 5, notes: 'Демо: закупка сырья' },
+        { org_id: orgId, ingredient_id: butter, type: 'приход', quantity: 4, notes: 'Демо: закупка сырья' },
+        { org_id: orgId, ingredient_id: eggs, type: 'приход', quantity: 40, notes: 'Демо: закупка сырья' },
+        { org_id: orgId, ingredient_id: milk, type: 'приход', quantity: 3, notes: 'Демо: закупка сырья' },
+        { org_id: orgId, ingredient_id: vanilla, type: 'приход', quantity: 0.5, notes: 'Демо: закупка сырья' },
+        { org_id: orgId, ingredient_id: choco, type: 'приход', quantity: 2, notes: 'Демо: закупка сырья' },
+        { org_id: orgId, ingredient_id: baking, type: 'приход', quantity: 0.3, notes: 'Демо: закупка сырья' },
+        { org_id: orgId, ingredient_id: salt, type: 'приход', quantity: 0.2, notes: 'Демо: закупка сырья' },
+        { org_id: orgId, ingredient_id: walnuts, type: 'приход', quantity: 1, notes: 'Демо: закупка сырья' },
         { org_id: orgId, ingredient_id: butter, type: 'расход', quantity: 0.5, notes: 'Демо: производство п/ф «Крем масляный»' },
         { org_id: orgId, ingredient_id: sugar, type: 'расход', quantity: 0.3, notes: 'Демо: производство п/ф «Крем масляный»' },
-        { org_id: orgId, semi_finished_id: cream, type: 'приход', quantity: 0.7, notes: `Демо: произведена партия ${today}` }
+        { org_id: orgId, ingredient_id: choco, type: 'расход', quantity: 0.3, notes: 'Демо: производство п/ф «Шоколадный ганаш»' },
+        { org_id: orgId, ingredient_id: butter, type: 'расход', quantity: 0.15, notes: 'Демо: производство п/ф «Шоколадный ганаш»' },
+        { org_id: orgId, semi_finished_id: cream, type: 'приход', quantity: 0.7, notes: `Демо: произведена партия ${today}` },
+        { org_id: orgId, semi_finished_id: ganache, type: 'приход', quantity: 0.4, notes: `Демо: произведена партия ${today}` }
     ]);
     if (invErr) throw invErr;
 
-    // Заказ-пример
-    const { data: orderNumberData, error: numErr } = await db.rpc('next_order_number', { p_org_id: orgId });
-    if (numErr) throw numErr;
-    const { data: orderData, error: orderErr } = await db.from('orders').insert({
-        org_id: orgId, customer_id: customersData[0].id, order_date: today,
-        status: 'принят', discount: 0, vat_exempt: false, employee_id: employeeId || null,
-        order_number: orderNumberData, notes: 'Демо-заказ для примера', is_demo: true
-    }).select().single();
-    if (orderErr) throw orderErr;
+    // 5 заказов на разные даты — специально подобраны так, чтобы сразу были
+    // видны все три статуса (принят / в работе / выполнен), а не только один.
+    const ivan = customersData.find(c => c.name === 'Иван Иванов').id;
+    const cafe = customersData.find(c => c.name === 'Кафе «Ромашка»').id;
+    const demoOrders = [
+        { offset: -5, status: 'выполнен', customer: ivan, items: [[croissant, 3, 2.50], [honeycake, 2, 3.20]] },
+        { offset: -2, status: 'выполнен', customer: cafe, items: [[chocoCake, 4, 4.50]] },
+        { offset: 0,  status: 'в работе', customer: ivan, items: [[berryTart, 2, 5.00], [croissant, 4, 2.50]] },
+        { offset: 1,  status: 'принят',   customer: cafe, items: [[honeycake, 6, 3.20]] },
+        { offset: 3,  status: 'принят',   customer: ivan, items: [[chocoCake, 2, 4.50], [berryTart, 1, 5.00]] }
+    ];
 
-    const { error: itemsErr } = await db.from('order_items').insert([
-        { org_id: orgId, order_id: orderData.id, product_id: croissant, quantity: 2, price: 2.50 },
-        { org_id: orgId, order_id: orderData.id, product_id: honeycake, quantity: 1, price: 3.20 }
-    ]);
-    if (itemsErr) throw itemsErr;
+    for (const o of demoOrders) {
+        const orderDate = getLocalDateStr ? getLocalDateStr(o.offset) : today;
+        const { data: orderNumberData, error: numErr } = await db.rpc('next_order_number', { p_org_id: orgId });
+        if (numErr) throw numErr;
+        const { data: orderData, error: orderErr } = await db.from('orders').insert({
+            org_id: orgId, customer_id: o.customer, order_date: orderDate,
+            status: o.status, discount: 0, vat_exempt: false, employee_id: employeeId || null,
+            order_number: orderNumberData, notes: 'Демо-заказ для примера', is_demo: true
+        }).select().single();
+        if (orderErr) throw orderErr;
+
+        const { error: itemsErr } = await db.from('order_items').insert(
+            o.items.map(([productId, quantity, price]) => ({
+                org_id: orgId, order_id: orderData.id, product_id: productId, quantity, price
+            }))
+        );
+        if (itemsErr) throw itemsErr;
+    }
 }
 
 // Полностью убирает демо-набор (и всё, что на него ссылается) — вызывается
