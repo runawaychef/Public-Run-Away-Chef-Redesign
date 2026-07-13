@@ -643,7 +643,8 @@ function openContactModal() {
 function sendContactMessage() {
     const ta = document.getElementById('contactMessage');
     const msg = (ta && ta.value || '').trim();
-    const subject = encodeURIComponent('Simple Bake — вопрос');
+    const subjectText = (typeof t === 'function') ? t('contact_subject') : 'Simple Bake — вопрос';
+    const subject = encodeURIComponent(subjectText);
     const body = encodeURIComponent(msg || '');
     window.location.href = `mailto:simplebake.support@gmail.com?subject=${subject}&body=${body}`;
     closeLegalModal('contactModal');

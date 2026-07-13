@@ -855,19 +855,19 @@
 <div id="bottomNav">
     <button onclick="showTab('orders')" class="tab bottom-nav-item active">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6a1 1 0 011 1v1h1a1 1 0 011 1v14a1 1 0 01-1 1H7a1 1 0 01-1-1V6a1 1 0 011-1h1V4a1 1 0 011-1z"/><path d="M9 3v2h6V3M8.5 11h7M8.5 14.5h7M8.5 18h4.5"/></svg>
-        <span>Заказы</span>
+        <span data-i18n="nav_orders">Заказы</span>
     </button>
     <button onclick="showTab('products')" class="tab bottom-nav-item">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 14.5c-.3-2 .6-3.4 2.3-4C6.7 7.2 9.8 4.5 13 4.5c3.8 0 6.5 2.9 6.5 6.3 0 3.7-2.6 6.3-6 7.3-3.6 1.1-7.3.9-9.4-1.2-.4-.4-.5-1.4-.6-2.4z"/><path d="M7.5 8.5l1.8 3M11.5 6.3l1 3.6M15.5 7.7l.3 3.7"/></svg>
-        <span>Ассортимент</span>
+        <span data-i18n="nav_products">Ассортимент</span>
     </button>
     <button onclick="showTab('ingredients')" class="tab bottom-nav-item">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.5L12 3l8.5 4.5L12 12 3.5 7.5z"/><path d="M3.5 7.5V16l8.5 4.5m0 0L20.5 16V7.5M12 12v8.5"/></svg>
-        <span>Склад</span>
+        <span data-i18n="nav_ingredients">Склад</span>
     </button>
     <button onclick="showTab('customers')" class="tab bottom-nav-item">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3"/><circle cx="16" cy="9" r="2.4"/><path d="M3 20c0-3.5 2.2-5.5 5.5-5.5S14 16.5 14 20"/><path d="M14.5 14.8c2.5.2 4 1.9 4 5.2"/></svg>
-        <span>Клиенты</span>
+        <span data-i18n="nav_customers">Клиенты</span>
     </button>
 </div>
 
@@ -1879,71 +1879,76 @@
         <!-- Настройки (шестерёнка) — служебные функции, доступны из любого раздела -->
         <div id="settingsModal" class="modal">
             <div class="modal-content" style="max-width:320px; max-height:78vh; display:flex; flex-direction:column; overflow:hidden; padding:16px 16px 12px;">
-                <h2 class="text-sm font-semibold mb-1 text-gray-800" style="flex-shrink:0;">Настройки</h2>
-                <p class="text-xs text-gray-500 mb-3" style="flex-shrink:0;">Текущий сотрудник: <b id="settingsCurrentEmployee" class="text-gray-800"></b></p>
+                <h2 class="text-sm font-semibold mb-1 text-gray-800" style="flex-shrink:0;" data-i18n="settings_title">Настройки</h2>
+                <p class="text-xs text-gray-500 mb-2" style="flex-shrink:0;"><span data-i18n="settings_current_employee_label">Текущий сотрудник:</span> <b id="settingsCurrentEmployee" class="text-gray-800"></b></p>
+
+                <div class="flex gap-2 mb-3" style="flex-shrink:0;">
+                    <button type="button" id="langBtnRu" onclick="setLang('ru')" class="settings-row-btn justify-center" style="flex:1;">RU</button>
+                    <button type="button" id="langBtnEn" onclick="setLang('en')" class="settings-row-btn justify-center" style="flex:1;">EN</button>
+                </div>
 
                 <div style="overflow-y:auto; flex:1; min-height:0; margin:0 -4px; padding:0 4px;">
 
                 <!-- Группа 1: аккаунт / бизнес -->
                 <div class="flex flex-col gap-1 mb-3 rounded-xl p-2" style="background:#e3e8df;">
                     <div class="flex justify-between items-center">
-                        <span class="text-xs text-gray-500">Тариф</span>
+                        <span class="text-xs text-gray-500" data-i18n="settings_tariff">Тариф</span>
                         <span id="settingsPlanBadge" class="text-xs font-semibold px-2 py-0.5 rounded-full">—</span>
                     </div>
                     <div id="settingsPlanUsage" class="text-xs text-gray-500 mt-1"></div>
                 </div>
                 <div id="companyInfoBtnBlock" class="flex flex-col gap-1 mb-3 hidden">
-                    <button onclick="openCompanyInfoModal()" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21"/></svg>Информация о компании</button>
+                    <button onclick="openCompanyInfoModal()" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21"/></svg><span data-i18n="settings_company_info">Информация о компании</span></button>
                 </div>
 
                 <!-- Группа 2+3: управление данными (свёрнуто по умолчанию) -->
                 <div class="mb-3">
                     <button type="button" id="settingsDataGroupBtn" onclick="document.getElementById('settingsDataGroup').classList.toggle('hidden'); document.getElementById('settingsDataGroupChevron').classList.toggle('rotate-180'); document.getElementById('settingsDataGroupBtn').classList.toggle('active')" class="settings-row-btn w-full justify-between">
-                        <span class="flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125"/></svg>Управление данными</span>
+                        <span class="flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125"/></svg><span data-i18n="settings_manage_data">Управление данными</span></span>
                         <svg id="settingsDataGroupChevron" class="w-3.5 h-3.5 flex-shrink-0 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
                     </button>
                     <div id="settingsDataGroup" class="hidden flex flex-col gap-1 mt-1">
-                        <button onclick="downloadBackup()" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg>Скачать резервную копию</button>
-                        <button onclick="openHistoryScreen()" class="settings-row-btn perm-owner-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Журнал действий</button>
-                        <button onclick="loadAllData()" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>Обновить данные</button>
-                        <button onclick="openOrdersTrash()" class="settings-row-btn perm-delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>Корзина удалённых заказов</button>
-                        <button onclick="confirmClearDemoData()" class="settings-row-btn danger perm-owner-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42"/></svg>Удалить демо-данные и начать заново</button>
+                        <button onclick="downloadBackup()" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/></svg><span data-i18n="settings_download_backup">Скачать резервную копию</span></button>
+                        <button onclick="openHistoryScreen()" class="settings-row-btn perm-owner-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg><span data-i18n="settings_activity_log">Журнал действий</span></button>
+                        <button onclick="loadAllData()" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg><span data-i18n="settings_refresh_data">Обновить данные</span></button>
+                        <button onclick="openOrdersTrash()" class="settings-row-btn perm-delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg><span data-i18n="settings_orders_trash">Корзина удалённых заказов</span></button>
+                        <button onclick="confirmClearDemoData()" class="settings-row-btn danger perm-owner-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42"/></svg><span data-i18n="settings_delete_demo">Удалить демо-данные и начать заново</span></button>
                     </div>
                 </div>
 
                 <!-- Группа 4+5: команда и доступ (свёрнуто по умолчанию) -->
                 <div class="mb-3">
                     <button type="button" id="settingsTeamGroupBtn" onclick="document.getElementById('settingsTeamGroup').classList.toggle('hidden'); document.getElementById('settingsTeamGroupChevron').classList.toggle('rotate-180'); document.getElementById('settingsTeamGroupBtn').classList.toggle('active')" class="settings-row-btn w-full justify-between">
-                        <span class="flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>Команда и доступ</span>
+                        <span class="flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg><span data-i18n="settings_team">Команда и доступ</span></span>
                         <svg id="settingsTeamGroupChevron" class="w-3.5 h-3.5 flex-shrink-0 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
                     </button>
                     <div id="settingsTeamGroup" class="hidden flex flex-col gap-1 mt-1">
-                        <button id="employeesManageBtn" onclick="openEmployeesModal()" class="settings-row-btn hidden"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>Сотрудники и права</button>
-                        <button onclick="logoutEmployee()" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Сменить сотрудника</button>
-                        <button onclick="signOutAccount()" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15 9V5.25A2.25 2.25 0 0012.75 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 006.75 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"/></svg>Выйти из аккаунта</button>
+                        <button id="employeesManageBtn" onclick="openEmployeesModal()" class="settings-row-btn hidden"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg><span data-i18n="settings_employees_manage">Сотрудники и права</span></button>
+                        <button onclick="logoutEmployee()" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"/></svg><span data-i18n="settings_switch_employee">Сменить сотрудника</span></button>
+                        <button onclick="signOutAccount()" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15 9V5.25A2.25 2.25 0 0012.75 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 006.75 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"/></svg><span data-i18n="settings_sign_out">Выйти из аккаунта</span></button>
                     </div>
                 </div>
 
                 <!-- Группа 6: о приложении (свёрнуто по умолчанию) -->
                 <div class="mb-3">
                     <button type="button" id="settingsAboutGroupBtn" onclick="document.getElementById('settingsAboutGroup').classList.toggle('hidden'); document.getElementById('settingsAboutGroupChevron').classList.toggle('rotate-180'); document.getElementById('settingsAboutGroupBtn').classList.toggle('active')" class="settings-row-btn w-full justify-between">
-                        <span class="flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg>О приложении</span>
+                        <span class="flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"/></svg><span data-i18n="settings_about">О приложении</span></span>
                         <svg id="settingsAboutGroupChevron" class="w-3.5 h-3.5 flex-shrink-0 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
                     </button>
                     <div id="settingsAboutGroup" class="hidden flex flex-col gap-1 mt-1">
-                        <button type="button" onclick="openLegalModal('privacyModal')" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg>Политика конфиденциальности</button>
-                        <button type="button" onclick="openLegalModal('termsModal')" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>Условия использования</button>
-                        <button type="button" onclick="openContactModal()" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>Написать нам</button>
+                        <button type="button" onclick="openLegalModal('privacyModal')" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"/></svg><span data-i18n="settings_privacy">Политика конфиденциальности</span></button>
+                        <button type="button" onclick="openLegalModal('termsModal')" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg><span data-i18n="settings_terms">Условия использования</span></button>
+                        <button type="button" onclick="openContactModal()" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg><span data-i18n="settings_contact">Написать нам</span></button>
 
-                        <button type="button" onclick="openLegalModal('faqModal')" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"/></svg>Частые вопросы</button>
+                        <button type="button" onclick="openLegalModal('faqModal')" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"/></svg><span data-i18n="settings_faq">Частые вопросы</span></button>
                     </div>
                 </div>
 
                 </div>
                 <!-- конец прокручиваемой области -->
 
-                <p class="text-center" style="font-size:10.5px;color:#a6a196;margin:8px 0 8px;flex-shrink:0;">Simple Bake · версия <span id="settingsAppVersion">2.0</span></p>
-                <button onclick="closeModal()" class="pill-btn w-full justify-center" style="flex-shrink:0;">Закрыть</button>
+                <p class="text-center" style="font-size:10.5px;color:#a6a196;margin:8px 0 8px;flex-shrink:0;"><span data-i18n="settings_version_prefix">Simple Bake · версия</span> <span id="settingsAppVersion">2.0</span></p>
+                <button onclick="closeModal()" class="pill-btn w-full justify-center" style="flex-shrink:0;" data-i18n="settings_close">Закрыть</button>
             </div>
         </div>
 
@@ -1953,8 +1958,8 @@
         <div id="privacyModal" class="modal">
             <div class="modal-content" style="max-width:420px; display:flex; flex-direction:column; padding:14px;">
                 <div class="flex justify-between items-center mb-2" style="flex-shrink:0;">
-                    <h2 class="text-sm font-semibold text-gray-800">Политика конфиденциальности</h2>
-                    <button onclick="closeLegalModal('privacyModal')" class="pill-btn-secondary" style="padding:4px 12px;">Закрыть</button>
+                    <h2 class="text-sm font-semibold text-gray-800" data-i18n="settings_privacy">Политика конфиденциальности</h2>
+                    <button onclick="closeLegalModal('privacyModal')" class="pill-btn-secondary" style="padding:4px 12px;" data-i18n="settings_close">Закрыть</button>
                 </div>
                 <iframe id="privacyFrame" src="" style="flex:1; width:100%; border:none; border-radius:12px; background:#fff;"></iframe>
             </div>
@@ -1963,8 +1968,8 @@
         <div id="termsModal" class="modal">
             <div class="modal-content" style="max-width:420px; display:flex; flex-direction:column; padding:14px;">
                 <div class="flex justify-between items-center mb-2" style="flex-shrink:0;">
-                    <h2 class="text-sm font-semibold text-gray-800">Условия использования</h2>
-                    <button onclick="closeLegalModal('termsModal')" class="pill-btn-secondary" style="padding:4px 12px;">Закрыть</button>
+                    <h2 class="text-sm font-semibold text-gray-800" data-i18n="settings_terms">Условия использования</h2>
+                    <button onclick="closeLegalModal('termsModal')" class="pill-btn-secondary" style="padding:4px 12px;" data-i18n="settings_close">Закрыть</button>
                 </div>
                 <iframe id="termsFrame" src="" style="flex:1; width:100%; border:none; border-radius:12px; background:#fff;"></iframe>
             </div>
@@ -1973,8 +1978,8 @@
         <div id="faqModal" class="modal">
             <div class="modal-content" style="max-width:420px; display:flex; flex-direction:column; padding:14px;">
                 <div class="flex justify-between items-center mb-2" style="flex-shrink:0;">
-                    <h2 class="text-sm font-semibold text-gray-800">Частые вопросы</h2>
-                    <button onclick="closeLegalModal('faqModal')" class="pill-btn-secondary" style="padding:4px 12px;">Закрыть</button>
+                    <h2 class="text-sm font-semibold text-gray-800" data-i18n="settings_faq">Частые вопросы</h2>
+                    <button onclick="closeLegalModal('faqModal')" class="pill-btn-secondary" style="padding:4px 12px;" data-i18n="settings_close">Закрыть</button>
                 </div>
                 <iframe id="faqFrame" src="" style="flex:1; width:100%; border:none; border-radius:12px; background:#fff;"></iframe>
             </div>
@@ -1984,11 +1989,11 @@
              системной почты (не сразу уводит из приложения). -->
         <div id="contactModal" class="modal">
             <div class="modal-content" style="max-width:360px;">
-                <h2 class="text-sm font-semibold mb-1 text-gray-800">Написать нам</h2>
-                <p class="text-xs text-gray-500 mb-3">Опишите вопрос или проблему — при отправке откроется ваше почтовое приложение с уже готовым письмом на simplebake.support@gmail.com.</p>
-                <textarea id="contactMessage" rows="5" placeholder="Ваше сообщение..." class="border p-2 rounded-xl w-full table-text mb-3" style="resize:vertical;"></textarea>
-                <button onclick="sendContactMessage()" class="pill-btn w-full justify-center mb-2">Отправить</button>
-                <button onclick="closeLegalModal('contactModal')" class="pill-btn-secondary w-full justify-center">Отмена</button>
+                <h2 class="text-sm font-semibold mb-1 text-gray-800" data-i18n="contact_title">Написать нам</h2>
+                <p class="text-xs text-gray-500 mb-3" data-i18n="contact_desc">Опишите вопрос или проблему — при отправке откроется ваше почтовое приложение с уже готовым письмом на simplebake.support@gmail.com.</p>
+                <textarea id="contactMessage" rows="5" placeholder="Ваше сообщение..." data-i18n-placeholder="contact_placeholder" class="border p-2 rounded-xl w-full table-text mb-3" style="resize:vertical;"></textarea>
+                <button onclick="sendContactMessage()" class="pill-btn w-full justify-center mb-2" data-i18n="contact_send">Отправить</button>
+                <button onclick="closeLegalModal('contactModal')" class="pill-btn-secondary w-full justify-center" data-i18n="contact_cancel">Отмена</button>
             </div>
         </div>
 
@@ -2633,6 +2638,7 @@
 
 <script src="dates.js?v=7"></script>
     <script src="money.js?v=9"></script>
+    <script src="i18n.js?v=1"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=3"></script>
     <script src="auth.js?v=11"></script>
