@@ -8,7 +8,8 @@
 
 let ingredients = []; // [{id, name, package_price, package_size, unit}]
 
-const UNIT_LABELS = { g: 'г', kg: 'кг', ml: 'мл', l: 'л', pcs: 'шт' };
+// UNIT_LABELS заменён общей функцией unitAbbrev(code) из inventory.js — единицы
+// измерения переводятся под текущий язык через i18n.js вместо жёсткой русской карты.
 
 function ingredientUnitPrice(ing) {
     if (!ing.package_size) return 0;
@@ -69,7 +70,7 @@ function displayIngredients() {
 
     ingredients.forEach((ing) => {
         const unitPrice = ingredientUnitPrice(ing);
-        const unitLabel = UNIT_LABELS[ing.unit] || ing.unit;
+        const unitLabel = unitAbbrev(ing.unit);
         const balance  = typeof getIngredientBalance === 'function' ? getIngredientBalance(ing.id) : null;
         const daily    = typeof avgDailyUsage === 'function' ? avgDailyUsage(ing.id) : 0;
         const daysLeft = (balance !== null && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
@@ -87,8 +88,8 @@ function displayIngredients() {
             : daysLeft !== null && daysLeft < 7 ? 'color:#96712a;' : 'color:#4b5563;';
 
         const daysStr = daysLeft !== null
-            ? `<span style="${colorStyle}" class="font-semibold">${daysLeft} дн.</span>`
-            : shortfall ? '<span style="color:#c0685c;" class="font-semibold">нехватка</span>'
+            ? `<span style="${colorStyle}" class="font-semibold">${daysLeft} ${t('inv_days_short')}</span>`
+            : shortfall ? `<span style="color:#c0685c;" class="font-semibold">${t('inv_shortage')}</span>`
             : '<span class="text-gray-400">—</span>';
 
         // Полоска-акцент вместо сплошного фона строки
@@ -138,7 +139,7 @@ function renderIngredientCards() {
     let html = '';
     ingredients.forEach(ing => {
         const unitPrice = ingredientUnitPrice(ing);
-        const unitLabel = UNIT_LABELS[ing.unit] || ing.unit;
+        const unitLabel = unitAbbrev(ing.unit);
         const balance  = typeof getIngredientBalance === 'function' ? getIngredientBalance(ing.id) : null;
         const daily    = typeof avgDailyUsage === 'function' ? avgDailyUsage(ing.id) : 0;
         const daysLeft = (balance !== null && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
@@ -149,8 +150,8 @@ function renderIngredientCards() {
         const isWarning  = !isCritical && daysLeft !== null && daysLeft < 7;
         const accentColor = isCritical ? '#c0685c' : isWarning ? '#d9a441' : '';
         const daysColor = isCritical ? '#c0685c' : isWarning ? '#96712a' : '#4f6349';
-        const daysText = daysLeft !== null ? `Хватит: ${daysLeft} дн.` : shortfall ? 'Хватит: нехватка' : '';
-        const balanceText = balance !== null ? `Остаток: ${Number(balance).toFixed(1)} ${unitLabel}` : 'Остаток: —';
+        const daysText = daysLeft !== null ? `${t('ing_lasts_colon')} ${daysLeft} ${t('inv_days_short')}` : shortfall ? `${t('ing_lasts_colon')} ${t('inv_shortage')}` : '';
+        const balanceText = balance !== null ? `${t('ing_balance_colon')} ${Number(balance).toFixed(1)} ${unitLabel}` : `${t('ing_balance_colon')} —`;
         const priceText = `${formatMoney(unitPrice, 4)}/${unitLabel}`;
         const stripe = accentColor ? `<div class="stripe" style="background:${accentColor};"></div>` : '';
         const realIdx = ingredients.indexOf(ing);
@@ -162,7 +163,7 @@ function renderIngredientCards() {
                 ${stripe}
                 <div class="order-card-body">
                     <div class="oc-row">
-                        <span class="oc-name">${escapeHtml(ing.name || '(без названия)')}</span>
+                        <span class="oc-name">${escapeHtml(ing.name || t('semifinished_no_name_fallback'))}</span>
                         ${daysText ? `<span class="oc-sum" style="color:${daysColor};">${daysText}</span>` : ''}
                     </div>
                     <div class="oc-meta">${balanceText} · ${priceText}</div>
@@ -274,7 +275,7 @@ async function createDraftIngredientAndOpen() {
 async function saveNewIngredient() {
     const name = (document.getElementById('idNameInput')?.value || '').trim();
     const unit = document.getElementById('idUnitInput')?.value || 'g';
-    if (!name) { showInfo('Введите название ингредиента!'); return; }
+    if (!name) { showInfo(t('ing_name_required')); return; }
 
     suppressRealtimeFor3s();
     showLoading();
@@ -312,7 +313,7 @@ async function copyIngredient(i) {
     showLoading();
     try {
         const { data, error } = await db.from('ingredients').insert({
-            org_id: currentOrgId, name: src.name + ' (копия)',
+            org_id: currentOrgId, name: src.name + t('common_copy_suffix'),
             package_price: src.package_price || 0, package_size: src.package_size || 1, unit: src.unit || 'g'
         }).select().single();
         if (error) throw error;
@@ -325,7 +326,7 @@ async function copyIngredient(i) {
         displayIngredients();
         openIngredientDetail(newIng.id);
         logActivity('ingredient', `Скопирован ингредиент «${src.name}» → «${newIng.name}»`);
-    } catch (e) { console.error(e); showInfo('Ошибка копирования. Проверьте подключение.'); }
+    } catch (e) { console.error(e); showInfo(t('ing_copy_error')); }
     finally { hideLoading(); }
 }
 
@@ -358,7 +359,7 @@ async function openIngredientDetail(ingId) {
     const batchesChevron = document.getElementById('ingBatchesChevron');
     if (batchesChevron) batchesChevron.style.transform = '';
     const batchesLabel = document.getElementById('ingBatchesToggleLabel');
-    if (batchesLabel) batchesLabel.textContent = 'Партии';
+    if (batchesLabel) batchesLabel.textContent = t('ing_batches');
 
 
     // Заголовок карточки — inline поля
@@ -372,7 +373,7 @@ async function openIngredientDetail(ingId) {
     document.getElementById('idPackageSize').value = ing.package_size;
     document.getElementById('idStockQty').value = '';
     const qtyUnitEl = document.getElementById('ingQtyUnit');
-    if (qtyUnitEl) qtyUnitEl.textContent = UNIT_LABELS[ing.unit] || ing.unit;
+    if (qtyUnitEl) qtyUnitEl.textContent = unitAbbrev(ing.unit);
     renderIngredientUnitPrice(ing);
     // Загружаем историю цен для расчёта стоимости в истории движений
     const { data: ph } = await db.from('ingredient_price_history')
@@ -391,7 +392,7 @@ function renderIngredientUnitPricePreview() {
     const size = parseFloat(document.getElementById('idPackageSize').value) || 0;
     const ing = ingredients.find(i => i.id === currentIngredientId);
     const unit = ing ? ing.unit : 'g';
-    const unitLabel = UNIT_LABELS[unit] || unit;
+    const unitLabel = unitAbbrev(unit);
     const unitPrice = size > 0 ? (price / size).toFixed(4) : '0.0000';
     const el = document.getElementById('idUnitPrice');
     if (el) el.textContent = `${formatMoney(unitPrice, 4)}/${unitLabel}`;
@@ -409,7 +410,7 @@ async function saveStockAndPrice() {
     const stockQty     = parseFloat(document.getElementById('idStockQty').value) || 0;
 
     if (!validFrom || isNaN(packagePrice) || isNaN(packageSize) || packageSize <= 0) {
-        showInfo('Заполните дату, цену и размер упаковки!'); return;
+        showInfo(t('ing_fill_date_price_size')); return;
     }
 
     showLoading();
@@ -448,10 +449,10 @@ async function saveStockAndPrice() {
                 ingredient_id: ing.id,
                 type:          'приход',
                 quantity:      parseFloat(stockQty.toFixed(4)),
-                notes:         `Закупка ${validFrom}`
+                notes:         `${t('ing_purchase_note')} ${validFrom}`
             });
             const unitPrice = packageSize > 0 ? packagePrice / packageSize : 0;
-            await createStockBatch('ingredient', ing.id, unitPrice, stockQty, 'приход', `Закупка ${validFrom}`);
+            await createStockBatch('ingredient', ing.id, unitPrice, stockQty, 'приход', `${t('ing_purchase_note')} ${validFrom}`);
             await loadInventory();
         }
 
@@ -503,8 +504,8 @@ async function saveIngredientHeader() {
 function openWriteOffModal() {
     const ing = ingredients.find(i => i.id === currentIngredientId);
     if (!ing) return;
-    const unitLabel = UNIT_LABELS[ing.unit] || ing.unit;
-    document.getElementById('writeOffIngName').textContent = `Ингредиент: ${ing.name}`;
+    const unitLabel = unitAbbrev(ing.unit);
+    document.getElementById('writeOffIngName').textContent = `${t('ing_ingredient_word')}: ${ing.name}`;
     document.getElementById('writeOffUnit').textContent = unitLabel;
     document.getElementById('writeOffQty').value = '';
     document.getElementById('writeOffReason').value = '';
@@ -528,9 +529,13 @@ async function saveWriteOff() {
     const qty    = parseFloat(document.getElementById('writeOffQty').value);
     const reason = document.getElementById('writeOffReason').value;
     const note   = document.getElementById('writeOffNote').value.trim();
-    if (isNaN(qty) || qty <= 0) { showInfo('Введите корректное количество!'); return; }
+    if (isNaN(qty) || qty <= 0) { showInfo(t('inv_enter_valid_qty')); return; }
 
-    const notes = reason === 'Другое' ? `Корректировка: ${note || 'другое'}` : `Корректировка: ${reason || 'без причины'}`;
+    // Причина хранится в базе на русском (значение <option>), но пользователю
+    // показываем переведённую подпись — та же карта ключей, что и в самой форме.
+    const reasonLabelKeys = { 'Испортилось': 'ing_reason_spoiled', 'Личное использование': 'ing_reason_personal', 'Пересчёт остатков': 'ing_reason_recount', 'Другое': 'ing_reason_other' };
+    const reasonDisplay = reasonLabelKeys[reason] ? t(reasonLabelKeys[reason]) : reason;
+    const notes = reason === 'Другое' ? `${t('ing_adjustment_note')}: ${note || t('ing_other_lowercase')}` : `${t('ing_adjustment_note')}: ${reasonDisplay || t('ing_no_reason')}`;
 
     showLoading();
     try {
@@ -559,7 +564,7 @@ async function saveIdNewPrice() {
     const packageSize  = parseFloat(document.getElementById('idPackageSize').value);
     const validFrom    = document.getElementById('idNewPriceDate').value;
     if (!validFrom || isNaN(packagePrice) || isNaN(packageSize) || packageSize <= 0) {
-        showInfo('Заполните все поля корректно!'); return;
+        showInfo(t('common_fill_correctly')); return;
     }
     showLoading();
     try {
@@ -625,7 +630,7 @@ async function closeIngredientDetail() {
 }
 
 function renderIngredientUnitPrice(ing) {
-    const unitLabel = UNIT_LABELS[ing.unit] || ing.unit;
+    const unitLabel = unitAbbrev(ing.unit);
     document.getElementById('idUnitPrice').textContent = `${formatMoney(ingredientUnitPrice(ing), 4)}/${unitLabel}`;
 }
 
@@ -652,7 +657,7 @@ function deleteCurrentIngredient() {
     const idx = ingredients.findIndex(i => i.id === currentIngredientId);
     if (idx === -1) return;
     const ing = ingredients[idx];
-    openDeleteModal(idx, 'ingredient', `ингредиент «${ing.name}»`);
+    openDeleteModal(idx, 'ingredient', `${t('delete_label_ingredient')} «${ing.name}»`);
 }
 
 // ==================== ИСТОРИЯ ЦЕН ИНГРЕДИЕНТА ====================
@@ -675,7 +680,7 @@ let _ingredientPriceChartInstance = null;
 
 // Обновляет блок «Остаток на складе» в карточке ингредиента
 async function renderIngredientStockBlock(ing) {
-    const unitLabel = UNIT_LABELS[ing.unit] || ing.unit;
+    const unitLabel = unitAbbrev(ing.unit);
     const balance = typeof getIngredientBalance === 'function' ? getIngredientBalance(ing.id) : null;
     const daily   = typeof avgDailyUsage === 'function' ? avgDailyUsage(ing.id) : 0;
 
@@ -698,10 +703,10 @@ async function renderIngredientStockBlock(ing) {
     if (daysEl) {
         if (balance !== null && balance > 0 && daily > 0) {
             const days = Math.floor(balance / daily);
-            daysEl.textContent = `~${days} дн. запаса`;
+            daysEl.textContent = `~${days} ${t('ing_days_of_stock')}`;
             daysEl.className = `table-text font-semibold ${stockColorClass(days, 'text-')}`;
         } else {
-            daysEl.textContent = daily > 0 ? 'нет данных о запасе' : 'недостаточно истории';
+            daysEl.textContent = daily > 0 ? t('ing_no_stock_data') : t('ing_not_enough_history');
             daysEl.className = 'table-text text-gray-400';
         }
     }
@@ -717,7 +722,7 @@ async function renderIngredientStockBlock(ing) {
             .order('created_at', { ascending: false })
             .limit(200);
         if (!data || !data.length) {
-            histEl.innerHTML = '<p class="table-text text-gray-400 mt-1">Движений ещё не было</p>';
+            histEl.innerHTML = `<p class="table-text text-gray-400 mt-1">${t('ing_no_movements_yet')}</p>`;
             return;
         }
 
@@ -758,17 +763,17 @@ async function renderIngredientStockBlock(ing) {
 
         // Итоговая строка
         let summary = `<div class="table-text text-gray-600 mt-2 mb-2 space-y-0.5">`;
-        summary += `<div><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#7c9473;"></span>Куплено: <span class="font-semibold" style="color:#4f6349;">${totals.in.qty.toFixed(2)} ${unitLabel}</span> · ${formatMoney(totals.in.cost)}</div>`;
-        if (totals.order.qty > 0) summary += `<div><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#d9a441;"></span>На заказы: <span class="font-semibold" style="color:#96712a;">${totals.order.qty.toFixed(2)} ${unitLabel}</span> · ${formatMoney(totals.order.cost)}</div>`;
-        if (totals.personal.qty > 0) summary += `<div><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#c0685c;"></span>Личное/потери: <span class="font-semibold" style="color:#c0685c;">${totals.personal.qty.toFixed(2)} ${unitLabel}</span> · ${formatMoney(totals.personal.cost)}</div>`;
+        summary += `<div><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#7c9473;"></span>${t('ing_bought_label')}: <span class="font-semibold" style="color:#4f6349;">${totals.in.qty.toFixed(2)} ${unitLabel}</span> · ${formatMoney(totals.in.cost)}</div>`;
+        if (totals.order.qty > 0) summary += `<div><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#d9a441;"></span>${t('ing_for_orders_label')}: <span class="font-semibold" style="color:#96712a;">${totals.order.qty.toFixed(2)} ${unitLabel}</span> · ${formatMoney(totals.order.cost)}</div>`;
+        if (totals.personal.qty > 0) summary += `<div><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#c0685c;"></span>${t('ing_personal_losses_label')}: <span class="font-semibold" style="color:#c0685c;">${totals.personal.qty.toFixed(2)} ${unitLabel}</span> · ${formatMoney(totals.personal.cost)}</div>`;
         summary += `</div>`;
 
         // Фильтр-табы
         const tabs = `<div class="flex gap-1 mb-2 flex-wrap">
-            <button onclick="filterIngHistory('all')" id="histTab_all" class="hist-tab hist-tab-active table-text px-2 py-0.5 rounded-full border border-gray-300 bg-[#7c9473] text-white">Все</button>
-            <button onclick="filterIngHistory('in')" id="histTab_in" class="hist-tab table-text px-2 py-0.5 rounded-full border border-gray-300 bg-[#f4f1ea] text-gray-600">+ Приходы</button>
-            <button onclick="filterIngHistory('order')" id="histTab_order" class="hist-tab table-text px-2 py-0.5 rounded-full border border-gray-300 bg-[#f4f1ea] text-gray-600">− Заказы</button>
-            <button onclick="filterIngHistory('personal')" id="histTab_personal" class="hist-tab table-text px-2 py-0.5 rounded-full border border-gray-300 bg-[#f4f1ea] text-gray-600">− Личное</button>
+            <button onclick="filterIngHistory('all')" id="histTab_all" class="hist-tab hist-tab-active table-text px-2 py-0.5 rounded-full border border-gray-300 bg-[#7c9473] text-white">${t('common_all')}</button>
+            <button onclick="filterIngHistory('in')" id="histTab_in" class="hist-tab table-text px-2 py-0.5 rounded-full border border-gray-300 bg-[#f4f1ea] text-gray-600">+ ${t('ing_tab_purchases')}</button>
+            <button onclick="filterIngHistory('order')" id="histTab_order" class="hist-tab table-text px-2 py-0.5 rounded-full border border-gray-300 bg-[#f4f1ea] text-gray-600">− ${t('ing_tab_orders')}</button>
+            <button onclick="filterIngHistory('personal')" id="histTab_personal" class="hist-tab table-text px-2 py-0.5 rounded-full border border-gray-300 bg-[#f4f1ea] text-gray-600">− ${t('ing_tab_personal')}</button>
         </div>`;
 
         // Строки таблицы
@@ -786,7 +791,9 @@ async function renderIngredientStockBlock(ing) {
             const isStorno = r.type === 'сторно';
             const sign = isIn || isStorno ? '+' : '−';
             const color = isIn ? 'color:#4f6349;' : isStorno ? 'color:#7c9473;' : (cat === 'order' ? 'color:#96712a;' : 'color:#c0685c;');
-            const notes = escapeHtml(r.notes || '').replace('Корректировка: ', '').replace('Закупка ', '');
+            const notes = escapeHtml(r.notes || '')
+                .replace('Корректировка: ', '').replace('Закупка ', '')
+                .replace(t('ing_adjustment_note') + ': ', '').replace(t('ing_purchase_note') + ' ', '');
             const rowCat = isStorno ? 'order' : cat; // сторно фильтруется вместе с заказами
             rows += `<tr class="border-b ing-hist-row" data-cat="${rowCat}">
                 <td class="p-1 whitespace-nowrap">${date}</td>
@@ -799,10 +806,10 @@ async function renderIngredientStockBlock(ing) {
         const table = `<div id="ingHistTableWrap" style="max-height:260px;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;">
             <table class="w-full table-text table-clean">
                 <thead><tr style="background-color:#e3e8df;" class="sticky top-0 table-text">
-                    <th class="p-1 text-left">Дата</th>
-                    <th class="p-1 text-right">Кол-во</th>
-                    <th class="p-1 text-right">Сумма</th>
-                    <th class="p-1 text-left">Заметка</th>
+                    <th class="p-1 text-left">${t('history_col_date')}</th>
+                    <th class="p-1 text-right">${t('inv_col_quantity')}</th>
+                    <th class="p-1 text-right">${t('stats_col_sum')}</th>
+                    <th class="p-1 text-left">${t('ing_note_label')}</th>
                 </tr></thead>
                 <tbody id="ingHistTableBody">${rows}</tbody>
             </table>
@@ -826,7 +833,7 @@ async function saveInventoryEdit() {
     const id  = Number(document.getElementById('editInventoryId').value);
     const qty = parseFloat(document.getElementById('editInventoryQty').value);
     const notes = document.getElementById('editInventoryNotes').value.trim();
-    if (isNaN(qty) || qty <= 0) { showInfo('Введите корректное количество!'); return; }
+    if (isNaN(qty) || qty <= 0) { showInfo(t('inv_enter_valid_qty')); return; }
     showLoading();
     try {
         const { error } = await db.from('inventory')
@@ -843,7 +850,7 @@ async function saveInventoryEdit() {
 }
 
 async function deleteInventoryRecord(id) {
-    const ok = await showConfirm('Удалить эту запись из истории склада?');
+    const ok = await showConfirm(t('ing_delete_stock_record_confirm'));
     if (!ok) return;
     closeModal();
     showLoading();
@@ -854,7 +861,7 @@ async function deleteInventoryRecord(id) {
         const ing = ingredients.find(i => i.id === currentIngredientId);
         if (ing) await renderIngredientStockBlock(ing);
         displayIngredients();
-    } catch(e) { console.error(e); showInfo('Ошибка удаления.'); }
+    } catch(e) { console.error(e); showInfo(t('error_delete_generic')); }
     finally { hideLoading(); }
 }
 
@@ -865,7 +872,7 @@ function renderIngredientPriceChart(ingredientId) {
 
     const history = (_ingredientPriceHistory[ingredientId] || []).slice().reverse(); // от старых к новым
     const ing = ingredients.find(i => i.id === ingredientId);
-    const unitLabel = ing ? (UNIT_LABELS[ing.unit] || ing.unit) : '';
+    const unitLabel = ing ? (unitAbbrev(ing.unit)) : '';
 
     if (history.length < 2) {
         canvas.style.display = 'none';
@@ -888,7 +895,7 @@ function renderIngredientPriceChart(ingredientId) {
         data: {
             labels,
             datasets: [{
-                label: `Цена (${CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency}/${unitLabel})`,
+                label: `${t('ing_price_word')} (${CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency}/${unitLabel})`,
                 data,
                 borderColor: '#4f46e5',
                 backgroundColor: 'rgba(79,70,229,0.08)',
@@ -923,15 +930,15 @@ function renderIngredientPriceHistory(ingredientId) {
     const container = document.getElementById('idPriceHistory');
     if (!container) return;
     const history = _ingredientPriceHistory[ingredientId] || [];
-    if (!history.length) { container.innerHTML = '<p class="table-text text-gray-400">История цен пуста</p>'; return; }
+    if (!history.length) { container.innerHTML = `<p class="table-text text-gray-400">${t('ing_price_history_empty')}</p>`; return; }
     const ing = ingredients.find(i => i.id === ingredientId);
-    const unitLabel = ing ? (UNIT_LABELS[ing.unit] || ing.unit) : '';
-    let html = '<table class="w-full table-text table-clean"><thead><tr style="background-color:#e3e8df;" class="table-text"><th class="p-0.5 text-left">С даты</th><th class="p-0.5 text-right">Цена упак.</th><th class="p-0.5 text-right">Цена за ед.</th><th class="p-0.5 w-12"></th></tr></thead><tbody>';
+    const unitLabel = ing ? (unitAbbrev(ing.unit)) : '';
+    let html = '<table class="w-full table-text table-clean"><thead><tr style="background-color:#e3e8df;" class="table-text"><th class="p-0.5 text-left">' + t('ing_from_date') + '</th><th class="p-0.5 text-right">' + t('ing_package_price_short') + '</th><th class="p-0.5 text-right">' + t('ing_price_per_unit') + '</th><th class="p-0.5 w-12"></th></tr></thead><tbody>';
     history.forEach((h, i) => {
         const unitPrice = h.package_size ? (h.package_price / h.package_size).toFixed(4) : '—';
         const isCurrent = i === 0;
         html += `<tr style="${isCurrent ? 'background:#e3e8df;' : ''}" class="${isCurrent ? 'font-semibold' : 'border-b'}">
-            <td class="p-0.5">${formatDateDMY(h.valid_from)}${isCurrent ? ' <span style="color:#4f6349;">(текущая)</span>' : ''}</td>
+            <td class="p-0.5">${formatDateDMY(h.valid_from)}${isCurrent ? ` <span style="color:#4f6349;">(${t('ing_current_word')})</span>` : ''}</td>
             <td class="p-0.5 text-right">${formatMoney(h.package_price)}</td>
             <td class="p-0.5 text-right">${unitPrice === '—' ? '—' : formatMoney(unitPrice, 4) + '/' + unitLabel}</td>
             <td class="p-0.5 text-center whitespace-nowrap">
@@ -948,7 +955,7 @@ function renderIngredientPriceHistory(ingredientId) {
 function openAddPriceHistoryModal() {
     const ing = ingredients.find(i => i.id === currentIngredientId);
     if (!ing) return;
-    document.getElementById('priceHistoryModalTitle').textContent = 'Добавить запись цены';
+    document.getElementById('priceHistoryModalTitle').textContent = t('ing_add_price_record');
     document.getElementById('priceHistoryRecordId').value = '';
     calSetFieldValue('priceHistoryDate', 'priceHistoryDateBtnLabel', new Date().toISOString().slice(0, 10));
     document.getElementById('priceHistoryPrice').value = ing.package_price.toFixed(2);
@@ -958,7 +965,7 @@ function openAddPriceHistoryModal() {
 
 // Открыть модалку для редактирования существующей записи
 function openEditPriceHistoryModal(id, validFrom, price, size) {
-    document.getElementById('priceHistoryModalTitle').textContent = 'Редактировать запись цены';
+    document.getElementById('priceHistoryModalTitle').textContent = t('ing_edit_price_record');
     document.getElementById('priceHistoryRecordId').value = id;
     calSetFieldValue('priceHistoryDate', 'priceHistoryDateBtnLabel', validFrom);
     document.getElementById('priceHistoryPrice').value = Number(price).toFixed(2);
@@ -974,7 +981,7 @@ async function savePriceHistoryRecord() {
     const price = parseFloat(document.getElementById('priceHistoryPrice').value);
     const size = parseFloat(document.getElementById('priceHistorySize').value);
     if (!validFrom || isNaN(price) || isNaN(size) || size <= 0) {
-        showInfo('Заполните все поля корректно!'); return;
+        showInfo(t('common_fill_correctly')); return;
     }
     showLoading();
     try {
@@ -1006,17 +1013,17 @@ async function savePriceHistoryRecord() {
 // Удалить запись из истории цен
 async function deletePriceHistoryRecord(id) {
     if (!hasPermission('can_delete')) {
-        showInfo('У вас нет права на удаление. Обратитесь к владельцу пекарни.');
+        showInfo(t('ing_no_delete_permission'));
         return;
     }
-    const ok = await showConfirm('Удалить эту запись из истории цен?');
+    const ok = await showConfirm(t('ing_delete_price_record_confirm'));
     if (!ok) return;
     showLoading();
     try {
         const { error } = await db.from('ingredient_price_history').delete().eq('id', id);
         if (error) throw error;
         await loadIngredientPriceHistory(currentIngredientId);
-    } catch (e) { console.error(e); showInfo('Ошибка удаления.'); }
+    } catch (e) { console.error(e); showInfo(t('error_delete_generic')); }
     finally { hideLoading(); }
 }
 
@@ -1042,7 +1049,7 @@ async function confirmQuickAddIngredient() {
     const packageSize  = parseFloat(document.getElementById('qaiSize').value);
     const unit = document.getElementById('qaiUnit').value;
     if (!name || isNaN(packagePrice) || isNaN(packageSize) || packageSize <= 0) {
-        showInfo('Заполните все поля корректно!'); return;
+        showInfo(t('common_fill_correctly')); return;
     }
     showLoading();
     try {

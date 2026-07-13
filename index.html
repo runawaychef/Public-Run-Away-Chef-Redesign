@@ -1034,25 +1034,25 @@
                 <div class="p-2 rounded-xl shadow-md" style="background:#f4f1ea;">
                     <div class="flex items-center justify-end mb-2">
                         <div class="flex gap-2">
-                            <button onclick="openInventarizationModal()" class="pill-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Инвентаризация</button>
-                            <button onclick="showTab('semiFinished')" class="pill-btn-secondary">Полуфабрикаты →</button>
+                            <button onclick="openInventarizationModal()" class="pill-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg><span data-i18n="inv_inventarization">Инвентаризация</span></button>
+                            <button onclick="showTab('semiFinished')" class="pill-btn-secondary" data-i18n="ing_semifinished_link">Полуфабрикаты →</button>
                         </div>
                     </div>
 
                     <!-- Карточный вид (по умолчанию) -->
                     <div id="ingredientCardsWrap">
                         <div id="ingredientCardsBody"></div>
-                        <p id="ingredientCardsEmpty" class="text-xs text-gray-400 text-center py-4 hidden">Ничего не найдено</p>
+                        <p id="ingredientCardsEmpty" class="text-xs text-gray-400 text-center py-4 hidden" data-i18n="common_nothing_found">Ничего не найдено</p>
                     </div>
 
                     <!-- Табличный вид -->
                     <div id="ingredientTableWrap" class="hidden">
                         <table class="w-full table-auto table-clean">
                             <thead><tr style="background-color:#e3e8df;">
-                                <th class="p-1 text-xs w-[35%]">Название</th>
-                                <th class="p-1 text-xs w-[20%]">Цена за ед.</th>
-                                <th class="p-1 text-xs w-[25%]">Остаток</th>
-                                <th class="p-1 text-xs w-[20%]">Хватит</th>
+                                <th class="p-1 text-xs w-[35%]" data-i18n="inv_col_name">Название</th>
+                                <th class="p-1 text-xs w-[20%]" data-i18n="ing_price_per_unit">Цена за ед.</th>
+                                <th class="p-1 text-xs w-[25%]" data-i18n="inv_col_balance">Остаток</th>
+                                <th class="p-1 text-xs w-[20%]" data-i18n="inv_col_lasts">Хватит</th>
                             </tr></thead>
                             <tbody id="ingredientTableBody"></tbody>
                         </table>
@@ -1067,38 +1067,38 @@
                     <div class="flex items-center justify-between mb-2">
                         <button onclick="closeIngredientDetail()" class="pill-btn">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-                            Назад к складу
+                            <span data-i18n="ing_back_to_stock">Назад к складу</span>
                         </button>
-                        <button onclick="deleteCurrentIngredient()" class="pill-btn-danger perm-delete">Удалить ингредиент</button>
+                        <button onclick="deleteCurrentIngredient()" class="pill-btn-danger perm-delete" data-i18n="ing_delete_btn">Удалить ингредиент</button>
                     </div>
-                    <p class="text-[11px] text-gray-400 mb-1">Изменения сохраняются автоматически</p>
+                    <p class="text-[11px] text-gray-400 mb-1" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
                     <div class="grid grid-cols-2 gap-1 mt-1">
                         <div>
-                            <label class="table-text text-gray-500">Название</label>
-                            <input id="idNameInput" type="text" onblur="saveIngredientHeader()" class="border p-0.5 rounded-xl w-full table-text" placeholder="Например: Мука пшеничная">
+                            <label class="table-text text-gray-500" data-i18n="inv_col_name">Название</label>
+                            <input id="idNameInput" type="text" onblur="saveIngredientHeader()" class="border p-0.5 rounded-xl w-full table-text" placeholder="Например: Мука пшеничная" data-i18n-placeholder="ing_name_placeholder">
                         </div>
                         <div>
-                            <label class="table-text text-gray-500">Единица</label>
+                            <label class="table-text text-gray-500" data-i18n="ing_unit_label">Единица</label>
                             <select id="idUnitInput" onchange="saveIngredientHeader()" class="border p-0.5 rounded-xl w-full table-text">
-                                <option value="g">г</option>
-                                <option value="kg">кг</option>
-                                <option value="ml">мл</option>
-                                <option value="l">л</option>
-                                <option value="pcs">шт</option>
+                                <option value="g" data-i18n="unit_g">г</option>
+                                <option value="kg" data-i18n="unit_kg">кг</option>
+                                <option value="ml" data-i18n="unit_ml">мл</option>
+                                <option value="l" data-i18n="unit_l">л</option>
+                                <option value="pcs" data-i18n="unit_pcs">шт</option>
                             </select>
                         </div>
                     </div>
-                    <button id="idSaveNewBtn" onclick="saveNewIngredient()" class="hidden pill-btn w-full justify-center mt-2">Сохранить</button>
+                    <button id="idSaveNewBtn" onclick="saveNewIngredient()" class="hidden pill-btn w-full justify-center mt-2" data-i18n="common_save">Сохранить</button>
                 </div>
 
                 <!-- Блок 2: Пополнить склад (остаток + новая цена) -->
                 <div id="ingStockBlock" class="bg-white p-2 rounded-xl shadow-md mb-3">
-                    <h3 class="text-xs font-semibold text-gray-700 mb-2">Склад</h3>
+                    <h3 class="text-xs font-semibold text-gray-700 mb-2" data-i18n="inv_tab_stock">Склад</h3>
 
                     <!-- Текущий остаток -->
                     <div class="flex items-center justify-between mb-3 border-b pb-2">
                         <div>
-                            <span class="table-text text-gray-500">Остаток:</span>
+                            <span class="table-text text-gray-500" data-i18n="ing_balance_colon">Остаток:</span>
                             <span id="ingBalanceValue" class="table-text font-bold text-gray-800 ml-1">—</span>
                             <span id="ingBalanceUnit" class="table-text text-gray-500 ml-1"></span>
                         </div>
@@ -1108,7 +1108,7 @@
                     <!-- Партии (FIFO) — разворачиваемый блок -->
                     <div class="mb-3 border-b pb-2">
                         <div class="flex items-center justify-between cursor-pointer" onclick="toggleIngredientBatches()">
-                            <span id="ingBatchesToggleLabel" class="table-text text-gray-500">Партии</span>
+                            <span id="ingBatchesToggleLabel" class="table-text text-gray-500" data-i18n="ing_batches">Партии</span>
                             <svg id="ingBatchesChevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform .15s;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                         </div>
                         <div id="ingBatchesList" class="hidden mt-1.5"></div>
@@ -1117,7 +1117,7 @@
                     <!-- Форма пополнения (количество + цена) -->
                     <div class="grid grid-cols-2 gap-1 mb-2">
                         <div style="position:relative;" onclick="event.stopPropagation();">
-                            <label class="table-text text-gray-500">Дата</label>
+                            <label class="table-text text-gray-500" data-i18n="ing_date_label">Дата</label>
                             <input id="idNewPriceDate" type="hidden">
                             <button type="button" class="field-select-btn" id="idNewPriceDateBtn" onclick="toggleCustomCalendar('globalCalendarPopup','idNewPriceDate','idNewPriceDateBtnLabel',{onPick:function(){}})">
                                 <span id="idNewPriceDateBtnLabel">—</span>
@@ -1125,24 +1125,24 @@
                             </button>
                         </div>
                         <div>
-                            <label class="table-text text-gray-500">Количество (<span id="ingQtyUnit"></span>)</label>
+                            <label class="table-text text-gray-500"><span data-i18n="inv_col_quantity">Количество</span> (<span id="ingQtyUnit"></span>)</label>
                             <input id="idStockQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-0.5 rounded-xl table-text w-full" placeholder="0">
                         </div>
                         <div>
-                            <label class="table-text text-gray-500">Цена за упаковку</label>
+                            <label class="table-text text-gray-500" data-i18n="ing_package_price">Цена за упаковку</label>
                             <input id="idPackagePrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" onchange="renderIngredientUnitPricePreview()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                         <div>
-                            <label class="table-text text-gray-500">Размер упаковки</label>
+                            <label class="table-text text-gray-500" data-i18n="ing_package_size">Размер упаковки</label>
                             <input id="idPackageSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" onchange="renderIngredientUnitPricePreview()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                         <div class="col-span-2">
-                            <span class="table-text text-gray-500">Цена за ед.: <span id="idUnitPrice" class="font-semibold text-gray-900">0.0000</span></span>
+                            <span class="table-text text-gray-500"><span data-i18n="ing_price_per_unit">Цена за ед.</span>: <span id="idUnitPrice" class="font-semibold text-gray-900">0.0000</span></span>
                         </div>
                     </div>
-                    <button onclick="saveStockAndPrice()" class="pill-btn w-full justify-center">Сохранить</button>
-                    <button onclick="openWriteOffModal()" class="pill-btn-danger w-full justify-center mt-1.5" style="background:#f3ded9; color:#a3493d; box-shadow:none;">— Списать (корректировка)</button>
-                    <button onclick="closeIngredientDetail(); openInventarizationModal();" class="pill-btn-secondary w-full justify-center mt-1.5"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Инвентаризация</button>
+                    <button onclick="saveStockAndPrice()" class="pill-btn w-full justify-center" data-i18n="common_save">Сохранить</button>
+                    <button onclick="openWriteOffModal()" class="pill-btn-danger w-full justify-center mt-1.5" style="background:#f3ded9; color:#a3493d; box-shadow:none;" data-i18n="ing_writeoff_btn">— Списать (корректировка)</button>
+                    <button onclick="closeIngredientDetail(); openInventarizationModal();" class="pill-btn-secondary w-full justify-center mt-1.5"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg><span data-i18n="inv_inventarization">Инвентаризация</span></button>
 
                     <!-- История пополнений -->
                     <div id="ingStockHistory" class="mt-2"></div>
@@ -1150,15 +1150,15 @@
 
                 <!-- Блок 3: График изменения цены -->
                 <div id="ingPriceChartBlock" class="bg-white p-2 rounded-xl shadow-md mb-3">
-                    <h3 class="text-xs font-semibold text-gray-700  mb-2">Динамика цены</h3>
+                    <h3 class="text-xs font-semibold text-gray-700  mb-2" data-i18n="ing_price_dynamics">Динамика цены</h3>
                     <canvas id="ingredientPriceChart" style="max-height:180px;"></canvas>
-                    <p id="ingredientPriceChartEmpty" class="text-xs text-gray-400 hidden">Недостаточно данных — нужно минимум 2 записи</p>
+                    <p id="ingredientPriceChartEmpty" class="text-xs text-gray-400 hidden" data-i18n="ing_not_enough_data_2">Недостаточно данных — нужно минимум 2 записи</p>
                 </div>
 
                 <!-- Блок 4: История цен -->
                 <div id="ingPriceHistoryBlock" class="bg-white p-2 rounded-xl shadow-md mb-3">
-                    <h3 class="text-xs font-semibold text-gray-700 mb-2">История цен</h3>
-                    <div id="idPriceHistory"><p class="text-xs text-gray-400">Загрузка...</p></div>
+                    <h3 class="text-xs font-semibold text-gray-700 mb-2" data-i18n="ing_price_history">История цен</h3>
+                    <div id="idPriceHistory"><p class="text-xs text-gray-400" data-i18n="common_loading">Загрузка...</p></div>
                 </div>
             </div>
         </div>
@@ -1169,29 +1169,29 @@
                 <div class="flex justify-start mb-2">
                     <button onclick="showTab('ingredients')" class="pill-btn">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-                        Назад к ингредиентам
+                        <span data-i18n="sf_back_to_ingredients">Назад к ингредиентам</span>
                     </button>
                 </div>
                 <div class="p-2 rounded-xl shadow-md" style="background:#f4f1ea;">
                     <div class="flex items-center justify-end mb-2">
-                        <button onclick="openSfInventarizationModal()" class="pill-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Инвентаризация</button>
+                        <button onclick="openSfInventarizationModal()" class="pill-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg><span data-i18n="inv_inventarization">Инвентаризация</span></button>
                     </div>
-                    <p id="semiFinishedRecipeWarning" class="text-xs mb-2 hidden" style="color:#a3493d; background:#f3ded9; border:1px solid #e8c4bb; border-radius:12px; padding:6px;"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>У некоторых полуфабрикатов не подтверждён рецепт. Откройте их и проверьте.</p>
+                    <p id="semiFinishedRecipeWarning" class="text-xs mb-2 hidden" style="color:#a3493d; background:#f3ded9; border:1px solid #e8c4bb; border-radius:12px; padding:6px;"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg><span data-i18n="sf_recipe_warning">У некоторых полуфабрикатов не подтверждён рецепт. Откройте их и проверьте.</span></p>
 
                     <!-- Карточный вид (по умолчанию) -->
                     <div id="semiFinishedCardsWrap">
                         <div id="semiFinishedCardsBody"></div>
-                        <p id="semiFinishedCardsEmpty" class="text-xs text-gray-400 text-center py-4 hidden">Ничего не найдено</p>
+                        <p id="semiFinishedCardsEmpty" class="text-xs text-gray-400 text-center py-4 hidden" data-i18n="common_nothing_found">Ничего не найдено</p>
                     </div>
 
                     <!-- Табличный вид -->
                     <div id="semiFinishedTableWrap" class="hidden">
                         <table class="w-full table-auto table-clean">
                             <thead><tr style="background-color:#e3e8df;">
-                                <th class="p-1 text-xs w-[35%]">Название</th>
-                                <th class="p-1 text-xs w-[20%]">Цена за ед.</th>
-                                <th class="p-1 text-xs w-[25%]">Остаток</th>
-                                <th class="p-1 text-xs w-[20%]">Хватит</th>
+                                <th class="p-1 text-xs w-[35%]" data-i18n="inv_col_name">Название</th>
+                                <th class="p-1 text-xs w-[20%]" data-i18n="ing_price_per_unit">Цена за ед.</th>
+                                <th class="p-1 text-xs w-[25%]" data-i18n="inv_col_balance">Остаток</th>
+                                <th class="p-1 text-xs w-[20%]" data-i18n="inv_col_lasts">Хватит</th>
                             </tr></thead>
                             <tbody id="semiFinishedTableBody"></tbody>
                         </table>
@@ -1205,31 +1205,31 @@
                     <div class="flex items-center justify-between mb-2">
                         <button onclick="closeSemiFinishedDetail()" class="pill-btn">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-                            Назад к полуфабрикатам
+                            <span data-i18n="sf_back_to_sf">Назад к полуфабрикатам</span>
                         </button>
-                        <button onclick="deleteCurrentSemiFinished()" class="pill-btn-danger perm-delete">Удалить полуфабрикат</button>
+                        <button onclick="deleteCurrentSemiFinished()" class="pill-btn-danger perm-delete" data-i18n="sf_delete_btn">Удалить полуфабрикат</button>
                     </div>
-                    <p class="text-[11px] text-gray-400 mb-1">Изменения сохраняются автоматически</p>
+                    <p class="text-[11px] text-gray-400 mb-1" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
                     <div class="grid grid-cols-2 gap-1 mb-2">
                         <div class="col-span-2">
-                            <label class="table-text text-gray-500">Название</label>
+                            <label class="table-text text-gray-500" data-i18n="inv_col_name">Название</label>
                             <input id="sfdName" type="text" onblur="saveSfdHeader()" class="border p-0.5 rounded-xl w-full table-text text-gray-900">
                         </div>
                         <div>
-                            <label class="table-text text-gray-500">Размер партии</label>
+                            <label class="table-text text-gray-500" data-i18n="sf_batch_size">Размер партии</label>
                             <input id="sfdBatchSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" onchange="saveSfdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                         <div>
-                            <label class="table-text text-gray-500">Единица</label>
+                            <label class="table-text text-gray-500" data-i18n="ing_unit_label">Единица</label>
                             <select id="sfdUnit" onchange="saveSfdHeader()" class="border p-0.5 rounded-xl w-full table-text">
-                                <option value="g">граммы (г)</option>
-                                <option value="kg">килограммы (кг)</option>
-                                <option value="ml">миллилитры (мл)</option>
-                                <option value="l">литры (л)</option>
+                                <option value="g" data-i18n="unit_g_full">граммы (г)</option>
+                                <option value="kg" data-i18n="unit_kg_full">килограммы (кг)</option>
+                                <option value="ml" data-i18n="unit_ml_full">миллилитры (мл)</option>
+                                <option value="l" data-i18n="unit_l_full">литры (л)</option>
                             </select>
                         </div>
                         <div class="col-span-2">
-                            <label class="table-text text-gray-500">Прочие расходы на партию</label>
+                            <label class="table-text text-gray-500" data-i18n="sf_other_costs">Прочие расходы на партию</label>
                             <input id="sfdOtherCosts" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" onchange="saveSfdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                     </div>
@@ -1239,7 +1239,7 @@
                 <div class="bg-white p-2 rounded-xl shadow-md mb-3">
                     <div class="flex items-center justify-between">
                         <div>
-                            <span class="table-text text-gray-500">Остаток:</span>
+                            <span class="table-text text-gray-500" data-i18n="ing_balance_colon">Остаток:</span>
                             <span id="sfBalanceValue" class="text-lg font-bold text-gray-800 ml-1">—</span>
                             <span id="sfBalanceUnit" class="table-text text-gray-500 ml-1"></span>
                         </div>
@@ -1249,7 +1249,7 @@
                     <!-- Партии (FIFO) — разворачиваемый блок -->
                     <div class="mt-2 pt-2 border-t">
                         <div class="flex items-center justify-between cursor-pointer" onclick="toggleSfBatches()">
-                            <span id="sfBatchesToggleLabel" class="table-text text-gray-500">Партии</span>
+                            <span id="sfBatchesToggleLabel" class="table-text text-gray-500" data-i18n="ing_batches">Партии</span>
                             <svg id="sfBatchesChevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform .15s;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                         </div>
                         <div id="sfBatchesList" class="hidden mt-1.5"></div>
@@ -1258,57 +1258,57 @@
                 </div>
 
                 <div class="bg-white p-2 rounded-xl shadow-md mb-3">
-                    <h2 class="text-sm font-semibold text-gray-800 mb-2">Рецептура (на партию)</h2>
+                    <h2 class="text-sm font-semibold text-gray-800 mb-2" data-i18n="sf_recipe_title">Рецептура (на партию)</h2>
                     <div class="rounded-xl p-2 mb-2" style="background:#f4f1ea; border:1px dashed #d8d2c4;">
-                        <label class="table-text text-gray-500">Скопировать рецепт из другого полуфабриката</label>
+                        <label class="table-text text-gray-500" data-i18n="sf_copy_recipe_label">Скопировать рецепт из другого полуфабриката</label>
                         <div class="search-input-wrap">
-                            <input id="copySfRecipeFromInput" placeholder="— выберите полуфабрикат —" autocomplete="off" class="border p-1 rounded-xl table-text w-full">
+                            <input id="copySfRecipeFromInput" placeholder="— выберите полуфабрикат —" autocomplete="off" class="border p-1 rounded-xl table-text w-full" data-i18n-placeholder="sf_choose_semifinished_placeholder">
                             <div id="copySfRecipeFromDropdown" class="search-dropdown hidden"></div>
                         </div>
                     </div>
                     <table class="w-full table-auto table-clean mb-2">
                         <thead><tr style="background-color:#e3e8df;">
-                            <th class="p-1 text-xs w-[40%]">Ингредиент</th>
-                            <th class="p-1 text-xs w-[25%]">Кол-во</th>
-                            <th class="p-1 text-xs w-[20%]">Стоимость</th>
-                            <th class="p-1 text-xs w-[15%]">Действия</th>
+                            <th class="p-1 text-xs w-[40%]" data-i18n="inv_col_ingredient">Ингредиент</th>
+                            <th class="p-1 text-xs w-[25%]" data-i18n="inv_col_quantity">Кол-во</th>
+                            <th class="p-1 text-xs w-[20%]" data-i18n="sf_col_cost">Стоимость</th>
+                            <th class="p-1 text-xs w-[15%]" data-i18n="sf_col_actions">Действия</th>
                         </tr></thead>
-                    <p class="table-text text-gray-400 mb-1">Нажмите на звёздочку, чтобы отметить основной ингредиент для расчёта производства.</p>
+                    <p class="table-text text-gray-400 mb-1" data-i18n="sf_star_hint">Нажмите на звёздочку, чтобы отметить основной ингредиент для расчёта производства.</p>
                         <tbody id="sfRecipeItemsBody"></tbody>
                     </table>
                     <div class="rounded-xl p-2 mb-2" style="background:#f4f1ea; border:1px solid #e2ddd0;">
-                        <label class="table-text text-gray-500">Добавить в рецепт</label>
+                        <label class="table-text text-gray-500" data-i18n="sf_add_to_recipe_label">Добавить в рецепт</label>
                         <div class="search-input-wrap mb-1">
-                            <input id="newSfRecipeIngredient" placeholder="— ингредиент —" autocomplete="off" class="border p-1 rounded-xl table-text w-full">
+                            <input id="newSfRecipeIngredient" placeholder="— ингредиент —" autocomplete="off" class="border p-1 rounded-xl table-text w-full" data-i18n-placeholder="sf_choose_ingredient_placeholder">
                             <div id="newSfRecipeIngredientDropdown" class="search-dropdown hidden"></div>
                         </div>
                         <div class="flex gap-2">
-                            <input id="newSfRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="Количество" class="border p-1 rounded-xl table-text flex-1">
-                            <button onclick="addIngredientToSfRecipe()" class="pill-btn whitespace-nowrap">+ Добавить</button>
+                            <input id="newSfRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="Количество" class="border p-1 rounded-xl table-text flex-1" data-i18n-placeholder="inv_col_quantity">
+                            <button onclick="addIngredientToSfRecipe()" class="pill-btn whitespace-nowrap" data-i18n="sf_add_btn">+ Добавить</button>
                         </div>
                     </div>
-                    <button onclick="produceSfBatch()" class="pill-btn-secondary w-full justify-center mb-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"/></svg>Произвести партию</button>
-                    <button onclick="openSfWriteOffModal()" class="pill-btn-secondary w-full justify-center mb-2">— Списать (корректировка)</button>
+                    <button onclick="produceSfBatch()" class="pill-btn-secondary w-full justify-center mb-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"/></svg><span data-i18n="sf_produce_batch_btn">Произвести партию</span></button>
+                    <button onclick="openSfWriteOffModal()" class="pill-btn-secondary w-full justify-center mb-2" data-i18n="ing_writeoff_btn">— Списать (корректировка)</button>
                     <label class="flex items-center gap-2 table-text text-gray-700 border-t pt-2 mb-1 cursor-pointer">
                         <input type="checkbox" id="sfdRecipeConfirmed" onchange="toggleSfRecipeConfirmed()" style="accent-color:#7c9473;">
-                        Рецепт заполнен полностью
+                        <span data-i18n="sf_recipe_confirmed_label">Рецепт заполнен полностью</span>
                     </label>
                     <label class="flex items-center gap-2 table-text text-gray-700 mb-1 cursor-pointer">
                         <input type="checkbox" id="sfdTrackStock" onchange="toggleSfTrackStock()" style="accent-color:#7c9473;">
-                        Отслеживать остатки постоянно (включить в аналитику склада)
+                        <span data-i18n="sf_track_stock_label">Отслеживать остатки постоянно (включить в аналитику склада)</span>
                     </label>
                     <div class="text-right table-text text-gray-600 space-y-0.5 border-t pt-1 perm-view-costs">
-                        <div>Себестоимость партии: <span id="sfdBatchCost" class="font-medium text-gray-800">0.00</span></div>
-                        <div>Себестоимость за единицу: <span id="sfdUnitCost" class="font-semibold text-gray-900">0.0000</span></div>
+                        <div><span data-i18n="sf_batch_cost">Себестоимость партии</span>: <span id="sfdBatchCost" class="font-medium text-gray-800">0.00</span></div>
+                        <div><span data-i18n="sf_unit_cost">Себестоимость за единицу</span>: <span id="sfdUnitCost" class="font-semibold text-gray-900">0.0000</span></div>
                     </div>
                 </div>
 
                 <!-- Динамика себестоимости и история производства — внизу карточки -->
                 <div class="bg-white p-2 rounded-xl shadow-md mb-3">
                     <div class="perm-view-costs">
-                        <p class="text-xs font-semibold text-gray-700 mb-1">Динамика себестоимости партии</p>
+                        <p class="text-xs font-semibold text-gray-700 mb-1" data-i18n="sf_cost_dynamics">Динамика себестоимости партии</p>
                         <canvas id="sfCostChart" height="160" style="display:none;"></canvas>
-                        <p id="sfCostChartEmpty" class="text-xs text-gray-400 hidden">Недостаточно данных — нужно 2+ партии.</p>
+                        <p id="sfCostChartEmpty" class="text-xs text-gray-400 hidden" data-i18n="sf_not_enough_batches">Недостаточно данных — нужно 2+ партии.</p>
                     </div>
                     <div id="sfStockHistory" class="mt-2"></div>
                 </div>
@@ -2262,10 +2262,10 @@
         <!-- Модалка производства п/ф — шаг 1: количество основного ингредиента -->
         <div id="sfProduceModal" class="modal">
             <div class="modal-content" style="max-width:480px;">
-                <h2 class="text-sm font-semibold mb-3 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"/></svg>Произвести партию — шаг 1</h2>
-                <p class="text-xs text-gray-500 mb-3">Введите количество основного ингредиента.</p>
+                <h2 class="text-sm font-semibold mb-3 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"/></svg><span data-i18n="sf_produce_step1_title">Произвести партию — шаг 1</span></h2>
+                <p class="text-xs text-gray-500 mb-3" data-i18n="sf_produce_step1_desc">Введите количество основного ингредиента.</p>
                 <div class="mb-4">
-                    <label class="text-xs text-gray-600 block mb-1">Основной ингредиент: <span id="sfProduceIngName" class="font-semibold text-gray-800"></span></label>
+                    <label class="text-xs text-gray-600 block mb-1"><span data-i18n="sf_main_ingredient">Основной ингредиент</span>: <span id="sfProduceIngName" class="font-semibold text-gray-800"></span></label>
                     <div class="flex gap-2 items-center">
                         <input type="number" inputmode="decimal" step="0.01" min="0.01" id="sfProduceIngQty"
                             class="border rounded p-1 text-xs flex-1 text-right">
@@ -2273,8 +2273,8 @@
                     </div>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="sfProduceCalc()" class="pill-btn flex-1 justify-center">Рассчитать →</button>
-                    <button onclick="closeModal()" class="pill-btn-secondary flex-1">Отмена</button>
+                    <button onclick="sfProduceCalc()" class="pill-btn flex-1 justify-center" data-i18n="sf_calculate_btn">Рассчитать →</button>
+                    <button onclick="closeModal()" class="pill-btn-secondary flex-1" data-i18n="common_cancel">Отмена</button>
                 </div>
             </div>
         </div>
@@ -2282,23 +2282,23 @@
         <!-- Модалка производства п/ф — шаг 2: подтверждение выхода -->
         <div id="sfConfirmModal" class="modal">
             <div class="modal-content" style="max-width:480px;">
-                <h2 class="text-sm font-semibold mb-3 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"/></svg>Подтвердите производство</h2>
+                <h2 class="text-sm font-semibold mb-3 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"/></svg><span data-i18n="sf_confirm_produce_title">Подтвердите производство</span></h2>
                 <div class="rounded-xl p-2 mb-3 text-xs text-gray-700" style="background:#e3e8df;">
-                    <p class="mb-1">Будет списано:</p>
+                    <p class="mb-1" data-i18n="sf_will_be_written_off">Будет списано:</p>
                     <p class="font-semibold" id="sfConfirmIngLine"></p>
                 </div>
                 <div class="mb-4">
-                    <label class="text-xs text-gray-600 block mb-1">Фактический выход п/ф:</label>
+                    <label class="text-xs text-gray-600 block mb-1" data-i18n="sf_actual_output">Фактический выход п/ф:</label>
                     <div class="flex gap-2 items-center">
                         <input type="number" inputmode="decimal" step="0.01" min="0.01" id="sfConfirmResultQty"
                             class="border rounded p-1 text-xs flex-1 text-right font-semibold">
                         <span id="sfConfirmResultUnit" class="text-xs text-gray-500 w-8"></span>
                     </div>
-                    <p class="text-xs text-gray-400 mt-1">Расчётное значение подставлено автоматически. Измените если фактический выход отличается.</p>
+                    <p class="text-xs text-gray-400 mt-1" data-i18n="sf_calculated_value_hint">Расчётное значение подставлено автоматически. Измените если фактический выход отличается.</p>
                 </div>
                 <div class="flex gap-2">
-                    <button onclick="confirmSfProduce()" class="pill-btn flex-1 justify-center">Подтвердить</button>
-                    <button onclick="closeModal()" class="pill-btn-secondary flex-1">Отмена</button>
+                    <button onclick="confirmSfProduce()" class="pill-btn flex-1 justify-center" data-i18n="common_confirm">Подтвердить</button>
+                    <button onclick="closeModal()" class="pill-btn-secondary flex-1" data-i18n="common_cancel">Отмена</button>
                 </div>
             </div>
         </div>
@@ -2306,15 +2306,15 @@
         <!-- Модалка списания полуфабриката -->
         <div id="sfWriteOffModal" class="modal">
             <div class="modal-content" style="max-width:480px;">
-                <h2 class="text-sm font-semibold mb-3 text-gray-800">Списание п/ф (корректировка)</h2>
+                <h2 class="text-sm font-semibold mb-3 text-gray-800" data-i18n="sf_writeoff_title">Списание п/ф (корректировка)</h2>
                 <p id="sfWriteOffName" class="text-xs text-gray-500 mb-3"></p>
-                <label class="text-xs text-gray-500">Количество (<span id="sfWriteOffUnit"></span>)</label>
+                <label class="text-xs text-gray-500"><span data-i18n="inv_col_quantity">Количество</span> (<span id="sfWriteOffUnit"></span>)</label>
                 <input id="sfWriteOffQty" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
-                <label class="text-xs text-gray-500">Причина (необязательно)</label>
-                <input id="sfWriteOffNote" type="text" class="border p-0.5 rounded-xl mb-3 w-full text-xs" placeholder="Например: испортилось">
+                <label class="text-xs text-gray-500" data-i18n="ing_reason_optional">Причина (необязательно)</label>
+                <input id="sfWriteOffNote" type="text" class="border p-0.5 rounded-xl mb-3 w-full text-xs" placeholder="Например: испортилось" data-i18n-placeholder="sf_writeoff_note_placeholder">
                 <div class="flex gap-2">
-                    <button onclick="saveSfWriteOff()" class="pill-btn-danger flex-1">Списать</button>
-                    <button onclick="closeModal()" class="pill-btn-secondary flex-1">Отмена</button>
+                    <button onclick="saveSfWriteOff()" class="pill-btn-danger flex-1" data-i18n="ing_writeoff_confirm_btn">Списать</button>
+                    <button onclick="closeModal()" class="pill-btn-secondary flex-1" data-i18n="common_cancel">Отмена</button>
                 </div>
             </div>
         </div>
@@ -2322,12 +2322,12 @@
         <!-- Модалка инвентаризации полуфабрикатов -->
         <div id="sfInventarizationModal" class="modal">
             <div class="modal-content" style="max-width:480px;">
-                <h2 class="text-sm font-semibold mb-1 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Инвентаризация п/ф</h2>
-                <p class="text-xs text-gray-500 mb-3">Введите фактическое количество. Пустые поля — пропускаются.</p>
+                <h2 class="text-sm font-semibold mb-1 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg><span data-i18n="sf_inventarization_title">Инвентаризация п/ф</span></h2>
+                <p class="text-xs text-gray-500 mb-3" data-i18n="inv_enter_actual_qty">Введите фактическое количество. Пустые поля — пропускаются.</p>
                 <div id="sfInventarizationContent" style="max-height:60vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
                 <div class="flex gap-2 mt-3">
-                    <button onclick="saveSfInventarization()" class="pill-btn flex-1 justify-center">Сохранить</button>
-                    <button onclick="closeModal()" class="pill-btn-secondary" style="width:80px;">Отмена</button>
+                    <button onclick="saveSfInventarization()" class="pill-btn flex-1 justify-center" data-i18n="common_save">Сохранить</button>
+                    <button onclick="closeModal()" class="pill-btn-secondary" style="width:80px;" data-i18n="common_cancel">Отмена</button>
                 </div>
             </div>
         </div>
@@ -2357,12 +2357,12 @@
         <!-- Модалка инвентаризации -->
         <div id="inventarizationModal" class="modal">
             <div class="modal-content" style="max-width:480px;">
-                <h2 class="text-sm font-semibold mb-1 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg>Инвентаризация</h2>
-                <p class="text-xs text-gray-500 mb-3">Введите фактическое количество. Пустые поля — пропускаются. Разница запишется автоматически.</p>
+                <h2 class="text-sm font-semibold mb-1 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg><span data-i18n="inv_inventarization">Инвентаризация</span></h2>
+                <p class="text-xs text-gray-500 mb-3" data-i18n="ing_inventarization_desc">Введите фактическое количество. Пустые поля — пропускаются. Разница запишется автоматически.</p>
                 <div id="inventarizationContent" style="max-height:60vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
                 <div class="flex gap-2 mt-3">
-                    <button onclick="saveInventarization()" class="pill-btn flex-1 justify-center">Сохранить инвентаризацию</button>
-                    <button onclick="closeModal()" class="pill-btn-secondary" style="width:80px;">Отмена</button>
+                    <button onclick="saveInventarization()" class="pill-btn flex-1 justify-center" data-i18n="ing_save_inventarization">Сохранить инвентаризацию</button>
+                    <button onclick="closeModal()" class="pill-btn-secondary" style="width:80px;" data-i18n="common_cancel">Отмена</button>
                 </div>
             </div>
         </div>
@@ -2370,20 +2370,20 @@
         <!-- Модалка редактирования названия/единицы ингредиента -->
         <div id="editIngredientHeaderModal" class="modal">
             <div class="modal-content" style="max-width:480px;">
-                <h2 class="text-sm font-semibold mb-3 text-gray-800">Редактировать ингредиент</h2>
-                <label class="text-xs text-gray-500">Название</label>
+                <h2 class="text-sm font-semibold mb-3 text-gray-800" data-i18n="ing_edit_title">Редактировать ингредиент</h2>
+                <label class="text-xs text-gray-500" data-i18n="inv_col_name">Название</label>
                 <input id="editIngName" type="text" class="border p-0.5 rounded-xl mb-2 w-full text-sm">
-                <label class="text-xs text-gray-500">Единица измерения</label>
+                <label class="text-xs text-gray-500" data-i18n="ing_unit_of_measure">Единица измерения</label>
                 <select id="editIngUnit" class="border p-0.5 rounded-xl mb-3 w-full text-sm">
-                    <option value="g">граммы (г)</option>
-                    <option value="kg">килограммы (кг)</option>
-                    <option value="ml">миллилитры (мл)</option>
-                    <option value="l">литры (л)</option>
-                    <option value="pcs">штуки (шт)</option>
+                    <option value="g" data-i18n="unit_g_full">граммы (г)</option>
+                    <option value="kg" data-i18n="unit_kg_full">килограммы (кг)</option>
+                    <option value="ml" data-i18n="unit_ml_full">миллилитры (мл)</option>
+                    <option value="l" data-i18n="unit_l_full">литры (л)</option>
+                    <option value="pcs" data-i18n="unit_pcs_full">штуки (шт)</option>
                 </select>
                 <div class="flex gap-2">
-                    <button onclick="saveIngredientHeader()" class="pill-btn flex-1 justify-center">Сохранить</button>
-                    <button onclick="closeModal()" class="pill-btn-secondary flex-1">Отмена</button>
+                    <button onclick="saveIngredientHeader()" class="pill-btn flex-1 justify-center" data-i18n="common_save">Сохранить</button>
+                    <button onclick="closeModal()" class="pill-btn-secondary flex-1" data-i18n="common_cancel">Отмена</button>
                 </div>
             </div>
         </div>
@@ -2391,16 +2391,16 @@
         <!-- Модалка редактирования записи склада -->
         <div id="editInventoryModal" class="modal">
             <div class="modal-content" style="max-width:480px;">
-                <h2 class="text-sm font-semibold mb-3 text-gray-800">Редактировать запись</h2>
+                <h2 class="text-sm font-semibold mb-3 text-gray-800" data-i18n="ing_edit_record_title">Редактировать запись</h2>
                 <input type="hidden" id="editInventoryId">
-                <label class="text-xs text-gray-500">Количество</label>
+                <label class="text-xs text-gray-500" data-i18n="inv_col_quantity">Количество</label>
                 <input id="editInventoryQty" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
-                <label class="text-xs text-gray-500">Заметка</label>
+                <label class="text-xs text-gray-500" data-i18n="ing_note_label">Заметка</label>
                 <input id="editInventoryNotes" type="text" class="border p-0.5 rounded-xl mb-3 w-full text-xs">
                 <div class="flex gap-2">
-                    <button onclick="saveInventoryEdit()" class="pill-btn flex-1 justify-center">Сохранить</button>
-                    <button onclick="deleteInventoryRecord(Number(document.getElementById('editInventoryId').value))" class="pill-btn-danger" style="width:80px;">Удалить</button>
-                    <button onclick="closeModal()" class="pill-btn-secondary" style="width:80px;">Отмена</button>
+                    <button onclick="saveInventoryEdit()" class="pill-btn flex-1 justify-center" data-i18n="common_save">Сохранить</button>
+                    <button onclick="deleteInventoryRecord(Number(document.getElementById('editInventoryId').value))" class="pill-btn-danger" style="width:80px;" data-i18n="common_delete">Удалить</button>
+                    <button onclick="closeModal()" class="pill-btn-secondary" style="width:80px;" data-i18n="common_cancel">Отмена</button>
                 </div>
             </div>
         </div>
@@ -2408,18 +2408,18 @@
         <!-- Модалка редактирования партии (FIFO) -->
         <div id="editBatchModal" class="modal">
             <div class="modal-content" style="max-width:480px;">
-                <h2 class="text-sm font-semibold mb-3 text-gray-800">Редактировать партию</h2>
+                <h2 class="text-sm font-semibold mb-3 text-gray-800" data-i18n="ing_edit_batch_title">Редактировать партию</h2>
                 <input type="hidden" id="editBatchId">
                 <input type="hidden" id="editBatchItemType">
                 <p id="editBatchDate" class="table-text text-gray-500 mb-3"></p>
-                <label class="text-xs text-gray-500">Остаток (<span id="editBatchUnit"></span>)</label>
+                <label class="text-xs text-gray-500"><span data-i18n="inv_col_balance">Остаток</span> (<span id="editBatchUnit"></span>)</label>
                 <input id="editBatchQty" type="number" inputmode="decimal" step="0.01" min="0" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
-                <label class="text-xs text-gray-500">Цена за единицу</label>
+                <label class="text-xs text-gray-500" data-i18n="ing_price_per_unit">Цена за единицу</label>
                 <input id="editBatchPrice" type="number" inputmode="decimal" step="0.0001" min="0" class="border p-0.5 rounded-xl mb-3 w-full text-xs">
                 <div class="flex gap-2">
-                    <button onclick="saveBatchEdit()" class="pill-btn flex-1 justify-center">Сохранить</button>
-                    <button onclick="deleteBatch()" class="pill-btn-danger" style="width:80px;">Удалить</button>
-                    <button onclick="closeModal()" class="pill-btn-secondary" style="width:80px;">Отмена</button>
+                    <button onclick="saveBatchEdit()" class="pill-btn flex-1 justify-center" data-i18n="common_save">Сохранить</button>
+                    <button onclick="deleteBatch()" class="pill-btn-danger" style="width:80px;" data-i18n="common_delete">Удалить</button>
+                    <button onclick="closeModal()" class="pill-btn-secondary" style="width:80px;" data-i18n="common_cancel">Отмена</button>
                 </div>
             </div>
         </div>
@@ -2428,22 +2428,22 @@
         <!-- Модалка ручного списания со склада -->
         <div id="writeOffModal" class="modal">
             <div class="modal-content" style="max-width:480px;">
-                <h2 class="text-sm font-semibold mb-3 text-gray-800">Списание (корректировка)</h2>
+                <h2 class="text-sm font-semibold mb-3 text-gray-800" data-i18n="ing_writeoff_title">Списание (корректировка)</h2>
                 <p id="writeOffIngName" class="text-xs text-gray-500 mb-3"></p>
-                <label class="text-xs text-gray-500">Количество (<span id="writeOffUnit"></span>)</label>
+                <label class="text-xs text-gray-500"><span data-i18n="inv_col_quantity">Количество</span> (<span id="writeOffUnit"></span>)</label>
                 <input id="writeOffQty" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
-                <label class="text-xs text-gray-500">Причина (необязательно)</label>
+                <label class="text-xs text-gray-500" data-i18n="ing_reason_optional">Причина (необязательно)</label>
                 <select id="writeOffReason" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
-                    <option value="">— выберите причину —</option>
-                    <option value="Испортилось">Испортилось</option>
-                    <option value="Личное использование">Личное использование</option>
-                    <option value="Пересчёт остатков">Пересчёт остатков</option>
-                    <option value="Другое">Другое</option>
+                    <option value="" data-i18n="ing_choose_reason">— выберите причину —</option>
+                    <option value="Испортилось" data-i18n="ing_reason_spoiled">Испортилось</option>
+                    <option value="Личное использование" data-i18n="ing_reason_personal">Личное использование</option>
+                    <option value="Пересчёт остатков" data-i18n="ing_reason_recount">Пересчёт остатков</option>
+                    <option value="Другое" data-i18n="ing_reason_other">Другое</option>
                 </select>
-                <input id="writeOffNote" type="text" class="border p-0.5 rounded-xl mb-3 w-full text-xs hidden" placeholder="Уточните причину...">
+                <input id="writeOffNote" type="text" class="border p-0.5 rounded-xl mb-3 w-full text-xs hidden" placeholder="Уточните причину..." data-i18n-placeholder="ing_specify_reason_placeholder">
                 <div class="flex gap-2">
-                    <button onclick="saveWriteOff()" class="pill-btn-danger flex-1">Списать</button>
-                    <button onclick="closeModal()" class="pill-btn-secondary flex-1">Отмена</button>
+                    <button onclick="saveWriteOff()" class="pill-btn-danger flex-1" data-i18n="ing_writeoff_confirm_btn">Списать</button>
+                    <button onclick="closeModal()" class="pill-btn-secondary flex-1" data-i18n="common_cancel">Отмена</button>
                 </div>
             </div>
         </div>
@@ -2467,9 +2467,9 @@
         <!-- Редактирование/добавление записи истории цен ингредиента -->
         <div id="priceHistoryModal" class="modal">
             <div class="modal-content">
-                <h2 class="text-sm font-semibold mb-3 text-gray-800" id="priceHistoryModalTitle">Запись истории цен</h2>
+                <h2 class="text-sm font-semibold mb-3 text-gray-800" id="priceHistoryModalTitle" data-i18n="ing_price_record_title">Запись истории цен</h2>
                 <input type="hidden" id="priceHistoryRecordId">
-                <label class="text-xs text-gray-500">Дата (с какого числа действует цена)</label>
+                <label class="text-xs text-gray-500" data-i18n="ing_date_effective_label">Дата (с какого числа действует цена)</label>
                 <div style="position:relative; margin-bottom:8px;" onclick="event.stopPropagation();">
                     <input id="priceHistoryDate" type="hidden">
                     <button type="button" class="field-select-btn" id="priceHistoryDateBtn" onclick="toggleCustomCalendar('globalCalendarPopup','priceHistoryDate','priceHistoryDateBtnLabel',{onPick:function(){}})">
@@ -2477,13 +2477,13 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/></svg>
                     </button>
                 </div>
-                <label class="text-xs text-gray-500">Цена за упаковку</label>
+                <label class="text-xs text-gray-500" data-i18n="ing_package_price">Цена за упаковку</label>
                 <input id="priceHistoryPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
-                <label class="text-xs text-gray-500">Размер упаковки</label>
+                <label class="text-xs text-gray-500" data-i18n="ing_package_size">Размер упаковки</label>
                 <input id="priceHistorySize" type="number" autocomplete="off" inputmode="decimal" step="0.01" class="border p-0.5 rounded-xl mb-3 w-full text-xs">
                 <div class="flex gap-2">
-                    <button onclick="savePriceHistoryRecord()" class="pill-btn flex-1 justify-center">Сохранить</button>
-                    <button onclick="closeModal()" class="pill-btn-secondary flex-1">Отмена</button>
+                    <button onclick="savePriceHistoryRecord()" class="pill-btn flex-1 justify-center" data-i18n="common_save">Сохранить</button>
+                    <button onclick="closeModal()" class="pill-btn-secondary flex-1" data-i18n="common_cancel">Отмена</button>
                 </div>
             </div>
         </div>
@@ -2491,30 +2491,30 @@
         <!-- Быстрое создание нового ингредиента прямо из карточки рецепта -->
         <div id="quickAddIngredientModal" class="modal">
             <div class="modal-content">
-                <h2 class="text-sm font-semibold mb-2 text-gray-800">Новый ингредиент</h2>
-                <label class="text-xs text-gray-600">Название</label>
+                <h2 class="text-sm font-semibold mb-2 text-gray-800" data-i18n="ing_new_ingredient_title">Новый ингредиент</h2>
+                <label class="text-xs text-gray-600" data-i18n="inv_col_name">Название</label>
                 <input id="qaiName" class="border p-1 rounded-xl mb-1 w-full text-xs">
                 <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="text-xs text-gray-600">Цена упаковки</label>
+                        <label class="text-xs text-gray-600" data-i18n="ing_package_price">Цена упаковки</label>
                         <input id="qaiPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-1 rounded-xl mb-1 w-full text-xs">
                     </div>
                     <div>
-                        <label class="text-xs text-gray-600">Размер упаковки</label>
+                        <label class="text-xs text-gray-600" data-i18n="ing_package_size">Размер упаковки</label>
                         <input id="qaiSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" class="border p-1 rounded-xl mb-1 w-full text-xs">
                     </div>
                 </div>
-                <label class="text-xs text-gray-600">Единица измерения</label>
+                <label class="text-xs text-gray-600" data-i18n="ing_unit_of_measure">Единица измерения</label>
                 <select id="qaiUnit" class="border p-1 rounded-xl mb-2 w-full text-xs">
-                    <option value="g">граммы (г)</option>
-                    <option value="kg">килограммы (кг)</option>
-                    <option value="ml">миллилитры (мл)</option>
-                    <option value="l">литры (л)</option>
-                    <option value="pcs">штуки (шт)</option>
+                    <option value="g" data-i18n="unit_g_full">граммы (г)</option>
+                    <option value="kg" data-i18n="unit_kg_full">килограммы (кг)</option>
+                    <option value="ml" data-i18n="unit_ml_full">миллилитры (мл)</option>
+                    <option value="l" data-i18n="unit_l_full">литры (л)</option>
+                    <option value="pcs" data-i18n="unit_pcs_full">штуки (шт)</option>
                 </select>
                 <div class="flex gap-2">
-                    <button onclick="confirmQuickAddIngredient()" class="pill-btn flex-1 justify-center">Создать</button>
-                    <button onclick="closeModal()" class="pill-btn-secondary flex-1">Отмена</button>
+                    <button onclick="confirmQuickAddIngredient()" class="pill-btn flex-1 justify-center" data-i18n="common_create">Создать</button>
+                    <button onclick="closeModal()" class="pill-btn-secondary flex-1" data-i18n="common_cancel">Отмена</button>
                 </div>
             </div>
         </div>
@@ -2649,18 +2649,18 @@
     <script src="employees.js?v=22"></script>
     <script src="company.js?v=10"></script>
     <script src="inventory.js?v=25"></script>
-<script src="ingredients.js?v=26"></script>
+<script src="ingredients.js?v=27"></script>
 <script src="batches.js?v=4"></script>
-<script src="semifinished.js?v=23"></script>
-<script src="products.js?v=23"></script>
-<script src="customers.js?v=33"></script>
+<script src="semifinished.js?v=24"></script>
+<script src="products.js?v=24"></script>
+<script src="customers.js?v=34"></script>
 <script src="calendar.js?v=6"></script>
-<script src="orders.js?v=75"></script>
+<script src="orders.js?v=76"></script>
 <script src="invoice.js?v=10"></script>
 <script src="payments.js?v=17"></script>
 <script src="stats.js?v=15"></script>
 <script src="history.js?v=9"></script>
-<script src="modals.js?v=10"></script>
+<script src="modals.js?v=11"></script>
 <script src="demoData.js?v=10"></script>
 <script src="helpers.js?v=18"></script>
 <script>

@@ -453,7 +453,7 @@ function deleteCurrentCustomer() {
     const idx = customers.findIndex(c => c.id === currentCustomerId);
     if (idx === -1) return;
     const cust = customers[idx];
-    openDeleteModal(idx, 'customer', `клиента «${cust.name || '(без имени)'}»`);
+    openDeleteModal(idx, 'customer', `${t('delete_label_customer')} «${cust.name || t('customers_no_name_fallback')}»`);
 }
 
 let _customerEntityType = 'company';

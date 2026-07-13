@@ -8,7 +8,7 @@
 
 let semiFinished = []; // [{id, name, batch_size, unit, other_costs, ingredients:[{id, ingredient_id, quantity}]}]
 
-const SF_UNIT_LABELS = { g: 'г', kg: 'кг', ml: 'мл', l: 'л' };
+// SF_UNIT_LABELS заменён общей функцией unitAbbrev(code) из inventory.js.
 
 // Себестоимость партии полуфабриката
 function semiFinishedBatchCost(sf) {
@@ -70,7 +70,7 @@ function displaySemiFinished() {
     });
 
     semiFinished.forEach((sf, i) => {
-        const unitLabel = SF_UNIT_LABELS[sf.unit] || sf.unit;
+        const unitLabel = unitAbbrev(sf.unit);
         const unitCost  = semiFinishedUnitCost(sf);
         const balance   = typeof getSemiFinishedBalance === 'function' ? getSemiFinishedBalance(sf.id) : null;
         const daily     = typeof avgDailySfUsage === 'function' ? avgDailySfUsage(sf.id) : 0;
@@ -90,8 +90,8 @@ function displaySemiFinished() {
             ? 'color:#c0685c;' : daysLeft !== null && daysLeft < 7 ? 'color:#96712a;' : 'color:#4b5563;';
 
         const daysStr = daysLeft !== null
-            ? `<span style="${colorStyle}" class="font-semibold">${daysLeft} дн.</span>`
-            : shortage ? '<span style="color:#c0685c;" class="font-semibold">нехватка</span>'
+            ? `<span style="${colorStyle}" class="font-semibold">${daysLeft} ${t('inv_days_short')}</span>`
+            : shortage ? `<span style="color:#c0685c;" class="font-semibold">${t('inv_shortage')}</span>`
             : '<span class="text-gray-400">—</span>';
 
         const isCritical = shortage || (balance !== null && balance <= 0) || (daysLeft !== null && daysLeft < 3) || !sf.recipe_confirmed;
@@ -143,7 +143,7 @@ function renderSemiFinishedCards() {
 
     let html = '';
     semiFinished.forEach(sf => {
-        const unitLabel = SF_UNIT_LABELS[sf.unit] || sf.unit;
+        const unitLabel = unitAbbrev(sf.unit);
         const unitCost  = semiFinishedUnitCost(sf);
         const balance   = typeof getSemiFinishedBalance === 'function' ? getSemiFinishedBalance(sf.id) : null;
         const daily     = typeof avgDailySfUsage === 'function' ? avgDailySfUsage(sf.id) : 0;
@@ -156,8 +156,8 @@ function renderSemiFinishedCards() {
         const notConfirmed = !sf.recipe_confirmed;
         const accentColor = (isCritical || notConfirmed) ? '#c0685c' : isWarning ? '#d9a441' : '';
         const daysColor = isCritical ? '#c0685c' : isWarning ? '#96712a' : '#4f6349';
-        const daysText = daysLeft !== null ? `Хватит: ${daysLeft} дн.` : shortage ? 'Хватит: нехватка' : '';
-        const balanceText = balance !== null ? `Остаток: ${Number(balance).toFixed(1)} ${unitLabel}` : 'Остаток: —';
+        const daysText = daysLeft !== null ? `${t('ing_lasts_colon')} ${daysLeft} ${t('inv_days_short')}` : shortage ? `${t('ing_lasts_colon')} ${t('inv_shortage')}` : '';
+        const balanceText = balance !== null ? `${t('ing_balance_colon')} ${Number(balance).toFixed(1)} ${unitLabel}` : `${t('ing_balance_colon')} —`;
         const priceText = `${formatMoney(unitCost, 4)}/${unitLabel}`;
         const stripe = accentColor ? `<div class="stripe" style="background:${accentColor};"></div>` : '';
         const realIdx = semiFinished.indexOf(sf);
@@ -169,7 +169,7 @@ function renderSemiFinishedCards() {
                 ${stripe}
                 <div class="order-card-body">
                     <div class="oc-row">
-                        <span class="oc-name">${escapeHtml(sf.name || '(без названия)')}</span>
+                        <span class="oc-name">${escapeHtml(sf.name || t('semifinished_no_name_fallback'))}</span>
                         ${daysText ? `<span class="oc-sum" style="color:${daysColor};">${daysText}</span>` : ''}
                     </div>
                     <div class="oc-meta">${balanceText} · ${priceText}</div>
@@ -236,7 +236,7 @@ async function createDraftSemiFinishedAndOpen() {
         displaySemiFinished();
         openSemiFinishedDetail(newSf.id);
         logActivity('semiFinished', `Создан черновик полуфабриката №${newSf.id}`);
-    } catch (e) { console.error(e); showInfo('Ошибка создания полуфабриката. Проверьте подключение.'); }
+    } catch (e) { console.error(e); showInfo(t('sf_create_error')); }
     finally { hideLoading(); }
 }
 
@@ -263,7 +263,7 @@ async function copySemiFinished(i) {
     showLoading();
     try {
         const { data, error } = await db.from('semi_finished').insert({
-            org_id: currentOrgId, name: src.name + ' (копия)', batch_size: src.batch_size || 1,
+            org_id: currentOrgId, name: src.name + t('common_copy_suffix'), batch_size: src.batch_size || 1,
             unit: src.unit || 'g', other_costs: src.other_costs || 0
         }).select().single();
         if (error) throw error;
@@ -276,7 +276,7 @@ async function copySemiFinished(i) {
         displaySemiFinished();
         openSemiFinishedDetail(newSf.id);
         logActivity('semiFinished', `Скопирован полуфабрикат «${src.name}» → «${newSf.name}»`);
-    } catch (e) { console.error(e); showInfo('Ошибка копирования. Проверьте подключение.'); }
+    } catch (e) { console.error(e); showInfo(t('ing_copy_error')); }
     finally { hideLoading(); }
 }
 
@@ -299,7 +299,7 @@ function openSemiFinishedDetail(sfId) {
     const sfBatchesChevron = document.getElementById('sfBatchesChevron');
     if (sfBatchesChevron) sfBatchesChevron.style.transform = '';
     const sfBatchesLabel = document.getElementById('sfBatchesToggleLabel');
-    if (sfBatchesLabel) sfBatchesLabel.textContent = 'Партии';
+    if (sfBatchesLabel) sfBatchesLabel.textContent = t('ing_batches');
 
     document.getElementById('sfdName').value = sf.name;
     document.getElementById('sfdBatchSize').value = sf.batch_size;
@@ -332,7 +332,7 @@ function deleteCurrentSemiFinished() {
     const idx = semiFinished.findIndex(s => s.id === currentSemiFinishedId);
     if (idx === -1) return;
     const sf = semiFinished[idx];
-    openDeleteModal(idx, 'semiFinished', `полуфабрикат «${sf.name || '(без названия)'}»`);
+    openDeleteModal(idx, 'semiFinished', `${t('delete_label_semifinished')} «${sf.name || t('semifinished_no_name_fallback')}»`);
 }
 
 async function saveSfdHeader() {
@@ -342,7 +342,7 @@ async function saveSfdHeader() {
     const batchSize = parseFloat(document.getElementById('sfdBatchSize').value);
     const unit = document.getElementById('sfdUnit').value;
     const otherCosts = parseFloat(document.getElementById('sfdOtherCosts').value) || 0;
-    if (!name || isNaN(batchSize) || batchSize <= 0) { showInfo('Заполните название и размер партии корректно!'); return; }
+    if (!name || isNaN(batchSize) || batchSize <= 0) { showInfo(t('sf_fill_name_batch_size')); return; }
 
     showLoading();
     try {
@@ -371,7 +371,7 @@ function renderSemiFinishedRecipe(sf) {
     const list = sf.ingredients || [];
     if (!list.length) {
         const row = document.createElement('tr');
-        row.innerHTML = `<td colspan="4" class="text-center text-xs text-gray-400 py-2">Нет ингредиентов. Добавьте ниже.</td>`;
+        row.innerHTML = `<td colspan="4" class="text-center text-xs text-gray-400 py-2">${t('sf_no_ingredients_hint')}</td>`;
         tbody.appendChild(row);
     } else {
         list.forEach((ri, i) => {
@@ -379,12 +379,12 @@ function renderSemiFinishedRecipe(sf) {
             const unitPrice = ing ? ingredientUnitPrice(ing) : 0;
             const lineCost = unitPrice * ri.quantity;
             const isPrimary = !!ri.is_primary;
-            const starBtn = `<button onclick="setSfPrimaryIngredient(${i})" title="Сделать основным" class="inline-flex sf-star-btn${isPrimary ? ' active' : ''}"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="${isPrimary ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.562.562 0 00-.586 0L6.98 21.539a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"/></svg></button>`;
+            const starBtn = `<button onclick="setSfPrimaryIngredient(${i})" title="${t('sf_make_primary')}" class="inline-flex sf-star-btn${isPrimary ? ' active' : ''}"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="${isPrimary ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.562.562 0 00-.586 0L6.98 21.539a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"/></svg></button>`;
             const row = document.createElement('tr');
             row.className = 'border-b';
             row.innerHTML = `
-                <td class="p-0.5 table-text">${starBtn} ${escapeHtml(ing ? ing.name : '(удалён)')}</td>
-                <td class="p-0.5 table-text text-center">${ri.quantity} ${ing ? UNIT_LABELS[ing.unit] : ''}</td>
+                <td class="p-0.5 table-text">${starBtn} ${escapeHtml(ing ? ing.name : t('sf_ingredient_deleted'))}</td>
+                <td class="p-0.5 table-text text-center">${ri.quantity} ${ing ? unitAbbrev(ing.unit) : ''}</td>
                 <td class="p-0.5 table-text text-center font-medium">${formatMoney(lineCost)}</td>
                 <td class="p-0.5 text-center">
                     ${svgEdit(`openEditSfRecipeItemModal(${i})`)}
@@ -396,7 +396,7 @@ function renderSemiFinishedRecipe(sf) {
 
     const batchCost = semiFinishedBatchCost(sf);
     const unitCost  = semiFinishedUnitCost(sf);
-    const unitLabel = SF_UNIT_LABELS[sf.unit] || sf.unit;
+    const unitLabel = unitAbbrev(sf.unit);
 
     document.getElementById('sfdBatchCost').textContent = formatMoney(batchCost);
     document.getElementById('sfdUnitCost').textContent  = formatMoney(unitCost, 4) + `/${unitLabel}`;
@@ -409,7 +409,7 @@ async function addIngredientToSfRecipe() {
     const quantity = parseFloat(document.getElementById('newSfRecipeQty').value);
     const ing = ingredients.find(i => i.name === inputEl.value.trim());
     if (!ing || isNaN(quantity) || quantity <= 0) {
-        showInfo('Выберите ингредиент из списка и укажите количество!'); return;
+        showInfo(t('sf_choose_ingredient_and_qty')); return;
     }
     const ingredientId = ing.id;
 
@@ -440,7 +440,7 @@ function openEditSfRecipeItemModal(i) {
     const ri = sf.ingredients[i];
 
     const sel = document.getElementById('editSfRecipeIngredient');
-    sel.innerHTML = '<option value="">Выберите ингредиент</option>';
+    sel.innerHTML = `<option value="">${t('sf_choose_ingredient')}</option>`;
     ingredients.sort((a,b)=>(a.name||"").localeCompare(b.name||"")).forEach(ing => {
         const opt = document.createElement('option');
         opt.value = ing.id; opt.textContent = ing.name;
@@ -457,7 +457,7 @@ async function saveSfRecipeItemEdit() {
     const ingredientIdRaw = document.getElementById('editSfRecipeIngredient').value;
     const quantity = parseFloat(document.getElementById('editSfRecipeQty').value);
     if (!ingredientIdRaw || isNaN(quantity) || quantity <= 0) {
-        showInfo('Заполните все поля корректно!'); return;
+        showInfo(t('common_fill_correctly')); return;
     }
     const ingredientId = Number(ingredientIdRaw);
     const ri = sf.ingredients[editSfRecipeItemIdx];
@@ -482,7 +482,7 @@ function deleteSfRecipeItem(i) {
     if (!sf) return;
     const ri = sf.ingredients[i];
     const ing = ingredients.find(x => x.id === ri.ingredient_id);
-    openDeleteModal(i, 'sfRecipeItem', `ингредиент «${ing ? ing.name : ''}» из рецепта полуфабриката`);
+    openDeleteModal(i, 'sfRecipeItem', `${t('delete_label_ingredient')} «${ing ? ing.name : ''}» ${t('delete_label_from_sf_recipe')}`);
 }
 
 // ==================== ПОДТВЕРЖДЕНИЕ "РЕЦЕПТ ЗАПОЛНЕН ПОЛНОСТЬЮ" ====================
@@ -550,16 +550,17 @@ async function copySfRecipeFromByName(sourceName) {
     const src = semiFinished.find(s => s.name === sourceName);
     if (!sf || !src) return;
     const srcItems = src.ingredients || [];
-    if (!srcItems.length) { showInfo('У выбранного полуфабриката нет рецепта.'); return; }
+    if (!srcItems.length) { showInfo(t('sf_no_recipe_to_copy')); return; }
 
     const existingIds = new Set((sf.ingredients || []).map(i => i.ingredient_id));
     const toCopy = srcItems.filter(ri => !existingIds.has(ri.ingredient_id));
     const skipped = srcItems.length - toCopy.length;
 
-    if (!toCopy.length) { showInfo(`Все ингредиенты из рецепта «${sourceName}» уже есть в этом рецепте.`); return; }
+    if (!toCopy.length) { showInfo(t('sf_all_ingredients_already_in_recipe').replace('{name}', sourceName)); return; }
 
-    let msg = `Скопировать ${toCopy.length} ${toCopy.length === 1 ? 'позицию' : 'позиций'} из рецепта «${sourceName}» в «${sf.name}»?`;
-    if (skipped) msg += `\n(${skipped} уже есть в текущем рецепте — будут пропущены)`;
+    const posWord = toCopy.length === 1 ? t('sf_position_one') : t('sf_position_many');
+    let msg = `${t('sf_copy_positions_confirm_prefix')} ${toCopy.length} ${posWord} ${t('sf_copy_positions_confirm_from')} «${sourceName}» ${t('common_into')} «${sf.name}»?`;
+    if (skipped) msg += `\n(${skipped} ${t('sf_already_in_recipe_skip')})`;
     if (!(await showConfirm(msg))) return;
 
     showLoading();
@@ -586,8 +587,7 @@ function updateSemiFinishedSelects() {
 // ==================== СКЛАД ПОЛУФАБРИКАТОВ ====================
 
 async function renderSfStockBlock(sf) {
-    const UNIT_LABELS = { g: 'г', kg: 'кг', ml: 'мл', l: 'л', pcs: 'шт' };
-    const unitLabel = UNIT_LABELS[sf.unit] || sf.unit;
+    const unitLabel = unitAbbrev(sf.unit);
     const balance = typeof getSemiFinishedBalance === 'function' ? getSemiFinishedBalance(sf.id) : null;
     const daily   = avgDailySfUsage(sf.id);
 
@@ -613,12 +613,12 @@ async function renderSfStockBlock(sf) {
     if (daysEl) {
         if (balance !== null && balance > 0 && daily > 0) {
             const days = Math.floor(balance / daily);
-            daysEl.textContent = `~${days} дн. запаса`;
+            daysEl.textContent = `~${days} ${t('ing_days_of_stock')}`;
             if (days < 3)      { daysEl.className = 'table-text font-semibold'; daysEl.style.color = '#c0685c'; }
             else if (days < 7) { daysEl.className = 'table-text font-semibold'; daysEl.style.color = '#96712a'; }
             else               { daysEl.className = 'table-text'; daysEl.style.color = '#4f6349'; }
         } else {
-            daysEl.textContent = daily > 0 ? 'нет запаса' : 'недостаточно истории';
+            daysEl.textContent = daily > 0 ? t('sf_no_stock') : t('ing_not_enough_history');
             daysEl.className = 'table-text text-gray-400';
             daysEl.style.color = '';
         }
@@ -635,13 +635,13 @@ async function renderSfStockBlock(sf) {
             .order('created_at', { ascending: false })
             .limit(50);
         if (!data || !data.length) {
-            histEl.innerHTML = '<p class="table-text text-gray-400 mt-1">Движений ещё не было</p>';
+            histEl.innerHTML = `<p class="table-text text-gray-400 mt-1">${t('ing_no_movements_yet')}</p>`;
             return;
         }
         const totalIn = data.filter(r => r.type === 'приход').reduce((s, r) => s + Number(r.quantity), 0);
-        let html = `<p class="table-text text-gray-500 font-semibold mt-2 mb-1">История (произведено: ${totalIn.toFixed(2)} ${unitLabel})</p>`;
+        let html = `<p class="table-text text-gray-500 font-semibold mt-2 mb-1">${t('sf_history_produced_prefix')}: ${totalIn.toFixed(2)} ${unitLabel})</p>`;
         html += '<div style="max-height:224px;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;">';
-        html += '<table class="w-full table-text table-clean"><thead><tr style="background-color:#e3e8df;" class="text-xs"><th class="p-1 text-left">Дата</th><th class="p-1 text-right">Кол-во</th><th class="p-1 text-left">Заметка</th></tr></thead><tbody>';
+        html += '<table class="w-full table-text table-clean"><thead><tr style="background-color:#e3e8df;" class="text-xs"><th class="p-1 text-left">' + t('history_col_date') + '</th><th class="p-1 text-right">' + t('inv_col_quantity') + '</th><th class="p-1 text-left">' + t('ing_note_label') + '</th></tr></thead><tbody>';
         data.forEach(r => {
             const date = new Date(r.created_at).toLocaleDateString('ru-LT');
             const isIn = r.type === 'приход';
@@ -707,17 +707,16 @@ async function produceSfBatch() {
     const sf = semiFinished.find(s => s.id === currentSemiFinishedId);
     if (!sf) return;
     if (!sf.ingredients || !sf.ingredients.length) {
-        showInfo('Рецепт не заполнен — нельзя произвести партию.'); return;
+        showInfo(t('sf_recipe_not_filled')); return;
     }
-    const UNIT_LABELS = { g: 'г', kg: 'кг', ml: 'мл', l: 'л', pcs: 'шт' };
-    const unitLabel = UNIT_LABELS[sf.unit] || sf.unit;
+    const unitLabel = unitAbbrev(sf.unit);
 
     const primaryRi = sf.ingredients.find(ri => ri.is_primary);
     if (!primaryRi) {
-        showInfo('Укажите основной ингредиент рецепта (нажмите на звёздочку у нужного ингредиента).'); return;
+        showInfo(t('sf_specify_primary_ingredient')); return;
     }
     const primaryIng = ingredients.find(i => i.id === primaryRi.ingredient_id);
-    const primaryUnitLabel = primaryIng ? (UNIT_LABELS[primaryIng.unit] || primaryIng.unit) : '';
+    const primaryUnitLabel = primaryIng ? (unitAbbrev(primaryIng.unit)) : '';
 
     // Шаг 1: ввод количества основного ингредиента
     document.getElementById('sfProduceIngName').textContent = primaryIng ? primaryIng.name : '';
@@ -730,20 +729,18 @@ async function produceSfBatch() {
 async function sfProduceCalc() {
     const sf = semiFinished.find(s => s.id === currentSemiFinishedId);
     if (!sf) return;
-    const UNIT_LABELS = { g: 'г', kg: 'кг', ml: 'мл', l: 'л', pcs: 'шт' };
-    const unitLabel = UNIT_LABELS[sf.unit] || sf.unit;
+    const unitLabel = unitAbbrev(sf.unit);
 
     const primaryRi = sf.ingredients.find(ri => ri.is_primary);
     if (!primaryRi) return;
 
     const inputQty = parseFloat(document.getElementById('sfProduceIngQty').value);
-    if (isNaN(inputQty) || inputQty <= 0) { showInfo('Введите корректное количество!'); return; }
+    if (isNaN(inputQty) || inputQty <= 0) { showInfo(t('inv_enter_valid_qty')); return; }
 
     const factor = inputQty / Number(primaryRi.quantity);
     const sfResultCalc = parseFloat((Number(sf.batch_size) * factor).toFixed(4));
 
     // Проверяем наличие всех ингредиентов
-    const UNIT_L = UNIT_LABELS;
     const shortages = [];
     sf.ingredients.forEach(ri => {
         if (!ri.ingredient_id) return;
@@ -751,20 +748,20 @@ async function sfProduceCalc() {
         const balance = getIngredientBalance(ri.ingredient_id) || 0;
         if (balance < needed) {
             const ing = ingredients.find(i => i.id === ri.ingredient_id);
-            const ingUnit = ing ? (UNIT_L[ing.unit] || ing.unit) : '';
-            shortages.push(`«${ing ? ing.name : '?'}»: нужно ${needed.toFixed(1)} ${ingUnit}, есть ${balance.toFixed(1)} ${ingUnit}`);
+            const ingUnit = ing ? unitAbbrev(ing.unit) : '';
+            shortages.push(`«${ing ? ing.name : '?'}»: ${t('sf_needed')} ${needed.toFixed(1)} ${ingUnit}, ${t('sf_have')} ${balance.toFixed(1)} ${ingUnit}`);
         }
     });
 
     if (shortages.length) {
         closeModal();
-        await showInfo('Не хватает ингредиентов:\n' + shortages.join('\n'));
+        await showInfo(t('sf_not_enough_ingredients') + '\n' + shortages.join('\n'));
         return;
     }
 
     // Переходим к шагу подтверждения
     const primaryIng = ingredients.find(i => i.id === primaryRi.ingredient_id);
-    const primaryUnitLabel = primaryIng ? (UNIT_LABELS[primaryIng.unit] || primaryIng.unit) : '';
+    const primaryUnitLabel = primaryIng ? (unitAbbrev(primaryIng.unit)) : '';
 
     document.getElementById('sfConfirmIngLine').textContent =
         `${primaryIng ? primaryIng.name : ''}: ${inputQty} ${primaryUnitLabel}`;
@@ -787,14 +784,13 @@ async function confirmSfProduce() {
     const sf = semiFinished.find(s => s.id === sfId);
     if (!sf) return;
 
-    const UNIT_LABELS = { g: 'г', kg: 'кг', ml: 'мл', l: 'л', pcs: 'шт' };
-    const unitLabel = UNIT_LABELS[sf.unit] || sf.unit;
+    const unitLabel = unitAbbrev(sf.unit);
 
     const actualResult = parseFloat(document.getElementById('sfConfirmResultQty').value);
-    if (isNaN(actualResult) || actualResult <= 0) { showInfo('Введите корректный выход!'); return; }
+    if (isNaN(actualResult) || actualResult <= 0) { showInfo(t('sf_enter_valid_output')); return; }
 
     closeModal();
-    showLoading('Записываю производство...');
+    showLoading(t('sf_recording_production'));
     try {
         const today = getLocalDateStr(0);
         const rows = [];
@@ -810,7 +806,7 @@ async function confirmSfProduce() {
                 semi_finished_id: null,
                 type: 'расход',
                 quantity: qty,
-                notes: `Производство п/ф «${sf.name}»`,
+                notes: `${t('sf_production_note')} «${sf.name}»`,
                 batch_breakdown: breakdown
             });
         }
@@ -820,7 +816,7 @@ async function confirmSfProduce() {
             semi_finished_id: sf.id,
             type: 'приход',
             quantity: actualResult,
-            notes: `Произведена партия ${today}`
+            notes: `${t('sf_batch_produced_note')} ${today}`
         });
 
         const rowsWithOrg = rows.map(r => ({ org_id: currentOrgId, ...r }));
@@ -830,12 +826,12 @@ async function confirmSfProduce() {
         // + прочие расходы (масштабированы тем же коэффициентом, что и рецепт)
         const totalBatchCost = actualIngredientsCost + (sf.other_costs || 0) * factor;
         const unitPrice = actualResult > 0 ? totalBatchCost / actualResult : 0;
-        await createStockBatch('semi_finished', sf.id, unitPrice, actualResult, 'производство', `Произведена партия ${today}`);
+        await createStockBatch('semi_finished', sf.id, unitPrice, actualResult, 'производство', `${t('sf_batch_produced_note')} ${today}`);
 
         await loadInventory();
         await renderSfStockBlock(sf);
         logActivity('inventory', `Произведена партия п/ф «${sf.name}» ${actualResult} ${unitLabel}`);
-        await showInfo(`Партия произведена! +${actualResult} ${unitLabel} на складе.`);
+        await showInfo(`${t('sf_batch_produced_success')} +${actualResult} ${unitLabel} ${t('sf_in_stock')}.`);
     } catch(e) { console.error(e); showInfo(t('error_save_generic')); }
     finally { hideLoading(); }
 }
@@ -844,9 +840,8 @@ async function confirmSfProduce() {
 function openSfWriteOffModal() {
     const sf = semiFinished.find(s => s.id === currentSemiFinishedId);
     if (!sf) return;
-    const UNIT_LABELS = { g: 'г', kg: 'кг', ml: 'мл', l: 'л', pcs: 'шт' };
-    document.getElementById('sfWriteOffName').textContent = `Полуфабрикат: ${sf.name}`;
-    document.getElementById('sfWriteOffUnit').textContent = UNIT_LABELS[sf.unit] || sf.unit;
+    document.getElementById('sfWriteOffName').textContent = `${t('sf_semifinished_word')}: ${sf.name}`;
+    document.getElementById('sfWriteOffUnit').textContent = unitAbbrev(sf.unit);
     document.getElementById('sfWriteOffQty').value = '';
     document.getElementById('sfWriteOffNote').value = '';
     document.getElementById('sfWriteOffModal').style.display = 'flex';
@@ -857,7 +852,7 @@ async function saveSfWriteOff() {
     if (!sf) return;
     const qty  = parseFloat(document.getElementById('sfWriteOffQty').value);
     const note = document.getElementById('sfWriteOffNote').value.trim();
-    if (isNaN(qty) || qty <= 0) { showInfo('Введите корректное количество!'); return; }
+    if (isNaN(qty) || qty <= 0) { showInfo(t('inv_enter_valid_qty')); return; }
     showLoading();
     try {
         const { breakdown } = await consumeFIFO('semi_finished', sf.id, qty);
@@ -867,13 +862,13 @@ async function saveSfWriteOff() {
             ingredient_id: null,
             type: 'расход',
             quantity: parseFloat(qty.toFixed(4)),
-            notes: `Корректировка: ${note || 'без причины'}`,
+            notes: `${t('ing_adjustment_note')}: ${note || t('ing_no_reason')}`,
             batch_breakdown: breakdown
         });
         await loadInventory();
         closeModal();
         await renderSfStockBlock(sf);
-    } catch(e) { console.error(e); showInfo('Ошибка.'); }
+    } catch(e) { console.error(e); showInfo(t('common_error_generic')); }
     finally { hideLoading(); }
 }
 
@@ -887,12 +882,11 @@ function editSfInventoryRecord(id, qty, notes) {
 
 // Инвентаризация полуфабрикатов
 function openSfInventarizationModal() {
-    const UNIT_LABELS = { g: 'г', kg: 'кг', ml: 'мл', l: 'л', pcs: 'шт' };
     const sorted = semiFinished.slice().sort((a, b) => (a.name||'').localeCompare(b.name||''));
     let html = '<table class="w-full table-text table-clean">';
-    html += '<thead><tr style="background-color:#e3e8df;"><th class="p-1 text-left">Полуфабрикат</th><th class="p-1 text-right">Текущий остаток</th><th class="p-1 text-right">Фактически</th></tr></thead><tbody>';
+    html += '<thead><tr style="background-color:#e3e8df;"><th class="p-1 text-left">' + t('delete_label_semifinished') + '</th><th class="p-1 text-right">' + t('sf_current_balance') + '</th><th class="p-1 text-right">' + t('sf_actual') + '</th></tr></thead><tbody>';
     sorted.forEach(sf => {
-        const unitLabel = UNIT_LABELS[sf.unit] || sf.unit;
+        const unitLabel = unitAbbrev(sf.unit);
         const balance   = getSemiFinishedBalance(sf.id);
         const balStr    = balance !== null ? `${Number(balance).toFixed(2)} ${unitLabel}` : '—';
         html += `<tr class="border-b">
@@ -927,11 +921,11 @@ async function saveSfInventarization() {
             ingredient_id: null,
             type:     diff > 0 ? 'приход' : 'расход',
             quantity: Math.abs(diff),
-            notes:    `Инвентаризация ${today}`
+            notes:    `${t('ing_inventarization_note')} ${today}`
         });
     });
-    if (!rows.length) { await showInfo('Нет изменений.'); return; }
-    const ok = await showConfirm(`Записать ${rows.length} корректировок?`);
+    if (!rows.length) { await showInfo(t('sf_no_changes')); return; }
+    const ok = await showConfirm(`${t('sf_record_adjustments_confirm')} ${rows.length}?`);
     if (!ok) return;
     showLoading();
     try {
@@ -1053,7 +1047,7 @@ async function renderSfCostChart(sf) {
         data: {
             labels,
             datasets: [{
-                label: `Себестоимость партии (${CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency})`,
+                label: `${t('sf_batch_cost')} (${CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency})`,
                 data: costs,
                 borderColor: '#4f46e5',
                 backgroundColor: 'rgba(79,70,229,0.08)',

@@ -12,7 +12,7 @@
 function openDeleteModal(id, type, label) {
     deleteId   = id;
     deleteType = type;
-    document.getElementById('deleteModalText').textContent = `Вы уверены, что хотите удалить ${label}?`;
+    document.getElementById('deleteModalText').textContent = `${t('delete_confirm_prefix')} ${label}?`;
     document.getElementById('deleteModal').style.display = 'flex';
 }
 

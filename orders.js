@@ -389,7 +389,7 @@ function quickCopyFromSwipe(realIdx) {
 
 function quickDeleteFromSwipe(realIdx, customerName) {
     closeAllCardSwipes();
-    openDeleteModal(realIdx, 'order', `заказ клиента «${customerName}»`);
+    openDeleteModal(realIdx, 'order', `${t('delete_label_order_of')} «${customerName}»`);
 }
 
 // Открытие/закрытие статус-дропдаунов теперь идёт через общий портал
@@ -1383,7 +1383,7 @@ function deleteCurrentOrder() {
     const idx = orders.findIndex(o => o.id === currentOrderId);
     if (idx === -1) return;
     const order = orders[idx];
-    openDeleteModal(idx, 'order', `заказ клиента «${order.customer}»`);
+    openDeleteModal(idx, 'order', `${t('delete_label_order_of')} «${order.customer}»`);
 }
 
 // Переход из карточки заказа в карточку его клиента (раздел "Клиенты")
@@ -1681,7 +1681,7 @@ function deleteItem(itemIdx) {
     const order = orders.find(o => o.id === currentOrderId);
     if (!order) return;
     const item = order.items[itemIdx];
-    openDeleteModal(itemIdx, 'item', `позицию «${item.product}»`);
+    openDeleteModal(itemIdx, 'item', `${t('delete_label_position')} «${item.product}»`);
 }
 
 // ==================== ДЕТАЛИЗАЦИЯ СЕБЕСТОИМОСТИ ЗАКАЗА ====================

@@ -441,7 +441,7 @@ function deleteCurrentProduct() {
     const idx = products.findIndex(p => p.id === currentProductId);
     if (idx === -1) return;
     const prod = products[idx];
-    openDeleteModal(idx, 'product', `изделие «${prod.name}»`);
+    openDeleteModal(idx, 'product', `${t('delete_label_product')} «${prod.name}»`);
 }
 
 async function savePdHeader() {
@@ -667,7 +667,7 @@ function deleteRecipeItem(i) {
         const ing = ingredients.find(x => x.id === ri.ingredient_id);
         itemName = ing ? ing.name : '';
     }
-    openDeleteModal(i, 'recipeItem', `«${itemName}» из рецепта`);
+    openDeleteModal(i, 'recipeItem', `«${itemName}» ${t('delete_label_from_recipe')}`);
 }
 
 // ==================== ПОДТВЕРЖДЕНИЕ "РЕЦЕПТ ЗАПОЛНЕН ПОЛНОСТЬЮ" ====================
