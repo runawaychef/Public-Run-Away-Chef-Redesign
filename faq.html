@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Simple Bake — Частые вопросы</title>
+<title>Simple Bake — FAQ</title>
 <style>
   body{
     font-family:'Segoe UI',Arial,sans-serif;
@@ -19,16 +19,32 @@
   h2{color:#3c3a34; font-size:13px; font-weight:600; margin:20px 0 4px;}
   p{color:#6b675d; font-size:12.5px; margin:0 0 4px;}
   a{color:#7c9473;}
+  .top-row{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:20px;
+  }
   .back-link{
     display:inline-flex; align-items:center; gap:6px;
     font-size:12px; font-weight:600; color:#4f6349;
-    text-decoration:none; margin-bottom:20px;
+    text-decoration:none;
   }
+  .lang-switch{ display:flex; background:#e3e8df; border-radius:999px; padding:2px; gap:2px; flex-shrink:0; }
+  .lang-switch button{ border:none; background:transparent; font-size:10.5px; font-weight:700; letter-spacing:.02em; color:#6b675d; padding:4px 10px; border-radius:999px; }
+  .lang-switch button.active{ background:#7c9473; color:#fff; }
 </style>
 </head>
 <body>
 
-<a href="index.html" class="back-link" onclick="if (window.history.length > 1) { history.back(); return false; }">← Назад в Simple Bake</a>
+<div class="top-row">
+  <a href="index.html" class="back-link" onclick="if (window.history.length > 1) { history.back(); return false; }" id="backLink">← Назад в Simple Bake</a>
+  <div class="lang-switch">
+    <button type="button" id="langBtnRu" onclick="setDocLang('ru')">RU</button>
+    <button type="button" id="langBtnEn" onclick="setDocLang('en')">EN</button>
+  </div>
+</div>
+
+<!-- ==================== RU ==================== -->
+<div id="content-ru">
 
 <h1>Частые вопросы</h1>
 
@@ -49,6 +65,65 @@
 
 <h2>Как удалить свой аккаунт?</h2>
 <p>Напишите нам — удалим аккаунт и все связанные данные в разумный срок.</p>
+
+</div>
+
+<!-- ==================== EN ==================== -->
+<div id="content-en" style="display:none;">
+
+<h1>Frequently Asked Questions</h1>
+
+<h2>What does Simple Bake do?</h2>
+<p>It helps you manage your bakery's orders, customers, inventory, and recipes in one app — no more paper or spreadsheets.</p>
+
+<h2>How does the free limit work?</h2>
+<p>All features are available for the first 7 days. After that, the free plan lets you create up to 50 orders in total.</p>
+
+<h2>How do I switch to a paid plan?</h2>
+<p>You can subscribe right inside the app through Google Play — no order limit and the full set of features.</p>
+
+<h2>Is my data protected?</h2>
+<p>Yes, your data is stored on servers in the European Union and is only accessible to you and your team. See the <a href="privacy.html">Privacy Policy</a> for details.</p>
+
+<h2>How do I contact support?</h2>
+<p>Use the "Contact us" button in the app's settings — we reply by email.</p>
+
+<h2>How do I delete my account?</h2>
+<p>Contact us — we'll delete your account and all related data within a reasonable time.</p>
+
+</div>
+
+<script>
+function setDocLang(lang) {
+    const isEn = lang === 'en';
+    document.getElementById('content-ru').style.display = isEn ? 'none' : 'block';
+    document.getElementById('content-en').style.display = isEn ? 'block' : 'none';
+    document.getElementById('langBtnRu').classList.toggle('active', !isEn);
+    document.getElementById('langBtnEn').classList.toggle('active', isEn);
+    document.getElementById('backLink').textContent = isEn ? '← Back to Simple Bake' : '← Назад в Simple Bake';
+    document.documentElement.lang = lang;
+    try { localStorage.setItem('appLang', lang); } catch (e) {}
+}
+(function () {
+    let lang = 'ru';
+    try {
+        lang = localStorage.getItem('appLang')
+            || (navigator.language && navigator.language.toLowerCase().startsWith('ru') ? 'ru' : 'en');
+    } catch (e) {}
+    setDocLang(lang);
+
+    // Тот же принцип, что и в privacy.html/terms.html: переключатель нужен
+    // только при самостоятельном открытии страницы, внутри приложения (iframe)
+    // язык уже синхронизирован автоматически.
+    try {
+        if (window.self !== window.top) {
+            document.querySelector('.lang-switch').style.display = 'none';
+        }
+    } catch (e) {
+        document.querySelector('.lang-switch').style.display = 'none';
+    }
+})();
+</script>
 
 </body>
 </html>
