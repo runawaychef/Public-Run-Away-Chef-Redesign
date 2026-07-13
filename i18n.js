@@ -180,6 +180,13 @@ const I18N = {
         employees_cancel_invite_confirm: 'Отменить это приглашение?',
         employees_cancel_invite_error: 'Ошибка отмены приглашения.',
         employees_switch_confirm: 'Сменить сотрудника?',
+
+        // Экран выбора сотрудника
+        login_welcome_back: 'С возвращением',
+        login_who_is_this: 'Кто вводит данные?',
+        login_switch_account: 'Сменить аккаунт',
+        login_error: 'Не удалось загрузить список сотрудников. Проверьте подключение к интернету.',
+        login_retry: 'Повторить попытку',
     },
     en: {
         // Bottom navigation
@@ -346,6 +353,13 @@ const I18N = {
         employees_cancel_invite_confirm: 'Cancel this invitation?',
         employees_cancel_invite_error: 'Failed to cancel the invitation.',
         employees_switch_confirm: 'Switch employee?',
+
+        // Employee picker screen
+        login_welcome_back: 'Welcome back',
+        login_who_is_this: "Who's entering data?",
+        login_switch_account: 'Switch account',
+        login_error: 'Failed to load the staff list. Check your internet connection.',
+        login_retry: 'Retry',
     }
 };
 

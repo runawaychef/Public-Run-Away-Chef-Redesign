@@ -113,9 +113,6 @@ async function initLogin() {
 
         if (myOwn) { await selectEmployee(myOwn); return true; }
 
-        const list = document.getElementById('employeeList');
-        list.innerHTML = '';
-
         if (!employees.length) {
             // Пекарня новая (или ещё нет ни одной записи) — создаём настоящую запись владельца с полными правами
             const { data: owner, error: ownerErr } = await db
@@ -132,27 +129,42 @@ async function initLogin() {
             return true;
         }
 
-        employees.forEach(emp => {
-            const btn = document.createElement('button');
-            btn.className = 'btn';
-            btn.style.cssText = 'display:flex;align-items:center;gap:12px;background:#e3e8df;border-radius:14px;padding:10px 14px;text-align:left;width:100%;';
-            const initial = (emp.name || '?').trim().charAt(0).toUpperCase();
-            const roleLabel = emp.is_owner ? t('employees_role_owner') : t('employees_role_staff');
-            btn.innerHTML = `
-                <span style="width:34px;height:34px;border-radius:50%;background:#7c9473;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:0 0 auto;">${escapeHtml(initial)}</span>
-                <span>
-                    <span style="display:block;font-size:13.5px;font-weight:600;color:#3c3a34;">${escapeHtml(emp.name || '')}</span>
-                    <span style="display:block;font-size:11px;color:#a6a196;">${roleLabel}</span>
-                </span>`;
-            btn.onclick = () => selectEmployee(emp);
-            list.appendChild(btn);
-        });
+        renderEmployeePickerList();
         return false;
     } catch (e) {
         console.error(e);
         document.getElementById('loginError').classList.remove('hidden'); document.getElementById('loginRetryBtn').classList.remove('hidden');
         return false;
     }
+}
+
+// Строит список сотрудников на экране выбора (аватар + имя + роль). Вынесено
+// отдельно от initLogin(), потому что logoutEmployee() ("Сменить сотрудника")
+// тоже должен уметь заново показать этот список — раньше он просто открывал
+// экран, не наполняя список заново, и если initLogin() не успел построить его
+// в текущей сессии (например, при мгновенном восстановлении из кэша — см.
+// cache.js, там employees тоже восстанавливается, так что данные для списка
+// уже есть в памяти), экран оставался пустым. Работает с уже загруженным
+// массивом employees, заново из базы не запрашивает.
+function renderEmployeePickerList() {
+    const list = document.getElementById('employeeList');
+    if (!list) return;
+    list.innerHTML = '';
+    employees.forEach(emp => {
+        const btn = document.createElement('button');
+        btn.className = 'btn';
+        btn.style.cssText = 'display:flex;align-items:center;gap:12px;background:#e3e8df;border-radius:14px;padding:10px 14px;text-align:left;width:100%;';
+        const initial = (emp.name || '?').trim().charAt(0).toUpperCase();
+        const roleLabel = emp.is_owner ? t('employees_role_owner') : t('employees_role_staff');
+        btn.innerHTML = `
+            <span style="width:34px;height:34px;border-radius:50%;background:#7c9473;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:0 0 auto;">${escapeHtml(initial)}</span>
+            <span>
+                <span style="display:block;font-size:13.5px;font-weight:600;color:#3c3a34;">${escapeHtml(emp.name || '')}</span>
+                <span style="display:block;font-size:11px;color:#a6a196;">${roleLabel}</span>
+            </span>`;
+        btn.onclick = () => selectEmployee(emp);
+        list.appendChild(btn);
+    });
 }
 
 
@@ -290,6 +302,7 @@ async function logoutEmployee() {
     logActivity('auth', `Выход: ${currentEmployee ? currentEmployee.name : ''}`);
     currentEmployee = null;
     localStorage.removeItem('currentEmployee');
+    renderEmployeePickerList();
     document.getElementById('loginScreen').classList.remove('hidden');
     document.getElementById('appContent').classList.add('app-locked');
     document.getElementById('settingsBtn').classList.add('hidden');
