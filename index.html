@@ -50,6 +50,10 @@
         .stats-table td.stats-num { font-weight: 600; color: #111827; }
         .stats-table td.stats-pct { font-size: 10px; color: #6b7280; }
         .modal-content { background: white; padding: 16px; border-radius: 16px; max-width: 380px; width: 100%; margin: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
+        /* Окно настроек (шестерёнка) — фиксированный отступ сверху 22vh вместо
+           плавающего вертикального центрирования, чтобы позиция не "гуляла"
+           в зависимости от объёма контента (список настроек будет расти). */
+        #settingsModal .modal-content { margin-top: 22vh; margin-bottom: auto; }
 
         /* ── Вкладки — нижняя синяя черта вместо серой заливки ── */
         .tab:not(.bottom-nav-item) { cursor: pointer; position: relative; background: transparent !important; color: #6b7280 !important; border-radius: 0 !important; padding-bottom: 6px !important; border-bottom: 2px solid transparent; transition: color 0.2s, border-color 0.2s; font-size: 14px; font-weight: 500; }
