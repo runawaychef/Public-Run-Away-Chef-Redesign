@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Simple Bake — Политика конфиденциальности</title>
+<title>Simple Bake — Privacy Policy</title>
 <style>
   body{
     font-family:'Segoe UI',Arial,sans-serif;
@@ -25,16 +25,32 @@
     background:#e3e8df; border-radius:12px; padding:14px 16px; margin-top:28px;
     font-size:12.5px;
   }
+  .top-row{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:20px;
+  }
   .back-link{
     display:inline-flex; align-items:center; gap:6px;
     font-size:12px; font-weight:600; color:#4f6349;
-    text-decoration:none; margin-bottom:20px;
+    text-decoration:none;
   }
+  .lang-switch{ display:flex; background:#e3e8df; border-radius:999px; padding:2px; gap:2px; flex-shrink:0; }
+  .lang-switch button{ border:none; background:transparent; font-size:10.5px; font-weight:700; letter-spacing:.02em; color:#6b675d; padding:4px 10px; border-radius:999px; }
+  .lang-switch button.active{ background:#7c9473; color:#fff; }
 </style>
 </head>
 <body>
 
-<a href="index.html" class="back-link" onclick="if (window.history.length > 1) { history.back(); return false; }">← Назад в Simple Bake</a>
+<div class="top-row">
+  <a href="index.html" class="back-link" onclick="if (window.history.length > 1) { history.back(); return false; }" id="backLink">← Назад в Simple Bake</a>
+  <div class="lang-switch">
+    <button type="button" id="langBtnRu" onclick="setDocLang('ru')">RU</button>
+    <button type="button" id="langBtnEn" onclick="setDocLang('en')">EN</button>
+  </div>
+</div>
+
+<!-- ==================== RU ==================== -->
+<div id="content-ru">
 
 <h1>Политика конфиденциальности Simple Bake</h1>
 <p class="updated">Дата вступления в силу: [ДД.ММ.ГГГГ]</p>
@@ -58,9 +74,12 @@
 <p>Мы <b>не продаём</b> и <b>не передаём</b> ваши данные третьим лицам в рекламных целях, не используем данные для таргетированной рекламы.</p>
 
 <h2>3. Где хранятся данные</h2>
-<p>Данные Приложения хранятся на серверах инфраструктурного партнёра <b>Supabase</b> (регион Евросоюза, Франкфурт-на-Майне, Германия).</p>
+<p>Данные Приложения хранятся на серверах инфраструктурного партнёра <b>Supabase</b> в дата-центрах на территории Европейского союза.</p>
 
-<h2>4. Передача данных третьим лицам</h2>
+<h2>4. Безопасность данных</h2>
+<p>Мы применяем разумные технические и организационные меры для защиты ваших данных от несанкционированного доступа, изменения, раскрытия или уничтожения. Несмотря на это, ни один способ передачи данных через Интернет или электронного хранения не может гарантировать абсолютную безопасность.</p>
+
+<h2>5. Передача данных третьим лицам</h2>
 <p>Мы используем следующих технических партнёров исключительно для обеспечения работы Приложения:</p>
 <ul>
   <li><b>Supabase</b> — хранение данных и аутентификация</li>
@@ -69,25 +88,131 @@
 </ul>
 <p>Мы не передаём ваши данные никаким иным третьим лицам, за исключением случаев, предусмотренных законом (например, по официальному запросу государственных органов).</p>
 
-<h2>5. Хранение и удаление данных</h2>
-<p>Данные хранятся до тех пор, пока вы используете Приложение. Вы можете запросить удаление своей учётной записи и всех связанных данных, написав нам по контактам ниже — данные будут удалены в разумный срок, за исключением случаев, когда их сохранение требуется по закону.</p>
+<h2>6. Хранение и удаление данных</h2>
+<p>Данные хранятся до тех пор, пока вы используете Приложение. Удаление Приложения с устройства <b>не удаляет</b> вашу учётную запись и сохранённые данные — они остаются на сервере.</p>
+<p>Чтобы удалить учётную запись и все связанные данные, напишите нам по контактам ниже («Написать нам» в самом Приложении или email) — отдельной кнопки удаления аккаунта внутри Приложения пока нет, запрос обрабатывается вручную и данные удаляются в разумный срок, за исключением случаев, когда их сохранение требуется по закону.</p>
 
-<h2>6. Резервное копирование</h2>
+<h2>7. Резервное копирование</h2>
 <p>Для защиты от потери данных мы выполняем регулярное автоматическое резервное копирование. Резервные копии хранятся в защищённом виде и используются исключительно для восстановления данных в случае технического сбоя.</p>
 
-<h2>7. Дети</h2>
+<h2>8. Дети</h2>
 <p>Приложение предназначено для владельцев и сотрудников бизнеса (18+) и не рассчитано на использование детьми. Мы сознательно не собираем данные лиц младше 18 лет.</p>
 
-<h2>8. Ваши права</h2>
-<p>Вы имеете право запросить доступ к своим данным, их исправление, экспорт или удаление, обратившись по контактам ниже.</p>
+<h2>9. Ваши права</h2>
+<p>В отношении своих персональных данных вы имеете право:</p>
+<ul>
+  <li>получить доступ к данным и их копию;</li>
+  <li>исправить неточные или неполные данные;</li>
+  <li>удалить данные;</li>
+  <li>ограничить обработку данных;</li>
+  <li>перенести данные (получить их в структурированном, машиночитаемом формате).</li>
+</ul>
+<p>Чтобы воспользоваться любым из этих прав, напишите нам по контактам ниже.</p>
 
-<h2>9. Изменения в Политике</h2>
+<h2>10. Изменения в Политике</h2>
 <p>Мы можем время от времени обновлять эту Политику. Актуальная версия всегда доступна по этой же ссылке. О существенных изменениях мы можем уведомить вас через Приложение.</p>
 
 <div class="contact">
   <b>Контакты</b><br>
-  По вопросам конфиденциальности и обработки данных пишите: <a href="mailto:simplebake.support@gmail.com">simplebake.support@gmail.com</a>
+  Developer / Разработчик: Runaway Chef<br>
+  Email: <a href="mailto:simplebake.support@gmail.com">simplebake.support@gmail.com</a>
 </div>
+
+</div>
+
+<!-- ==================== EN ==================== -->
+<div id="content-en" style="display:none;">
+
+<h1>Simple Bake Privacy Policy</h1>
+<p class="updated">Effective date: [DD.MM.YYYY]</p>
+
+<p>Simple Bake (the "App", "we") is an app for managing orders, customers, recipes, and inventory for a small bakery business. Developer: Runaway Chef (the "Developer"). This Policy describes what data we collect, how we use it, and how we store it.</p>
+
+<h2>1. What data we collect</h2>
+<p><b>1.1. Account data.</b> When you register, we receive your email (directly or via Google Sign-In) — this is required for account access and password recovery.</p>
+<p><b>1.2. Data you enter into the App.</b> To use the App, you enter your bakery's business data: customer information (name, contact details), orders, ingredients, recipes, inventory levels, and staff. This data belongs to you and is used solely to operate the App within your organization.</p>
+<p><b>1.3. Technical data.</b> We may automatically collect technical information needed for the service to run (device type, app version, error logs) — solely for diagnostics and improving the App.</p>
+<p><b>1.4. Payment data.</b> When you purchase a paid subscription, payment is processed through Google Play Billing. The Developer does not receive or store card details — they are processed directly by Google in accordance with <a href="https://policies.google.com/privacy" target="_blank">Google's Privacy Policy</a>.</p>
+
+<h2>2. How we use data</h2>
+<ul>
+  <li>To provide the App's features (order, customer, and inventory management, etc.)</li>
+  <li>To authenticate and secure your account</li>
+  <li>To provide support when you contact us</li>
+  <li>To create backups and restore data in case of failure</li>
+  <li>To enforce the terms of the App's free/paid plan</li>
+</ul>
+<p>We do <b>not sell</b> and do <b>not share</b> your data with third parties for advertising purposes, and we do not use data for targeted advertising.</p>
+
+<h2>3. Where data is stored</h2>
+<p>App data is stored on the servers of our infrastructure partner <b>Supabase</b>, in data centers located in the European Union.</p>
+
+<h2>4. Data security</h2>
+<p>We apply reasonable technical and organizational measures to protect your data from unauthorized access, alteration, disclosure, or destruction. That said, no method of transmission over the Internet or electronic storage can guarantee absolute security.</p>
+
+<h2>5. Sharing data with third parties</h2>
+<p>We use the following technical partners solely to operate the App:</p>
+<ul>
+  <li><b>Supabase</b> — data storage and authentication</li>
+  <li><b>Google Play Billing</b> — subscription payment processing (for paid plans)</li>
+  <li><b>Google Sign-In</b> — optional sign-in via Google account</li>
+</ul>
+<p>We do not share your data with any other third parties, except as required by law (for example, in response to a formal request from government authorities).</p>
+
+<h2>6. Data retention and deletion</h2>
+<p>Data is retained for as long as you use the App. Deleting the App from your device does <b>not</b> delete your account or stored data — it remains on the server.</p>
+<p>To delete your account and all associated data, contact us using the details below ("Contact us" inside the App, or email) — there is currently no in-app account deletion button; requests are handled manually and data is deleted within a reasonable time, except where retention is required by law.</p>
+
+<h2>7. Backups</h2>
+<p>To protect against data loss, we perform regular automatic backups. Backups are stored securely and used solely to restore data in the event of a technical failure.</p>
+
+<h2>8. Children</h2>
+<p>The App is intended for business owners and staff (18+) and is not designed for use by children. We do not knowingly collect data from individuals under 18.</p>
+
+<h2>9. Your rights</h2>
+<p>Regarding your personal data, you have the right to:</p>
+<ul>
+  <li>access your data and obtain a copy of it;</li>
+  <li>correct inaccurate or incomplete data;</li>
+  <li>delete your data;</li>
+  <li>restrict processing of your data;</li>
+  <li>port your data (receive it in a structured, machine-readable format).</li>
+</ul>
+<p>To exercise any of these rights, contact us using the details below.</p>
+
+<h2>10. Changes to this Policy</h2>
+<p>We may update this Policy from time to time. The current version is always available at this same link. We may notify you of material changes through the App.</p>
+
+<div class="contact">
+  <b>Contact</b><br>
+  Developer: Runaway Chef<br>
+  Email: <a href="mailto:simplebake.support@gmail.com">simplebake.support@gmail.com</a>
+</div>
+
+</div>
+
+<script>
+function setDocLang(lang) {
+    const isEn = lang === 'en';
+    document.getElementById('content-ru').style.display = isEn ? 'none' : 'block';
+    document.getElementById('content-en').style.display = isEn ? 'block' : 'none';
+    document.getElementById('langBtnRu').classList.toggle('active', !isEn);
+    document.getElementById('langBtnEn').classList.toggle('active', isEn);
+    document.getElementById('backLink').textContent = isEn ? '← Back to Simple Bake' : '← Назад в Simple Bake';
+    document.documentElement.lang = lang;
+    try { localStorage.setItem('appLang', lang); } catch (e) {}
+}
+// Определяем язык так же, как основное приложение: сохранённый выбор в
+// localStorage (общий для приложения и этой страницы), иначе — язык телефона.
+(function () {
+    let lang = 'ru';
+    try {
+        lang = localStorage.getItem('appLang')
+            || (navigator.language && navigator.language.toLowerCase().startsWith('ru') ? 'ru' : 'en');
+    } catch (e) {}
+    setDocLang(lang);
+})();
+</script>
 
 </body>
 </html>

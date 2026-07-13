@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Simple Bake — Условия использования</title>
+<title>Simple Bake — Terms of Use</title>
 <style>
   body{
     font-family:'Segoe UI',Arial,sans-serif;
@@ -25,16 +25,32 @@
     background:#e3e8df; border-radius:12px; padding:14px 16px; margin-top:28px;
     font-size:12.5px;
   }
+  .top-row{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:20px;
+  }
   .back-link{
     display:inline-flex; align-items:center; gap:6px;
     font-size:12px; font-weight:600; color:#4f6349;
-    text-decoration:none; margin-bottom:20px;
+    text-decoration:none;
   }
+  .lang-switch{ display:flex; background:#e3e8df; border-radius:999px; padding:2px; gap:2px; flex-shrink:0; }
+  .lang-switch button{ border:none; background:transparent; font-size:10.5px; font-weight:700; letter-spacing:.02em; color:#6b675d; padding:4px 10px; border-radius:999px; }
+  .lang-switch button.active{ background:#7c9473; color:#fff; }
 </style>
 </head>
 <body>
 
-<a href="index.html" class="back-link" onclick="if (window.history.length > 1) { history.back(); return false; }">← Назад в Simple Bake</a>
+<div class="top-row">
+  <a href="index.html" class="back-link" onclick="if (window.history.length > 1) { history.back(); return false; }" id="backLink">← Назад в Simple Bake</a>
+  <div class="lang-switch">
+    <button type="button" id="langBtnRu" onclick="setDocLang('ru')">RU</button>
+    <button type="button" id="langBtnEn" onclick="setDocLang('en')">EN</button>
+  </div>
+</div>
+
+<!-- ==================== RU ==================== -->
+<div id="content-ru">
 
 <h1>Условия использования Simple Bake</h1>
 <p class="updated">Дата вступления в силу: [ДД.ММ.ГГГГ]</p>
@@ -72,7 +88,7 @@
 <p>Приложение предоставляется «как есть». Разработчик не несёт ответственности за косвенные убытки, упущенную выгоду или потерю данных, возникшие в результате использования или невозможности использования Приложения, в максимальной степени, разрешённой применимым законодательством.</p>
 
 <h2>8. Прекращение использования</h2>
-<p>Вы можете прекратить использование Приложения и удалить учётную запись в любой момент, обратившись к нам по контактам ниже. Мы оставляем за собой право приостановить или прекратить доступ к учётной записи в случае нарушения настоящих Условий.</p>
+<p>Вы можете прекратить использование Приложения и удалить учётную запись в любой момент, обратившись к нам по контактам ниже (отдельной кнопки удаления аккаунта внутри Приложения пока нет — запрос обрабатывается вручную, подробнее в <a href="privacy.html">Политике конфиденциальности</a>). Мы оставляем за собой право приостановить или прекратить доступ к учётной записи в случае нарушения настоящих Условий.</p>
 
 <h2>9. Изменения Условий</h2>
 <p>Мы можем время от времени обновлять эти Условия. Актуальная версия всегда доступна по этой же ссылке. Продолжение использования Приложения после публикации изменений означает согласие с обновлёнными Условиями.</p>
@@ -82,8 +98,87 @@
 
 <div class="contact">
   <b>Контакты</b><br>
-  По любым вопросам, связанным с использованием Приложения, пишите: <a href="mailto:simplebake.support@gmail.com">simplebake.support@gmail.com</a>
+  Developer / Разработчик: Runaway Chef<br>
+  Email: <a href="mailto:simplebake.support@gmail.com">simplebake.support@gmail.com</a>
 </div>
+
+</div>
+
+<!-- ==================== EN ==================== -->
+<div id="content-en" style="display:none;">
+
+<h1>Simple Bake Terms of Use</h1>
+<p class="updated">Effective date: [DD.MM.YYYY]</p>
+
+<p>These Terms of Use (the "Terms") govern your use of the Simple Bake app (the "App"), developed by Runaway Chef (the "Developer", "we"). By installing or using the App, you agree to these Terms. If you do not agree, please do not use the App.</p>
+
+<h2>1. Service description</h2>
+<p>Simple Bake is an app for managing orders, customers, recipes, inventory, and staff for a small food business (bakery, patisserie, etc.). The App is offered on a subscription basis with a free trial period, as described below.</p>
+
+<h2>2. Account</h2>
+<p>To use the App, you must register with a valid email address (directly or via Google Sign-In). You are responsible for keeping your login credentials secure and for all activity under your account. One account represents one organization (business) — data belonging to different organizations is isolated from each other.</p>
+
+<h2>3. Plans and payment</h2>
+<p><b>3.1. Trial period.</b> The first 7 days after registration, the App is available in full, with no restrictions, free of charge.</p>
+<p><b>3.2. Free plan.</b> After the trial period ends, you may continue using the App for free, with one limit: no more than 50 orders in total for the organization's lifetime. Statistics, inventory analytics, cost pricing, and staff features are not available on the free plan.</p>
+<p><b>3.3. Paid plans.</b> Paid plans with monthly or annual billing, processed through Google Play Billing, remove these limits. Current prices and plan details are shown in the App on the subscription screen.</p>
+<p><b>3.4. Renewal and cancellation.</b> Subscriptions renew automatically until cancelled. You can cancel anytime through your Google Play account settings — access to paid features continues until the end of the period you already paid for. Refunds are handled according to Google Play's policy.</p>
+
+<h2>4. Your data</h2>
+<p>You retain all rights to the data you enter into the App (orders, customers, recipes, etc.). We do not claim ownership of this data and use it solely to provide you with the App's features — see our <a href="privacy.html">Privacy Policy</a> for details.</p>
+<p>You are responsible for the accuracy and legality of the data you enter (for example, for the correctness of your customers' personal data and for having a lawful basis to process it).</p>
+
+<h2>5. Acceptable use</h2>
+<p>You agree not to use the App to:</p>
+<ul>
+  <li>Engage in unlawful activity or infringe on the rights of third parties</li>
+  <li>Attempt to hack, reverse-engineer, or disrupt the App or its infrastructure</li>
+  <li>Store data unrelated to running your business</li>
+</ul>
+
+<h2>6. Service availability</h2>
+<p>We aim to keep the App running reliably, but we do not guarantee 100% uninterrupted operation — technical downtime may occur for updates or for reasons beyond our control (infrastructure partner outages, internet connectivity, etc.). We create regular data backups, but we recommend not relying on the App as the sole location for critical information.</p>
+
+<h2>7. Limitation of liability</h2>
+<p>The App is provided "as is". To the maximum extent permitted by applicable law, the Developer is not liable for indirect damages, lost profits, or data loss arising from the use or inability to use the App.</p>
+
+<h2>8. Termination</h2>
+<p>You may stop using the App and delete your account at any time by contacting us using the details below (there is currently no in-app account deletion button — requests are handled manually; see the <a href="privacy.html">Privacy Policy</a> for details). We reserve the right to suspend or terminate access to an account in case of a breach of these Terms.</p>
+
+<h2>9. Changes to these Terms</h2>
+<p>We may update these Terms from time to time. The current version is always available at this same link. Continued use of the App after changes are published means you accept the updated Terms.</p>
+
+<h2>10. Governing law</h2>
+<p>These Terms are governed by the laws of the Republic of Lithuania, without prejudice to any mandatory consumer rights applicable in your place of residence within the European Union.</p>
+
+<div class="contact">
+  <b>Contact</b><br>
+  Developer: Runaway Chef<br>
+  Email: <a href="mailto:simplebake.support@gmail.com">simplebake.support@gmail.com</a>
+</div>
+
+</div>
+
+<script>
+function setDocLang(lang) {
+    const isEn = lang === 'en';
+    document.getElementById('content-ru').style.display = isEn ? 'none' : 'block';
+    document.getElementById('content-en').style.display = isEn ? 'block' : 'none';
+    document.getElementById('langBtnRu').classList.toggle('active', !isEn);
+    document.getElementById('langBtnEn').classList.toggle('active', isEn);
+    document.getElementById('backLink').textContent = isEn ? '← Back to Simple Bake' : '← Назад в Simple Bake';
+    document.documentElement.lang = lang;
+    try { localStorage.setItem('appLang', lang); } catch (e) {}
+}
+(function () {
+    let lang = 'ru';
+    try {
+        lang = localStorage.getItem('appLang')
+            || (navigator.language && navigator.language.toLowerCase().startsWith('ru') ? 'ru' : 'en');
+    } catch (e) {}
+    setDocLang(lang);
+})();
+</script>
 
 </body>
 </html>
