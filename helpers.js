@@ -600,13 +600,21 @@ function initCopySwipeDelegation(containerId) {
     }, true);
 }
 
-// Готовая разметка одной кнопки "Копировать" для .oc-swipe-actions — общая для
-// изделий/ингредиентов/полуфабрикатов, чтобы иконка и цвет не разъезжались.
-function refCopySwipeBtnHtml(onclickCall) {
-    return `<div class="oc-swipe-actions">
-        <button class="oc-swipe-btn oc-swipe-copy" onclick="event.stopPropagation(); ${onclickCall}">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184"/></svg>
-            Копировать
-        </button>
-    </div>`;
+// Открывает Политику конфиденциальности / Условия использования поверх окна настроек
+// (через iframe на privacy.html/terms.html — те же файлы, что указаны в карточке Google Play),
+// без ухода со страницы приложения. src задаётся только при первом открытии — чтобы каждый
+// повторный клик не перезагружал iframe заново без необходимости.
+function openLegalModal(modalId) {
+    const frameId = modalId === 'privacyModal' ? 'privacyFrame' : 'termsFrame';
+    const src = modalId === 'privacyModal' ? 'privacy.html' : 'terms.html';
+    const frame = document.getElementById(frameId);
+    if (frame && !frame.src) frame.src = src;
+    document.getElementById(modalId).style.display = 'flex';
+}
+
+// Закрывает Политику/Условия и возвращает окно настроек в том виде, в каком оно было
+// (те же разделы остаются раскрытыми — это тот же самый DOM, не перезагрузка страницы).
+function closeLegalModal(modalId) {
+    document.getElementById(modalId).style.display = 'none';
+    openSettingsModal();
 }
