@@ -3,6 +3,14 @@
 // Зависит от: db, ingredients, orders, semiFinished, products, UNIT_LABELS,
 //             showLoading, hideLoading, showInfo, showConfirm, closeModal, logActivity.
 
+// Подписи единиц измерения (г/кг/мл/л/шт) — короткие, переводятся под текущий
+// язык через i18n.js. Раньше этот словарь копипастился локальной константой
+// в каждой функции файла по отдельности — свели к одной общей функции.
+function unitAbbrev(code) {
+    const map = { g: 'unit_g', kg: 'unit_kg', ml: 'unit_ml', l: 'unit_l', pcs: 'unit_pcs' };
+    return (typeof t === 'function' && map[code]) ? t(map[code]) : code;
+}
+
 const STOCK_LOW_DAYS = 7; // порог «критически мало» — менее N дней запаса
 
 function openSettingsModal() {
@@ -217,11 +225,11 @@ function updateInventoryAlertDot() {
 async function openInventoryModal() {
     closeModal();
     if (!hasPermission('can_manage_inventory')) {
-        showInfo('У вас нет доступа к складу. Обратитесь к владельцу пекарни.');
+        showInfo(t('inv_no_access'));
         return;
     }
     document.getElementById('inventoryBtn').classList.add('active');
-    showLoading('Загружаю склад...');
+    showLoading(t('inv_loading_stock'));
     await Promise.all([loadInventory(), loadShoppingList()]);
     hideLoading();
 
@@ -232,7 +240,6 @@ async function openInventoryModal() {
     document.getElementById('invTabStock').classList.add('active');
     document.getElementById('invTabShop').classList.remove('active');
 
-    const UNIT_LABELS = { g: 'г', kg: 'кг', ml: 'мл', l: 'л', pcs: 'шт' };
 
     // Считаем нехватку для принятых заказов.
     // П/ф НЕ раскрываем до ингредиентов — нехватку п/ф проверяем по его остатку.
@@ -267,7 +274,7 @@ async function openInventoryModal() {
         const daily     = avgDailyUsage(ing.id);
         const daysLeft  = (balance !== null && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
         const shortage  = neededForOrders[ing.id] > 0 && (balance === null || balance < neededForOrders[ing.id]);
-        const unitLabel = UNIT_LABELS[ing.unit] || ing.unit;
+        const unitLabel = unitAbbrev(ing.unit);
         const item      = { ing, balance, daysLeft, unitLabel, shortage };
 
         // Если ингредиент используется ТОЛЬКО через п/ф (не напрямую в изделиях,
@@ -324,7 +331,7 @@ async function openInventoryModal() {
     function renderRow(item, bgClass, daysClass, isSf) {
         const { ing, balance, daysLeft, unitLabel, shortage } = item;
         const balanceStr = balance !== null ? `${Number(balance).toFixed(1)} ${unitLabel}` : '—';
-        const daysStr    = shortage ? 'нехватка' : daysLeft !== null ? `~${daysLeft} дн.` : '—';
+        const daysStr    = shortage ? t('inv_shortage') : daysLeft !== null ? `~${daysLeft} ${t('inv_days_short')}` : '—';
         const inList     = isSf
             ? _shoppingList.some(r => r.semi_finished_id === ing.id)
             : _shoppingList.some(r => r.ingredient_id === ing.id);
@@ -344,13 +351,12 @@ async function openInventoryModal() {
 
     // Разбиваем п/ф на группы заранее — критичные и жёлтые поднимем наверх
     const sfSorted = (semiFinished || []).slice().sort((a, b) => (a.name||'').localeCompare(b.name||''));
-    const SF_UNIT_LABELS = { g: 'г', kg: 'кг', ml: 'мл', l: 'л', pcs: 'шт' };
     const sfRed = [], sfYellow = [], sfRest = [];
     sfSorted.forEach(sf => {
         const balance  = getSemiFinishedBalance(sf.id);
         const daily    = avgDailySfUsage(sf.id);
         const daysLeft = (balance !== null && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
-        const unitLabel = SF_UNIT_LABELS[sf.unit] || sf.unit;
+        const unitLabel = unitAbbrev(sf.unit);
         const needed = neededSfForOrders[sf.id] || 0;
         const shortage = needed > 0 && (balance === null || balance < needed);
         const item = { ing: { id: sf.id, name: sf.name }, balance, daysLeft, unitLabel, shortage };
@@ -374,11 +380,11 @@ async function openInventoryModal() {
                 if (ri.ingredient_id) {
                     const ing = ingredients.find(i => i.id === ri.ingredient_id);
                     if (!ing) return;
-                    key = `ing_${ing.id}`; name = ing.name; unit = UNIT_LABELS[ing.unit] || ing.unit;
+                    key = `ing_${ing.id}`; name = ing.name; unit = unitAbbrev(ing.unit);
                 } else if (ri.semi_finished_id) {
                     const sfP = semiFinished.find(s => s.id === ri.semi_finished_id);
                     if (!sfP) return;
-                    key = `sf_${sfP.id}`; name = sfP.name; unit = UNIT_LABELS[sfP.unit] || sfP.unit;
+                    key = `sf_${sfP.id}`; name = sfP.name; unit = unitAbbrev(sfP.unit);
                 } else return;
                 const qty = Number(ri.quantity) * Number(item.quantity) * factor;
                 if (!pendingByKey[key]) pendingByKey[key] = { name, unit, qty: 0, earliestDate: writeOffDate };
@@ -394,37 +400,37 @@ async function openInventoryModal() {
     let html = '';
     if (pendingRows.length) {
         html += `<div onclick="document.getElementById('pendingWriteOffBlock').scrollIntoView({behavior:'smooth'})" class="mb-2 p-1.5 rounded-xl text-xs cursor-pointer flex items-center justify-between" style="background:#e3e8df; border:1px solid #d3ddce; color:#4f6349;">
-            <span>📅 Запланировано списаний: ${pendingRows.length} · ближайшее ${formatDateDMY(pendingRows[0].earliestDate)}</span>
-            <span style="color:#7c9473;">Показать ↓</span>
+            <span>📅 ${t('inv_pending_writeoffs')}: ${pendingRows.length} · ${t('inv_nearest')} ${formatDateDMY(pendingRows[0].earliestDate)}</span>
+            <span style="color:#7c9473;">${t('inv_show_down')}</span>
         </div>`;
     }
 
-    html += '<table class="w-full text-xs table-clean"><thead><tr style="background-color:#e3e8df;" class="sticky top-0"><th class="p-1 text-left">Ингредиент</th><th class="p-1 text-right">Остаток</th><th class="p-1 text-right">Хватит</th><th class="p-1 text-center">Список</th></tr></thead><tbody>';
+    html += '<table class="w-full text-xs table-clean"><thead><tr style="background-color:#e3e8df;" class="sticky top-0"><th class="p-1 text-left">' + t('inv_col_ingredient') + '</th><th class="p-1 text-right">' + t('inv_col_balance') + '</th><th class="p-1 text-right">' + t('inv_col_lasts') + '</th><th class="p-1 text-center">' + t('inv_col_list') + '</th></tr></thead><tbody>';
 
     // 🔴 Критично: ингредиенты
     if (red.length) {
-        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold" style="color:#c0685c;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#c0685c;"></span>Критично</td></tr>`;
+        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold" style="color:#c0685c;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#c0685c;"></span>${t('inv_group_critical')}</td></tr>`;
         red.forEach(item => { html += renderRow(item, null, 'stock-critical', false); });
     }
     // 🔴 Критично: полуфабрикаты
     if (sfRed.length) {
-        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold" style="color:#c0685c;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#c0685c;"></span>Критично — п/ф</td></tr>`;
+        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold" style="color:#c0685c;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#c0685c;"></span>${t('inv_group_critical_sf')}</td></tr>`;
         sfRed.forEach(item => { html += renderRow(item, null, 'stock-critical', true); });
     }
     // 🟡 Заканчивается: ингредиенты
     if (yellow.length) {
-        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold" style="color:#96712a;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#d9a441;"></span>Заканчивается</td></tr>`;
+        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold" style="color:#96712a;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#d9a441;"></span>${t('inv_group_low')}</td></tr>`;
         yellow.forEach(item => { html += renderRow(item, null, 'stock-low', false); });
     }
     // 🟡 Заканчивается: полуфабрикаты
     if (sfYellow.length) {
-        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold" style="color:#96712a;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#d9a441;"></span>Заканчивается — п/ф</td></tr>`;
+        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold" style="color:#96712a;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#d9a441;"></span>${t('inv_group_low_sf')}</td></tr>`;
         sfYellow.forEach(item => { html += renderRow(item, null, 'stock-low', true); });
     }
     // Остальные ингредиенты
     if (rest.length) {
         if (red.length || yellow.length || sfRed.length || sfYellow.length) {
-            html += `<tr><td colspan="4" class="p-1 text-xs font-semibold text-gray-500">Остальные</td></tr>`;
+            html += `<tr><td colspan="4" class="p-1 text-xs font-semibold text-gray-500">${t('inv_group_rest')}</td></tr>`;
         }
         rest.sort((a, b) => {
             if (a.daysLeft === null && b.daysLeft === null) return 0;
@@ -439,8 +445,8 @@ async function openInventoryModal() {
 
     // Остальные полуфабрикаты — внизу отдельной таблицей
     if (sfRest.length) {
-        html += `<p class="text-xs font-semibold text-gray-600 mt-3 mb-1">Полуфабрикаты</p>`;
-        html += '<table class="w-full text-xs table-clean"><thead><tr style="background-color:#e3e8df;" class="sticky top-0"><th class="p-1 text-left">Название</th><th class="p-1 text-right">Остаток</th><th class="p-1 text-right">Хватит</th><th class="p-1 text-center">Список</th></tr></thead><tbody>';
+        html += `<p class="text-xs font-semibold text-gray-600 mt-3 mb-1">${t('inv_semifinished_title')}</p>`;
+        html += '<table class="w-full text-xs table-clean"><thead><tr style="background-color:#e3e8df;" class="sticky top-0"><th class="p-1 text-left">' + t('inv_col_name') + '</th><th class="p-1 text-right">' + t('inv_col_balance') + '</th><th class="p-1 text-right">' + t('inv_col_lasts') + '</th><th class="p-1 text-center">' + t('inv_col_list') + '</th></tr></thead><tbody>';
         sfRest.sort((a, b) => {
             if (a.daysLeft === null && b.daysLeft === null) return 0;
             if (a.daysLeft === null) return 1;
@@ -453,8 +459,8 @@ async function openInventoryModal() {
 
     // 📅 Плановый расход — сам блок, внизу (бейдж наверху уже даёт о нём знать)
     if (pendingRows.length) {
-        html += `<p id="pendingWriteOffBlock" class="text-xs font-semibold mt-3 mb-1" style="color:#4f6349;">📅 Плановый расход</p>`;
-        html += '<table class="w-full text-xs table-clean"><thead><tr style="background-color:#e3e8df;" class="sticky top-0"><th class="p-1 text-left">Ингредиент</th><th class="p-1 text-right">Количество</th><th class="p-1 text-right">Дата списания</th></tr></thead><tbody>';
+        html += `<p id="pendingWriteOffBlock" class="text-xs font-semibold mt-3 mb-1" style="color:#4f6349;">📅 ${t('inv_planned_writeoffs_title')}</p>`;
+        html += '<table class="w-full text-xs table-clean"><thead><tr style="background-color:#e3e8df;" class="sticky top-0"><th class="p-1 text-left">' + t('inv_col_ingredient') + '</th><th class="p-1 text-right">' + t('inv_col_quantity') + '</th><th class="p-1 text-right">' + t('inv_col_writeoff_date') + '</th></tr></thead><tbody>';
         pendingRows.forEach(r => {
             html += `<tr class="border-b"><td class="p-1 table-text">${escapeHtml(r.name)}</td><td class="p-1 table-text text-right">${r.qty.toFixed(2)} ${r.unit}</td><td class="p-1 table-text text-right">${formatDateDMY(r.earliestDate)}</td></tr>`;
         });
@@ -468,14 +474,13 @@ async function openInventoryModal() {
 // ── Инвентаризация ───────────────────────────────────────────────────────────
 
 function openInventarizationModal() {
-    const UNIT_LABELS = { g: 'г', kg: 'кг', ml: 'мл', l: 'л', pcs: 'шт' };
     const sorted = ingredients.slice().sort((a, b) => (a.name||'').localeCompare(b.name||''));
     const today  = getLocalDateStr(0);
 
     let html = '<table class="w-full text-xs table-clean">';
     html += '<thead><tr style="background-color:#e3e8df;"><th class="p-1 text-left">Ингредиент</th><th class="p-1 text-right">Текущий остаток</th><th class="p-1 text-right">Фактически</th></tr></thead><tbody>';
     sorted.forEach(ing => {
-        const unitLabel = UNIT_LABELS[ing.unit] || ing.unit;
+        const unitLabel = unitAbbrev(ing.unit);
         const balance   = getIngredientBalance(ing.id);
         const balStr    = balance !== null ? `${Number(balance).toFixed(2)} ${unitLabel}` : '—';
         html += `<tr class="border-b">
@@ -516,14 +521,14 @@ async function saveInventarization() {
     });
 
     if (!rows.length) {
-        await showInfo('Нет изменений — все фактические остатки совпадают с текущими.');
+        await showInfo(t('inv_no_changes'));
         return;
     }
 
     const ok = await showConfirm(`Записать ${rows.length} корректировок по результатам инвентаризации?`);
     if (!ok) return;
 
-    showLoading('Сохраняю инвентаризацию...');
+    showLoading(t('inv_saving_inventarization'));
     try {
         const rowsWithOrg = rows.map(r => ({ org_id: currentOrgId, ...r }));
         const { error } = await db.from('inventory').insert(rowsWithOrg);
@@ -557,10 +562,9 @@ async function saveInventarization() {
 function openInventoryAddModal(ingId) {
     const ing = ingredients.find(i => i.id === ingId);
     if (!ing) return;
-    const UNIT_LABELS = { g: 'г', kg: 'кг', ml: 'мл', l: 'л', pcs: 'шт' };
     document.getElementById('inventoryAddTitle').textContent = `Пополнить: ${ing.name}`;
     document.getElementById('inventoryAddIngId').value = ingId;
-    document.getElementById('inventoryAddUnit').textContent = UNIT_LABELS[ing.unit] || ing.unit;
+    document.getElementById('inventoryAddUnit').textContent = unitAbbrev(ing.unit);
     document.getElementById('inventoryAddQty').value = '';
     document.getElementById('inventoryAddNotes').value = '';
     document.getElementById('inventoryAddModal').style.display = 'flex';
@@ -570,7 +574,7 @@ async function saveInventoryAdd() {
     const ingId = Number(document.getElementById('inventoryAddIngId').value);
     const qty   = parseFloat(document.getElementById('inventoryAddQty').value);
     const notes = document.getElementById('inventoryAddNotes').value.trim();
-    if (!ingId || isNaN(qty) || qty <= 0) { showInfo('Введите корректное количество!'); return; }
+    if (!ingId || isNaN(qty) || qty <= 0) { showInfo(t('inv_enter_valid_qty')); return; }
     showLoading();
     try {
         const { error } = await db.from('inventory').insert({
@@ -723,7 +727,7 @@ function switchInventoryTab(tab) {
     document.getElementById('invTabStock').classList.toggle('active', tab === 'stock');
     document.getElementById('invTabShop').classList.toggle('active', tab === 'shop');
     const title = document.getElementById('inventoryModalTitle');
-    if (title) title.innerHTML = tab === 'stock' ? (icon('cart') + 'Аналитика склада') : (icon('cart') + 'Корзина покупок');
+    if (title) title.innerHTML = tab === 'stock' ? (icon('cart') + t('inv_title')) : (icon('cart') + t('inv_shopping_cart_title'));
     if (tab === 'shop') renderShoppingList();
 }
 
@@ -760,16 +764,15 @@ function updateShopListBadge() {
 function renderShoppingList() {
     const container = document.getElementById('shopListContent');
     if (!container) return;
-    const UL = { g: 'г', kg: 'кг', ml: 'мл', l: 'л', pcs: 'шт' };
 
     if (!_shoppingList.length) {
-        container.innerHTML = '<p class="text-xs text-gray-400 text-center py-4">Список пуст. Добавьте позиции кнопкой «+ Добавить критичное» или из карточки ингредиента.</p>';
+        container.innerHTML = `<p class="text-xs text-gray-400 text-center py-4">${t('inv_shop_empty_hint')}</p>`;
         updateShopListBadge();
         return;
     }
 
     let html = '<table class="w-full text-xs table-clean" style="table-layout:fixed;">';
-    html += '<thead><tr style="background-color:#e3e8df;"><th class="p-1 text-left" style="width:38%;">Название</th><th class="p-1 text-right" style="width:20%;">Есть</th><th class="p-1 text-right" style="width:24%;">Купить</th><th class="p-1 text-center" style="width:18%;"></th></tr></thead><tbody>';
+    html += '<thead><tr style="background-color:#e3e8df;"><th class="p-1 text-left" style="width:38%;">' + t('inv_col_name') + '</th><th class="p-1 text-right" style="width:20%;">' + t('inv_col_have') + '</th><th class="p-1 text-right" style="width:24%;">' + t('inv_col_buy') + '</th><th class="p-1 text-center" style="width:18%;"></th></tr></thead><tbody>';
 
     _shoppingList.forEach(row => {
         let name = '—', balanceStr = '—', unit = '';
@@ -777,7 +780,7 @@ function renderShoppingList() {
             const ing = (ingredients || []).find(i => i.id === row.ingredient_id);
             if (ing) {
                 name = ing.name;
-                unit = UL[ing.unit] || ing.unit;
+                unit = unitAbbrev(ing.unit);
                 const bal = getIngredientBalance(ing.id);
                 balanceStr = bal !== null ? `${Number(bal).toFixed(1)} ${unit}` : '—';
             }
@@ -785,7 +788,7 @@ function renderShoppingList() {
             const sf = (semiFinished || []).find(s => s.id === row.semi_finished_id);
             if (sf) {
                 name = sf.name;
-                unit = UL[sf.unit] || sf.unit;
+                unit = unitAbbrev(sf.unit);
                 const bal = getSemiFinishedBalance(sf.id);
                 balanceStr = bal !== null ? `${Number(bal).toFixed(1)} ${unit}` : '—';
             }
@@ -809,7 +812,7 @@ function renderShoppingList() {
                     class="border rounded p-0.5 text-xs w-full text-right ${row.is_bought ? 'text-gray-400' : ''}">
             </td>
             <td class="p-1 text-center">
-                <button onclick="removeShopItem(${row.id})" class="text-gray-300" style="transition:color .15s;" onmouseover="this.style.color='#c0685c'" onmouseout="this.style.color=''" title="Удалить">${icon('close', 'w-3.5 h-3.5')}</button>
+                <button onclick="removeShopItem(${row.id})" class="text-gray-300" style="transition:color .15s;" onmouseover="this.style.color='#c0685c'" onmouseout="this.style.color=''" title="${t('icon_delete_title')}">${icon('close', 'w-3.5 h-3.5')}</button>
             </td>
         </tr>`;
     });
@@ -819,7 +822,7 @@ function renderShoppingList() {
     // Итог: сколько позиций куплено
     const bought = _shoppingList.filter(r => r.is_bought).length;
     const total  = _shoppingList.length;
-    html += `<p class="text-xs text-gray-400 text-right mt-2">Куплено: ${bought} из ${total}</p>`;
+    html += `<p class="text-xs text-gray-400 text-right mt-2">${t('inv_bought_label')}: ${bought} ${t('settings_of')} ${total}</p>`;
 
     container.innerHTML = html;
     updateShopListBadge();
@@ -852,7 +855,6 @@ async function addToShoppingList(ingredientId, semiFinshedId, qty) {
 // ── «+ Добавить критичное» — всё красное из текущей аналитики склада ─────────
 
 async function addCriticalToShoppingList() {
-    const UL = { g: 'г', kg: 'кг', ml: 'мл', l: 'л', pcs: 'шт' };
     const today = getLocalDateStr(0);
 
     // Считаем нехватку для заказов — П/ф НЕ раскрываем до ингредиентов
@@ -895,11 +897,11 @@ async function addCriticalToShoppingList() {
     });
 
     if (!criticalIngs.length && !criticalSf.length) {
-        await showInfo('Нет критичных позиций для добавления.');
+        await showInfo(t('inv_no_critical_items'));
         return;
     }
 
-    showLoading('Добавляю в список...');
+    showLoading(t('inv_adding_to_list'));
     try {
         // Для каждого критичного считаем дефицит как количество к покупке
         for (const ing of criticalIngs) {
@@ -920,7 +922,7 @@ async function addCriticalToShoppingList() {
             await addToShoppingList(null, sf.id, toBuy);
         }
         switchInventoryTab('shop');
-    } catch (e) { console.error(e); showInfo('Ошибка добавления.'); }
+    } catch (e) { console.error(e); showInfo(t('error_add_generic')); }
     finally { hideLoading(); }
 }
 
@@ -973,7 +975,7 @@ async function removeShopItem(id) {
         if (error) throw error;
         _shoppingList = _shoppingList.filter(r => r.id !== id);
         renderShoppingList();
-    } catch (e) { console.error(e); showInfo('Ошибка удаления.'); }
+    } catch (e) { console.error(e); showInfo(t('error_delete_generic')); }
 }
 
 // ── Добавить строку из таблицы склада (кнопка «+») ───────────────────────────
@@ -1001,18 +1003,17 @@ async function addRowToShoppingList(ingId, sfId) {
 // ── Поделиться списком покупок ───────────────────────────────────────────────
 
 function shareShoppingList() {
-    if (!_shoppingList.length) { showInfo('Список покупок пуст.'); return; }
-    const UL = { g: 'г', kg: 'кг', ml: 'мл', l: 'л', pcs: 'шт' };
+    if (!_shoppingList.length) { showInfo(t('inv_shop_list_empty')); return; }
 
-    let text = `Список покупок — ${currentOrgName || 'пекарня'}\n\n`;
+    let text = `${t('inv_shop_list_title_prefix')} — ${currentOrgName || t('inv_bakery_fallback')}\n\n`;
     _shoppingList.forEach(row => {
         let name = '—', unit = '';
         if (row.ingredient_id) {
             const ing = (ingredients || []).find(i => i.id === row.ingredient_id);
-            if (ing) { name = ing.name; unit = UL[ing.unit] || ing.unit; }
+            if (ing) { name = ing.name; unit = unitAbbrev(ing.unit); }
         } else if (row.semi_finished_id) {
             const sf = (semiFinished || []).find(s => s.id === row.semi_finished_id);
-            if (sf) { name = sf.name; unit = UL[sf.unit] || sf.unit; }
+            if (sf) { name = sf.name; unit = unitAbbrev(sf.unit); }
         }
         const mark = row.is_bought ? '✅' : '☐';
         text += `${mark} ${name} — ${Number(row.quantity_to_buy).toFixed(2)} ${unit}\n`;
@@ -1024,8 +1025,8 @@ function shareShoppingList() {
 // ── Очистить весь список ─────────────────────────────────────────────────────
 
 async function clearShoppingList() {
-    if (!_shoppingList.length) { await showInfo('Список уже пуст.'); return; }
-    const ok = await showConfirm(`Очистить весь список покупок (${_shoppingList.length} поз.)?`);
+    if (!_shoppingList.length) { await showInfo(t('inv_shop_list_already_empty')); return; }
+    const ok = await showConfirm(`${t('inv_clear_confirm_prefix')} (${_shoppingList.length} ${t('common_positions_word')})?`);
     if (!ok) return;
     showLoading();
     try {
@@ -1034,6 +1035,6 @@ async function clearShoppingList() {
         if (error) throw error;
         _shoppingList = [];
         renderShoppingList();
-    } catch (e) { console.error(e); showInfo('Ошибка очистки.'); }
+    } catch (e) { console.error(e); showInfo(t('error_clear_generic')); }
     finally { hideLoading(); }
 }
