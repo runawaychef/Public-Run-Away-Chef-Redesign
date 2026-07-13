@@ -623,11 +623,30 @@ function openLegalModal(modalId) {
     document.getElementById(modalId).style.display = 'flex';
 }
 
-// Закрывает Политику/Условия и возвращает окно настроек в том виде, в каком оно было
+// Закрывает Политику/Условия/FAQ и возвращает окно настроек в том виде, в каком оно было
 // (те же разделы остаются раскрытыми — это тот же самый DOM, не перезагрузка страницы).
 function closeLegalModal(modalId) {
     document.getElementById(modalId).style.display = 'none';
     openSettingsModal();
+}
+
+// "Написать нам" — сначала показываем свою форму с текстом сообщения, а не сразу
+// открываем системную почту (это может выглядеть неожиданно для пользователя и не
+// даёт возможности сначала спокойно сформулировать вопрос).
+function openContactModal() {
+    document.getElementById('contactMessage').value = '';
+    document.getElementById('contactModal').style.display = 'flex';
+}
+
+// Отправка — формируем mailto со введённым текстом и открываем системное приложение
+// почты, где пользователь уже сам решает, отправлять или нет.
+function sendContactMessage() {
+    const ta = document.getElementById('contactMessage');
+    const msg = (ta && ta.value || '').trim();
+    const subject = encodeURIComponent('Simple Bake — вопрос');
+    const body = encodeURIComponent(msg || '');
+    window.location.href = `mailto:simplebake.support@gmail.com?subject=${subject}&body=${body}`;
+    closeLegalModal('contactModal');
 }
 
 // Готовая разметка одной кнопки "Копировать" для .oc-swipe-actions — общая для
