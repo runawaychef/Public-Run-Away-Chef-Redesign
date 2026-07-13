@@ -889,7 +889,7 @@ function editSfInventoryRecord(id, qty, notes) {
 function openSfInventarizationModal() {
     const UNIT_LABELS = { g: 'г', kg: 'кг', ml: 'мл', l: 'л', pcs: 'шт' };
     const sorted = semiFinished.slice().sort((a, b) => (a.name||'').localeCompare(b.name||''));
-    let html = '<table class="w-full text-xs table-clean">';
+    let html = '<table class="w-full table-text table-clean">';
     html += '<thead><tr style="background-color:#e3e8df;"><th class="p-1 text-left">Полуфабрикат</th><th class="p-1 text-right">Текущий остаток</th><th class="p-1 text-right">Фактически</th></tr></thead><tbody>';
     sorted.forEach(sf => {
         const unitLabel = UNIT_LABELS[sf.unit] || sf.unit;
@@ -901,7 +901,7 @@ function openSfInventarizationModal() {
             <td class="p-0.5 text-right">
                 <input type="number" inputmode="decimal" step="0.01" min="0"
                     data-sf-id="${sf.id}" data-unit="${unitLabel}"
-                    class="sf-inv-qty-input border p-0.5 rounded text-xs w-24 text-right"
+                    class="sf-inv-qty-input border p-0.5 rounded table-text w-24 text-right"
                     placeholder="${unitLabel}">
             </td>
         </tr>`;

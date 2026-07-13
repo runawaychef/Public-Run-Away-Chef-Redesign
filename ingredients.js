@@ -765,10 +765,10 @@ async function renderIngredientStockBlock(ing) {
 
         // Фильтр-табы
         const tabs = `<div class="flex gap-1 mb-2 flex-wrap">
-            <button onclick="filterIngHistory('all')" id="histTab_all" class="hist-tab hist-tab-active text-xs px-2 py-0.5 rounded-full border border-gray-300 bg-[#7c9473] text-white">Все</button>
-            <button onclick="filterIngHistory('in')" id="histTab_in" class="hist-tab text-xs px-2 py-0.5 rounded-full border border-gray-300 bg-[#f4f1ea] text-gray-600">+ Приходы</button>
-            <button onclick="filterIngHistory('order')" id="histTab_order" class="hist-tab text-xs px-2 py-0.5 rounded-full border border-gray-300 bg-[#f4f1ea] text-gray-600">− Заказы</button>
-            <button onclick="filterIngHistory('personal')" id="histTab_personal" class="hist-tab text-xs px-2 py-0.5 rounded-full border border-gray-300 bg-[#f4f1ea] text-gray-600">− Личное</button>
+            <button onclick="filterIngHistory('all')" id="histTab_all" class="hist-tab hist-tab-active table-text px-2 py-0.5 rounded-full border border-gray-300 bg-[#7c9473] text-white">Все</button>
+            <button onclick="filterIngHistory('in')" id="histTab_in" class="hist-tab table-text px-2 py-0.5 rounded-full border border-gray-300 bg-[#f4f1ea] text-gray-600">+ Приходы</button>
+            <button onclick="filterIngHistory('order')" id="histTab_order" class="hist-tab table-text px-2 py-0.5 rounded-full border border-gray-300 bg-[#f4f1ea] text-gray-600">− Заказы</button>
+            <button onclick="filterIngHistory('personal')" id="histTab_personal" class="hist-tab table-text px-2 py-0.5 rounded-full border border-gray-300 bg-[#f4f1ea] text-gray-600">− Личное</button>
         </div>`;
 
         // Строки таблицы
@@ -798,7 +798,7 @@ async function renderIngredientStockBlock(ing) {
 
         const table = `<div id="ingHistTableWrap" style="max-height:260px;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;">
             <table class="w-full table-text table-clean">
-                <thead><tr style="background-color:#e3e8df;" class="sticky top-0 text-xs">
+                <thead><tr style="background-color:#e3e8df;" class="sticky top-0 table-text">
                     <th class="p-1 text-left">Дата</th>
                     <th class="p-1 text-right">Кол-во</th>
                     <th class="p-1 text-right">Сумма</th>
@@ -926,7 +926,7 @@ function renderIngredientPriceHistory(ingredientId) {
     if (!history.length) { container.innerHTML = '<p class="table-text text-gray-400">История цен пуста</p>'; return; }
     const ing = ingredients.find(i => i.id === ingredientId);
     const unitLabel = ing ? (UNIT_LABELS[ing.unit] || ing.unit) : '';
-    let html = '<table class="w-full table-text table-clean"><thead><tr style="background-color:#e3e8df;" class="text-xs"><th class="p-0.5 text-left">С даты</th><th class="p-0.5 text-right">Цена упак.</th><th class="p-0.5 text-right">Цена за ед.</th><th class="p-0.5 w-12"></th></tr></thead><tbody>';
+    let html = '<table class="w-full table-text table-clean"><thead><tr style="background-color:#e3e8df;" class="table-text"><th class="p-0.5 text-left">С даты</th><th class="p-0.5 text-right">Цена упак.</th><th class="p-0.5 text-right">Цена за ед.</th><th class="p-0.5 w-12"></th></tr></thead><tbody>';
     history.forEach((h, i) => {
         const unitPrice = h.package_size ? (h.package_price / h.package_size).toFixed(4) : '—';
         const isCurrent = i === 0;
