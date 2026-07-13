@@ -648,10 +648,10 @@
 
         <!-- Логотип -->
         <img src="icon-192.png" alt="Simple Bake" style="width:64px;height:64px;border-radius:16px;margin:0 auto 14px;">
-        <p style="font-size:12px;color:#a6a196;margin:0 0 22px;">Учёт заказов и рецептур</p>
+        <p style="font-size:12px;color:#a6a196;margin:0 0 22px;" data-i18n="auth_tagline">Учёт заказов и рецептур</p>
 
         <!-- Заголовок режима (Вход / Регистрация / Сброс пароля) -->
-        <p id="authTitle" style="font-family:'Fraunces',serif;font-weight:600;font-size:17px;margin:0 0 18px;color:#3c3a34;">Вход</p>
+        <p id="authTitle" style="font-family:'Fraunces',serif;font-weight:600;font-size:17px;margin:0 0 18px;color:#3c3a34;" data-i18n="auth_title_login">Вход</p>
 
         <!-- Кнопка Google -->
         <button id="googleSignInBtn" class="btn w-full flex items-center justify-center gap-2" style="background:#fbfaf6;border:1.5px solid #e3ded0;border-radius:14px;padding:12px;font-size:13.5px;font-weight:500;color:#3c3a34;margin-bottom:16px;">
@@ -661,12 +661,12 @@
                 <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
                 <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
             </svg>
-            Войти через Google
+            <span data-i18n="auth_google_signin">Войти через Google</span>
         </button>
 
         <div class="flex items-center gap-2" style="margin-bottom:16px;">
             <div class="flex-1 h-px" style="background:#e3ded0;"></div>
-            <span style="font-size:11.5px;color:#a6a196;">или</span>
+            <span style="font-size:11.5px;color:#a6a196;" data-i18n="auth_or">или</span>
             <div class="flex-1 h-px" style="background:#e3ded0;"></div>
         </div>
 
@@ -674,10 +674,10 @@
         <form id="authForm" class="flex flex-col gap-2 text-left">
             <input id="authEmail" type="email" required placeholder="Email" autocomplete="username"
                 style="background:#fbfaf6;border:1.5px solid #e3ded0;border-radius:14px;padding:12px 14px;font-size:13.5px;color:#3c3a34;" class="focus:outline-none">
-            <input id="authPassword" type="password" placeholder="Пароль" autocomplete="current-password"
+            <input id="authPassword" type="password" placeholder="Пароль" autocomplete="current-password" data-i18n-placeholder="auth_password_placeholder"
                 style="background:#fbfaf6;border:1.5px solid #e3ded0;border-radius:14px;padding:12px 14px;font-size:13.5px;color:#3c3a34;" class="focus:outline-none">
             <button id="authSubmitBtn" type="submit"
-                style="background:#4f6349;color:#f4f1ea;border-radius:14px;padding:13px;font-size:14px;font-weight:600;margin-top:4px;" class="btn">
+                style="background:#4f6349;color:#f4f1ea;border-radius:14px;padding:13px;font-size:14px;font-weight:600;margin-top:4px;" class="btn" data-i18n="auth_submit_login">
                 Войти
             </button>
         </form>
@@ -687,17 +687,17 @@
         <p id="authSuccess" class="text-xs text-green-600 mt-2 hidden"></p>
 
         <!-- Забыли пароль -->
-        <p id="forgotPasswordLink" style="font-size:12px;color:#4f6349;font-weight:500;margin-top:14px;" class="cursor-pointer hover:underline">
+        <p id="forgotPasswordLink" style="font-size:12px;color:#4f6349;font-weight:500;margin-top:14px;" class="cursor-pointer hover:underline" data-i18n="auth_forgot_password">
             Забыли пароль?
         </p>
 
         <!-- Назад к входу (показывается только в режиме сброса пароля) -->
-        <p id="backToLoginLink" style="font-size:12px;color:#4f6349;font-weight:500;margin-top:14px;" class="cursor-pointer hover:underline hidden">
+        <p id="backToLoginLink" style="font-size:12px;color:#4f6349;font-weight:500;margin-top:14px;" class="cursor-pointer hover:underline hidden" data-i18n="auth_back_to_login">
             ← Назад к входу
         </p>
 
         <!-- Переключение между входом и регистрацией -->
-        <p id="toggleAuthMode" style="font-size:12px;color:#a6a196;margin-top:16px;" class="cursor-pointer hover:underline">
+        <p id="toggleAuthMode" style="font-size:12px;color:#a6a196;margin-top:16px;" class="cursor-pointer hover:underline" data-i18n="auth_toggle_to_register">
             Нет аккаунта? Зарегистрироваться
         </p>
 
@@ -2645,7 +2645,7 @@
     <script src="i18n.js?v=1"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=3"></script>
-    <script src="auth.js?v=11"></script>
+    <script src="auth.js?v=12"></script>
     <script src="employees.js?v=21"></script>
     <script src="company.js?v=9"></script>
     <script src="inventory.js?v=23"></script>

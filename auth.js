@@ -136,9 +136,9 @@ async function _doShowAuthedApp() {
 
 function showLoginMode() {
     _authMode = 'login';
-    document.getElementById('authTitle').textContent = 'Вход';
-    document.getElementById('authSubmitBtn').textContent = 'Войти';
-    document.getElementById('toggleAuthMode').textContent = 'Нет аккаунта? Зарегистрироваться';
+    document.getElementById('authTitle').textContent = t('auth_title_login');
+    document.getElementById('authSubmitBtn').textContent = t('auth_submit_login');
+    document.getElementById('toggleAuthMode').textContent = t('auth_toggle_to_register');
     document.getElementById('forgotPasswordLink').classList.remove('hidden');
     document.getElementById('backToLoginLink').classList.add('hidden');
     document.getElementById('authError').classList.add('hidden');
@@ -147,9 +147,9 @@ function showLoginMode() {
 
 function showRegisterMode() {
     _authMode = 'register';
-    document.getElementById('authTitle').textContent = 'Регистрация';
-    document.getElementById('authSubmitBtn').textContent = 'Зарегистрироваться';
-    document.getElementById('toggleAuthMode').textContent = 'Уже есть аккаунт? Войти';
+    document.getElementById('authTitle').textContent = t('auth_title_register');
+    document.getElementById('authSubmitBtn').textContent = t('auth_submit_register');
+    document.getElementById('toggleAuthMode').textContent = t('auth_toggle_to_login');
     document.getElementById('forgotPasswordLink').classList.add('hidden');
     document.getElementById('backToLoginLink').classList.add('hidden');
     document.getElementById('authError').classList.add('hidden');
@@ -158,8 +158,8 @@ function showRegisterMode() {
 
 function showResetMode() {
     _authMode = 'reset';
-    document.getElementById('authTitle').textContent = 'Сброс пароля';
-    document.getElementById('authSubmitBtn').textContent = 'Отправить письмо';
+    document.getElementById('authTitle').textContent = t('auth_title_reset');
+    document.getElementById('authSubmitBtn').textContent = t('auth_submit_reset');
     document.getElementById('toggleAuthMode').textContent = '';
     document.getElementById('forgotPasswordLink').classList.add('hidden');
     document.getElementById('backToLoginLink').classList.remove('hidden');
@@ -192,13 +192,13 @@ async function handleAuthSubmit(e) {
 
     try {
         if (_authMode === 'login') {
-            btn.textContent = 'Вход...';
+            btn.textContent = t('auth_signing_in');
             const { error } = await db.auth.signInWithPassword({ email, password });
             if (error) throw error;
             document.getElementById('authPassword').value = '';
             await showAuthedApp();
         } else {
-            btn.textContent = 'Регистрация...';
+            btn.textContent = t('auth_registering');
             const { data, error } = await db.auth.signUp({ email, password });
             if (error) throw error;
             document.getElementById('authPassword').value = '';
@@ -209,27 +209,26 @@ async function handleAuthSubmit(e) {
                 await showAuthedApp();
             } else {
                 // Подтверждение email включено — реально отправлено письмо, ждём его.
-                document.getElementById('authSuccess').textContent =
-                    'На ваш email отправлено письмо для подтверждения. Пожалуйста, проверьте почту.';
+                document.getElementById('authSuccess').textContent = t('auth_confirm_email_sent');
                 document.getElementById('authSuccess').classList.remove('hidden');
             }
         }
     } catch (err) {
         console.error(err);
         if (err.message && err.message.includes('already registered')) {
-            errEl.textContent = 'Этот email уже зарегистрирован. Войдите или сбросьте пароль.';
+            errEl.textContent = t('auth_error_already_registered');
         } else if (err.message && err.message.includes('Invalid login credentials')) {
-            errEl.textContent = 'Неверный email или пароль.';
+            errEl.textContent = t('auth_error_invalid_credentials');
         } else if (err.message && err.message.includes('Password should be')) {
-            errEl.textContent = 'Пароль должен содержать не менее 6 символов.';
+            errEl.textContent = t('auth_error_password_too_short');
         } else {
-            errEl.textContent = 'Что-то пошло не так. Попробуйте ещё раз.';
+            errEl.textContent = t('auth_error_generic');
         }
         errEl.classList.remove('hidden');
     } finally {
         btn.disabled = false;
-        if (_authMode === 'login') btn.textContent = 'Войти';
-        else btn.textContent = 'Зарегистрироваться';
+        if (_authMode === 'login') btn.textContent = t('auth_submit_login');
+        else btn.textContent = t('auth_submit_register');
     }
 }
 
@@ -242,29 +241,28 @@ async function handlePasswordReset() {
     errEl.classList.add('hidden');
 
     if (!email) {
-        errEl.textContent = 'Введите ваш email.';
+        errEl.textContent = t('auth_error_enter_email');
         errEl.classList.remove('hidden');
         return;
     }
 
     btn.disabled = true;
-    btn.textContent = 'Отправка...';
+    btn.textContent = t('auth_sending');
 
     try {
         const { error } = await db.auth.resetPasswordForEmail(email, {
             redirectTo: 'https://runawaychef.github.io/Public-Run-Away-Chef'
         });
         if (error) throw error;
-        document.getElementById('authSuccess').textContent =
-            'Письмо отправлено! Проверьте почту и перейдите по ссылке для сброса пароля.';
+        document.getElementById('authSuccess').textContent = t('auth_reset_email_sent');
         document.getElementById('authSuccess').classList.remove('hidden');
     } catch (err) {
         console.error(err);
-        errEl.textContent = 'Не удалось отправить письмо. Проверьте email и попробуйте ещё раз.';
+        errEl.textContent = t('auth_error_reset_failed');
         errEl.classList.remove('hidden');
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Отправить письмо';
+        btn.textContent = t('auth_submit_reset');
     }
 }
 
@@ -284,7 +282,7 @@ async function handleGoogleSignIn() {
         // Google перенаправит пользователя — дальнейший код не выполняется
     } catch (err) {
         console.error(err);
-        errEl.textContent = 'Не удалось войти через Google. Попробуйте ещё раз.';
+        errEl.textContent = t('auth_error_google_failed');
         errEl.classList.remove('hidden');
     }
 }
@@ -292,7 +290,7 @@ async function handleGoogleSignIn() {
 // ===== Выход из аккаунта =====
 
 async function signOutAccount() {
-    if (!(await showConfirm('Выйти из приложения полностью? Потребуется снова войти.'))) return;
+    if (!(await showConfirm(t('signout_confirm')))) return;
     closeModal();
     try { await db.auth.signOut(); } catch (e) { console.error(e); }
     localStorage.removeItem('currentEmployee');
