@@ -116,7 +116,7 @@ async function selectCountry(code) {
     document.getElementById('cmpCurrencyLabel').textContent = currencyLabel(found.currency);
     document.getElementById('cmpVatRate').value = (found.vatRate * 100).toString();
 
-    showLoading('Сохранение...');
+    showLoading(t('common_saving'));
     try {
         await updateChecked(db.from('organizations')
             .update({ country: code, currency_code: found.currency, vat_rate: found.vatRate })

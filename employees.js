@@ -137,7 +137,7 @@ async function initLogin() {
             btn.className = 'btn';
             btn.style.cssText = 'display:flex;align-items:center;gap:12px;background:#e3e8df;border-radius:14px;padding:10px 14px;text-align:left;width:100%;';
             const initial = (emp.name || '?').trim().charAt(0).toUpperCase();
-            const roleLabel = emp.is_owner ? 'Владелец' : 'Сотрудник';
+            const roleLabel = emp.is_owner ? t('employees_role_owner') : t('employees_role_staff');
             btn.innerHTML = `
                 <span style="width:34px;height:34px;border-radius:50%;background:#7c9473;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:0 0 auto;">${escapeHtml(initial)}</span>
                 <span>
@@ -285,7 +285,7 @@ function startPeriodicRefresh() {
 }
 
 async function logoutEmployee() {
-    if (!(await showConfirm('Сменить сотрудника?'))) return;
+    if (!(await showConfirm(t('employees_switch_confirm')))) return;
     closeModal();
     logActivity('auth', `Выход: ${currentEmployee ? currentEmployee.name : ''}`);
     currentEmployee = null;
@@ -375,7 +375,7 @@ async function reloadEmployeesList() {
 }
 
 async function openEmployeesModal() {
-    if (!hasPermission('can_manage_team')) { showInfo('Раздел «Сотрудники и права» вам недоступен.'); return; }
+    if (!hasPermission('can_manage_team')) { showInfo(t('employees_no_access')); return; }
     closeModal();
     await reloadEmployeesList();
     const content = document.getElementById('employeesListContent');
@@ -385,7 +385,7 @@ async function openEmployeesModal() {
         const row = document.createElement('button');
         row.className = 'settings-row-btn';
         row.style.justifyContent = 'space-between';
-        const badge = emp.is_owner ? 'Владелец' : (emp.user_id ? 'Личный вход' : 'Общее устройство');
+        const badge = emp.is_owner ? t('employees_role_owner') : (emp.user_id ? t('employees_role_personal_login') : t('employees_role_shared_device'));
         row.innerHTML = `<span>${escapeHtml(emp.name)}</span><span class="text-gray-400">${badge}</span>`;
         row.onclick = () => openEmployeeEditModal(emp);
         content.appendChild(row);
@@ -398,18 +398,18 @@ async function openEmployeesModal() {
         row.innerHTML = `
             <div class="flex justify-between items-center">
                 <span>${escapeHtml(inv.name)} <span class="text-gray-400">(${escapeHtml(inv.email)})</span></span>
-                <span style="color:#96712a;" class="flex-shrink-0 ml-1 inline-flex items-center">${icon('clock')}Ждём регистрации</span>
+                <span style="color:#96712a;" class="flex-shrink-0 ml-1 inline-flex items-center">${icon('clock')}${t('employees_invite_pending')}</span>
             </div>`;
         const actionsRow = document.createElement('div');
         actionsRow.className = 'flex gap-2 mt-1';
 
         const shareBtn = document.createElement('button');
-        shareBtn.innerHTML = icon('share') + 'Поделиться';
+        shareBtn.innerHTML = icon('share') + t('employees_invite_share');
         shareBtn.className = 'text-xs inline-flex items-center invite-share-btn';
         shareBtn.onclick = (e) => { e.stopPropagation(); shareInvitation(inv); };
 
         const cancelBtn = document.createElement('button');
-        cancelBtn.innerHTML = icon('close') + 'Отменить';
+        cancelBtn.innerHTML = icon('close') + t('employees_invite_cancel');
         cancelBtn.className = 'text-gray-400 text-xs inline-flex items-center invite-cancel-btn';
         cancelBtn.onclick = (e) => { e.stopPropagation(); cancelInvitation(inv.id); };
 
@@ -428,7 +428,7 @@ function openEmployeeEditModal(emp) {
     document.getElementById('employeeEditUserId').value = emp && emp.user_id ? emp.user_id : '';
     document.getElementById('employeeEditName').value = emp ? emp.name : '';
     document.getElementById('employeeEditEmail').value = '';
-    document.getElementById('employeeEditTitle').textContent = emp ? 'Редактирование сотрудника' : 'Новый сотрудник';
+    document.getElementById('employeeEditTitle').textContent = emp ? t('employees_edit_title') : t('employees_new_title');
 
     // Поле email для приглашения имеет смысл только при создании новой записи
     document.getElementById('employeeEditEmailBlock').classList.toggle('hidden', !!emp);
@@ -461,14 +461,14 @@ async function saveEmployee() {
     const id = document.getElementById('employeeEditId').value;
     const name = document.getElementById('employeeEditName').value.trim();
     const email = document.getElementById('employeeEditEmail').value.trim();
-    if (!name) { showInfo('Введите имя сотрудника.'); return; }
+    if (!name) { showInfo(t('employees_name_required')); return; }
 
     const permissions = {};
     PERMISSION_FIELDS.forEach(field => {
         permissions[field] = document.getElementById(PERMISSION_CHECKBOX_IDS[field]).checked;
     });
 
-    showLoading('Сохранение...');
+    showLoading(t('common_saving'));
     try {
         suppressRealtimeFor3s();
         if (id) {
@@ -483,7 +483,7 @@ async function saveEmployee() {
             logActivity('system', `Отправлено приглашение сотруднику: ${name} (${email})`);
             await reloadEmployeesList();
             openEmployeesModal();
-            await showInfo(`Приглашение создано. Сообщите сотруднику, что нужно зарегистрироваться в приложении на email: ${email}`);
+            await showInfo(`${t('employees_invite_created_prefix')} ${email}`);
             return;
         } else {
             // Обычная запись для входа по имени на общем устройстве
@@ -495,7 +495,7 @@ async function saveEmployee() {
         openEmployeesModal();
     } catch (e) {
         console.error(e);
-        showInfo('Ошибка сохранения сотрудника.');
+        showInfo(t('employees_save_error'));
     } finally { hideLoading(); }
 }
 
@@ -505,11 +505,11 @@ async function deleteEmployee() {
     if (!id) return;
 
     const warning = userId
-        ? 'Удалить этого сотрудника? Он полностью потеряет доступ к пекарне (личный вход тоже будет отозван). Записи в журнале действий сохранятся.'
-        : 'Удалить этого сотрудника? Записи в журнале действий сохранятся.';
+        ? t('employees_delete_warning_with_login')
+        : t('employees_delete_warning_simple');
     if (!(await showConfirm(warning))) return;
 
-    showLoading('Удаление...');
+    showLoading(t('common_deleting'));
     try {
         suppressRealtimeFor3s();
         const { error } = await db.from('employees').delete().eq('id', id);
@@ -521,7 +521,7 @@ async function deleteEmployee() {
             const { error: memErr } = await db.from('memberships').delete().eq('user_id', userId).eq('org_id', currentOrgId);
             if (memErr) {
                 console.error(memErr);
-                showInfo('Карточка сотрудника удалена, но не удалось отозвать доступ к организации. Проверьте вручную в Supabase (таблица memberships).');
+                showInfo(t('employees_delete_membership_error'));
             }
         }
 
@@ -529,20 +529,24 @@ async function deleteEmployee() {
         openEmployeesModal();
     } catch (e) {
         console.error(e);
-        showInfo('Ошибка удаления сотрудника.');
+        showInfo(t('employees_delete_error'));
     } finally { hideLoading(); }
 }
 
 async function shareInvitation(inv) {
     const appUrl = window.location.origin + window.location.pathname;
-    const orgLabel = currentOrgName || 'нашу пекарню';
-    const text = `Здравствуйте, ${inv.name}! Приглашаю вас в приложение «${orgLabel}» для учёта заказов.\n\n1. Откройте: ${appUrl}\n2. Зарегистрируйтесь именно на этот email: ${inv.email}\n\nПосле регистрации вы автоматически получите доступ.`;
+    const orgLabel = currentOrgName || t('employees_our_bakery_fallback');
+    const text = t('employees_invite_share_text')
+        .replace('{name}', inv.name)
+        .replace('{org}', orgLabel)
+        .replace('{url}', appUrl)
+        .replace('{email}', inv.email);
     await shareOrCopyText(text);
 }
 
 async function cancelInvitation(id) {
-    if (!(await showConfirm('Отменить это приглашение?'))) return;
-    showLoading('Отмена...');
+    if (!(await showConfirm(t('employees_cancel_invite_confirm')))) return;
+    showLoading(t('common_cancelling'));
     try {
         const { error } = await db.from('invitations').delete().eq('id', id);
         if (error) throw error;
@@ -550,7 +554,7 @@ async function cancelInvitation(id) {
         openEmployeesModal();
     } catch (e) {
         console.error(e);
-        showInfo('Ошибка отмены приглашения.');
+        showInfo(t('employees_cancel_invite_error'));
     } finally { hideLoading(); }
 }
 

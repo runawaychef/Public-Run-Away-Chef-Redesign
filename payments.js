@@ -195,7 +195,7 @@ async function savePayment() {
     if (!paidAt) { showInfo('Укажите дату.'); return; }
     if (!currentOrderId) return;
 
-    showLoading('Сохранение...');
+    showLoading(t('common_saving'));
     try {
         suppressRealtimeFor3s();
         if (id) {
@@ -226,7 +226,7 @@ async function deletePayment() {
     const id = document.getElementById('paymentEditId').value;
     if (!id) return;
     if (!(await showConfirm('Удалить эту запись об оплате?'))) return;
-    showLoading('Удаление...');
+    showLoading(t('common_deleting'));
     try {
         suppressRealtimeFor3s();
         const { error } = await db.from('order_payments').delete().eq('id', id);
