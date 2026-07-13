@@ -3267,6 +3267,26 @@ window.addEventListener('pageshow', (e) => {
     }
 });
 
+// Отдельный путь возврата в приложение, не покрытый pageshow выше: переключение
+// между приложениями на Android (например, через "Недавние" или открытие
+// отдельного Chrome) не всегда замораживает вкладку в bfcache — вместо этого
+// срабатывает visibilitychange, когда вкладка снова становится видимой. Без
+// этого переключатель карточки/таблица оставался на координатах, посчитанных
+// до переключения, и "убегал" к самому верху экрана — тот же класс бага, что
+// и с pageshow, просто другой путь попадания в приложение.
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        requestAnimationFrame(() => {
+            refreshFab();
+            setTimeout(refreshFab, 300);
+            if (typeof positionOrdersViewToggle === 'function') {
+                positionOrdersViewToggle();
+                setTimeout(positionOrdersViewToggle, 300);
+            }
+        });
+    }
+});
+
 // Свайп между вкладками (Заказы/Ассортимент/Склад/Клиенты) убран — заменён
 // свайп-действиями на карточках заказов (см. orders.js), которые пользователь
 // счёл более полезными и не хотел, чтобы два жеста конфликтовали друг с другом.
