@@ -12,7 +12,7 @@ function updateHistoryEmployeeFilter() {
     const sel = document.getElementById('historyEmployeeFilter');
     if (!sel) return;
     const prev = sel.value;
-    sel.innerHTML = '<option value="">Все сотрудники</option>';
+    sel.innerHTML = `<option value="">${t('history_all_employees')}</option>`;
     employees.forEach(e => {
         const opt = document.createElement('option');
         opt.value = e.id; opt.textContent = e.name;

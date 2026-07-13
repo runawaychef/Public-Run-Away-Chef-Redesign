@@ -287,7 +287,7 @@ function svgEdit(onclick) {
     return `<svg class="action-icon icon-edit inline mr-1 cursor-pointer" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" title="Редактировать" onclick="${onclick}"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/></svg>`;
 }
 function svgDelete(onclick) {
-    return `<svg class="action-icon icon-delete inline mr-1 cursor-pointer" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" title="Удалить" onclick="${onclick}"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>`;
+    return `<svg class="action-icon icon-delete inline mr-1 cursor-pointer" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" title="${t('icon_delete_title')}" onclick="${onclick}"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>`;
 }
 
 // ---- Безопасные версии (data-fn/data-args вместо inline onclick с именами) ----
@@ -297,7 +297,7 @@ function svgEditSafe(fnName, args) {
     return `<svg class="action-icon icon-edit inline mr-1 cursor-pointer" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" title="Редактировать" ${dataAction(fnName, args)}><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125"/></svg>`;
 }
 function svgDeleteSafe(fnName, args) {
-    return `<svg class="action-icon icon-delete inline mr-1 cursor-pointer" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" title="Удалить" ${dataAction(fnName, args)}><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>`;
+    return `<svg class="action-icon icon-delete inline mr-1 cursor-pointer" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" title="${t('icon_delete_title')}" ${dataAction(fnName, args)}><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>`;
 }
 // Универсальный способ поделиться текстом: системное меню "Отправить через..." на телефоне,
 // либо копирование в буфер обмена как запасной вариант (десктоп и т.п.)
@@ -347,10 +347,10 @@ async function updateChecked(query) {
 }
 
 function svgCopy(onclick) {
-    return `<svg class="action-icon icon-copy inline mr-1 cursor-pointer" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" title="Копировать" onclick="${onclick}"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124M15.75 17.25h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25"/></svg>`;
+    return `<svg class="action-icon icon-copy inline mr-1 cursor-pointer" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" title="${t('icon_copy_title')}" onclick="${onclick}"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124M15.75 17.25h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25"/></svg>`;
 }
 function svgCopySafe(fnName, args) {
-    return `<svg class="action-icon icon-copy inline mr-1 cursor-pointer" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" title="Копировать" ${dataAction(fnName, args)}><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124M15.75 17.25h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25"/></svg>`;
+    return `<svg class="action-icon icon-copy inline mr-1 cursor-pointer" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke-width="1.6" title="${t('icon_copy_title')}" ${dataAction(fnName, args)}><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124M15.75 17.25h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25"/></svg>`;
 }
 
 // ==================== ГЕНЕРАЦИЯ PDF (нативно, без html2canvas) ====================
@@ -656,7 +656,7 @@ function refCopySwipeBtnHtml(onclickCall) {
     return `<div class="oc-swipe-actions">
         <button class="oc-swipe-btn oc-swipe-copy" onclick="event.stopPropagation(); ${onclickCall}">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184"/></svg>
-            Копировать
+            ${t('icon_copy_title')}
         </button>
     </div>`;
 }

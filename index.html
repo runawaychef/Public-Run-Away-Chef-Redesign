@@ -725,10 +725,10 @@
 </div>
 
 <!-- Realtime-тост -->
-<div id="realtimeToast"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>Данные обновлены</div>
+<div id="realtimeToast"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg><span data-i18n="toast_data_updated">Данные обновлены</span></div>
 
 <!-- Тост подтверждения автосохранения поля в карточке (клиент/изделие/ингредиент/п-ф/заказ) -->
-<div id="autosaveToast"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>Сохранено</div>
+<div id="autosaveToast"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg><span data-i18n="toast_saved">Сохранено</span></div>
 
 <!-- Склад: корзина, доступна из любого раздела -->
 <button id="inventoryBtn" onclick="openInventoryModal()" title="Склад">
@@ -776,7 +776,7 @@
 <div id="productsSearchBar" class="hidden" style="position:fixed; left:50%; transform:translateX(-50%); width:100%; max-width:42rem; z-index:30; box-sizing:border-box; padding:0 8px;">
     <div class="flex gap-2 items-center" style="background:#f4f1ea; padding:6px 0;">
         <div class="search-input-wrap" style="flex:1; position:relative;">
-            <input id="productSearchInput" type="text" placeholder="Поиск по названию..." oninput="filterProductsList()" class="border p-1.5 rounded-xl w-full table-text" style="padding-right:30px;">
+            <input id="productSearchInput" type="text" placeholder="Поиск по названию..." data-i18n-placeholder="search_by_title" oninput="filterProductsList()" class="border p-1.5 rounded-xl w-full table-text" style="padding-right:30px;">
             <svg id="productSearchIcon" class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:#a29c8c; pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
             <svg id="productSearchClear" onclick="clearProductSearch()" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:#9a9488; cursor:pointer;"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
         </div>
@@ -795,7 +795,7 @@
 <div id="customersSearchBar" class="hidden" style="position:fixed; left:50%; transform:translateX(-50%); width:100%; max-width:42rem; z-index:30; box-sizing:border-box; padding:0 8px;">
     <div class="flex gap-2 items-center" style="background:#f4f1ea; padding:6px 0;">
         <div class="search-input-wrap" style="flex:1; position:relative;">
-            <input id="customerSearchInput" type="text" placeholder="Поиск по имени..." oninput="filterCustomersList()" class="border p-1.5 rounded-xl w-full table-text" style="padding-right:30px;">
+            <input id="customerSearchInput" type="text" placeholder="Поиск по имени..." data-i18n-placeholder="search_by_person_name" oninput="filterCustomersList()" class="border p-1.5 rounded-xl w-full table-text" style="padding-right:30px;">
             <svg id="customerSearchIcon" class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:#a29c8c; pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
             <svg id="customerSearchClear" onclick="clearCustomerSearch()" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:#9a9488; cursor:pointer;"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
         </div>
@@ -814,7 +814,7 @@
 <div id="ingredientsSearchBar" class="hidden" style="position:fixed; left:50%; transform:translateX(-50%); width:100%; max-width:42rem; z-index:30; box-sizing:border-box; padding:0 8px;">
     <div class="flex gap-2 items-center" style="background:#f4f1ea; padding:6px 0;">
         <div class="search-input-wrap" style="flex:1; position:relative;">
-            <input id="ingredientSearchInput" type="text" placeholder="Поиск по названию..." oninput="filterIngredientsList()" class="border p-1.5 rounded-xl w-full table-text" style="padding-right:30px;">
+            <input id="ingredientSearchInput" type="text" placeholder="Поиск по названию..." data-i18n-placeholder="search_by_title" oninput="filterIngredientsList()" class="border p-1.5 rounded-xl w-full table-text" style="padding-right:30px;">
             <svg id="ingredientSearchIcon" class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:#a29c8c; pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
             <svg id="ingredientSearchClear" onclick="clearIngredientSearch()" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:#9a9488; cursor:pointer;"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
         </div>
@@ -833,7 +833,7 @@
 <div id="semiFinishedSearchBar" class="hidden" style="position:fixed; left:50%; transform:translateX(-50%); width:100%; max-width:42rem; z-index:30; box-sizing:border-box; padding:0 8px;">
     <div class="flex gap-2 items-center" style="background:#f4f1ea; padding:6px 0;">
         <div class="search-input-wrap" style="flex:1; position:relative;">
-            <input id="semiFinishedSearchInput" type="text" placeholder="Поиск по названию..." oninput="filterSemiFinishedList()" class="border p-1.5 rounded-xl w-full table-text" style="padding-right:30px;">
+            <input id="semiFinishedSearchInput" type="text" placeholder="Поиск по названию..." data-i18n-placeholder="search_by_title" oninput="filterSemiFinishedList()" class="border p-1.5 rounded-xl w-full table-text" style="padding-right:30px;">
             <svg id="semiFinishedSearchIcon" class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:#a29c8c; pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
             <svg id="semiFinishedSearchClear" onclick="clearSemiFinishedSearch()" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:#9a9488; cursor:pointer;"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
         </div>
@@ -1484,39 +1484,39 @@
         <div id="history" class="tab-content hidden">
             <div class="bg-white p-2 rounded-xl shadow-md">
                 <div class="flex items-center justify-between mb-2">
-                    <h2 class="text-sm font-semibold text-gray-800">Журнал действий</h2>
+                    <h2 class="text-sm font-semibold text-gray-800" data-i18n="history_title">Журнал действий</h2>
                     <button onclick="closeHistoryScreen()" class="pill-btn">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-                        Назад
+                        <span data-i18n="common_back">Назад</span>
                     </button>
                 </div>
                 <div class="mb-2">
                     <select id="historyEmployeeFilter" onchange="loadHistory()" class="border p-0.5 rounded-xl w-full text-xs">
-                        <option value="">Все сотрудники</option>
+                        <option value="" data-i18n="history_all_employees">Все сотрудники</option>
                     </select>
                 </div>
                 <div class="mb-2">
                     <select id="historyActionFilter" onchange="loadHistory()" class="border p-0.5 rounded-xl w-full text-xs">
-                        <option value="">Все действия</option>
-                        <option value="order">Заказы</option>
-                        <option value="item">Позиции заказа</option>
-                        <option value="customer">Клиенты</option>
-                        <option value="product">Изделия</option>
-                        <option value="auth">Вход/выход</option>
+                        <option value="" data-i18n="history_all_actions">Все действия</option>
+                        <option value="order" data-i18n="history_action_orders">Заказы</option>
+                        <option value="item" data-i18n="history_action_items">Позиции заказа</option>
+                        <option value="customer" data-i18n="history_action_customers">Клиенты</option>
+                        <option value="product" data-i18n="history_action_products">Изделия</option>
+                        <option value="auth" data-i18n="history_action_auth">Вход/выход</option>
                     </select>
                 </div>
-                <p class="text-xs text-gray-400 mb-2">Записи о заказах можно открыть нажатием (кроме удалённых)</p>
+                <p class="text-xs text-gray-400 mb-2" data-i18n="history_hint">Записи о заказах можно открыть нажатием (кроме удалённых)</p>
                 <table class="w-full table-auto table-clean">
                     <thead><tr style="background-color:#e3e8df;">
-                        <th class="p-1 text-xs w-[15%]">Дата</th>
-                        <th class="p-1 text-xs w-[10%]">Время</th>
-                        <th class="p-1 text-xs w-[20%]">Сотрудник</th>
-                        <th class="p-1 text-xs w-[55%]">Действие</th>
+                        <th class="p-1 text-xs w-[15%]" data-i18n="history_col_date">Дата</th>
+                        <th class="p-1 text-xs w-[10%]" data-i18n="history_col_time">Время</th>
+                        <th class="p-1 text-xs w-[20%]" data-i18n="history_col_employee">Сотрудник</th>
+                        <th class="p-1 text-xs w-[55%]" data-i18n="history_col_action">Действие</th>
                     </tr></thead>
                     <tbody id="historyTableBody"></tbody>
                 </table>
                 <div class="text-center mt-2">
-                    <button id="historyLoadMoreBtn" onclick="loadMoreHistory()" class="pill-btn-secondary hidden">Показать ещё</button>
+                    <button id="historyLoadMoreBtn" onclick="loadMoreHistory()" class="pill-btn-secondary hidden" data-i18n="common_show_more">Показать ещё</button>
                 </div>
             </div>
         </div>
@@ -1860,10 +1860,10 @@
         <!-- Подтверждение удаления -->
         <div id="deleteModal" class="modal">
             <div class="modal-content">
-                <p id="deleteModalText" class="mb-3 text-sm text-gray-800">Вы уверены, что хотите удалить этот элемент?</p>
+                <p id="deleteModalText" class="mb-3 text-sm text-gray-800" data-i18n="common_delete_confirm_default">Вы уверены, что хотите удалить этот элемент?</p>
                 <div class="flex gap-2">
-                    <button onclick="confirmDelete()" class="pill-btn-danger">Удалить</button>
-                    <button onclick="closeModal()" class="pill-btn">Отмена</button>
+                    <button onclick="confirmDelete()" class="pill-btn-danger" data-i18n="common_delete">Удалить</button>
+                    <button onclick="closeModal()" class="pill-btn" data-i18n="common_cancel">Отмена</button>
                 </div>
             </div>
         </div>
@@ -1873,8 +1873,8 @@
             <div class="modal-content text-center">
                 <p id="confirmMessage" class="text-sm text-gray-800 mb-4" style="white-space: pre-line;"></p>
                 <div class="flex justify-center gap-2">
-                    <button id="confirmCancelBtn" class="btn bg-gray-300 text-gray-800 px-4 py-1.5 rounded-xl hover:bg-gray-400 text-sm">Отмена</button>
-                    <button id="confirmOkBtn" class="btn bg-[#7c9473] text-white px-4 py-1.5 rounded-xl hover:bg-[#6c8464] text-sm">OK</button>
+                    <button id="confirmCancelBtn" class="btn bg-gray-300 text-gray-800 px-4 py-1.5 rounded-xl hover:bg-gray-400 text-sm" data-i18n="common_cancel">Отмена</button>
+                    <button id="confirmOkBtn" class="btn bg-[#7c9473] text-white px-4 py-1.5 rounded-xl hover:bg-[#6c8464] text-sm" data-i18n="common_ok">OK</button>
                 </div>
             </div>
         </div>
@@ -2659,7 +2659,7 @@
 <script src="invoice.js?v=10"></script>
 <script src="payments.js?v=15"></script>
 <script src="stats.js?v=14"></script>
-<script src="history.js?v=8"></script>
+<script src="history.js?v=9"></script>
 <script src="modals.js?v=10"></script>
 <script src="demoData.js?v=9"></script>
 <script src="helpers.js?v=16"></script>

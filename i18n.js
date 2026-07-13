@@ -84,6 +84,35 @@ const I18N = {
         contact_placeholder: 'Ваше сообщение...',
         contact_send: 'Отправить',
         contact_cancel: 'Отмена',
+
+        // Общие переиспользуемые элементы (кнопки, тосты, поиск, подсказки иконок)
+        common_back: 'Назад',
+        common_cancel: 'Отмена',
+        common_ok: 'OK',
+        common_delete: 'Удалить',
+        common_delete_confirm_default: 'Вы уверены, что хотите удалить этот элемент?',
+        common_show_more: 'Показать ещё',
+        toast_saved: 'Сохранено',
+        toast_data_updated: 'Данные обновлены',
+        search_by_title: 'Поиск по названию...',
+        search_by_person_name: 'Поиск по имени...',
+        icon_delete_title: 'Удалить',
+        icon_copy_title: 'Копировать',
+
+        // Экран "Журнал действий"
+        history_title: 'Журнал действий',
+        history_all_employees: 'Все сотрудники',
+        history_all_actions: 'Все действия',
+        history_action_orders: 'Заказы',
+        history_action_items: 'Позиции заказа',
+        history_action_customers: 'Клиенты',
+        history_action_products: 'Изделия',
+        history_action_auth: 'Вход/выход',
+        history_hint: 'Записи о заказах можно открыть нажатием (кроме удалённых)',
+        history_col_date: 'Дата',
+        history_col_time: 'Время',
+        history_col_employee: 'Сотрудник',
+        history_col_action: 'Действие',
     },
     en: {
         // Bottom navigation
@@ -154,6 +183,35 @@ const I18N = {
         contact_placeholder: 'Your message...',
         contact_send: 'Send',
         contact_cancel: 'Cancel',
+
+        // Common reusable elements (buttons, toasts, search, icon tooltips)
+        common_back: 'Back',
+        common_cancel: 'Cancel',
+        common_ok: 'OK',
+        common_delete: 'Delete',
+        common_delete_confirm_default: 'Are you sure you want to delete this item?',
+        common_show_more: 'Show more',
+        toast_saved: 'Saved',
+        toast_data_updated: 'Data updated',
+        search_by_title: 'Search by name...',
+        search_by_person_name: 'Search by name...',
+        icon_delete_title: 'Delete',
+        icon_copy_title: 'Copy',
+
+        // "Activity log" screen
+        history_title: 'Activity log',
+        history_all_employees: 'All staff',
+        history_all_actions: 'All actions',
+        history_action_orders: 'Orders',
+        history_action_items: 'Order items',
+        history_action_customers: 'Customers',
+        history_action_products: 'Menu items',
+        history_action_auth: 'Sign in/out',
+        history_hint: 'Order entries can be opened by tapping (except deleted ones)',
+        history_col_date: 'Date',
+        history_col_time: 'Time',
+        history_col_employee: 'Staff',
+        history_col_action: 'Action',
     }
 };
 
