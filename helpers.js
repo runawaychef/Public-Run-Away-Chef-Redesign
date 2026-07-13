@@ -608,7 +608,14 @@ function openLegalModal(modalId) {
     const frameId = modalId === 'privacyModal' ? 'privacyFrame' : 'termsFrame';
     const src = modalId === 'privacyModal' ? 'privacy.html' : 'terms.html';
     const frame = document.getElementById(frameId);
-    if (frame && !frame.src) frame.src = src;
+    // Не полагаемся на frame.src (у <iframe src=""> он не пустой, а равен
+    // адресу текущей страницы — из-за этого проверка "уже загружено?" всегда
+    // была бы true, и реальный файл так и не подставлялся бы). Используем
+    // свой собственный флаг вместо этого.
+    if (frame && !frame.dataset.loaded) {
+        frame.src = src;
+        frame.dataset.loaded = '1';
+    }
     document.getElementById(modalId).style.display = 'flex';
 }
 
