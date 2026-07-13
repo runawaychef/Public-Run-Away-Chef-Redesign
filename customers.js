@@ -176,12 +176,13 @@ async function applyVatExemptToAllOrders() {
     const toUpdate = custOrders.filter(o => !!o.vat_exempt !== !!cust.vat_exempt);
 
     if (!toUpdate.length) {
-        await showInfo('У всех заказов этого клиента НДС-статус уже совпадает с текущим.');
+        await showInfo(t('customers_vat_already_matches'));
         return;
     }
 
-    const statusLabel = cust.vat_exempt ? '«Без НДС»' : '«С НДС»';
-    const ok = await showConfirm(`Применить статус ${statusLabel} к ${toUpdate.length} ${toUpdate.length === 1 ? 'заказу' : 'заказам'} клиента «${cust.name}»?\nЭто изменит уже существующие заказы.`);
+    const statusLabel = cust.vat_exempt ? t('customers_vat_status_exempt') : t('customers_vat_status_included');
+    const orderWord = toUpdate.length === 1 ? t('customers_order_word_one') : t('customers_order_word_many');
+    const ok = await showConfirm(`${t('customers_apply_vat_confirm_prefix')} ${statusLabel} ${t('common_to')} ${toUpdate.length} ${orderWord} ${t('customers_of_customer')} «${cust.name}»?\n${t('customers_apply_vat_confirm_suffix')}`);
     if (!ok) return;
 
     showLoading();
@@ -222,7 +223,10 @@ function getCustomerOrdersForRange(cust) {
     return { range, custOrders };
 }
 
-const RANGE_LABELS = { all: 'Весь период', week: 'Текущая неделя', month: 'Текущий месяц', year: 'Текущий год', custom: 'От – До' };
+function rangeLabel(range) {
+    const map = { all: 'stats_range_all', week: 'stats_range_week', month: 'stats_range_month', year: 'stats_range_year', custom: 'stats_range_custom' };
+    return t(map[range] || 'stats_range_all');
+}
 
 // ==================== СВОДНЫЙ ОТЧЁТ ПО ИЗДЕЛИЯМ ЗА ПЕРИОД ====================
 function openCustomerReportPreview() {
@@ -231,7 +235,7 @@ function openCustomerReportPreview() {
     const { range, custOrders } = getCustomerOrdersForRange(cust);
 
     if (!custOrders.length) {
-        showInfo('Нет заказов за выбранный период — отчёт формировать не из чего.');
+        showInfo(t('customers_no_orders_for_report'));
         return;
     }
 
@@ -254,41 +258,41 @@ function openCustomerReportPreview() {
     const totalVat = custOrders.reduce((s, o) => s + orderVatAmount(o), 0);
     const grandTotal = custOrders.reduce((s, o) => s + orderGrandTotal(o), 0);
     const discountPercents = [...new Set(custOrders.map(o => o.discount || 0).filter(d => d > 0))];
-    const discountLabel = discountPercents.length === 1 ? ` (${discountPercents[0]}%)` : discountPercents.length > 1 ? ' (разная по заказам)' : '';
+    const discountLabel = discountPercents.length === 1 ? ` (${discountPercents[0]}%)` : discountPercents.length > 1 ? ` (${t('customers_discount_varies')})` : '';
 
     // Диапазон дат для заголовка
     const dates = custOrders.map(o => o.date).sort();
     const periodLabel = dates.length
         ? (dates[0] === dates[dates.length-1] ? formatDateDMY(dates[0]) : `${formatDateDMY(dates[0])} – ${formatDateDMY(dates[dates.length-1])}`)
-        : RANGE_LABELS[range];
+        : rangeLabel(range);
 
     let html = `
         <div style="padding:6px;">
             <h2 style="font-size:16px;font-weight:700;color:#1f2937;margin:0 0 2px;">${escapeHtml(cust.name)}</h2>
-            <p style="font-size:11px;color:#6b7280;margin:0 0 12px;">Сводный отчёт по изделиям · ${RANGE_LABELS[range]} (${periodLabel})</p>
+            <p style="font-size:11px;color:#6b7280;margin:0 0 12px;">${t('customers_report_title')} · ${rangeLabel(range)} (${periodLabel})</p>
             <table class="table-clean" style="width:100%;border-collapse:separate;border-spacing:0;font-size:12px;">
                 <thead><tr style="background:#e3e8df;">
-                    <th style="text-align:left;padding:4px;border-bottom:1px solid #e5e7eb;">Изделие</th>
-                    <th style="text-align:right;padding:4px;border-bottom:1px solid #e5e7eb;">Кол-во</th>
-                    <th style="text-align:right;padding:4px;border-bottom:1px solid #e5e7eb;">Сумма (${CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency})</th>
+                    <th style="text-align:left;padding:4px;border-bottom:1px solid #e5e7eb;">${t('stats_col_product')}</th>
+                    <th style="text-align:right;padding:4px;border-bottom:1px solid #e5e7eb;">${t('inv_col_quantity')}</th>
+                    <th style="text-align:right;padding:4px;border-bottom:1px solid #e5e7eb;">${t('stats_col_sum')} (${CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency})</th>
                 </tr></thead><tbody>`;
     rows.forEach(([name, v]) => {
         html += `<tr><td style="padding:4px;border-bottom:1px solid #f3f4f6;">${escapeHtml(name)}</td><td style="text-align:right;padding:4px;border-bottom:1px solid #f3f4f6;">${v.qty}</td><td style="text-align:right;padding:4px;border-bottom:1px solid #f3f4f6;">${v.sum.toFixed(2)}</td></tr>`;
     });
     html += `</tbody>
             <tfoot><tr style="font-weight:700;background:#e3e8df;">
-                <td style="padding:4px;">Итого</td>
+                <td style="padding:4px;">${t('stats_col_total')}</td>
                 <td style="text-align:right;padding:4px;">${totalQty}</td>
                 <td style="text-align:right;padding:4px;">${totalSum.toFixed(2)}</td>
             </tr></tfoot>
             </table>
             <table style="width:100%;border-collapse:separate;border-spacing:0;font-size:12px;margin-top:10px;">
-                <tr><td style="padding:2px 4px;color:#6b7280;">Сумма по позициям</td><td style="text-align:right;padding:2px 4px;">${formatMoney(totalSum)}</td></tr>
-                ${totalDiscount > 0 ? `<tr><td style="padding:2px 4px;color:#6b7280;">Скидка${discountLabel}</td><td style="text-align:right;padding:2px 4px;color:#c0685c;">−${formatMoney(totalDiscount)}</td></tr>` : ''}
-                <tr><td style="padding:2px 4px;color:#6b7280;">НДС (21%)</td><td style="text-align:right;padding:2px 4px;color:#6b7280;">${formatMoney(totalVat)}</td></tr>
-                <tr style="font-weight:700;"><td style="padding:4px;border-top:1px solid #e5e7eb;">Итого к оплате</td><td style="text-align:right;padding:4px;border-top:1px solid #e5e7eb;">${formatMoney(grandTotal)}</td></tr>
+                <tr><td style="padding:2px 4px;color:#6b7280;">${t('customers_sum_by_items')}</td><td style="text-align:right;padding:2px 4px;">${formatMoney(totalSum)}</td></tr>
+                ${totalDiscount > 0 ? `<tr><td style="padding:2px 4px;color:#6b7280;">${t('customers_discount_word')}${discountLabel}</td><td style="text-align:right;padding:2px 4px;color:#c0685c;">−${formatMoney(totalDiscount)}</td></tr>` : ''}
+                <tr><td style="padding:2px 4px;color:#6b7280;">${t('customers_vat_word')} (21%)</td><td style="text-align:right;padding:2px 4px;color:#6b7280;">${formatMoney(totalVat)}</td></tr>
+                <tr style="font-weight:700;"><td style="padding:4px;border-top:1px solid #e5e7eb;">${t('customers_total_due')}</td><td style="text-align:right;padding:4px;border-top:1px solid #e5e7eb;">${formatMoney(grandTotal)}</td></tr>
             </table>
-            <p style="font-size:10px;color:#9ca3af;margin-top:10px;">Заказов за период: ${custOrders.length}. В таблице по изделиям — цены позиций без скидки и НДС, финансовая сводка ниже — уже с их учётом.</p>
+            <p style="font-size:10px;color:#9ca3af;margin-top:10px;">${t('customers_orders_in_period')}: ${custOrders.length}. ${t('customers_report_footnote')}</p>
         </div>`;
 
     document.getElementById('customerReportContent').innerHTML = html;
@@ -302,22 +306,22 @@ async function downloadCustomerReportPdf() {
     if (_reportPdfInProgress) return; // защита от повторных нажатий, пока идёт обработка
     _reportPdfInProgress = true;
     const btn = document.getElementById('downloadReportPdfBtn');
-    if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; btn.textContent = 'Формирую PDF...'; }
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; btn.textContent = t('customers_pdf_generating_btn'); }
 
     const cust = customers.find(c => c.id === currentCustomerId);
-    if (!cust) { _reportPdfInProgress = false; if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.innerHTML = icon('download') + 'Скачать PDF'; } return; }
+    if (!cust) { _reportPdfInProgress = false; if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.innerHTML = icon('download') + t('customers_download_pdf_btn'); } return; }
     const { range, custOrders } = getCustomerOrdersForRange(cust);
-    if (!custOrders.length) { _reportPdfInProgress = false; if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.innerHTML = icon('download') + 'Скачать PDF'; } return; }
+    if (!custOrders.length) { _reportPdfInProgress = false; if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.innerHTML = icon('download') + t('customers_download_pdf_btn'); } return; }
 
     const dates = custOrders.map(o => o.date).sort();
     const periodTag = dates.length
         ? (dates[0] === dates[dates.length-1] ? dates[0] : `${dates[0]}_${dates[dates.length-1]}`)
         : range;
-    const safeName = cust.name.replace(/[^\p{L}\p{N}]+/gu, '_').replace(/^_+|_+$/g, '') || 'клиент';
+    const safeName = cust.name.replace(/[^\p{L}\p{N}]+/gu, '_').replace(/^_+|_+$/g, '') || t('customers_fallback_name');
     const filename = `${safeName}_${periodTag}.pdf`;
     const periodLabel = dates.length
         ? (dates[0] === dates[dates.length-1] ? formatDateDMY(dates[0]) : `${formatDateDMY(dates[0])} – ${formatDateDMY(dates[dates.length-1])}`)
-        : RANGE_LABELS[range];
+        : rangeLabel(range);
 
     // Пересчитываем те же данные, что и в предпросмотре — их не храним отдельно
     // между открытием попапа и нажатием "Скачать", чтобы не рассинхронизироваться,
@@ -337,10 +341,10 @@ async function downloadCustomerReportPdf() {
     const totalVat = custOrders.reduce((s, o) => s + orderVatAmount(o), 0);
     const grandTotal = custOrders.reduce((s, o) => s + orderGrandTotal(o), 0);
     const discountPercents = [...new Set(custOrders.map(o => o.discount || 0).filter(d => d > 0))];
-    const discountLabel = discountPercents.length === 1 ? ` (${discountPercents[0]}%)` : discountPercents.length > 1 ? ' (разная по заказам)' : '';
+    const discountLabel = discountPercents.length === 1 ? ` (${discountPercents[0]}%)` : discountPercents.length > 1 ? ` (${t('customers_discount_varies')})` : '';
     const sym = CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency;
 
-    showLoading('Формируется PDF, подождите...');
+    showLoading(t('customers_pdf_generating'));
     try {
         const pdf = await createPdfDoc();
         const pageW = pdf.internal.pageSize.getWidth();
@@ -349,15 +353,15 @@ async function downloadCustomerReportPdf() {
         pdf.setFontSize(15); pdf.setFont('Roboto', 'bold');
         pdf.text(cust.name, marginX, 18);
         pdf.setFontSize(10); pdf.setFont('Roboto', 'normal'); pdf.setTextColor(...PDF_COLORS.textGray);
-        pdf.text(`Сводный отчёт по изделиям · ${RANGE_LABELS[range]} (${periodLabel})`, marginX, 24);
+        pdf.text(`${t('customers_report_title')} · ${rangeLabel(range)} (${periodLabel})`, marginX, 24);
         pdf.setTextColor(...PDF_COLORS.textDark);
 
         pdf.autoTable({
             startY: 30,
             margin: { left: marginX, right: marginX },
-            head: [['Изделие', 'Кол-во', `Сумма (${sym})`]],
+            head: [[t('stats_col_product'), t('inv_col_quantity'), `${t('stats_col_sum')} (${sym})`]],
             body: rows.map(([name, v]) => [name, String(v.qty), v.sum.toFixed(2)]),
-            foot: [['Итого', String(totalQty), totalSum.toFixed(2)]],
+            foot: [[t('stats_col_total'), String(totalQty), totalSum.toFixed(2)]],
             headStyles: PDF_TABLE_HEAD_STYLE,
             footStyles: { fillColor: PDF_COLORS.sageLight, textColor: PDF_COLORS.textDark, fontStyle: 'bold', font: 'Roboto' },
             columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' } },
@@ -365,9 +369,9 @@ async function downloadCustomerReportPdf() {
         });
 
         let y = pdf.lastAutoTable.finalY + 8;
-        const summaryRows = [['Сумма по позициям', formatMoney(totalSum)]];
-        if (totalDiscount > 0) summaryRows.push([`Скидка${discountLabel}`, '−' + formatMoney(totalDiscount)]);
-        summaryRows.push(['НДС (21%)', formatMoney(totalVat)]);
+        const summaryRows = [[t('customers_sum_by_items'), formatMoney(totalSum)]];
+        if (totalDiscount > 0) summaryRows.push([`${t('customers_discount_word')}${discountLabel}`, '−' + formatMoney(totalDiscount)]);
+        summaryRows.push([`${t('customers_vat_word')} (21%)`, formatMoney(totalVat)]);
 
         pdf.autoTable({
             startY: y,
@@ -381,22 +385,22 @@ async function downloadCustomerReportPdf() {
         pdf.setDrawColor(229, 231, 235); pdf.line(marginX, y, pageW - marginX, y);
         y += 6;
         pdf.setFontSize(12); pdf.setFont('Roboto', 'bold'); pdf.setTextColor(...PDF_COLORS.textDark);
-        pdf.text('Итого к оплате', marginX, y);
+        pdf.text(t('customers_total_due'), marginX, y);
         pdf.text(formatMoney(grandTotal), pageW - marginX, y, { align: 'right' });
 
         y += 10;
         pdf.setFontSize(8.5); pdf.setFont('Roboto', 'normal'); pdf.setTextColor(...PDF_COLORS.textGray);
-        pdf.text(`Заказов за период: ${custOrders.length}. В таблице по изделиям — цены позиций без скидки и НДС, финансовая сводка выше — уже с их учётом.`, marginX, y, { maxWidth: pageW - marginX * 2 });
+        pdf.text(`${t('customers_orders_in_period')}: ${custOrders.length}. ${t('customers_report_footnote')}`, marginX, y, { maxWidth: pageW - marginX * 2 });
 
         await pdfSaveOrShare(pdf, filename);
     } catch (e) {
         console.error(e);
-        showInfo('Не удалось сформировать PDF: ' + (e && e.message ? e.message : 'неизвестная ошибка') + '. Проверьте подключение и попробуйте ещё раз.');
+        showInfo(t('customers_pdf_error_prefix') + (e && e.message ? e.message : t('customers_pdf_error_unknown')) + t('customers_pdf_error_suffix'));
     }
     finally {
         hideLoading();
         _reportPdfInProgress = false;
-        if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.innerHTML = icon('download') + 'Скачать PDF'; }
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.innerHTML = icon('download') + t('customers_download_pdf_btn'); }
     }
 }
 
@@ -417,7 +421,7 @@ function openCustomerDetail(custId) {
     document.getElementById('cdVatExempt').checked = !!cust.vat_exempt;
     document.getElementById('cdNotes').value = cust.notes || '';
     document.getElementById('cdDateRange').value = 'all';
-    document.getElementById('cdDateRangeBtnLabel').textContent = 'Весь период';
+    document.getElementById('cdDateRangeBtnLabel').textContent = t('stats_range_all');
     document.querySelectorAll('#cdDateRangeDropdown .status-option').forEach((opt, i) => opt.classList.toggle('selected', i === 0));
     document.getElementById('cdCustomDateRange').classList.add('hidden');
     document.getElementById('cdDateFrom').value = '';
@@ -483,7 +487,7 @@ async function saveCdHeader() {
     const vatCode     = document.getElementById('cdVatCode').value.trim();
     const personalCode = document.getElementById('cdPersonalCode').value.trim();
     const entityType  = _customerEntityType;
-    if (!name) { showInfo('Заполните имя клиента!'); return; }
+    if (!name) { showInfo(t('customers_name_required')); return; }
     const oldName = cust.name;
     showLoading();
     try {
@@ -513,7 +517,7 @@ function renderCustomerStats(cust) {
 }
 
 // Список заказов клиента с фильтром по периоду (Весь период/Неделя/Месяц/Год)
-const CD_DATE_RANGE_LABELS = { all: 'Весь период', week: 'Текущая неделя', month: 'Текущий месяц', year: 'Текущий год', custom: 'От – До' };
+// CD_DATE_RANGE_LABELS заменён общей функцией rangeLabel() выше — тот же набор ключей.
 
 function toggleCdDateRangeDropdown() {
     const dd = document.getElementById('cdDateRangeDropdown');
@@ -525,7 +529,7 @@ function toggleCdDateRangeDropdown() {
 
 function setCdDateRange(range) {
     document.getElementById('cdDateRange').value = range;
-    document.getElementById('cdDateRangeBtnLabel').textContent = CD_DATE_RANGE_LABELS[range];
+    document.getElementById('cdDateRangeBtnLabel').textContent = rangeLabel(range);
     document.querySelectorAll('#cdDateRangeDropdown .status-option').forEach(opt => opt.classList.remove('selected'));
     event.currentTarget.classList.add('selected');
     closeAllOrderStatusDropdowns();
@@ -567,12 +571,12 @@ function renderCustomerOrders() {
     custOrders.sort((a, b) => b.date.localeCompare(a.date));
 
     if (!custOrders.length) {
-        container.innerHTML = '<p class="text-xs text-gray-400">Нет заказов за этот период</p>';
+        container.innerHTML = `<p class="text-xs text-gray-400">${t('customers_no_orders_period')}</p>`;
         return;
     }
 
     const statusFlag = { 'принят': 'flag-red', 'в работе': 'flag-yellow', 'выполнен': 'flag-green' };
-    let html = '<table class="w-full table-text table-clean" style="table-layout:fixed;"><thead><tr style="background-color:#e3e8df;" class="text-xs"><th class="p-1 text-left" style="width:28%;">№</th><th class="p-1 text-left" style="width:20%;">Дата</th><th class="p-1 text-right" style="width:28%;">Сумма (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-1 text-center" style="width:24%;">Статус</th></tr></thead><tbody>';
+    let html = '<table class="w-full table-text table-clean" style="table-layout:fixed;"><thead><tr style="background-color:#e3e8df;" class="text-xs"><th class="p-1 text-left" style="width:28%;">' + t('customers_col_number') + '</th><th class="p-1 text-left" style="width:20%;">' + t('customers_col_date') + '</th><th class="p-1 text-right" style="width:28%;">' + t('customers_col_sum') + ' (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-1 text-center" style="width:24%;">' + t('customers_col_status') + '</th></tr></thead><tbody>';
     custOrders.forEach(o => {
         const oNum = o.order_number || `#${o.id}`;
         const payInfo = getOrderPaymentStatus(o);
@@ -580,7 +584,7 @@ function renderCustomerOrders() {
             <td class="p-0.5 whitespace-nowrap">${escapeHtml(oNum)}</td>
             <td class="p-0.5">${formatDateDMY(o.date)}</td>
             <td class="p-0.5 text-right font-semibold"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background-color:${getPaymentStripeColor(payInfo)};"></span>${orderGrandTotal(o).toFixed(2)}</td>
-            <td class="p-0.5 text-center"><span class="flag ${statusFlag[o.status] || ''}"></span> ${escapeHtml(o.status)}</td>
+            <td class="p-0.5 text-center"><span class="flag ${statusFlag[o.status] || ''}"></span> ${escapeHtml(orderStatusLabel(o.status))}</td>
         </tr>`;
     });
     html += '</tbody></table>';
