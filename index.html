@@ -553,6 +553,9 @@
         .settings-row-btn.danger svg { color: #c0685c; }
         .settings-row-btn.danger:active { background: #eccbc0; }
         .settings-row-btn.active { background: #e3e8df; border-color: #7c9473; color: #4f6349; }
+        .lang-switch { display: flex; background: #e3e8df; border-radius: 999px; padding: 2px; gap: 2px; flex-shrink: 0; }
+        .lang-switch button { border: none; background: transparent; font-size: 10.5px; font-weight: 700; letter-spacing: .02em; color: #6b675d; padding: 4px 10px; border-radius: 999px; transition: background .15s ease, color .15s ease; }
+        .lang-switch button.active { background: #7c9473; color: #fff; }
         .settings-row-btn.active svg { color: #7c9473; }
         .invite-share-btn { color: #7c9473; }
         .invite-cancel-btn:active { color: #c0685c; }
@@ -1879,13 +1882,14 @@
         <!-- Настройки (шестерёнка) — служебные функции, доступны из любого раздела -->
         <div id="settingsModal" class="modal">
             <div class="modal-content" style="max-width:320px; max-height:78vh; display:flex; flex-direction:column; overflow:hidden; padding:16px 16px 12px;">
-                <h2 class="text-sm font-semibold mb-1 text-gray-800" style="flex-shrink:0;" data-i18n="settings_title">Настройки</h2>
-                <p class="text-xs text-gray-500 mb-2" style="flex-shrink:0;"><span data-i18n="settings_current_employee_label">Текущий сотрудник:</span> <b id="settingsCurrentEmployee" class="text-gray-800"></b></p>
-
-                <div class="flex gap-2 mb-3" style="flex-shrink:0;">
-                    <button type="button" id="langBtnRu" onclick="setLang('ru')" class="settings-row-btn justify-center" style="flex:1;">RU</button>
-                    <button type="button" id="langBtnEn" onclick="setLang('en')" class="settings-row-btn justify-center" style="flex:1;">EN</button>
+                <div class="flex justify-between items-center mb-1" style="flex-shrink:0;">
+                    <h2 class="text-sm font-semibold text-gray-800" data-i18n="settings_title">Настройки</h2>
+                    <div class="lang-switch">
+                        <button type="button" id="langBtnRu" onclick="setLang('ru')">RU</button>
+                        <button type="button" id="langBtnEn" onclick="setLang('en')">EN</button>
+                    </div>
                 </div>
+                <p class="text-xs text-gray-500 mb-3" style="flex-shrink:0;"><span data-i18n="settings_current_employee_label">Текущий сотрудник:</span> <b id="settingsCurrentEmployee" class="text-gray-800"></b></p>
 
                 <div style="overflow-y:auto; flex:1; min-height:0; margin:0 -4px; padding:0 4px;">
 
