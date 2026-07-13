@@ -334,7 +334,7 @@ async function saveOrgNameSetup() {
             updateHeaderOrgName();
         } catch (e) {
             console.error(e);
-            showInfo('Не удалось сохранить название, но можно будет изменить его позже в настройках.');
+            showInfo(t('employees_name_save_delayed'));
         }
     }
     const owner = _pendingOwnerForSetup;

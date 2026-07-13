@@ -355,7 +355,7 @@ async function saveSfdHeader() {
         renderSemiFinishedRecipe(sf);
         logActivity('semiFinished', `Изменён полуфабрикат «${sf.name}»`);
         showAutosaveToast();
-    } catch (e) { console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.'); }
+    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }
 
@@ -427,7 +427,7 @@ async function addIngredientToSfRecipe() {
         logActivity('semiFinished', `В рецепт «${sf.name}» добавлен ингредиент «${ing.name}» (${quantity})`);
         inputEl.value = '';
         document.getElementById('newSfRecipeQty').value = '';
-    } catch (e) { console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.'); }
+    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }
 
@@ -473,7 +473,7 @@ async function saveSfRecipeItemEdit() {
         renderSemiFinishedRecipe(sf);
         closeModal();
         logActivity('semiFinished', `Изменён ингредиент в рецепте «${sf.name}»`);
-    } catch (e) { console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.'); }
+    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }
 
@@ -498,7 +498,7 @@ async function toggleSfRecipeConfirmed() {
         sf.recipe_confirmed = checked;
         logActivity('semiFinished', `Рецепт «${sf.name}» отмечен как ${checked ? 'заполненный полностью' : 'неполный'}`);
     } catch (e) {
-        console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.');
+        console.error(e); showInfo(t('error_save_check_connection'));
         document.getElementById('sfdRecipeConfirmed').checked = !checked;
     } finally { hideLoading(); }
 }
@@ -516,7 +516,7 @@ async function toggleSfTrackStock() {
         if (typeof updateInventoryAlertDot === 'function') updateInventoryAlertDot();
         logActivity('semiFinished', `«${sf.name}» — отслеживание склада ${checked ? 'включено' : 'отключено'}`);
     } catch (e) {
-        console.error(e); showInfo('Ошибка сохранения.');
+        console.error(e); showInfo(t('error_save_generic'));
         document.getElementById('sfdTrackStock').checked = !checked;
     } finally { hideLoading(); }
 }
@@ -573,7 +573,7 @@ async function copySfRecipeFromByName(sourceName) {
         data.forEach(d => sf.ingredients.push({ id: d.id, ingredient_id: d.ingredient_id, quantity: Number(d.quantity) }));
         renderSemiFinishedRecipe(sf);
         logActivity('semiFinished', `В рецепт «${sf.name}» скопировано ${toCopy.length} поз. из рецепта «${sourceName}»`);
-    } catch (e) { console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.'); }
+    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }
 
@@ -698,7 +698,7 @@ async function setSfPrimaryIngredient(idx) {
         await db.from('semi_finished_ingredients').update({ is_primary: true }).eq('id', ri.id);
         ri.is_primary = true;
         renderSemiFinishedRecipe(sf);
-    } catch(e) { console.error(e); showInfo('Ошибка сохранения.'); }
+    } catch(e) { console.error(e); showInfo(t('error_save_generic')); }
     finally { hideLoading(); }
 }
 
@@ -836,7 +836,7 @@ async function confirmSfProduce() {
         await renderSfStockBlock(sf);
         logActivity('inventory', `Произведена партия п/ф «${sf.name}» ${actualResult} ${unitLabel}`);
         await showInfo(`Партия произведена! +${actualResult} ${unitLabel} на складе.`);
-    } catch(e) { console.error(e); showInfo('Ошибка сохранения.'); }
+    } catch(e) { console.error(e); showInfo(t('error_save_generic')); }
     finally { hideLoading(); }
 }
 
@@ -953,8 +953,8 @@ async function saveSfInventarization() {
         await loadInventory();
         closeModal();
         logActivity('inventory', `Инвентаризация п/ф ${today}: ${rows.length} позиций`);
-        await showInfo(`Сохранено: ${rows.length} позиций.`);
-    } catch(e) { console.error(e); showInfo('Ошибка.'); }
+        await showInfo(`${t('toast_saved')}: ${rows.length} ${t('common_positions_word')}.`);
+    } catch(e) { console.error(e); showInfo(t('common_error_generic')); }
     finally { hideLoading(); }
 }
 

@@ -299,7 +299,7 @@ async function saveNewIngredient() {
         displayIngredients();
         openIngredientDetail(newIng.id);
         logActivity('ingredient', `Создан ингредиент: «${name}»`);
-    } catch (e) { console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.'); }
+    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }
 
@@ -461,7 +461,7 @@ async function saveStockAndPrice() {
         displayIngredients();
         logActivity('ingredient', `Обновлён склад/цена: «${ing.name}»${stockQty > 0 ? ` +${stockQty}` : ''}`);
         document.getElementById('idStockQty').value = '';
-    } catch (e) { console.error(e); showInfo('Ошибка сохранения.'); }
+    } catch (e) { console.error(e); showInfo(t('error_save_generic')); }
     finally { hideLoading(); }
 }
 
@@ -493,7 +493,7 @@ async function saveIngredientHeader() {
         ing.unit = unit;
         displayIngredients();
         logActivity('ingredient', `Ингредиент обновлён: «${name}»`);
-    } catch(e) { console.error(e); showInfo('Ошибка сохранения.'); }
+    } catch(e) { console.error(e); showInfo(t('error_save_generic')); }
 }
 
 
@@ -548,7 +548,7 @@ async function saveWriteOff() {
         await renderIngredientStockBlock(ing);
         displayIngredients();
         logActivity('inventory', `Списание: «${ing.name}» -${qty} (${notes})`);
-    } catch (e) { console.error(e); showInfo('Ошибка сохранения.'); }
+    } catch (e) { console.error(e); showInfo(t('error_save_generic')); }
     finally { hideLoading(); }
 }
 async function saveIdNewPrice() {
@@ -596,8 +596,8 @@ async function saveIdNewPrice() {
         await loadIngredientPriceHistory(ing.id);
         displayIngredients(); // обновляем список
         logActivity('ingredient', `Обновлена цена ингредиента «${ing.name}» с ${validFrom}`);
-        await showInfo('Цена сохранена.');
-    } catch (e) { console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.'); }
+        await showInfo(t('ingredient_price_saved'));
+    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }
 
@@ -838,7 +838,7 @@ async function saveInventoryEdit() {
         const ing = ingredients.find(i => i.id === currentIngredientId);
         if (ing) await renderIngredientStockBlock(ing);
         displayIngredients();
-    } catch(e) { console.error(e); showInfo('Ошибка сохранения.'); }
+    } catch(e) { console.error(e); showInfo(t('error_save_generic')); }
     finally { hideLoading(); }
 }
 
@@ -999,7 +999,7 @@ async function savePriceHistoryRecord() {
         }
         closeModal();
         await loadIngredientPriceHistory(currentIngredientId);
-    } catch (e) { console.error(e); showInfo('Ошибка сохранения: ' + (e.message || '')); }
+    } catch (e) { console.error(e); showInfo(t('error_save_generic') + (e.message ? ' ' + e.message : '')); }
     finally { hideLoading(); }
 }
 
@@ -1061,7 +1061,7 @@ async function confirmQuickAddIngredient() {
         const inputId = _quickAddIngredientContext === 'semiFinished' ? 'newSfRecipeIngredient' : 'newRecipeIngredient';
         const input = document.getElementById(inputId);
         if (input) input.value = newIng.name;
-    } catch (e) { console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.'); }
+    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }
 

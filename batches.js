@@ -182,7 +182,7 @@ async function saveBatchEdit() {
         closeModal();
         await refreshBatchesAndStockAfterEdit(itemType, batch.ingredient_id || batch.semi_finished_id);
         logActivity('inventory', 'Партия отредактирована вручную');
-    } catch (e) { console.error(e); showInfo('Ошибка сохранения.'); }
+    } catch (e) { console.error(e); showInfo(t('error_save_generic')); }
     finally { hideLoading(); }
 }
 

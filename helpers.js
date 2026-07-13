@@ -451,7 +451,7 @@ async function pdfSaveOrShare(pdf, filename) {
         } catch (e) { /* пользователь закрыл меню "Поделиться" — просто скачиваем ниже */ }
     }
     pdf.save(filename);
-    await showInfo(`Готово: файл «${filename}» сохранён.`);
+    await showInfo(`${t('common_done')}: ${t('backup_file_saved_prefix')} «${filename}» ${t('backup_file_saved_suffix')}.`);
 }
 
 // ==================== ПОРТАЛ ДЛЯ ВЫПАДАЮЩИХ МЕНЮ ====================

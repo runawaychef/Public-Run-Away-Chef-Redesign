@@ -183,7 +183,7 @@ async function saveNewProduct() {
         displayProducts();
         openProductDetail(newProd.id);
         logActivity('product', `Создано изделие: «${name}»`);
-    } catch (e) { console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.'); }
+    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }
 
@@ -223,7 +223,7 @@ async function saveProductEdit() {
         orders.forEach(o => o.items.forEach(it => { if (it.product_id === prod.id) it.product = name; }));
         displayProducts(); closeModal();
         logActivity('product', `Изменено изделие «${oldName}» (${formatMoney(oldPrice)}) → «${name}» (${formatMoney(price)})`);
-    } catch (e) { console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.'); }
+    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }
 
@@ -471,7 +471,7 @@ async function savePdHeader() {
         renderProductRecipe(prod);
         logActivity('product', `Изменено изделие «${prod.name}»${unitChanged ? ` (единица: ${UNIT_PRODUCT_LABELS[unit] || '—'})` : ''}`);
         showAutosaveToast();
-    } catch (e) { console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.'); }
+    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }
 
@@ -583,7 +583,7 @@ async function addIngredientToRecipe() {
         logActivity('product', `В рецепт «${prod.name}» добавлен «${itemName}» (${quantity})`);
         inputEl.value = '';
         document.getElementById('newRecipeQty').value = '';
-    } catch (e) { console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.'); }
+    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }
 
@@ -651,7 +651,7 @@ async function saveRecipeItemEdit() {
         renderProductRecipe(prod);
         closeModal();
         logActivity('product', `Изменён ингредиент в рецепте «${prod.name}»`);
-    } catch (e) { console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.'); }
+    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }
 
@@ -687,7 +687,7 @@ async function toggleRecipeConfirmed() {
         prod.recipe_confirmed = checked;
         logActivity('product', `Рецепт «${prod.name}» отмечен как ${checked ? 'заполненный полностью' : 'неполный'}`);
     } catch (e) {
-        console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.');
+        console.error(e); showInfo(t('error_save_check_connection'));
         document.getElementById('pdRecipeConfirmed').checked = !checked;
     } finally { hideLoading(); }
 }
@@ -706,7 +706,7 @@ async function toggleTrackStock() {
         if (typeof updateInventoryAlertDot === 'function') updateInventoryAlertDot();
         logActivity('product', `«${prod.name}» — отслеживание склада ${checked ? 'включено' : 'отключено'}`);
     } catch (e) {
-        console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.');
+        console.error(e); showInfo(t('error_save_check_connection'));
         document.getElementById('pdTrackStock').checked = !checked;
     } finally { hideLoading(); }
 }
@@ -772,6 +772,6 @@ async function copyRecipeFromProductByName(sourceName) {
         data.forEach(d => prod.ingredients.push({ id: d.id, ingredient_id: d.ingredient_id, semi_finished_id: d.semi_finished_id, quantity: Number(d.quantity) }));
         renderProductRecipe(prod);
         logActivity('product', `В рецепт «${prod.name}» скопировано ${toCopy.length} поз. из рецепта «${sourceName}»`);
-    } catch (e) { console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.'); }
+    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }

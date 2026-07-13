@@ -547,8 +547,8 @@ async function saveInventarization() {
         closeModal();
         displayIngredients();
         logActivity('inventory', `Инвентаризация ${today}: скорректировано ${rows.length} позиций`);
-        await showInfo(`Инвентаризация сохранена. Скорректировано: ${rows.length} позиций.`);
-    } catch(e) { console.error(e); showInfo('Ошибка сохранения.'); }
+        await showInfo(`${t('inventory_saved_prefix')} ${t('common_adjusted')}: ${rows.length} ${t('common_positions_word')}.`);
+    } catch(e) { console.error(e); showInfo(t('error_save_generic')); }
     finally { hideLoading(); }
 }
 
@@ -589,7 +589,7 @@ async function saveInventoryAdd() {
         await loadInventory();
         // Обновляем окно склада
         await openInventoryModal();
-    } catch (e) { console.error(e); showInfo('Ошибка сохранения.'); }
+    } catch (e) { console.error(e); showInfo(t('error_save_generic')); }
     finally { hideLoading(); }
 }
 
@@ -949,7 +949,7 @@ async function toggleShopItem(id, isBought) {
         const row = _shoppingList.find(r => r.id === id);
         if (row) row.is_bought = isBought;
         renderShoppingList();
-    } catch (e) { console.error(e); showInfo('Ошибка сохранения.'); }
+    } catch (e) { console.error(e); showInfo(t('error_save_generic')); }
 }
 
 // ── Изменить количество к покупке ────────────────────────────────────────────

@@ -127,7 +127,7 @@ async function selectCountry(code) {
         showAutosaveToast();
     } catch (e) {
         console.error(e);
-        showInfo('Не удалось сохранить страну. Проверьте подключение.');
+        showInfo(t('error_save_country'));
     } finally {
         hideLoading();
     }
@@ -240,7 +240,7 @@ async function saveCompanyInfo(field, value) {
         showAutosaveToast();
     } catch (e) {
         console.error(e);
-        showInfo('Не удалось сохранить изменение. Проверьте подключение.');
+        showInfo(t('error_save_check_connection'));
     }
 }
 

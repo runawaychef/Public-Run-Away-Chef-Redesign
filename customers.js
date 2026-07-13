@@ -192,8 +192,8 @@ async function applyVatExemptToAllOrders() {
         logActivity('customer', `Применён НДС-статус ${statusLabel} к ${toUpdate.length} заказам клиента «${cust.name}»`);
         renderCustomerStats(cust);
         renderCustomerOrders();
-        await showInfo(`Готово: обновлено заказов — ${toUpdate.length}.`);
-    } catch (e) { console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.'); }
+        await showInfo(`${t('common_done')}: ${t('customers_orders_updated')} — ${toUpdate.length}.`);
+    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }
 
@@ -498,7 +498,7 @@ async function saveCdHeader() {
         renderCustomerStats(cust);
         renderCustomerOrders();
         showAutosaveToast();
-    } catch (e) { console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.'); }
+    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }
 

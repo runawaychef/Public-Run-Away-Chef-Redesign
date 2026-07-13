@@ -261,6 +261,27 @@ const I18N = {
         stats_top_by_margin: 'Топ-{count} по рентабельности',
         stats_chart_revenue: 'Выручка',
         stats_chart_profit: 'Прибыль',
+
+        // Баннер обновления приложения
+        update_banner_text: 'Доступна новая версия приложения',
+        update_banner_btn: 'Обновить',
+
+        // Общие сообщения сохранения/обновления (переиспользуются по всему проекту)
+        common_done: 'Готово',
+        common_positions_word: 'позиций',
+        common_adjusted: 'Скорректировано',
+        common_error_generic: 'Ошибка.',
+        error_save_check_connection: 'Ошибка сохранения. Проверьте подключение.',
+        error_save_generic: 'Ошибка сохранения.',
+        error_save_payment: 'Ошибка сохранения платежа.',
+        error_save_country: 'Не удалось сохранить страну. Проверьте подключение.',
+        error_save_due_date: 'Не удалось сохранить срок оплаты.',
+        customers_orders_updated: 'обновлено заказов',
+        employees_name_save_delayed: 'Не удалось сохранить название, но можно будет изменить его позже в настройках.',
+        backup_file_saved_prefix: 'файл',
+        backup_file_saved_suffix: 'сохранён',
+        ingredient_price_saved: 'Цена сохранена.',
+        inventory_saved_prefix: 'Инвентаризация сохранена.',
     },
     en: {
         // Bottom navigation
@@ -508,6 +529,27 @@ const I18N = {
         stats_top_by_margin: 'Top {count} by margin',
         stats_chart_revenue: 'Revenue',
         stats_chart_profit: 'Profit',
+
+        // App update banner
+        update_banner_text: 'A new version of the app is available',
+        update_banner_btn: 'Update',
+
+        // Common save/update messages (reused across the whole project)
+        common_done: 'Done',
+        common_positions_word: 'items',
+        common_adjusted: 'Adjusted',
+        common_error_generic: 'Error.',
+        error_save_check_connection: 'Failed to save. Check your connection.',
+        error_save_generic: 'Failed to save.',
+        error_save_payment: 'Failed to save the payment.',
+        error_save_country: 'Failed to save the country. Check your connection.',
+        error_save_due_date: 'Failed to save the due date.',
+        customers_orders_updated: 'orders updated',
+        employees_name_save_delayed: "Couldn't save the name, but you can change it later in settings.",
+        backup_file_saved_prefix: 'file',
+        backup_file_saved_suffix: 'saved',
+        ingredient_price_saved: 'Price saved.',
+        inventory_saved_prefix: 'Inventory count saved.',
     }
 };
 

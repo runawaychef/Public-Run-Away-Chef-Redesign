@@ -148,7 +148,7 @@ async function saveDueDate() {
         renderPayments();
     } catch (e) {
         console.error(e);
-        showInfo('Не удалось сохранить срок оплаты.');
+        showInfo(t('error_save_due_date'));
     }
 }
 
@@ -218,7 +218,7 @@ async function savePayment() {
         await loadOrderPayments(currentOrderId);
     } catch (e) {
         console.error(e);
-        showInfo('Ошибка сохранения платежа.');
+        showInfo(t('error_save_payment'));
     } finally { hideLoading(); }
 }
 

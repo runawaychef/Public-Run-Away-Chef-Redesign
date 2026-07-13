@@ -1474,7 +1474,7 @@ async function saveDetailHeader() {
         if (old.notes !== order.notes) changes.push(`комментарий изменён`);
         if (changes.length) logActivity('order', `Изменён заказ №${order.id}: ${changes.join(', ')}`, order.id);
         showAutosaveToast();
-    } catch (e) { console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.'); }
+    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }
 
@@ -1590,7 +1590,7 @@ async function addItemToOrder() {
         document.getElementById('newItemProduct').value = '';
         document.getElementById('newItemQty').value    = '';
         document.getElementById('newItemPrice').value  = '';
-    } catch (e) { console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.'); }
+    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }
 
@@ -1673,7 +1673,7 @@ async function saveItemEdit() {
         renderDetailItems(order);
         closeModal();
         logActivity('item', `Изменена позиция в заказе №${order.id}: ${oldDesc} → «${prod.name}» × ${quantity}`, order.id);
-    } catch (e) { console.error(e); showInfo('Ошибка сохранения. Проверьте подключение.'); }
+    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }
 
