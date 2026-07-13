@@ -54,7 +54,7 @@
            плавающего вертикального центрирования, чтобы позиция не "гуляла"
            в зависимости от объёма контента (список настроек будет расти). */
         #settingsModal .modal-content { margin-top: 10vh; margin-bottom: auto; }
-        #privacyModal .modal-content, #termsModal .modal-content { margin-top: 6vh; margin-bottom: auto; height: 82vh; max-height: 82vh; }
+        #privacyModal .modal-content, #termsModal .modal-content, #faqModal .modal-content { margin-top: 6vh; margin-bottom: auto; height: 82vh; max-height: 82vh; }
 
         /* ── Вкладки — нижняя синяя черта вместо серой заливки ── */
         .tab:not(.bottom-nav-item) { cursor: pointer; position: relative; background: transparent !important; color: #6b7280 !important; border-radius: 0 !important; padding-bottom: 6px !important; border-bottom: 2px solid transparent; transition: color 0.2s, border-color 0.2s; font-size: 14px; font-weight: 500; }
@@ -553,9 +553,6 @@
         .settings-row-btn.danger svg { color: #c0685c; }
         .settings-row-btn.danger:active { background: #eccbc0; }
         .settings-row-btn.active { background: #e3e8df; border-color: #7c9473; color: #4f6349; }
-        .settings-faq summary { list-style: none; }
-        .settings-faq summary::-webkit-details-marker { display: none; }
-        .settings-faq[open] summary { background: #e3e8df; border-color: #7c9473; color: #4f6349; }
         .settings-row-btn.active svg { color: #7c9473; }
         .invite-share-btn { color: #7c9473; }
         .invite-cancel-btn:active { color: #c0685c; }
@@ -1938,35 +1935,7 @@
                         <button type="button" onclick="openLegalModal('termsModal')" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>Условия использования</button>
                         <a href="mailto:simplebake.support@gmail.com?subject=Simple%20Bake%20%E2%80%94%20%D0%B2%D0%BE%D0%BF%D1%80%D0%BE%D1%81" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>Написать нам</a>
 
-                        <details class="settings-faq mt-1">
-                            <summary class="settings-row-btn" style="cursor:pointer;list-style:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"/></svg>Частые вопросы</summary>
-                            <div class="flex flex-col gap-2 mt-2 px-1 pb-1">
-                                <div>
-                                    <p class="text-xs font-semibold text-gray-700">Что делает Simple Bake?</p>
-                                    <p class="text-xs text-gray-500">Помогает вести заказы, клиентов, склад и рецептуры пекарни в одном приложении — без бумаги и таблиц.</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs font-semibold text-gray-700">Как работает бесплатный лимит?</p>
-                                    <p class="text-xs text-gray-500">Первые 7 дней доступны все функции. Дальше на бесплатном тарифе можно создать до 50 заказов за всё время использования.</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs font-semibold text-gray-700">Как перейти на платный тариф?</p>
-                                    <p class="text-xs text-gray-500">Оформить подписку можно прямо в приложении через Google Play — без лимита заказов и с полным набором функций.</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs font-semibold text-gray-700">Мои данные защищены?</p>
-                                    <p class="text-xs text-gray-500">Да, данные хранятся на серверах в Евросоюзе и доступны только вам и вашей команде. Подробнее — в Политике конфиденциальности.</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs font-semibold text-gray-700">Как связаться с поддержкой?</p>
-                                    <p class="text-xs text-gray-500">Через кнопку «Написать нам» выше — мы отвечаем на email.</p>
-                                </div>
-                                <div>
-                                    <p class="text-xs font-semibold text-gray-700">Как удалить свой аккаунт?</p>
-                                    <p class="text-xs text-gray-500">Напишите нам — удалим аккаунт и все связанные данные в разумный срок.</p>
-                                </div>
-                            </div>
-                        </details>
+                        <button type="button" onclick="openLegalModal('faqModal')" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"/></svg>Частые вопросы</button>
                     </div>
                 </div>
 
@@ -1992,12 +1961,22 @@
         </div>
 
         <div id="termsModal" class="modal">
-            <div class="modal-content" style="max-width:420px; max-height:82vh; display:flex; flex-direction:column; padding:14px;">
+            <div class="modal-content" style="max-width:420px; display:flex; flex-direction:column; padding:14px;">
                 <div class="flex justify-between items-center mb-2" style="flex-shrink:0;">
                     <h2 class="text-sm font-semibold text-gray-800">Условия использования</h2>
                     <button onclick="closeLegalModal('termsModal')" class="pill-btn-secondary" style="padding:4px 12px;">Закрыть</button>
                 </div>
                 <iframe id="termsFrame" src="" style="flex:1; width:100%; border:none; border-radius:12px; background:#fff;"></iframe>
+            </div>
+        </div>
+
+        <div id="faqModal" class="modal">
+            <div class="modal-content" style="max-width:420px; display:flex; flex-direction:column; padding:14px;">
+                <div class="flex justify-between items-center mb-2" style="flex-shrink:0;">
+                    <h2 class="text-sm font-semibold text-gray-800">Частые вопросы</h2>
+                    <button onclick="closeLegalModal('faqModal')" class="pill-btn-secondary" style="padding:4px 12px;">Закрыть</button>
+                </div>
+                <iframe id="faqFrame" src="" style="flex:1; width:100%; border:none; border-radius:12px; background:#fff;"></iframe>
             </div>
         </div>
 

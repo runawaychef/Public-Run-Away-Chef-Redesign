@@ -605,9 +605,13 @@ function initCopySwipeDelegation(containerId) {
 // без ухода со страницы приложения. src задаётся только при первом открытии — чтобы каждый
 // повторный клик не перезагружал iframe заново без необходимости.
 function openLegalModal(modalId) {
-    const frameId = modalId === 'privacyModal' ? 'privacyFrame' : 'termsFrame';
-    const src = modalId === 'privacyModal' ? 'privacy.html' : 'terms.html';
-    const frame = document.getElementById(frameId);
+    const map = {
+        privacyModal: ['privacyFrame', 'privacy.html'],
+        termsModal: ['termsFrame', 'terms.html'],
+        faqModal: ['faqFrame', 'faq.html']
+    };
+    const [frameId, src] = map[modalId] || [];
+    const frame = frameId ? document.getElementById(frameId) : null;
     // Не полагаемся на frame.src (у <iframe src=""> он не пустой, а равен
     // адресу текущей страницы — из-за этого проверка "уже загружено?" всегда
     // была бы true, и реальный файл так и не подставлялся бы). Используем
