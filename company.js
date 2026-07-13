@@ -7,30 +7,38 @@
 // showAutosaveToast, updateHeaderOrgName (employees.js), logActivity.
 
 let _companyEntityType = 'company'; // текущее выбранное значение в открытой карточке
+let _cmpCurrentCountryCode = null;   // код текущей страны — для обновления подписи при смене языка
+let _cmpCurrentCurrencyCode = null;  // код текущей валюты — аналогично
 
 // Евро/доллар — по умолчанию, остальные — валюты русскоязычных стран
 // (страны бывшего СССР; страны Прибалтики уже покрываются евро) + польский злотый.
 const CURRENCY_OPTIONS = [
-    { code: 'EUR', label: 'Евро (€)' },
-    { code: 'USD', label: 'Доллар США ($)' },
-    { code: 'PLN', label: 'Польский злотый (zł)' },
-    { code: 'RUB', label: 'Российский рубль (₽)' },
-    { code: 'BYN', label: 'Белорусский рубль (Br)' },
-    { code: 'KZT', label: 'Казахстанский тенге (₸)' },
-    { code: 'KGS', label: 'Киргизский сом (с)' },
-    { code: 'UZS', label: 'Узбекский сум' },
-    { code: 'TJS', label: 'Таджикский сомони' },
-    { code: 'TMT', label: 'Туркменский манат (m)' },
-    { code: 'AZN', label: 'Азербайджанский манат (₼)' },
-    { code: 'AMD', label: 'Армянский драм (֏)' },
-    { code: 'GEL', label: 'Грузинский лари (₾)' },
-    { code: 'MDL', label: 'Молдавский лей (L)' },
-    { code: 'UAH', label: 'Украинская гривна (₴)' },
+    { code: 'EUR', label: 'Евро (€)', labelEn: 'Euro (€)' },
+    { code: 'USD', label: 'Доллар США ($)', labelEn: 'US Dollar ($)' },
+    { code: 'PLN', label: 'Польский злотый (zł)', labelEn: 'Polish Zloty (zł)' },
+    { code: 'RUB', label: 'Российский рубль (₽)', labelEn: 'Russian Ruble (₽)' },
+    { code: 'BYN', label: 'Белорусский рубль (Br)', labelEn: 'Belarusian Ruble (Br)' },
+    { code: 'KZT', label: 'Казахстанский тенге (₸)', labelEn: 'Kazakhstani Tenge (₸)' },
+    { code: 'KGS', label: 'Киргизский сом (с)', labelEn: 'Kyrgyzstani Som (с)' },
+    { code: 'UZS', label: 'Узбекский сум', labelEn: 'Uzbekistani Som' },
+    { code: 'TJS', label: 'Таджикский сомони', labelEn: 'Tajikistani Somoni' },
+    { code: 'TMT', label: 'Туркменский манат (m)', labelEn: 'Turkmenistani Manat (m)' },
+    { code: 'AZN', label: 'Азербайджанский манат (₼)', labelEn: 'Azerbaijani Manat (₼)' },
+    { code: 'AMD', label: 'Армянский драм (֏)', labelEn: 'Armenian Dram (֏)' },
+    { code: 'GEL', label: 'Грузинский лари (₾)', labelEn: 'Georgian Lari (₾)' },
+    { code: 'MDL', label: 'Молдавский лей (L)', labelEn: 'Moldovan Leu (L)' },
+    { code: 'UAH', label: 'Украинская гривна (₴)', labelEn: 'Ukrainian Hryvnia (₴)' },
 ];
+
+// Выбирает подпись на текущем языке приложения (i18n.js задаёт currentLang
+// глобально) — используется и для валют, и для стран ниже.
+function _localizedLabel(option) {
+    return (typeof currentLang !== 'undefined' && currentLang === 'en' && option.labelEn) ? option.labelEn : option.label;
+}
 
 function currencyLabel(code) {
     const found = CURRENCY_OPTIONS.find(c => c.code === code);
-    return found ? found.label : code;
+    return found ? _localizedLabel(found) : code;
 }
 
 // ==================== СТРАНА (определяет валюту и ставку НДС по умолчанию) ====================
@@ -39,34 +47,35 @@ function currencyLabel(code) {
 // меняться — при выборе страны они лишь подставляются как отправная точка,
 // после чего остаются полностью редактируемыми вручную (см. selectCountry()).
 const COUNTRY_OPTIONS = [
-    { code: 'LT', label: 'Литва', currency: 'EUR', vatRate: 0.21 },
-    { code: 'LV', label: 'Латвия', currency: 'EUR', vatRate: 0.21 },
-    { code: 'EE', label: 'Эстония', currency: 'EUR', vatRate: 0.24 },
-    { code: 'DE', label: 'Германия', currency: 'EUR', vatRate: 0.19 },
-    { code: 'PL', label: 'Польша', currency: 'PLN', vatRate: 0.23 },
-    { code: 'RU', label: 'Россия', currency: 'RUB', vatRate: 0.22 },
-    { code: 'BY', label: 'Беларусь', currency: 'BYN', vatRate: 0.20 },
-    { code: 'KZ', label: 'Казахстан', currency: 'KZT', vatRate: 0.16 },
-    { code: 'KG', label: 'Киргизия', currency: 'KGS', vatRate: 0.12 },
-    { code: 'UZ', label: 'Узбекистан', currency: 'UZS', vatRate: 0.12 },
-    { code: 'TJ', label: 'Таджикистан', currency: 'TJS', vatRate: 0.14 },
-    { code: 'TM', label: 'Туркменистан', currency: 'TMT', vatRate: 0.15 },
-    { code: 'AZ', label: 'Азербайджан', currency: 'AZN', vatRate: 0.18 },
-    { code: 'AM', label: 'Армения', currency: 'AMD', vatRate: 0.20 },
-    { code: 'GE', label: 'Грузия', currency: 'GEL', vatRate: 0.18 },
-    { code: 'MD', label: 'Молдова', currency: 'MDL', vatRate: 0.20 },
-    { code: 'UA', label: 'Украина', currency: 'UAH', vatRate: 0.20 },
+    { code: 'LT', label: 'Литва', labelEn: 'Lithuania', currency: 'EUR', vatRate: 0.21 },
+    { code: 'LV', label: 'Латвия', labelEn: 'Latvia', currency: 'EUR', vatRate: 0.21 },
+    { code: 'EE', label: 'Эстония', labelEn: 'Estonia', currency: 'EUR', vatRate: 0.24 },
+    { code: 'DE', label: 'Германия', labelEn: 'Germany', currency: 'EUR', vatRate: 0.19 },
+    { code: 'PL', label: 'Польша', labelEn: 'Poland', currency: 'PLN', vatRate: 0.23 },
+    { code: 'RU', label: 'Россия', labelEn: 'Russia', currency: 'RUB', vatRate: 0.22 },
+    { code: 'BY', label: 'Беларусь', labelEn: 'Belarus', currency: 'BYN', vatRate: 0.20 },
+    { code: 'KZ', label: 'Казахстан', labelEn: 'Kazakhstan', currency: 'KZT', vatRate: 0.16 },
+    { code: 'KG', label: 'Киргизия', labelEn: 'Kyrgyzstan', currency: 'KGS', vatRate: 0.12 },
+    { code: 'UZ', label: 'Узбекистан', labelEn: 'Uzbekistan', currency: 'UZS', vatRate: 0.12 },
+    { code: 'TJ', label: 'Таджикистан', labelEn: 'Tajikistan', currency: 'TJS', vatRate: 0.14 },
+    { code: 'TM', label: 'Туркменистан', labelEn: 'Turkmenistan', currency: 'TMT', vatRate: 0.15 },
+    { code: 'AZ', label: 'Азербайджан', labelEn: 'Azerbaijan', currency: 'AZN', vatRate: 0.18 },
+    { code: 'AM', label: 'Армения', labelEn: 'Armenia', currency: 'AMD', vatRate: 0.20 },
+    { code: 'GE', label: 'Грузия', labelEn: 'Georgia', currency: 'GEL', vatRate: 0.18 },
+    { code: 'MD', label: 'Молдова', labelEn: 'Moldova', currency: 'MDL', vatRate: 0.20 },
+    { code: 'UA', label: 'Украина', labelEn: 'Ukraine', currency: 'UAH', vatRate: 0.20 },
 ];
 
 function countryLabel(code) {
     const found = COUNTRY_OPTIONS.find(c => c.code === code);
-    return found ? found.label : 'Не указана';
+    if (found) return _localizedLabel(found);
+    return (typeof t === 'function') ? t('company_country_not_specified') : 'Не указана';
 }
 
 function renderCurrencyDropdown() {
     const dropdown = document.getElementById('cmpCurrencyDropdown');
     dropdown.innerHTML = CURRENCY_OPTIONS.map(c =>
-        `<div onclick="selectCurrency('${c.code}')" class="table-text px-2 py-1.5 rounded hover:bg-gray-100 cursor-pointer">${c.label}</div>`
+        `<div onclick="selectCurrency('${c.code}')" class="table-text px-2 py-1.5 rounded hover:bg-gray-100 cursor-pointer">${_localizedLabel(c)}</div>`
     ).join('');
 }
 
@@ -75,6 +84,7 @@ function toggleCurrencyDropdown() {
 }
 
 function selectCurrency(code) {
+    _cmpCurrentCurrencyCode = code;
     document.getElementById('cmpCurrencyLabel').textContent = currencyLabel(code);
     document.getElementById('cmpCurrencyDropdown').classList.add('hidden');
     saveCompanyInfo('currency_code', code);
@@ -83,7 +93,7 @@ function selectCurrency(code) {
 function renderCountryDropdown() {
     const dropdown = document.getElementById('cmpCountryDropdown');
     dropdown.innerHTML = COUNTRY_OPTIONS.map(c =>
-        `<div onclick="selectCountry('${c.code}')" class="table-text px-2 py-1.5 rounded hover:bg-gray-100 cursor-pointer">${c.label}</div>`
+        `<div onclick="selectCountry('${c.code}')" class="table-text px-2 py-1.5 rounded hover:bg-gray-100 cursor-pointer">${_localizedLabel(c)}</div>`
     ).join('');
 }
 
@@ -96,11 +106,13 @@ function toggleCountryDropdown() {
 // вручную сразу после этого — подстановка лишь отправная точка.
 async function selectCountry(code) {
     const found = COUNTRY_OPTIONS.find(c => c.code === code);
+    _cmpCurrentCountryCode = code;
     document.getElementById('cmpCountryLabel').textContent = countryLabel(code);
     document.getElementById('cmpCountryDropdown').classList.add('hidden');
 
     if (!found) { await saveCompanyInfo('country', code); return; }
 
+    _cmpCurrentCurrencyCode = found.currency;
     document.getElementById('cmpCurrencyLabel').textContent = currencyLabel(found.currency);
     document.getElementById('cmpVatRate').value = (found.vatRate * 100).toString();
 
@@ -161,6 +173,8 @@ async function openCompanyInfoModal() {
         if (error) throw error;
 
         document.getElementById('cmpOrgName').value      = data.name || '';
+        _cmpCurrentCountryCode = data.country || null;
+        _cmpCurrentCurrencyCode = data.currency_code || 'EUR';
         renderCountryDropdown();
         document.getElementById('cmpCountryLabel').textContent = countryLabel(data.country);
         renderCurrencyDropdown();
@@ -228,4 +242,16 @@ async function saveCompanyInfo(field, value) {
         console.error(e);
         showInfo('Не удалось сохранить изменение. Проверьте подключение.');
     }
+}
+
+// Вызывается из setLang() (i18n.js), если окно "Информация о компании" открыто —
+// подписи страны/валюты собираются в JS из COUNTRY_OPTIONS/CURRENCY_OPTIONS, поэтому
+// applyI18n() (который работает только с data-i18n атрибутами) их не подхватывает.
+function refreshCompanyLangDependentUI() {
+    const countryLabelEl = document.getElementById('cmpCountryLabel');
+    if (!countryLabelEl) return; // окно сейчас не открыто — нечего обновлять
+    countryLabelEl.textContent = countryLabel(_cmpCurrentCountryCode);
+    document.getElementById('cmpCurrencyLabel').textContent = currencyLabel(_cmpCurrentCurrencyCode);
+    renderCountryDropdown();
+    renderCurrencyDropdown();
 }
