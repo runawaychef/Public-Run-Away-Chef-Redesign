@@ -1880,9 +1880,11 @@
 
         <!-- Настройки (шестерёнка) — служебные функции, доступны из любого раздела -->
         <div id="settingsModal" class="modal">
-            <div class="modal-content" style="max-width:320px;">
-                <h2 class="text-sm font-semibold mb-1 text-gray-800">Настройки</h2>
-                <p class="text-xs text-gray-500 mb-3">Текущий сотрудник: <b id="settingsCurrentEmployee" class="text-gray-800"></b></p>
+            <div class="modal-content" style="max-width:320px; max-height:76vh; display:flex; flex-direction:column; overflow:hidden; padding:16px 16px 12px;">
+                <h2 class="text-sm font-semibold mb-1 text-gray-800" style="flex-shrink:0;">Настройки</h2>
+                <p class="text-xs text-gray-500 mb-3" style="flex-shrink:0;">Текущий сотрудник: <b id="settingsCurrentEmployee" class="text-gray-800"></b></p>
+
+                <div style="overflow-y:auto; flex:1; min-height:0; margin:0 -4px; padding:0 4px;">
 
                 <!-- Группа 1: аккаунт / бизнес -->
                 <div class="flex flex-col gap-1 mb-3 rounded-xl p-2" style="background:#e3e8df;">
@@ -1967,8 +1969,11 @@
                     </div>
                 </div>
 
-                <p class="text-center" style="font-size:10.5px;color:#a6a196;margin-bottom:8px;">Simple Bake · версия <span id="settingsAppVersion">2.0</span></p>
-                <button onclick="closeModal()" class="pill-btn w-full justify-center">Закрыть</button>
+                </div>
+                <!-- конец прокручиваемой области -->
+
+                <p class="text-center" style="font-size:10.5px;color:#a6a196;margin:8px 0 8px;flex-shrink:0;">Simple Bake · версия <span id="settingsAppVersion">2.0</span></p>
+                <button onclick="closeModal()" class="pill-btn w-full justify-center" style="flex-shrink:0;">Закрыть</button>
             </div>
         </div>
 
