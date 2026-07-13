@@ -1254,7 +1254,7 @@ async function closeOrderDetailSilent() {
 
 async function openOrdersTrash() {
     closeModal();
-    showLoading('Загружаю корзину...');
+    showLoading(t('trash_loading'));
     try {
         // Автоочистка — физически удаляем заказы старше 30 дней
         const cutoff = new Date();
@@ -1276,12 +1276,12 @@ async function openOrdersTrash() {
 
         const content = document.getElementById('ordersTrashContent');
         if (!data || !data.length) {
-            content.innerHTML = '<p class="text-xs text-gray-400 text-center py-4">Корзина пуста</p>';
+            content.innerHTML = `<p class="text-xs text-gray-400 text-center py-4">${t('trash_empty')}</p>`;
         } else {
-            let html = '<table class="w-full text-xs table-clean"><thead><tr style="background-color:#e3e8df;"><th class="p-1 text-left">Дата заказа</th><th class="p-1 text-left">Клиент</th><th class="p-1 text-left">Удалён</th></tr></thead><tbody>';
+            let html = `<table class="w-full text-xs table-clean"><thead><tr style="background-color:#e3e8df;"><th class="p-1 text-left">${t('trash_col_order_date')}</th><th class="p-1 text-left">${t('trash_col_customer')}</th><th class="p-1 text-left">${t('trash_col_deleted')}</th></tr></thead><tbody>`;
             data.forEach(o => {
                 const cust = customers.find(c => c.id === o.customer_id);
-                const custName = cust ? cust.name : '(неизвестно)';
+                const custName = cust ? cust.name : t('trash_unknown_customer');
                 const deletedDate = new Date(o.deleted_at).toLocaleDateString('ru-LT');
                 const orderDate = formatDateDMY(o.order_date || o.date);
                 const orderNum = o.order_number || `#${o.id}`;
@@ -1310,7 +1310,7 @@ function openTrashOrderActions(orderId, custName, orderDate, orderNum) {
     const deleteBtn  = document.getElementById('trashDeleteBtn');
     if (!modal) return;
 
-    title.textContent = `Заказ ${orderNum} · ${custName} · ${orderDate}`;
+    title.textContent = `${t('trash_order_word')} ${orderNum} · ${custName} · ${orderDate}`;
 
     // Переназначаем обработчики каждый раз (избегаем накопления listener-ов)
     restoreBtn.onclick = async () => {
@@ -1319,7 +1319,7 @@ function openTrashOrderActions(orderId, custName, orderDate, orderNum) {
     };
     deleteBtn.onclick = async () => {
         modal.style.display = 'none';
-        const ok = await showConfirm(`Удалить заказ №${orderId} навсегда? Это действие нельзя отменить.`);
+        const ok = await showConfirm(`${t('trash_delete_confirm_prefix')}${t('order_number_symbol')}${orderId}${t('trash_delete_confirm_suffix')}`);
         if (ok) await permanentDeleteOrder(orderId);
     };
 

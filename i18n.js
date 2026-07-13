@@ -113,6 +113,21 @@ const I18N = {
         history_col_time: 'Время',
         history_col_employee: 'Сотрудник',
         history_col_action: 'Действие',
+
+        // Корзина удалённых заказов
+        trash_desc: 'Удалённые заказы хранятся 30 дней. Нажмите на заказ для восстановления или окончательного удаления.',
+        trash_loading: 'Загружаю корзину...',
+        trash_col_order_date: 'Дата заказа',
+        trash_col_customer: 'Клиент',
+        trash_col_deleted: 'Удалён',
+        trash_unknown_customer: '(неизвестно)',
+        trash_empty: 'Корзина пуста',
+        trash_restore_order: 'Восстановить заказ',
+        trash_delete_forever: 'Удалить навсегда',
+        trash_order_word: 'Заказ',
+        trash_delete_confirm_prefix: 'Удалить заказ ',
+        trash_delete_confirm_suffix: ' навсегда? Это действие нельзя отменить.',
+        order_number_symbol: '№',
     },
     en: {
         // Bottom navigation
@@ -212,6 +227,21 @@ const I18N = {
         history_col_time: 'Time',
         history_col_employee: 'Staff',
         history_col_action: 'Action',
+
+        // Deleted orders trash
+        trash_desc: 'Deleted orders are kept for 30 days. Tap an order to restore or permanently delete it.',
+        trash_loading: 'Loading trash...',
+        trash_col_order_date: 'Order date',
+        trash_col_customer: 'Customer',
+        trash_col_deleted: 'Deleted',
+        trash_unknown_customer: '(unknown)',
+        trash_empty: 'Trash is empty',
+        trash_restore_order: 'Restore order',
+        trash_delete_forever: 'Delete forever',
+        trash_order_word: 'Order',
+        trash_delete_confirm_prefix: 'Permanently delete order ',
+        trash_delete_confirm_suffix: '? This action cannot be undone.',
+        order_number_symbol: '#',
     }
 };
 

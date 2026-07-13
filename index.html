@@ -2335,10 +2335,10 @@
         <!-- Корзина удалённых заказов -->
         <div id="ordersTrashModal" class="modal">
             <div class="modal-content" style="max-width:480px;">
-                <h2 class="text-sm font-semibold mb-1 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>Корзина удалённых заказов</h2>
-                <p class="text-xs text-gray-500 mb-3">Удалённые заказы хранятся 30 дней. Нажмите на заказ для восстановления или окончательного удаления.</p>
+                <h2 class="text-sm font-semibold mb-1 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg><span data-i18n="settings_orders_trash">Корзина удалённых заказов</span></h2>
+                <p class="text-xs text-gray-500 mb-3" data-i18n="trash_desc">Удалённые заказы хранятся 30 дней. Нажмите на заказ для восстановления или окончательного удаления.</p>
                 <div id="ordersTrashContent" style="max-height:65vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
-                <button onclick="openSettingsModal()" class="pill-btn w-full justify-center mt-3">Закрыть</button>
+                <button onclick="openSettingsModal()" class="pill-btn w-full justify-center mt-3" data-i18n="settings_close">Закрыть</button>
             </div>
         </div>
 
@@ -2347,9 +2347,9 @@
             <div class="modal-content" style="max-width:340px;">
                 <h2 id="trashOrderActionsTitle" class="text-sm font-semibold mb-3 text-gray-800"></h2>
                 <div class="flex flex-col gap-2">
-                    <button id="trashRestoreBtn" class="pill-btn justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/></svg>Восстановить заказ</button>
-                    <button id="trashDeleteBtn" class="pill-btn-danger justify-center" style="background:#f3ded9; color:#a3493d; box-shadow:none;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>Удалить навсегда</button>
-                    <button onclick="document.getElementById('trashOrderActionsModal').style.display='none'" class="pill-btn-secondary justify-center">Отмена</button>
+                    <button id="trashRestoreBtn" class="pill-btn justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3"/></svg><span data-i18n="trash_restore_order">Восстановить заказ</span></button>
+                    <button id="trashDeleteBtn" class="pill-btn-danger justify-center" style="background:#f3ded9; color:#a3493d; box-shadow:none;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg><span data-i18n="trash_delete_forever">Удалить навсегда</span></button>
+                    <button onclick="document.getElementById('trashOrderActionsModal').style.display='none'" class="pill-btn-secondary justify-center" data-i18n="common_cancel">Отмена</button>
                 </div>
             </div>
         </div>
@@ -2655,7 +2655,7 @@
 <script src="products.js?v=22"></script>
 <script src="customers.js?v=31"></script>
 <script src="calendar.js?v=6"></script>
-<script src="orders.js?v=73"></script>
+<script src="orders.js?v=74"></script>
 <script src="invoice.js?v=10"></script>
 <script src="payments.js?v=15"></script>
 <script src="stats.js?v=14"></script>
