@@ -140,15 +140,18 @@ function onCustomerFilterChange(name) {
 function updateCustomerFilterLabel() {
     const label = document.getElementById('customerFilterLabel');
     if (selectedStatsCustomers.length === 0) {
-        label.textContent = 'Все клиенты';
+        label.textContent = t('stats_all_customers');
     } else if (selectedStatsCustomers.length === 1) {
         label.textContent = selectedStatsCustomers[0];
     } else {
-        label.textContent = `Клиентов: ${selectedStatsCustomers.length}`;
+        label.textContent = `${t('stats_customers_count')} ${selectedStatsCustomers.length}`;
     }
 }
 
-const STATS_DATE_RANGE_LABELS = { all: 'Весь период', week: 'Текущая неделя', month: 'Текущий месяц', year: 'Текущий год', custom: 'От – До' };
+function statsDateRangeLabel(range) {
+    const map = { all: 'stats_range_all', week: 'stats_range_week', month: 'stats_range_month', year: 'stats_range_year', custom: 'stats_range_custom' };
+    return t(map[range] || 'stats_range_all');
+}
 
 function toggleStatsDateRangeDropdown() {
     const dd = document.getElementById('statsDateRangeDropdown');
@@ -160,7 +163,7 @@ function toggleStatsDateRangeDropdown() {
 
 function setStatsDateRange(range) {
     document.getElementById('statsDateRange').value = range;
-    document.getElementById('statsDateRangeBtnLabel').textContent = STATS_DATE_RANGE_LABELS[range];
+    document.getElementById('statsDateRangeBtnLabel').textContent = statsDateRangeLabel(range);
     document.querySelectorAll('#statsDateRangeDropdown .status-option').forEach(opt => opt.classList.remove('selected'));
     event.currentTarget.classList.add('selected');
     closeAllOrderStatusDropdowns();
@@ -247,17 +250,17 @@ function drawCustomerTable(filtered) {
     const totalContainer = document.getElementById('statsCustomerTableTotal');
 
     if (!sorted.length) {
-        container.innerHTML = '<p class="text-xs text-gray-400">Нет данных</p>';
+        container.innerHTML = `<p class="text-xs text-gray-400">${t('stats_no_data')}</p>`;
         totalContainer.innerHTML = '';
         return;
     }
 
-    let html = '<table class="w-full stats-table table-clean" style="table-layout:fixed;"><thead><tr style="background-color:#e3e8df;position:sticky;top:0;"><th class="p-0.5 text-left" style="width:40%;">Клиент</th><th class="p-0.5 text-right" style="width:15%;">Кол-во</th><th class="p-0.5 text-right" style="width:20%;">Сумма (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:15%;">НДС (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:10%;">Доля</th></tr></thead><tbody>';
+    let html = '<table class="w-full stats-table table-clean" style="table-layout:fixed;"><thead><tr style="background-color:#e3e8df;position:sticky;top:0;"><th class="p-0.5 text-left" style="width:40%;">' + t('stats_col_customer') + '</th><th class="p-0.5 text-right" style="width:15%;">' + t('stats_col_qty') + '</th><th class="p-0.5 text-right" style="width:20%;">' + t('stats_col_sum') + ' (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:15%;">' + t('stats_col_vat') + ' (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:10%;">' + t('stats_col_share') + '</th></tr></thead><tbody>';
     html += buildCustomerRowsHtml(sorted, totals, vats, qtys, grandTotal);
     html += '</tbody></table>';
     container.innerHTML = html;
     totalContainer.innerHTML =
-        `<table class="w-full stats-table table-clean" style="table-layout:fixed;"><tr style="background-color:#e3e8df;" class="font-semibold"><td class="p-0.5" style="width:40%">Итого</td><td class="p-0.5 text-right" style="width:15%">${grandQty}</td><td class="p-0.5 text-right" style="width:20%">${grandTotal.toFixed(2)}</td><td class="p-0.5 text-right" style="width:15%;color:#6b7280;">${grandVat.toFixed(2)}</td><td class="p-0.5" style="width:10%"></td></tr></table>`;
+        `<table class="w-full stats-table table-clean" style="table-layout:fixed;"><tr style="background-color:#e3e8df;" class="font-semibold"><td class="p-0.5" style="width:40%">${t('stats_col_total')}</td><td class="p-0.5 text-right" style="width:15%">${grandQty}</td><td class="p-0.5 text-right" style="width:20%">${grandTotal.toFixed(2)}</td><td class="p-0.5 text-right" style="width:15%;color:#6b7280;">${grandVat.toFixed(2)}</td><td class="p-0.5" style="width:10%"></td></tr></table>`;
 }
 
 // --- Топ изделий ---
@@ -272,11 +275,11 @@ function drawProductTable(filtered) {
     });
     const sorted = Object.entries(totals).sort((a,b) => b[1] - a[1]).slice(0, 10);
     if (!sorted.length) {
-        document.getElementById('statsProductTable').innerHTML = '<p class="text-xs text-gray-400">Нет данных</p>';
+        document.getElementById('statsProductTable').innerHTML = `<p class="text-xs text-gray-400">${t('stats_no_data')}</p>`;
         return;
     }
     const max = sorted[0][1];
-    let html = '<table class="w-full stats-table table-clean"><thead><tr style="background-color:#e3e8df;"><th class="p-0.5 text-left">Изделие</th><th class="p-0.5 text-right">Кол-во</th><th class="p-0.5 text-right">Сумма (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th></tr></thead><tbody>';
+    let html = '<table class="w-full stats-table table-clean"><thead><tr style="background-color:#e3e8df;"><th class="p-0.5 text-left">' + t('stats_col_product') + '</th><th class="p-0.5 text-right">' + t('stats_col_qty') + '</th><th class="p-0.5 text-right">' + t('stats_col_sum') + ' (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th></tr></thead><tbody>';
     sorted.forEach(([name, val]) => {
         const barW = max > 0 ? Math.round(val/max*100) : 0;
         html += `<tr class="border-b"><td class="p-0.5">
@@ -322,7 +325,7 @@ function drawProductProfitabilityTable() {
     }
 
     if (!withRecipe.length) {
-        container.innerHTML = `<p class="text-xs text-gray-400">${filter ? 'Нет изделий по фильтру «' + filter + '»' : 'Нет изделий с заполненной рецептурой'}</p>`;
+        container.innerHTML = `<p class="text-xs text-gray-400">${filter ? t('stats_no_products_by_filter').replace('{filter}', filter) : t('stats_no_products_with_recipe')}</p>`;
         return;
     }
 
@@ -332,11 +335,11 @@ function drawProductProfitabilityTable() {
         .slice(0, filter ? 100 : 10);
 
     const title = filter
-        ? `Найдено: ${sorted.length} изделий по «${filter}»`
-        : `Топ-${sorted.length} по рентабельности`;
+        ? t('stats_found_products').replace('{count}', sorted.length).replace('{filter}', filter)
+        : t('stats_top_by_margin').replace('{count}', sorted.length);
 
     let html = `<p class="text-xs text-gray-500 mb-1">${title}</p>`;
-    html += '<table class="w-full stats-table table-clean" style="table-layout:fixed;"><thead><tr style="background-color:#e3e8df;"><th class="p-0.5 text-left" style="width:46%;">Изделие</th><th class="p-0.5 text-right" style="width:18%;">Себест. (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:18%;">Цена (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:18%;">Рент.</th></tr></thead><tbody>';
+    html += '<table class="w-full stats-table table-clean" style="table-layout:fixed;"><thead><tr style="background-color:#e3e8df;"><th class="p-0.5 text-left" style="width:46%;">' + t('stats_col_product') + '</th><th class="p-0.5 text-right" style="width:18%;">' + t('stats_col_cost') + ' (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:18%;">' + t('stats_col_price') + ' (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:18%;">' + t('stats_col_margin_short') + '</th></tr></thead><tbody>';
     sorted.forEach(p => {
         const cost = productUnitCost(p);
         const pct  = productProfitPct(p);
@@ -372,7 +375,7 @@ function drawMonthlyChart(filtered) {
     const keys = Object.keys(monthlyRevenue).sort();
     if (!keys.length) {
         ctx.fillStyle = '#9ca3af'; ctx.font = '11px sans-serif';
-        ctx.fillText('Нет данных', W/2 - 30, H/2);
+        ctx.fillText(t('stats_no_data'), W/2 - 30, H/2);
         return;
     }
     const revenueVals = keys.map(k => monthlyRevenue[k]);
@@ -404,7 +407,9 @@ function drawMonthlyChart(filtered) {
         // Подпись месяца
         ctx.fillStyle = '#6b7280'; ctx.font = '8px sans-serif'; ctx.textAlign = 'center';
         const label = key.slice(5); // MM
-        const months = ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+        const months = (typeof currentLang !== 'undefined' && currentLang === 'en')
+            ? ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+            : ['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
         ctx.fillText(months[parseInt(label)-1] || label, x + bW/2, H - 4);
     });
 
@@ -429,11 +434,11 @@ function drawMonthlyChart(filtered) {
     ctx.fillStyle = '#d9a441';
     ctx.fillRect(pad.left, 2, 8, 8);
     ctx.fillStyle = '#374151';
-    ctx.fillText('Выручка', pad.left + 11, 9);
+    ctx.fillText(t('stats_chart_revenue'), pad.left + 11, 9);
     ctx.strokeStyle = '#4f6349'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(pad.left + 65, 6); ctx.lineTo(pad.left + 80, 6); ctx.stroke();
     ctx.fillStyle = '#374151';
-    ctx.fillText('Прибыль', pad.left + 84, 9);
+    ctx.fillText(t('stats_chart_profit'), pad.left + 84, 9);
 }
 
 // --- Круговая диаграмма (без легенды на canvas) ---
@@ -458,7 +463,7 @@ function drawPieChart(filtered) {
         ctx.fillStyle = '#e5e7eb';
         ctx.beginPath(); ctx.arc(SIZE/2, SIZE/2, SIZE/2 - 10, 0, 2*Math.PI); ctx.fill();
         ctx.fillStyle = '#9ca3af'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText('Нет данных', SIZE/2, SIZE/2 + 4);
+        ctx.fillText(t('stats_no_data'), SIZE/2, SIZE/2 + 4);
         document.getElementById('chartLegend').innerHTML = '';
         return;
     }
@@ -500,8 +505,16 @@ function drawChart() { applyFilter(); }
 // с датой/днём недели/суммой. Выходные (Сб/Вс) подсвечены фоном.
 
 const DAILY_CHART_WINDOW_DAYS = 21; // 3 недели
-const WEEKDAY_NAMES_SHORT = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
-const WEEKDAY_NAMES_FULL  = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
+function weekdayNameShort(dow) {
+    const ru = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+    const en = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    return ((typeof currentLang !== 'undefined' && currentLang === 'en') ? en : ru)[dow];
+}
+function weekdayNameFull(dow) {
+    const ru = ['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
+    const en = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    return ((typeof currentLang !== 'undefined' && currentLang === 'en') ? en : ru)[dow];
+}
 
 let _dailyChartWindowEnd = null; // Date — последний (самый поздний) день видимого окна
 let _dailyChartInitialized = false;
@@ -628,7 +641,7 @@ function drawDailyRevenueChart() {
         const dow = d.getDay();
         ctx.font = '7px sans-serif'; ctx.textAlign = 'center';
         ctx.fillStyle = (dow === 0 || dow === 6) ? '#c0685c' : '#9ca3af';
-        ctx.fillText(WEEKDAY_NAMES_SHORT[dow], x, H - 3);
+        ctx.fillText(weekdayNameShort(dow), x, H - 3);
     });
     // Дата — только по понедельникам (опорные точки для ориентира по неделям)
     days.forEach((d, i) => {
@@ -685,7 +698,7 @@ function drawDailyRevenueChart() {
         ctx.beginPath(); ctx.arc(nearest.x, nearest.y, 1.5, 0, Math.PI*2); ctx.fill();
 
         if (tooltip) {
-            tooltip.textContent = `${WEEKDAY_NAMES_FULL[nearest.dow]}, ${formatDateDMY(nearest.date)} — ${formatMoney(nearest.value)}`;
+            tooltip.textContent = `${weekdayNameFull(nearest.dow)}, ${formatDateDMY(nearest.date)} — ${formatMoney(nearest.value)}`;
             // Не даём подсказке вылезти за левый/правый край канваса
             const clampedX = Math.min(Math.max(nearest.x, 30), W - 30);
             tooltip.style.left = clampedX + 'px';
