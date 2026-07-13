@@ -54,6 +54,7 @@
            плавающего вертикального центрирования, чтобы позиция не "гуляла"
            в зависимости от объёма контента (список настроек будет расти). */
         #settingsModal .modal-content { margin-top: 10vh; margin-bottom: auto; }
+        #privacyModal .modal-content, #termsModal .modal-content { margin-top: 6vh; margin-bottom: auto; height: 82vh; max-height: 82vh; }
 
         /* ── Вкладки — нижняя синяя черта вместо серой заливки ── */
         .tab:not(.bottom-nav-item) { cursor: pointer; position: relative; background: transparent !important; color: #6b7280 !important; border-radius: 0 !important; padding-bottom: 6px !important; border-bottom: 2px solid transparent; transition: color 0.2s, border-color 0.2s; font-size: 14px; font-weight: 500; }
@@ -1981,7 +1982,7 @@
              показывают тот же privacy.html/terms.html через iframe (та же страница, что и в
              карточке Google Play), но без ухода из приложения и потери открытого раздела настроек. -->
         <div id="privacyModal" class="modal">
-            <div class="modal-content" style="max-width:420px; max-height:82vh; display:flex; flex-direction:column; padding:14px;">
+            <div class="modal-content" style="max-width:420px; display:flex; flex-direction:column; padding:14px;">
                 <div class="flex justify-between items-center mb-2" style="flex-shrink:0;">
                     <h2 class="text-sm font-semibold text-gray-800">Политика конфиденциальности</h2>
                     <button onclick="closeLegalModal('privacyModal')" class="pill-btn-secondary" style="padding:4px 12px;">Закрыть</button>
