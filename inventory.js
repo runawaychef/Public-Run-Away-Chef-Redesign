@@ -10,6 +10,7 @@ function openSettingsModal() {
     document.getElementById('settingsBtn').classList.add('active');
     document.getElementById('settingsCurrentEmployee').textContent = currentEmployee ? currentEmployee.name : '—';
     renderPlanInfo();
+    if (typeof refreshDeleteDemoDataVisibility === 'function') refreshDeleteDemoDataVisibility();
     document.getElementById('settingsModal').style.display = 'flex';
 }
 

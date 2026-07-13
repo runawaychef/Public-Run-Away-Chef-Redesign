@@ -1916,7 +1916,7 @@
                         <button onclick="openHistoryScreen()" class="settings-row-btn perm-owner-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg><span data-i18n="settings_activity_log">Журнал действий</span></button>
                         <button onclick="loadAllData()" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg><span data-i18n="settings_refresh_data">Обновить данные</span></button>
                         <button onclick="openOrdersTrash()" class="settings-row-btn perm-delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg><span data-i18n="settings_orders_trash">Корзина удалённых заказов</span></button>
-                        <button onclick="confirmClearDemoData()" class="settings-row-btn danger perm-owner-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42"/></svg><span data-i18n="settings_delete_demo">Удалить демо-данные и начать заново</span></button>
+                        <button id="deleteDemoDataBtn" onclick="confirmClearDemoData()" class="settings-row-btn danger perm-owner-only" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42"/></svg><span data-i18n="settings_delete_demo">Удалить демо-данные и начать заново</span></button>
                     </div>
                 </div>
 
@@ -2648,7 +2648,7 @@
     <script src="auth.js?v=11"></script>
     <script src="employees.js?v=19"></script>
     <script src="company.js?v=8"></script>
-    <script src="inventory.js?v=22"></script>
+    <script src="inventory.js?v=23"></script>
 <script src="ingredients.js?v=25"></script>
 <script src="batches.js?v=3"></script>
 <script src="semifinished.js?v=22"></script>
@@ -2661,7 +2661,7 @@
 <script src="stats.js?v=14"></script>
 <script src="history.js?v=9"></script>
 <script src="modals.js?v=10"></script>
-<script src="demoData.js?v=9"></script>
+<script src="demoData.js?v=10"></script>
 <script src="helpers.js?v=16"></script>
 <script>
 // SUPABASE_URL, SUPABASE_KEY, db перенесены в supabaseClient.js

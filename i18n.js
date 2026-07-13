@@ -128,6 +128,14 @@ const I18N = {
         trash_delete_confirm_prefix: 'Удалить заказ ',
         trash_delete_confirm_suffix: ' навсегда? Это действие нельзя отменить.',
         order_number_symbol: '№',
+
+        // Удаление демо-данных
+        demo_deleting: 'Удаляю демо-данные...',
+        demo_activity_deleted: 'Демо-данные удалены',
+        demo_deleted_success: 'Демо-данные удалены. Можно начинать вводить свои данные.',
+        demo_deleted_error: 'Ошибка удаления демо-данных. Проверьте подключение и попробуйте ещё раз.',
+        demo_not_found: 'Демо-данных не найдено — похоже, они уже удалены или не создавались.',
+        demo_delete_confirm: 'Удалить весь демо-набор (демо-клиенты, изделия, полуфабрикат, ингредиенты и демо-заказ)? Ваши собственные данные это не затронет.',
     },
     en: {
         // Bottom navigation
@@ -242,6 +250,14 @@ const I18N = {
         trash_delete_confirm_prefix: 'Permanently delete order ',
         trash_delete_confirm_suffix: '? This action cannot be undone.',
         order_number_symbol: '#',
+
+        // Deleting demo data
+        demo_deleting: 'Deleting demo data...',
+        demo_activity_deleted: 'Demo data deleted',
+        demo_deleted_success: 'Demo data deleted. You can start entering your own data now.',
+        demo_deleted_error: 'Failed to delete demo data. Check your connection and try again.',
+        demo_not_found: 'No demo data found — it looks like it was already deleted or never created.',
+        demo_delete_confirm: 'Delete the whole demo set (demo customers, menu items, semi-finished goods, ingredients, and the demo order)? Your own data will not be affected.',
     }
 };
 

@@ -173,7 +173,7 @@ async function createDemoData(orgId, employeeId) {
 // потом полуфабрикат (и его рецепт + складские движения по нему), потом
 // ингредиенты (и их историю цен + складские движения), и только в конце — клиенты.
 async function clearDemoData() {
-    showLoading('Удаляю демо-данные...');
+    showLoading(t('demo_deleting'));
     try {
         const { data: demoOrders } = await db.from('orders').select('id').eq('org_id', currentOrgId).eq('is_demo', true);
         const orderIds = (demoOrders || []).map(o => o.id);
@@ -212,12 +212,12 @@ async function clearDemoData() {
         closeModal();
         await loadAllData();
         await loadInventory();
-        logActivity('auth', 'Демо-данные удалены');
-        await showInfo('Демо-данные удалены. Можно начинать вводить свои данные.');
+        logActivity('auth', t('demo_activity_deleted'));
+        await showInfo(t('demo_deleted_success'));
     } catch (e) {
         hideLoading();
         console.error(e);
-        showInfo('Ошибка удаления демо-данных. Проверьте подключение и попробуйте ещё раз.');
+        showInfo(t('demo_deleted_error'));
     }
 }
 
@@ -225,8 +225,26 @@ async function clearDemoData() {
 async function confirmClearDemoData() {
     try {
         const { count } = await db.from('customers').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId).eq('is_demo', true);
-        if (!count) { showInfo('Демо-данных не найдено — похоже, они уже удалены или не создавались.'); return; }
+        if (!count) { showInfo(t('demo_not_found')); return; }
     } catch (e) { console.error(e); }
-    const ok = await showConfirm('Удалить весь демо-набор (демо-клиенты, изделия, полуфабрикат, ингредиенты и демо-заказ)? Ваши собственные данные это не затронет.');
+    const ok = await showConfirm(t('demo_delete_confirm'));
     if (ok) await clearDemoData();
+}
+
+// Показывает кнопку "Удалить демо-данные" только если демо-данные реально ещё
+// остались в этой организации — иначе пункт просто лишний шум в настройках
+// для реального владельца пекарни, который уже месяцами ведёт бизнес в
+// приложении. Управляет видимостью через inline style, не трогая класс
+// "hidden" (им отдельно управляет система прав доступа perm-owner-only —
+// см. employees.js), чтобы обе проверки не конфликтовали друг с другом.
+async function refreshDeleteDemoDataVisibility() {
+    const btn = document.getElementById('deleteDemoDataBtn');
+    if (!btn) return;
+    try {
+        const { count } = await db.from('customers').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId).eq('is_demo', true);
+        btn.style.display = count ? '' : 'none';
+    } catch (e) {
+        console.error(e);
+        btn.style.display = 'none'; // при ошибке — безопаснее спрятать, чем показать зря
+    }
 }
