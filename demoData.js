@@ -59,7 +59,7 @@ const DEMO_CONTENT = {
         shoppingNote: 'Демо: пополнить запас'
     },
     en: {
-        customers: ['Ivan Ivanov', 'Café "Romashka"', 'Maria Petrova', '"Midnight" Coffee House', 'Hotel Švyturys', 'Olga Kuznetsova'],
+        customers: ['Emma Carter', '"Sunrise" Café', 'Daniel Brooks', '"The Coffee Nook"', 'Riverside Hotel', 'Olivia Bennett'],
         customerNote: 'Demo customer example',
         ingredients: {
             flour:    { name: 'Wheat flour',      unit: 'kg',  size: 1 },
