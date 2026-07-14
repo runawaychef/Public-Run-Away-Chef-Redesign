@@ -58,7 +58,7 @@ function displayOrders() {
         const weekLabel = formatDateDMY(localStr(monday)) + ' – ' + formatDateDMY(localStr(sunday));
         const weekRow = document.createElement('tr');
         weekRow.innerHTML = `<td colspan="6" class="text-xs font-medium p-0.5" style="background-color:#7c9473; color:#fff;">
-            Неделя ${weekLabel} — ${weekTotals.count} зак., ${weekTotals.qty} шт., ${formatMoney(weekTotals.sum)}
+            ${t('orders_week_word')} ${weekLabel} — ${weekTotals.count} ${t('orders_orders_short')}, ${weekTotals.qty} ${t('unit_pcs')}, ${formatMoney(weekTotals.sum)}
         </td>`;
         tbody.appendChild(weekRow);
     }
@@ -66,10 +66,10 @@ function displayOrders() {
     function appendMonthSummary(monthKey) {
         const [y, m] = monthKey.split('-').map(Number);
         const monthTotals = calcGroupTotals(sorted, o => keysFor(o).monthKey === monthKey);
-        const monthLabel = `${MONTH_NAMES_RU[m - 1]} ${y}`;
+        const monthLabel = `${monthName(m - 1)} ${y}`;
         const monthRow = document.createElement('tr');
         monthRow.innerHTML = `<td colspan="6" class="text-xs font-semibold p-0.5.5" style="background-color:#d9a441; color:#fff;">
-            Итого за ${monthLabel} — ${monthTotals.count} зак., ${monthTotals.qty} шт., ${formatMoney(monthTotals.sum)}
+            ${t('orders_total_for')} ${monthLabel} — ${monthTotals.count} ${t('orders_orders_short')}, ${monthTotals.qty} ${t('unit_pcs')}, ${formatMoney(monthTotals.sum)}
         </td>`;
         tbody.appendChild(monthRow);
     }
@@ -117,7 +117,7 @@ function displayOrders() {
             <td class=" p-0.5 table-text font-medium whitespace-nowrap" onclick="openOrderDetail(${order.id})">${total}</td>
             <td class=" p-0.5 text-center" onclick="openOrderDetail(${order.id})"><span class="${flagClass}"></span></td>
             <td class=" p-0.5 text-center">
-                ${hasPermission('can_delete') ? svgDeleteSafe('openDeleteModal', [realIdx, 'order', `заказ клиента «${order.customer}»`]) : ''}
+                ${hasPermission('can_delete') ? svgDeleteSafe('openDeleteModal', [realIdx, 'order', `${t('delete_label_order_of')} «${order.customer}»`]) : ''}
                 ${svgCopy(`copyOrder(${realIdx})`)}
             </td>`;
         tbody.appendChild(row);
@@ -146,24 +146,24 @@ function displayOrders() {
         let cardsHtml = '';
 
         if (plannedOrders.length) {
-            cardsHtml += sectionDividerHtml('Принятые',
+            cardsHtml += sectionDividerHtml(t('orders_section_accepted'),
                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>');
             plannedOrders.forEach(order => { cardsHtml += renderOrderCard(order); });
         }
 
         if (urgentOrders.length) {
-            cardsHtml += sectionDividerHtml('Заказы в работе',
+            cardsHtml += sectionDividerHtml(t('orders_section_in_progress'),
                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>');
             urgentOrders.forEach(order => { cardsHtml += renderOrderCard(order); });
         }
 
         if (doneOrders.length) {
-            cardsHtml += sectionDividerHtml('Выполненные',
+            cardsHtml += sectionDividerHtml(t('orders_section_done'),
                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>');
             doneOrders.forEach(order => { cardsHtml += renderDoneOrderCard(order); });
         }
 
-        cardsBody.innerHTML = cardsHtml || `<p class="text-xs text-gray-400 text-center py-4">Заказов не найдено</p>`;
+        cardsBody.innerHTML = cardsHtml || `<p class="text-xs text-gray-400 text-center py-4">${t('orders_none_found')}</p>`;
         initOrderCardSwipeDelegation();
     }
 
@@ -192,9 +192,13 @@ function getPaymentStripeColor(payInfo) {
 }
 
 const RU_MONTH_ABBR = ['ЯНВ', 'ФЕВ', 'МАР', 'АПР', 'МАЙ', 'ИЮН', 'ИЮЛ', 'АВГ', 'СЕН', 'ОКТ', 'НОЯ', 'ДЕК'];
+const EN_MONTH_ABBR = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+function monthAbbr(monthIdx0) {
+    return (typeof currentLang !== 'undefined' && currentLang === 'en') ? EN_MONTH_ABBR[monthIdx0] : RU_MONTH_ABBR[monthIdx0];
+}
 function orderDateBadgeParts(iso) {
     const d = new Date(iso + 'T00:00:00');
-    return { month: RU_MONTH_ABBR[d.getMonth()], day: d.getDate() };
+    return { month: monthAbbr(d.getMonth()), day: d.getDate() };
 }
 
 // Позиции заказа теперь показываются во всех карточках без исключения.
@@ -209,9 +213,9 @@ function renderOrderCard(order) {
     let payLine = '';
     if (payInfo.status === 'partial' || payInfo.overdue) {
         const pending = Math.max(0, payInfo.grandAmt - payInfo.paidAmt);
-        payLine = `<div class="oc-pay-line"><span style="color:#4f6349">${formatMoney(payInfo.paidAmt)} оплачено</span> · <span style="color:#c0685c">${formatMoney(pending)} осталось</span></div>`;
+        payLine = `<div class="oc-pay-line"><span style="color:#4f6349">${formatMoney(payInfo.paidAmt)} ${t('orders_paid_lower')}</span> · <span style="color:#c0685c">${formatMoney(pending)} ${t('orders_remaining_lower')}</span></div>`;
     }
-    const overdueLine = payInfo.overdue ? `<div class="oc-pay-line" style="color:#8b3a3a; font-weight:700;">Просрочен платёж</div>` : '';
+    const overdueLine = payInfo.overdue ? `<div class="oc-pay-line" style="color:#8b3a3a; font-weight:700;">${t('orders_payment_overdue')}</div>` : '';
 
     // Заметка к заказу (готовность/доставка и т.п.) — то же поле order.notes,
     // что и "Комментарий к заказу" в карточке; показываем только если заполнено.
@@ -223,13 +227,13 @@ function renderOrderCard(order) {
     let itemsLine = '';
     if (order.items && order.items.length) {
         itemsLine = `<div class="oc-items">` +
-            order.items.map(it => `<div class="oc-item-row"><span class="oc-item-name">· ${escapeHtml(it.product)}</span><span class="oc-item-qty">${it.quantity} шт.</span></div>`).join('') +
+            order.items.map(it => `<div class="oc-item-row"><span class="oc-item-name">· ${escapeHtml(it.product)}</span><span class="oc-item-qty">${it.quantity} ${t('unit_pcs')}.</span></div>`).join('') +
             `</div>`;
     }
 
     const statusOptions = ORDER_STATUS_LIST.map(s => `
         <div class="status-option${s === order.status ? ' selected' : ''}" onclick="event.stopPropagation(); quickSetOrderStatus(${order.id}, '${s}')">
-            <span><span class="dot" style="background:${ORDER_STATUS_COLORS[s]}"></span> ${s.charAt(0).toUpperCase() + s.slice(1)}</span>
+            <span><span class="dot" style="background:${ORDER_STATUS_COLORS[s]}"></span> ${orderStatusLabelCap(s)}</span>
             <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
         </div>`).join('');
 
@@ -244,19 +248,19 @@ function renderOrderCard(order) {
         swipeBtnCount++;
         swipeBtns += `<button class="oc-swipe-btn oc-swipe-pay" onclick="event.stopPropagation(); quickPayFromSwipe(${order.id})">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
-            Оплатить
+            ${t('orders_pay_btn')}
         </button>`;
     }
     swipeBtnCount++;
     swipeBtns += `<button class="oc-swipe-btn oc-swipe-copy" onclick="event.stopPropagation(); quickCopyFromSwipe(${realIdx})">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184"/></svg>
-        Копировать
+        ${t('icon_copy_title')}
     </button>`;
     if (hasPermission('can_delete')) {
         swipeBtnCount++;
         swipeBtns += `<button class="oc-swipe-btn oc-swipe-delete" onclick="event.stopPropagation(); quickDeleteFromSwipe(${realIdx}, '${escapeHtml(order.customer || '').replace(/'/g, "\\'")}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
-            Удалить
+            ${t('common_delete')}
         </button>`;
     }
     const swipeWrapStyle = swipeBtnCount ? ` style="--oc-swipe-x:-${swipeBtnCount * 72}px;"` : '';
@@ -276,14 +280,14 @@ function renderOrderCard(order) {
                         </div>
                         <div style="flex:1; min-width:0;">
                             <div class="oc-row">
-                                <span class="oc-name">${escapeHtml(order.customer || '(без клиента)')}</span>
+                                <span class="oc-name">${escapeHtml(order.customer || t('orders_no_customer'))}</span>
                                 <span class="oc-sum">${total}</span>
                             </div>
                             <div class="oc-row" style="margin-top:3px;">
                                 <span class="oc-meta">${escapeHtml(oNum)}</span>
                                 <div style="position:relative;" onclick="event.stopPropagation();">
                                     <button class="status-btn" style="background:${statusColor};" onclick="toggleOrderStatusDropdown(${order.id})">
-                                        ${order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                                        ${orderStatusLabelCap(order.status)}
                                         <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
                                     </button>
                                     <div class="status-dropdown" id="statusDropdown-${order.id}">${statusOptions}</div>
@@ -415,7 +419,7 @@ function renderDoneOrderCard(order) {
     const oNum = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
     const total = formatMoney(orderGrandTotal(order));
     const dateBadge = orderDateBadgeParts(order.date);
-    const statusLabel = order.status.charAt(0).toUpperCase() + order.status.slice(1);
+    const statusLabel = orderStatusLabelCap(order.status);
 
     // Заметка и полоса оплаты — те же блоки, что и в активной карточке
     // (renderOrderCard), показываются только в развёрнутом виде.
@@ -426,20 +430,20 @@ function renderDoneOrderCard(order) {
     let payLine = '';
     if (payInfo.status === 'partial' || payInfo.overdue) {
         const pending = Math.max(0, payInfo.grandAmt - payInfo.paidAmt);
-        payLine = `<div class="oc-pay-line"><span style="color:#4f6349">${formatMoney(payInfo.paidAmt)} оплачено</span> · <span style="color:#c0685c">${formatMoney(pending)} осталось</span></div>`;
+        payLine = `<div class="oc-pay-line"><span style="color:#4f6349">${formatMoney(payInfo.paidAmt)} ${t('orders_paid_lower')}</span> · <span style="color:#c0685c">${formatMoney(pending)} ${t('orders_remaining_lower')}</span></div>`;
     }
-    const overdueLine = payInfo.overdue ? `<div class="oc-pay-line" style="color:#8b3a3a; font-weight:700;">Просрочен платёж</div>` : '';
+    const overdueLine = payInfo.overdue ? `<div class="oc-pay-line" style="color:#8b3a3a; font-weight:700;">${t('orders_payment_overdue')}</div>` : '';
 
     let itemsLine = '';
     if (order.items && order.items.length) {
-        itemsLine = order.items.map(it => `<div class="oc-item-row"><span class="oc-item-name">· ${escapeHtml(it.product)}</span><span class="oc-item-qty">${it.quantity} шт.</span></div>`).join('');
+        itemsLine = order.items.map(it => `<div class="oc-item-row"><span class="oc-item-name">· ${escapeHtml(it.product)}</span><span class="oc-item-qty">${it.quantity} ${t('unit_pcs')}.</span></div>`).join('');
     }
 
     // Кнопка смены статуса — идентична той, что в активных карточках
     // (renderOrderCard), включая выпадающее меню с тремя вариантами.
     const statusOptions = ORDER_STATUS_LIST.map(s => `
         <div class="status-option${s === order.status ? ' selected' : ''}" onclick="event.stopPropagation(); quickSetOrderStatus(${order.id}, '${s}')">
-            <span><span class="dot" style="background:${ORDER_STATUS_COLORS[s]}"></span> ${s.charAt(0).toUpperCase() + s.slice(1)}</span>
+            <span><span class="dot" style="background:${ORDER_STATUS_COLORS[s]}"></span> ${orderStatusLabelCap(s)}</span>
             <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
         </div>`).join('');
 
@@ -454,13 +458,13 @@ function renderDoneOrderCard(order) {
         swipeBtnCount++;
         swipeBtns += `<button class="oc-swipe-btn oc-swipe-pay" onclick="event.stopPropagation(); quickPayFromSwipe(${order.id})">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
-            Оплатить
+            ${t('orders_pay_btn')}
         </button>`;
     }
     swipeBtnCount++;
     swipeBtns += `<button class="oc-swipe-btn oc-swipe-copy" onclick="event.stopPropagation(); quickCopyFromSwipe(${realIdx})">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184"/></svg>
-        Копировать
+        ${t('icon_copy_title')}
     </button>`;
     const swipeWrapStyle = ` style="--oc-swipe-x:-${swipeBtnCount * 72}px;"`;
 
@@ -473,7 +477,7 @@ function renderDoneOrderCard(order) {
                 <div class="order-card-body" style="padding-right:34px;">
                     <div data-role="collapsed-header">
                         <div class="oc-row">
-                            <span class="oc-name">${escapeHtml(order.customer || '(без клиента)')}</span>
+                            <span class="oc-name">${escapeHtml(order.customer || t('orders_no_customer'))}</span>
                             <span class="oc-sum">${total}</span>
                         </div>
                         <div class="oc-row" style="margin-top:1px;">
@@ -490,7 +494,7 @@ function renderDoneOrderCard(order) {
                             </div>
                             <div style="flex:1; min-width:0;">
                                 <div class="oc-row">
-                                    <span class="oc-name">${escapeHtml(order.customer || '(без клиента)')}</span>
+                                    <span class="oc-name">${escapeHtml(order.customer || t('orders_no_customer'))}</span>
                                     <span class="oc-sum">${total}</span>
                                 </div>
                                 <div class="oc-row" style="margin-top:3px;">
@@ -512,7 +516,7 @@ function renderDoneOrderCard(order) {
                     <div class="oc-items" data-role="items" style="display:none;">${itemsLine}</div>
                 </div>
             </div>
-            <div class="expand-btn" onclick="event.stopPropagation(); toggleDoneCardExpand(${order.id})" title="Развернуть">
+            <div class="expand-btn" onclick="event.stopPropagation(); toggleDoneCardExpand(${order.id})" title="${t('orders_expand_title')}">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
             </div>
         </div>
@@ -567,7 +571,7 @@ async function quickSetOrderStatus(orderId, newStatus) {
     } catch (e) {
         order.status = oldStatus; // откат при ошибке сети/сохранения
         displayOrders();
-        showInfo('Не удалось изменить статус. Проверьте соединение и попробуйте ещё раз.');
+        showInfo(t('orders_status_change_error'));
     }
 }
 
@@ -990,7 +994,7 @@ async function createDraftOrderAndOpen() {
         displayOrders();
         openOrderDetail(newOrder.id);
         logActivity('order', `Создан черновик заказа №${newOrder.id}`, newOrder.id);
-    } catch (e) { console.error(e); showDbError(e, 'Ошибка создания заказа. Проверьте подключение.'); }
+    } catch (e) { console.error(e); showDbError(e, t('orders_create_error')); }
     finally { hideLoading(); }
 }
 
@@ -1075,7 +1079,7 @@ async function copyOrder(i) {
         displayOrders();
         openOrderDetail(copy.id);
         logActivity('order', `Скопирован заказ №${o.id} → новый заказ №${copy.id} (клиент «${o.customer}»)`, copy.id);
-    } catch (e) { console.error(e); showDbError(e, 'Ошибка копирования заказа. Проверьте подключение.'); }
+    } catch (e) { console.error(e); showDbError(e, t('orders_copy_error')); }
     finally { hideLoading(); }
 }
 
@@ -1100,7 +1104,7 @@ function openOrderDetail(orderId) {
     document.getElementById('ordersViewToggle')?.classList.add('hidden');
 
     const _oNum = order.order_number || `#${orderId}`;
-    document.getElementById('detailOrderId').textContent = `Заказ ${_oNum}`;
+    document.getElementById('detailOrderId').textContent = `${t('trash_order_word')} ${_oNum}`;
 
     // Заполнить шапку
     fillDetailCustomerSelect(order.customer);
@@ -1140,7 +1144,7 @@ function fillDetailEmployeeSelect(selectedId) {
 function renderDetailStatusButton(status) {
     const lbl = document.getElementById('detailStatusBtnLabel');
     if (!lbl) return;
-    lbl.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+    lbl.textContent = orderStatusLabelCap(status);
     document.querySelectorAll('#detailStatusDropdown .status-option').forEach((opt, i) => {
         const optStatus = ['принят', 'в работе', 'выполнен'][i];
         opt.classList.toggle('selected', optStatus === status);
@@ -1299,7 +1303,7 @@ async function openOrdersTrash() {
     } catch(e) {
         hideLoading();
         console.error(e);
-        showInfo('Ошибка загрузки корзины.');
+        showInfo(t('orders_trash_load_error'));
     }
 }
 
@@ -1329,7 +1333,7 @@ function openTrashOrderActions(orderId, custName, orderDate, orderNum) {
 async function restoreOrder(orderId) {
     if (!hasPermission('can_delete')) {
         closeModal();
-        showInfo('У вас нет права на это действие. Обратитесь к владельцу пекарни.');
+        showInfo(t('orders_no_permission_action'));
         return;
     }
     suppressRealtimeFor3s();
@@ -1339,15 +1343,15 @@ async function restoreOrder(orderId) {
         closeModal();
         await loadAllData();
         logActivity('order', `Заказ №${orderId} восстановлен из корзины`);
-        await showInfo(`Заказ №${orderId} восстановлен.`);
-    } catch(e) { console.error(e); showInfo('Ошибка восстановления.'); }
+        await showInfo(`${t('trash_order_word')} ${t('order_number_symbol')}${orderId} ${t('orders_restored')}.`);
+    } catch(e) { console.error(e); showInfo(t('orders_restore_error')); }
     finally { hideLoading(); }
 }
 
 async function permanentDeleteOrder(orderId) {
     if (!hasPermission('can_delete')) {
         closeModal();
-        showInfo('У вас нет права на удаление. Обратитесь к владельцу пекарни.');
+        showInfo(t('ing_no_delete_permission'));
         return;
     }
     suppressRealtimeFor3s();
@@ -1357,8 +1361,8 @@ async function permanentDeleteOrder(orderId) {
         if (error) throw error;
         closeModal();
         logActivity('order', `Заказ №${orderId} удалён окончательно`);
-        await showInfo(`Заказ №${orderId} удалён окончательно.`);
-    } catch(e) { console.error(e); showInfo('Ошибка удаления.'); }
+        await showInfo(`${t('trash_order_word')} ${t('order_number_symbol')}${orderId} ${t('orders_deleted_forever')}.`);
+    } catch(e) { console.error(e); showInfo(t('error_delete_generic')); }
     finally { hideLoading(); }
 }
 
@@ -1370,11 +1374,11 @@ function shareOrderInfo() {
     const oNum = order.order_number || `#${order.id}`;
     const total = (document.getElementById('detailTotal').textContent || '').trim();
 
-    let text = `Заказ ${oNum}\nКлиент: ${order.customer}\nДата: ${formatDateDMY(order.date)}\nСтатус: ${order.status}\n\nПозиции:\n`;
+    let text = `${t('trash_order_word')} ${oNum}\n${t('customers_col_number_alt')}: ${order.customer}\n${t('history_col_date')}: ${formatDateDMY(order.date)}\n${t('customers_col_status')}: ${orderStatusLabelCap(order.status)}\n\n${t('orders_positions_title')}:\n`;
     (order.items || []).forEach(item => {
         text += `• ${item.product} — ${item.quantity} × ${formatMoney(item.price)} = ${formatMoney(item.quantity * item.price)}\n`;
     });
-    text += `\nИтого к оплате: ${total}`;
+    text += `\n${t('customers_total_due')}: ${total}`;
 
     shareOrCopyText(text);
 }
@@ -1389,7 +1393,7 @@ function deleteCurrentOrder() {
 // Переход из карточки заказа в карточку его клиента (раздел "Клиенты")
 function goToCustomerFromOrder() {
     const order = orders.find(o => o.id === currentOrderId);
-    if (!order || !order.customer_id) { showInfo('У этого заказа не указан клиент.'); return; }
+    if (!order || !order.customer_id) { showInfo(t('orders_no_customer_specified')); return; }
     showTab('customers');
     openCustomerDetail(order.customer_id);
 }
@@ -1416,7 +1420,7 @@ async function saveDetailHeader() {
     if (customerName !== (order.customer || '')) {
         const cust = customers.find(c => c.name === customerName);
         if (!cust) {
-            showInfo(`Клиент «${customerName}» не найден в списке. Выберите клиента из выпадающего списка.`);
+            showInfo(t('orders_customer_not_found').replace('{name}', customerName));
             document.getElementById('detailCustomer').value = order.customer || ''; // откатываем поле
             return;
         }
@@ -1483,13 +1487,13 @@ function renderDetailItems(order) {
     tbody.innerHTML = '';
     if (!order.items || !order.items.length) {
         const row = document.createElement('tr');
-        row.innerHTML = `<td colspan="5" class="text-center text-xs text-gray-400 py-2">Нет позиций. Добавьте изделие ниже.</td>`;
+        row.innerHTML = `<td colspan="5" class="text-center text-xs text-gray-400 py-2">${t('orders_no_items_hint')}</td>`;
         tbody.appendChild(row);
     } else {
         order.items.forEach((item, i) => {
             const total = formatMoney(item.quantity * item.price);
             const prod = products.find(p => p.id === item.product_id);
-            const unitLabel = prod && prod.unit ? (UNIT_PRODUCT_LABELS[prod.unit] || '') : '';
+            const unitLabel = prod && prod.unit ? unitAbbrev(prod.unit) : '';
             const row = document.createElement('tr');
             row.className = 'border-b cursor-pointer';
             row.onclick = () => openEditItemModal(i);
@@ -1548,10 +1552,10 @@ async function addItemToOrder() {
     const quantity = parseFloat(document.getElementById('newItemQty').value);
     const price    = parseFloat(document.getElementById('newItemPrice').value);
     if (!productName || isNaN(quantity) || quantity <= 0 || isNaN(price)) {
-        showInfo('Заполните изделие, количество и цену!'); return;
+        showInfo(t('orders_fill_product_qty_price')); return;
     }
     const prod = products.find(p => p.name === productName);
-    if (!prod) { showInfo('Изделие не найдено!'); return; }
+    if (!prod) { showInfo(t('orders_product_not_found')); return; }
     const itemCost = parseFloat((productUnitCost(prod) * quantity).toFixed(4));
 
     showLoading();
@@ -1600,8 +1604,8 @@ function autoFillNewItemPrice() {
     if (p) {
         document.getElementById('newItemPrice').value = p.price.toFixed(2);
         const qtyField = document.getElementById('newItemQty');
-        if (p.unit === 'kg') qtyField.placeholder = 'кг, напр. 1.4';
-        else if (p.unit === 'pcs') qtyField.placeholder = 'шт';
+        if (p.unit === 'kg') qtyField.placeholder = t('orders_kg_placeholder');
+        else if (p.unit === 'pcs') qtyField.placeholder = t('unit_pcs');
         else qtyField.placeholder = '1';
     }
 }
@@ -1635,10 +1639,10 @@ async function saveItemEdit() {
     const quantity = parseFloat(document.getElementById('editItemQty').value);
     const price    = parseFloat(document.getElementById('editItemPrice').value);
     if (!productName || isNaN(quantity) || quantity <= 0 || isNaN(price)) {
-        showInfo('Заполните все поля корректно!'); return;
+        showInfo(t('common_fill_correctly')); return;
     }
     const prod = products.find(p => p.name === productName);
-    if (!prod) { showInfo('Изделие не найдено!'); return; }
+    if (!prod) { showInfo(t('orders_product_not_found')); return; }
     const item = order.items[editItemIdx];
     const oldDesc = `«${item.product}» × ${item.quantity}`;
 
@@ -1688,10 +1692,10 @@ function deleteItem(itemIdx) {
 async function openOrderCostBreakdown() {
     const order = orders.find(o => o.id === currentOrderId);
     if (!order) return;
-    showLoading('Загружаю детализацию...');
+    showLoading(t('orders_loading_breakdown'));
     try {
         const orderItemIds = (order.items || []).map(it => it.id);
-        if (!orderItemIds.length) { hideLoading(); await showInfo('В заказе нет позиций.'); return; }
+        if (!orderItemIds.length) { hideLoading(); await showInfo(t('orders_no_items_in_order')); return; }
 
         const { data, error } = await db
             .from('order_item_ingredients')
@@ -1700,7 +1704,6 @@ async function openOrderCostBreakdown() {
         if (error) throw error;
 
         // Объединяем одинаковые ингредиенты по всему заказу
-        const UNIT_LABELS = { g: 'г', kg: 'кг', ml: 'мл', l: 'л', pcs: 'шт' };
         const merged = {}; // key = ingredient_name
         (data || []).forEach(row => {
             const key = row.ingredient_name;
@@ -1717,14 +1720,14 @@ async function openOrderCostBreakdown() {
 
         if (!rows.length) {
             hideLoading();
-            await showInfo('Детализация недоступна — рецепты не содержат прямых ингредиентов.');
+            await showInfo(t('orders_breakdown_unavailable'));
             return;
         }
 
         let html = '<table class="w-full stats-table table-clean" style="table-layout:fixed;">';
-        html += '<thead><tr style="background-color:#e3e8df;"><th class="p-1 text-xs text-left" style="width:40%;">Ингредиент</th><th class="p-1 text-xs text-right" style="width:20%;">Кол-во</th><th class="p-1 text-xs text-right" style="width:20%;">Цена/ед.</th><th class="p-1 text-xs text-right" style="width:20%;">Сумма</th></tr></thead><tbody>';
+        html += '<thead><tr style="background-color:#e3e8df;"><th class="p-1 text-xs text-left" style="width:40%;">' + t('inv_col_ingredient') + '</th><th class="p-1 text-xs text-right" style="width:20%;">' + t('inv_col_quantity') + '</th><th class="p-1 text-xs text-right" style="width:20%;">' + t('orders_price_per_unit_short') + '</th><th class="p-1 text-xs text-right" style="width:20%;">' + t('stats_col_sum') + '</th></tr></thead><tbody>';
         rows.forEach(r => {
-            const unitLabel = UNIT_LABELS[r.unit] || r.unit;
+            const unitLabel = unitAbbrev(r.unit);
             html += `<tr class="border-b">
                 <td class="p-0.5 table-text" style="word-break:break-word;">${escapeHtml(r.name)}</td>
                 <td class="p-0.5 table-text text-right whitespace-nowrap">${r.qty.toFixed(2)} ${unitLabel}</td>
@@ -1733,12 +1736,12 @@ async function openOrderCostBreakdown() {
             </tr>`;
         });
         html += `</tbody><tfoot><tr style="background-color:#e3e8df;" class="font-semibold">
-            <td class="p-0.5 table-text" colspan="3">Итого себестоимость</td>
+            <td class="p-0.5 table-text" colspan="3">${t('orders_total_cost_price')}</td>
             <td class="p-0.5 table-text text-right">${grandCost > 0 ? formatMoney(grandCost) : formatMoney(grandIngCost)}</td>
         </tr></tfoot></table>`;
 
         document.getElementById('orderCostBreakdownSubtitle').textContent =
-            `Заказ ${order.order_number || '#'+order.id} · ${formatDateDMY(order.date)} · ${escapeHtml(order.customer || '(без клиента)')}`;
+            `${t('trash_order_word')} ${order.order_number || '#'+order.id} · ${formatDateDMY(order.date)} · ${escapeHtml(order.customer || t('orders_no_customer'))}`;
         const content = document.getElementById('orderCostBreakdownContent');
         content.innerHTML = html;
         content.style.cssText = 'max-height:60vh; overflow-y:auto; touch-action:pan-y; overscroll-behavior:contain;';
@@ -1749,7 +1752,7 @@ async function openOrderCostBreakdown() {
         document.getElementById('orderCostBreakdownModal').style.display = 'flex';
     } catch (e) {
         console.error(e);
-        await showInfo('Ошибка загрузки детализации. Проверьте подключение.');
+        await showInfo(t('orders_breakdown_load_error'));
     } finally { hideLoading(); }
 }
 
@@ -1821,12 +1824,10 @@ async function saveOrderItemIngredients(orderItemId, prod, itemQty) {
 async function recalcOrderCostBreakdown() {
     const order = orders.find(o => o.id === currentOrderId);
     if (!order) return;
-    const ok = await showConfirm(
-        'Пересчитать детализацию по актуальному рецепту и текущим ценам?\n\nСтарый снимок будет удалён и заменён новым.'
-    );
+    const ok = await showConfirm(t('orders_recalc_confirm'));
     if (!ok) return;
 
-    showLoading('Пересчитываю...');
+    showLoading(t('orders_recalculating'));
     try {
         const orderItemIds = (order.items || []).map(it => it.id);
 
@@ -1860,7 +1861,7 @@ async function recalcOrderCostBreakdown() {
     } catch (e) {
         console.error(e);
         hideLoading();
-        await showInfo('Ошибка пересчёта. Проверьте подключение.');
+        await showInfo(t('orders_recalc_error'));
     }
 }
 

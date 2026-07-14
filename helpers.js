@@ -609,6 +609,14 @@ function orderStatusLabel(status) {
     return (typeof t === 'function' && map[status]) ? t(map[status]) : status;
 }
 
+// То же самое, но с заглавной буквы — для бейджей статуса в карточках
+// заказов (кнопка "Принят"/"In progress" и т.п.), где нужен именно
+// капитализированный вид, а не строчный (как в таблице заказов клиента).
+function orderStatusLabelCap(status) {
+    const map = { 'принят': 'order_status_accepted_cap', 'в работе': 'order_status_in_progress_cap', 'выполнен': 'order_status_done_cap' };
+    return (typeof t === 'function' && map[status]) ? t(map[status]) : status;
+}
+
 // Открывает Политику конфиденциальности / Условия использования поверх окна настроек
 // (через iframe на privacy.html/terms.html — те же файлы, что указаны в карточке Google Play),
 // без ухода со страницы приложения. src задаётся только при первом открытии — чтобы каждый

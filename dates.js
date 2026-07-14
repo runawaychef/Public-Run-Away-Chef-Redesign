@@ -34,3 +34,14 @@ const MONTH_NAMES_RU = [
     'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
     'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
 ];
+const MONTH_NAMES_EN = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+];
+
+// Название месяца (0-индекс) на текущем языке приложения. Для русского — в
+// родительном падеже ("за июля" уже само по себе устоявшийся у Сержа вариант
+// в этом проекте, сохраняем как есть), для английского падежей нет.
+function monthName(monthIdx0) {
+    return (typeof currentLang !== 'undefined' && currentLang === 'en') ? MONTH_NAMES_EN[monthIdx0] : MONTH_NAMES_RU[monthIdx0];
+}
