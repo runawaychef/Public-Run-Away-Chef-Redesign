@@ -1930,6 +1930,7 @@
                         <button id="employeesManageBtn" onclick="openEmployeesModal()" class="settings-row-btn hidden"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg><span data-i18n="settings_employees_manage">Сотрудники и права</span></button>
                         <button onclick="logoutEmployee()" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z"/></svg><span data-i18n="settings_switch_employee">Сменить сотрудника</span></button>
                         <button onclick="signOutAccount()" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15 9V5.25A2.25 2.25 0 0012.75 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 006.75 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9"/></svg><span data-i18n="settings_sign_out">Выйти из аккаунта</span></button>
+                        <button type="button" onclick="openDeleteAccountModal()" class="settings-row-btn danger perm-owner-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><span data-i18n="settings_delete_account">Удалить аккаунт</span></button>
                     </div>
                 </div>
 
@@ -1998,6 +1999,18 @@
                 <textarea id="contactMessage" rows="5" placeholder="Ваше сообщение..." data-i18n-placeholder="contact_placeholder" class="border p-2 rounded-xl w-full table-text mb-3" style="resize:vertical;"></textarea>
                 <button onclick="sendContactMessage()" class="pill-btn w-full justify-center mb-2" data-i18n="contact_send">Отправить</button>
                 <button onclick="closeLegalModal('contactModal')" class="pill-btn-secondary w-full justify-center" data-i18n="contact_cancel">Отмена</button>
+            </div>
+        </div>
+
+        <!-- Удаление аккаунта — предупреждение с объяснением, что именно удаляется,
+             затем готовое письмо через mailto (та же логика, что "Написать нам") —
+             это и есть in-app path для запроса на удаление аккаунта. -->
+        <div id="deleteAccountModal" class="modal">
+            <div class="modal-content" style="max-width:360px;">
+                <h2 class="text-sm font-semibold mb-1 text-gray-800" data-i18n="delacc_title">Удаление аккаунта</h2>
+                <p class="text-xs text-gray-500 mb-3" data-i18n="delacc_warning">Будут безвозвратно удалены все данные организации: заказы, клиенты, ассортимент, склад и журнал действий. Отменить это действие после обработки будет нельзя. При отправке откроется ваше почтовое приложение с уже готовым письмом в поддержку — мы обработаем запрос и удалим данные в разумный срок.</p>
+                <button onclick="sendDeleteAccountRequest()" class="pill-btn-danger w-full justify-center mb-2" data-i18n="delacc_confirm_btn">Отправить запрос на удаление</button>
+                <button onclick="closeLegalModal('deleteAccountModal')" class="pill-btn-secondary w-full justify-center" data-i18n="common_cancel">Отмена</button>
             </div>
         </div>
 
@@ -2642,7 +2655,7 @@
 
 <script src="dates.js?v=8"></script>
     <script src="money.js?v=9"></script>
-    <script src="i18n.js?v=1"></script>
+    <script src="i18n.js?v=2"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=3"></script>
     <script src="auth.js?v=12"></script>
@@ -2662,7 +2675,7 @@
 <script src="history.js?v=9"></script>
 <script src="modals.js?v=13"></script>
 <script src="demoData.js?v=10"></script>
-<script src="helpers.js?v=20"></script>
+<script src="helpers.js?v=21"></script>
 <script>
 // SUPABASE_URL, SUPABASE_KEY, db перенесены в supabaseClient.js
 

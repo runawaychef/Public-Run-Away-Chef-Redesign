@@ -69,6 +69,7 @@ const I18N = {
         settings_employees_manage: 'Сотрудники и права',
         settings_switch_employee: 'Сменить сотрудника',
         settings_sign_out: 'Выйти из аккаунта',
+        settings_delete_account: 'Удалить аккаунт',
         settings_about: 'О приложении',
         settings_privacy: 'Политика конфиденциальности',
         settings_terms: 'Условия использования',
@@ -84,6 +85,14 @@ const I18N = {
         contact_placeholder: 'Ваше сообщение...',
         contact_send: 'Отправить',
         contact_cancel: 'Отмена',
+
+        // Окно "Удаление аккаунта"
+        delacc_title: 'Удаление аккаунта',
+        delacc_warning: 'Будут безвозвратно удалены все данные организации: заказы, клиенты, ассортимент, склад и журнал действий. Отменить это действие после обработки будет нельзя. При отправке откроется ваше почтовое приложение с уже готовым письмом в поддержку — мы обработаем запрос и удалим данные в разумный срок.',
+        delacc_confirm_btn: 'Отправить запрос на удаление',
+        delacc_subject: 'Simple Bake — запрос на удаление аккаунта',
+        delacc_body_line1: 'Прошу удалить аккаунт и все данные организации:',
+        delacc_body_line2: 'Понимаю, что это действие необратимо.',
 
         // Общие переиспользуемые элементы (кнопки, тосты, поиск, подсказки иконок)
         common_back: 'Назад',
@@ -868,6 +877,7 @@ const I18N = {
         settings_employees_manage: 'Staff & permissions',
         settings_switch_employee: 'Switch staff member',
         settings_sign_out: 'Sign out',
+        settings_delete_account: 'Delete account',
         settings_about: 'About',
         settings_privacy: 'Privacy Policy',
         settings_terms: 'Terms of Use',
@@ -883,6 +893,14 @@ const I18N = {
         contact_placeholder: 'Your message...',
         contact_send: 'Send',
         contact_cancel: 'Cancel',
+
+        // "Delete account" window
+        delacc_title: 'Delete account',
+        delacc_warning: 'All organization data will be permanently deleted: orders, customers, catalog, inventory, and the activity log. This cannot be undone once processed. Sending will open your mail app with a ready message to support — we will process the request and delete the data within a reasonable time.',
+        delacc_confirm_btn: 'Send deletion request',
+        delacc_subject: 'Simple Bake — account deletion request',
+        delacc_body_line1: 'Please delete the account and all data for organization:',
+        delacc_body_line2: 'I understand this action is irreversible.',
 
         // Common reusable elements (buttons, toasts, search, icon tooltips)
         common_back: 'Back',

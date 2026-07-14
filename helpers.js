@@ -671,6 +671,26 @@ function sendContactMessage() {
     closeLegalModal('contactModal');
 }
 
+// "Удалить аккаунт" — сначала предупреждение о том, что именно удаляется и что
+// действие необратимо, затем — готовое письмо в поддержку через mailto (реальное
+// удаление пока делается вручную, см. Privacy Policy раздел 6). Это и есть in-app
+// путь для запроса на удаление аккаунта, требуемый политикой Google Play.
+function openDeleteAccountModal() {
+    document.getElementById('deleteAccountModal').style.display = 'flex';
+}
+
+function sendDeleteAccountRequest() {
+    const subjectText = (typeof t === 'function') ? t('delacc_subject') : 'Simple Bake — запрос на удаление аккаунта';
+    const line1 = (typeof t === 'function') ? t('delacc_body_line1') : 'Прошу удалить аккаунт и все данные организации:';
+    const line2 = (typeof t === 'function') ? t('delacc_body_line2') : 'Понимаю, что это действие необратимо.';
+    const orgLine = `${currentOrgName || '—'} (org_id=${currentOrgId != null ? currentOrgId : '—'})`;
+    const body = `${line1}\n${orgLine}\n\n${line2}`;
+    const subject = encodeURIComponent(subjectText);
+    const encodedBody = encodeURIComponent(body);
+    window.location.href = `mailto:simplebake.support@gmail.com?subject=${subject}&body=${encodedBody}`;
+    closeLegalModal('deleteAccountModal');
+}
+
 // Готовая разметка одной кнопки "Копировать" для .oc-swipe-actions — общая для
 // изделий/ингредиентов/полуфабрикатов, чтобы иконка и цвет не разъезжались.
 function refCopySwipeBtnHtml(onclickCall) {
