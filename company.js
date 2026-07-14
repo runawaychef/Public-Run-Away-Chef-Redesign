@@ -64,6 +64,14 @@ const COUNTRY_OPTIONS = [
     { code: 'GE', label: 'Грузия', labelEn: 'Georgia', currency: 'GEL', vatRate: 0.18 },
     { code: 'MD', label: 'Молдова', labelEn: 'Moldova', currency: 'MDL', vatRate: 0.20 },
     { code: 'UA', label: 'Украина', labelEn: 'Ukraine', currency: 'UAH', vatRate: 0.20 },
+    { code: 'GB', label: 'Великобритания', labelEn: 'United Kingdom', currency: 'GBP', vatRate: 0.20 },
+    { code: 'AE', label: 'ОАЭ', labelEn: 'United Arab Emirates', currency: 'AED', vatRate: 0.05 },
+    // США и Канада сознательно пока не добавлены: там не НДС, а другой по механике
+    // налог (sales tax в США — без единой ставки, по штатам; GST/HST в Канаде —
+    // федеральный + провинциальный). Слово "НДС"/"VAT" сейчас зашито ~в 20 местах
+    // интерфейса, включая сам счёт-фактуру ("VAT INVOICE" и т.п.) — добавлять эти
+    // страны нужно вместе с веткой терминологии (Sales Tax/Tax invoice), а не просто
+    // строкой в этом списке. Сделать в течение 14-дневного окна тестирования.
 ];
 
 function countryLabel(code) {
