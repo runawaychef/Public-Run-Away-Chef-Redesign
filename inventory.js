@@ -551,7 +551,7 @@ async function saveInventarization() {
         await loadInventory();
         closeModal();
         displayIngredients();
-        logActivity('inventory', `Инвентаризация ${today}: скорректировано ${rows.length} позиций`);
+        logActivity('inventory', `${t('ing_inventarization_note')} ${today}: ${t('log_adjusted')} ${rows.length} ${t('common_positions_word')}`);
         await showInfo(`${t('inventory_saved_prefix')} ${t('common_adjusted')}: ${rows.length} ${t('common_positions_word')}.`);
     } catch(e) { console.error(e); showInfo(t('error_save_generic')); }
     finally { hideLoading(); }
@@ -589,7 +589,7 @@ async function saveInventoryAdd() {
         // Цена здесь не указывается отдельно — используем текущую цену ингредиента
         if (ing) await createStockBatch('ingredient', ingId, ingredientUnitPrice(ing), qty, 'приход', notes || null);
         closeModal();
-        logActivity('inventory', `Пополнен склад: «${ing ? ing.name : ingId}» +${qty}`);
+        logActivity('inventory', `${t('log_stock_replenished')}: «${ing ? ing.name : ingId}» +${qty}`);
         await loadInventory();
         // Обновляем окно склада
         await openInventoryModal();

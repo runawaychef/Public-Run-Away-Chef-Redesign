@@ -267,7 +267,7 @@ async function selectEmployee(emp) {
     initRealtime();
     refreshFab();
     setTimeout(refreshFab, 150);
-    logActivity('auth', `Вход: ${emp.name}`);
+    logActivity('auth', `${t('log_signin')}: ${emp.name}`);
 
     startPeriodicRefresh();
 }
@@ -299,7 +299,7 @@ function startPeriodicRefresh() {
 async function logoutEmployee() {
     if (!(await showConfirm(t('employees_switch_confirm')))) return;
     closeModal();
-    logActivity('auth', `Выход: ${currentEmployee ? currentEmployee.name : ''}`);
+    logActivity('auth', `${t('log_signout')}: ${currentEmployee ? currentEmployee.name : ''}`);
     currentEmployee = null;
     localStorage.removeItem('currentEmployee');
     renderEmployeePickerList();
@@ -488,12 +488,12 @@ async function saveEmployee() {
             // Редактирование существующей записи (имя + права)
             const { error } = await db.from('employees').update({ name, ...permissions }).eq('id', id);
             if (error) throw error;
-            logActivity('system', `Обновлены данные сотрудника: ${name}`);
+            logActivity('system', `${t('log_employee_updated')}: ${name}`);
         } else if (email) {
             // Создаём приглашение на личный вход — запись сотрудника появится сама при регистрации
             const { error } = await db.from('invitations').insert({ org_id: currentOrgId, email, name, ...permissions });
             if (error) throw error;
-            logActivity('system', `Отправлено приглашение сотруднику: ${name} (${email})`);
+            logActivity('system', `${t('log_invite_sent')}: ${name} (${email})`);
             await reloadEmployeesList();
             openEmployeesModal();
             await showInfo(`${t('employees_invite_created_prefix')} ${email}`);
@@ -502,7 +502,7 @@ async function saveEmployee() {
             // Обычная запись для входа по имени на общем устройстве
             const { error } = await db.from('employees').insert({ org_id: currentOrgId, name, ...permissions });
             if (error) throw error;
-            logActivity('system', `Создан сотрудник: ${name}`);
+            logActivity('system', `${t('log_employee_created')}: ${name}`);
         }
         await reloadEmployeesList();
         openEmployeesModal();
@@ -606,7 +606,7 @@ async function fixateAllItemCosts() {
                 if (!error) { rec.item.item_cost = rec.item_cost; fixed++; }
             }
         }
-        logActivity('system', `Зафиксирована себестоимость ${fixed} позиций заказов`);
+        logActivity('system', `${t('log_cost_fixed')} ${fixed} ${t('log_order_items_word')}`);
         await showInfo(`Готово: зафиксировано ${fixed} позиций из ${toFix.length}.`);
     } catch (e) {
         console.error(e);

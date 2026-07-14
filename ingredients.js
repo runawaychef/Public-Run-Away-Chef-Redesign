@@ -299,7 +299,7 @@ async function saveNewIngredient() {
 
         displayIngredients();
         openIngredientDetail(newIng.id);
-        logActivity('ingredient', `Создан ингредиент: «${name}»`);
+        logActivity('ingredient', `${t('log_ingredient_created')}: «${name}»`);
     } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }
@@ -325,7 +325,7 @@ async function copyIngredient(i) {
         ingredients.push(newIng);
         displayIngredients();
         openIngredientDetail(newIng.id);
-        logActivity('ingredient', `Скопирован ингредиент «${src.name}» → «${newIng.name}»`);
+        logActivity('ingredient', `${t('log_ingredient_copied')} «${src.name}» → «${newIng.name}»`);
     } catch (e) { console.error(e); showInfo(t('ing_copy_error')); }
     finally { hideLoading(); }
 }
@@ -460,7 +460,7 @@ async function saveStockAndPrice() {
         await loadIngredientPriceHistory(ing.id);
         await renderIngredientStockBlock(ing);
         displayIngredients();
-        logActivity('ingredient', `Обновлён склад/цена: «${ing.name}»${stockQty > 0 ? ` +${stockQty}` : ''}`);
+        logActivity('ingredient', `${t('log_stock_price_updated')}: «${ing.name}»${stockQty > 0 ? ` +${stockQty}` : ''}`);
         document.getElementById('idStockQty').value = '';
     } catch (e) { console.error(e); showInfo(t('error_save_generic')); }
     finally { hideLoading(); }
@@ -493,7 +493,7 @@ async function saveIngredientHeader() {
         ing.name = name;
         ing.unit = unit;
         displayIngredients();
-        logActivity('ingredient', `Ингредиент обновлён: «${name}»`);
+        logActivity('ingredient', `${t('log_ingredient_updated')}: «${name}»`);
     } catch(e) { console.error(e); showInfo(t('error_save_generic')); }
 }
 
@@ -552,7 +552,7 @@ async function saveWriteOff() {
         closeModal();
         await renderIngredientStockBlock(ing);
         displayIngredients();
-        logActivity('inventory', `Списание: «${ing.name}» -${qty} (${notes})`);
+        logActivity('inventory', `${t('log_writeoff')}: «${ing.name}» -${qty} (${notes})`);
     } catch (e) { console.error(e); showInfo(t('error_save_generic')); }
     finally { hideLoading(); }
 }
@@ -600,7 +600,7 @@ async function saveIdNewPrice() {
         renderIngredientUnitPrice(ing);
         await loadIngredientPriceHistory(ing.id);
         displayIngredients(); // обновляем список
-        logActivity('ingredient', `Обновлена цена ингредиента «${ing.name}» с ${validFrom}`);
+        logActivity('ingredient', `${t('log_price_updated')} «${ing.name}» ${t('log_from_date')} ${validFrom}`);
         await showInfo(t('ingredient_price_saved'));
     } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
@@ -647,7 +647,7 @@ async function saveIdHeader() {
         ing.name = name;
         ing.unit = unit;
         renderIngredientUnitPrice(ing);
-        logActivity('ingredient', `Изменён ингредиент «${name}»`);
+        logActivity('ingredient', `${t('log_ingredient_changed')} «${name}»`);
         showAutosaveToast();
     } catch (e) { console.error(e); }
 }
@@ -1060,7 +1060,7 @@ async function confirmQuickAddIngredient() {
         const newIng = { id: data.id, name: data.name, package_price: Number(data.package_price), package_size: Number(data.package_size), unit: data.unit };
         ingredients.push(newIng);
         displayIngredients();
-        logActivity('ingredient', `Добавлен ингредиент «${name}» (из карточки рецепта)`);
+        logActivity('ingredient', `${t('log_ingredient_added')} «${name}» (${t('log_from_recipe_card')})`);
         closeModal();
 
         // Подставляем созданный ингредиент обратно в поле поиска того рецепта,

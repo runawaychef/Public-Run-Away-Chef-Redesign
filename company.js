@@ -123,7 +123,7 @@ async function selectCountry(code) {
             .eq('id', currentOrgId));
         currentOrgCurrency = found.currency;
         currentOrgVatRate = found.vatRate;
-        logActivity('system', `Изменена страна в информации о компании: ${found.label}`);
+        logActivity('system', `${t('log_country_changed')}: ${found.label}`);
         showAutosaveToast();
     } catch (e) {
         console.error(e);
@@ -236,7 +236,7 @@ async function saveCompanyInfo(field, value) {
             currentOrgVatRate = Number(value);
         }
 
-        logActivity('system', `Изменено поле «${field}» в информации о компании`);
+        logActivity('system', `${t('log_field_changed')} «${field}» ${t('log_in_company_info')}`);
         showAutosaveToast();
     } catch (e) {
         console.error(e);

@@ -202,7 +202,7 @@ async function savePayment() {
             await updateChecked(db.from('order_payments')
                 .update({ amount, method, paid_at: paidAt, note: note || null })
                 .eq('id', id));
-            logActivity('order', `Изменена оплата: ${formatMoney(amount)} (${method})`, currentOrderId);
+            logActivity('order', `${t('log_payment_changed')}: ${formatMoney(amount)} (${method})`, currentOrderId);
         } else {
             const { error } = await db.from('order_payments').insert({
                 org_id: currentOrgId,
@@ -212,7 +212,7 @@ async function savePayment() {
                 created_by: currentEmployee ? currentEmployee.id : null
             });
             if (error) throw error;
-            logActivity('order', `Внесена оплата ${formatMoney(amount)} (${method})`, currentOrderId);
+            logActivity('order', `${t('log_payment_added')} ${formatMoney(amount)} (${method})`, currentOrderId);
         }
         document.getElementById('addPaymentModal').style.display = 'none';
         await loadOrderPayments(currentOrderId);
@@ -231,7 +231,7 @@ async function deletePayment() {
         suppressRealtimeFor3s();
         const { error } = await db.from('order_payments').delete().eq('id', id);
         if (error) throw error;
-        logActivity('order', 'Удалена запись об оплате', currentOrderId);
+        logActivity('order', t('log_payment_deleted'), currentOrderId);
         document.getElementById('addPaymentModal').style.display = 'none';
         await loadOrderPayments(currentOrderId);
     } catch (e) {

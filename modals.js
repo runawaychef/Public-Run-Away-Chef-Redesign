@@ -44,7 +44,7 @@ async function confirmDelete() {
                 refreshFab();
             }
             displayProducts();
-            logActivity('product', `Удалено изделие «${prod.name}»`);
+            logActivity('product', `${t('log_product_deleted')} «${prod.name}»`);
         } else if (deleteType === 'customer') {
             const cust = customers[deleteId];
             const wasOpenInDetail = cust.id === currentCustomerId;
@@ -58,7 +58,7 @@ async function confirmDelete() {
                 refreshFab();
             }
             displayCustomers();
-            logActivity('customer', `Удалён клиент «${cust.name}»`);
+            logActivity('customer', `${t('log_customer_deleted')} «${cust.name}»`);
         } else if (deleteType === 'order') {
             const order = orders[deleteId];
             const wasOpenInDetail = order.id === currentOrderId;
@@ -76,7 +76,7 @@ async function confirmDelete() {
                 document.getElementById('orderDetail').classList.remove('active');
             }
             displayOrders();
-            logActivity('order', `Заказ №${order.id} (клиент «${order.customer}») перемещён в корзину`);
+            logActivity('order', `${t('trash_order_word')} №${order.id} (${t('delete_label_customer')} «${order.customer}») ${t('log_moved_to_trash')}`);
         } else if (deleteType === 'item') {
             const order = orders.find(o => o.id === currentOrderId);
             if (order) {
@@ -93,7 +93,7 @@ async function confirmDelete() {
                 if (error) throw error;
                 order.items.splice(deleteId, 1);
                 renderDetailItems(order);
-                logActivity('item', `Удалена позиция «${item.product}» × ${item.quantity} из заказа №${order.id}`, order.id);
+                logActivity('item', `${t('log_position_deleted')} «${item.product}» × ${item.quantity} ${t('log_from_order')} №${order.id}`, order.id);
             }
         } else if (deleteType === 'ingredient') {
             const ing = ingredients[deleteId];
@@ -108,7 +108,7 @@ async function confirmDelete() {
                 refreshFab();
             }
             displayIngredients();
-            logActivity('ingredient', `Удалён ингредиент «${ing.name}»`);
+            logActivity('ingredient', `${t('log_ingredient_deleted')} «${ing.name}»`);
         } else if (deleteType === 'recipeItem') {
             const prod = products.find(p => p.id === currentProductId);
             if (prod) {
@@ -118,7 +118,7 @@ async function confirmDelete() {
                 prod.ingredients.splice(deleteId, 1);
                 renderProductRecipe(prod);
                 await resetProductRecipeConfirmed(prod);
-                logActivity('product', `Удалён ингредиент из рецепта «${prod.name}»`);
+                logActivity('product', `${t('log_ingredient_removed_from_recipe')} «${prod.name}»`);
             }
         } else if (deleteType === 'semiFinished') {
             const sf = semiFinished[deleteId];
@@ -133,7 +133,7 @@ async function confirmDelete() {
                 refreshFab();
             }
             displaySemiFinished();
-            logActivity('semiFinished', `Удалён полуфабрикат «${sf.name}»`);
+            logActivity('semiFinished', `${t('log_sf_deleted')} «${sf.name}»`);
         } else if (deleteType === 'sfRecipeItem') {
             const sf = semiFinished.find(s => s.id === currentSemiFinishedId);
             if (sf) {
@@ -143,7 +143,7 @@ async function confirmDelete() {
                 sf.ingredients.splice(deleteId, 1);
                 renderSemiFinishedRecipe(sf);
                 await resetSfRecipeConfirmed(sf);
-                logActivity('semiFinished', `Удалён ингредиент из рецепта полуфабриката «${sf.name}»`);
+                logActivity('semiFinished', `${t('log_ingredient_removed_from_sf_recipe')} «${sf.name}»`);
             }
         }
         closeModal();

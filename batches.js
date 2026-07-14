@@ -181,7 +181,7 @@ async function saveBatchEdit() {
         await loadInventory();
         closeModal();
         await refreshBatchesAndStockAfterEdit(itemType, batch.ingredient_id || batch.semi_finished_id);
-        logActivity('inventory', 'Партия отредактирована вручную');
+        logActivity('inventory', t('log_batch_edited'));
     } catch (e) { console.error(e); showInfo(t('error_save_generic')); }
     finally { hideLoading(); }
 }
@@ -215,7 +215,7 @@ async function deleteBatch() {
         await loadInventory();
         closeModal();
         await refreshBatchesAndStockAfterEdit(itemType, batch.ingredient_id || batch.semi_finished_id);
-        logActivity('inventory', 'Партия удалена вручную');
+        logActivity('inventory', t('log_batch_deleted'));
     } catch (e) { console.error(e); showInfo(t('error_delete_generic')); }
     finally { hideLoading(); }
 }

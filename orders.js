@@ -567,7 +567,7 @@ async function quickSetOrderStatus(orderId, newStatus) {
     try {
         await updateChecked(db.from('orders').update({ status: newStatus }).eq('id', orderId));
         const oNum = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
-        logActivity('order', `Заказ ${oNum}: статус «${oldStatus}» → «${newStatus}»`, orderId);
+        logActivity('order', `${t('trash_order_word')} ${oNum}: ${t('customers_col_status')} «${orderStatusLabel(oldStatus)}» → «${orderStatusLabel(newStatus)}»`, orderId);
     } catch (e) {
         order.status = oldStatus; // откат при ошибке сети/сохранения
         displayOrders();
@@ -993,7 +993,7 @@ async function createDraftOrderAndOpen() {
         _draftOrderIds.add(newOrder.id);
         displayOrders();
         openOrderDetail(newOrder.id);
-        logActivity('order', `Создан черновик заказа №${newOrder.id}`, newOrder.id);
+        logActivity('order', `${t('log_order_draft_created')} №${newOrder.id}`, newOrder.id);
     } catch (e) { console.error(e); showDbError(e, t('orders_create_error')); }
     finally { hideLoading(); }
 }
@@ -1078,7 +1078,7 @@ async function copyOrder(i) {
 
         displayOrders();
         openOrderDetail(copy.id);
-        logActivity('order', `Скопирован заказ №${o.id} → новый заказ №${copy.id} (клиент «${o.customer}»)`, copy.id);
+        logActivity('order', `${t('log_order_copied')} №${o.id} → ${t('log_new_order')} №${copy.id} (${t('delete_label_customer')} «${o.customer}»)`, copy.id);
     } catch (e) { console.error(e); showDbError(e, t('orders_copy_error')); }
     finally { hideLoading(); }
 }
@@ -1342,7 +1342,7 @@ async function restoreOrder(orderId) {
         await updateChecked(db.from('orders').update({ deleted_at: null }).eq('id', orderId));
         closeModal();
         await loadAllData();
-        logActivity('order', `Заказ №${orderId} восстановлен из корзины`);
+        logActivity('order', `${t('trash_order_word')} №${orderId} ${t('log_restored_from_trash')}`);
         await showInfo(`${t('trash_order_word')} ${t('order_number_symbol')}${orderId} ${t('orders_restored')}.`);
     } catch(e) { console.error(e); showInfo(t('orders_restore_error')); }
     finally { hideLoading(); }
@@ -1360,7 +1360,7 @@ async function permanentDeleteOrder(orderId) {
         const { error } = await db.from('orders').delete().eq('id', orderId);
         if (error) throw error;
         closeModal();
-        logActivity('order', `Заказ №${orderId} удалён окончательно`);
+        logActivity('order', `${t('trash_order_word')} №${orderId} ${t('orders_deleted_forever')}`);
         await showInfo(`${t('trash_order_word')} ${t('order_number_symbol')}${orderId} ${t('orders_deleted_forever')}.`);
     } catch(e) { console.error(e); showInfo(t('error_delete_generic')); }
     finally { hideLoading(); }
@@ -1470,13 +1470,13 @@ async function saveDetailHeader() {
 
         // Журнал: фиксируем только реально изменившиеся поля
         const changes = [];
-        if (old.customer !== order.customer) changes.push(`клиент «${old.customer}» → «${order.customer}»`);
-        if (old.date !== order.date) changes.push(`дата ${formatDateDMY(old.date)} → ${formatDateDMY(order.date)}`);
-        if (old.status !== order.status) changes.push(`статус «${old.status}» → «${order.status}»`);
-        if (old.discount !== order.discount) changes.push(`скидка ${old.discount}% → ${order.discount}%`);
-        if ((old.employee || '') !== (order.employee || '')) changes.push(`исполнитель «${old.employee || '—'}» → «${order.employee || '—'}»`);
-        if (old.notes !== order.notes) changes.push(`комментарий изменён`);
-        if (changes.length) logActivity('order', `Изменён заказ №${order.id}: ${changes.join(', ')}`, order.id);
+        if (old.customer !== order.customer) changes.push(`${t('delete_label_customer')} «${old.customer}» → «${order.customer}»`);
+        if (old.date !== order.date) changes.push(`${t('history_col_date').toLowerCase()} ${formatDateDMY(old.date)} → ${formatDateDMY(order.date)}`);
+        if (old.status !== order.status) changes.push(`${t('customers_col_status').toLowerCase()} «${orderStatusLabel(old.status)}» → «${orderStatusLabel(order.status)}»`);
+        if (old.discount !== order.discount) changes.push(`${t('customers_discount_word').toLowerCase()} ${old.discount}% → ${order.discount}%`);
+        if ((old.employee || '') !== (order.employee || '')) changes.push(`${t('orders_master').toLowerCase()} «${old.employee || '—'}» → «${order.employee || '—'}»`);
+        if (old.notes !== order.notes) changes.push(t('log_comment_changed'));
+        if (changes.length) logActivity('order', `${t('log_order_changed')} №${order.id}: ${changes.join(', ')}`, order.id);
         showAutosaveToast();
     } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
@@ -1589,7 +1589,7 @@ async function addItemToOrder() {
         }
 
         renderDetailItems(order);
-        logActivity('item', `Добавлена позиция в заказ №${order.id}: «${prod.name}» × ${quantity}`, order.id);
+        logActivity('item', `${t('log_position_added')} ${t('log_to_order')} №${order.id}: «${prod.name}» × ${quantity}`, order.id);
         // Сбросить поля
         document.getElementById('newItemProduct').value = '';
         document.getElementById('newItemQty').value    = '';
@@ -1676,7 +1676,7 @@ async function saveItemEdit() {
 
         renderDetailItems(order);
         closeModal();
-        logActivity('item', `Изменена позиция в заказе №${order.id}: ${oldDesc} → «${prod.name}» × ${quantity}`, order.id);
+        logActivity('item', `${t('log_position_changed')} ${t('log_in_order')} №${order.id}: ${oldDesc} → «${prod.name}» × ${quantity}`, order.id);
     } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }
@@ -1857,7 +1857,7 @@ async function recalcOrderCostBreakdown() {
         renderDetailItems(order);
         hideLoading();
         await openOrderCostBreakdown(); // перезагружаем детализацию
-        logActivity('order', `Пересчитана себестоимость заказа №${order.id} по актуальному рецепту`);
+        logActivity('order', `${t('log_cost_recalculated')} №${order.id} ${t('log_by_current_recipe')}`);
     } catch (e) {
         console.error(e);
         hideLoading();

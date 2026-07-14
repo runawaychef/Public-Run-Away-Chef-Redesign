@@ -182,7 +182,7 @@ async function saveNewProduct() {
 
         displayProducts();
         openProductDetail(newProd.id);
-        logActivity('product', `Создано изделие: «${name}»`);
+        logActivity('product', `${t('log_product_created')}: «${name}»`);
     } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }
@@ -222,7 +222,7 @@ async function saveProductEdit() {
         // Обновить название изделия в позициях заказов (в кэше)
         orders.forEach(o => o.items.forEach(it => { if (it.product_id === prod.id) it.product = name; }));
         displayProducts(); closeModal();
-        logActivity('product', `Изменено изделие «${oldName}» (${formatMoney(oldPrice)}) → «${name}» (${formatMoney(price)})`);
+        logActivity('product', `${t('log_product_changed')} «${oldName}» (${formatMoney(oldPrice)}) → «${name}» (${formatMoney(price)})`);
     } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }
@@ -248,7 +248,7 @@ async function copyProduct(i) {
         products.push(newProd);
         displayProducts();
         openProductDetail(newProd.id);
-        logActivity('product', `Скопировано изделие «${src.name}» → «${newProd.name}»`);
+        logActivity('product', `${t('log_product_copied')} «${src.name}» → «${newProd.name}»`);
     } catch (e) { console.error(e); showInfo(t('ing_copy_error')); }
     finally { hideLoading(); }
 }
@@ -469,7 +469,7 @@ async function savePdHeader() {
         orders.forEach(o => o.items.forEach(it => { if (it.product_id === prod.id) it.product = name; }));
         updatePdUnitUI(unit);
         renderProductRecipe(prod);
-        logActivity('product', `Изменено изделие «${prod.name}»${unitChanged ? ` (единица: ${unitAbbrev(unit) || '—'})` : ''}`);
+        logActivity('product', `${t('log_product_changed')} «${prod.name}»${unitChanged ? ` (${t('ing_unit_label').toLowerCase()}: ${unitAbbrev(unit) || '—'})` : ''}`);
         showAutosaveToast();
     } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
@@ -581,7 +581,7 @@ async function addIngredientToRecipe() {
             const ing = ingredients.find(i => i.id === selectedId);
             itemName = ing ? ing.name : '';
         }
-        logActivity('product', `В рецепт «${prod.name}» добавлен «${itemName}» (${quantity})`);
+        logActivity('product', `${t('log_added_to_recipe')} «${prod.name}»: «${itemName}» (${quantity})`);
         inputEl.value = '';
         document.getElementById('newRecipeQty').value = '';
     } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
@@ -651,7 +651,7 @@ async function saveRecipeItemEdit() {
         };
         renderProductRecipe(prod);
         closeModal();
-        logActivity('product', `Изменён ингредиент в рецепте «${prod.name}»`);
+        logActivity('product', `${t('log_ingredient_changed_in_recipe')} «${prod.name}»`);
     } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }
@@ -686,7 +686,7 @@ async function toggleRecipeConfirmed() {
         const { error } = await db.from('products').update({ recipe_confirmed: checked }).eq('id', prod.id);
         if (error) throw error;
         prod.recipe_confirmed = checked;
-        logActivity('product', `Рецепт «${prod.name}» отмечен как ${checked ? 'заполненный полностью' : 'неполный'}`);
+        logActivity('product', `${t('log_recipe_word')} «${prod.name}» ${t('log_marked_as')} ${checked ? t('log_fully_filled') : t('log_incomplete')}`);
     } catch (e) {
         console.error(e); showInfo(t('error_save_check_connection'));
         document.getElementById('pdRecipeConfirmed').checked = !checked;
@@ -705,7 +705,7 @@ async function toggleTrackStock() {
         prod.track_stock = checked;
         // Обновляем пульсацию корзинки
         if (typeof updateInventoryAlertDot === 'function') updateInventoryAlertDot();
-        logActivity('product', `«${prod.name}» — отслеживание склада ${checked ? 'включено' : 'отключено'}`);
+        logActivity('product', `«${prod.name}» — ${t('log_stock_tracking')} ${checked ? t('log_enabled') : t('log_disabled')}`);
     } catch (e) {
         console.error(e); showInfo(t('error_save_check_connection'));
         document.getElementById('pdTrackStock').checked = !checked;
@@ -773,7 +773,7 @@ async function copyRecipeFromProductByName(sourceName) {
         if (!prod.ingredients) prod.ingredients = [];
         data.forEach(d => prod.ingredients.push({ id: d.id, ingredient_id: d.ingredient_id, semi_finished_id: d.semi_finished_id, quantity: Number(d.quantity) }));
         renderProductRecipe(prod);
-        logActivity('product', `В рецепт «${prod.name}» скопировано ${toCopy.length} поз. из рецепта «${sourceName}»`);
+        logActivity('product', `${t('log_copied_to_recipe')} «${prod.name}»: ${toCopy.length} ${t('sf_position_many')} ${t('sf_copy_positions_confirm_from')} «${sourceName}»`);
     } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }

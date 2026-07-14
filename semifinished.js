@@ -235,7 +235,7 @@ async function createDraftSemiFinishedAndOpen() {
         _draftSemiFinishedIds.add(newSf.id);
         displaySemiFinished();
         openSemiFinishedDetail(newSf.id);
-        logActivity('semiFinished', `Создан черновик полуфабриката №${newSf.id}`);
+        logActivity('semiFinished', `${t('log_sf_draft_created')} №${newSf.id}`);
     } catch (e) { console.error(e); showInfo(t('sf_create_error')); }
     finally { hideLoading(); }
 }
@@ -275,7 +275,7 @@ async function copySemiFinished(i) {
         semiFinished.push(newSf);
         displaySemiFinished();
         openSemiFinishedDetail(newSf.id);
-        logActivity('semiFinished', `Скопирован полуфабрикат «${src.name}» → «${newSf.name}»`);
+        logActivity('semiFinished', `${t('log_sf_copied')} «${src.name}» → «${newSf.name}»`);
     } catch (e) { console.error(e); showInfo(t('ing_copy_error')); }
     finally { hideLoading(); }
 }
@@ -353,7 +353,7 @@ async function saveSfdHeader() {
         if (error) throw error;
         sf.name = name; sf.batch_size = batchSize; sf.unit = unit; sf.other_costs = parseFloat(otherCosts.toFixed(2));
         renderSemiFinishedRecipe(sf);
-        logActivity('semiFinished', `Изменён полуфабрикат «${sf.name}»`);
+        logActivity('semiFinished', `${t('log_sf_changed')} «${sf.name}»`);
         showAutosaveToast();
     } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
@@ -424,7 +424,7 @@ async function addIngredientToSfRecipe() {
         if (!sf.ingredients) sf.ingredients = [];
         sf.ingredients.push({ id: data.id, ingredient_id: ingredientId, quantity: Number(data.quantity) });
         renderSemiFinishedRecipe(sf);
-        logActivity('semiFinished', `В рецепт «${sf.name}» добавлен ингредиент «${ing.name}» (${quantity})`);
+        logActivity('semiFinished', `${t('log_added_to_recipe')} «${sf.name}»: «${ing.name}» (${quantity})`);
         inputEl.value = '';
         document.getElementById('newSfRecipeQty').value = '';
     } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
@@ -472,7 +472,7 @@ async function saveSfRecipeItemEdit() {
         sf.ingredients[editSfRecipeItemIdx] = { id: ri.id, ingredient_id: ingredientId, quantity };
         renderSemiFinishedRecipe(sf);
         closeModal();
-        logActivity('semiFinished', `Изменён ингредиент в рецепте «${sf.name}»`);
+        logActivity('semiFinished', `${t('log_ingredient_changed_in_recipe')} «${sf.name}»`);
     } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }
@@ -496,7 +496,7 @@ async function toggleSfRecipeConfirmed() {
         const { error } = await db.from('semi_finished').update({ recipe_confirmed: checked }).eq('id', sf.id);
         if (error) throw error;
         sf.recipe_confirmed = checked;
-        logActivity('semiFinished', `Рецепт «${sf.name}» отмечен как ${checked ? 'заполненный полностью' : 'неполный'}`);
+        logActivity('semiFinished', `${t('log_recipe_word')} «${sf.name}» ${t('log_marked_as')} ${checked ? t('log_fully_filled') : t('log_incomplete')}`);
     } catch (e) {
         console.error(e); showInfo(t('error_save_check_connection'));
         document.getElementById('sfdRecipeConfirmed').checked = !checked;
@@ -514,7 +514,7 @@ async function toggleSfTrackStock() {
         if (error) throw error;
         sf.track_stock = checked;
         if (typeof updateInventoryAlertDot === 'function') updateInventoryAlertDot();
-        logActivity('semiFinished', `«${sf.name}» — отслеживание склада ${checked ? 'включено' : 'отключено'}`);
+        logActivity('semiFinished', `«${sf.name}» — ${t('log_stock_tracking')} ${checked ? t('log_enabled') : t('log_disabled')}`);
     } catch (e) {
         console.error(e); showInfo(t('error_save_generic'));
         document.getElementById('sfdTrackStock').checked = !checked;
@@ -573,7 +573,7 @@ async function copySfRecipeFromByName(sourceName) {
         if (!sf.ingredients) sf.ingredients = [];
         data.forEach(d => sf.ingredients.push({ id: d.id, ingredient_id: d.ingredient_id, quantity: Number(d.quantity) }));
         renderSemiFinishedRecipe(sf);
-        logActivity('semiFinished', `В рецепт «${sf.name}» скопировано ${toCopy.length} поз. из рецепта «${sourceName}»`);
+        logActivity('semiFinished', `${t('log_copied_to_recipe')} «${sf.name}»: ${toCopy.length} ${t('sf_position_many')} ${t('sf_copy_positions_confirm_from')} «${sourceName}»`);
     } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }
@@ -830,7 +830,7 @@ async function confirmSfProduce() {
 
         await loadInventory();
         await renderSfStockBlock(sf);
-        logActivity('inventory', `Произведена партия п/ф «${sf.name}» ${actualResult} ${unitLabel}`);
+        logActivity('inventory', `${t('log_batch_produced')} «${sf.name}» ${actualResult} ${unitLabel}`);
         await showInfo(`${t('sf_batch_produced_success')} +${actualResult} ${unitLabel} ${t('sf_in_stock')}.`);
     } catch(e) { console.error(e); showInfo(t('error_save_generic')); }
     finally { hideLoading(); }
@@ -946,7 +946,7 @@ async function saveSfInventarization() {
 
         await loadInventory();
         closeModal();
-        logActivity('inventory', `Инвентаризация п/ф ${today}: ${rows.length} позиций`);
+        logActivity('inventory', `${t('sf_inventarization_title')} ${today}: ${rows.length} ${t('common_positions_word')}`);
         await showInfo(`${t('toast_saved')}: ${rows.length} ${t('common_positions_word')}.`);
     } catch(e) { console.error(e); showInfo(t('common_error_generic')); }
     finally { hideLoading(); }

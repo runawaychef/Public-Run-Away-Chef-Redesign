@@ -148,7 +148,7 @@ async function createDraftCustomerAndOpen() {
         _draftCustomerIds.add(newCust.id);
         displayCustomers();
         openCustomerDetail(newCust.id);
-        logActivity('customer', `Создан черновик клиента №${newCust.id}`);
+        logActivity('customer', `${t('log_customer_draft_created')} №${newCust.id}`);
     } catch (e) { console.error(e); showDbError(e, 'Ошибка создания клиента. Проверьте подключение.'); }
     finally { hideLoading(); }
 }
@@ -190,7 +190,7 @@ async function applyVatExemptToAllOrders() {
         const ids = toUpdate.map(o => o.id);
         await updateChecked(db.from('orders').update({ vat_exempt: cust.vat_exempt }).in('id', ids));
         toUpdate.forEach(o => { o.vat_exempt = cust.vat_exempt; });
-        logActivity('customer', `Применён НДС-статус ${statusLabel} к ${toUpdate.length} заказам клиента «${cust.name}»`);
+        logActivity('customer', `${t('log_vat_status_applied')} ${statusLabel} ${t('common_to')} ${toUpdate.length} ${t('customers_order_word_many')} ${t('customers_of_customer')} «${cust.name}»`);
         renderCustomerStats(cust);
         renderCustomerOrders();
         await showInfo(`${t('common_done')}: ${t('customers_orders_updated')} — ${toUpdate.length}.`);
@@ -498,7 +498,7 @@ async function saveCdHeader() {
         cust.name = name; cust.contact = contact; cust.discount = parseFloat(discount.toFixed(2)); cust.vat_exempt = vatExempt; cust.notes = notes;
         cust.address = address; cust.reg_number = regNumber; cust.vat_code = vatCode; cust.personal_code = personalCode; cust.entity_type = entityType;
         orders.forEach(o => { if (o.customer_id === cust.id) o.customer = name; });
-        logActivity('customer', `Изменён клиент «${oldName}»${oldName !== name ? ` → «${name}»` : ''}`);
+        logActivity('customer', `${t('log_customer_changed')} «${oldName}»${oldName !== name ? ` → «${name}»` : ''}`);
         renderCustomerStats(cust);
         renderCustomerOrders();
         showAutosaveToast();
