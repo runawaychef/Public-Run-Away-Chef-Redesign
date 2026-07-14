@@ -350,6 +350,10 @@ const I18N = {
         unit_ml: 'мл',
         unit_l: 'л',
         unit_pcs: 'шт',
+        unit_lb: 'lb',
+        unit_oz: 'oz',
+        unit_fl_oz: 'fl oz',
+        unit_gal: 'gal',
 
         // Карточка клиента
         customers_delete_btn: 'Удалить клиента',
@@ -491,6 +495,10 @@ const I18N = {
         unit_ml_full: 'миллилитры (мл)',
         unit_l_full: 'литры (л)',
         unit_pcs_full: 'штуки (шт)',
+        unit_lb_full: 'фунты (lb)',
+        unit_oz_full: 'унции (oz)',
+        unit_fl_oz_full: 'жидкие унции (fl oz)',
+        unit_gal_full: 'галлоны (gal)',
 
         // Инвентаризация (модалки)
         sf_inventarization_title: 'Инвентаризация п/ф',
@@ -1163,6 +1171,10 @@ const I18N = {
         unit_ml: 'ml',
         unit_l: 'l',
         unit_pcs: 'pcs',
+        unit_lb: 'lb',
+        unit_oz: 'oz',
+        unit_fl_oz: 'fl oz',
+        unit_gal: 'gal',
 
         // Customer card
         customers_delete_btn: 'Delete customer',
@@ -1304,6 +1316,10 @@ const I18N = {
         unit_ml_full: 'milliliters (ml)',
         unit_l_full: 'liters (l)',
         unit_pcs_full: 'pieces (pcs)',
+        unit_lb_full: 'pounds (lb)',
+        unit_oz_full: 'ounces (oz)',
+        unit_fl_oz_full: 'fluid ounces (fl oz)',
+        unit_gal_full: 'gallons (gal)',
 
         // Inventory count (modals)
         sf_inventarization_title: 'Semi-finished inventory count',

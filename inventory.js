@@ -7,7 +7,7 @@
 // язык через i18n.js. Раньше этот словарь копипастился локальной константой
 // в каждой функции файла по отдельности — свели к одной общей функции.
 function unitAbbrev(code) {
-    const map = { g: 'unit_g', kg: 'unit_kg', ml: 'unit_ml', l: 'unit_l', pcs: 'unit_pcs' };
+    const map = { g: 'unit_g', kg: 'unit_kg', ml: 'unit_ml', l: 'unit_l', pcs: 'unit_pcs', lb: 'unit_lb', oz: 'unit_oz', fl_oz: 'unit_fl_oz', gal: 'unit_gal' };
     return (typeof t === 'function' && map[code]) ? t(map[code]) : code;
 }
 
