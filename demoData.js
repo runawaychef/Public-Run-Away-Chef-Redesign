@@ -415,7 +415,43 @@ async function createDemoData(orgId, employeeId) {
     }
 }
 
-// Полностью убирает демо-набор (и всё, что на него ссылается) — вызывается
+// ВРЕМЕННО (для цикла тестирования Google Play, потом убрать вместе с кнопкой
+// в index.html и ключами fill_demo_* в i18n.js): кнопка в настройках, которая
+// позволяет заполнить пустую организацию демо-набором повторно, без создания
+// нового тестового приглашения через Simple Hub каждый раз. Показывается
+// только если организация по-настоящему пустая (ни одного клиента вообще,
+// демо или нет) — чтобы её не увидел случайно реальный владелец пекарни.
+async function refreshFillDemoDataVisibility() {
+    const btn = document.getElementById('fillDemoDataBtn');
+    if (!btn) return;
+    try {
+        const { count } = await db.from('customers').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId);
+        btn.style.display = count ? 'none' : '';
+    } catch (e) {
+        console.error(e);
+        btn.style.display = 'none';
+    }
+}
+
+async function fillDemoDataFromSettings() {
+    if (!currentEmployee) return;
+    const ok = await showConfirm(t('fill_demo_confirm'));
+    if (!ok) return;
+    showLoading(t('fill_demo_loading'));
+    try {
+        await createDemoData(currentOrgId, currentEmployee.id);
+        await loadAllData();
+        await loadInventory();
+        closeModal();
+        await showInfo(t('fill_demo_success'));
+    } catch (e) {
+        console.error(e);
+        showInfo(t('fill_demo_error') + (e && e.message ? e.message : String(e)));
+    } finally {
+        hideLoading();
+    }
+}
+
 // из настроек, кнопка "Удалить демо-данные и начать заново".
 // Порядок важен: сначала заказы (позиции + их снимок себестоимости + оплаты),
 // потом изделия (и их рецепты), потом полуфабрикаты (рецепт + партии +

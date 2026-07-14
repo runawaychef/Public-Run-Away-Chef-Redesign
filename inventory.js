@@ -19,6 +19,7 @@ function openSettingsModal() {
     document.getElementById('settingsCurrentEmployee').textContent = currentEmployee ? currentEmployee.name : '—';
     renderPlanInfo();
     if (typeof refreshDeleteDemoDataVisibility === 'function') refreshDeleteDemoDataVisibility();
+    if (typeof refreshFillDemoDataVisibility === 'function') refreshFillDemoDataVisibility(); // ВРЕМЕННО, см. demoData.js
     document.getElementById('settingsModal').style.display = 'flex';
 }
 
