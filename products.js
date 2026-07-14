@@ -5,7 +5,7 @@
 // showLoading/hideLoading, logActivity (employees.js),
 // svgEdit/svgDelete/svgCopy, updateProductSelects, openDeleteModal, closeModal (главный скрипт).
 
-const UNIT_PRODUCT_LABELS = { pcs: 'шт', kg: 'кг' };
+// UNIT_PRODUCT_LABELS заменён общей функцией unitAbbrev(code) из inventory.js.
 
 function displayProducts() {
     products.sort((a, b) => (a.name||"").localeCompare(b.name||""));
@@ -17,7 +17,7 @@ function displayProducts() {
         const recipeOk = !!p.recipe_confirmed;
         const needsAttention = !hasUnit || !recipeOk;
         if (needsAttention) warningCount++;
-        const unitLabel = hasUnit ? UNIT_PRODUCT_LABELS[p.unit] : icon('warning', 'w-3.5 h-3.5 inline-block text-[#c0685c]');
+        const unitLabel = hasUnit ? unitAbbrev(p.unit) : icon('warning', 'w-3.5 h-3.5 inline-block text-[#c0685c]');
         const row = document.createElement('tr');
         row.className = 'order-row border-b';
         row.dataset.name = (p.name || '').toLowerCase();
@@ -30,7 +30,7 @@ function displayProducts() {
             <td class=" p-0.5 table-text text-center" style="${hasUnit ? '' : 'color:#c0685c; font-weight:600;'}" onclick="openProductDetail(${p.id})">${unitLabel}</td>
             <td class=" p-0.5 table-text" onclick="openProductDetail(${p.id})">${formatMoney(p.price)}</td>
             <td class=" p-0.5 text-center">
-                ${hasPermission('can_delete') ? svgDeleteSafe('openDeleteModal', [i, 'product', `изделие «${p.name}»`]) : ''}
+                ${hasPermission('can_delete') ? svgDeleteSafe('openDeleteModal', [i, 'product', `${t('delete_label_product')} «${p.name}»`]) : ''}
                 ${svgCopy(`copyProduct(${i})`)}
             </td>`;
         tbody.appendChild(row);
@@ -51,11 +51,11 @@ function renderProductCards() {
         const hasUnit = !!p.unit;
         const recipeOk = !!p.recipe_confirmed;
         const needsAttention = !hasUnit || !recipeOk;
-        const unitLabel = hasUnit ? UNIT_PRODUCT_LABELS[p.unit] : '';
+        const unitLabel = hasUnit ? unitAbbrev(p.unit) : '';
         const unitCost = hasUnit ? productUnitCost(p) : null;
         const costLine = unitCost !== null
-            ? `Себестоимость: ${formatMoney(unitCost)}/${unitLabel}`
-            : 'Себестоимость: —';
+            ? `${t('prod_cost_price_colon')} ${formatMoney(unitCost)}/${unitLabel}`
+            : `${t('prod_cost_price_colon')} —`;
         const stripe = needsAttention ? `<div class="stripe" style="background:#c0685c;"></div>` : '';
         const realIdx = products.indexOf(p);
         html += `
@@ -65,7 +65,7 @@ function renderProductCards() {
                 ${stripe}
                 <div class="order-card-body">
                     <div class="oc-row">
-                        <span class="oc-name">${escapeHtml(p.name || '(без названия)')}</span>
+                        <span class="oc-name">${escapeHtml(p.name || t('semifinished_no_name_fallback'))}</span>
                         <span class="oc-sum">${formatMoney(p.price)}</span>
                     </div>
                     <div class="oc-meta">${costLine}</div>
@@ -158,7 +158,7 @@ async function saveNewProduct() {
     const name  = (document.getElementById('pdName')?.value || '').trim();
     const unit  = document.getElementById('pdUnit')?.value || 'pcs';
     const price = parseFloat(document.getElementById('pdPrice')?.value) || 0;
-    if (!name) { showInfo('Введите название изделия!'); return; }
+    if (!name) { showInfo(t('prod_name_required')); return; }
 
     suppressRealtimeFor3s();
     showLoading();
@@ -210,7 +210,7 @@ function openEditProductModal(i) {
 async function saveProductEdit() {
     const name  = document.getElementById('editProductName').value.trim();
     const price = parseFloat(document.getElementById('editProductPrice').value);
-    if (!name || isNaN(price)) { showInfo('Заполните все поля корректно!'); return; }
+    if (!name || isNaN(price)) { showInfo(t('common_fill_correctly')); return; }
     const prod = products[editIndex];
     const oldName = prod.name, oldPrice = prod.price;
     suppressRealtimeFor3s();
@@ -236,7 +236,7 @@ async function copyProduct(i) {
     showLoading();
     try {
         const { data, error } = await db.from('products').insert({
-            org_id: currentOrgId, name: src.name + ' (копия)', price: src.price, unit: src.unit || 'pcs',
+            org_id: currentOrgId, name: src.name + t('common_copy_suffix'), price: src.price, unit: src.unit || 'pcs',
             batch_size: src.batch_size || 1, other_costs: src.other_costs || 0
         }).select().single();
         if (error) throw error;
@@ -249,7 +249,7 @@ async function copyProduct(i) {
         displayProducts();
         openProductDetail(newProd.id);
         logActivity('product', `Скопировано изделие «${src.name}» → «${newProd.name}»`);
-    } catch (e) { console.error(e); showInfo('Ошибка копирования. Проверьте подключение.'); }
+    } catch (e) { console.error(e); showInfo(t('ing_copy_error')); }
     finally { hideLoading(); }
 }
 
@@ -346,7 +346,7 @@ async function renderProductCostChart(prod) {
         data: {
             labels,
             datasets: [{
-                label: `Себестоимость 1 шт (${CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency})`,
+                label: `${t('prod_unit_cost_1pc')} (${CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency})`,
                 data,
                 borderColor: '#059669',
                 backgroundColor: 'rgba(5,150,105,0.08)',
@@ -362,7 +362,7 @@ async function renderProductCostChart(prod) {
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        label: ctx => `Себест.: ${formatMoney(ctx.parsed.y, 4)}`
+                        label: ctx => `${t('prod_cost_short')}: ${formatMoney(ctx.parsed.y, 4)}`
                     }
                 }
             },
@@ -412,7 +412,7 @@ function updatePdUnitUI(unit) {
     const warning = document.getElementById('pdUnitWarning');
     const hint = document.getElementById('pdPriceUnitHint');
     if (warning) warning.classList.toggle('hidden', !!unit);
-    if (hint) hint.textContent = unit ? `(за ${UNIT_PRODUCT_LABELS[unit]})` : '';
+    if (hint) hint.textContent = unit ? `(за ${unitAbbrev(unit)})` : '';
 }
 
 async function closeProductDetail() {
@@ -453,7 +453,7 @@ async function savePdHeader() {
     const price = parseFloat(document.getElementById('pdPrice').value);
     const batchSize = parseFloat(document.getElementById('pdBatchSize').value) || 1;
     const otherCosts = parseFloat(document.getElementById('pdOtherCosts').value) || 0;
-    if (!name || isNaN(price)) { showInfo('Заполните название и цену корректно!'); return; }
+    if (!name || isNaN(price)) { showInfo(t('prod_fill_name_price')); return; }
 
     suppressRealtimeFor3s();
     showLoading();
@@ -469,7 +469,7 @@ async function savePdHeader() {
         orders.forEach(o => o.items.forEach(it => { if (it.product_id === prod.id) it.product = name; }));
         updatePdUnitUI(unit);
         renderProductRecipe(prod);
-        logActivity('product', `Изменено изделие «${prod.name}»${unitChanged ? ` (единица: ${UNIT_PRODUCT_LABELS[unit] || '—'})` : ''}`);
+        logActivity('product', `Изменено изделие «${prod.name}»${unitChanged ? ` (единица: ${unitAbbrev(unit) || '—'})` : ''}`);
         showAutosaveToast();
     } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
@@ -479,7 +479,7 @@ function fillNewRecipeIngredientSelect() {
     setupSearchDropdown('newRecipeIngredient', 'newRecipeIngredientDropdown', () => {
         const names = ingredients.slice().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).map(i => i.name);
         const sfNames = (typeof semiFinished !== 'undefined')
-            ? semiFinished.slice().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).map(s => s.name + ' (п/ф)')
+            ? semiFinished.slice().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).map(s => s.name + t('prod_sf_suffix'))
             : [];
         return names.concat(sfNames);
     }, null, (text) => openQuickAddIngredientModal(text, 'product'));
@@ -490,8 +490,9 @@ function fillNewRecipeIngredientSelect() {
 function resolveRecipeIngredientInput(text) {
     const raw = text.trim();
     if (!raw) return null;
-    if (raw.endsWith(' (п/ф)')) {
-        const name = raw.slice(0, -' (п/ф)'.length);
+    const sfSuffix = t('prod_sf_suffix');
+    if (raw.endsWith(sfSuffix)) {
+        const name = raw.slice(0, -sfSuffix.length);
         const sf = (typeof semiFinished !== 'undefined') ? semiFinished.find(s => s.name === name) : null;
         return sf ? { type: 'sf', id: sf.id } : null;
     }
@@ -508,20 +509,20 @@ function renderProductRecipe(prod) {
     const list = prod.ingredients || [];
     if (!list.length) {
         const row = document.createElement('tr');
-        row.innerHTML = `<td colspan="4" class="text-center text-xs text-gray-400 py-2">Нет ингредиентов. Добавьте ниже.</td>`;
+        row.innerHTML = `<td colspan="4" class="text-center text-xs text-gray-400 py-2">${t('sf_no_ingredients_hint')}</td>`;
         tbody.appendChild(row);
     } else {
         list.forEach((ri, i) => {
             let displayName, unitLabel, unitPrice;
             if (ri.semi_finished_id) {
                 const sf = (typeof semiFinished !== 'undefined') ? semiFinished.find(s => s.id === ri.semi_finished_id) : null;
-                displayName = sf ? sf.name + ' (п/ф)' : '(удалён п/ф)';
-                unitLabel = sf ? (SF_UNIT_LABELS[sf.unit] || sf.unit) : '';
+                displayName = sf ? sf.name + t('prod_sf_suffix') : t('prod_sf_deleted');
+                unitLabel = sf ? unitAbbrev(sf.unit) : '';
                 unitPrice = sf ? semiFinishedUnitCost(sf) : 0;
             } else {
                 const ing = ingredients.find(x => x.id === ri.ingredient_id);
-                displayName = ing ? ing.name : '(удалён)';
-                unitLabel = ing ? (UNIT_LABELS[ing.unit] || ing.unit) : '';
+                displayName = ing ? ing.name : t('sf_ingredient_deleted');
+                unitLabel = ing ? unitAbbrev(ing.unit) : '';
                 unitPrice = ing ? ingredientUnitPrice(ing) : 0;
             }
             const lineCost = unitPrice * ri.quantity;
@@ -557,7 +558,7 @@ async function addIngredientToRecipe() {
     const quantity = parseFloat(document.getElementById('newRecipeQty').value);
     const resolved = resolveRecipeIngredientInput(inputEl.value);
     if (!resolved || isNaN(quantity) || quantity <= 0) {
-        showInfo('Выберите ингредиент/полуфабрикат из списка и укажите количество!'); return;
+        showInfo(t('prod_choose_ing_sf_and_qty')); return;
     }
     const type = resolved.type, selectedId = resolved.id;
     const insertRow = type === 'sf'
@@ -575,7 +576,7 @@ async function addIngredientToRecipe() {
         let itemName = '';
         if (type === 'sf') {
             const sf = semiFinished.find(s => s.id === selectedId);
-            itemName = sf ? sf.name + ' (п/ф)' : '';
+            itemName = sf ? sf.name + t('prod_sf_suffix') : '';
         } else {
             const ing = ingredients.find(i => i.id === selectedId);
             itemName = ing ? ing.name : '';
@@ -595,10 +596,10 @@ function openEditRecipeItemModal(i) {
     const currentValue = ri.semi_finished_id ? ('sf-' + ri.semi_finished_id) : ('ing-' + ri.ingredient_id);
 
     const sel = document.getElementById('editRecipeIngredient');
-    sel.innerHTML = '<option value="">Выберите ингредиент / полуфабрикат</option>';
+    sel.innerHTML = `<option value="">${t('prod_choose_ing_or_sf')}</option>`;
     if (ingredients.length) {
         const grpIng = document.createElement('optgroup');
-        grpIng.label = 'Ингредиенты';
+        grpIng.label = t('prod_optgroup_ingredients');
         ingredients.sort((a,b)=>(a.name||"").localeCompare(b.name||"")).forEach(ing => {
             const opt = document.createElement('option');
             opt.value = 'ing-' + ing.id; opt.textContent = ing.name;
@@ -609,7 +610,7 @@ function openEditRecipeItemModal(i) {
     }
     if (typeof semiFinished !== 'undefined' && semiFinished.length) {
         const grpSf = document.createElement('optgroup');
-        grpSf.label = 'Полуфабрикаты';
+        grpSf.label = t('prod_optgroup_semifinished');
         semiFinished.sort((a,b)=>(a.name||"").localeCompare(b.name||"")).forEach(sf => {
             const opt = document.createElement('option');
             opt.value = 'sf-' + sf.id; opt.textContent = sf.name;
@@ -628,7 +629,7 @@ async function saveRecipeItemEdit() {
     const selectedRaw = document.getElementById('editRecipeIngredient').value;
     const quantity = parseFloat(document.getElementById('editRecipeQty').value);
     if (!selectedRaw || isNaN(quantity) || quantity <= 0) {
-        showInfo('Заполните все поля корректно!'); return;
+        showInfo(t('common_fill_correctly')); return;
     }
     const [type, idStr] = selectedRaw.split('-');
     const selectedId = Number(idStr);
@@ -662,7 +663,7 @@ function deleteRecipeItem(i) {
     let itemName = '';
     if (ri.semi_finished_id) {
         const sf = semiFinished.find(x => x.id === ri.semi_finished_id);
-        itemName = sf ? sf.name + ' (п/ф)' : '';
+        itemName = sf ? sf.name + t('prod_sf_suffix') : '';
     } else {
         const ing = ingredients.find(x => x.id === ri.ingredient_id);
         itemName = ing ? ing.name : '';
@@ -747,17 +748,18 @@ async function copyRecipeFromProductByName(sourceName) {
     const src = products.find(p => p.name === sourceName);
     if (!prod || !src) return;
     const srcItems = src.ingredients || [];
-    if (!srcItems.length) { showInfo('У выбранного изделия нет рецепта.'); return; }
+    if (!srcItems.length) { showInfo(t('prod_no_recipe_to_copy')); return; }
 
     const existingIngIds = new Set((prod.ingredients || []).filter(i => i.ingredient_id).map(i => i.ingredient_id));
     const existingSfIds  = new Set((prod.ingredients || []).filter(i => i.semi_finished_id).map(i => i.semi_finished_id));
     const toCopy = srcItems.filter(ri => ri.semi_finished_id ? !existingSfIds.has(ri.semi_finished_id) : !existingIngIds.has(ri.ingredient_id));
     const skipped = srcItems.length - toCopy.length;
 
-    if (!toCopy.length) { showInfo(`Все позиции из рецепта «${sourceName}» уже есть в этом рецепте.`); return; }
+    if (!toCopy.length) { showInfo(t('prod_all_positions_already_in_recipe').replace('{name}', sourceName)); return; }
 
-    let msg = `Скопировать ${toCopy.length} ${toCopy.length === 1 ? 'позицию' : 'позиций'} из рецепта «${sourceName}» в «${prod.name}»?`;
-    if (skipped) msg += `\n(${skipped} уже есть в текущем рецепте — будут пропущены)`;
+    const posWord = toCopy.length === 1 ? t('sf_position_one') : t('sf_position_many');
+    let msg = `${t('sf_copy_positions_confirm_prefix')} ${toCopy.length} ${posWord} ${t('sf_copy_positions_confirm_from')} «${sourceName}» ${t('common_into')} «${prod.name}»?`;
+    if (skipped) msg += `\n(${skipped} ${t('sf_already_in_recipe_skip')})`;
     if (!(await showConfirm(msg))) return;
 
     showLoading();
