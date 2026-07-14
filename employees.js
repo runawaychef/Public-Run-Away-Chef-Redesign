@@ -317,7 +317,14 @@ let _pendingOwnerForSetup = null;
 
 function openOrgNameSetupModal(owner) {
     _pendingOwnerForSetup = owner;
-    document.getElementById('orgNameSetupInput').value = '';
+    // Если название уже осмысленно задано заранее (например, тестовая
+    // организация создана через Simple Hub с реальным названием) — подставляем
+    // его, а не заставляем вводить заново. Для органической регистрации
+    // handle_new_user() всегда ставит технический дефолт "Моя пекарня"/"My
+    // Bakery" — в этом случае, наоборот, оставляем поле пустым, чтобы человек
+    // ввёл настоящее название своей пекарни.
+    const isPlaceholder = !currentOrgName || currentOrgName === 'Моя пекарня' || currentOrgName === 'My Bakery';
+    document.getElementById('orgNameSetupInput').value = isPlaceholder ? '' : currentOrgName;
     const demoCheckbox = document.getElementById('orgNameSetupDemoCheckbox');
     if (demoCheckbox) demoCheckbox.checked = false;
     document.getElementById('orgNameSetupModal').style.display = 'flex';
