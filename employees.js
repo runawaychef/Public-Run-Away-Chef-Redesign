@@ -351,7 +351,7 @@ async function saveOrgNameSetup() {
             await createDemoData(currentOrgId, owner.id);
         } catch (e) {
             console.error(e);
-            showInfo('Не удалось заполнить пример — но можно продолжить и добавить данные вручную.');
+            showInfo('Не удалось полностью заполнить пример — но можно продолжить и добавить данные вручную.\n\nТехническая причина: ' + (e && e.message ? e.message : String(e)));
         } finally {
             hideLoading();
         }

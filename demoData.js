@@ -197,7 +197,7 @@ async function createDemoData(orgId, employeeId) {
     // ---------- Полуфабрикаты ----------
     const sfKeys = Object.keys(C.semiFinished);
     const { data: sfData, error: sfErr } = await db.from('semi_finished').insert(
-        sfKeys.map(key => ({ org_id: orgId, name: C.semiFinished[key].name, unit: C.semiFinished[key].unit, batch_size: C.semiFinished[key].batch_size, other_costs: C.semiFinished[key].other_costs, is_demo: true }))
+        sfKeys.map(key => ({ org_id: orgId, name: C.semiFinished[key].name, unit: C.semiFinished[key].unit, batch_size: C.semiFinished[key].batch_size, other_costs: C.semiFinished[key].other_costs, recipe_confirmed: true, track_stock: true, is_demo: true }))
     ).select();
     if (sfErr) throw sfErr;
     const sfByKey = {};
@@ -213,7 +213,7 @@ async function createDemoData(orgId, employeeId) {
     // ---------- Изделия ----------
     const prodKeys = Object.keys(C.products);
     const { data: prodData, error: prodErr } = await db.from('products').insert(
-        prodKeys.map(key => ({ org_id: orgId, name: C.products[key].name, price: C.products[key].price, unit: C.products[key].unit, batch_size: C.products[key].batch_size, other_costs: C.products[key].other_costs, is_demo: true }))
+        prodKeys.map(key => ({ org_id: orgId, name: C.products[key].name, price: C.products[key].price, unit: C.products[key].unit, batch_size: C.products[key].batch_size, other_costs: C.products[key].other_costs, recipe_confirmed: true, track_stock: true, is_demo: true }))
     ).select();
     if (prodErr) throw prodErr;
     const prodByKey = {};
@@ -247,6 +247,7 @@ async function createDemoData(orgId, employeeId) {
     const sfConsumption = {};   // ключ п/ф -> суммарный расход через заказы
 
     for (const o of plan) {
+      try {
         const orderDate = demoDateStr(o.offset);
         const dueDate = demoDateStr(o.offset + 3);
         const customer = customersData[Math.floor(Math.random() * customersData.length)];
@@ -291,16 +292,26 @@ async function createDemoData(orgId, employeeId) {
         // частично (виден остаток), 10% — вообще без оплаты (при due_date в
         // прошлом это и создаёт "просрочен платёж" на карточке заказа).
         if (o.status === 'выполнен') {
-            const total = itemsPayload.reduce((s, it) => s + it.price * it.quantity, 0);
-            const roll = Math.random();
-            if (roll < 0.7) {
-                await db.from('order_payments').insert({ org_id: orgId, order_id: orderData.id, amount: parseFloat(total.toFixed(2)), method: 'cash', paid_at: orderDate, note: null });
-            } else if (roll < 0.9) {
-                const partial = parseFloat((total * (0.3 + Math.random() * 0.4)).toFixed(2));
-                await db.from('order_payments').insert({ org_id: orgId, order_id: orderData.id, amount: partial, method: 'transfer', paid_at: orderDate, note: null });
+            try {
+                const total = itemsPayload.reduce((s, it) => s + it.price * it.quantity, 0);
+                const roll = Math.random();
+                if (roll < 0.7) {
+                    await db.from('order_payments').insert({ org_id: orgId, order_id: orderData.id, amount: parseFloat(total.toFixed(2)), method: 'cash', paid_at: orderDate, note: null });
+                } else if (roll < 0.9) {
+                    const partial = parseFloat((total * (0.3 + Math.random() * 0.4)).toFixed(2));
+                    await db.from('order_payments').insert({ org_id: orgId, order_id: orderData.id, amount: partial, method: 'transfer', paid_at: orderDate, note: null });
+                }
+                // остальные 10% — без единой оплаты
+            } catch (payErr) {
+                console.error('Демо: не удалось создать оплату для заказа', orderData.id, payErr);
             }
-            // остальные 10% — без единой оплаты
         }
+      } catch (orderLoopErr) {
+        // Один неудачный заказ (сеть/таймаут) — пропускаем и идём дальше,
+        // не обрывая создание остальных заказов и всего, что после них
+        // (склад, п/ф, список покупок, снимок себестоимости).
+        console.error('Демо: не удалось создать один из заказов, продолжаю со следующим', orderLoopErr);
+      }
     }
 
     // ---------- Сколько полуфабрикатов нужно произвести (считаем ДО закупок сырья,
@@ -354,9 +365,9 @@ async function createDemoData(orgId, employeeId) {
         }
     });
     const { error: invErr } = await db.from('inventory').insert(invRows);
-    if (invErr) throw invErr;
+    if (invErr) console.error('Демо: не удалось создать приход/расход сырья (склад останется пустым)', invErr);
     const { error: batchErr } = await db.from('stock_batches').insert(batchRows);
-    if (batchErr) throw batchErr;
+    if (batchErr) console.error('Демо: не удалось создать партии сырья (FIFO-себестоимость будет недоступна)', batchErr);
 
     // ---------- Производство и расход полуфабрикатов ----------
     const sfInvRows = [];
@@ -377,9 +388,9 @@ async function createDemoData(orgId, employeeId) {
         }
     });
     const { error: sfInvErr } = await db.from('inventory').insert(sfInvRows);
-    if (sfInvErr) throw sfInvErr;
+    if (sfInvErr) console.error('Демо: не удалось создать движения по п/ф', sfInvErr);
     const { error: sfBatchErr } = await db.from('stock_batches').insert(sfBatchRows);
-    if (sfBatchErr) throw sfBatchErr;
+    if (sfBatchErr) console.error('Демо: не удалось создать партии п/ф', sfBatchErr);
 
     // ---------- Список покупок: пара позиций из "тесных" ингредиентов ----------
     const shoppingRows = DEMO_LOW_STOCK_KEYS.slice(0, 2).map(key => ({
@@ -394,8 +405,12 @@ async function createDemoData(orgId, employeeId) {
     if (typeof loadAllData === 'function' && typeof saveOrderItemIngredients === 'function') {
         await loadAllData(true);
         for (const item of allCreatedItems) {
-            const prod = products.find(p => p.id === prodByKey[item.key]);
-            if (prod) await saveOrderItemIngredients(item.id, prod, item.quantity);
+            try {
+                const prod = products.find(p => p.id === prodByKey[item.key]);
+                if (prod) await saveOrderItemIngredients(item.id, prod, item.quantity);
+            } catch (snapErr) {
+                console.error('Демо: не удалось сохранить снимок себестоимости для позиции', item.id, snapErr);
+            }
         }
     }
 }
