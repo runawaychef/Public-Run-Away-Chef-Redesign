@@ -33,7 +33,7 @@ async function openOrderDocumentPreview(docType) {
     const order = orders.find(o => o.id === currentOrderId);
     if (!order) return;
 
-    showLoading('Формирование документа...');
+    showLoading(t('inv_generating_document'));
     try {
         let snapshot = order[snapshotField(docType)];
         if (!snapshot) {
@@ -44,7 +44,7 @@ async function openOrderDocumentPreview(docType) {
         document.getElementById('orderDocumentModal').style.display = 'flex';
     } catch (e) {
         console.error(e);
-        showInfo('Не удалось сформировать документ: ' + (e && e.message ? e.message : 'неизвестная ошибка'));
+        showInfo(t('inv_doc_error_prefix') + (e && e.message ? e.message : t('inv_unknown_error')));
     } finally {
         hideLoading();
     }
@@ -58,7 +58,7 @@ async function refreshDocumentSnapshot() {
     const order = orders.find(o => o.id === currentOrderId);
     if (!order) return;
 
-    showLoading('Обновление снимка...');
+    showLoading(t('inv_updating_snapshot'));
     try {
         const snapshot = await freezeDocumentSnapshot(order, docType, /*reuseNumber*/ order[snapshotField(docType)].number);
         _docPreview = { docType, snapshot };
@@ -66,7 +66,7 @@ async function refreshDocumentSnapshot() {
         showAutosaveToast();
     } catch (e) {
         console.error(e);
-        showInfo('Не удалось обновить снимок: ' + (e && e.message ? e.message : 'неизвестная ошибка'));
+        showInfo(t('inv_snapshot_error_prefix') + (e && e.message ? e.message : t('inv_unknown_error')));
     } finally {
         hideLoading();
     }
@@ -152,18 +152,18 @@ function renderDocumentPreviewThumbnail() {
 function buildDocumentHtml(docType, snapshot) {
     const { order, org, cust, number, issueDate, dueDate, customerNameFallback } = snapshot;
     const isInvoice = docType === 'invoice';
-    const title = isInvoice ? (org.vat_code ? 'СЧЁТ-ФАКТУРА (НДС)' : 'СЧЁТ') : 'НАКЛАДНАЯ';
+    const title = isInvoice ? (org.vat_code ? t('inv_title_vat_invoice') : t('inv_title_invoice')) : t('inv_title_delivery_note');
     const sym = CURRENCY_SYMBOLS[org.currency_code] || org.currency_code || '€';
     const money = n => Number(n).toFixed(2) + ' ' + sym;
 
     // ---- Продавец ----
     const sellerName = org.entity_type === 'individual' ? (org.name || '') : (org.legal_name || org.name || '');
     const sellerIdLine = org.entity_type === 'individual'
-        ? (org.personal_code ? `Личный код: ${escapeHtml(org.personal_code)}` : '')
-        : (org.reg_number ? `Рег. номер: ${escapeHtml(org.reg_number)}` : '');
+        ? (org.personal_code ? `${t('inv_personal_code')}: ${escapeHtml(org.personal_code)}` : '')
+        : (org.reg_number ? `${t('inv_reg_number')}: ${escapeHtml(org.reg_number)}` : '');
     const sellerLines = [
         sellerIdLine,
-        org.vat_code ? `Код НДС: ${escapeHtml(org.vat_code)}` : '',
+        org.vat_code ? `${t('inv_vat_code')}: ${escapeHtml(org.vat_code)}` : '',
         org.address ? escapeHtml(org.address) : '',
         [org.phone, org.email].filter(Boolean).map(escapeHtml).join(' · '),
         org.bank_name ? `${escapeHtml(org.bank_name)}${org.bank_account ? ' — ' + escapeHtml(org.bank_account) : ''}` : '',
@@ -173,11 +173,11 @@ function buildDocumentHtml(docType, snapshot) {
     // ---- Покупатель ----
     const buyerName = cust ? cust.name : customerNameFallback;
     const buyerIdLine = cust && cust.entity_type === 'individual'
-        ? (cust.personal_code ? `Личный код: ${escapeHtml(cust.personal_code)}` : '')
-        : (cust && cust.reg_number ? `Рег. номер: ${escapeHtml(cust.reg_number)}` : '');
+        ? (cust.personal_code ? `${t('inv_personal_code')}: ${escapeHtml(cust.personal_code)}` : '')
+        : (cust && cust.reg_number ? `${t('inv_reg_number')}: ${escapeHtml(cust.reg_number)}` : '');
     const buyerLines = cust ? [
         buyerIdLine,
-        cust.vat_code ? `Код НДС: ${escapeHtml(cust.vat_code)}` : '',
+        cust.vat_code ? `${t('inv_vat_code')}: ${escapeHtml(cust.vat_code)}` : '',
         cust.address ? escapeHtml(cust.address) : '',
         cust.contact ? escapeHtml(cust.contact) : '',
     ].filter(Boolean) : [];
@@ -214,7 +214,7 @@ function buildDocumentHtml(docType, snapshot) {
     });
 
     const dueDateRow = isInvoice
-        ? `<div>Срок оплаты: ${formatDateDMY(dueDate)}</div>`
+        ? `<div>${t('inv_due_date')}: ${formatDateDMY(dueDate)}</div>`
         : '';
 
     // Макет рассчитан на реальную ширину A4 при 96dpi (794px) — не под экран
@@ -227,20 +227,20 @@ function buildDocumentHtml(docType, snapshot) {
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;">
             <h1 style="font-size:26px;margin:0;">${title}</h1>
             <div style="text-align:right;font-size:15px;color:#374151;">
-                <div>Номер: ${escapeHtml(number)}</div>
-                <div>Дата: ${formatDateDMY(issueDate)}</div>
+                <div>${t('inv_number')}: ${escapeHtml(number)}</div>
+                <div>${t('history_col_date')}: ${formatDateDMY(issueDate)}</div>
                 ${dueDateRow}
             </div>
         </div>
 
         <div style="display:flex;gap:32px;margin-bottom:28px;">
             <div style="flex:1;">
-                <div style="font-size:13px;color:#6b7280;font-weight:600;margin-bottom:4px;">ПРОДАВЕЦ</div>
+                <div style="font-size:13px;color:#6b7280;font-weight:600;margin-bottom:4px;">${t('inv_seller')}</div>
                 <div style="font-weight:600;font-size:16px;">${escapeHtml(sellerName)}</div>
                 ${sellerLines.map(l => `<div style="font-size:15px;color:#374151;">${l}</div>`).join('')}
             </div>
             <div style="flex:1;">
-                <div style="font-size:13px;color:#6b7280;font-weight:600;margin-bottom:4px;">ПОКУПАТЕЛЬ</div>
+                <div style="font-size:13px;color:#6b7280;font-weight:600;margin-bottom:4px;">${t('inv_buyer')}</div>
                 <div style="font-weight:600;font-size:16px;">${escapeHtml(buyerName)}</div>
                 ${buyerLines.map(l => `<div style="font-size:15px;color:#374151;">${l}</div>`).join('')}
             </div>
@@ -249,28 +249,28 @@ function buildDocumentHtml(docType, snapshot) {
         <table class="table-clean" style="width:100%;border-collapse:separate;border-spacing:0;font-size:15px;table-layout:fixed;">
             <thead>
                 <tr style="background:#e3e8df;">
-                    <th style="padding:10px 8px;text-align:left;width:32%;">Наименование</th>
-                    <th style="padding:10px 8px;text-align:center;width:8%;">Кол-во</th>
-                    <th style="padding:10px 8px;text-align:right;width:14%;">Цена без НДС</th>
-                    <th style="padding:10px 8px;text-align:right;width:14%;">Сумма без НДС</th>
-                    <th style="padding:10px 8px;text-align:right;width:12%;">НДС</th>
-                    <th style="padding:10px 8px;text-align:center;width:8%;">НДС %</th>
-                    <th style="padding:10px 8px;text-align:right;width:12%;">Итого</th>
+                    <th style="padding:10px 8px;text-align:left;width:32%;">${t('inv_col_name')}</th>
+                    <th style="padding:10px 8px;text-align:center;width:8%;">${t('inv_col_qty')}</th>
+                    <th style="padding:10px 8px;text-align:right;width:14%;">${t('inv_col_price_no_vat')}</th>
+                    <th style="padding:10px 8px;text-align:right;width:14%;">${t('inv_col_sum_no_vat')}</th>
+                    <th style="padding:10px 8px;text-align:right;width:12%;">${t('inv_col_vat')}</th>
+                    <th style="padding:10px 8px;text-align:center;width:8%;">${t('inv_col_vat_pct')}</th>
+                    <th style="padding:10px 8px;text-align:right;width:12%;">${t('inv_col_total')}</th>
                 </tr>
             </thead>
             <tbody>${itemsHtml}</tbody>
         </table>
 
         <div style="margin-top:20px;text-align:right;font-size:15px;">
-            <div>Итого кол-во: <b>${totalQty}</b></div>
-            <div>Итого без НДС: <b>${money(afterDiscountAll)}</b></div>
-            <div>Сумма НДС: <b>${money(vatAll)}</b></div>
-            <div style="font-size:19px;margin-top:6px;">Итого к оплате: <b>${money(grandAll)}</b></div>
+            <div>${t('inv_total_qty')}: <b>${totalQty}</b></div>
+            <div>${t('inv_total_no_vat')}: <b>${money(afterDiscountAll)}</b></div>
+            <div>${t('inv_vat_sum')}: <b>${money(vatAll)}</b></div>
+            <div style="font-size:19px;margin-top:6px;">${t('inv_total_due')}: <b>${money(grandAll)}</b></div>
         </div>
 
         <div style="margin-top:56px;display:flex;justify-content:space-between;font-size:15px;">
-            <div>Выставил: ${escapeHtml(org.director_name || sellerName)}</div>
-            <div>Принято: _______________________</div>
+            <div>${t('inv_issued_by')}: ${escapeHtml(org.director_name || sellerName)}</div>
+            <div>${t('inv_accepted')}: _______________________</div>
         </div>
     </div>`;
 }
@@ -281,17 +281,17 @@ function buildDocumentHtml(docType, snapshot) {
 async function buildDocumentPdf(docType, snapshot) {
     const { order, org, cust, number, issueDate, dueDate, customerNameFallback } = snapshot;
     const isInvoice = docType === 'invoice';
-    const title = isInvoice ? (org.vat_code ? 'СЧЁТ-ФАКТУРА (НДС)' : 'СЧЁТ') : 'НАКЛАДНАЯ';
+    const title = isInvoice ? (org.vat_code ? t('inv_title_vat_invoice') : t('inv_title_invoice')) : t('inv_title_delivery_note');
     const sym = CURRENCY_SYMBOLS[org.currency_code] || org.currency_code || '€';
     const money = n => Number(n).toFixed(2) + ' ' + sym;
 
     const sellerName = org.entity_type === 'individual' ? (org.name || '') : (org.legal_name || org.name || '');
     const sellerIdLine = org.entity_type === 'individual'
-        ? (org.personal_code ? `Личный код: ${org.personal_code}` : '')
-        : (org.reg_number ? `Рег. номер: ${org.reg_number}` : '');
+        ? (org.personal_code ? `${t('inv_personal_code')}: ${org.personal_code}` : '')
+        : (org.reg_number ? `${t('inv_reg_number')}: ${org.reg_number}` : '');
     const sellerLines = [
         sellerIdLine,
-        org.vat_code ? `Код НДС: ${org.vat_code}` : '',
+        org.vat_code ? `${t('inv_vat_code')}: ${org.vat_code}` : '',
         org.address || '',
         [org.phone, org.email].filter(Boolean).join(' · '),
         org.bank_name ? `${org.bank_name}${org.bank_account ? ' — ' + org.bank_account : ''}` : '',
@@ -300,11 +300,11 @@ async function buildDocumentPdf(docType, snapshot) {
 
     const buyerName = cust ? cust.name : customerNameFallback;
     const buyerIdLine = cust && cust.entity_type === 'individual'
-        ? (cust.personal_code ? `Личный код: ${cust.personal_code}` : '')
-        : (cust && cust.reg_number ? `Рег. номер: ${cust.reg_number}` : '');
+        ? (cust.personal_code ? `${t('inv_personal_code')}: ${cust.personal_code}` : '')
+        : (cust && cust.reg_number ? `${t('inv_reg_number')}: ${cust.reg_number}` : '');
     const buyerLines = cust ? [
         buyerIdLine,
-        cust.vat_code ? `Код НДС: ${cust.vat_code}` : '',
+        cust.vat_code ? `${t('inv_vat_code')}: ${cust.vat_code}` : '',
         cust.address || '',
         cust.contact || '',
     ].filter(Boolean) : [];
@@ -340,9 +340,9 @@ async function buildDocumentPdf(docType, snapshot) {
     pdf.setFontSize(18); pdf.setFont('Roboto', 'bold'); pdf.setTextColor(...PDF_COLORS.textDark);
     pdf.text(title, marginX, 20);
     pdf.setFontSize(10); pdf.setFont('Roboto', 'normal'); pdf.setTextColor(...PDF_COLORS.textGray);
-    pdf.text(`Номер: ${number}`, pageW - marginX, 14, { align: 'right' });
-    pdf.text(`Дата: ${formatDateDMY(issueDate)}`, pageW - marginX, 19, { align: 'right' });
-    if (isInvoice) pdf.text(`Срок оплаты: ${formatDateDMY(dueDate)}`, pageW - marginX, 24, { align: 'right' });
+    pdf.text(`${t('inv_number')}: ${number}`, pageW - marginX, 14, { align: 'right' });
+    pdf.text(`${t('history_col_date')}: ${formatDateDMY(issueDate)}`, pageW - marginX, 19, { align: 'right' });
+    if (isInvoice) pdf.text(`${t('inv_due_date')}: ${formatDateDMY(dueDate)}`, pageW - marginX, 24, { align: 'right' });
 
     // ---- Продавец / Покупатель — две колонки ----
     const colW = (pageW - marginX * 2 - 10) / 2;
@@ -363,15 +363,15 @@ async function buildDocumentPdf(docType, snapshot) {
         });
         return ly;
     }
-    const yAfterSeller = drawParty('ПРОДАВЕЦ', sellerName, sellerLines, marginX);
-    const yAfterBuyer  = drawParty('ПОКУПАТЕЛЬ', buyerName, buyerLines, col2X);
+    const yAfterSeller = drawParty(t('inv_seller'), sellerName, sellerLines, marginX);
+    const yAfterBuyer  = drawParty(t('inv_buyer'), buyerName, buyerLines, col2X);
     pdf.setTextColor(...PDF_COLORS.textDark);
 
     // ---- Таблица позиций ----
     pdf.autoTable({
         startY: Math.max(yAfterSeller, yAfterBuyer) + 6,
         margin: { left: marginX, right: marginX },
-        head: [['Наименование', 'Кол-во', 'Цена без НДС', 'Сумма без НДС', 'НДС', 'НДС %', 'Итого']],
+        head: [[t('inv_col_name'), t('inv_col_qty'), t('inv_col_price_no_vat'), t('inv_col_sum_no_vat'), t('inv_col_vat'), t('inv_col_vat_pct'), t('inv_col_total')]],
         body: bodyRows,
         headStyles: { ...PDF_TABLE_HEAD_STYLE, fontSize: 9 },
         columnStyles: {
@@ -385,17 +385,17 @@ async function buildDocumentPdf(docType, snapshot) {
     y = pdf.lastAutoTable.finalY + 8;
     pdf.setFontSize(10); pdf.setFont('Roboto', 'normal'); pdf.setTextColor(...PDF_COLORS.textGray);
     const totalsRight = pageW - marginX;
-    pdf.text(`Итого кол-во: ${totalQty}`, totalsRight, y, { align: 'right' }); y += 5;
-    pdf.text(`Итого без НДС: ${money(afterDiscountAll)}`, totalsRight, y, { align: 'right' }); y += 5;
-    pdf.text(`Сумма НДС: ${money(vatAll)}`, totalsRight, y, { align: 'right' }); y += 7;
+    pdf.text(`${t('inv_total_qty')}: ${totalQty}`, totalsRight, y, { align: 'right' }); y += 5;
+    pdf.text(`${t('inv_total_no_vat')}: ${money(afterDiscountAll)}`, totalsRight, y, { align: 'right' }); y += 5;
+    pdf.text(`${t('inv_vat_sum')}: ${money(vatAll)}`, totalsRight, y, { align: 'right' }); y += 7;
     pdf.setFontSize(13); pdf.setFont('Roboto', 'bold'); pdf.setTextColor(...PDF_COLORS.textDark);
-    pdf.text(`Итого к оплате: ${money(grandAll)}`, totalsRight, y, { align: 'right' });
+    pdf.text(`${t('inv_total_due')}: ${money(grandAll)}`, totalsRight, y, { align: 'right' });
 
     // ---- Подписи ----
     y += 20;
     pdf.setFontSize(9.5); pdf.setFont('Roboto', 'normal'); pdf.setTextColor(...PDF_COLORS.textGray);
-    pdf.text(`Выставил: ${org.director_name || sellerName}`, marginX, y);
-    pdf.text('Принято: _______________________', pageW - marginX, y, { align: 'right' });
+    pdf.text(`${t('inv_issued_by')}: ${org.director_name || sellerName}`, marginX, y);
+    pdf.text(`${t('inv_accepted')}: _______________________`, pageW - marginX, y, { align: 'right' });
 
     return pdf;
 }
@@ -410,13 +410,13 @@ async function shareOrderDocumentPdf() {
     const { docType, snapshot } = _docPreview;
     const filename = `${docType === 'invoice' ? 'schet' : 'nakladnaya'}_${snapshot.number}.pdf`;
 
-    showLoading('Формируется PDF, подождите...');
+    showLoading(t('customers_pdf_generating'));
     try {
         const pdf = await buildDocumentPdf(docType, snapshot);
         await pdfSaveOrShare(pdf, filename);
     } catch (e) {
         console.error(e);
-        showInfo('Не удалось сформировать документ: ' + (e && e.message ? e.message : 'неизвестная ошибка') + '. Проверьте подключение и попробуйте ещё раз.');
+        showInfo(t('inv_doc_error_prefix') + (e && e.message ? e.message : t('inv_unknown_error')) + t('customers_pdf_error_suffix'));
     } finally {
         hideLoading();
         if (btn) { btn.disabled = false; btn.style.opacity = ''; }

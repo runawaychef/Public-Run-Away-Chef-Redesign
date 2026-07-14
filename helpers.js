@@ -309,10 +309,10 @@ async function shareOrCopyText(text) {
     } else {
         try {
             await navigator.clipboard.writeText(text);
-            showInfo('Текст скопирован в буфер обмена — вставьте его в нужное сообщение.');
+            showInfo(t('helpers_text_copied'));
         } catch (e) {
             console.error(e);
-            showInfo('Не удалось скопировать текст. Скопируйте вручную:\n\n' + text);
+            showInfo(t('helpers_copy_failed') + '\n\n' + text);
         }
     }
 }
@@ -320,10 +320,14 @@ async function shareOrCopyText(text) {
 // Показывает понятное сообщение при достижении лимита бесплатного тарифа,
 // иначе — обычное сообщение об ошибке (по умолчанию). Текст лимита берём
 // прямо из базы (поле DETAIL, заданное в триггере) — не дублируем цифры тут.
+// ВАЖНО: e.details приходит с сервера (текст самого триггера в Supabase) и
+// пока всегда на русском независимо от языка приложения — полный перевод
+// этого конкретного сообщения потребует правки серверной функции, это уже
+// не JS-фронтенд. Клиентская обвязка вокруг него переведена.
 function showDbError(e, fallbackMsg) {
     const code = e && e.message;
     if (code === 'FREE_LIMIT_CUSTOMERS' || code === 'FREE_LIMIT_ORDERS') {
-        showInfo((e.details || 'Достигнут лимит бесплатного тарифа.') + '\n\nЧтобы продолжить, перейдите на платный тариф.');
+        showInfo((e.details || t('helpers_free_limit_reached')) + '\n\n' + t('helpers_upgrade_to_continue'));
         return true;
     }
     showInfo(fallbackMsg);
@@ -341,7 +345,7 @@ async function updateChecked(query) {
     const { data, error } = await query.select('id');
     if (error) throw error;
     if (!data || data.length === 0) {
-        throw new Error('Изменение не было сохранено (0 строк). Возможно, нет прав на обновление этой записи.');
+        throw new Error(t('helpers_update_not_saved'));
     }
     return data;
 }
@@ -381,7 +385,7 @@ const PDF_COLORS = {
 // встроенные шрифты jsPDF (Helvetica и т.д.) кириллицу не поддерживают
 // вообще, текст на русском вышел бы нечитаемым набором символов.
 async function createPdfDoc() {
-    if (!window.jspdf) throw new Error('Библиотека jsPDF не загрузилась. Проверьте интернет и обновите страницу.');
+    if (!window.jspdf) throw new Error(t('helpers_jspdf_not_loaded'));
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF('p', 'mm', 'a4');
     await ensureCyrillicFont(pdf);
@@ -413,7 +417,7 @@ async function ensureCyrillicFont(pdf) {
             _cyrillicFontBase64 = arrayBufferToBase64(buf);
             try { localStorage.setItem(CYRILLIC_FONT_CACHE_KEY, _cyrillicFontBase64); } catch (e) { /* не критично */ }
         } catch (e) {
-            throw new Error('Не удалось загрузить шрифт для PDF (кириллица). Убедитесь, что файл Roboto-Regular.ttf загружен в репозиторий рядом с index.html.');
+            throw new Error(t('helpers_font_load_failed'));
         }
     }
     pdf.addFileToVFS('Roboto-Regular.ttf', _cyrillicFontBase64);

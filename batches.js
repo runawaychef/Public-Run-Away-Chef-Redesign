@@ -108,10 +108,10 @@ async function restoreFIFO(breakdown) {
 
 function renderBatchesList(batches, unitLabel, itemType) {
     if (!batches || !batches.length) {
-        return '<div class="table-text text-gray-400">Нет активных партий (списано полностью или ещё не закупалось)</div>';
+        return `<div class="table-text text-gray-400">${t('batch_no_active')}</div>`;
     }
     let html = '<table class="w-full text-xs table-clean"><thead><tr style="background-color:#e3e8df;">' +
-        '<th class="p-1 text-left">Дата</th><th class="p-1 text-right">Остаток</th><th class="p-1 text-right">Цена/ед.</th></tr></thead><tbody>';
+        `<th class="p-1 text-left">${t('history_col_date')}</th><th class="p-1 text-right">${t('inv_col_balance')}</th><th class="p-1 text-right">${t('orders_price_per_unit_short')}</th></tr></thead><tbody>`;
     batches.forEach(b => {
         const dateStr = new Date(b.created_at).toLocaleDateString('ru-RU');
         html += `<tr class="border-b cursor-pointer" ${dataAction('openEditBatchModal', [b.id, itemType, unitLabel])}>
@@ -130,11 +130,11 @@ async function openEditBatchModal(batchId, itemType, unitLabel) {
     const { data, error } = await db.from('stock_batches')
         .select('id, item_type, unit_price, qty_remaining, created_at')
         .eq('id', batchId).single();
-    if (error || !data) { showInfo('Не удалось загрузить партию.'); return; }
+    if (error || !data) { showInfo(t('batch_load_error')); return; }
     document.getElementById('editBatchId').value = data.id;
     document.getElementById('editBatchItemType').value = data.item_type;
     document.getElementById('editBatchDate').textContent =
-        `Партия от ${new Date(data.created_at).toLocaleDateString('ru-RU')}`;
+        `${t('batch_from_date_prefix')} ${new Date(data.created_at).toLocaleDateString('ru-RU')}`;
     document.getElementById('editBatchUnit').textContent = unitLabel;
     document.getElementById('editBatchQty').value = Number(data.qty_remaining).toFixed(2);
     document.getElementById('editBatchPrice').value = Number(data.unit_price).toFixed(4);
@@ -150,14 +150,14 @@ async function saveBatchEdit() {
     const newQty = parseFloat(document.getElementById('editBatchQty').value);
     const newPrice = parseFloat(document.getElementById('editBatchPrice').value);
     if (isNaN(newQty) || newQty < 0 || isNaN(newPrice) || newPrice < 0) {
-        showInfo('Введите корректные значения!'); return;
+        showInfo(t('batch_enter_valid_values')); return;
     }
     showLoading();
     try {
         const { data: batch, error: readErr } = await db.from('stock_batches')
             .select('id, item_type, ingredient_id, semi_finished_id, qty_remaining, qty_original')
             .eq('id', batchId).single();
-        if (readErr || !batch) throw readErr || new Error('Партия не найдена');
+        if (readErr || !batch) throw readErr || new Error(t('batch_not_found'));
 
         const delta = parseFloat((newQty - Number(batch.qty_remaining)).toFixed(4));
         if (Math.abs(delta) > 0.0001) {
@@ -167,7 +167,7 @@ async function saveBatchEdit() {
                 semi_finished_id: itemType === 'semi_finished' ? batch.semi_finished_id : null,
                 type: delta > 0 ? 'приход' : 'расход',
                 quantity: Math.abs(delta),
-                notes: 'Правка партии вручную'
+                notes: t('batch_manual_edit_note')
             });
         }
 
@@ -191,14 +191,14 @@ async function saveBatchEdit() {
 async function deleteBatch() {
     const batchId = Number(document.getElementById('editBatchId').value);
     const itemType = document.getElementById('editBatchItemType').value;
-    const ok = await showConfirm('Удалить эту партию? Действие нельзя отменить.');
+    const ok = await showConfirm(t('batch_delete_confirm'));
     if (!ok) return;
     showLoading();
     try {
         const { data: batch, error: readErr } = await db.from('stock_batches')
             .select('id, item_type, ingredient_id, semi_finished_id, qty_remaining')
             .eq('id', batchId).single();
-        if (readErr || !batch) throw readErr || new Error('Партия не найдена');
+        if (readErr || !batch) throw readErr || new Error(t('batch_not_found'));
 
         if (Number(batch.qty_remaining) > 0.0001) {
             await db.from('inventory').insert({
@@ -207,7 +207,7 @@ async function deleteBatch() {
                 semi_finished_id: itemType === 'semi_finished' ? batch.semi_finished_id : null,
                 type: 'расход',
                 quantity: Number(batch.qty_remaining),
-                notes: 'Удаление партии вручную'
+                notes: t('batch_manual_delete_note')
             });
         }
         await db.from('stock_batches').delete().eq('id', batchId);
@@ -216,7 +216,7 @@ async function deleteBatch() {
         closeModal();
         await refreshBatchesAndStockAfterEdit(itemType, batch.ingredient_id || batch.semi_finished_id);
         logActivity('inventory', 'Партия удалена вручную');
-    } catch (e) { console.error(e); showInfo('Ошибка удаления.'); }
+    } catch (e) { console.error(e); showInfo(t('error_delete_generic')); }
     finally { hideLoading(); }
 }
 
@@ -230,7 +230,7 @@ async function refreshBatchesAndStockAfterEdit(itemType, itemId) {
             displayIngredients();
             const list = document.getElementById('ingBatchesList');
             if (list && !list.classList.contains('hidden')) {
-                document.getElementById('ingBatchesToggleLabel').textContent = 'Партии';
+                document.getElementById('ingBatchesToggleLabel').textContent = t('ing_batches');
                 list.classList.add('hidden');
                 await toggleIngredientBatches();
             }
@@ -241,7 +241,7 @@ async function refreshBatchesAndStockAfterEdit(itemType, itemId) {
             await renderSfStockBlock(sf);
             const list = document.getElementById('sfBatchesList');
             if (list && !list.classList.contains('hidden')) {
-                document.getElementById('sfBatchesToggleLabel').textContent = 'Партии';
+                document.getElementById('sfBatchesToggleLabel').textContent = t('ing_batches');
                 list.classList.add('hidden');
                 await toggleSfBatches();
             }
@@ -259,15 +259,15 @@ async function toggleIngredientBatches() {
     if (willShow) {
         const ing = ingredients.find(i => i.id === currentIngredientId);
         if (!ing) return;
-        list.innerHTML = '<div class="table-text text-gray-400">Загрузка...</div>';
+        list.innerHTML = `<div class="table-text text-gray-400">${t('common_loading')}</div>`;
         const { data, error } = await db.from('stock_batches')
             .select('id, unit_price, qty_remaining, created_at')
             .eq('item_type', 'ingredient').eq('ingredient_id', ing.id)
             .gt('qty_remaining', 0).order('created_at', { ascending: true });
-        const unitLabel = UNIT_LABELS[ing.unit] || ing.unit;
+        const unitLabel = unitAbbrev(ing.unit);
         const label = document.getElementById('ingBatchesToggleLabel');
-        if (label) label.textContent = `Партии${!error && data ? ` (${data.length})` : ''}`;
-        list.innerHTML = error ? '<div class="table-text text-gray-400">Ошибка загрузки</div>' : renderBatchesList(data, unitLabel, 'ingredient');
+        if (label) label.textContent = `${t('ing_batches')}${!error && data ? ` (${data.length})` : ''}`;
+        list.innerHTML = error ? `<div class="table-text text-gray-400">${t('batch_load_list_error')}</div>` : renderBatchesList(data, unitLabel, 'ingredient');
     }
 }
 
@@ -281,15 +281,14 @@ async function toggleSfBatches() {
     if (willShow) {
         const sf = (typeof semiFinished !== 'undefined') ? semiFinished.find(s => s.id === currentSemiFinishedId) : null;
         if (!sf) return;
-        list.innerHTML = '<div class="table-text text-gray-400">Загрузка...</div>';
+        list.innerHTML = `<div class="table-text text-gray-400">${t('common_loading')}</div>`;
         const { data, error } = await db.from('stock_batches')
             .select('id, unit_price, qty_remaining, created_at')
             .eq('item_type', 'semi_finished').eq('semi_finished_id', sf.id)
             .gt('qty_remaining', 0).order('created_at', { ascending: true });
-        const SF_LABELS = { g: 'г', kg: 'кг', ml: 'мл', l: 'л', pcs: 'шт' };
-        const unitLabel = SF_LABELS[sf.unit] || sf.unit;
+        const unitLabel = unitAbbrev(sf.unit);
         const label = document.getElementById('sfBatchesToggleLabel');
-        if (label) label.textContent = `Партии${!error && data ? ` (${data.length})` : ''}`;
-        list.innerHTML = error ? '<div class="table-text text-gray-400">Ошибка загрузки</div>' : renderBatchesList(data, unitLabel, 'semi_finished');
+        if (label) label.textContent = `${t('ing_batches')}${!error && data ? ` (${data.length})` : ''}`;
+        list.innerHTML = error ? `<div class="table-text text-gray-400">${t('batch_load_list_error')}</div>` : renderBatchesList(data, unitLabel, 'semi_finished');
     }
 }

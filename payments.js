@@ -61,7 +61,7 @@ function renderPayments() {
     if (remEl) remEl.textContent = formatMoney(remaining);
 
     const summaryLine = document.getElementById('paymentSummaryLine');
-    if (summaryLine) summaryLine.textContent = `Оплачено ${formatMoney(paid)} из ${formatMoney(total)}`;
+    if (summaryLine) summaryLine.textContent = `${t('orders_paid')} ${formatMoney(paid)} ${t('settings_of')} ${formatMoney(total)}`;
 
     const overpaidRow = document.getElementById('paymentOverpaidRow');
     if (overpaidRow) {
@@ -85,15 +85,15 @@ function renderPayments() {
     [badge, badge2].forEach(b => {
         if (!b) return;
         if (paidCents <= 0) {
-            b.textContent = 'Не оплачен';
+            b.textContent = t('pay_status_unpaid');
             b.className = 'text-xs font-semibold px-2 py-0.5 rounded-full';
             b.style.cssText = 'background:#f3ded9; color:#a3493d;';
         } else if (paidCents < totalCents) {
-            b.textContent = 'Частично оплачен';
+            b.textContent = t('pay_status_partial');
             b.className = 'text-xs font-semibold px-2 py-0.5 rounded-full';
             b.style.cssText = 'background:#f7e6c4; color:#96712a;';
         } else {
-            b.textContent = 'Оплачен';
+            b.textContent = t('pay_status_paid');
             b.className = 'text-xs font-semibold px-2 py-0.5 rounded-full';
             b.style.cssText = 'background:#e3e8df; color:#4f6349;';
         }
@@ -115,7 +115,7 @@ function renderPayments() {
     const list = document.getElementById('paymentsListContent');
     if (!list) return;
     if (!_orderPayments.length) {
-        list.innerHTML = '<p class="text-xs text-gray-400">Платежей ещё не было</p>';
+        list.innerHTML = `<p class="text-xs text-gray-400">${t('pay_no_payments_yet')}</p>`;
         return;
     }
     let html = '<div class="flex flex-col gap-1.5">';
@@ -156,7 +156,7 @@ async function saveDueDate() {
 
 function openAddPaymentModal(fillRemaining) {
     document.getElementById('paymentEditId').value = '';
-    document.getElementById('paymentModalTitle').textContent = 'Добавить оплату';
+    document.getElementById('paymentModalTitle').textContent = t('orders_add_payment_title');
     document.getElementById('paymentDeleteBtn').classList.add('hidden');
 
     const total = getOrderTotalValue();
@@ -174,7 +174,7 @@ function openEditPaymentModal(paymentId) {
     const p = _orderPayments.find(pay => pay.id === paymentId);
     if (!p) { console.error('openEditPaymentModal: платёж не найден —', paymentId); return; }
     document.getElementById('paymentEditId').value = p.id;
-    document.getElementById('paymentModalTitle').textContent = 'Редактировать платёж';
+    document.getElementById('paymentModalTitle').textContent = t('pay_edit_title');
     document.getElementById('paymentDeleteBtn').classList.toggle('hidden', !hasPermission('can_delete'));
 
     document.getElementById('paymentAmount').value = Number(p.amount).toFixed(2);
@@ -191,8 +191,8 @@ async function savePayment() {
     const method = document.getElementById('paymentMethod').value;
     const note = document.getElementById('paymentNote').value.trim();
 
-    if (!amount || amount <= 0) { showInfo('Укажите сумму больше нуля.'); return; }
-    if (!paidAt) { showInfo('Укажите дату.'); return; }
+    if (!amount || amount <= 0) { showInfo(t('pay_amount_required')); return; }
+    if (!paidAt) { showInfo(t('pay_date_required')); return; }
     if (!currentOrderId) return;
 
     showLoading(t('common_saving'));
@@ -225,7 +225,7 @@ async function savePayment() {
 async function deletePayment() {
     const id = document.getElementById('paymentEditId').value;
     if (!id) return;
-    if (!(await showConfirm('Удалить эту запись об оплате?'))) return;
+    if (!(await showConfirm(t('pay_delete_confirm')))) return;
     showLoading(t('common_deleting'));
     try {
         suppressRealtimeFor3s();
@@ -236,6 +236,6 @@ async function deletePayment() {
         await loadOrderPayments(currentOrderId);
     } catch (e) {
         console.error(e);
-        showInfo('Ошибка удаления.');
+        showInfo(t('error_delete_generic'));
     } finally { hideLoading(); }
 }

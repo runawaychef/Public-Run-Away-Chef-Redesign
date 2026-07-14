@@ -23,8 +23,16 @@
 
 const _calInstances = {}; // popupId -> {hiddenInputId, labelId, onPick, badge, viewYear, viewMonth}
 
-const CAL_MONTH_NAMES = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-const CAL_WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+const CAL_MONTH_NAMES_RU = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+const CAL_MONTH_NAMES_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const CAL_WEEKDAYS_RU = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+const CAL_WEEKDAYS_EN = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+function calMonthName(idx0) {
+    return (typeof currentLang !== 'undefined' && currentLang === 'en') ? CAL_MONTH_NAMES_EN[idx0] : CAL_MONTH_NAMES_RU[idx0];
+}
+function calWeekdays() {
+    return (typeof currentLang !== 'undefined' && currentLang === 'en') ? CAL_WEEKDAYS_EN : CAL_WEEKDAYS_RU;
+}
 
 function toggleCustomCalendar(popupId, hiddenInputId, labelId, opts) {
     const popup = document.getElementById(popupId);
@@ -211,30 +219,30 @@ function renderCalendarPopup(popupId) {
     }
 
     const statusHtml = isRange
-        ? `<div class="cal-range-status">С ${st.tempFrom ? formatDateDMY(st.tempFrom) : '—'} &nbsp;по&nbsp; ${st.tempTo ? formatDateDMY(st.tempTo) : '—'}</div>`
+        ? `<div class="cal-range-status">${t('cal_from')} ${st.tempFrom ? formatDateDMY(st.tempFrom) : '—'} &nbsp;${t('cal_to')}&nbsp; ${st.tempTo ? formatDateDMY(st.tempTo) : '—'}</div>`
         : '';
 
     const footerHtml = isRange
         ? `<div class="cal-footer" style="justify-content:space-between;">
-               <div class="cal-today-btn" onclick="calGoToday('${popupId}')">Сегодня</div>
+               <div class="cal-today-btn" onclick="calGoToday('${popupId}')">${t('cal_today')}</div>
                <div style="display:flex; gap:6px;">
-                   <div class="cal-today-btn" onclick="calClearRange('${popupId}')">Очистить</div>
-                   <div class="cal-apply-btn${(st.tempFrom && st.tempTo) ? '' : ' disabled'}" onclick="calApplyRange('${popupId}')">Применить</div>
+                   <div class="cal-today-btn" onclick="calClearRange('${popupId}')">${t('common_clear')}</div>
+                   <div class="cal-apply-btn${(st.tempFrom && st.tempTo) ? '' : ' disabled'}" onclick="calApplyRange('${popupId}')">${t('cal_apply')}</div>
                </div>
            </div>`
         : `<div class="cal-footer">
-               <div class="cal-today-btn" onclick="calGoToday('${popupId}')">Сегодня</div>
-               ${st.allowClear ? `<div class="cal-today-btn" onclick="calClearDay('${popupId}')">Очистить</div>` : ''}
+               <div class="cal-today-btn" onclick="calGoToday('${popupId}')">${t('cal_today')}</div>
+               ${st.allowClear ? `<div class="cal-today-btn" onclick="calClearDay('${popupId}')">${t('common_clear')}</div>` : ''}
            </div>`;
 
     popup.innerHTML = `
         <div class="cal-header">
             <div class="cal-nav-btn" onclick="calNavMonth('${popupId}', -1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6"/></svg></div>
-            <div class="cal-title">${CAL_MONTH_NAMES[st.viewMonth]} ${st.viewYear}</div>
+            <div class="cal-title">${calMonthName(st.viewMonth)} ${st.viewYear}</div>
             <div class="cal-nav-btn" onclick="calNavMonth('${popupId}', 1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6"/></svg></div>
         </div>
         ${statusHtml}
-        <div class="cal-weekdays">${CAL_WEEKDAYS.map(w => `<div class="cal-weekday">${w}</div>`).join('')}</div>
+        <div class="cal-weekdays">${calWeekdays().map(w => `<div class="cal-weekday">${w}</div>`).join('')}</div>
         <div class="cal-days">${cellsHtml}</div>
         ${footerHtml}
     `;

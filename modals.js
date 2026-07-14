@@ -22,7 +22,7 @@ async function confirmDelete() {
     // без права can_delete фактическое удаление не выполнится.
     if (!hasPermission('can_delete')) {
         closeModal();
-        showInfo('У вас нет права на удаление. Обратитесь к владельцу пекарни.');
+        showInfo(t('ing_no_delete_permission'));
         return;
     }
     showLoading();
@@ -149,7 +149,7 @@ async function confirmDelete() {
         closeModal();
     } catch (e) {
         console.error(e);
-        showInfo('Ошибка удаления. Возможно, запись связана с другими данными, либо нет подключения к интернету.');
+        showInfo(t('modals_delete_error_detailed'));
         closeModal();
     } finally {
         hideLoading();
