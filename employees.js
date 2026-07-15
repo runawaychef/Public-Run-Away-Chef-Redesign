@@ -348,7 +348,10 @@ async function saveOrgNameSetup() {
     if (wantsDemo && owner) {
         showLoading('Заполняю пример...');
         try {
-            await createDemoData(currentOrgId, owner.id);
+            const warnings = await createDemoData(currentOrgId, owner.id);
+            if (warnings && warnings.length) {
+                showInfo('Пример создан, но не всё удалось до конца:\n\n⚠️ ' + warnings.join('\n⚠️ '));
+            }
         } catch (e) {
             console.error(e);
             showInfo('Не удалось полностью заполнить пример — но можно продолжить и добавить данные вручную.\n\nТехническая причина: ' + (e && e.message ? e.message : String(e)));

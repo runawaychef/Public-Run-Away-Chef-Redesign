@@ -159,6 +159,11 @@ function demoOrderPlan() {
 async function createDemoData(orgId, employeeId) {
     const lang = (typeof currentLang !== 'undefined' && currentLang === 'en') ? 'en' : 'ru';
     const C = DEMO_CONTENT[lang];
+    // Некритичные сбои (склад, оплаты, отдельные заказы, снимок себестоимости)
+    // не должны обрывать весь процесс — но и молча теряться в консоли браузера
+    // тоже не должны, раз на мобильном нет доступа к DevTools. Собираем текст
+    // сюда и показываем пользователю вместе с итоговым сообщением об успехе.
+    const warnings = [];
 
     // ---------- Клиенты ----------
     const { data: customersData, error: custErr } = await db.from('customers').insert(
@@ -246,6 +251,7 @@ async function createDemoData(orgId, employeeId) {
     const ingConsumption = {};  // ключ ингредиента -> суммарный расход "напрямую" через заказы
     const sfConsumption = {};   // ключ п/ф -> суммарный расход через заказы
 
+    let failedOrdersCount = 0;
     for (const o of plan) {
       try {
         const orderDate = demoDateStr(o.offset);
@@ -304,14 +310,22 @@ async function createDemoData(orgId, employeeId) {
                 // остальные 10% — без единой оплаты
             } catch (payErr) {
                 console.error('Демо: не удалось создать оплату для заказа', orderData.id, payErr);
+                warnings.push('оплата заказа: ' + (payErr && payErr.message ? payErr.message : String(payErr)));
             }
         }
       } catch (orderLoopErr) {
         // Один неудачный заказ (сеть/таймаут) — пропускаем и идём дальше,
         // не обрывая создание остальных заказов и всего, что после них
-        // (склад, п/ф, список покупок, снимок себестоимости).
+        // (склад, п/ф, список покупок, снимок себестоимости). Считаем, а не
+        // пишем каждый в warnings отдельно — иначе при системном сбое
+        // сообщение об успехе утонет в десятках одинаковых строк.
+        failedOrdersCount++;
         console.error('Демо: не удалось создать один из заказов, продолжаю со следующим', orderLoopErr);
       }
+    }
+
+    if (failedOrdersCount > 0) {
+        warnings.push(`заказы: ${failedOrdersCount} из ${plan.length} не удалось создать`);
     }
 
     // ---------- Сколько полуфабрикатов нужно произвести (считаем ДО закупок сырья,
@@ -365,9 +379,9 @@ async function createDemoData(orgId, employeeId) {
         }
     });
     const { error: invErr } = await db.from('inventory').insert(invRows);
-    if (invErr) console.error('Демо: не удалось создать приход/расход сырья (склад останется пустым)', invErr);
+    if (invErr) { console.error('Демо: не удалось создать приход/расход сырья (склад останется пустым)', invErr); warnings.push('склад (приход/расход сырья): ' + invErr.message); }
     const { error: batchErr } = await db.from('stock_batches').insert(batchRows);
-    if (batchErr) console.error('Демо: не удалось создать партии сырья (FIFO-себестоимость будет недоступна)', batchErr);
+    if (batchErr) { console.error('Демо: не удалось создать партии сырья (FIFO-себестоимость будет недоступна)', batchErr); warnings.push('склад (партии сырья): ' + batchErr.message); }
 
     // ---------- Производство и расход полуфабрикатов ----------
     const sfInvRows = [];
@@ -388,9 +402,9 @@ async function createDemoData(orgId, employeeId) {
         }
     });
     const { error: sfInvErr } = await db.from('inventory').insert(sfInvRows);
-    if (sfInvErr) console.error('Демо: не удалось создать движения по п/ф', sfInvErr);
+    if (sfInvErr) { console.error('Демо: не удалось создать движения по п/ф', sfInvErr); warnings.push('склад п/ф (движения): ' + sfInvErr.message); }
     const { error: sfBatchErr } = await db.from('stock_batches').insert(sfBatchRows);
-    if (sfBatchErr) console.error('Демо: не удалось создать партии п/ф', sfBatchErr);
+    if (sfBatchErr) { console.error('Демо: не удалось создать партии п/ф', sfBatchErr); warnings.push('склад п/ф (партии): ' + sfBatchErr.message); }
 
     // ---------- Список покупок: пара позиций из "тесных" ингредиентов ----------
     const shoppingRows = DEMO_LOW_STOCK_KEYS.slice(0, 2).map(key => ({
@@ -404,15 +418,22 @@ async function createDemoData(orgId, employeeId) {
     // подгружаем свежие данные, чтобы у products/semiFinished были рецепты). ----------
     if (typeof loadAllData === 'function' && typeof saveOrderItemIngredients === 'function') {
         await loadAllData(true);
+        let failedSnapshotsCount = 0;
         for (const item of allCreatedItems) {
             try {
                 const prod = products.find(p => p.id === prodByKey[item.key]);
                 if (prod) await saveOrderItemIngredients(item.id, prod, item.quantity);
             } catch (snapErr) {
+                failedSnapshotsCount++;
                 console.error('Демо: не удалось сохранить снимок себестоимости для позиции', item.id, snapErr);
             }
         }
+        if (failedSnapshotsCount > 0) {
+            warnings.push(`себестоимость: ${failedSnapshotsCount} из ${allCreatedItems.length} позиций без детализации`);
+        }
     }
+
+    return warnings;
 }
 
 // ВРЕМЕННО (для цикла тестирования Google Play, потом убрать вместе с кнопкой
@@ -439,11 +460,15 @@ async function fillDemoDataFromSettings() {
     if (!ok) return;
     showLoading(t('fill_demo_loading'));
     try {
-        await createDemoData(currentOrgId, currentEmployee.id);
+        const warnings = await createDemoData(currentOrgId, currentEmployee.id);
         await loadAllData();
         await loadInventory();
         closeModal();
-        await showInfo(t('fill_demo_success'));
+        if (warnings && warnings.length) {
+            await showInfo(t('fill_demo_success') + '\n\n⚠️ ' + warnings.join('\n⚠️ '));
+        } else {
+            await showInfo(t('fill_demo_success'));
+        }
     } catch (e) {
         console.error(e);
         showInfo(t('fill_demo_error') + (e && e.message ? e.message : String(e)));
