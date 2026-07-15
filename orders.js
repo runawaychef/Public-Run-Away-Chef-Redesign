@@ -629,6 +629,28 @@ function positionOrdersViewToggle() {
     watchHeaderResize(headerCard);
 }
 window.addEventListener('resize', positionOrdersViewToggle);
+// window 'resize' не всегда срабатывает при появлении/скрытии клавиатуры на
+// Android Chrome (зависит от версии браузера и того, что фокус попал именно
+// в текстовое поле) — visualViewport.resize ловит это надёжнее в любом случае.
+// Это тот самый класс "переключатель иногда уезжает", который не покрывался
+// ни pageshow/visibilitychange (не про клавиатуру), ни обычным resize.
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', positionOrdersViewToggle);
+}
+// Доп. подстраховка: пересчёт при скролле, throttled через requestAnimationFrame.
+// На случай, если положение вдруг посчиталось в момент, когда прилипающая
+// шапка (#appStickyHeader, position:sticky) ещё "доезжает" до прилипшего
+// состояния — тогда getBoundingClientRect() у неё на миг даёт промежуточное,
+// а не финальное значение.
+let _ovtScrollScheduled = false;
+window.addEventListener('scroll', () => {
+    if (_ovtScrollScheduled) return;
+    _ovtScrollScheduled = true;
+    requestAnimationFrame(() => {
+        positionOrdersViewToggle();
+        _ovtScrollScheduled = false;
+    });
+}, { passive: true });
 
 // Самокорректирующийся пересчёт: раньше позиция переключателя пересчитывалась
 // только "по требованию" — из конкретных мест кода (смена вкладки, pageshow
