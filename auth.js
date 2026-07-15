@@ -251,7 +251,7 @@ async function handlePasswordReset() {
 
     try {
         const { error } = await db.auth.resetPasswordForEmail(email, {
-            redirectTo: 'https://runawaychef.github.io/Public-Run-Away-Chef'
+            redirectTo: 'https://runawaychef.github.io/Public-Run-Away-Chef-Redesign/'
         });
         if (error) throw error;
         document.getElementById('authSuccess').textContent = t('auth_reset_email_sent');
@@ -275,7 +275,7 @@ async function handleGoogleSignIn() {
         const { error } = await db.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: 'https://runawaychef.github.io/Public-Run-Away-Chef'
+                redirectTo: 'https://runawaychef.github.io/Public-Run-Away-Chef-Redesign/'
             }
         });
         if (error) throw error;
