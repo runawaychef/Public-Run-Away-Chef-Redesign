@@ -14,6 +14,10 @@ async function initAuth() {
     // Supabase сам восстанавливает сессию из URL-хэша
     db.auth.onAuthStateChange(async (event, session) => {
         if (event === 'SIGNED_IN' && session) {
+            if (_instantRestoreDone && session.user?.id && _snapshotAuthUserId !== session.user.id) {
+                await handleInstantRestoreWrongAccount();
+                return;
+            }
             await showAuthedApp();
         }
     });
@@ -36,6 +40,15 @@ async function initAuth() {
     }
 
     if (session) {
+        // Снимок мог мгновенно восстановиться из кэша ЕЩЁ ДО этой проверки (см.
+        // index.html/cache.js) — если он принадлежит другому Google-аккаунту
+        // (сменили пользователя на этом устройстве), нельзя тихо продолжать
+        // фоновое обновление поверх чужой организации — сбрасываем и грузим
+        // всё заново для реального текущего пользователя.
+        if (_instantRestoreDone && session.user?.id && _snapshotAuthUserId !== session.user.id) {
+            await handleInstantRestoreWrongAccount();
+            return;
+        }
         await showAuthedApp();
     } else if (_instantRestoreDone) {
         if (networkError) {

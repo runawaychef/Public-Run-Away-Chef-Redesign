@@ -20,11 +20,28 @@ const APP_SNAPSHOT_KEY = 'appDataSnapshot_v1';
 // повторно поверх уже показанного приложения, а просто тихо освежить данные.
 let _instantRestoreDone = false;
 
+// user_id, под которым был сохранён снимок, из которого мгновенно восстановили
+// интерфейс — auth.js сверяет его с реально авторизованным пользователем,
+// как только это станет известно, и если они не совпадают (снимок остался от
+// ДРУГОГО Google-аккаунта на этом же устройстве) — отменяет доверие к снимку
+// вместо того чтобы тихо продолжать работать с чужой организацией.
+let _snapshotAuthUserId = null;
+
 // Сохраняет текущее состояние всех данных приложения одним снимком.
 // Вызывается из loadAllData() после каждой успешной загрузки — чтобы кэш
 // всегда был не старше последнего реального обращения к серверу.
-function saveAppSnapshot() {
+// authUserId обязателен — без него при входе под ДРУГИМ Google-аккаунтом на
+// том же устройстве/браузере старый снимок мог мгновенно подставиться и
+// временно выдать чужую организацию за текущую (реальный случай, ловили на
+// живом тестировании 15.07.2026: демо-данные ушли не в ту org).
+async function saveAppSnapshot() {
     try {
+        let authUserId = null;
+        try {
+            const { data } = await db.auth.getSession();
+            authUserId = data?.session?.user?.id || null;
+        } catch (e) { /* сеть недоступна — сохраняем без привязки, ниже просто не будем доверять такому снимку */ }
+
         const snapshot = {
             orders, customers, products, ingredients, semiFinished, employees,
             _orderPaidTotals,
@@ -33,6 +50,7 @@ function saveAppSnapshot() {
             currentOrgCustomersUsed, currentOrgOrdersUsed,
             currentOrgCurrency, currentOrgVatRate,
             currentEmployee,
+            authUserId,
             savedAt: Date.now()
         };
         localStorage.setItem(APP_SNAPSHOT_KEY, JSON.stringify(snapshot));
@@ -82,6 +100,7 @@ function restoreAppFromSnapshot(snapshot) {
     currentOrgCurrency = snapshot.currentOrgCurrency || 'EUR';
     currentOrgVatRate = snapshot.currentOrgVatRate != null ? snapshot.currentOrgVatRate : 0.21;
     currentEmployee = snapshot.currentEmployee;
+    _snapshotAuthUserId = snapshot.authUserId || null;
 
     updateHeaderOrgName();
     applyPermissions(currentEmployee);
@@ -125,7 +144,27 @@ async function backgroundRefreshAfterInstantRestore() {
     }
 }
 
-// Вызывается из auth.js, когда фоновая проверка ПОСЛЕ мгновенного восстановления
+// Вызывается из auth.js, когда снимок был мгновенно восстановлен из кэша, но
+// реально авторизованный пользователь оказался ДРУГИМ (сменили Google-аккаунт
+// на этом же устройстве/браузере) — снимок принадлежит предыдущему аккаунту,
+// доверять его currentOrgId/currentEmployee нельзя ни секунды. Полностью
+// сбрасываем и грузим всё заново с нуля для реального текущего пользователя —
+// без этого действия могли молча уйти в чужую организацию (реальный случай,
+// пойман на живом тестировании 15.07.2026).
+async function handleInstantRestoreWrongAccount() {
+    clearAppSnapshot();
+    _instantRestoreDone = false;
+    _snapshotAuthUserId = null;
+    orders = []; customers = []; products = []; ingredients = []; semiFinished = []; employees = [];
+    currentOrgId = null; currentOrgName = ''; currentEmployee = null;
+    localStorage.removeItem('currentEmployee');
+    document.getElementById('appContent').classList.add('app-locked');
+    showLoading();
+    const autoSelected = await initLogin();
+    if (!autoSelected) hideLoading();
+}
+
+
 // из кэша обнаружила, что сессии реально больше нет (не ошибка сети, а именно
 // невалидная/отозванная сессия) — мягко предупреждаем и переводим на экран входа,
 // вместо того чтобы молча выкинуть пользователя посреди работы.
