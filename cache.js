@@ -151,7 +151,23 @@ async function backgroundRefreshAfterInstantRestore() {
 // сбрасываем и грузим всё заново с нуля для реального текущего пользователя —
 // без этого действия могли молча уйти в чужую организацию (реальный случай,
 // пойман на живом тестировании 15.07.2026).
-async function handleInstantRestoreWrongAccount() {
+// handleInstantRestoreWrongAccount() вызывается из auth.js в двух разных
+// местах (onAuthStateChange и ручная проверка getSession()), которые могут
+// сработать почти одновременно — та же гонка, что уже была починена для
+// showAuthedApp() (см. auth.js). Без этой защиты initLogin() запускался
+// дважды параллельно, и оба запуска успевали увидеть "сотрудников ещё нет"
+// до того, как первый успевал создать владельца — в результате создавались
+// два сотрудника-владельца на одну организацию (пойман на org_id=8, 15.07.2026).
+let _handleWrongAccountPromise = null;
+
+function handleInstantRestoreWrongAccount() {
+    if (_handleWrongAccountPromise) return _handleWrongAccountPromise;
+    _handleWrongAccountPromise = _doHandleInstantRestoreWrongAccount()
+        .finally(() => { _handleWrongAccountPromise = null; });
+    return _handleWrongAccountPromise;
+}
+
+async function _doHandleInstantRestoreWrongAccount() {
     clearAppSnapshot();
     _instantRestoreDone = false;
     _snapshotAuthUserId = null;
