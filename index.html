@@ -1302,6 +1302,7 @@
                     </div>
                     <button onclick="produceSfBatch()" class="pill-btn-secondary w-full justify-center mb-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"/></svg><span data-i18n="sf_produce_batch_btn">Произвести партию</span></button>
                     <button onclick="openSfWriteOffModal()" class="pill-btn-secondary w-full justify-center mb-2" data-i18n="ing_writeoff_btn">— Списать (корректировка)</button>
+                    <button onclick="closeSemiFinishedDetail(); openSfInventarizationModal();" class="pill-btn-secondary w-full justify-center mb-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg><span data-i18n="inv_inventarization">Инвентаризация</span></button>
                     <label class="flex items-center gap-2 table-text text-gray-700 border-t pt-2 mb-1 cursor-pointer">
                         <input type="checkbox" id="sfdRecipeConfirmed" onchange="toggleSfRecipeConfirmed()" style="accent-color:#7c9473;">
                         <span data-i18n="sf_recipe_confirmed_label">Рецепт заполнен полностью</span>
@@ -2260,7 +2261,7 @@
         <!-- Модалка склада -->
         <div id="inventoryModal" class="modal">
             <div class="modal-content" style="max-width:480px;">
-                <h2 id="inventoryModalTitle" class="text-sm font-semibold mb-2 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.836l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.98-4.706 2.545-7.187.075-.323-.174-.63-.53-.63H5.106M7.5 14.25L5.106 5.653M7.5 14.25L5.25 20.25m9-6l2.25 6"/></svg><span data-i18n="inv_title">Аналитика склада</span><button onclick="showHelpModal('help_inventory_title','help_inventory_text','help_inventory_text_more')" class="help-marker" data-i18n-title="help_marker_label" title="Подробнее об этом разделе">?</button></h2>
+                <h2 id="inventoryModalTitle" class="text-sm font-semibold mb-2 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.836l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.98-4.706 2.545-7.187.075-.323-.174-.63-.53-.63H5.106M7.5 14.25L5.106 5.653M7.5 14.25L5.25 20.25m9-6l2.25 6"/></svg><span data-i18n="inv_title">Аналитика склада</span><button onclick="showHelpModal('help_inventory_title','help_inventory_text')" class="help-marker" data-i18n-title="help_marker_label" title="Подробнее об этом разделе">?</button></h2>
                 <!-- Вкладки -->
                 <div class="flex gap-3 border-b mb-3">
                     <button id="invTabStock" onclick="switchInventoryTab('stock')" class="tab active text-xs pb-1" data-i18n="inv_tab_stock">Склад</button>
@@ -2690,7 +2691,7 @@
 
 <script src="dates.js?v=8"></script>
     <script src="money.js?v=9"></script>
-    <script src="i18n.js?v=9"></script>
+    <script src="i18n.js?v=10"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=6"></script>
     <script src="auth.js?v=15"></script>
