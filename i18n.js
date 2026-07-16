@@ -300,9 +300,10 @@ const I18N = {
         // Подсказки (маркер "?") — общий aria-label для всех маркеров,
         // плюс тексты для каждой конкретной подсказки по разделам
         help_marker_label: 'Подробнее об этом разделе',
-        help_more: 'Подробнее в FAQ',
+        help_more: 'Подробнее',
         help_inventory_title: 'Как работает аналитика склада',
         help_inventory_text: 'Остаток — сколько ингредиента у вас сейчас. «Хватит» — прогноз в днях по среднему расходу за последние 30 дней.\n\nКрасным — то, что уже закончилось или не хватит на подтверждённые заказы (для полуфабрикатов отрицательное число значит, что заготовки нужно доготовить). Жёлтым — то, что скоро понадобится докупить.\n\n«Запланировано списаний» — заказы дальше 7 дней не списывают ингредиенты сразу, чтобы остатки не выглядели заниженными раньше времени. Списание происходит автоматически за 7 дней до даты заказа.',
+        help_inventory_text_more: 'Остальные — запаса достаточно.\n\n«Нехватка» значит, что подтверждённые заказы спишут больше, чем есть в наличии — закупите это в первую очередь.\n\nБлок «Запланировано списаний» вверху показывает, сколько таких заказов ждут своей очереди и когда ближайшее из них.\n\nКнопка «+» в колонке «Список» добавляет ингредиент в список покупок.',
 
         // Аналитика склада + Список покупок
         inv_title: 'Аналитика склада',
@@ -1128,9 +1129,10 @@ const I18N = {
         // Help tooltips ("?" marker) — shared aria-label for all markers,
         // plus text for each specific section's tooltip
         help_marker_label: 'More about this section',
-        help_more: 'More in FAQ',
+        help_more: 'Show more',
         help_inventory_title: 'How inventory analytics works',
         help_inventory_text: 'Balance is how much of an ingredient you currently have. "Lasts" is a forecast in days, based on the average usage over the last 30 days.\n\nRed means it\'s already out of stock or won\'t be enough for confirmed orders (for semi-finished items, a negative number means you need to prepare more). Yellow means it will run out soon.\n\n"Scheduled write-offs" — orders more than 7 days away don\'t deduct ingredients right away, so stock levels don\'t look artificially low too early. The write-off happens automatically 7 days before the order date.',
+        help_inventory_text_more: 'Everything else — enough stock.\n\n"Not enough" means confirmed orders will use more than what\'s in stock — buy this first.\n\nThe "Scheduled write-offs" block at the top shows how many such orders are waiting and when the nearest one is.\n\nThe "+" button in the "List" column adds the ingredient to your shopping list.',
 
         // Inventory analytics + Shopping list
         inv_title: 'Inventory Analytics',

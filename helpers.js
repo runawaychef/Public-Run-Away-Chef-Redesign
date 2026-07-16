@@ -99,28 +99,31 @@ function showConfirm(message) {
 // оборачивается в свой <p>. Текст статический (из словаря, не от
 // пользователя), но экранируем на всякий случай тем же escapeHtml,
 // что и везде в приложении.
-// faqAnchor — необязательный: если задан, показывает кнопку "Подробнее в
-// FAQ", которая ведёт на конкретный вопрос в faq.html (см. data-faq-anchor
-// там же) и закрывается обратно сюда же, а не в Настройки (returnTo: 'none').
-function showHelpModal(titleKey, textKey, faqAnchor) {
+// moreKey — необязательный: ключ с дополнительными абзацами. Если задан,
+// показывает кнопку "Подробнее", которая ДОРИСОВЫВАЕТ эти абзацы в конец
+// текста прямо в этой же модалке (не уводит в FAQ — решили не дублировать
+// подробное объяснение в двух местах, чтобы не разъезжалось при правках).
+function showHelpModal(titleKey, textKey, moreKey) {
     const titleEl = document.getElementById('helpModalTitle');
     const textEl = document.getElementById('helpModalText');
     const modal = document.getElementById('helpModal');
     const moreBtn = document.getElementById('helpModalMoreBtn');
     if (!titleEl || !textEl || !modal) return;
 
-    titleEl.textContent = t(titleKey);
-    textEl.innerHTML = t(textKey)
+    const renderParagraphs = (key) => t(key)
         .split('\n\n')
         .map(p => `<p class="mb-2">${escapeHtml(p)}</p>`)
         .join('');
 
+    titleEl.textContent = t(titleKey);
+    textEl.innerHTML = renderParagraphs(textKey);
+
     if (moreBtn) {
-        if (faqAnchor) {
+        if (moreKey) {
             moreBtn.classList.remove('hidden');
             moreBtn.onclick = () => {
-                modal.style.display = 'none';
-                openLegalModal('faqModal', { anchor: faqAnchor, returnTo: 'none' });
+                textEl.insertAdjacentHTML('beforeend', renderParagraphs(moreKey));
+                moreBtn.classList.add('hidden');
             };
         } else {
             moreBtn.classList.add('hidden');
@@ -657,25 +660,11 @@ function orderStatusLabelCap(status) {
     return (typeof t === 'function' && map[status]) ? t(map[status]) : status;
 }
 
-// Открывает Политику конфиденциальности / Условия использования / FAQ поверх
-// текущего экрана (через iframe на privacy.html/terms.html/faq.html — те же
-// файлы, что указаны в карточке Google Play), без ухода со страницы приложения.
-// src задаётся только при первом открытии — чтобы каждый повторный клик не
-// перезагружал iframe заново без необходимости.
-//
-// opts.anchor    — если задан, прокручивает FAQ к конкретному вопросу
-//                   (см. data-faq-anchor в faq.html). Если iframe уже был
-//                   загружен раньше, просто меняем hash у него — сам
-//                   faq.html слушает hashchange и сам прокручивает,
-//                   перезагрузка не нужна.
-// opts.returnTo  — куда вернуться после закрытия: 'settings' (по умолчанию,
-//                   как было раньше — открываем Настройки обратно) или 'none'
-//                   (просто закрыть и остаться там, откуда открыли — например
-//                   если FAQ открыли из подсказки "?" на экране склада).
-function openLegalModal(modalId, opts) {
-    opts = opts || {};
-    const anchor = opts.anchor || '';
-    const returnTo = opts.returnTo || 'settings';
+// Открывает Политику конфиденциальности / Условия использования поверх окна настроек
+// (через iframe на privacy.html/terms.html — те же файлы, что указаны в карточке Google Play),
+// без ухода со страницы приложения. src задаётся только при первом открытии — чтобы каждый
+// повторный клик не перезагружал iframe заново без необходимости.
+function openLegalModal(modalId) {
     const map = {
         privacyModal: ['privacyFrame', 'privacy.html'],
         termsModal: ['termsFrame', 'terms.html'],
@@ -687,28 +676,18 @@ function openLegalModal(modalId, opts) {
     // адресу текущей страницы — из-за этого проверка "уже загружено?" всегда
     // была бы true, и реальный файл так и не подставлялся бы). Используем
     // свой собственный флаг вместо этого.
-    if (frame) {
-        if (!frame.dataset.loaded) {
-            frame.src = anchor ? `${src}#${anchor}` : src;
-            frame.dataset.loaded = '1';
-        } else if (anchor) {
-            try { frame.contentWindow.location.hash = anchor; } catch (e) { /* другой источник — не критично, просто не проскроллит */ }
-        }
+    if (frame && !frame.dataset.loaded) {
+        frame.src = src;
+        frame.dataset.loaded = '1';
     }
-    document.getElementById(modalId).dataset.returnTo = returnTo;
     document.getElementById(modalId).style.display = 'flex';
 }
 
-// Закрывает Политику/Условия/FAQ. Если модалка была открыта из Настроек
-// (returnTo не задан или 'settings') — возвращает окно настроек в том виде,
-// в каком оно было (тот же самый DOM, не перезагрузка страницы). Если была
-// открыта из другого места (returnTo === 'none', например из подсказки "?")
-// — просто закрывается, ничего поверх не открывает.
+// Закрывает Политику/Условия/FAQ и возвращает окно настроек в том виде, в каком оно было
+// (те же разделы остаются раскрытыми — это тот же самый DOM, не перезагрузка страницы).
 function closeLegalModal(modalId) {
-    const modal = document.getElementById(modalId);
-    const returnTo = (modal && modal.dataset.returnTo) || 'settings';
-    modal.style.display = 'none';
-    if (returnTo === 'settings') openSettingsModal();
+    document.getElementById(modalId).style.display = 'none';
+    openSettingsModal();
 }
 
 // "Написать нам" — сначала показываем свою форму с текстом сообщения, а не сразу
