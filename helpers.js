@@ -93,6 +93,26 @@ function showConfirm(message) {
     });
 }
 
+// Открывает короткую подсказку по маркеру "?" — универсальная модалка для
+// любого раздела интерфейса. titleKey/textKey — ключи словаря i18n.js.
+// textKey может содержать несколько абзацев через "\n\n" — каждый
+// оборачивается в свой <p>. Текст статический (из словаря, не от
+// пользователя), но экранируем на всякий случай тем же escapeHtml,
+// что и везде в приложении.
+function showHelpModal(titleKey, textKey) {
+    const titleEl = document.getElementById('helpModalTitle');
+    const textEl = document.getElementById('helpModalText');
+    const modal = document.getElementById('helpModal');
+    if (!titleEl || !textEl || !modal) return;
+
+    titleEl.textContent = t(titleKey);
+    textEl.innerHTML = t(textKey)
+        .split('\n\n')
+        .map(p => `<p class="mb-2">${escapeHtml(p)}</p>`)
+        .join('');
+    modal.style.display = 'flex';
+}
+
 // Экранирование пользовательских строк перед вставкой через innerHTML
 // (защита от XSS, если в имя клиента/товара/заметку попадут HTML-теги).
 function escapeHtml(str) {

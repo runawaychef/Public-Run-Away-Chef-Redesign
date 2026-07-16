@@ -297,6 +297,12 @@ const I18N = {
         ingredient_price_saved: 'Цена сохранена.',
         inventory_saved_prefix: 'Инвентаризация сохранена.',
 
+        // Подсказки (маркер "?") — общий aria-label для всех маркеров,
+        // плюс тексты для каждой конкретной подсказки по разделам
+        help_marker_label: 'Подробнее об этом разделе',
+        help_inventory_title: 'Как работает аналитика склада',
+        help_inventory_text: 'Остаток — сколько ингредиента у вас сейчас. «Хватит» — прогноз в днях по среднему расходу за последние 30 дней.\n\nКрасным — то, что уже закончилось или не хватит на подтверждённые заказы (для полуфабрикатов отрицательное число значит, что заготовки нужно доготовить). Жёлтым — то, что скоро понадобится докупить.\n\n«Запланировано списаний» — заказы дальше 7 дней не списывают ингредиенты сразу, чтобы остатки не выглядели заниженными раньше времени. Списание происходит автоматически за 7 дней до даты заказа.',
+
         // Аналитика склада + Список покупок
         inv_title: 'Аналитика склада',
         inv_shopping_cart_title: 'Корзина покупок',
@@ -1117,6 +1123,12 @@ const I18N = {
         backup_file_saved_suffix: 'saved',
         ingredient_price_saved: 'Price saved.',
         inventory_saved_prefix: 'Inventory count saved.',
+
+        // Help tooltips ("?" marker) — shared aria-label for all markers,
+        // plus text for each specific section's tooltip
+        help_marker_label: 'More about this section',
+        help_inventory_title: 'How inventory analytics works',
+        help_inventory_text: 'Balance is how much of an ingredient you currently have. "Lasts" is a forecast in days, based on the average usage over the last 30 days.\n\nRed means it\'s already out of stock or won\'t be enough for confirmed orders (for semi-finished items, a negative number means you need to prepare more). Yellow means it will run out soon.\n\n"Scheduled write-offs" — orders more than 7 days away don\'t deduct ingredients right away, so stock levels don\'t look artificially low too early. The write-off happens automatically 7 days before the order date.',
 
         // Inventory analytics + Shopping list
         inv_title: 'Inventory Analytics',
