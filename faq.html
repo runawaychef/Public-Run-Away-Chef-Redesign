@@ -66,6 +66,18 @@
 <h2>Как удалить свой аккаунт?</h2>
 <p>Напишите нам — удалим аккаунт и все связанные данные в разумный срок.</p>
 
+<h2 data-faq-anchor="inventory">Как работает аналитика склада?</h2>
+<p>Раздел «Склад» показывает текущие остатки ингредиентов и полуфабрикатов и помогает вовремя закупить то, что нужно.</p>
+<p><strong>Остаток</strong> — сколько ингредиента физически есть у вас сейчас, с учётом всех приходов и списаний.</p>
+<p><strong>Хватит</strong> — прогноз в днях, рассчитанный по среднему расходу за последние 30 дней. Если данных за этот период недостаточно, в колонке стоит «—».</p>
+<p><strong>Категории:</strong><br>
+🔴 Критично — остаток на нуле или не хватит на уже подтверждённые заказы (для полуфабрикатов отрицательное число означает, что заготовки нужно будет сделать больше, чем есть сейчас)<br>
+🟡 Заканчивается — запас на исходе, стоит запланировать закупку<br>
+Остальные — запаса достаточно</p>
+<p><strong>«Нехватка»</strong> значит: подтверждённые заказы спишут больше, чем есть в наличии — это нужно закупить в первую очередь.</p>
+<p><strong>Запланированные списания.</strong> Если заказ назначен более чем на 7 дней вперёд, ингредиенты под него пока не списываются со склада — иначе остатки выглядели бы заниженными из-за заказов, которые будут ещё нескоро. За 7 дней до даты заказа списание происходит автоматически. Блок «Запланировано списаний» вверху показывает, сколько таких заказов ждут своей очереди и когда ближайшее списание.</p>
+<p>Кнопка «+» в колонке «Список» добавляет ингредиент в список покупок.</p>
+
 </div>
 
 <!-- ==================== EN ==================== -->
@@ -91,6 +103,18 @@
 <h2>How do I delete my account?</h2>
 <p>Contact us — we'll delete your account and all related data within a reasonable time.</p>
 
+<h2 data-faq-anchor="inventory">How does inventory analytics work?</h2>
+<p>The "Inventory" screen shows current stock levels for ingredients and semi-finished items and helps you restock in time.</p>
+<p><strong>Balance</strong> is how much of an ingredient you physically have right now, including all deliveries and write-offs.</p>
+<p><strong>Lasts</strong> is a forecast in days, based on the average usage over the last 30 days. If there isn't enough data for that period, this column shows "—".</p>
+<p><strong>Categories:</strong><br>
+🔴 Critical — balance is at zero or won't be enough for confirmed orders (for semi-finished items, a negative number means you'll need to prepare more than you currently have)<br>
+🟡 Running low — stock is getting low, plan a purchase<br>
+Everything else — enough stock</p>
+<p><strong>"Not enough"</strong> means confirmed orders will use more than what's in stock — buy this first.</p>
+<p><strong>Scheduled write-offs.</strong> If an order is more than 7 days away, its ingredients aren't deducted from stock right away — otherwise stock levels would look artificially low because of orders that are still far off. The write-off happens automatically 7 days before the order date. The "Scheduled write-offs" block at the top shows how many such orders are waiting and when the nearest one is.</p>
+<p>The "+" button in the "List" column adds the ingredient to your shopping list.</p>
+
 </div>
 
 <script>
@@ -104,6 +128,24 @@ function setDocLang(lang) {
     document.documentElement.lang = lang;
     try { localStorage.setItem('appLang', lang); } catch (e) {}
 }
+
+// Прокручивает к вопросу, на который ссылается маркер "?" в самом приложении
+// (например #inventory — со страницы склада). Ищет по data-faq-anchor внутри
+// ВИДИМОГО в данный момент языкового блока, а не по обычному id, потому что
+// у RU и EN версий вопроса разный текст, но должен быть общий "адрес" —
+// одна и та же ссылка должна работать независимо от языка документа.
+function scrollToFaqAnchor() {
+    const raw = (location.hash || '').slice(1);
+    if (!raw || !/^[a-z0-9-]+$/.test(raw)) return; // только простые безопасные значения
+    const isEn = document.getElementById('content-en').style.display !== 'none';
+    const container = document.getElementById(isEn ? 'content-en' : 'content-ru');
+    const target = container.querySelector(`[data-faq-anchor="${raw}"]`);
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+// Родительское окно (index.html) может поменять hash в уже загруженном iframe
+// без перезагрузки страницы — слушаем это событие отдельно от начальной загрузки.
+window.addEventListener('hashchange', scrollToFaqAnchor);
+
 (function () {
     let lang = 'ru';
     try {
@@ -111,6 +153,7 @@ function setDocLang(lang) {
             || (navigator.language && navigator.language.toLowerCase().startsWith('ru') ? 'ru' : 'en');
     } catch (e) {}
     setDocLang(lang);
+    scrollToFaqAnchor();
 
     // Тот же принцип, что и в privacy.html/terms.html: переключатель нужен
     // только при самостоятельном открытии страницы, внутри приложения (iframe)
