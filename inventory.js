@@ -644,7 +644,7 @@ async function writeOffInventoryForItem(prod, itemQty, orderId, orderItemId = nu
                 quantity: parseFloat(r.quantity.toFixed(4)),
                 order_id: orderId,
                 order_item_id: orderItemId,
-                notes:    `Заказ #${orderId}`,
+                notes:    `Заказ ${order.order_number ? '№' + order.order_number : '#' + order.id}`,
                 batch_breakdown: breakdown
             });
         }
@@ -670,16 +670,20 @@ async function reverseInventoryForOrderItem(orderItemId) {
             if (r.batch_breakdown) await restoreFIFO(r.batch_breakdown);
         }
 
-        await db.from('inventory').insert(data.map(r => ({
-            org_id:           currentOrgId,
-            ingredient_id:    r.ingredient_id || null,
-            semi_finished_id: r.semi_finished_id || null,
-            type:     'сторно',
-            quantity: r.quantity,
-            order_id: r.order_id,
-            order_item_id: orderItemId,
-            notes:    `Сторно позиции заказа #${r.order_id}`
-        })));
+        await db.from('inventory').insert(data.map(r => {
+            const o = orders.find(x => x.id === r.order_id);
+            const oLabel = o && o.order_number ? '№' + o.order_number : '#' + r.order_id;
+            return {
+                org_id:           currentOrgId,
+                ingredient_id:    r.ingredient_id || null,
+                semi_finished_id: r.semi_finished_id || null,
+                type:     'сторно',
+                quantity: r.quantity,
+                order_id: r.order_id,
+                order_item_id: orderItemId,
+                notes:    `Сторно позиции заказа ${oLabel}`
+            };
+        }));
         await loadInventory();
     } catch (e) { console.error('Ошибка сторнирования позиции:', e); }
 }
@@ -697,6 +701,9 @@ async function reverseInventoryForOrder(orderId) {
             if (r.batch_breakdown) await restoreFIFO(r.batch_breakdown);
         }
 
+        const o = orders.find(x => x.id === orderId);
+        const oLabel = o && o.order_number ? '№' + o.order_number : '#' + orderId;
+
         await db.from('inventory').insert(data.map(r => ({
             org_id:           currentOrgId,
             ingredient_id:    r.ingredient_id || null,
@@ -704,7 +711,7 @@ async function reverseInventoryForOrder(orderId) {
             type:     'сторно',
             quantity: r.quantity,
             order_id: orderId,
-            notes:    `Сторно заказа #${orderId}`
+            notes:    `Сторно заказа ${oLabel}`
         })));
         await loadInventory();
     } catch (e) { console.error('Ошибка сторнирования:', e); }

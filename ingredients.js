@@ -731,7 +731,7 @@ async function renderIngredientStockBlock(ing) {
             if (r.type === 'приход') return 'in';
             if (r.type === 'сторно') return 'storno';
             const n = r.notes || '';
-            if (n.startsWith('Заказ #') || n.startsWith('Сторно заказа')) return 'order';
+            if (n.startsWith('Заказ ') || n.startsWith('Сторно заказа')) return 'order';
             return 'personal';
         }
 
