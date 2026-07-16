@@ -357,7 +357,7 @@
         #ordersCardCalendarBtn svg { width: 19px; height: 19px; }
         .view-toggle-btn.active { background: #7c9473; color: #fff; }
         #splashScreen {
-            position: fixed; inset: 0; z-index: 9999; background: #f4ede0;
+            position: fixed; inset: 0; z-index: 90; background: #f4ede0;
             display: flex; align-items: center; justify-content: center;
             transition: opacity 0.4s ease;
         }
@@ -2692,9 +2692,9 @@
     <script src="money.js?v=9"></script>
     <script src="i18n.js?v=9"></script>
     <script src="supabaseClient.js?v=7"></script>
-    <script src="cache.js?v=5"></script>
-    <script src="auth.js?v=14"></script>
-    <script src="employees.js?v=26"></script>
+    <script src="cache.js?v=6"></script>
+    <script src="auth.js?v=15"></script>
+    <script src="employees.js?v=27"></script>
     <script src="company.js?v=13"></script>
     <script src="inventory.js?v=28"></script>
 <script src="ingredients.js?v=28"></script>
@@ -3221,8 +3221,16 @@ function closeHistoryScreen() {
         // Сплэш держим минимум 900мс (чтобы не мигал слишком быстро на мощных
         // устройствах), но не дольше реальной инициализации — обе задержки идут
         // параллельно, скрываем по более долгой из двух.
+        //
+        // Ждём именно _appReadyPromise (см. cache.js), а не сам initAuth() —
+        // при входе через Google initAuth() может вернуться раньше, чем реально
+        // придёт событие onAuthStateChange('SIGNED_IN') и построится интерфейс
+        // (окно приветствия для нового пользователя и т.п.), из-за чего сплэш
+        // иногда успевал скрыться раньше времени и показать недорисованное
+        // приложение (пойман на живом тестировании 16.07.2026).
+        initAuth(); // намеренно не в Promise.all — готовность сигнализирует _appReadyPromise
         const minSplashTime = new Promise(resolve => setTimeout(resolve, 900));
-        await Promise.all([initAuth(), minSplashTime]);
+        await Promise.all([_appReadyPromise, minSplashTime]);
         document.getElementById('splashScreen')?.classList.add('hide');
     }
 })();

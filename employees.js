@@ -362,6 +362,10 @@ async function saveOrgNameSetup() {
     document.getElementById('orgNameSetupModal').style.display = 'none';
     _pendingOwnerForSetup = null;
     await selectEmployee(owner);
+    // Только теперь готов итоговый экран (пустой или с примером) — можно
+    // скрыть сплэш, который до этого специально держали фоном под формой
+    // приветствия (см. auth.js).
+    revealAppReady();
 }
 
 // Сохранение названия пекарни теперь происходит внутри карточки

@@ -66,6 +66,7 @@ async function initAuth() {
 }
 
 function showAuthScreen() {
+    revealAppReady();
     document.getElementById('authScreen').classList.remove('hidden');
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('appContent').classList.add('app-locked');
@@ -108,8 +109,13 @@ async function _doShowAuthedApp() {
     const autoSelected = await initLogin();
 
     if (autoSelected) {
-        // initLogin() уже сам вызвал selectEmployee() и скрыл loginScreen/спиннер не нужен —
-        // но на всякий случай гасим спиннер явно.
+        // Если только что открылось окно "Назовите вашу пекарню" (новый
+        // владелец) — сплэш пока НЕ скрываем: он останется красивым фоном
+        // под этим окном вместо пустого недорисованного экрана приложения.
+        // Скрываем его только после того, как человек заполнит форму —
+        // см. revealAppReady() в saveOrgNameSetup() (employees.js).
+        const orgSetupOpen = document.getElementById('orgNameSetupModal')?.style.display === 'flex';
+        if (!orgSetupOpen) revealAppReady();
         hideLoading();
         return;
     }
@@ -132,6 +138,7 @@ async function _doShowAuthedApp() {
                         : null;
                     if (fresh || cached) {
                         await selectEmployee(fresh || cached);
+                        revealAppReady();
                         hideLoading();
                         return;
                     }
@@ -141,6 +148,7 @@ async function _doShowAuthedApp() {
     }
 
     // Ни автовхода, ни валидного кэша — только теперь реально показываем выбор сотрудника.
+    revealAppReady();
     hideLoading();
     document.getElementById('loginScreen').classList.remove('hidden');
 }
