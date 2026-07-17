@@ -1556,9 +1556,9 @@ function renderDetailItems(order) {
             row.onclick = () => openEditItemModal(i);
             row.innerHTML = `
                 <td class="p-0.5 table-text">${escapeHtml(item.product)}</td>
-                <td class="p-0.5 table-text text-center">${item.quantity}${unitLabel ? ' ' + unitLabel : ''}</td>
-                <td class="p-0.5 table-text text-center">${formatMoney(item.price)}</td>
-                <td class="p-0.5 table-text text-center font-medium">${total}</td>
+                <td class="p-0.5 table-text text-center whitespace-nowrap">${item.quantity}${unitLabel ? ' ' + unitLabel : ''}</td>
+                <td class="p-0.5 table-text text-center whitespace-nowrap">${formatMoney(item.price)}</td>
+                <td class="p-0.5 table-text text-center font-medium whitespace-nowrap">${total}</td>
                 <td class="p-0.5 text-center" onclick="event.stopPropagation()">
                     ${hasPermission('can_delete') ? svgDelete(`deleteItem(${i})`) : ''}
                 </td>`;
