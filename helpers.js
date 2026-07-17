@@ -160,7 +160,7 @@ function positionHeaderIcons() {
     if (!headerCard || !btns.length) return;
 
     const rect = headerCard.getBoundingClientRect();
-    const BTN = 34, GAP = 6, PAD_TOP = 6; // 6px — то же значение, что использовалось изначально (top: 6px от края экрана)
+    const BTN = 34, GAP = 6, PAD_TOP = 12; // 12px — тот же отступ, что и у самой карточки шапки (p-3)
     const groupWidth = btns.length * BTN + (btns.length - 1) * GAP;
     let left = Math.round(rect.left + rect.width / 2 - groupWidth / 2);
     const top = Math.round(rect.top + PAD_TOP);
