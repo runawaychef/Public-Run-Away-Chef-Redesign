@@ -2733,7 +2733,7 @@
 <script src="products.js?v=27"></script>
 <script src="customers.js?v=35"></script>
 <script src="calendar.js?v=7"></script>
-<script src="orders.js?v=83"></script>
+<script src="orders.js?v=84"></script>
 <script src="invoice.js?v=11"></script>
 <script src="payments.js?v=19"></script>
 <script src="stats.js?v=15"></script>
@@ -2886,6 +2886,7 @@ async function loadAllData(silent) {
                 due_date: o.due_date || null,
                 inventory_pending: !!o.inventory_pending,
                 is_confirmed: !!o.is_confirmed,
+                created_by: o.created_by || null,
                 items: itemsByOrder[o.id] || []
             };
         });

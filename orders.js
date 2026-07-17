@@ -1011,7 +1011,7 @@ async function createDraftOrderAndOpen() {
 
         const { data, error } = await db.from('orders').insert({
             org_id: currentOrgId, customer_id: null, order_date: today, status: 'принят', discount: 0, vat_exempt: false,
-            employee_id: employeeId, order_number: orderNumber, is_confirmed: false
+            employee_id: employeeId, order_number: orderNumber, is_confirmed: false, created_by: employeeId
         }).select().single();
         if (error) throw error;
         const emp = employees.find(e => e.id === data.employee_id);
@@ -1054,7 +1054,8 @@ async function copyOrder(i) {
             vat_exempt: !!o.vat_exempt,
             employee_id: employeeId,
             order_number: orderNumber,
-            is_confirmed: true
+            is_confirmed: true,
+            created_by: employeeId
         }).select().single();
         if (error) throw error;
 
