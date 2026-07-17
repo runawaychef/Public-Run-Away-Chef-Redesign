@@ -3265,6 +3265,7 @@ function closeHistoryScreen() {
         await _appReadyPromise;
         history.replaceState(null, '', location.pathname);
         setTimeout(() => {
+            if (typeof showTab === 'function') showTab('orders');
             if (typeof openOrderDetail === 'function') openOrderDetail(parseInt(_deepLinkOrderId, 10));
         }, 300);
     }
