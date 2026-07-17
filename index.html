@@ -376,8 +376,10 @@
            обрезает и позиционирует панель кнопок позади сдвигаемой карточки. */
         .oc-swipe-wrap { position: relative; border-radius: 16px; overflow: hidden; margin-bottom: 10px; width: 100%; display: block; }
         .oc-swipe-wrap .order-card { margin-bottom: 0; position: relative; z-index: 1; transition: transform 0.22s ease; touch-action: pan-y; width: 100%; }
-        .oc-swipe-wrap.swiped .order-card { transform: translateX(var(--oc-swipe-x, -72px)); }
+        .oc-swipe-wrap.swiped-left .order-card { transform: translateX(var(--oc-swipe-x, -72px)); }
+        .oc-swipe-wrap.swiped-right .order-card { transform: translateX(var(--oc-swipe-pay-x, 72px)); }
         .oc-swipe-actions { position: absolute; top: 0; right: 0; bottom: 0; display: flex; }
+        .oc-swipe-actions-left { position: absolute; top: 0; left: 0; bottom: 0; display: flex; }
         .oc-swipe-btn { width: 72px; border: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #fff; font-size: 11px; font-weight: 600; }
         .oc-swipe-btn svg { width: 20px; height: 20px; }
         .oc-swipe-btn.oc-swipe-pay { background: #7c9473; }
@@ -2728,7 +2730,7 @@
 <script src="products.js?v=27"></script>
 <script src="customers.js?v=35"></script>
 <script src="calendar.js?v=7"></script>
-<script src="orders.js?v=81"></script>
+<script src="orders.js?v=82"></script>
 <script src="invoice.js?v=11"></script>
 <script src="payments.js?v=19"></script>
 <script src="stats.js?v=15"></script>

@@ -237,20 +237,14 @@ function renderOrderCard(order) {
             <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
         </div>`).join('');
 
-    // Свайп-действия (прототип): "Оплатить" показываем только если есть смысл
-    // (заказ ещё не оплачен полностью), "Копировать" — всегда, "Удалить" —
-    // только при наличии права. Ширина панели (переменная --oc-swipe-x)
-    // зависит от того, сколько кнопок реально показано.
+    // Свайп-действия (прототип): "Копировать" — всегда, "Удалить" — только
+    // при наличии права (правая панель, свайп влево). "Оплатить" — отдельная
+    // панель слева (свайп вправо), логически рядом с цветной полосой статуса
+    // оплаты. Ширина панели (переменная --oc-swipe-x) зависит от того, сколько
+    // кнопок реально показано в правой панели.
     const realIdx = orders.indexOf(order);
     let swipeBtns = '';
     let swipeBtnCount = 0;
-    if (payInfo.status !== 'paid') {
-        swipeBtnCount++;
-        swipeBtns += `<button class="oc-swipe-btn oc-swipe-pay" onclick="event.stopPropagation(); quickPayFromSwipe(${order.id})">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
-            ${t('orders_pay_btn')}
-        </button>`;
-    }
     swipeBtnCount++;
     swipeBtns += `<button class="oc-swipe-btn oc-swipe-copy" onclick="event.stopPropagation(); quickCopyFromSwipe(${realIdx})">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184"/></svg>
@@ -263,12 +257,20 @@ function renderOrderCard(order) {
             ${t('common_delete')}
         </button>`;
     }
-    const swipeWrapStyle = swipeBtnCount ? ` style="--oc-swipe-x:-${swipeBtnCount * 72}px;"` : '';
-    const swipeWrapOpen = swipeBtnCount ? '' : ' data-no-swipe="1"';
+    let payPanel = '';
+    if (payInfo.status !== 'paid') {
+        payPanel = `<div class="oc-swipe-actions-left"><button class="oc-swipe-btn oc-swipe-pay" onclick="event.stopPropagation(); quickPayFromSwipe(${order.id})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
+            ${t('orders_pay_btn')}
+        </button></div>`;
+    }
+    const swipeWrapStyle = ` style="--oc-swipe-x:-${swipeBtnCount * 72}px; --oc-swipe-pay-x:72px;"`;
+    const swipeWrapOpen = '';
 
     return `
     <div class="oc-swipe-wrap"${swipeWrapStyle}${swipeWrapOpen}>
-        ${swipeBtnCount ? `<div class="oc-swipe-actions">${swipeBtns}</div>` : ''}
+        <div class="oc-swipe-actions">${swipeBtns}</div>
+        ${payPanel}
         <div class="order-card" id="orderCard-${order.id}">
             <div class="order-card-tap" onclick="openOrderDetail(${order.id})">
                 <div class="stripe" style="background:${stripeColor}"></div>
@@ -306,10 +308,12 @@ function renderOrderCard(order) {
 }
 
 // ==================== СВАЙП КАРТОЧКИ ЗАКАЗА — быстрые действия (прототип) ====================
-// Свайп влево открывает панель с кнопками "Оплатить"/"Удалить" позади карточки.
-// Реализовано через делегирование на общий контейнер (#orderCardsBody), а не
-// отдельные обработчики на каждой карточке — карточки создаются через innerHTML
-// при каждой перерисовке списка, а не поэлементно. stopPropagation() на самом
+// Свайп влево открывает панель с кнопками "Копировать"/"Удалить" справа от
+// карточки. Свайп вправо открывает панель "Оплатить" слева от карточки (рядом
+// с цветной полосой статуса оплаты — логическая связка). Реализовано через
+// делегирование на общий контейнер (#orderCardsBody), а не отдельные
+// обработчики на каждой карточке — карточки создаются через innerHTML при
+// каждой перерисовке списка, а не поэлементно. stopPropagation() на самом
 // жесте не даёт глобальному свайпу между вкладками (initSwipeNavigation)
 // перехватить то же движение пальца как переключение вкладки.
 let _cardSwipeStartX = 0, _cardSwipeStartY = 0, _cardSwipeWrapEl = null, _cardSwipeDragging = false;
@@ -317,7 +321,7 @@ const CARD_SWIPE_MIN_X = 45;
 const CARD_SWIPE_MAX_Y = 40;
 
 function closeAllCardSwipes() {
-    document.querySelectorAll('.oc-swipe-wrap.swiped').forEach(w => w.classList.remove('swiped'));
+    document.querySelectorAll('.oc-swipe-wrap.swiped-left, .oc-swipe-wrap.swiped-right').forEach(w => w.classList.remove('swiped-left', 'swiped-right'));
 }
 document.addEventListener('click', (e) => {
     if (!e.target.closest('.oc-swipe-wrap')) closeAllCardSwipes();
@@ -353,21 +357,31 @@ function initOrderCardSwipeDelegation() {
         const dx = e.changedTouches[0].clientX - _cardSwipeStartX;
         const dy = e.changedTouches[0].clientY - _cardSwipeStartY;
         if (Math.abs(dy) > CARD_SWIPE_MAX_Y) return;
-        const isOpen = wrap.classList.contains('swiped');
-        if (!isOpen && dx < -CARD_SWIPE_MIN_X) {
+        const isOpenLeft = wrap.classList.contains('swiped-left');
+        const isOpenRight = wrap.classList.contains('swiped-right');
+        const hasPayPanel = !!wrap.querySelector('.oc-swipe-actions-left');
+
+        if (!isOpenLeft && !isOpenRight && dx < -CARD_SWIPE_MIN_X) {
             closeAllCardSwipes();
-            wrap.classList.add('swiped');
+            wrap.classList.add('swiped-left');
             e.stopPropagation();
-        } else if (isOpen && dx > CARD_SWIPE_MIN_X) {
-            wrap.classList.remove('swiped');
+        } else if (!isOpenLeft && !isOpenRight && dx > CARD_SWIPE_MIN_X && hasPayPanel) {
+            closeAllCardSwipes();
+            wrap.classList.add('swiped-right');
+            e.stopPropagation();
+        } else if (isOpenLeft && dx > CARD_SWIPE_MIN_X) {
+            wrap.classList.remove('swiped-left');
+            e.stopPropagation();
+        } else if (isOpenRight && dx < -CARD_SWIPE_MIN_X) {
+            wrap.classList.remove('swiped-right');
             e.stopPropagation();
         }
     }, { passive: true });
 
     // Тап по уже открытой (свайпнутой) карточке закрывает её вместо перехода в заказ.
     container.addEventListener('click', (e) => {
-        const openWrap = container.querySelector('.oc-swipe-wrap.swiped');
-        if (openWrap && !e.target.closest('.oc-swipe-actions')) {
+        const openWrap = container.querySelector('.oc-swipe-wrap.swiped-left, .oc-swipe-wrap.swiped-right');
+        if (openWrap && !e.target.closest('.oc-swipe-actions') && !e.target.closest('.oc-swipe-actions-left')) {
             closeAllCardSwipes();
             e.stopPropagation();
             e.preventDefault();
@@ -447,30 +461,31 @@ function renderDoneOrderCard(order) {
             <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
         </div>`).join('');
 
-    // Свайп-действия — те же кнопки, что у активных карточек, кроме "Удалить"
-    // (заказ уже выполнен, удалять из свайпа этого экрана не даём — только из
-    // полной карточки, осознанно). Работает ТОЛЬКО в развёрнутом виде — см.
-    // data-no-swipe, переключается в toggleDoneCardExpand().
+    // Свайп-действия — "Копировать" в правой панели (кроме "Удалить" — заказ
+    // уже выполнен, удалять из свайпа этого экрана не даём, только из полной
+    // карточки). "Оплатить" — отдельная левая панель, свайп вправо, как и у
+    // активных карточек. Работает ТОЛЬКО в развёрнутом виде — см. data-no-swipe,
+    // переключается в toggleDoneCardExpand().
     const realIdx = orders.indexOf(order);
     let swipeBtns = '';
-    let swipeBtnCount = 0;
-    if (payInfo.status !== 'paid') {
-        swipeBtnCount++;
-        swipeBtns += `<button class="oc-swipe-btn oc-swipe-pay" onclick="event.stopPropagation(); quickPayFromSwipe(${order.id})">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
-            ${t('orders_pay_btn')}
-        </button>`;
-    }
-    swipeBtnCount++;
+    let swipeBtnCount = 1;
     swipeBtns += `<button class="oc-swipe-btn oc-swipe-copy" onclick="event.stopPropagation(); quickCopyFromSwipe(${realIdx})">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184"/></svg>
         ${t('icon_copy_title')}
     </button>`;
-    const swipeWrapStyle = ` style="--oc-swipe-x:-${swipeBtnCount * 72}px;"`;
+    let payPanel = '';
+    if (payInfo.status !== 'paid') {
+        payPanel = `<div class="oc-swipe-actions-left"><button class="oc-swipe-btn oc-swipe-pay" onclick="event.stopPropagation(); quickPayFromSwipe(${order.id})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
+            ${t('orders_pay_btn')}
+        </button></div>`;
+    }
+    const swipeWrapStyle = ` style="--oc-swipe-x:-${swipeBtnCount * 72}px; --oc-swipe-pay-x:72px;"`;
 
     return `
     <div class="oc-swipe-wrap" data-no-swipe="1"${swipeWrapStyle}>
         <div class="oc-swipe-actions">${swipeBtns}</div>
+        ${payPanel}
         <div class="order-card done-card muted" id="orderCard-${order.id}">
             <div class="stripe" style="background:${stripeColor};" data-role="stripe"></div>
             <div class="order-card-tap" onclick="handleDoneCardTap(event, ${order.id})">
@@ -544,7 +559,7 @@ function toggleDoneCardExpand(orderId) {
             wrap.removeAttribute('data-no-swipe');
         } else {
             wrap.setAttribute('data-no-swipe', '1');
-            wrap.classList.remove('swiped');
+            wrap.classList.remove('swiped-left', 'swiped-right');
         }
     }
 }
