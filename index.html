@@ -762,17 +762,19 @@
 </button>
 
 <!-- Переключатель вида списка заказов: карточки / таблица. Виден только на вкладке "Заказы" (управляется в showTab()). -->
-<div id="ordersViewToggle" class="hidden view-toggle-pill">
-    <button class="view-toggle-btn active" id="ordersViewBtnCards" onclick="setOrdersViewMode('cards')" title="Карточки">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-    </button>
-    <button class="view-toggle-btn" id="ordersViewBtnTable" onclick="setOrdersViewMode('table')" title="Таблица">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-    </button>
-    <button class="view-toggle-btn" id="ordersCardCalendarBtn" onclick="openOrdersCardFilterCalendar()" title="Фильтр по дате">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/></svg>
-    </button>
-    <button class="view-toggle-btn" id="ordersHelpBtn" onclick="showHelpModal('help_orders_screen_title','help_orders_screen_text')" style="font-weight:700; font-size:14px;" data-i18n-title="help_marker_label" title="Подробнее об этом разделе">?</button>
+<div id="ordersViewToggle" class="hidden" style="position:fixed; right:6px; z-index:150; display:flex; align-items:center; gap:6px;">
+    <button class="view-toggle-btn" id="ordersHelpBtn" onclick="showHelpModal('help_orders_screen_title','help_orders_screen_text')" style="background:white; border:1px solid #e5e7eb; box-shadow:0 1px 3px rgba(0,0,0,0.08); font-weight:700; font-size:14px;" data-i18n-title="help_marker_label" title="Подробнее об этом разделе">?</button>
+    <div class="view-toggle-pill">
+        <button class="view-toggle-btn active" id="ordersViewBtnCards" onclick="setOrdersViewMode('cards')" title="Карточки">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+        </button>
+        <button class="view-toggle-btn" id="ordersViewBtnTable" onclick="setOrdersViewMode('table')" title="Таблица">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        </button>
+        <button class="view-toggle-btn" id="ordersCardCalendarBtn" onclick="openOrdersCardFilterCalendar()" title="Фильтр по дате">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/></svg>
+        </button>
+    </div>
 </div>
 <input id="ordersCardFilterTempDate" type="hidden">
 
