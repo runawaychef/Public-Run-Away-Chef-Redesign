@@ -144,7 +144,44 @@ function escapeHtml(str) {
         .replaceAll("'", '&#039;');
 }
 
-// ==================== БЕЗОПАСНЫЕ ОБРАБОТЧИКИ КЛИКОВ (data-fn/data-args) ====================
+// Три плавающие круглые иконки в правом верхнем углу (Склад/Статистика/
+// Настройки) технически не являются частью карточки шапки (лежат вне неё,
+// position:fixed, чтобы быть видимыми поверх любой вкладки) — раньше сидели
+// на фиксированных отступах от правого края ЭКРАНА, из-за чего на разных
+// ширинах экрана заметно "вылезали" за реальные границы белой карточки шапки.
+// Теперь после каждой отрисовки центрируем всю группу по горизонтали
+// относительно самой карточки и выравниваем по вертикали её центра —
+// аналогично тому, как уже сделано для positionOrdersViewToggle().
+let _headerIconsResizeObserver = null, _headerIconsResizeTarget = null;
+
+function positionHeaderIcons() {
+    const headerCard = document.querySelector('#appStickyHeader .bg-white');
+    const btns = ['inventoryBtn', 'statsBtn', 'settingsBtn'].map(id => document.getElementById(id)).filter(Boolean);
+    if (!headerCard || !btns.length) return;
+
+    const rect = headerCard.getBoundingClientRect();
+    const BTN = 34, GAP = 6;
+    const groupWidth = btns.length * BTN + (btns.length - 1) * GAP;
+    let left = Math.round(rect.left + rect.width / 2 - groupWidth / 2);
+    const top = Math.round(rect.top + rect.height / 2 - BTN / 2);
+
+    btns.forEach(btn => {
+        btn.style.right = 'auto';
+        btn.style.left = left + 'px';
+        btn.style.top = top + 'px';
+        left += BTN + GAP;
+    });
+
+    if (typeof ResizeObserver !== 'undefined' && _headerIconsResizeTarget !== headerCard) {
+        if (_headerIconsResizeObserver) _headerIconsResizeObserver.disconnect();
+        _headerIconsResizeObserver = new ResizeObserver(() => positionHeaderIcons());
+        _headerIconsResizeObserver.observe(headerCard);
+        _headerIconsResizeTarget = headerCard;
+    }
+}
+window.addEventListener('resize', positionHeaderIcons);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', positionHeaderIcons);
+positionHeaderIcons();
 // Проблема, которую это решает: раньше имена/названия вставлялись прямо в
 // строку onclick="..." — если в названии попадалась кавычка (частый случай:
 // "Торт «Наполеон»", O'Connor), атрибут ломался и в худшем случае позволял
