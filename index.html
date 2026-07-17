@@ -342,7 +342,7 @@
         /* ── Карточный вид списка заказов ──────────────────────────────── */
         #ordersViewToggle {
             position: fixed; right: 6px; /* top выставляется в JS — positionOrdersViewToggle() */
-            z-index: 150;
+            z-index: 150; display: flex; align-items: center; gap: 6px;
         }
         #ordersViewToggle.hidden { display: none; }
         .view-toggle-pill {
@@ -762,7 +762,7 @@
 </button>
 
 <!-- Переключатель вида списка заказов: карточки / таблица. Виден только на вкладке "Заказы" (управляется в showTab()). -->
-<div id="ordersViewToggle" class="hidden" style="position:fixed; right:6px; z-index:150; display:flex; align-items:center; gap:6px;">
+<div id="ordersViewToggle" class="hidden">
     <button class="view-toggle-btn" id="ordersHelpBtn" onclick="showHelpModal('help_orders_screen_title','help_orders_screen_text')" style="background:white; border:1px solid #e5e7eb; box-shadow:0 1px 3px rgba(0,0,0,0.08); font-weight:700; font-size:14px;" data-i18n-title="help_marker_label" title="Подробнее об этом разделе">?</button>
     <div class="view-toggle-pill">
         <button class="view-toggle-btn active" id="ordersViewBtnCards" onclick="setOrdersViewMode('cards')" title="Карточки">
