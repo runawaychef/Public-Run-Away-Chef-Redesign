@@ -1934,6 +1934,10 @@
                             <span data-i18n="push_type_new_order">Новые заказы</span>
                             <input type="checkbox" id="pushType_new_order" onchange="setNotificationPreference('new_order', this.checked)">
                         </label>
+                        <label class="flex items-center justify-between text-xs text-gray-600" style="padding:7px 8px;">
+                            <span data-i18n="push_type_daily_summary">Ежедневные сводки (сегодня/завтра)</span>
+                            <input type="checkbox" id="pushType_daily_summary" onchange="setNotificationPreference('daily_summary', this.checked)">
+                        </label>
                     </div>
                     <p id="pushUnsupportedNote" class="text-xs text-gray-500 hidden" style="padding:4px 8px 0;" data-i18n="push_unsupported_note">Push-уведомления не поддерживаются в этом браузере/устройстве.</p>
                 </div>
@@ -2710,14 +2714,14 @@
 
 <script src="dates.js?v=8"></script>
     <script src="money.js?v=9"></script>
-    <script src="i18n.js?v=13"></script>
+    <script src="i18n.js?v=14"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=6"></script>
     <script src="auth.js?v=15"></script>
     <script src="employees.js?v=27"></script>
     <script src="company.js?v=13"></script>
     <script src="inventory.js?v=29"></script>
-    <script src="push.js?v=2"></script>
+    <script src="push.js?v=3"></script>
 <script src="ingredients.js?v=29"></script>
 <script src="batches.js?v=6"></script>
 <script src="semifinished.js?v=25"></script>
@@ -3261,12 +3265,27 @@ function closeHistoryScreen() {
     // в обеих ветках выше), затем открываем нужный заказ и убираем параметр из
     // адресной строки, чтобы обновление страницы не открывало его повторно.
     const _deepLinkOrderId = new URLSearchParams(location.search).get('openOrder');
+    const _deepLinkDate = new URLSearchParams(location.search).get('openDate');
     if (_deepLinkOrderId) {
         await _appReadyPromise;
         history.replaceState(null, '', location.pathname);
         setTimeout(() => {
             if (typeof showTab === 'function') showTab('orders');
             if (typeof openOrderDetail === 'function') openOrderDetail(parseInt(_deepLinkOrderId, 10));
+        }, 300);
+    } else if (_deepLinkDate) {
+        await _appReadyPromise;
+        history.replaceState(null, '', location.pathname);
+        setTimeout(() => {
+            if (typeof showTab === 'function') showTab('orders');
+            if (typeof setOrdersViewMode === 'function') setOrdersViewMode('table');
+            const rangeSel = document.getElementById('orderDateRangeFilter');
+            const fromEl = document.getElementById('orderDateFrom');
+            const toEl = document.getElementById('orderDateTo');
+            if (rangeSel) rangeSel.value = 'custom';
+            if (fromEl) fromEl.value = _deepLinkDate;
+            if (toEl) toEl.value = _deepLinkDate;
+            if (typeof applyOrderFilter === 'function') applyOrderFilter();
         }, 300);
     }
 })();

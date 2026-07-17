@@ -13,7 +13,7 @@ const PUSH_VAPID_PUBLIC_KEY = 'BAj0Hpw2vFpBObn3cC6PTThGuIgG0PSunol_tMcEdEyCw-Lh8
 // Известные типы push-уведомлений — по мере добавления новых сценариев
 // (склад, лимит заказов и т.п.) достаточно дописать сюда и в разметку
 // #pushTypesList в index.html.
-const PUSH_TYPES = ['new_order'];
+const PUSH_TYPES = ['new_order', 'daily_summary'];
 
 function _pushSupported() {
     return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
