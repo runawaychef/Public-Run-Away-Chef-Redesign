@@ -20,6 +20,7 @@ function openSettingsModal() {
     renderPlanInfo();
     if (typeof refreshDeleteDemoDataVisibility === 'function') refreshDeleteDemoDataVisibility();
     if (typeof refreshFillDemoDataVisibility === 'function') refreshFillDemoDataVisibility(); // ВРЕМЕННО, см. demoData.js
+    if (typeof refreshPushSettingsUI === 'function') refreshPushSettingsUI();
     document.getElementById('settingsModal').style.display = 'flex';
 }
 

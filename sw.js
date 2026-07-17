@@ -1,4 +1,4 @@
-const CACHE_NAME = 'runwaychef-public-cache-v262';
+const CACHE_NAME = 'runwaychef-public-cache-v263';
 const ASSETS = [
   './index.html',
   './i18n.js',
@@ -11,6 +11,8 @@ const ASSETS = [
   './icon-180.png',
   './icon-192.png',
   './icon-512.png',
+  './notification-icon-192.png',
+  './notification-icon-96.png',
   './supabaseClient.js',
   './cache.js',
   './auth.js',
@@ -30,6 +32,7 @@ const ASSETS = [
   './ingredients.js',
   './batches.js',
   './inventory.js',
+  './push.js',
   './stats.js',
   './history.js',
   './demoData.js',
@@ -86,5 +89,41 @@ self.addEventListener('fetch', (event) => {
         return res;
       })
       .catch(() => caches.match(req))
+  );
+});
+
+// ==================== PUSH-УВЕДОМЛЕНИЯ ====================
+// Формат данных, которые присылает Supabase Edge Function (см. send-push):
+// { title, body, url, tag, type }
+self.addEventListener('push', (event) => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch (e) { /* пустое/битое сообщение — покажем заголовок по умолчанию */ }
+
+  const title = data.title || 'Simple Bake';
+  const options = {
+    body: data.body || '',
+    icon: './notification-icon-192.png',
+    badge: './notification-icon-96.png',
+    tag: data.tag || undefined,
+    data: { url: data.url || './' }
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || './';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client) {
+          client.navigate(url).catch(() => {});
+          return client.focus();
+        }
+      }
+      if (self.clients.openWindow) return self.clients.openWindow(url);
+    })
   );
 });
