@@ -1903,8 +1903,8 @@
                 <div class="flex justify-between items-center mb-1" style="flex-shrink:0;">
                     <h2 class="text-sm font-semibold text-gray-800" data-i18n="settings_title">Настройки</h2>
                     <div class="lang-switch">
-                        <button type="button" id="langBtnRu" onclick="setLang('ru')">RU</button>
                         <button type="button" id="langBtnEn" onclick="setLang('en')">EN</button>
+                        <button type="button" id="langBtnRu" onclick="setLang('ru')">RU</button>
                     </div>
                 </div>
                 <p class="text-xs text-gray-500 mb-3" style="flex-shrink:0;"><span data-i18n="settings_current_employee_label">Текущий сотрудник:</span> <b id="settingsCurrentEmployee" class="text-gray-800"></b></p>
@@ -1932,11 +1932,11 @@
                     <div id="pushTypesList" class="hidden flex flex-col gap-0.5 mt-1">
                         <label class="flex items-center justify-between text-xs text-gray-600" style="padding:7px 8px;">
                             <span data-i18n="push_type_new_order">Новые заказы</span>
-                            <input type="checkbox" id="pushType_new_order" onchange="setNotificationPreference('new_order', this.checked)">
+                            <input type="checkbox" id="pushType_new_order" onchange="setNotificationPreference('new_order', this.checked)" style="accent-color:#7c9473;">
                         </label>
                         <label class="flex items-center justify-between text-xs text-gray-600" style="padding:7px 8px;">
                             <span data-i18n="push_type_daily_summary">Ежедневные сводки (сегодня/завтра)</span>
-                            <input type="checkbox" id="pushType_daily_summary" onchange="setNotificationPreference('daily_summary', this.checked)">
+                            <input type="checkbox" id="pushType_daily_summary" onchange="setNotificationPreference('daily_summary', this.checked)" style="accent-color:#7c9473;">
                         </label>
                     </div>
                     <p id="pushUnsupportedNote" class="text-xs text-gray-500 hidden" style="padding:4px 8px 0;" data-i18n="push_unsupported_note">Push-уведомления не поддерживаются в этом браузере/устройстве.</p>
