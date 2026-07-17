@@ -128,7 +128,8 @@ async function _enablePush() {
         endpoint: json.endpoint,
         p256dh: json.keys.p256dh,
         auth: json.keys.auth,
-        user_agent: navigator.userAgent
+        user_agent: navigator.userAgent,
+        lang: (typeof currentLang !== 'undefined' && currentLang) ? currentLang : 'ru'
     }, { onConflict: 'endpoint' });
 
     if (error) { console.error('push_subscriptions upsert error:', error); showInfo(t('push_error')); return; }
@@ -143,6 +144,19 @@ async function _disablePush() {
         await subscription.unsubscribe().catch(() => {});
         await db.from('push_subscriptions').delete().eq('endpoint', endpoint);
     }
+}
+
+// Вызывается из setLang() (i18n.js) при переключении RU/EN — если на этом
+// устройстве уже есть активная push-подписка, обновляем в ней сохранённый
+// язык, чтобы будущие уведомления приходили на актуальном языке.
+async function syncPushLangIfSubscribed() {
+    if (!_pushSupported() || typeof currentLang === 'undefined') return;
+    try {
+        const reg = await navigator.serviceWorker.ready;
+        const subscription = await reg.pushManager.getSubscription();
+        if (!subscription) return;
+        await db.from('push_subscriptions').update({ lang: currentLang }).eq('endpoint', subscription.endpoint);
+    } catch (e) { /* не критично — просто останется прошлый язык до следующего переключения */ }
 }
 
 // Переключатель конкретного типа уведомлений (например "Новые заказы").

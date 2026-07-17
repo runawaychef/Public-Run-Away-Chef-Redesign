@@ -996,7 +996,7 @@ async function createDraftOrderAndOpen() {
 
         const { data, error } = await db.from('orders').insert({
             org_id: currentOrgId, customer_id: null, order_date: today, status: 'принят', discount: 0, vat_exempt: false,
-            employee_id: employeeId, order_number: orderNumber
+            employee_id: employeeId, order_number: orderNumber, is_confirmed: false
         }).select().single();
         if (error) throw error;
         const emp = employees.find(e => e.id === data.employee_id);
@@ -1008,6 +1008,7 @@ async function createDraftOrderAndOpen() {
             notes: '', order_number: data.order_number || orderNumber,
             due_date: null,
             inventory_pending: false,
+            is_confirmed: false,
             items: []
         };
         orders.push(newOrder);
@@ -1037,7 +1038,8 @@ async function copyOrder(i) {
             discount: o.discount || 0,
             vat_exempt: !!o.vat_exempt,
             employee_id: employeeId,
-            order_number: orderNumber
+            order_number: orderNumber,
+            is_confirmed: true
         }).select().single();
         if (error) throw error;
 
@@ -1050,6 +1052,7 @@ async function copyOrder(i) {
             order_number: data.order_number || orderNumber,
             due_date: null,
             inventory_pending: false,
+            is_confirmed: true,
             items: []
         };
 
@@ -1137,6 +1140,7 @@ function openOrderDetail(orderId) {
     document.getElementById('detailVatExempt').checked = !!order.vat_exempt;
     document.getElementById('detailNotes').value = order.notes || '';
     fillDetailEmployeeSelect(order.employee_id);
+    document.getElementById('confirmOrderBtn')?.classList.toggle('hidden', !!order.is_confirmed);
 
     renderDetailItems(order);
     updateProductSelects();
@@ -1239,12 +1243,29 @@ async function cleanupOrderDraftIfEmpty(orderId) {
     const idx = orders.findIndex(o => o.id === orderId);
     if (idx === -1) return;
     const order = orders[idx];
-    // Не удаляем если выбран клиент ИЛИ уже добавлены позиции
-    if (order.customer_id || (order.items && order.items.length > 0)) return;
+    // Не удаляем если выбран клиент, ИЛИ уже добавлены позиции, ИЛИ заказ подтверждён вручную
+    if (order.customer_id || (order.items && order.items.length > 0) || order.is_confirmed) return;
     try {
         await db.from('orders').delete().eq('id', orderId);
         orders.splice(idx, 1);
     } catch (e) { console.error('Не удалось удалить пустой черновик заказа:', e); }
+}
+
+// Кнопка "Сохранить" в шапке карточки заказа — подтверждает черновик вручную,
+// даже если позиции ещё не добавлены (например, приняли заказ по телефону и
+// хотят зафиксировать хотя бы клиента/дату сразу, а позиции внести позже).
+// Именно этот момент запускает push-уведомление сотрудникам (см. send-push).
+async function confirmOrderManually() {
+    const order = orders.find(o => o.id === currentOrderId);
+    if (!order || order.is_confirmed) return;
+    showLoading();
+    try {
+        await updateChecked(db.from('orders').update({ is_confirmed: true }).eq('id', order.id));
+        order.is_confirmed = true;
+        document.getElementById('confirmOrderBtn')?.classList.add('hidden');
+        _draftOrderIds.delete(order.id);
+    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
+    finally { hideLoading(); }
 }
 
 async function closeOrderDetail() {
@@ -1587,7 +1608,16 @@ async function addItemToOrder() {
             item_cost: itemCost
         }).select().single();
         if (error) throw error;
+        const wasEmpty = order.items.length === 0;
         order.items.push({ id: data.id, product_id: prod.id, product: prod.name, quantity: Number(data.quantity), price: Number(data.price), item_cost: itemCost });
+
+        if (wasEmpty && !order.is_confirmed) {
+            try {
+                await updateChecked(db.from('orders').update({ is_confirmed: true }).eq('id', order.id));
+                order.is_confirmed = true;
+                document.getElementById('confirmOrderBtn')?.classList.add('hidden');
+            } catch (e) { console.error('Не удалось подтвердить заказ:', e); }
+        }
 
         // Фиксируем снимок рецепта с ценами на момент создания позиции —
         // это нужно всегда, независимо от того, спишем ли склад сейчас или позже

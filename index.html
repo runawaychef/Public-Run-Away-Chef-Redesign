@@ -1654,6 +1654,10 @@
                     </div>
                     <p id="detailOrderId" class="text-sm font-semibold text-gray-600 mt-2 mb-1"></p>
                     <p class="text-[11px] text-gray-400 mb-1" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
+                    <button type="button" id="confirmOrderBtn" onclick="confirmOrderManually()" class="hidden pill-btn w-full justify-center mb-2" style="background:#7c9473; color:#fff; border-color:#7c9473;">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+                        <span data-i18n="orders_confirm_order_btn">Сохранить заказ</span>
+                    </button>
                     <div class="grid grid-cols-2 gap-1 mb-2">
                         <div>
                             <label class="table-text text-gray-500" data-i18n="customers_col_number_alt">Клиент</label>
@@ -2706,21 +2710,21 @@
 
 <script src="dates.js?v=8"></script>
     <script src="money.js?v=9"></script>
-    <script src="i18n.js?v=12"></script>
+    <script src="i18n.js?v=13"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=6"></script>
     <script src="auth.js?v=15"></script>
     <script src="employees.js?v=27"></script>
     <script src="company.js?v=13"></script>
     <script src="inventory.js?v=29"></script>
-    <script src="push.js?v=1"></script>
+    <script src="push.js?v=2"></script>
 <script src="ingredients.js?v=29"></script>
 <script src="batches.js?v=6"></script>
 <script src="semifinished.js?v=25"></script>
 <script src="products.js?v=27"></script>
 <script src="customers.js?v=35"></script>
 <script src="calendar.js?v=7"></script>
-<script src="orders.js?v=80"></script>
+<script src="orders.js?v=81"></script>
 <script src="invoice.js?v=11"></script>
 <script src="payments.js?v=19"></script>
 <script src="stats.js?v=15"></script>
@@ -2872,6 +2876,7 @@ async function loadAllData(silent) {
                 order_number: o.order_number || null,
                 due_date: o.due_date || null,
                 inventory_pending: !!o.inventory_pending,
+                is_confirmed: !!o.is_confirmed,
                 items: itemsByOrder[o.id] || []
             };
         });

@@ -60,6 +60,7 @@ const I18N = {
         settings_limits_not_apply: 'Лимиты не действуют.',
         settings_company_info: 'Информация о компании',
         settings_push_title: 'Push-уведомления',
+        orders_confirm_order_btn: 'Сохранить заказ',
         push_state_on: 'Вкл',
         push_state_off: 'Выкл',
         push_type_new_order: 'Новые заказы',
@@ -898,6 +899,7 @@ const I18N = {
         settings_limits_not_apply: 'No limits apply.',
         settings_company_info: 'Business info',
         settings_push_title: 'Push notifications',
+        orders_confirm_order_btn: 'Save order',
         push_state_on: 'On',
         push_state_off: 'Off',
         push_type_new_order: 'New orders',
@@ -1714,6 +1716,7 @@ function setLang(lang) {
     if (typeof renderPlanInfo === 'function') renderPlanInfo();
     // Страна/валюта в окне "Информация о компании" — та же логика (company.js).
     if (typeof refreshCompanyLangDependentUI === 'function') refreshCompanyLangDependentUI();
+    if (typeof syncPushLangIfSubscribed === 'function') syncPushLangIfSubscribed();
 }
 
 function applyI18n() {
