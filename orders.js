@@ -821,7 +821,7 @@ function updateOrderEmployeeFilter() {
     const sel = document.getElementById('orderEmployeeFilter');
     if (!sel) return;
     const prev = sel.value;
-    sel.innerHTML = '<option value="">Все исполнители</option>';
+    sel.innerHTML = `<option value="">${t('orders_filter_all_staff')}</option>`;
     employees.forEach(e => {
         const opt = document.createElement('option');
         opt.value = e.id; opt.textContent = e.name;
@@ -835,7 +835,7 @@ function renderOrderEmployeeFilterList() {
     const list = document.getElementById('orderEmployeeFilterList');
     if (!list) return;
     const current = document.getElementById('orderEmployeeFilter').value;
-    let html = `<div class="status-option${current === '' ? ' selected' : ''}" onclick="setOrderEmployeeFilter('')"><span>Все мастера</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>`;
+    let html = `<div class="status-option${current === '' ? ' selected' : ''}" onclick="setOrderEmployeeFilter('')"><span>${t('orders_filter_all_staff')}</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>`;
     employees.forEach(e => {
         html += `<div class="status-option${String(e.id) === current ? ' selected' : ''}" onclick="setOrderEmployeeFilter('${e.id}')"><span>${escapeHtml(e.name)}</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>`;
     });
