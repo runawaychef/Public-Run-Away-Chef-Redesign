@@ -74,6 +74,18 @@ const COUNTRY_OPTIONS = [
     // строкой в этом списке. Сделать в течение 14-дневного окна тестирования.
 ];
 
+// Подпись поля "Личный код" зависит от страны: для Литвы используется точная
+// формулировка "Номер свидетельства о деятельности" (самозанятые/individual
+// activity в Литве оформляются именно так, не как обычный personal code).
+// Значение в БД (personal_code) при этом одно и то же — меняется только подпись.
+function updatePersonalCodeLabel() {
+    const el = document.getElementById('cmpPersonalCodeLabel');
+    if (!el) return;
+    el.textContent = _cmpCurrentCountryCode === 'LT'
+        ? t('company_personal_code_label_lt')
+        : t('company_personal_code_label');
+}
+
 function countryLabel(code) {
     const found = COUNTRY_OPTIONS.find(c => c.code === code);
     if (found) return _localizedLabel(found);
@@ -117,6 +129,7 @@ async function selectCountry(code) {
     _cmpCurrentCountryCode = code;
     document.getElementById('cmpCountryLabel').textContent = countryLabel(code);
     document.getElementById('cmpCountryDropdown').classList.add('hidden');
+    updatePersonalCodeLabel();
 
     if (!found) { await saveCompanyInfo('country', code); return; }
 
@@ -196,9 +209,11 @@ async function openCompanyInfoModal() {
         document.getElementById('cmpVatCode').value      = data.vat_code || '';
         document.getElementById('cmpDirectorName').value = data.director_name || '';
         document.getElementById('cmpPersonalCode').value = data.personal_code || '';
+        document.getElementById('cmpVatCodeIndividual').value = data.vat_code || '';
         document.getElementById('cmpBankName').value     = data.bank_name || '';
         document.getElementById('cmpBankAccount').value  = data.bank_account || '';
         document.getElementById('cmpBankSwift').value    = data.bank_swift || '';
+        updatePersonalCodeLabel();
 
         setCompanyEntityType(data.entity_type || 'company', /*skipSave*/ true);
         document.getElementById('companyInfoModal').style.display = 'flex';
@@ -262,4 +277,5 @@ function refreshCompanyLangDependentUI() {
     document.getElementById('cmpCurrencyLabel').textContent = currencyLabel(_cmpCurrentCurrencyCode);
     renderCountryDropdown();
     renderCurrencyDropdown();
+    updatePersonalCodeLabel();
 }

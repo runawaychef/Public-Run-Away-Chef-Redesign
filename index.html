@@ -2145,8 +2145,16 @@
 
                 <!-- Только для физического лица -->
                 <div id="cmpIndividualFields" class="border-t pt-2 mb-3">
-                    <label class="table-text text-gray-500" data-i18n="company_personal_code_label">Личный код</label>
-                    <input id="cmpPersonalCode" type="text" autocomplete="off" onblur="saveCompanyInfo('personal_code', this.value)" class="border p-1 rounded-xl w-full table-text">
+                    <div class="grid grid-cols-2 gap-1">
+                        <div>
+                            <label id="cmpPersonalCodeLabel" class="table-text text-gray-500" data-i18n="company_personal_code_label">Личный код</label>
+                            <input id="cmpPersonalCode" type="text" autocomplete="off" onblur="saveCompanyInfo('personal_code', this.value)" class="border p-1 rounded-xl w-full table-text">
+                        </div>
+                        <div>
+                            <label class="table-text text-gray-500" data-i18n="company_vat_code_label">Код НДС / PVM</label>
+                            <input id="cmpVatCodeIndividual" type="text" autocomplete="off" onblur="saveCompanyInfo('vat_code', this.value)" class="border p-1 rounded-xl w-full table-text">
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Банковские реквизиты — общие для обоих типов -->
@@ -2719,12 +2727,12 @@
 
 <script src="dates.js?v=8"></script>
     <script src="money.js?v=9"></script>
-    <script src="i18n.js?v=16"></script>
+    <script src="i18n.js?v=17"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=6"></script>
     <script src="auth.js?v=15"></script>
     <script src="employees.js?v=27"></script>
-    <script src="company.js?v=13"></script>
+    <script src="company.js?v=14"></script>
     <script src="inventory.js?v=29"></script>
     <script src="push.js?v=3"></script>
 <script src="ingredients.js?v=29"></script>
