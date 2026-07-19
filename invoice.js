@@ -273,6 +273,12 @@ async function freezeDocumentSnapshot(order, docType, reuseNumber) {
     const field = snapshotField(docType);
     await updateChecked(db.from('orders').update({ [field]: snapshot }).eq('id', order.id));
     order[field] = snapshot;
+    // Держим кэш мгновенного запуска (cache.js) в курсе присвоенного номера
+    // немедленно — иначе при сворачивании приложения (Android часто выгружает
+    // процесс из памяти) следующий запуск может подставить старый снимок без
+    // этого номера, и следующее открытие документа "не увидит" его и создаст
+    // новый вместо переиспользования.
+    if (typeof saveAppSnapshot === 'function') saveAppSnapshot();
     return snapshot;
 }
 
