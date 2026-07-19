@@ -257,6 +257,11 @@ const I18N = {
         stats_incl_vat: 'в т.ч. НДС',
         stats_week_with_vat: 'Неделя (с НДС)',
         stats_month_with_vat: 'Месяц (с НДС)',
+        stats_customers_table_title_novat: 'Сумма по клиентам',
+        stats_pie_title_novat: 'Доля клиентов',
+        stats_total_novat: 'Всего',
+        stats_week_novat: 'Неделя',
+        stats_month_novat: 'Месяц',
         stats_products_count: 'Изделий:',
         stats_orders_count: 'Заказов:',
         stats_monthly_dynamics_title: 'Динамика по месяцам: выручка и прибыль',
@@ -615,6 +620,7 @@ const I18N = {
         customers_col_number_alt: 'Клиент',
         orders_col_positions: 'Позиций',
         orders_col_total_vat: 'Итого с НДС',
+        orders_col_total_novat: 'Итого',
         orders_customer_card: 'Карточка клиента',
         orders_share_order: 'Поделиться заказом',
         orders_invoice_doc: 'Счёт / накладная',
@@ -1105,6 +1111,11 @@ const I18N = {
         stats_incl_vat: 'incl. VAT',
         stats_week_with_vat: 'This week (incl. VAT)',
         stats_month_with_vat: 'This month (incl. VAT)',
+        stats_customers_table_title_novat: 'Total by customer',
+        stats_pie_title_novat: 'Customer share',
+        stats_total_novat: 'Total',
+        stats_week_novat: 'This week',
+        stats_month_novat: 'This month',
         stats_products_count: 'Menu items:',
         stats_orders_count: 'Orders:',
         stats_monthly_dynamics_title: 'Monthly trend: revenue and profit',
@@ -1463,6 +1474,7 @@ const I18N = {
         customers_col_number_alt: 'Customer',
         orders_col_positions: 'Items',
         orders_col_total_vat: 'Total incl. VAT',
+        orders_col_total_novat: 'Total',
         orders_customer_card: 'Customer card',
         orders_share_order: 'Share order',
         orders_invoice_doc: 'Invoice / delivery note',
@@ -1734,6 +1746,7 @@ function setLang(lang) {
     if (typeof renderPlanInfo === 'function') renderPlanInfo();
     // Страна/валюта в окне "Информация о компании" — та же логика (company.js).
     if (typeof refreshCompanyLangDependentUI === 'function') refreshCompanyLangDependentUI();
+    if (typeof refreshVatLabels === 'function') refreshVatLabels();
     if (typeof syncPushLangIfSubscribed === 'function') syncPushLangIfSubscribed();
 }
 

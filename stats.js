@@ -13,6 +13,32 @@ function openStatsModal() {
     showTab('stats');
 }
 
+// Переключает подписи "(с НДС)"/"incl. VAT" на нейтральные версии и скрывает
+// строку "в т.ч. НДС" целиком, если у организации НДС не включён (ставка 0).
+// Вызывается после загрузки организации (когда известен currentOrgVatRate)
+// и при смене языка (см. setLang() в i18n.js), т.к. лейблы зависят от языка.
+function refreshVatLabels() {
+    const vat = hasVat();
+
+    const swap = (id, keyVat, keyNoVat) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = t(vat ? keyVat : keyNoVat);
+    };
+    swap('statsCustomersTableTitle', 'stats_customers_table_title', 'stats_customers_table_title_novat');
+    swap('statsPieTitle', 'stats_pie_title', 'stats_pie_title_novat');
+    swap('statsTotalLabel', 'stats_total_with_vat', 'stats_total_novat');
+    swap('weekTotalLabel', 'stats_week_with_vat', 'stats_week_novat');
+    swap('monthTotalLabel', 'stats_month_with_vat', 'stats_month_novat');
+
+    // Строка "в т.ч. НДС" целиком не нужна, если НДС не включён
+    const inclVatRow = document.getElementById('statsInclVatRow');
+    if (inclVatRow) inclVatRow.style.display = vat ? '' : 'none';
+
+    // Заголовок колонки "Итого с НДС" в таблице заказов
+    const ordersTotalCol = document.getElementById('ordersColTotalVat');
+    if (ordersTotalCol) ordersTotalCol.textContent = t(vat ? 'orders_col_total_vat' : 'orders_col_total_novat');
+}
+
 function downloadBackup() {
     // Экспорт текущих данных (из кэша) в JSON для резервной копии
     const exportOrders = orders.map(o => ({
@@ -222,16 +248,19 @@ function updateTotals(filteredOrders) {
 // (кэш lastCustomerTableData больше не нужен — теперь весь список всегда виден через прокрутку)
 
 function buildCustomerRowsHtml(sorted, totals, vats, qtys, grandTotal) {
+    const vat = hasVat();
     let html = '';
     sorted.forEach(([name, val], i) => {
         const pct = grandTotal > 0 ? (val/grandTotal*100).toFixed(1) : '0.0';
         const color = `hsl(${i * 360 / sorted.length}, 60%, 50%)`;
-        html += `<tr class="border-b"><td class="p-0.5 flex items-center gap-1"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></span>${escapeHtml(name)}</td><td class="p-0.5 text-right">${qtys[name] || 0}</td><td class="p-0.5 text-right stats-num">${val.toFixed(2)}</td><td class="p-0.5 text-right" style="color:#6b7280;">${(vats[name]||0).toFixed(2)}</td><td class="p-0.5 text-right stats-pct">${pct}%</td></tr>`;
+        const vatCell = vat ? `<td class="p-0.5 text-right" style="color:#6b7280;">${(vats[name]||0).toFixed(2)}</td>` : '';
+        html += `<tr class="border-b"><td class="p-0.5 flex items-center gap-1"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></span>${escapeHtml(name)}</td><td class="p-0.5 text-right">${qtys[name] || 0}</td><td class="p-0.5 text-right stats-num">${val.toFixed(2)}</td>${vatCell}<td class="p-0.5 text-right stats-pct">${pct}%</td></tr>`;
     });
     return html;
 }
 
 function drawCustomerTable(filtered) {
+    const vat = hasVat();
     const totals = {};
     const vats    = {};
     const qtys   = {};
@@ -255,12 +284,17 @@ function drawCustomerTable(filtered) {
         return;
     }
 
-    let html = '<table class="w-full stats-table table-clean" style="table-layout:fixed;"><thead><tr style="background-color:#e3e8df;position:sticky;top:0;"><th class="p-0.5 text-left" style="width:40%;">' + t('stats_col_customer') + '</th><th class="p-0.5 text-right" style="width:15%;">' + t('stats_col_qty') + '</th><th class="p-0.5 text-right" style="width:20%;">' + t('stats_col_sum') + ' (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:15%;">' + t('stats_col_vat') + ' (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:10%;">' + t('stats_col_share') + '</th></tr></thead><tbody>';
+    const sumW   = vat ? '20%' : '25%';
+    const shareW = vat ? '10%' : '15%';
+    const vatTh  = vat ? '<th class="p-0.5 text-right" style="width:15%;">' + t('stats_col_vat') + ' (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th>' : '';
+    const vatTd  = vat ? `<td class="p-0.5 text-right" style="width:15%;color:#6b7280;">${grandVat.toFixed(2)}</td>` : '';
+
+    let html = '<table class="w-full stats-table table-clean" style="table-layout:fixed;"><thead><tr style="background-color:#e3e8df;position:sticky;top:0;"><th class="p-0.5 text-left" style="width:40%;">' + t('stats_col_customer') + '</th><th class="p-0.5 text-right" style="width:15%;">' + t('stats_col_qty') + '</th><th class="p-0.5 text-right" style="width:' + sumW + ';">' + t('stats_col_sum') + ' (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th>' + vatTh + '<th class="p-0.5 text-right" style="width:' + shareW + ';">' + t('stats_col_share') + '</th></tr></thead><tbody>';
     html += buildCustomerRowsHtml(sorted, totals, vats, qtys, grandTotal);
     html += '</tbody></table>';
     container.innerHTML = html;
     totalContainer.innerHTML =
-        `<table class="w-full stats-table table-clean" style="table-layout:fixed;"><tr style="background-color:#e3e8df;" class="font-semibold"><td class="p-0.5" style="width:40%">${t('stats_col_total')}</td><td class="p-0.5 text-right" style="width:15%">${grandQty}</td><td class="p-0.5 text-right" style="width:20%">${grandTotal.toFixed(2)}</td><td class="p-0.5 text-right" style="width:15%;color:#6b7280;">${grandVat.toFixed(2)}</td><td class="p-0.5" style="width:10%"></td></tr></table>`;
+        `<table class="w-full stats-table table-clean" style="table-layout:fixed;"><tr style="background-color:#e3e8df;" class="font-semibold"><td class="p-0.5" style="width:40%">${t('stats_col_total')}</td><td class="p-0.5 text-right" style="width:15%">${grandQty}</td><td class="p-0.5 text-right" style="width:${sumW}">${grandTotal.toFixed(2)}</td>${vatTd}<td class="p-0.5" style="width:${shareW}"></td></tr></table>`;
 }
 
 // --- Топ изделий ---
