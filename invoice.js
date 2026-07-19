@@ -49,7 +49,7 @@ function openDocumentTypeModal() {
 // Снимок пересобирается заново при КАЖДОМ открытии — документ всегда отражает
 // актуальные данные заказа на момент просмотра, а не то, что было в момент
 // самого первого формирования (см. reuseNumber: номер при этом не меняется).
-async function openOrderDocumentPreview(docType) {
+async function openOrderDocumentPreview(docType, langOverride) {
     closeModal();
     const order = orders.find(o => o.id === currentOrderId);
     if (!order) return;
@@ -58,7 +58,7 @@ async function openOrderDocumentPreview(docType) {
     try {
         const existing = order[snapshotField(docType)];
         const snapshot = await freezeDocumentSnapshot(order, docType, existing ? existing.number : undefined);
-        _docPreview = { docType, snapshot, lang: currentLang };
+        _docPreview = { docType, snapshot, lang: langOverride || currentLang };
         renderDocumentPreviewThumbnail();
         document.getElementById('orderDocumentModal').style.display = 'flex';
     } catch (e) {
@@ -85,6 +85,11 @@ function updateDocumentLangSwitcherUI() {
     if (!ruBtn || !enBtn || !_docPreview) return;
     ruBtn.classList.toggle('active', _docPreview.lang === 'ru');
     enBtn.classList.toggle('active', _docPreview.lang === 'en');
+
+    // Кнопка "Сформировать Delivery Note" видна только когда открыт Invoice —
+    // из накладной генерировать накладную же незачем.
+    const dnBtn = document.getElementById('generateDeliveryNoteBtn');
+    if (dnBtn) dnBtn.style.display = _docPreview.docType === 'invoice' ? 'block' : 'none';
 }
 
 // Пересобирает снимок из текущих данных ещё раз, не закрывая предпросмотр
