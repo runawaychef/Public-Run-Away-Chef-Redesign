@@ -3,7 +3,7 @@
 // Обычный скрипт (без модулей) — функции доступны глобально, как раньше.
 
 // Ставка НДС теперь настраивается per-organization — см. currentOrgVatRate (employees.js),
-// заполняется из company.js (карточка "Информация о компании"). Дефолт 0.21 — на случай
+// заполняется из company.js (карточка "Информация о компании"). Дефолт 0 (без НДС) — на случай
 // организаций, где поле ещё не заполнено.
 
 // Символы валют — единая таблица соответствий, используется и в formatMoney(),
@@ -40,7 +40,7 @@ function orderAfterDiscount(order) {
 
 function orderVatAmount(order) {
     if (order.vat_exempt) return 0;
-    const rate = typeof currentOrgVatRate !== 'undefined' ? currentOrgVatRate : 0.21;
+    const rate = typeof currentOrgVatRate !== 'undefined' ? currentOrgVatRate : 0;
     return orderAfterDiscount(order) * rate;
 }
 

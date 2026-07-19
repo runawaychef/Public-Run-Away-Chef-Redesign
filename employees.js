@@ -11,7 +11,7 @@ let currentOrgPlan = 'free';        // текущий тариф: 'free' или 
 let currentOrgCustomersUsed = 0;    // сколько клиентов создано за всё время (для лимита бесплатного тарифа)
 let currentOrgOrdersUsed = 0;       // сколько заказов создано за всё время (для лимита бесплатного тарифа)
 let currentOrgCurrency = 'EUR';     // код валюты расчёта организации (пригодится для formatMoney())
-let currentOrgVatRate = 0.21;       // ставка НДС организации (доля, не проценты — 0.21 = 21%)
+let currentOrgVatRate = 0;          // ставка НДС организации (доля, не проценты — 0.21 = 21%); по умолчанию без НДС
 
 function updateHeaderOrgName() {
     const el = document.getElementById('orgNameHeader');
@@ -58,7 +58,7 @@ async function loadCurrentOrg() {
         currentOrgCustomersUsed = (data.organizations && data.organizations.customers_created_total) || 0;
         currentOrgOrdersUsed = (data.organizations && data.organizations.orders_created_total) || 0;
         currentOrgCurrency = (data.organizations && data.organizations.currency_code) || 'EUR';
-        currentOrgVatRate = (data.organizations && data.organizations.vat_rate != null) ? Number(data.organizations.vat_rate) : 0.21;
+        currentOrgVatRate = (data.organizations && data.organizations.vat_rate != null) ? Number(data.organizations.vat_rate) : 0;
         updateHeaderOrgName();
         return data;
     } catch (e) {

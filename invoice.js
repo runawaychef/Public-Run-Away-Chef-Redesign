@@ -356,7 +356,7 @@ function buildDocumentHtml(docType, snapshot, lang) {
     const subtotalAll = items.reduce((s, it) => s + it.quantity * it.price, 0);
     const discountAll = subtotalAll * (Number(order.discount) || 0) / 100;
     const afterDiscountAll = subtotalAll - discountAll;
-    const vatRate = typeof currentOrgVatRate !== 'undefined' ? currentOrgVatRate : 0.21;
+    const vatRate = typeof currentOrgVatRate !== 'undefined' ? currentOrgVatRate : 0;
     const vatAll = order.vat_exempt ? 0 : afterDiscountAll * vatRate;
     const grandAll = afterDiscountAll + vatAll;
     const vatPctLabel = order.vat_exempt ? '0%' : (vatRate * 100).toFixed(0) + '%';
@@ -491,7 +491,7 @@ async function buildDocumentPdf(docType, snapshot, lang) {
     const subtotalAll = items.reduce((s, it) => s + it.quantity * it.price, 0);
     const discountAll = subtotalAll * (Number(order.discount) || 0) / 100;
     const afterDiscountAll = subtotalAll - discountAll;
-    const vatRate = typeof currentOrgVatRate !== 'undefined' ? currentOrgVatRate : 0.21;
+    const vatRate = typeof currentOrgVatRate !== 'undefined' ? currentOrgVatRate : 0;
     const vatAll = order.vat_exempt ? 0 : afterDiscountAll * vatRate;
     const grandAll = afterDiscountAll + vatAll;
     const vatPctLabel = order.vat_exempt ? '0%' : (vatRate * 100).toFixed(0) + '%';

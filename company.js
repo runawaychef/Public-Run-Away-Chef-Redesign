@@ -200,7 +200,7 @@ async function openCompanyInfoModal() {
         document.getElementById('cmpCountryLabel').textContent = countryLabel(data.country);
         renderCurrencyDropdown();
         document.getElementById('cmpCurrencyLabel').textContent = currencyLabel(data.currency_code || 'EUR');
-        document.getElementById('cmpVatRate').value = data.vat_rate != null ? (Number(data.vat_rate) * 100).toString() : '21';
+        document.getElementById('cmpVatRate').value = data.vat_rate != null ? (Number(data.vat_rate) * 100).toString() : '0';
         document.getElementById('cmpPhone').value        = data.phone || '';
         document.getElementById('cmpEmail').value        = data.email || '';
         document.getElementById('cmpAddress').value      = data.address || '';
