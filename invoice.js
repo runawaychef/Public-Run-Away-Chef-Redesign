@@ -92,31 +92,6 @@ function updateDocumentLangSwitcherUI() {
     if (dnBtn) dnBtn.style.display = _docPreview.docType === 'invoice' ? 'block' : 'none';
 }
 
-// Пересобирает снимок из текущих данных ещё раз, не закрывая предпросмотр
-// (номер при этом не меняется — только содержимое). С учётом того, что
-// openOrderDocumentPreview теперь и так пересобирает снимок при каждом
-// открытии, эта функция нужна только для ручного пересчёта, не закрывая
-// уже открытое окно предпросмотра.
-async function refreshDocumentSnapshot() {
-    if (!_docPreview) return;
-    const { docType, lang } = _docPreview;
-    const order = orders.find(o => o.id === currentOrderId);
-    if (!order) return;
-
-    showLoading(t('inv_updating_snapshot'));
-    try {
-        const snapshot = await freezeDocumentSnapshot(order, docType, /*reuseNumber*/ order[snapshotField(docType)].number);
-        _docPreview = { docType, snapshot, lang };
-        renderDocumentPreviewThumbnail();
-        showAutosaveToast();
-    } catch (e) {
-        console.error(e);
-        showInfo(t('inv_snapshot_error_prefix') + (e && e.message ? e.message : t('inv_unknown_error')));
-    } finally {
-        hideLoading();
-    }
-}
-
 // Собирает снимок данных из текущего состояния заказа/компании/клиента,
 // присваивает номер (если ещё не присвоен) и сохраняет в orders.*_snapshot.
 // ==================== СУММА ПРОПИСЬЮ ====================
