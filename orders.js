@@ -114,7 +114,7 @@ function displayOrders() {
             <td class=" p-0.5 table-text whitespace-nowrap" onclick="openOrderDetail(${order.id})">${formatDateDMY(order.date)}</td>
             <td class=" p-0.5 table-text" onclick="openOrderDetail(${order.id})">${escapeHtml(order.customer)}</td>
             <td class=" p-0.5 table-text text-center" onclick="openOrderDetail(${order.id})">${itemsCount}</td>
-            <td class=" p-0.5 table-text font-medium whitespace-nowrap" onclick="openOrderDetail(${order.id})">${total}</td>
+            <td class=" p-0.5 table-text font-medium whitespace-nowrap text-center" onclick="openOrderDetail(${order.id})">${total}</td>
             <td class=" p-0.5 text-center" onclick="openOrderDetail(${order.id})"><span class="${flagClass}"></span></td>
             <td class=" p-0.5 text-center">
                 ${hasPermission('can_delete') ? svgDeleteSafe('openDeleteModal', [realIdx, 'order', `${t('delete_label_order_of')} «${order.customer}»`]) : ''}
