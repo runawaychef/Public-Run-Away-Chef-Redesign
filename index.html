@@ -2804,7 +2804,7 @@ async function loadAllData(silent) {
         const [pRes, cRes, oRes, oiRes, eRes, ingRes, piRes, sfRes, sfiRes, opRes] = await Promise.all([
             db.from('products').select('id, name, price, batch_size, other_costs, unit, recipe_confirmed, track_stock').eq('org_id', currentOrgId).order('name').limit(5000),
             db.from('customers').select('id, name, contact, discount, vat_exempt, notes').eq('org_id', currentOrgId).order('name').limit(5000),
-            db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending').eq('org_id', currentOrgId).is('deleted_at', null).range(0, 9999),
+            db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending, invoice_snapshot, delivery_note_snapshot').eq('org_id', currentOrgId).is('deleted_at', null).range(0, 9999),
             db.from('order_items').select('id, order_id, product_id, quantity, price, item_cost').eq('org_id', currentOrgId).range(0, 9999),
             db.from('employees').select('id, name').eq('org_id', currentOrgId).order('name').limit(1000),
             db.from('ingredients').select('id, name, package_price, package_size, unit').eq('org_id', currentOrgId).order('name').limit(5000),
