@@ -56,7 +56,14 @@ async function openOrderDocumentPreview(docType, langOverride) {
 
     showLoading(t('inv_generating_document'));
     try {
-        const existing = order[snapshotField(docType)];
+        // Проверяем номер НАПРЯМУЮ в базе (а не в локальном массиве orders в
+        // памяти приложения) — чтобы полностью исключить любую возможную
+        // рассинхронизацию между тем, что реально сохранено на сервере, и
+        // тем, что видит клиент в данный момент (устаревший кэш и т.п.).
+        const field = snapshotField(docType);
+        const { data: freshRow, error: freshErr } = await db.from('orders').select(field).eq('id', order.id).single();
+        if (freshErr) throw freshErr;
+        const existing = freshRow ? freshRow[field] : null;
         const snapshot = await freezeDocumentSnapshot(order, docType, existing ? existing.number : undefined);
         _docPreview = { docType, snapshot, lang: langOverride || currentLang };
         renderDocumentPreviewThumbnail();
