@@ -55,6 +55,7 @@ function renderPlanInfo() {
 
 // Кэш данных склада: { ingredient_id: { total_in, total_out, balance } }
 let _inventoryCache = {};
+let _inventoryMovements = []; // сырые движения (нужны для расчёта "остатка до списания" по незавершённым заказам)
 
 // ── Загрузка и расчёт остатков ──────────────────────────────────────────────
 
@@ -62,7 +63,7 @@ async function loadInventory() {
     try {
         const { data, error } = await db
             .from('inventory')
-            .select('ingredient_id, semi_finished_id, type, quantity')
+            .select('ingredient_id, semi_finished_id, type, quantity, order_item_id')
             .limit(50000);
         if (error) throw error;
 
@@ -75,8 +76,47 @@ async function loadInventory() {
             if (row.type === 'сторно')  cache[key].out -= Number(row.quantity);
         });
         _inventoryCache = cache;
+        _inventoryMovements = data || [];
         updateInventoryAlertDot();
     } catch (e) { console.error('Ошибка загрузки склада:', e); }
+}
+
+// Считает, сколько уже списано по заказам, которые ФИЗИЧЕСКИ ещё не выполнены
+// (статус ≠ "выполнен"), независимо от даты заказа. Пока заказ не отмечен
+// выполненным — ингредиент/п-ф реально ещё лежит на складе, просто в системе
+// уже "зарезервирован". Используется для показа остатка "до списания".
+function computePendingWriteoffMap() {
+    const pendingItemIds = new Set();
+    (orders || []).forEach(o => {
+        if (o.status === 'выполнен') return;
+        (o.items || []).forEach(it => { if (it && it.id != null) pendingItemIds.add(it.id); });
+    });
+    const map = {};
+    _inventoryMovements.forEach(row => {
+        if (row.order_item_id == null || !pendingItemIds.has(row.order_item_id)) return;
+        const key = row.semi_finished_id ? `sf_${row.semi_finished_id}` : `ing_${row.ingredient_id}`;
+        if (!map[key]) map[key] = 0;
+        if (row.type === 'расход') map[key] += Number(row.quantity);
+        if (row.type === 'сторно') map[key] -= Number(row.quantity);
+    });
+    return map;
+}
+
+// Остаток ингредиента "до списания" — физический остаток без учёта ещё не
+// выполненных заказов (см. computePendingWriteoffMap выше).
+function getIngredientBalanceBeforeWriteoff(ingId, pendingMap) {
+    const after = getIngredientBalance(ingId);
+    const pending = (pendingMap && pendingMap[`ing_${ingId}`]) || 0;
+    if (after === null) return pending ? pending : null;
+    return parseFloat((after + pending).toFixed(4));
+}
+
+// То же самое для полуфабрикатов.
+function getSemiFinishedBalanceBeforeWriteoff(sfId, pendingMap) {
+    const after = getSemiFinishedBalance(sfId);
+    const pending = (pendingMap && pendingMap[`sf_${sfId}`]) || 0;
+    if (after === null) return pending ? pending : null;
+    return parseFloat((after + pending).toFixed(4));
 }
 
 // Остаток ингредиента

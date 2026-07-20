@@ -20,7 +20,7 @@ function getLocalDateStr(offsetDays) {
 // Если заказ на дату больше чем через N дней — списывать сырьё сразу рано:
 // его может ещё не быть на складе, аналитика начнёт врать (уйдёт в минус).
 // Вместо этого откладываем списание до момента, когда до заказа останется N дней.
-const INVENTORY_PENDING_DAYS = 7;
+const INVENTORY_PENDING_DAYS = 5;
 
 // true = списывать сейчас (заказ сегодня, в прошлом, или в пределах ближайших N дней)
 function shouldWriteOffNow(orderDateStr) {

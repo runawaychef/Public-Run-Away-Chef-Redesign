@@ -136,11 +136,14 @@ function renderIngredientCards() {
         });
     });
 
+    const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
+
     let html = '';
     ingredients.forEach(ing => {
         const unitPrice = ingredientUnitPrice(ing);
         const unitLabel = unitAbbrev(ing.unit);
         const balance  = typeof getIngredientBalance === 'function' ? getIngredientBalance(ing.id) : null;
+        const balanceBefore = typeof getIngredientBalanceBeforeWriteoff === 'function' ? getIngredientBalanceBeforeWriteoff(ing.id, pendingMap) : balance;
         const daily    = typeof avgDailyUsage === 'function' ? avgDailyUsage(ing.id) : 0;
         const daysLeft = (balance !== null && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
         const needed   = neededForOrders[ing.id] || 0;
@@ -149,9 +152,10 @@ function renderIngredientCards() {
         const isCritical = shortfall || (balance !== null && balance <= 0) || (daysLeft !== null && daysLeft < 3);
         const isWarning  = !isCritical && daysLeft !== null && daysLeft < 7;
         const accentColor = isCritical ? '#c0685c' : isWarning ? '#d9a441' : '';
-        const daysColor = isCritical ? '#c0685c' : isWarning ? '#96712a' : '#4f6349';
+        const afterColor = isCritical ? '#c0685c' : isWarning ? '#96712a' : '#4f6349';
         const daysText = daysLeft !== null ? `${t('ing_lasts_colon')} ${daysLeft} ${t('inv_days_short')}` : shortfall ? `${t('ing_lasts_colon')} ${t('inv_shortage')}` : '';
-        const balanceText = balance !== null ? `${t('ing_balance_colon')} ${Number(balance).toFixed(1)} ${unitLabel}` : `${t('ing_balance_colon')} —`;
+        const beforeText = balanceBefore !== null ? `${t('ing_before_writeoff_colon')} ${Number(balanceBefore).toFixed(1)} ${unitLabel}` : `${t('ing_before_writeoff_colon')} —`;
+        const afterText = balance !== null ? `${Number(balance).toFixed(1)} ${unitLabel}` : '—';
         const priceText = `${formatMoney(unitPrice, 4)}/${unitLabel}`;
         const stripe = accentColor ? `<div class="stripe" style="background:${accentColor};"></div>` : '';
         const realIdx = ingredients.indexOf(ing);
@@ -164,9 +168,13 @@ function renderIngredientCards() {
                 <div class="order-card-body">
                     <div class="oc-row">
                         <span class="oc-name">${escapeHtml(ing.name || t('semifinished_no_name_fallback'))}</span>
-                        ${daysText ? `<span class="oc-sum" style="color:${daysColor};">${daysText}</span>` : ''}
+                        <span class="oc-sum" style="color:${afterColor};">${afterText}</span>
                     </div>
-                    <div class="oc-meta">${balanceText} · ${priceText}</div>
+                    <div class="oc-meta">${beforeText}</div>
+                    <div class="oc-row" style="margin-top:2px;">
+                        <span class="oc-meta">${priceText}</span>
+                        ${daysText ? `<span class="oc-warn" style="color:${afterColor};">${daysText}</span>` : ''}
+                    </div>
                 </div>
             </div>
         </div>`;

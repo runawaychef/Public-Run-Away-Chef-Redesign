@@ -141,11 +141,14 @@ function renderSemiFinishedCards() {
         });
     });
 
+    const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
+
     let html = '';
     semiFinished.forEach(sf => {
         const unitLabel = unitAbbrev(sf.unit);
         const unitCost  = semiFinishedUnitCost(sf);
         const balance   = typeof getSemiFinishedBalance === 'function' ? getSemiFinishedBalance(sf.id) : null;
+        const balanceBefore = typeof getSemiFinishedBalanceBeforeWriteoff === 'function' ? getSemiFinishedBalanceBeforeWriteoff(sf.id, pendingMap) : balance;
         const daily     = typeof avgDailySfUsage === 'function' ? avgDailySfUsage(sf.id) : 0;
         const daysLeft  = (balance !== null && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
         const needed    = neededForOrders[sf.id] || 0;
@@ -155,9 +158,10 @@ function renderSemiFinishedCards() {
         const isWarning  = !isCritical && daysLeft !== null && daysLeft < 7;
         const notConfirmed = !sf.recipe_confirmed;
         const accentColor = (isCritical || notConfirmed) ? '#c0685c' : isWarning ? '#d9a441' : '';
-        const daysColor = isCritical ? '#c0685c' : isWarning ? '#96712a' : '#4f6349';
+        const afterColor = isCritical ? '#c0685c' : isWarning ? '#96712a' : '#4f6349';
         const daysText = daysLeft !== null ? `${t('ing_lasts_colon')} ${daysLeft} ${t('inv_days_short')}` : shortage ? `${t('ing_lasts_colon')} ${t('inv_shortage')}` : '';
-        const balanceText = balance !== null ? `${t('ing_balance_colon')} ${Number(balance).toFixed(1)} ${unitLabel}` : `${t('ing_balance_colon')} —`;
+        const beforeText = balanceBefore !== null ? `${t('ing_before_writeoff_colon')} ${Number(balanceBefore).toFixed(1)} ${unitLabel}` : `${t('ing_before_writeoff_colon')} —`;
+        const afterText = balance !== null ? `${Number(balance).toFixed(1)} ${unitLabel}` : '—';
         const priceText = `${formatMoney(unitCost, 4)}/${unitLabel}`;
         const stripe = accentColor ? `<div class="stripe" style="background:${accentColor};"></div>` : '';
         const realIdx = semiFinished.indexOf(sf);
@@ -170,9 +174,13 @@ function renderSemiFinishedCards() {
                 <div class="order-card-body">
                     <div class="oc-row">
                         <span class="oc-name">${escapeHtml(sf.name || t('semifinished_no_name_fallback'))}</span>
-                        ${daysText ? `<span class="oc-sum" style="color:${daysColor};">${daysText}</span>` : ''}
+                        <span class="oc-sum" style="color:${afterColor};">${afterText}</span>
                     </div>
-                    <div class="oc-meta">${balanceText} · ${priceText}</div>
+                    <div class="oc-meta">${beforeText}</div>
+                    <div class="oc-row" style="margin-top:2px;">
+                        <span class="oc-meta">${priceText}</span>
+                        ${daysText ? `<span class="oc-warn" style="color:${afterColor};">${daysText}</span>` : ''}
+                    </div>
                 </div>
             </div>
         </div>`;

@@ -329,6 +329,8 @@ const I18N = {
         help_prod_flags_text: '«Рецепт заполнен полностью» — отметьте вручную, когда состав рецепта окончательно готов. На расчёты и списание не влияет, это просто напоминание себе: пока флажок снят, изделие в списке помечается предупреждением, чтобы не забыть его доделать. Флажок автоматически снимается сам, как только вы меняете состав рецепта — так приложение напоминает подтвердить его заново после правок.\n\n«Отслеживать остатки постоянно» — включает изделие в «Аналитику склада»: прогноз «хватит на N дней», предупреждения о нехватке ингредиентов. Списание ингредиентов со склада при заказе происходит всегда, независимо от этой галочки — она влияет только на то, попадает ли изделие в сводку предупреждений. Удобно выключить для редких/разовых позиций, чтобы они не засоряли список.',
         help_prod_stripe_title: 'Что значит цветная полоска у названия',
         help_prod_stripe_text: 'Тонкая цветная полоска слева от названия изделия — предупреждение: либо не выбрана единица измерения (колонка «Ед.»), либо не отмечен флажок «Рецепт заполнен полностью» в карточке изделия. Тапните по строке, чтобы открыть карточку и исправить.',
+        help_stock_cards_title: 'Карточки ингредиентов и полуфабрикатов',
+        help_stock_cards_text: 'Цветная полоса слева — это предупреждение о запасе: красная — критично (осталось меньше 3 дней при обычном расходе, остаток на нуле, либо не хватает на уже принятые заказы), жёлтая — осталось меньше недели, без полосы — запас в порядке.\n\n«Хватит: N дней» считается по среднему расходу за последние 30 дней выполненных заказов — это прогноз на будущее, а не жёсткий факт. «Хватит: нехватка» — более срочный сигнал: уже сейчас принятых заказов больше, чем есть на складе, независимо от прогноза по дням.\n\nТап по карточке открывает полную карточку ингредиента/полуфабриката. Свайп влево — быстрая кнопка «Копировать».',
 
         // Аналитика склада + Список покупок
         inv_title: 'Аналитика склада',
@@ -466,6 +468,7 @@ const I18N = {
         ing_name_placeholder: 'Например: Мука пшеничная',
         ing_unit_label: 'Единица',
         ing_balance_colon: 'Остаток:',
+        ing_before_writeoff_colon: 'До списания:',
         ing_lasts_colon: 'Хватит:',
         ing_batches: 'Партии',
         ing_date_label: 'Дата',
@@ -1189,6 +1192,8 @@ const I18N = {
         help_prod_flags_text: '"Recipe fully filled in" — tick it yourself once the recipe is finalized. It doesn\'t affect calculations or stock write-off, it\'s just a reminder: while it\'s off, the item is flagged with a warning in the list so you don\'t forget to finish it. The checkbox unticks itself automatically the moment you change the recipe — that way the app reminds you to confirm it again after edits.\n\n"Track stock continuously" — includes the item in Inventory Analytics: the "days left" forecast and low-stock warnings. Ingredients are always written off from stock when an order is placed, regardless of this checkbox — it only affects whether the item shows up in the analytics summary and warnings. Handy to turn off for rare, one-off items so they don\'t clutter the warnings list.',
         help_prod_stripe_title: 'What the coloured stripe next to a name means',
         help_prod_stripe_text: 'The thin coloured stripe on the left of an item\'s name is a warning: either the measurement unit ("Unit" column) isn\'t set, or the "Recipe fully filled in" checkbox isn\'t ticked in the item\'s card. Tap the row to open the card and fix it.',
+        help_stock_cards_title: 'Ingredient and semi-finished item cards',
+        help_stock_cards_text: 'The coloured stripe on the left is a stock warning: red — critical (less than 3 days left at the usual usage rate, balance at zero, or not enough for already-accepted orders), amber — less than a week left, no stripe — stock is fine.\n\n"Enough for: N days" is calculated from the average usage over the last 30 days of completed orders — it\'s a forecast, not a hard fact. "Enough for: shortage" is a more urgent signal: already-accepted orders need more than what\'s currently in stock, regardless of the day-based forecast.\n\nTap a card to open the full ingredient/semi-finished item card. Swipe left for the quick "Copy" button.',
 
         // Inventory analytics + Shopping list
         inv_title: 'Inventory Analytics',
@@ -1326,6 +1331,7 @@ const I18N = {
         ing_name_placeholder: 'e.g. Wheat flour',
         ing_unit_label: 'Unit',
         ing_balance_colon: 'Balance:',
+        ing_before_writeoff_colon: 'Before write-off:',
         ing_lasts_colon: 'Lasts:',
         ing_batches: 'Batches',
         ing_date_label: 'Date',
