@@ -174,13 +174,13 @@ function renderSemiFinishedCards() {
                 <div class="order-card-body">
                     <div class="oc-row">
                         <span class="oc-name">${escapeHtml(sf.name || t('semifinished_no_name_fallback'))}</span>
-                        <span class="oc-sum" style="color:${afterColor};">${afterText}</span>
+                        <div style="text-align:right; flex-shrink:0;">
+                            <div class="oc-meta">${t('ing_after_writeoff_colon')}</div>
+                            <div class="oc-sum" style="color:${afterColor};">${afterText}</div>
+                        </div>
                     </div>
                     <div class="oc-meta">${beforeText}</div>
-                    <div class="oc-row" style="margin-top:2px;">
-                        <span class="oc-meta">${priceText}</span>
-                        ${daysText ? `<span class="oc-warn" style="color:${afterColor};">${daysText}</span>` : ''}
-                    </div>
+                    <div class="oc-meta">${priceText}</div>
                 </div>
             </div>
         </div>`;
