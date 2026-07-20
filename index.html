@@ -55,6 +55,8 @@
         .stats-table td.stats-num { font-weight: 600; color: #111827; }
         .stats-table td.stats-pct { font-size: 12px; color: #6b7280; }
         .modal-content { background: white; padding: 16px; border-radius: 16px; max-width: 380px; width: 100%; margin: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
+        .modal.modal-fullscreen { background: #f4f1ea; padding: 0; align-items: stretch; }
+        .modal.modal-fullscreen .modal-content { max-width: 100%; width: 100%; height: 100%; margin: 0; border-radius: 0; box-shadow: none; box-sizing: border-box; display: flex; flex-direction: column; overflow-y: auto; }
         /* Окно настроек (шестерёнка) — фиксированный отступ сверху 22vh вместо
            плавающего вертикального центрирования, чтобы позиция не "гуляла"
            в зависимости от объёма контента (список настроек будет расти). */
@@ -2307,8 +2309,8 @@
         </div>
 
         <!-- Модалка склада -->
-        <div id="inventoryModal" class="modal">
-            <div class="modal-content" style="max-width:480px;">
+        <div id="inventoryModal" class="modal modal-fullscreen">
+            <div class="modal-content">
                 <h2 id="inventoryModalTitle" class="text-sm font-semibold mb-2 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.836l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.98-4.706 2.545-7.187.075-.323-.174-.63-.53-.63H5.106M7.5 14.25L5.106 5.653M7.5 14.25L5.25 20.25m9-6l2.25 6"/></svg><span data-i18n="inv_title">Аналитика склада</span><button onclick="showHelpModal('help_inventory_title','help_inventory_text')" class="help-marker" data-i18n-title="help_marker_label" title="Подробнее об этом разделе">?</button></h2>
                 <!-- Вкладки -->
                 <div class="flex gap-3 border-b mb-3">
@@ -2316,8 +2318,8 @@
                     <button id="invTabShop" onclick="switchInventoryTab('shop')" class="tab text-xs pb-1"><span data-i18n="inv_tab_shopping_list">Список покупок</span> <span id="shopListBadge" class="hidden text-white rounded-full px-1.5 py-0.5 text-xs ml-1" style="background:#7c9473;"></span></button>
                 </div>
                 <!-- Склад -->
-                <div id="inventoryTabStock">
-                    <div id="inventoryContent" style="max-height:58vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
+                <div id="inventoryTabStock" style="flex:1; min-height:0; display:flex; flex-direction:column;">
+                    <div id="inventoryContent" style="flex:1; min-height:0; overflow-y:auto; touch-action:pan-y; overscroll-behavior:contain;"></div>
                 </div>
                 <!-- Список покупок -->
                 <div id="inventoryTabShop" class="hidden">
@@ -2739,13 +2741,13 @@
 
 <script src="dates.js?v=8"></script>
     <script src="money.js?v=10"></script>
-    <script src="i18n.js?v=28"></script>
+    <script src="i18n.js?v=29"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=6"></script>
     <script src="auth.js?v=15"></script>
     <script src="employees.js?v=29"></script>
     <script src="company.js?v=15"></script>
-    <script src="inventory.js?v=30"></script>
+    <script src="inventory.js?v=31"></script>
     <script src="push.js?v=3"></script>
 <script src="ingredients.js?v=31"></script>
 <script src="batches.js?v=6"></script>

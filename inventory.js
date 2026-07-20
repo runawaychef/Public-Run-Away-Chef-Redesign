@@ -283,6 +283,10 @@ async function openInventoryModal() {
     document.getElementById('invTabShop').classList.remove('active');
 
 
+    // Сумма уже списанного по заказам, которые ещё не выполнены — нужна для
+    // колонки "На складе" (физический остаток без учёта таких заказов).
+    const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
+
     // Считаем нехватку для принятых заказов.
     // П/ф НЕ раскрываем до ингредиентов — нехватку п/ф проверяем по его остатку.
     const today = getLocalDateStr(0);
@@ -317,7 +321,7 @@ async function openInventoryModal() {
         const daysLeft  = (balance !== null && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
         const shortage  = neededForOrders[ing.id] > 0 && (balance === null || balance < neededForOrders[ing.id]);
         const unitLabel = unitAbbrev(ing.unit);
-        const item      = { ing, balance, daysLeft, unitLabel, shortage };
+        const item      = { ing, balance, balanceBefore: getIngredientBalanceBeforeWriteoff(ing.id, pendingMap), daysLeft, unitLabel, shortage };
 
         // Если ингредиент используется ТОЛЬКО через п/ф (не напрямую в изделиях,
         // не в других п/ф кроме одного) — его зона определяется зоной родительских п/ф.
@@ -371,7 +375,8 @@ async function openInventoryModal() {
     });
 
     function renderRow(item, bgClass, daysClass, isSf) {
-        const { ing, balance, daysLeft, unitLabel, shortage } = item;
+        const { ing, balance, balanceBefore, daysLeft, unitLabel, shortage } = item;
+        const balanceBeforeStr = balanceBefore !== null ? `${Number(balanceBefore).toFixed(1)} ${unitLabel}` : '—';
         const balanceStr = balance !== null ? `${Number(balance).toFixed(1)} ${unitLabel}` : '—';
         const daysStr    = shortage ? t('inv_shortage') : daysLeft !== null ? `~${daysLeft} ${t('inv_days_short')}` : '—';
         const inList     = isSf
@@ -385,6 +390,7 @@ async function openInventoryModal() {
             : `closeModal(); showTab('ingredients'); openIngredientDetail(${ing.id});`;
         return `<tr class="border-b">
             <td class="p-1 table-text cursor-pointer hover:underline" onclick="${detailClick}">${escapeHtml(ing.name)}</td>
+            <td class="p-1 table-text text-right" style="color:#a29c8c;">${balanceBeforeStr}</td>
             <td class="p-1 table-text text-right">${balanceStr}</td>
             <td class="p-1 table-text text-right ${daysClass} font-semibold">${daysStr}</td>
             <td class="p-1 text-center">${addBtn}</td>
@@ -401,7 +407,7 @@ async function openInventoryModal() {
         const unitLabel = unitAbbrev(sf.unit);
         const needed = neededSfForOrders[sf.id] || 0;
         const shortage = needed > 0 && (balance === null || balance < needed);
-        const item = { ing: { id: sf.id, name: sf.name }, balance, daysLeft, unitLabel, shortage };
+        const item = { ing: { id: sf.id, name: sf.name }, balance, balanceBefore: getSemiFinishedBalanceBeforeWriteoff(sf.id, pendingMap), daysLeft, unitLabel, shortage };
         if (shortage || (balance !== null && balance <= 0) || (daysLeft !== null && daysLeft < 3)) sfRed.push(item);
         else if (daysLeft !== null && daysLeft < 7) sfYellow.push(item);
         else sfRest.push(item);
@@ -447,32 +453,32 @@ async function openInventoryModal() {
         </div>`;
     }
 
-    html += '<table class="w-full text-xs table-clean"><thead><tr style="background-color:#e3e8df;" class="sticky top-0"><th class="p-1 text-left">' + t('inv_col_ingredient') + '</th><th class="p-1 text-right">' + t('inv_col_balance') + '</th><th class="p-1 text-right">' + t('inv_col_lasts') + '</th><th class="p-1 text-center">' + t('inv_col_list') + '</th></tr></thead><tbody>';
+    html += '<table class="w-full text-xs table-clean"><thead><tr style="background-color:#e3e8df;" class="sticky top-0"><th class="p-1 text-left">' + t('inv_col_ingredient') + '</th><th class="p-1 text-right">' + t('inv_col_balance_before') + '</th><th class="p-1 text-right">' + t('inv_col_balance') + '</th><th class="p-1 text-right">' + t('inv_col_lasts') + '</th><th class="p-1 text-center">' + t('inv_col_list') + '</th></tr></thead><tbody>';
 
     // 🔴 Критично: ингредиенты
     if (red.length) {
-        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold" style="color:#c0685c;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#c0685c;"></span>${t('inv_group_critical')}</td></tr>`;
+        html += `<tr><td colspan="5" class="p-1 text-xs font-semibold" style="color:#c0685c;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#c0685c;"></span>${t('inv_group_critical')}</td></tr>`;
         red.forEach(item => { html += renderRow(item, null, 'stock-critical', false); });
     }
     // 🔴 Критично: полуфабрикаты
     if (sfRed.length) {
-        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold" style="color:#c0685c;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#c0685c;"></span>${t('inv_group_critical_sf')}</td></tr>`;
+        html += `<tr><td colspan="5" class="p-1 text-xs font-semibold" style="color:#c0685c;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#c0685c;"></span>${t('inv_group_critical_sf')}</td></tr>`;
         sfRed.forEach(item => { html += renderRow(item, null, 'stock-critical', true); });
     }
     // 🟡 Заканчивается: ингредиенты
     if (yellow.length) {
-        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold" style="color:#96712a;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#d9a441;"></span>${t('inv_group_low')}</td></tr>`;
+        html += `<tr><td colspan="5" class="p-1 text-xs font-semibold" style="color:#96712a;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#d9a441;"></span>${t('inv_group_low')}</td></tr>`;
         yellow.forEach(item => { html += renderRow(item, null, 'stock-low', false); });
     }
     // 🟡 Заканчивается: полуфабрикаты
     if (sfYellow.length) {
-        html += `<tr><td colspan="4" class="p-1 text-xs font-semibold" style="color:#96712a;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#d9a441;"></span>${t('inv_group_low_sf')}</td></tr>`;
+        html += `<tr><td colspan="5" class="p-1 text-xs font-semibold" style="color:#96712a;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#d9a441;"></span>${t('inv_group_low_sf')}</td></tr>`;
         sfYellow.forEach(item => { html += renderRow(item, null, 'stock-low', true); });
     }
     // Остальные ингредиенты
     if (rest.length) {
         if (red.length || yellow.length || sfRed.length || sfYellow.length) {
-            html += `<tr><td colspan="4" class="p-1 text-xs font-semibold text-gray-500">${t('inv_group_rest')}</td></tr>`;
+            html += `<tr><td colspan="5" class="p-1 text-xs font-semibold text-gray-500">${t('inv_group_rest')}</td></tr>`;
         }
         rest.sort((a, b) => {
             if (a.daysLeft === null && b.daysLeft === null) return 0;
