@@ -270,6 +270,7 @@ async function freezeDocumentSnapshot(order, docType, reuseNumber) {
             address: org.address, phone: org.phone, email: org.email,
             bank_name: org.bank_name, bank_account: org.bank_account, bank_swift: org.bank_swift,
             director_name: org.director_name, currency_code: org.currency_code,
+            logo_data_url: org.logo_data_url || null, logo_on_documents: !!org.logo_on_documents,
         },
         cust: cust ? {
             name: cust.name, entity_type: cust.entity_type, personal_code: cust.personal_code,
