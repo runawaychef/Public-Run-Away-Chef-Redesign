@@ -269,7 +269,8 @@ async function freezeDocumentSnapshot(order, docType, reuseNumber) {
             personal_code: org.personal_code, reg_number: org.reg_number, vat_code: org.vat_code,
             address: org.address, phone: org.phone, email: org.email,
             bank_name: org.bank_name, bank_account: org.bank_account, bank_swift: org.bank_swift,
-            director_name: org.director_name, currency_code: org.currency_code,
+            director_name: org.director_name, director_position: org.director_position, currency_code: org.currency_code,
+            country: org.country,
             logo_data_url: org.logo_data_url || null, logo_on_documents: !!org.logo_on_documents,
         },
         cust: cust ? {
@@ -316,6 +317,17 @@ function renderDocumentPreviewThumbnail() {
 // Строит HTML-разметку документа из ЗАМОРОЖЕННОГО снимка (не из текущих
 // живых данных) — используется и для предпросмотра, и для снимка в PDF.
 // lang — язык ЭТОГО документа, независимый от языка интерфейса приложения.
+// Для Беларуси по закону (ст.10 №57-З) первичный документ должен содержать
+// должность + ФИО + подпись ответственного лица — для остальных стран
+// оставляем как было (просто ФИО, без отдельной строки подписи).
+function issuedByLineText(org, sellerName, lang) {
+    const name = org.director_name || sellerName;
+    if (org.country === 'BY' && org.director_position) {
+        return `${name}, ${org.director_position}`;
+    }
+    return name;
+}
+
 function buildDocumentHtml(docType, snapshot, lang) {
     const { order, org, cust, number, issueDate, dueDate, customerNameFallback } = snapshot;
     const isInvoice = docType === 'invoice';
@@ -449,7 +461,10 @@ function buildDocumentHtml(docType, snapshot, lang) {
         </div>
 
         <div style="margin-top:56px;display:flex;justify-content:space-between;font-size:15px;">
-            <div>${tDoc('inv_issued_by', lang)}: ${escapeHtml(org.director_name || sellerName)}</div>
+            <div>
+                <div>${tDoc('inv_issued_by', lang)}: ${escapeHtml(issuedByLineText(org, sellerName, lang))}</div>
+                ${org.country === 'BY' ? `<div style="margin-top:8px;">${tDoc('inv_signature', lang)}: _______________________</div>` : ''}
+            </div>
             <div>${tDoc('inv_accepted', lang)}: _______________________</div>
         </div>
     </div>`;
@@ -595,8 +610,12 @@ async function buildDocumentPdf(docType, snapshot, lang) {
     // ---- Подписи ----
     y += 16;
     pdf.setFontSize(9.5); pdf.setFont('Roboto', 'normal'); pdf.setTextColor(...PDF_COLORS.textGray);
-    pdf.text(`${tDoc('inv_issued_by', lang)}: ${org.director_name || sellerName}`, marginX, y);
+    pdf.text(`${tDoc('inv_issued_by', lang)}: ${issuedByLineText(org, sellerName, lang)}`, marginX, y);
     pdf.text(`${tDoc('inv_accepted', lang)}: _______________________`, pageW - marginX, y, { align: 'right' });
+    if (org.country === 'BY') {
+        y += 8;
+        pdf.text(`${tDoc('inv_signature', lang)}: _______________________`, marginX, y);
+    }
 
     return pdf;
 }

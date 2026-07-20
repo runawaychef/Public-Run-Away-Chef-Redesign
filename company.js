@@ -74,16 +74,38 @@ const COUNTRY_OPTIONS = [
     // строкой в этом списке. Сделать в течение 14-дневного окна тестирования.
 ];
 
-// Подпись поля "Личный код" зависит от страны: для Литвы используется точная
-// формулировка "Номер свидетельства о деятельности" (самозанятые/individual
-// activity в Литве оформляются именно так, не как обычный personal code).
-// Значение в БД (personal_code) при этом одно и то же — меняется только подпись.
-function updatePersonalCodeLabel() {
-    const el = document.getElementById('cmpPersonalCodeLabel');
-    if (!el) return;
-    el.textContent = _cmpCurrentCountryCode === 'LT'
-        ? t('company_personal_code_label_lt')
-        : t('company_personal_code_label');
+// Подписи некоторых полей зависят от страны:
+// — Литва: "Личный код" → "Номер свидетельства о деятельности" (individual activity)
+// — Беларусь: и для юрлица, и для физлица/ИП основной идентификатор — единый
+//   УНП (учётный номер плательщика), поэтому отдельное поле "Код НДС / PVM"
+//   для Беларуси скрывается целиком (не дублируем один и тот же номер),
+//   а "Рег. номер"/"Личный код" переименовываются в "УНП".
+// Значение в БД (personal_code/reg_number/vat_code) при этом не меняется —
+// меняются только подписи и видимость полей.
+function updateCountrySpecificLabels() {
+    const personalCodeLabelEl = document.getElementById('cmpPersonalCodeLabel');
+    const regNumberLabelEl = document.getElementById('cmpRegNumberLabel');
+    const vatCodeCompanyWrap = document.getElementById('cmpVatCodeCompanyWrap');
+    const vatCodeIndividualWrap = document.getElementById('cmpVatCodeIndividualWrap');
+    if (!personalCodeLabelEl) return;
+
+    const isBY = _cmpCurrentCountryCode === 'BY';
+    const isLT = _cmpCurrentCountryCode === 'LT';
+
+    personalCodeLabelEl.textContent = isBY ? t('company_unp_label') : isLT ? t('company_personal_code_label_lt') : t('company_personal_code_label');
+    regNumberLabelEl.textContent = isBY ? t('company_unp_label') : t('company_reg_number_label');
+    vatCodeCompanyWrap.classList.toggle('hidden', isBY);
+    vatCodeIndividualWrap.classList.toggle('hidden', isBY);
+}
+
+// Прогрессивное раскрытие карточки компании: пока страна не выбрана ни разу
+// (org.country ещё NULL в базе), показываем только "Название" и "Страна" —
+// остальные поля появляются сразу после выбора страны. При всех следующих
+// открытиях карточки (страна уже сохранена) форма сразу полная — состояние
+// выводится из данных, отдельного флага в БД не заводим.
+function updateProgressiveFieldsVisibility(hasCountry) {
+    ['cmpProgressiveFields', 'cmpProgressiveFields2', 'cmpProgressiveFields3', 'cmpProgressiveFields4', 'cmpCompanyFields', 'cmpIndividualFields']
+        .forEach(id => document.getElementById(id)?.classList.toggle('hidden', !hasCountry));
 }
 
 function countryLabel(code) {
@@ -129,7 +151,8 @@ async function selectCountry(code) {
     _cmpCurrentCountryCode = code;
     document.getElementById('cmpCountryLabel').textContent = countryLabel(code);
     document.getElementById('cmpCountryDropdown').classList.add('hidden');
-    updatePersonalCodeLabel();
+    updateCountrySpecificLabels();
+    updateProgressiveFieldsVisibility(true);
 
     if (!found) { await saveCompanyInfo('country', code); return; }
 
@@ -188,7 +211,7 @@ async function openCompanyInfoModal() {
     showLoading();
     try {
         const { data, error } = await db.from('organizations')
-            .select('name, currency_code, country, vat_rate, entity_type, phone, email, address, legal_name, reg_number, vat_code, director_name, personal_code, bank_name, bank_account, bank_swift, logo_data_url, logo_on_documents')
+            .select('name, currency_code, country, vat_rate, entity_type, phone, email, address, legal_name, reg_number, vat_code, director_name, director_position, personal_code, bank_name, bank_account, bank_swift, logo_data_url, logo_on_documents')
             .eq('id', currentOrgId)
             .single();
         if (error) throw error;
@@ -208,13 +231,15 @@ async function openCompanyInfoModal() {
         document.getElementById('cmpRegNumber').value    = data.reg_number || '';
         document.getElementById('cmpVatCode').value      = data.vat_code || '';
         document.getElementById('cmpDirectorName').value = data.director_name || '';
+        document.getElementById('cmpDirectorPosition').value = data.director_position || '';
         document.getElementById('cmpPersonalCode').value = data.personal_code || '';
         document.getElementById('cmpVatCodeIndividual').value = data.vat_code || '';
         document.getElementById('cmpBankName').value     = data.bank_name || '';
         document.getElementById('cmpBankAccount').value  = data.bank_account || '';
         document.getElementById('cmpBankSwift').value    = data.bank_swift || '';
-        updatePersonalCodeLabel();
+        updateCountrySpecificLabels();
         renderCompanyLogoUI(data.logo_data_url || '', !!data.logo_on_documents);
+        updateProgressiveFieldsVisibility(!!data.country);
 
         setCompanyEntityType(data.entity_type || 'company', /*skipSave*/ true);
         document.getElementById('companyInfoModal').style.display = 'flex';
@@ -278,7 +303,7 @@ function refreshCompanyLangDependentUI() {
     document.getElementById('cmpCurrencyLabel').textContent = currencyLabel(_cmpCurrentCurrencyCode);
     renderCountryDropdown();
     renderCurrencyDropdown();
-    updatePersonalCodeLabel();
+    updateCountrySpecificLabels();
 }
 
 // ==================== ЛОГОТИП ДЛЯ ДОКУМЕНТОВ ====================
@@ -426,6 +451,7 @@ async function applyLogoCrop() {
     const dataUrl = out.toDataURL('image/png');
 
     closeLogoCropModal();
+    showLoading();
     try {
         await updateChecked(db.from('organizations').update({ logo_data_url: dataUrl, logo_on_documents: true }).eq('id', currentOrgId));
         renderCompanyLogoUI(dataUrl, true);
@@ -434,10 +460,13 @@ async function applyLogoCrop() {
     } catch (e) {
         console.error(e);
         showInfo(t('error_save_check_connection'));
+    } finally {
+        hideLoading();
     }
 }
 
 async function removeCompanyLogo() {
+    showLoading();
     try {
         await updateChecked(db.from('organizations').update({ logo_data_url: null, logo_on_documents: false }).eq('id', currentOrgId));
         renderCompanyLogoUI('', false);
@@ -446,6 +475,8 @@ async function removeCompanyLogo() {
     } catch (e) {
         console.error(e);
         showInfo(t('error_save_check_connection'));
+    } finally {
+        hideLoading();
     }
 }
 

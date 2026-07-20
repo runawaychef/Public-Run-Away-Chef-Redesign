@@ -64,6 +64,9 @@ const I18N = {
         company_director_label: 'Директор / представитель',
         company_personal_code_label: 'Личный код',
         company_personal_code_label_lt: 'Номер свидетельства о деятельности',
+        company_unp_label: 'УНП',
+        company_director_position_label: 'Должность',
+        company_director_position_placeholder: 'Например, Директор',
         company_bank_details_label: 'Банковские реквизиты',
         company_bank_name_label: 'Банк',
         company_bank_account_label: 'IBAN / счёт',
@@ -756,6 +759,7 @@ const I18N = {
         inv_vat_sum: 'Сумма НДС',
         inv_total_due: 'Итого к оплате',
         inv_issued_by: 'Выставил',
+        inv_signature: 'Подпись',
         inv_accepted: 'Принято',
 
         // Оплата
@@ -939,6 +943,9 @@ const I18N = {
         company_director_label: 'Director / representative',
         company_personal_code_label: 'Personal code',
         company_personal_code_label_lt: 'Individual activity certificate number',
+        company_unp_label: 'UNP',
+        company_director_position_label: 'Position',
+        company_director_position_placeholder: 'E.g. Director',
         company_bank_details_label: 'Bank details',
         company_bank_name_label: 'Bank',
         company_bank_account_label: 'IBAN / account',
@@ -1631,6 +1638,7 @@ const I18N = {
         inv_vat_sum: 'VAT amount',
         inv_total_due: 'Total due',
         inv_issued_by: 'Issued by',
+        inv_signature: 'Signature',
         inv_accepted: 'Received',
 
         // Payments
