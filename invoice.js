@@ -295,6 +295,9 @@ async function freezeDocumentSnapshot(order, docType, reuseNumber) {
 // (настоящий размер 794px используется только "под капотом" — на экране
 // телефона он умещается целиком за счёт CSS-трансформации масштаба).
 function renderDocumentPreviewThumbnail() {
+    const { org } = _docPreview.snapshot;
+    document.getElementById('orderDocumentRuNote').classList.toggle('hidden', !(org.country === 'RU' && org.entity_type === 'individual'));
+
     const container = document.getElementById('orderDocumentContent');
     container.innerHTML = `<div id="orderDocumentPreviewWrap" style="overflow:hidden;margin:0 auto;background:#f4f1ea;">
         <div id="orderDocumentInner" style="transform-origin:top left;">${buildDocumentHtml(_docPreview.docType, _docPreview.snapshot, _docPreview.lang)}</div>
@@ -460,8 +463,6 @@ function buildDocumentHtml(docType, snapshot, lang) {
             ${tDoc('inv_amount_in_words', lang)}: ${escapeHtml(amountWords)}
         </div>
 
-        ${org.country === 'RU' && org.entity_type === 'individual' ? `<div style="margin-top:18px;font-size:11.5px;color:#a3493d;background:#f3ded9;border-radius:8px;padding:8px 10px;">${escapeHtml(tDoc('inv_ru_self_employed_note', lang))}</div>` : ''}
-
         <div style="margin-top:56px;display:flex;justify-content:space-between;font-size:15px;">
             <div>
                 <div>${tDoc('inv_issued_by', lang)}: ${escapeHtml(issuedByLineText(org, sellerName, lang))}</div>
@@ -608,15 +609,6 @@ async function buildDocumentPdf(docType, snapshot, lang) {
     const amountWordsSplit = pdf.splitTextToSize(`${tDoc('inv_amount_in_words', lang)}: ${amountWords}`, pageW - marginX * 2);
     pdf.text(amountWordsSplit, marginX, y);
     y += 4.5 * amountWordsSplit.length;
-
-    // ---- Напоминание для самозанятых РФ ----
-    if (org.country === 'RU' && org.entity_type === 'individual') {
-        y += 8;
-        pdf.setFontSize(8.5); pdf.setFont('Roboto', 'normal'); pdf.setTextColor(...PDF_COLORS.terracotta);
-        const noteSplit = pdf.splitTextToSize(tDoc('inv_ru_self_employed_note', lang), pageW - marginX * 2);
-        pdf.text(noteSplit, marginX, y);
-        y += 4.5 * noteSplit.length;
-    }
 
     // ---- Подписи ----
     y += 16;
