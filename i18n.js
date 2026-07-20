@@ -65,6 +65,12 @@ const I18N = {
         company_personal_code_label: 'Личный код',
         company_personal_code_label_lt: 'Номер свидетельства о деятельности',
         company_unp_label: 'УНП',
+        company_inn_label: 'ИНН',
+        company_ogrn_label: 'ОГРН',
+        company_ogrnip_label: 'ОГРНИП',
+        company_inn_kpp_label: 'ИНН / КПП',
+        company_bank_account_label_ru: 'Расчётный счёт',
+        company_bank_swift_label_ru: 'БИК банка',
         company_director_position_label: 'Должность',
         company_director_position_placeholder: 'Например, Директор',
         company_bank_details_label: 'Банковские реквизиты',
@@ -760,6 +766,7 @@ const I18N = {
         inv_total_due: 'Итого к оплате',
         inv_issued_by: 'Выставил',
         inv_signature: 'Подпись',
+        inv_ru_self_employed_note: 'Этот документ не заменяет чек из приложения «Мой налог» — сформируйте чек отдельно при получении оплаты.',
         inv_accepted: 'Принято',
 
         // Оплата
@@ -944,6 +951,12 @@ const I18N = {
         company_personal_code_label: 'Personal code',
         company_personal_code_label_lt: 'Individual activity certificate number',
         company_unp_label: 'UNP',
+        company_inn_label: 'INN',
+        company_ogrn_label: 'OGRN',
+        company_ogrnip_label: 'OGRNIP',
+        company_inn_kpp_label: 'INN / KPP',
+        company_bank_account_label_ru: 'Settlement account',
+        company_bank_swift_label_ru: 'Bank BIK',
         company_director_position_label: 'Position',
         company_director_position_placeholder: 'E.g. Director',
         company_bank_details_label: 'Bank details',
@@ -1639,6 +1652,7 @@ const I18N = {
         inv_total_due: 'Total due',
         inv_issued_by: 'Issued by',
         inv_signature: 'Signature',
+        inv_ru_self_employed_note: 'This document does not replace the receipt from the "Мой налог" (My Tax) app — please issue that receipt separately when you receive payment.',
         inv_accepted: 'Received',
 
         // Payments

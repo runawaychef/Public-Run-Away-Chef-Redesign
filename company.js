@@ -86,16 +86,26 @@ function updateCountrySpecificLabels() {
     const personalCodeLabelEl = document.getElementById('cmpPersonalCodeLabel');
     const regNumberLabelEl = document.getElementById('cmpRegNumberLabel');
     const vatCodeCompanyWrap = document.getElementById('cmpVatCodeCompanyWrap');
+    const vatCodeCompanyLabelEl = document.getElementById('cmpVatCodeCompanyLabel');
     const vatCodeIndividualWrap = document.getElementById('cmpVatCodeIndividualWrap');
+    const vatCodeIndividualLabelEl = document.getElementById('cmpVatCodeIndividualLabel');
+    const bankAccountLabelEl = document.getElementById('cmpBankAccountLabel');
+    const bankSwiftLabelEl = document.getElementById('cmpBankSwiftLabel');
     if (!personalCodeLabelEl) return;
 
     const isBY = _cmpCurrentCountryCode === 'BY';
     const isLT = _cmpCurrentCountryCode === 'LT';
+    const isRU = _cmpCurrentCountryCode === 'RU';
 
-    personalCodeLabelEl.textContent = isBY ? t('company_unp_label') : isLT ? t('company_personal_code_label_lt') : t('company_personal_code_label');
-    regNumberLabelEl.textContent = isBY ? t('company_unp_label') : t('company_reg_number_label');
+    personalCodeLabelEl.textContent = isBY ? t('company_unp_label') : isRU ? t('company_inn_label') : isLT ? t('company_personal_code_label_lt') : t('company_personal_code_label');
+    regNumberLabelEl.textContent = isBY ? t('company_unp_label') : isRU ? t('company_ogrn_label') : t('company_reg_number_label');
+    vatCodeCompanyLabelEl.textContent = isRU ? t('company_inn_kpp_label') : t('company_vat_code_label');
+    vatCodeIndividualLabelEl.textContent = isRU ? t('company_ogrnip_label') : t('company_vat_code_label');
     vatCodeCompanyWrap.classList.toggle('hidden', isBY);
     vatCodeIndividualWrap.classList.toggle('hidden', isBY);
+
+    if (bankAccountLabelEl) bankAccountLabelEl.textContent = isRU ? t('company_bank_account_label_ru') : t('company_bank_account_label');
+    if (bankSwiftLabelEl) bankSwiftLabelEl.textContent = isRU ? t('company_bank_swift_label_ru') : t('company_bank_swift_label');
 }
 
 // Прогрессивное раскрытие карточки компании: пока страна не выбрана ни разу

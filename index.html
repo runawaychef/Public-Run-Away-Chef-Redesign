@@ -2167,7 +2167,7 @@
                             <input id="cmpRegNumber" type="text" autocomplete="off" onblur="saveCompanyInfo('reg_number', this.value)" class="border p-1 rounded-xl w-full table-text">
                         </div>
                         <div id="cmpVatCodeCompanyWrap">
-                            <label class="table-text text-gray-500" data-i18n="company_vat_code_label">Код НДС / PVM</label>
+                            <label id="cmpVatCodeCompanyLabel" class="table-text text-gray-500" data-i18n="company_vat_code_label">Код НДС / PVM</label>
                             <input id="cmpVatCode" type="text" autocomplete="off" onblur="saveCompanyInfo('vat_code', this.value)" class="border p-1 rounded-xl w-full table-text">
                         </div>
                         <div>
@@ -2189,7 +2189,7 @@
                             <input id="cmpPersonalCode" type="text" autocomplete="off" onblur="saveCompanyInfo('personal_code', this.value)" class="border p-1 rounded-xl w-full table-text">
                         </div>
                         <div id="cmpVatCodeIndividualWrap">
-                            <label class="table-text text-gray-500" data-i18n="company_vat_code_label">Код НДС / PVM</label>
+                            <label id="cmpVatCodeIndividualLabel" class="table-text text-gray-500" data-i18n="company_vat_code_label">Код НДС / PVM</label>
                             <input id="cmpVatCodeIndividual" type="text" autocomplete="off" onblur="saveCompanyInfo('vat_code', this.value)" class="border p-1 rounded-xl w-full table-text">
                         </div>
                     </div>
@@ -2204,11 +2204,11 @@
                             <input id="cmpBankName" type="text" autocomplete="off" onblur="saveCompanyInfo('bank_name', this.value)" class="border p-1 rounded-xl w-full table-text">
                         </div>
                         <div>
-                            <label class="table-text text-gray-500" data-i18n="company_bank_account_label">IBAN / счёт</label>
+                            <label id="cmpBankAccountLabel" class="table-text text-gray-500" data-i18n="company_bank_account_label">IBAN / счёт</label>
                             <input id="cmpBankAccount" type="text" autocomplete="off" onblur="saveCompanyInfo('bank_account', this.value)" class="border p-1 rounded-xl w-full table-text">
                         </div>
                         <div>
-                            <label class="table-text text-gray-500" data-i18n="company_bank_swift_label">SWIFT / BIC</label>
+                            <label id="cmpBankSwiftLabel" class="table-text text-gray-500" data-i18n="company_bank_swift_label">SWIFT / BIC</label>
                             <input id="cmpBankSwift" type="text" autocomplete="off" onblur="saveCompanyInfo('bank_swift', this.value)" class="border p-1 rounded-xl w-full table-text">
                         </div>
                     </div>
@@ -2781,12 +2781,12 @@
 
 <script src="dates.js?v=8"></script>
     <script src="money.js?v=10"></script>
-    <script src="i18n.js?v=33"></script>
+    <script src="i18n.js?v=34"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=6"></script>
     <script src="auth.js?v=15"></script>
     <script src="employees.js?v=29"></script>
-    <script src="company.js?v=18"></script>
+    <script src="company.js?v=19"></script>
     <script src="inventory.js?v=32"></script>
     <script src="push.js?v=3"></script>
 <script src="ingredients.js?v=31"></script>
@@ -2796,7 +2796,7 @@
 <script src="customers.js?v=35"></script>
 <script src="calendar.js?v=7"></script>
 <script src="orders.js?v=87"></script>
-<script src="invoice.js?v=21"></script>
+<script src="invoice.js?v=22"></script>
 <script src="payments.js?v=19"></script>
 <script src="stats.js?v=16"></script>
 <script src="history.js?v=9"></script>
