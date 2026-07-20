@@ -1425,6 +1425,11 @@
                             <label class="table-text text-gray-500" data-i18n="company_personal_code_label">Личный код</label>
                             <input id="cdPersonalCode" type="text" autocomplete="off" onblur="saveCdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
+
+                        <div class="mb-1">
+                            <label class="table-text text-gray-500" data-i18n="customers_payment_term_label">Отсрочка платежа, дней</label>
+                            <input id="cdPaymentTermDays" type="number" inputmode="numeric" min="0" step="1" autocomplete="off" onblur="saveCdHeader()" class="border p-0.5 rounded-xl w-full table-text" placeholder="7" data-i18n-placeholder="customers_payment_term_placeholder">
+                        </div>
                     </div>
 
                     <div class="mt-2">
@@ -1507,6 +1512,18 @@
                 <div class="flex gap-2 mt-3">
                     <button id="sendOrderDocumentBtn" onclick="shareOrderDocumentPdf()" class="pill-btn flex-1 justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"/></svg><span data-i18n="contact_send">Отправить</span></button>
                     <button onclick="closeModal()" class="pill-btn-secondary flex-1" data-i18n="settings_close">Закрыть</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Точечное изменение срока оплаты для одного конкретного счёта -->
+        <div id="editDueDateModal" class="modal">
+            <div class="modal-content" style="max-width:300px;">
+                <h2 class="text-sm font-semibold mb-2 text-gray-800" data-i18n="inv_edit_due_date">Изменить срок оплаты</h2>
+                <input id="editDueDateInput" type="date" class="border p-1 rounded-xl w-full table-text">
+                <div class="flex gap-2 mt-3">
+                    <button onclick="document.getElementById('editDueDateModal').style.display='none';" class="pill-btn-secondary flex-1 justify-center" data-i18n="company_logo_crop_cancel">Отмена</button>
+                    <button onclick="applyEditDueDate()" class="pill-btn flex-1 justify-center" data-i18n="common_save">Сохранить</button>
                 </div>
             </div>
         </div>
@@ -2782,7 +2799,7 @@
 
 <script src="dates.js?v=8"></script>
     <script src="money.js?v=10"></script>
-    <script src="i18n.js?v=34"></script>
+    <script src="i18n.js?v=35"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=6"></script>
     <script src="auth.js?v=15"></script>
@@ -2794,10 +2811,10 @@
 <script src="batches.js?v=6"></script>
 <script src="semifinished.js?v=27"></script>
 <script src="products.js?v=27"></script>
-<script src="customers.js?v=35"></script>
+<script src="customers.js?v=36"></script>
 <script src="calendar.js?v=7"></script>
 <script src="orders.js?v=87"></script>
-<script src="invoice.js?v=23"></script>
+<script src="invoice.js?v=24"></script>
 <script src="payments.js?v=19"></script>
 <script src="stats.js?v=16"></script>
 <script src="history.js?v=9"></script>
@@ -2852,7 +2869,7 @@ async function loadAllData(silent) {
     try {
         const [pRes, cRes, oRes, oiRes, eRes, ingRes, piRes, sfRes, sfiRes, opRes] = await Promise.all([
             db.from('products').select('id, name, price, batch_size, other_costs, unit, recipe_confirmed, track_stock').eq('org_id', currentOrgId).order('name').limit(5000),
-            db.from('customers').select('id, name, contact, discount, vat_exempt, notes').eq('org_id', currentOrgId).order('name').limit(5000),
+            db.from('customers').select('id, name, contact, discount, vat_exempt, notes, address, reg_number, vat_code, personal_code, entity_type, payment_term_days').eq('org_id', currentOrgId).order('name').limit(5000),
             db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending, invoice_snapshot, delivery_note_snapshot').eq('org_id', currentOrgId).is('deleted_at', null).range(0, 9999),
             db.from('order_items').select('id, order_id, product_id, quantity, price, item_cost').eq('org_id', currentOrgId).range(0, 9999),
             db.from('employees').select('id, name').eq('org_id', currentOrgId).order('name').limit(1000),

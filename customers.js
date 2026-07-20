@@ -430,6 +430,7 @@ function openCustomerDetail(custId) {
     document.getElementById('cdRegNumber').value = cust.reg_number || '';
     document.getElementById('cdVatCode').value = cust.vat_code || '';
     document.getElementById('cdPersonalCode').value = cust.personal_code || '';
+    document.getElementById('cdPaymentTermDays').value = cust.payment_term_days != null ? cust.payment_term_days : '';
     setCustomerEntityType(cust.entity_type || 'company', /*skipSave*/ true);
 
     renderCustomerStats(cust);
@@ -486,6 +487,8 @@ async function saveCdHeader() {
     const regNumber   = document.getElementById('cdRegNumber').value.trim();
     const vatCode     = document.getElementById('cdVatCode').value.trim();
     const personalCode = document.getElementById('cdPersonalCode').value.trim();
+    const paymentTermRaw = document.getElementById('cdPaymentTermDays').value;
+    const paymentTermDays = paymentTermRaw === '' ? null : Math.max(0, parseInt(paymentTermRaw, 10) || 0);
     const entityType  = _customerEntityType;
     if (!name) { showInfo(t('customers_name_required')); return; }
     const oldName = cust.name;
@@ -493,10 +496,12 @@ async function saveCdHeader() {
     try {
         await updateChecked(db.from('customers').update({
             name, contact, discount: parseFloat(discount.toFixed(2)), vat_exempt: vatExempt, notes,
-            address, reg_number: regNumber, vat_code: vatCode, personal_code: personalCode, entity_type: entityType
+            address, reg_number: regNumber, vat_code: vatCode, personal_code: personalCode, entity_type: entityType,
+            payment_term_days: paymentTermDays
         }).eq('id', cust.id));
         cust.name = name; cust.contact = contact; cust.discount = parseFloat(discount.toFixed(2)); cust.vat_exempt = vatExempt; cust.notes = notes;
         cust.address = address; cust.reg_number = regNumber; cust.vat_code = vatCode; cust.personal_code = personalCode; cust.entity_type = entityType;
+        cust.payment_term_days = paymentTermDays;
         orders.forEach(o => { if (o.customer_id === cust.id) o.customer = name; });
         logActivity('customer', `${t('log_customer_changed')} «${oldName}»${oldName !== name ? ` → «${name}»` : ''}`);
         renderCustomerStats(cust);

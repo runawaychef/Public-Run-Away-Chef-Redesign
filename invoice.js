@@ -64,7 +64,7 @@ async function openOrderDocumentPreview(docType, langOverride) {
         const { data: freshRow, error: freshErr } = await db.from('orders').select(field).eq('id', order.id).single();
         if (freshErr) throw freshErr;
         const existing = freshRow ? freshRow[field] : null;
-        const snapshot = await freezeDocumentSnapshot(order, docType, existing ? existing.number : undefined);
+        const snapshot = await freezeDocumentSnapshot(order, docType, existing);
         _docPreview = { docType, snapshot, lang: langOverride || currentLang };
         renderDocumentPreviewThumbnail();
         document.getElementById('orderDocumentModal').style.display = 'flex';
@@ -225,7 +225,7 @@ function amountInWords(amount, currencyCode, lang) {
     return `${numberToWordsEn(intPart)} ${currencyCode} and ${cents ? numberToWordsEn(cents) : 'zero'} ${centsWordEn}`;
 }
 
-async function freezeDocumentSnapshot(order, docType, reuseNumber) {
+async function freezeDocumentSnapshot(order, docType, existing) {
     const productIds = [...new Set((order.items || []).map(it => it.product_id).filter(Boolean))];
     const [{ data: org, error: orgErr }, { data: cust, error: custErr }, { data: prods, error: prodErr }] = await Promise.all([
         db.from('organizations').select('*').eq('id', currentOrgId).single(),
@@ -242,7 +242,7 @@ async function freezeDocumentSnapshot(order, docType, reuseNumber) {
     const unitById = {};
     (prods || []).forEach(p => { unitById[p.id] = p.unit; });
 
-    let number = reuseNumber;
+    let number = existing ? existing.number : undefined;
     if (!number) {
         const rpcName = docType === 'invoice' ? 'get_next_invoice_number' : 'get_next_delivery_note_number';
         const { data, error } = await db.rpc(rpcName, { p_org_id: currentOrgId });
@@ -250,14 +250,26 @@ async function freezeDocumentSnapshot(order, docType, reuseNumber) {
         number = data;
     }
 
-    const now = new Date();
-    const due = new Date(now);
-    due.setDate(due.getDate() + 7);
+    // Дата счёта и срок оплаты фиксируются ОДИН РАЗ при первом выставлении
+    // документа и дальше переиспользуются вместе с номером — иначе при
+    // каждом повторном открытии старого счёта дата "уезжала" бы на сегодня.
+    let issueDate, dueDate;
+    if (existing && existing.issueDate) {
+        issueDate = existing.issueDate;
+        dueDate = existing.dueDate;
+    } else {
+        const now = new Date();
+        const termDays = (cust && cust.payment_term_days != null) ? Number(cust.payment_term_days) : 7;
+        const due = new Date(now);
+        due.setDate(due.getDate() + termDays);
+        issueDate = now.toISOString().slice(0, 10);
+        dueDate = due.toISOString().slice(0, 10);
+    }
 
     const snapshot = {
         number,
-        issueDate: now.toISOString().slice(0, 10),
-        dueDate: due.toISOString().slice(0, 10),
+        issueDate,
+        dueDate,
         customerNameFallback: order.customer || '—',
         order: {
             items: (order.items || []).map(it => ({ product: it.product, quantity: it.quantity, price: it.price, unit: it.product_id ? (unitById[it.product_id] || null) : null })),
@@ -294,6 +306,33 @@ async function freezeDocumentSnapshot(order, docType, reuseNumber) {
 // Показывает документ в предпросмотре как уменьшенную копию целой страницы A4
 // (настоящий размер 794px используется только "под капотом" — на экране
 // телефона он умещается целиком за счёт CSS-трансформации масштаба).
+// Точечная правка срока оплаты для ОДНОГО конкретного, уже выставленного
+// счёта — не меняет ни отсрочку клиента по умолчанию, ни другие счета.
+function promptEditDueDate() {
+    if (!_docPreview || !_docPreview.snapshot) return;
+    document.getElementById('editDueDateInput').value = _docPreview.snapshot.dueDate || '';
+    document.getElementById('editDueDateModal').style.display = 'flex';
+}
+
+async function applyEditDueDate() {
+    const newDate = document.getElementById('editDueDateInput').value;
+    if (!newDate || !_docPreview) return;
+    document.getElementById('editDueDateModal').style.display = 'none';
+    showLoading();
+    try {
+        _docPreview.snapshot.dueDate = newDate;
+        const field = snapshotField(_docPreview.docType);
+        await updateChecked(db.from('orders').update({ [field]: _docPreview.snapshot }).eq('id', currentOrderId));
+        renderDocumentPreviewThumbnail();
+        showAutosaveToast();
+    } catch (e) {
+        console.error(e);
+        showInfo(t('error_save_check_connection'));
+    } finally {
+        hideLoading();
+    }
+}
+
 function renderDocumentPreviewThumbnail() {
     const { org } = _docPreview.snapshot;
     document.getElementById('orderDocumentRuNote').classList.toggle('hidden', !(org.country === 'RU' && org.entity_type === 'individual'));
@@ -399,7 +438,7 @@ function buildDocumentHtml(docType, snapshot, lang) {
     });
 
     const dueDateRow = isInvoice
-        ? `<div>${tDoc('inv_due_date', lang)}: ${formatDateDMY(dueDate)}</div>`
+        ? `<div>${tDoc('inv_due_date', lang)}: ${formatDateDMY(dueDate)} <button onclick="promptEditDueDate()" style="border:none;background:none;cursor:pointer;padding:0 0 0 4px;vertical-align:middle;color:#9ca3af;" title="${escapeHtml(t('inv_edit_due_date'))}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/></svg></button></div>`
         : '';
 
     const amountWords = amountInWords(grandAll, org.currency_code || 'EUR', lang);

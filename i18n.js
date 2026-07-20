@@ -419,6 +419,8 @@ const I18N = {
         customers_apply_vat_all: 'Применить текущий статус НДС ко всем заказам клиента',
         customers_entity_type_label: 'Тип лица (для счетов)',
         customers_vat_code_label: 'Код НДС',
+        customers_payment_term_label: 'Отсрочка платежа, дней',
+        customers_payment_term_placeholder: '7 (по умолчанию)',
         customers_notes_label: 'Заметки (аллергии, особые условия, контакты...)',
         customers_notes_placeholder: 'Например: оплата по счёту, аллергия на орехи...',
         customers_orders_total: 'Заказов всего',
@@ -766,6 +768,7 @@ const I18N = {
         inv_total_due: 'Итого к оплате',
         inv_issued_by: 'Выставил',
         inv_signature: 'Подпись',
+        inv_edit_due_date: 'Изменить срок оплаты',
         inv_ru_self_employed_note: 'Этот документ не заменяет чек из приложения «Мой налог» — сформируйте чек отдельно при получении оплаты.',
         inv_accepted: 'Принято',
 
@@ -1305,6 +1308,8 @@ const I18N = {
         customers_apply_vat_all: "Apply current VAT status to all of the customer's orders",
         customers_entity_type_label: 'Legal entity type (for invoices)',
         customers_vat_code_label: 'VAT code',
+        customers_payment_term_label: 'Payment term, days',
+        customers_payment_term_placeholder: '7 (default)',
         customers_notes_label: 'Notes (allergies, special conditions, contacts...)',
         customers_notes_placeholder: 'e.g. pays by invoice, nut allergy...',
         customers_orders_total: 'Total orders',
@@ -1652,6 +1657,7 @@ const I18N = {
         inv_total_due: 'Total due',
         inv_issued_by: 'Issued by',
         inv_signature: 'Signature',
+        inv_edit_due_date: 'Change due date',
         inv_ru_self_employed_note: 'This document does not replace the receipt from the "Мой налог" (My Tax) app — please issue that receipt separately when you receive payment.',
         inv_accepted: 'Received',
 
