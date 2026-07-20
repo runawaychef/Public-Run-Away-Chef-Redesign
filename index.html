@@ -763,7 +763,7 @@
 
 <!-- Переключатель вида списка заказов: карточки / таблица. Виден только на вкладке "Заказы" (управляется в showTab()). -->
 <div id="ordersViewToggle" class="hidden">
-    <button class="view-toggle-btn" id="ordersHelpBtn" onclick="showHelpModal('help_orders_screen_title','help_orders_screen_text')" style="background:white; border:1px solid #e5e7eb; box-shadow:0 1px 3px rgba(0,0,0,0.08); font-weight:700; font-size:14px;" data-i18n-title="help_marker_label" title="Подробнее об этом разделе">?</button>
+    <button class="help-marker" id="ordersHelpBtn" onclick="openOrdersHelp()" data-i18n-title="help_marker_label" title="Подробнее об этом разделе">?</button>
     <div class="view-toggle-pill">
         <button class="view-toggle-btn active" id="ordersViewBtnCards" onclick="setOrdersViewMode('cards')" title="Карточки">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
@@ -2335,7 +2335,7 @@
         <!-- Подсказка по маркеру "?" — универсальная модалка, переиспользуется для
              любого раздела: openHelpModal передаёт свои ключи заголовка/текста.
              Открывается поверх любой другой модалки (см. z-index в <style>). -->
-        <div id="helpModal" class="modal">
+        <div id="helpModal" class="modal" onclick="if(event.target===this) this.style.display='none';">
             <div class="modal-content" style="max-width:360px;">
                 <h2 id="helpModalTitle" class="text-sm font-semibold mb-2 text-gray-800"></h2>
                 <div id="helpModalText" class="text-xs text-gray-600 mb-3" style="line-height:1.55;max-height:50vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
@@ -2735,7 +2735,7 @@
 
 <script src="dates.js?v=8"></script>
     <script src="money.js?v=10"></script>
-    <script src="i18n.js?v=20"></script>
+    <script src="i18n.js?v=21"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=6"></script>
     <script src="auth.js?v=15"></script>
@@ -2749,7 +2749,7 @@
 <script src="products.js?v=27"></script>
 <script src="customers.js?v=35"></script>
 <script src="calendar.js?v=7"></script>
-<script src="orders.js?v=86"></script>
+<script src="orders.js?v=87"></script>
 <script src="invoice.js?v=17"></script>
 <script src="payments.js?v=19"></script>
 <script src="stats.js?v=16"></script>

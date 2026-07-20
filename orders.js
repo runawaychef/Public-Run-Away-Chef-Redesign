@@ -590,6 +590,17 @@ async function quickSetOrderStatus(orderId, newStatus) {
     }
 }
 
+// Показывает подсказку, соответствующую активному виду списка заказов
+// (карточки/таблица) — у каждого вида своя логика, поэтому и текст разный.
+function openOrdersHelp() {
+    const isTable = document.getElementById('ordersViewBtnTable')?.classList.contains('active');
+    if (isTable) {
+        showHelpModal('help_orders_table_title', 'help_orders_table_text');
+    } else {
+        showHelpModal('help_orders_screen_title', 'help_orders_screen_text');
+    }
+}
+
 // Переключатель "Карточки / Таблица" — верхний правый угол экрана.
 function setOrdersViewMode(mode) {
     document.getElementById('orderCardsWrap')?.classList.toggle('hidden', mode !== 'cards');
