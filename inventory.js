@@ -453,7 +453,7 @@ async function openInventoryModal() {
         </div>`;
     }
 
-    html += '<table class="w-full text-xs table-clean"><thead><tr style="background-color:#e3e8df;" class="sticky top-0"><th class="p-1 text-left">' + t('inv_col_ingredient') + '</th><th class="p-1 text-right">' + t('inv_col_balance_before') + '</th><th class="p-1 text-right">' + t('inv_col_balance') + '</th><th class="p-1 text-right">' + t('inv_col_lasts') + '</th><th class="p-1 text-center">' + t('inv_col_list') + '</th></tr></thead><tbody>';
+    html += '<table class="w-full text-xs table-clean"><thead><tr style="background-color:#e3e8df;" class="sticky top-0"><th class="p-1 text-center">' + t('inv_col_ingredient') + '</th><th class="p-1 text-center">' + t('inv_col_balance_before') + '</th><th class="p-1 text-center">' + t('inv_col_balance') + '</th><th class="p-1 text-center">' + t('inv_col_lasts') + '</th><th class="p-1 text-center">' + t('inv_col_list') + '</th></tr></thead><tbody>';
 
     // 🔴 Критично: ингредиенты
     if (red.length) {
