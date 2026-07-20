@@ -396,7 +396,10 @@ function buildDocumentHtml(docType, snapshot, lang) {
     return `
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#111827;width:794px;min-height:1123px;box-sizing:border-box;padding:56px;font-size:16px;background:white;">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;">
-            <h1 style="font-size:26px;margin:0;">${title}</h1>
+            <div style="display:flex;align-items:center;gap:12px;">
+                ${org.logo_on_documents && org.logo_data_url ? `<img src="${org.logo_data_url}" style="width:48px;height:48px;border-radius:6px;object-fit:cover;flex-shrink:0;">` : ''}
+                <h1 style="font-size:26px;margin:0;">${title}</h1>
+            </div>
             <div style="text-align:right;font-size:15px;color:#374151;">
                 <div>${tDoc('inv_number', lang)}: ${numberPrefix}${escapeHtml(number)}</div>
                 <div>${tDoc('history_col_date', lang)}: ${formatDateDMY(issueDate)}</div>
@@ -514,9 +517,18 @@ async function buildDocumentPdf(docType, snapshot, lang) {
     const pageW = pdf.internal.pageSize.getWidth();
     const marginX = 14;
 
-    // ---- Заголовок: тип документа слева, номер/даты справа ----
+    // ---- Заголовок: тип документа слева (+логотип, если включён), номер/даты справа ----
+    let titleX = marginX;
+    if (org.logo_on_documents && org.logo_data_url) {
+        try {
+            const logoSize = 13; // мм — небольшой, не должен отвлекать от текста
+            const logoFormat = org.logo_data_url.startsWith('data:image/png') ? 'PNG' : 'JPEG';
+            pdf.addImage(org.logo_data_url, logoFormat, marginX, 8, logoSize, logoSize);
+            titleX = marginX + logoSize + 4;
+        } catch (e) { console.error('Не удалось вставить логотип в документ:', e); }
+    }
     pdf.setFontSize(18); pdf.setFont('Roboto', 'bold'); pdf.setTextColor(...PDF_COLORS.textDark);
-    pdf.text(title, marginX, 20);
+    pdf.text(title, titleX, 20);
     pdf.setFontSize(10); pdf.setFont('Roboto', 'normal'); pdf.setTextColor(...PDF_COLORS.textGray);
     pdf.text(`${tDoc('inv_number', lang)}: ${numberPrefix}${number}`, pageW - marginX, 14, { align: 'right' });
     pdf.text(`${tDoc('history_col_date', lang)}: ${formatDateDMY(issueDate)}`, pageW - marginX, 19, { align: 'right' });

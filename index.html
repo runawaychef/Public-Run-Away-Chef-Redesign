@@ -2078,6 +2078,26 @@
                 <h2 class="text-sm font-semibold mb-1 text-gray-800" data-i18n="company_title">Информация о компании</h2>
                 <p class="text-[11px] text-gray-400 mb-3" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
 
+                <div class="mb-3 flex items-center gap-3">
+                    <div id="cmpLogoPreviewWrap" style="width:56px;height:56px;border-radius:12px;overflow:hidden;background:#f4f1ea;border:1px solid #e5e0d3;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+                        <img id="cmpLogoPreview" src="" style="width:100%;height:100%;object-fit:cover;display:none;">
+                        <svg id="cmpLogoPlaceholder" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="#c9c3b3" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3 3h18v18H3V3z"/></svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="table-text text-gray-500 mb-1" data-i18n="company_logo_label">Логотип для документов</div>
+                        <div class="flex gap-2">
+                            <input type="file" id="cmpLogoFileInput" accept="image/png,image/jpeg,image/webp" class="hidden" onchange="handleLogoFileSelected(this)">
+                            <button type="button" onclick="document.getElementById('cmpLogoFileInput').click()" class="btn bg-[#eef1ea] text-[#7c9473] px-2 py-1 rounded-lg text-xs hover:bg-[#e0e6d9]" data-i18n="company_logo_upload">Загрузить</button>
+                            <button type="button" id="cmpLogoRemoveBtn" onclick="removeCompanyLogo()" class="hidden btn bg-[#f3ded9] text-[#a3493d] px-2 py-1 rounded-lg text-xs hover:bg-[#eccec6]" data-i18n="company_logo_remove">Удалить</button>
+                        </div>
+                    </div>
+                </div>
+
+                <label class="flex items-center gap-2 table-text text-gray-700 mb-3 cursor-pointer">
+                    <input type="checkbox" id="cmpLogoOnDocuments" onchange="toggleLogoOnDocuments()" style="accent-color:#7c9473;">
+                    <span data-i18n="company_logo_on_documents_label">Показывать логотип в документах</span>
+                </label>
+
                 <div class="mb-3">
                     <label class="table-text text-gray-500" data-i18n="company_name_label">Название пекарни</label>
                     <input id="cmpOrgName" type="text" onblur="saveCompanyInfo('name', this.value)" class="border p-1 rounded-xl w-full table-text" placeholder="Например, Пекарня Анны" data-i18n-placeholder="company_name_placeholder">
@@ -2191,6 +2211,22 @@
                 </div>
 
                 <button onclick="openSettingsModal()" class="pill-btn w-full justify-center" data-i18n="settings_close">Закрыть</button>
+            </div>
+        </div>
+
+        <!-- Кроп-инструмент для логотипа: перетаскивание + зум на canvas -->
+        <div id="logoCropModal" class="modal">
+            <div class="modal-content" style="max-width:340px;">
+                <h2 class="text-sm font-semibold mb-1 text-gray-800" data-i18n="company_logo_crop_title">Подгонка логотипа</h2>
+                <p class="text-[11px] text-gray-400 mb-3" data-i18n="company_logo_crop_hint">Перетащите картинку и настройте масштаб ползунком</p>
+                <div style="position:relative; width:260px; height:260px; margin:0 auto; border-radius:12px; overflow:hidden; background:#f4f1ea; touch-action:none;">
+                    <canvas id="logoCropCanvas" width="260" height="260" style="display:block; cursor:grab;"></canvas>
+                </div>
+                <input type="range" id="logoCropZoom" min="100" max="400" value="100" step="1" style="width:100%; margin-top:14px; accent-color:#7c9473;">
+                <div class="flex gap-2 mt-3">
+                    <button onclick="closeLogoCropModal()" class="pill-btn-secondary flex-1 justify-center" data-i18n="company_logo_crop_cancel">Отмена</button>
+                    <button onclick="applyLogoCrop()" class="pill-btn flex-1 justify-center" data-i18n="company_logo_crop_apply">Применить</button>
+                </div>
             </div>
         </div>
 
@@ -2741,12 +2777,12 @@
 
 <script src="dates.js?v=8"></script>
     <script src="money.js?v=10"></script>
-    <script src="i18n.js?v=31"></script>
+    <script src="i18n.js?v=32"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=6"></script>
     <script src="auth.js?v=15"></script>
     <script src="employees.js?v=29"></script>
-    <script src="company.js?v=15"></script>
+    <script src="company.js?v=16"></script>
     <script src="inventory.js?v=32"></script>
     <script src="push.js?v=3"></script>
 <script src="ingredients.js?v=31"></script>
@@ -2756,7 +2792,7 @@
 <script src="customers.js?v=35"></script>
 <script src="calendar.js?v=7"></script>
 <script src="orders.js?v=87"></script>
-<script src="invoice.js?v=17"></script>
+<script src="invoice.js?v=18"></script>
 <script src="payments.js?v=19"></script>
 <script src="stats.js?v=16"></script>
 <script src="history.js?v=9"></script>

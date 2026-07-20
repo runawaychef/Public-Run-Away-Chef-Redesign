@@ -188,7 +188,7 @@ async function openCompanyInfoModal() {
     showLoading();
     try {
         const { data, error } = await db.from('organizations')
-            .select('name, currency_code, country, vat_rate, entity_type, phone, email, address, legal_name, reg_number, vat_code, director_name, personal_code, bank_name, bank_account, bank_swift')
+            .select('name, currency_code, country, vat_rate, entity_type, phone, email, address, legal_name, reg_number, vat_code, director_name, personal_code, bank_name, bank_account, bank_swift, logo_data_url, logo_on_documents')
             .eq('id', currentOrgId)
             .single();
         if (error) throw error;
@@ -214,6 +214,7 @@ async function openCompanyInfoModal() {
         document.getElementById('cmpBankAccount').value  = data.bank_account || '';
         document.getElementById('cmpBankSwift').value    = data.bank_swift || '';
         updatePersonalCodeLabel();
+        renderCompanyLogoUI(data.logo_data_url || '', !!data.logo_on_documents);
 
         setCompanyEntityType(data.entity_type || 'company', /*skipSave*/ true);
         document.getElementById('companyInfoModal').style.display = 'flex';
@@ -278,4 +279,183 @@ function refreshCompanyLangDependentUI() {
     renderCountryDropdown();
     renderCurrencyDropdown();
     updatePersonalCodeLabel();
+}
+
+// ==================== ЛОГОТИП ДЛЯ ДОКУМЕНТОВ ====================
+// Хранится как base64 прямо в organizations.logo_data_url (не в Storage —
+// это единственная небольшая картинка на организацию, не список файлов).
+// Итоговый файл всегда квадратный ~240×240px — независимо от того, что
+// именно загрузил пользователь, за счёт кроп-инструмента ниже.
+
+const LOGO_CROP_OUTPUT_SIZE = 240; // финальный размер сохранённого логотипа, px
+const LOGO_CROP_CANVAS_SIZE = 260; // размер видимой рамки кроп-инструмента, px
+const LOGO_MAX_UPLOAD_BYTES = 3 * 1024 * 1024; // 3 МБ — ограничение на входной файл
+
+let _logoCropImg = null;
+let _logoCropBaseScale = 1;   // масштаб, при котором картинка ровно закрывает рамку ("cover")
+let _logoCropOffsetX = 0;
+let _logoCropOffsetY = 0;
+let _logoCropDragging = false;
+let _logoCropLastX = 0;
+let _logoCropLastY = 0;
+
+// Отрисовывает превью в самой карточке "Информация о компании" (не в кроп-окне)
+function renderCompanyLogoUI(dataUrl, onDocuments) {
+    const img = document.getElementById('cmpLogoPreview');
+    const placeholder = document.getElementById('cmpLogoPlaceholder');
+    const removeBtn = document.getElementById('cmpLogoRemoveBtn');
+    const checkbox = document.getElementById('cmpLogoOnDocuments');
+    if (dataUrl) {
+        img.src = dataUrl;
+        img.style.display = 'block';
+        placeholder.style.display = 'none';
+        removeBtn.classList.remove('hidden');
+    } else {
+        img.style.display = 'none';
+        placeholder.style.display = 'block';
+        removeBtn.classList.add('hidden');
+    }
+    checkbox.checked = onDocuments;
+    checkbox.disabled = !dataUrl;
+}
+
+function handleLogoFileSelected(input) {
+    const file = input.files && input.files[0];
+    input.value = ''; // чтобы повторный выбор того же файла тоже сработал
+    if (!file) return;
+    if (file.size > LOGO_MAX_UPLOAD_BYTES) {
+        showInfo(t('company_logo_too_large'));
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => openLogoCropModal(img);
+        img.onerror = () => showInfo(t('company_logo_load_error'));
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function openLogoCropModal(img) {
+    _logoCropImg = img;
+    const size = LOGO_CROP_CANVAS_SIZE;
+    // "cover"-масштаб: минимальный, при котором картинка полностью закрывает квадрат рамки
+    _logoCropBaseScale = Math.max(size / img.width, size / img.height);
+    // стартуем по центру картинки
+    _logoCropOffsetX = (size - img.width * _logoCropBaseScale) / 2;
+    _logoCropOffsetY = (size - img.height * _logoCropBaseScale) / 2;
+    document.getElementById('logoCropZoom').value = 100;
+    drawLogoCropCanvas();
+    document.getElementById('logoCropModal').style.display = 'flex';
+}
+
+function closeLogoCropModal() {
+    document.getElementById('logoCropModal').style.display = 'none';
+    _logoCropImg = null;
+}
+
+function currentLogoCropScale() {
+    const zoomPct = Number(document.getElementById('logoCropZoom').value) || 100;
+    return _logoCropBaseScale * (zoomPct / 100);
+}
+
+// Держит картинку так, чтобы она всегда полностью закрывала рамку — не даёт
+// утащить её так, что по краям появится пустое место.
+function clampLogoCropOffset() {
+    const size = LOGO_CROP_CANVAS_SIZE;
+    const scale = currentLogoCropScale();
+    const w = _logoCropImg.width * scale;
+    const h = _logoCropImg.height * scale;
+    _logoCropOffsetX = Math.min(0, Math.max(size - w, _logoCropOffsetX));
+    _logoCropOffsetY = Math.min(0, Math.max(size - h, _logoCropOffsetY));
+}
+
+function drawLogoCropCanvas() {
+    if (!_logoCropImg) return;
+    clampLogoCropOffset();
+    const canvas = document.getElementById('logoCropCanvas');
+    const ctx = canvas.getContext('2d');
+    const scale = currentLogoCropScale();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(_logoCropImg, _logoCropOffsetX, _logoCropOffsetY, _logoCropImg.width * scale, _logoCropImg.height * scale);
+}
+
+(function initLogoCropInteractions() {
+    document.addEventListener('DOMContentLoaded', () => {
+        const canvas = document.getElementById('logoCropCanvas');
+        const zoomSlider = document.getElementById('logoCropZoom');
+        if (!canvas || !zoomSlider) return;
+
+        canvas.addEventListener('pointerdown', (e) => {
+            _logoCropDragging = true;
+            _logoCropLastX = e.clientX;
+            _logoCropLastY = e.clientY;
+            canvas.setPointerCapture(e.pointerId);
+            canvas.style.cursor = 'grabbing';
+        });
+        canvas.addEventListener('pointermove', (e) => {
+            if (!_logoCropDragging) return;
+            _logoCropOffsetX += e.clientX - _logoCropLastX;
+            _logoCropOffsetY += e.clientY - _logoCropLastY;
+            _logoCropLastX = e.clientX;
+            _logoCropLastY = e.clientY;
+            drawLogoCropCanvas();
+        });
+        const stopDrag = (e) => {
+            _logoCropDragging = false;
+            canvas.style.cursor = 'grab';
+        };
+        canvas.addEventListener('pointerup', stopDrag);
+        canvas.addEventListener('pointercancel', stopDrag);
+        canvas.addEventListener('pointerleave', stopDrag);
+
+        zoomSlider.addEventListener('input', () => drawLogoCropCanvas());
+    });
+})();
+
+async function applyLogoCrop() {
+    if (!_logoCropImg) return;
+    const out = document.createElement('canvas');
+    out.width = LOGO_CROP_OUTPUT_SIZE;
+    out.height = LOGO_CROP_OUTPUT_SIZE;
+    const ctx = out.getContext('2d');
+    const ratio = LOGO_CROP_OUTPUT_SIZE / LOGO_CROP_CANVAS_SIZE;
+    const scale = currentLogoCropScale() * ratio;
+    ctx.drawImage(_logoCropImg, _logoCropOffsetX * ratio, _logoCropOffsetY * ratio, _logoCropImg.width * scale, _logoCropImg.height * scale);
+    const dataUrl = out.toDataURL('image/png');
+
+    closeLogoCropModal();
+    try {
+        await updateChecked(db.from('organizations').update({ logo_data_url: dataUrl, logo_on_documents: true }).eq('id', currentOrgId));
+        renderCompanyLogoUI(dataUrl, true);
+        logActivity('system', `${t('log_field_changed')} «${t('company_logo_label')}» ${t('log_in_company_info')}`);
+        showAutosaveToast();
+    } catch (e) {
+        console.error(e);
+        showInfo(t('error_save_check_connection'));
+    }
+}
+
+async function removeCompanyLogo() {
+    try {
+        await updateChecked(db.from('organizations').update({ logo_data_url: null, logo_on_documents: false }).eq('id', currentOrgId));
+        renderCompanyLogoUI('', false);
+        logActivity('system', `${t('log_field_changed')} «${t('company_logo_label')}» ${t('log_in_company_info')}`);
+        showAutosaveToast();
+    } catch (e) {
+        console.error(e);
+        showInfo(t('error_save_check_connection'));
+    }
+}
+
+async function toggleLogoOnDocuments() {
+    const checked = document.getElementById('cmpLogoOnDocuments').checked;
+    try {
+        await updateChecked(db.from('organizations').update({ logo_on_documents: checked }).eq('id', currentOrgId));
+        showAutosaveToast();
+    } catch (e) {
+        console.error(e);
+        showInfo(t('error_save_check_connection'));
+    }
 }
