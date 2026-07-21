@@ -118,18 +118,31 @@ function renderBatchesList(batches, unitLabel, itemType) {
     if (!batches || !batches.length) {
         return `<div class="table-text text-gray-400">${t('batch_no_active')}</div>`;
     }
-    let html = '<table class="w-full text-xs table-clean"><thead><tr style="background-color:#e3e8df;position:sticky;top:0;">' +
-        `<th class="p-1 text-left">${t('history_col_date')}</th><th class="p-1 text-right">${t('inv_col_balance')}</th><th class="p-1 text-right">${t('orders_price_per_unit_short')}</th></tr></thead><tbody>`;
-    batches.forEach(b => {
+
+    const renderRow = (b) => {
         const dateStr = new Date(b.created_at).toLocaleDateString('ru-RU');
         const isActive = Number(b.qty_remaining) > 0;
         const rowStyle = isActive ? 'font-weight:600;color:#3d3a33;' : 'color:#a29c8c;';
-        html += `<tr class="border-b cursor-pointer" style="${rowStyle}" ${dataAction('openEditBatchModal', [b.id, itemType, unitLabel])}>
+        return `<tr class="border-b cursor-pointer" style="${rowStyle}" ${dataAction('openEditBatchModal', [b.id, itemType, unitLabel])}>
             <td class="p-0.5">${escapeHtml(dateStr)}</td>
             <td class="p-0.5 text-right">${Number(b.qty_remaining).toFixed(2)} ${escapeHtml(unitLabel)}</td>
             <td class="p-0.5 text-right">${formatMoney(b.unit_price, 4)}</td>
         </tr>`;
-    });
+    };
+
+    // Активные (остаток > 0) — как пришли, по порядку FIFO (старая→новая),
+    // сверху та, что спишется следующей. Исчерпанные (остаток = 0) — отдельно,
+    // в привычном порядке "новая→старая", как везде в остальном приложении.
+    const active = batches.filter(b => Number(b.qty_remaining) > 0);
+    const exhausted = batches.filter(b => Number(b.qty_remaining) <= 0).reverse();
+
+    let html = '<table class="w-full text-xs table-clean"><thead><tr style="background-color:#e3e8df;position:sticky;top:0;">' +
+        `<th class="p-1 text-left">${t('history_col_date')}</th><th class="p-1 text-right">${t('inv_col_balance')}</th><th class="p-1 text-right">${t('orders_price_per_unit_short')}</th></tr></thead><tbody>`;
+    active.forEach(b => { html += renderRow(b); });
+    if (active.length && exhausted.length) {
+        html += `<tr><td colspan="3" class="p-1 text-xs font-semibold text-gray-400" style="background:#f4f1ea;">${t('batch_exhausted_label')}</td></tr>`;
+    }
+    exhausted.forEach(b => { html += renderRow(b); });
     html += '</tbody></table>';
     return html;
 }

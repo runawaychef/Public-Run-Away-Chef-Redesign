@@ -781,6 +781,7 @@ const I18N = {
 
         // Партии (FIFO)
         batch_no_active: 'Нет активных партий (списано полностью или ещё не закупалось)',
+        batch_exhausted_label: 'Списано',
         batch_load_error: 'Не удалось загрузить партию.',
         batch_from_date_prefix: 'Партия от',
         batch_enter_valid_values: 'Введите корректные значения!',
@@ -1670,6 +1671,7 @@ const I18N = {
 
         // Stock batches (FIFO)
         batch_no_active: 'No active batches (fully consumed or not purchased yet)',
+        batch_exhausted_label: 'Used up',
         batch_load_error: 'Failed to load the batch.',
         batch_from_date_prefix: 'Batch from',
         batch_enter_valid_values: 'Enter valid values!',
