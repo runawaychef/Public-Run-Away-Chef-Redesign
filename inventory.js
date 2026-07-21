@@ -376,8 +376,8 @@ async function openInventoryModal() {
 
     function renderRow(item, bgClass, daysClass, isSf) {
         const { ing, balance, balanceBefore, daysLeft, unitLabel, shortage } = item;
-        const balanceBeforeStr = balanceBefore !== null ? `${Math.round(Number(balanceBefore))}${unitLabel}` : '—';
-        const balanceStr = balance !== null ? `${Math.round(Number(balance))}${unitLabel}` : '—';
+        const balanceBeforeStr = balanceBefore !== null ? `${Math.round(Number(balanceBefore))} ${unitLabel}` : '—';
+        const balanceStr = balance !== null ? `${Math.round(Number(balance))} ${unitLabel}` : '—';
         const daysStr    = shortage ? t('inv_shortage') : daysLeft !== null ? `~${daysLeft} ${t('inv_days_short')}` : '—';
         const inList     = isSf
             ? _shoppingList.some(r => r.semi_finished_id === ing.id)
