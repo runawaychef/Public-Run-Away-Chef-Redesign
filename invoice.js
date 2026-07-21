@@ -94,15 +94,6 @@ function updateDocumentLangSwitcherUI() {
     if (typeof renderLangSwitcher === 'function') {
         renderLangSwitcher('docLangSwitchContainer', currentLang, _docPreview.lang, 'setDocumentLang');
     }
-    const pickBtn = document.getElementById('docLangPickBtn');
-    if (pickBtn) {
-        pickBtn.classList.toggle('hidden', currentLang === BASE_LANG);
-        const label = pickBtn.querySelector('.lang-pick-label');
-        if (label && typeof LANG_META !== 'undefined') {
-            const native = (LANG_META[currentLang] && LANG_META[currentLang].native) || currentLang.toUpperCase();
-            label.textContent = `${native} · ${t('lang_pick_change_suffix')}`;
-        }
-    }
 
     // Кнопка "Сформировать Delivery Note" видна только когда открыт Invoice —
     // из накладной генерировать накладную же незачем.
