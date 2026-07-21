@@ -376,8 +376,8 @@ async function openInventoryModal() {
 
     function renderRow(item, bgClass, daysClass, isSf) {
         const { ing, balance, balanceBefore, daysLeft, unitLabel, shortage } = item;
-        const balanceBeforeStr = balanceBefore !== null ? `${Number(balanceBefore).toFixed(1)} ${unitLabel}` : '—';
-        const balanceStr = balance !== null ? `${Number(balance).toFixed(1)} ${unitLabel}` : '—';
+        const balanceBeforeStr = balanceBefore !== null ? `${Math.round(Number(balanceBefore))}${unitLabel}` : '—';
+        const balanceStr = balance !== null ? `${Math.round(Number(balance))}${unitLabel}` : '—';
         const daysStr    = shortage ? t('inv_shortage') : daysLeft !== null ? `~${daysLeft} ${t('inv_days_short')}` : '—';
         const inList     = isSf
             ? _shoppingList.some(r => r.semi_finished_id === ing.id)
@@ -389,10 +389,10 @@ async function openInventoryModal() {
             ? `closeModal(); showTab('semiFinished'); openSemiFinishedDetail(${ing.id});`
             : `closeModal(); showTab('ingredients'); openIngredientDetail(${ing.id});`;
         return `<tr class="border-b">
-            <td class="p-1 table-text cursor-pointer hover:underline" onclick="${detailClick}">${escapeHtml(ing.name)}</td>
-            <td class="p-1 table-text text-right" style="color:#a29c8c;">${balanceBeforeStr}</td>
-            <td class="p-1 table-text text-right">${balanceStr}</td>
-            <td class="p-1 table-text text-right ${daysClass} font-semibold">${daysStr}</td>
+            <td class="p-1 table-text cursor-pointer hover:underline" style="overflow:hidden;text-overflow:ellipsis;" onclick="${detailClick}">${escapeHtml(ing.name)}</td>
+            <td class="p-1 table-text text-right" style="color:#a29c8c;white-space:nowrap;">${balanceBeforeStr}</td>
+            <td class="p-1 table-text text-right" style="white-space:nowrap;">${balanceStr}</td>
+            <td class="p-1 table-text text-right ${daysClass} font-semibold" style="white-space:nowrap;">${daysStr}</td>
             <td class="p-1 text-center">${addBtn}</td>
         </tr>`;
     }
@@ -453,7 +453,8 @@ async function openInventoryModal() {
         </div>`;
     }
 
-    html += '<table class="w-full text-xs table-clean"><thead><tr style="background-color:#e3e8df;" class="sticky top-0"><th class="p-1 text-center">' + t('inv_col_ingredient') + '</th><th class="p-1 text-center">' + t('inv_col_balance_before') + '</th><th class="p-1 text-center">' + t('inv_col_balance') + '</th><th class="p-1 text-center">' + t('inv_col_lasts') + '</th><th class="p-1 text-center">' + t('inv_col_list') + '</th></tr></thead><tbody>';
+    const cartIconSvg = '<svg class="w-3.5 h-3.5 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.836l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.98-4.706 2.545-7.187.075-.323-.174-.63-.53-.63H5.106M7.5 14.25L5.106 5.653M7.5 14.25L5.25 20.25m9-6l2.25 6"/></svg>';
+    html += '<table class="w-full text-xs table-clean" style="table-layout:fixed;"><thead><tr style="background-color:#e3e8df;" class="sticky top-0"><th class="p-1 text-center" style="width:34%;">' + t('inv_col_ingredient') + '</th><th class="p-1 text-center" style="width:17%;">' + t('inv_col_balance_before') + '</th><th class="p-1 text-center" style="width:17%;">' + t('inv_col_balance') + '</th><th class="p-1 text-center" style="width:20%;">' + t('inv_col_lasts') + '</th><th class="p-1 text-center" style="width:12%;">' + cartIconSvg + '</th></tr></thead><tbody>';
 
     // 🔴 Критично: ингредиенты
     if (red.length) {
