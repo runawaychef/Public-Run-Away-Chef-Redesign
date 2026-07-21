@@ -110,11 +110,13 @@ function renderBatchesList(batches, unitLabel, itemType) {
     if (!batches || !batches.length) {
         return `<div class="table-text text-gray-400">${t('batch_no_active')}</div>`;
     }
-    let html = '<table class="w-full text-xs table-clean"><thead><tr style="background-color:#e3e8df;">' +
+    let html = '<table class="w-full text-xs table-clean"><thead><tr style="background-color:#e3e8df;position:sticky;top:0;">' +
         `<th class="p-1 text-left">${t('history_col_date')}</th><th class="p-1 text-right">${t('inv_col_balance')}</th><th class="p-1 text-right">${t('orders_price_per_unit_short')}</th></tr></thead><tbody>`;
     batches.forEach(b => {
         const dateStr = new Date(b.created_at).toLocaleDateString('ru-RU');
-        html += `<tr class="border-b cursor-pointer" ${dataAction('openEditBatchModal', [b.id, itemType, unitLabel])}>
+        const isActive = Number(b.qty_remaining) > 0;
+        const rowStyle = isActive ? 'font-weight:600;color:#3d3a33;' : 'color:#a29c8c;';
+        html += `<tr class="border-b cursor-pointer" style="${rowStyle}" ${dataAction('openEditBatchModal', [b.id, itemType, unitLabel])}>
             <td class="p-0.5">${escapeHtml(dateStr)}</td>
             <td class="p-0.5 text-right">${Number(b.qty_remaining).toFixed(2)} ${escapeHtml(unitLabel)}</td>
             <td class="p-0.5 text-right">${formatMoney(b.unit_price, 4)}</td>
@@ -263,11 +265,11 @@ async function toggleIngredientBatches() {
         const { data, error } = await db.from('stock_batches')
             .select('id, unit_price, qty_remaining, created_at')
             .eq('item_type', 'ingredient').eq('ingredient_id', ing.id)
-            .gt('qty_remaining', 0).order('created_at', { ascending: true });
+            .order('created_at', { ascending: true });
         const unitLabel = unitAbbrev(ing.unit);
         const label = document.getElementById('ingBatchesToggleLabel');
         if (label) label.textContent = `${t('ing_batches')}${!error && data ? ` (${data.length})` : ''}`;
-        list.innerHTML = error ? `<div class="table-text text-gray-400">${t('batch_load_list_error')}</div>` : renderBatchesList(data, unitLabel, 'ingredient');
+        list.innerHTML = error ? `<div class="table-text text-gray-400">${t('batch_load_list_error')}</div>` : `<div style="max-height:210px;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;">${renderBatchesList(data, unitLabel, 'ingredient')}</div>`;
     }
 }
 
@@ -285,10 +287,10 @@ async function toggleSfBatches() {
         const { data, error } = await db.from('stock_batches')
             .select('id, unit_price, qty_remaining, created_at')
             .eq('item_type', 'semi_finished').eq('semi_finished_id', sf.id)
-            .gt('qty_remaining', 0).order('created_at', { ascending: true });
+            .order('created_at', { ascending: true });
         const unitLabel = unitAbbrev(sf.unit);
         const label = document.getElementById('sfBatchesToggleLabel');
         if (label) label.textContent = `${t('ing_batches')}${!error && data ? ` (${data.length})` : ''}`;
-        list.innerHTML = error ? `<div class="table-text text-gray-400">${t('batch_load_list_error')}</div>` : renderBatchesList(data, unitLabel, 'semi_finished');
+        list.innerHTML = error ? `<div class="table-text text-gray-400">${t('batch_load_list_error')}</div>` : `<div style="max-height:210px;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;">${renderBatchesList(data, unitLabel, 'semi_finished')}</div>`;
     }
 }
