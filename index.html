@@ -566,6 +566,13 @@
         .lang-switch { display: flex; background: #e3e8df; border-radius: 999px; padding: 2px; gap: 2px; flex-shrink: 0; }
         .lang-switch button { border: none; background: transparent; font-size: 10.5px; font-weight: 700; letter-spacing: .02em; color: #6b675d; padding: 4px 10px; border-radius: 999px; transition: background .15s ease, color .15s ease; }
         .lang-switch button.active { background: #7c9473; color: #fff; }
+        .lang-pick-btn { display: flex; align-items: center; gap: 5px; background: #e3e8df; border: none; border-radius: 999px; padding: 4px 10px; margin-top: 6px; font-size: 10.5px; font-weight: 700; letter-spacing: .02em; color: #6b675d; }
+        .lang-pick-btn svg { width: 11px; height: 11px; opacity: .7; flex-shrink: 0; }
+        .lang-list-item { display: flex; align-items: center; justify-content: space-between; padding: 11px 14px; font-size: 13.5px; color: #322f28; border-bottom: 1px solid #f0ede3; cursor: pointer; }
+        .lang-list-item:last-child { border-bottom: none; }
+        .lang-list-item.selected { color: #4f6349; font-weight: 700; }
+        .lang-native-hint { color: #a29c8c; font-size: 11.5px; font-weight: 400; margin-left: 6px; }
+        .lang-check { width: 16px; height: 16px; color: #7c9473; flex-shrink: 0; }
         .settings-row-btn.active svg { color: #7c9473; }
         .invite-share-btn { color: #7c9473; }
         .invite-cancel-btn:active { color: #c0685c; }
@@ -1516,11 +1523,12 @@
         <!-- Предпросмотр счёта / накладной -->
         <div id="orderDocumentModal" class="modal">
             <div class="modal-content" style="max-width:520px;">
-                <div class="flex items-center justify-end mb-2">
-                    <div class="lang-switch">
-                        <button type="button" id="docLangEnBtn" onclick="setDocumentLang('en')">EN</button>
-                        <button type="button" id="docLangRuBtn" onclick="setDocumentLang('ru')">RU</button>
-                    </div>
+                <div class="flex items-center justify-between mb-2">
+                    <button type="button" id="docLangPickBtn" onclick="openLangPickerModal()" class="lang-pick-btn hidden">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span class="lang-pick-label"></span>
+                    </button>
+                    <div id="docLangSwitchContainer" class="lang-switch"></div>
                 </div>
                 <div id="orderDocumentRuNote" class="hidden text-xs mb-2" style="color:#a3493d; background:#f3ded9; border-radius:8px; padding:8px 10px;" data-i18n="inv_ru_self_employed_note">Этот документ не заменяет чек из приложения «Мой налог» — сформируйте чек отдельно при получении оплаты.</div>
                 <div id="orderDocumentContent" style="background:white;"></div>
@@ -1541,6 +1549,15 @@
                     <button onclick="document.getElementById('editDueDateModal').style.display='none';" class="pill-btn-secondary flex-1 justify-center" data-i18n="company_logo_crop_cancel">Отмена</button>
                     <button onclick="applyEditDueDate()" class="pill-btn flex-1 justify-center" data-i18n="common_save">Сохранить</button>
                 </div>
+            </div>
+        </div>
+
+        <!-- Выбор "второго" языка переключателя (кроме английского — он всегда доступен) -->
+        <div id="langPickerModal" class="modal">
+            <div class="modal-content" style="max-width:340px;">
+                <h2 class="text-sm font-semibold mb-2 text-gray-800" data-i18n="lang_picker_title">Выберите язык</h2>
+                <div id="langPickerList" style="max-height:50vh;overflow-y:auto;background:#fff;border-radius:12px;"></div>
+                <button onclick="document.getElementById('langPickerModal').style.display='none';" class="pill-btn-secondary w-full justify-center mt-3" data-i18n="company_logo_crop_cancel">Отмена</button>
             </div>
         </div>
 
@@ -1955,9 +1972,12 @@
             <div class="modal-content" style="max-width:320px; max-height:78vh; display:flex; flex-direction:column; overflow:hidden; padding:16px 16px 12px;">
                 <div class="flex justify-between items-center mb-1" style="flex-shrink:0;">
                     <h2 class="text-sm font-semibold text-gray-800" data-i18n="settings_title">Настройки</h2>
-                    <div class="lang-switch">
-                        <button type="button" id="langBtnEn" onclick="setLang('en')">EN</button>
-                        <button type="button" id="langBtnRu" onclick="setLang('ru')">RU</button>
+                    <div>
+                        <div id="langSwitchContainer" class="lang-switch"></div>
+                        <button type="button" id="langPickBtn" onclick="openLangPickerModal()" class="lang-pick-btn hidden">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span class="lang-pick-label"></span>
+                        </button>
                     </div>
                 </div>
                 <p class="text-xs text-gray-500 mb-3" style="flex-shrink:0;"><span data-i18n="settings_current_employee_label">Текущий сотрудник:</span> <b id="settingsCurrentEmployee" class="text-gray-800"></b></p>
@@ -2815,7 +2835,7 @@
 
 <script src="dates.js?v=8"></script>
     <script src="money.js?v=10"></script>
-    <script src="i18n-core.js?v=1"></script>
+    <script src="i18n-core.js?v=2"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=6"></script>
     <script src="auth.js?v=15"></script>
@@ -2830,7 +2850,7 @@
 <script src="customers.js?v=36"></script>
 <script src="calendar.js?v=7"></script>
 <script src="orders.js?v=87"></script>
-<script src="invoice.js?v=25"></script>
+<script src="invoice.js?v=26"></script>
 <script src="payments.js?v=19"></script>
 <script src="stats.js?v=16"></script>
 <script src="history.js?v=9"></script>

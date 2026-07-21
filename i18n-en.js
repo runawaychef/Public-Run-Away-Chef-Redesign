@@ -4,6 +4,8 @@
 // the translation strings themselves.
 window.I18N = window.I18N || {};
 I18N.en = {
+        lang_pick_change_suffix: 'change',
+        lang_picker_title: 'Choose language',
         // Bottom navigation
         nav_orders: 'Orders',
         nav_products: 'Menu',

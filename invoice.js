@@ -68,6 +68,7 @@ async function openOrderDocumentPreview(docType, langOverride) {
         const snapshot = await freezeDocumentSnapshot(order, docType, existing);
         _docPreview = { docType, snapshot, lang: langOverride || currentLang };
         renderDocumentPreviewThumbnail();
+        updateDocumentLangSwitcherUI();
         document.getElementById('orderDocumentModal').style.display = 'flex';
     } catch (e) {
         console.error(e);
@@ -81,7 +82,7 @@ async function openOrderDocumentPreview(docType, langOverride) {
 // интерфейса приложения — просто перерисовывает превью на новом языке,
 // без похода в базу (снимок с данными уже загружен).
 async function setDocumentLang(lang) {
-    if (!_docPreview || (lang !== 'ru' && lang !== 'en')) return;
+    if (!_docPreview || (lang !== BASE_LANG && lang !== currentLang)) return;
     if (typeof ensureLangLoaded === 'function') await ensureLangLoaded(lang);
     _docPreview.lang = lang;
     renderDocumentPreviewThumbnail();
@@ -89,11 +90,19 @@ async function setDocumentLang(lang) {
 }
 
 function updateDocumentLangSwitcherUI() {
-    const ruBtn = document.getElementById('docLangRuBtn');
-    const enBtn = document.getElementById('docLangEnBtn');
-    if (!ruBtn || !enBtn || !_docPreview) return;
-    ruBtn.classList.toggle('active', _docPreview.lang === 'ru');
-    enBtn.classList.toggle('active', _docPreview.lang === 'en');
+    if (!_docPreview) return;
+    if (typeof renderLangSwitcher === 'function') {
+        renderLangSwitcher('docLangSwitchContainer', currentLang, _docPreview.lang, 'setDocumentLang');
+    }
+    const pickBtn = document.getElementById('docLangPickBtn');
+    if (pickBtn) {
+        pickBtn.classList.toggle('hidden', currentLang === BASE_LANG);
+        const label = pickBtn.querySelector('.lang-pick-label');
+        if (label && typeof LANG_META !== 'undefined') {
+            const native = (LANG_META[currentLang] && LANG_META[currentLang].native) || currentLang.toUpperCase();
+            label.textContent = `${native} · ${t('lang_pick_change_suffix')}`;
+        }
+    }
 
     // Кнопка "Сформировать Delivery Note" видна только когда открыт Invoice —
     // из накладной генерировать накладную же незачем.

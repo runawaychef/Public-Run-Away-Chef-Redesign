@@ -30,7 +30,20 @@
 // (3) добавить файл в список кэша service worker'а (sw.js ASSETS);
 // (4) добавить кнопку/пункт в переключатель языка в интерфейсе.
 
-const SUPPORTED_LANGS = ['ru', 'en'];
+// LANG_META — единственное место, где перечислены поддерживаемые языки.
+// Чтобы добавить новый: (1) создать i18n-XX.js по образцу i18n-en.js;
+// (2) добавить строку сюда; (3) добавить файл в список кэша sw.js ASSETS.
+// native — как язык называется сам на себе (для списка выбора), english —
+// название на английском (подпись помельче рядом, для однозначности).
+const LANG_META = {
+    en: { native: 'English',    english: 'English' },
+    ru: { native: 'Русский',    english: 'Russian' },
+    lt: { native: 'Lietuvių',   english: 'Lithuanian' },
+    pl: { native: 'Polski',     english: 'Polish' },
+    uk: { native: 'Українська', english: 'Ukrainian' },
+    de: { native: 'Deutsch',    english: 'German' },
+};
+const SUPPORTED_LANGS = Object.keys(LANG_META);
 const BASE_LANG = 'en';
 
 // Кэш промисов загрузки — чтобы не запрашивать один и тот же файл языка
@@ -42,7 +55,7 @@ function _loadLangScript(lang) {
     if (_langLoadPromises[lang]) return _langLoadPromises[lang];
     _langLoadPromises[lang] = new Promise((resolve) => {
         const script = document.createElement('script');
-        script.src = `i18n-${lang}.js?v=1`;
+        script.src = `i18n-${lang}.js?v=2`;
         script.onload = () => resolve();
         script.onerror = () => {
             console.error(`Не удалось загрузить язык: ${lang}`);
@@ -57,8 +70,13 @@ function _loadLangScript(lang) {
 window.I18N = window.I18N || {};
 const I18N = window.I18N;
 
-let currentLang = localStorage.getItem('appLang')
-    || (navigator.language && navigator.language.toLowerCase().startsWith('ru') ? 'ru' : 'en');
+let currentLang = localStorage.getItem('appLang');
+if (!currentLang) {
+    // Первый запуск: если системный язык телефона совпадает с одним из
+    // поддерживаемых — используем его, иначе базовый (английский).
+    const sysLang = (navigator.language || '').toLowerCase().slice(0, 2);
+    currentLang = SUPPORTED_LANGS.includes(sysLang) ? sysLang : BASE_LANG;
+}
 if (!SUPPORTED_LANGS.includes(currentLang)) currentLang = BASE_LANG;
 
 function t(key) {
@@ -106,12 +124,62 @@ function applyI18n() {
     document.documentElement.lang = currentLang;
 }
 
+// Общий рендер переключателя "EN | <второй язык>" — используется и для языка
+// интерфейса (Настройки), и для языка документа (окно счёта/накладной).
+// Если второй язык совпадает с английским — показывает только одну кнопку
+// (переключатель "EN | EN" не имеет смысла).
+function renderLangSwitcher(containerId, secondLang, activeLang, onClickFnName) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const options = secondLang === BASE_LANG ? [BASE_LANG] : [BASE_LANG, secondLang];
+    el.innerHTML = options.map(code =>
+        `<button type="button" class="${code === activeLang ? 'active' : ''}" onclick="${onClickFnName}('${code}')">${code.toUpperCase()}</button>`
+    ).join('');
+}
+
+// Подпись на кнопке "выбрать второй язык" — родное название текущего
+// выбранного второго языка. Кнопка скрывается, если выбран сам английский
+// (тогда нечего показывать во втором слоте — переключатель однокнопочный).
+function updateLangPickButtonLabel() {
+    const btn = document.getElementById('langPickBtn');
+    if (!btn) return;
+    if (currentLang === BASE_LANG) {
+        btn.classList.add('hidden');
+        return;
+    }
+    btn.classList.remove('hidden');
+    const label = btn.querySelector('.lang-pick-label');
+    const native = (LANG_META[currentLang] && LANG_META[currentLang].native) || currentLang.toUpperCase();
+    if (label) label.textContent = `${native} · ${t('lang_pick_change_suffix')}`;
+}
+
 function updateLangSwitcherUI() {
-    const ruBtn = document.getElementById('langBtnRu');
-    const enBtn = document.getElementById('langBtnEn');
-    if (!ruBtn || !enBtn) return;
-    ruBtn.classList.toggle('active', currentLang === 'ru');
-    enBtn.classList.toggle('active', currentLang === 'en');
+    renderLangSwitcher('langSwitchContainer', currentLang, currentLang, 'setLang');
+    updateLangPickButtonLabel();
+    // Переключатель языка документа обновляем тоже, если он сейчас на экране
+    // (invoice.js) — тот же второй язык, но своя активная кнопка (_docPreview.lang).
+    if (typeof updateDocumentLangSwitcherUI === 'function') updateDocumentLangSwitcherUI();
+}
+
+// ---- Модалка выбора "второго" языка (кроме английского, он всегда доступен) ----
+function openLangPickerModal() {
+    const list = document.getElementById('langPickerList');
+    if (list) {
+        list.innerHTML = SUPPORTED_LANGS.filter(code => code !== BASE_LANG).map(code => {
+            const meta = LANG_META[code];
+            const selected = code === currentLang;
+            return `<div class="lang-list-item${selected ? ' selected' : ''}" onclick="selectSecondLang('${code}')">
+                <span>${meta.native} <span class="lang-native-hint">${meta.english}</span></span>
+                ${selected ? '<svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>' : ''}
+            </div>`;
+        }).join('');
+    }
+    document.getElementById('langPickerModal').style.display = 'flex';
+}
+
+async function selectSecondLang(code) {
+    document.getElementById('langPickerModal').style.display = 'none';
+    await setLang(code);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -125,9 +193,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // разбора этого <script>, и гарантированно приостанавливает разбор
 // документа до полной загрузки дописанных тегов.
 (function bootLoadLanguages() {
-    let tags = `<script src="i18n-${BASE_LANG}.js?v=1"><\/script>`;
+    let tags = `<script src="i18n-${BASE_LANG}.js?v=2"><\/script>`;
     if (currentLang !== BASE_LANG) {
-        tags += `<script src="i18n-${currentLang}.js?v=1"><\/script>`;
+        tags += `<script src="i18n-${currentLang}.js?v=2"><\/script>`;
     }
     document.write(tags);
 })();

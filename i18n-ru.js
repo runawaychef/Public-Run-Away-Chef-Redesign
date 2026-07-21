@@ -3,6 +3,8 @@
 // живёт отдельно в i18n-core.js, здесь только сами переводы.
 window.I18N = window.I18N || {};
 I18N.ru = {
+        lang_pick_change_suffix: 'изменить',
+        lang_picker_title: 'Выберите язык',
         // Нижняя навигация
         nav_orders: 'Заказы',
         nav_products: 'Ассортимент',
