@@ -689,19 +689,28 @@ let _ingredientPriceChartInstance = null;
 // Обновляет блок «Остаток на складе» в карточке ингредиента
 async function renderIngredientStockBlock(ing) {
     const unitLabel = unitAbbrev(ing.unit);
-    const balance = typeof getIngredientBalance === 'function' ? getIngredientBalance(ing.id) : null;
+    const balance  = typeof getIngredientBalance === 'function' ? getIngredientBalance(ing.id) : null;
+    const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
+    const balanceBefore = typeof getIngredientBalanceBeforeWriteoff === 'function' ? getIngredientBalanceBeforeWriteoff(ing.id, pendingMap) : balance;
     const daily   = typeof avgDailyUsage === 'function' ? avgDailyUsage(ing.id) : 0;
 
     const balEl   = document.getElementById('ingBalanceValue');
     const unitEl  = document.getElementById('ingBalanceUnit');
     const daysEl  = document.getElementById('ingDaysLeft');
+    const balBeforeEl = document.getElementById('ingBalanceBeforeValue');
+    const unitBeforeEl = document.getElementById('ingBalanceBeforeUnit');
+
+    if (balBeforeEl) balBeforeEl.textContent = balanceBefore !== null ? Number(balanceBefore).toFixed(2) : '—';
+    if (unitBeforeEl) unitBeforeEl.textContent = unitLabel;
 
     if (balEl) {
-        if (balance !== null && balance > 0) {
+        // Показываем реальное число, включая отрицательное (реальная нехватка) —
+        // раньше отрицательный баланс подменялся на "0", скрывая проблему.
+        if (balance !== null) {
             balEl.textContent = Number(balance).toFixed(2);
-            const days = (daily > 0) ? Math.floor(balance / daily) : null;
-            const colorClass = stockColorClass(days, 'text-') + ' font-bold';
-            balEl.className = colorClass;
+            const days = (balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
+            const colorClass = balance <= 0 ? 'text-[#c0685c]' : stockColorClass(days, 'text-');
+            balEl.className = colorClass + ' font-bold';
         } else {
             balEl.textContent = '0';
             balEl.className = 'font-bold text-gray-400';

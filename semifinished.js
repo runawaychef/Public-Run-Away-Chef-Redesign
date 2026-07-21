@@ -597,18 +597,27 @@ function updateSemiFinishedSelects() {
 async function renderSfStockBlock(sf) {
     const unitLabel = unitAbbrev(sf.unit);
     const balance = typeof getSemiFinishedBalance === 'function' ? getSemiFinishedBalance(sf.id) : null;
+    const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
+    const balanceBefore = typeof getSemiFinishedBalanceBeforeWriteoff === 'function' ? getSemiFinishedBalanceBeforeWriteoff(sf.id, pendingMap) : balance;
     const daily   = avgDailySfUsage(sf.id);
 
     const balEl  = document.getElementById('sfBalanceValue');
     const unitEl = document.getElementById('sfBalanceUnit');
     const daysEl = document.getElementById('sfDaysLeft');
+    const balBeforeEl = document.getElementById('sfBalanceBeforeValue');
+    const unitBeforeEl = document.getElementById('sfBalanceBeforeUnit');
+
+    if (balBeforeEl) balBeforeEl.textContent = balanceBefore !== null ? Number(balanceBefore).toFixed(2) : '—';
+    if (unitBeforeEl) unitBeforeEl.textContent = unitLabel;
 
     if (balEl) {
-        if (balance !== null && balance > 0) {
-            const days = daily > 0 ? Math.floor(balance / daily) : null;
+        // Показываем реальное число, включая отрицательное (реальная нехватка) —
+        // раньше отрицательный баланс подменялся на "0", скрывая проблему.
+        if (balance !== null) {
+            const days = (balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
             balEl.textContent = Number(balance).toFixed(2);
-            // Цвет: терракота < 3 дней, охра < 14 дней, шалфей — норма
-            if (days !== null && days < 3) { balEl.className = 'text-lg font-bold'; balEl.style.color = '#c0685c'; }
+            // Цвет: терракота < 3 дней или ≤0, охра < 7 дней, шалфей — норма
+            if (balance <= 0 || (days !== null && days < 3)) { balEl.className = 'text-lg font-bold'; balEl.style.color = '#c0685c'; }
             else if (days !== null && days < 7) { balEl.className = 'text-lg font-bold'; balEl.style.color = '#96712a'; }
             else { balEl.className = 'text-lg font-bold'; balEl.style.color = '#4f6349'; }
         } else {
