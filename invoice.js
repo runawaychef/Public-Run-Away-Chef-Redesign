@@ -2,14 +2,14 @@
 // Формирует PDF-документ (счёт или накладная) на основе данных заказа,
 // реквизитов пекарни (organizations) и реквизитов клиента (customers).
 //
-// Данные "замораживаются" при первом формировании документа: номер и полный
-// снимок (позиции, реквизиты обеих сторон на тот момент) сохраняются в
-// orders.invoice_snapshot / orders.delivery_note_snapshot (jsonb). При
-// повторном открытии показывается именно сохранённый снимок, а не пересчёт
-// из текущих (возможно, уже изменившихся) данных — иначе один и тот же номер
-// документа мог бы каждый раз показывать разное содержимое. Кнопка
-// «Обновить снимок» в предпросмотре позволяет осознанно пересчитать данные
-// заново, сохранив тот же номер.
+// Номер документа и даты (выставления/оплаты) "замораживаются" при первом
+// формировании — сохраняются в orders.invoice_snapshot / delivery_note_snapshot
+// (jsonb) и переиспользуются при повторных открытиях. Остальное содержимое
+// (реквизиты сторон, позиции, суммы) пересчитывается заново при КАЖДОМ
+// открытии предпросмотра из актуальных данных — документ всегда отражает
+// текущее состояние заказа/реквизитов, а не то, что было в момент первого
+// формирования. Полный пересчитанный снимок целиком перезаписывает
+// сохранённый (кроме номера/дат, которые остаются прежними).
 //
 // Зависит от: db, currentOrgId, orders/customers (orders.js/customers.js),
 // currentOrgVatRate (employees.js), formatDateDMY (dates.js),
@@ -25,9 +25,10 @@ let _docPreview = null; // { docType, snapshot, lang } — состояние о
 // котором сейчас работает само приложение (например, интерфейс на русском,
 // а документ для клиента — на английском).
 function tDoc(key, lang) {
-    const dict = I18N[lang] || I18N.ru;
+    const dict = I18N[lang] || I18N.en || {};
     if (dict[key] !== undefined) return dict[key];
-    if (I18N.ru[key] !== undefined) return I18N.ru[key];
+    const base = I18N.en;
+    if (base && base[key] !== undefined) return base[key];
     return key;
 }
 
@@ -79,8 +80,9 @@ async function openOrderDocumentPreview(docType, langOverride) {
 // Переключает язык ТЕКУЩЕГО открытого документа независимо от языка
 // интерфейса приложения — просто перерисовывает превью на новом языке,
 // без похода в базу (снимок с данными уже загружен).
-function setDocumentLang(lang) {
+async function setDocumentLang(lang) {
     if (!_docPreview || (lang !== 'ru' && lang !== 'en')) return;
+    if (typeof ensureLangLoaded === 'function') await ensureLangLoaded(lang);
     _docPreview.lang = lang;
     renderDocumentPreviewThumbnail();
     updateDocumentLangSwitcherUI();
