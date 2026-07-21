@@ -837,40 +837,39 @@ async function confirmSfProduce() {
     showLoading(t('sf_recording_production'));
     try {
         const today = getLocalDateStr(0);
-        const rows = [];
         let actualIngredientsCost = 0;
 
         for (const ri of sf.ingredients) {
             if (!ri.ingredient_id) continue;
             const qty = parseFloat((Number(ri.quantity) * factor).toFixed(4));
-            const { totalCost, breakdown } = await consumeFIFO('ingredient', ri.ingredient_id, qty);
-            actualIngredientsCost += totalCost;
-            rows.push({
-                ingredient_id: ri.ingredient_id,
-                semi_finished_id: null,
-                type: 'расход',
-                quantity: qty,
-                notes: `${t('sf_production_note')} «${sf.name}»`,
-                batch_breakdown: breakdown
+            const ing = ingredients.find(i => i.id === ri.ingredient_id);
+            const shortagePrice = ing ? ingredientUnitPrice(ing) : 0;
+            const { data, error } = await db.rpc('rpc_write_off_stock', {
+                p_org_id: currentOrgId,
+                p_item_type: 'ingredient',
+                p_item_id: ri.ingredient_id,
+                p_qty: qty,
+                p_shortage_price: shortagePrice,
+                p_notes: `${t('sf_production_note')} «${sf.name}»`
             });
+            if (error) throw error;
+            actualIngredientsCost += Number(data.totalCost) || 0;
         }
-
-        rows.push({
-            ingredient_id: null,
-            semi_finished_id: sf.id,
-            type: 'приход',
-            quantity: actualResult,
-            notes: `${t('sf_batch_produced_note')} ${today}`
-        });
-
-        const rowsWithOrg = rows.map(r => ({ org_id: currentOrgId, ...r }));
-        await db.from('inventory').insert(rowsWithOrg);
 
         // Фактическая себестоимость партии = фактически списанные ингредиенты (по FIFO)
         // + прочие расходы (масштабированы тем же коэффициентом, что и рецепт)
         const totalBatchCost = actualIngredientsCost + (sf.other_costs || 0) * factor;
         const unitPrice = actualResult > 0 ? totalBatchCost / actualResult : 0;
-        await createStockBatch('semi_finished', sf.id, unitPrice, actualResult, 'производство', `${t('sf_batch_produced_note')} ${today}`);
+        const { error: receiveError } = await db.rpc('rpc_receive_stock', {
+            p_org_id: currentOrgId,
+            p_item_type: 'semi_finished',
+            p_item_id: sf.id,
+            p_unit_price: unitPrice,
+            p_qty: actualResult,
+            p_source: 'производство',
+            p_notes: `${t('sf_batch_produced_note')} ${today}`
+        });
+        if (receiveError) throw receiveError;
 
         await loadInventory();
         await renderSfStockBlock(sf);
@@ -899,16 +898,16 @@ async function saveSfWriteOff() {
     if (isNaN(qty) || qty <= 0) { showInfo(t('inv_enter_valid_qty')); return; }
     showLoading();
     try {
-        const { breakdown } = await consumeFIFO('semi_finished', sf.id, qty);
-        await db.from('inventory').insert({
-            org_id: currentOrgId,
-            semi_finished_id: sf.id,
-            ingredient_id: null,
-            type: 'расход',
-            quantity: parseFloat(qty.toFixed(4)),
-            notes: `${t('ing_adjustment_note')}: ${note || t('ing_no_reason')}`,
-            batch_breakdown: breakdown
+        const shortagePrice = semiFinishedUnitCost(sf);
+        const { error } = await db.rpc('rpc_write_off_stock', {
+            p_org_id: currentOrgId,
+            p_item_type: 'semi_finished',
+            p_item_id: sf.id,
+            p_qty: qty,
+            p_shortage_price: shortagePrice,
+            p_notes: `${t('ing_adjustment_note')}: ${note || t('ing_no_reason')}`
         });
+        if (error) throw error;
         await loadInventory();
         closeModal();
         await renderSfStockBlock(sf);
@@ -973,18 +972,25 @@ async function saveSfInventarization() {
     if (!ok) return;
     showLoading();
     try {
-        const inventoryRows = rows.map(r => ({ org_id: currentOrgId, ...r }));
-        await db.from('inventory').insert(inventoryRows);
-
         // Как и у ингредиентов: излишек — новая партия по текущей расчётной
         // себестоимости, недостача — списание по FIFO со старейших партий.
+        // Каждая строка — атомарная RPC (приход или списание + запись в inventory).
         for (const r of rows) {
             const sf = semiFinished.find(s => s.id === r.semi_finished_id);
             if (!sf) continue;
+            const price = semiFinishedUnitCost(sf);
             if (r.type === 'приход') {
-                await createStockBatch('semi_finished', r.semi_finished_id, semiFinishedUnitCost(sf), r.quantity, 'инвентаризация', r.notes);
+                const { error } = await db.rpc('rpc_receive_stock', {
+                    p_org_id: currentOrgId, p_item_type: 'semi_finished', p_item_id: r.semi_finished_id,
+                    p_unit_price: price, p_qty: r.quantity, p_source: 'инвентаризация', p_notes: r.notes
+                });
+                if (error) throw error;
             } else {
-                await consumeFIFO('semi_finished', r.semi_finished_id, r.quantity);
+                const { error } = await db.rpc('rpc_write_off_stock', {
+                    p_org_id: currentOrgId, p_item_type: 'semi_finished', p_item_id: r.semi_finished_id,
+                    p_qty: r.quantity, p_shortage_price: price, p_notes: r.notes
+                });
+                if (error) throw error;
             }
         }
 

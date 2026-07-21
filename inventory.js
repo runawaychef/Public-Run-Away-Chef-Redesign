@@ -578,21 +578,25 @@ async function saveInventarization() {
 
     showLoading(t('inv_saving_inventarization'));
     try {
-        const rowsWithOrg = rows.map(r => ({ org_id: currentOrgId, ...r }));
-        const { error } = await db.from('inventory').insert(rowsWithOrg);
-        if (error) throw error;
-
         // Инвентаризация всегда идёт по ТЕКУЩЕЙ цене (не по FIFO-партиям):
         // излишек — новая партия по текущей цене; недостача — списание по
-        // текущей цене со старейших партий (без пересчёта фактической себестоимости).
+        // текущей цене со старейших партий. Каждая строка — атомарная RPC.
         for (const r of rows) {
             const ing = ingredients.find(i => i.id === r.ingredient_id);
             if (!ing) continue;
             const price = ingredientUnitPrice(ing);
             if (r.type === 'приход') {
-                await createStockBatch('ingredient', r.ingredient_id, price, r.quantity, 'инвентаризация', r.notes);
+                const { error } = await db.rpc('rpc_receive_stock', {
+                    p_org_id: currentOrgId, p_item_type: 'ingredient', p_item_id: r.ingredient_id,
+                    p_unit_price: price, p_qty: r.quantity, p_source: 'инвентаризация', p_notes: r.notes
+                });
+                if (error) throw error;
             } else {
-                await consumeFIFO('ingredient', r.ingredient_id, r.quantity);
+                const { error } = await db.rpc('rpc_write_off_stock', {
+                    p_org_id: currentOrgId, p_item_type: 'ingredient', p_item_id: r.ingredient_id,
+                    p_qty: r.quantity, p_shortage_price: price, p_notes: r.notes
+                });
+                if (error) throw error;
             }
         }
 
@@ -625,17 +629,18 @@ async function saveInventoryAdd() {
     if (!ingId || isNaN(qty) || qty <= 0) { showInfo(t('inv_enter_valid_qty')); return; }
     showLoading();
     try {
-        const { error } = await db.from('inventory').insert({
-            org_id: currentOrgId,
-            ingredient_id: ingId,
-            type: 'приход',
-            quantity: parseFloat(qty.toFixed(4)),
-            notes: notes || null
+        const ing = ingredients.find(i => i.id === ingId);
+        const { error } = await db.rpc('rpc_receive_stock', {
+            p_org_id: currentOrgId,
+            p_item_type: 'ingredient',
+            p_item_id: ingId,
+            // Цена здесь не указывается отдельно — используем текущую цену ингредиента
+            p_unit_price: ing ? ingredientUnitPrice(ing) : 0,
+            p_qty: parseFloat(qty.toFixed(4)),
+            p_source: 'приход',
+            p_notes: notes || null
         });
         if (error) throw error;
-        const ing = ingredients.find(i => i.id === ingId);
-        // Цена здесь не указывается отдельно — используем текущую цену ингредиента
-        if (ing) await createStockBatch('ingredient', ingId, ingredientUnitPrice(ing), qty, 'приход', notes || null);
         closeModal();
         logActivity('inventory', `${t('log_stock_replenished')}: «${ing ? ing.name : ingId}» +${qty}`);
         await loadInventory();
@@ -681,19 +686,19 @@ async function writeOffInventoryForItem(prod, itemQty, orderId, orderItemId = nu
         for (const r of rows) {
             const itemType = r.semi_finished_id ? 'semi_finished' : 'ingredient';
             const id = r.semi_finished_id || r.ingredient_id;
-            const { totalCost, breakdown } = await consumeFIFO(itemType, id, r.quantity);
-            actualCost += totalCost;
-            await db.from('inventory').insert({
-                org_id:           currentOrgId,
-                ingredient_id:    r.ingredient_id || null,
-                semi_finished_id: r.semi_finished_id || null,
-                type:     'расход',
-                quantity: parseFloat(r.quantity.toFixed(4)),
-                order_id: orderId,
-                order_item_id: orderItemId,
-                notes:    `Заказ ${order.order_number ? '№' + order.order_number : '#' + order.id}`,
-                batch_breakdown: breakdown
+            const shortagePrice = typeof currentUnitPriceFor === 'function' ? currentUnitPriceFor(itemType, id) : 0;
+            const { data, error } = await db.rpc('rpc_write_off_stock', {
+                p_org_id: currentOrgId,
+                p_item_type: itemType,
+                p_item_id: id,
+                p_qty: parseFloat(r.quantity.toFixed(4)),
+                p_shortage_price: shortagePrice,
+                p_notes: `Заказ ${order.order_number ? '№' + order.order_number : '#' + order.id}`,
+                p_order_id: orderId,
+                p_order_item_id: orderItemId
             });
+            if (error) throw error;
+            actualCost += Number(data.totalCost) || 0;
         }
         await loadInventory();
     } catch (e) { console.error('Ошибка списания со склада:', e); }
@@ -714,23 +719,22 @@ async function reverseInventoryForOrderItem(orderItemId) {
         if (error || !data || !data.length) return;
 
         for (const r of data) {
-            if (r.batch_breakdown) await restoreFIFO(r.batch_breakdown);
-        }
-
-        await db.from('inventory').insert(data.map(r => {
+            if (!r.batch_breakdown) continue;
+            const itemType = r.semi_finished_id ? 'semi_finished' : 'ingredient';
+            const itemId = r.semi_finished_id || r.ingredient_id;
             const o = orders.find(x => x.id === r.order_id);
             const oLabel = o && o.order_number ? '№' + o.order_number : '#' + r.order_id;
-            return {
-                org_id:           currentOrgId,
-                ingredient_id:    r.ingredient_id || null,
-                semi_finished_id: r.semi_finished_id || null,
-                type:     'сторно',
-                quantity: r.quantity,
-                order_id: r.order_id,
-                order_item_id: orderItemId,
-                notes:    `Сторно позиции заказа ${oLabel}`
-            };
-        }));
+            const { error: rpcError } = await db.rpc('rpc_restore_stock', {
+                p_org_id: currentOrgId,
+                p_item_type: itemType,
+                p_item_id: itemId,
+                p_breakdown: r.batch_breakdown,
+                p_notes: `Сторно позиции заказа ${oLabel}`,
+                p_order_id: r.order_id,
+                p_order_item_id: orderItemId
+            });
+            if (rpcError) console.error('Ошибка сторнирования позиции (RPC):', rpcError);
+        }
         await loadInventory();
     } catch (e) { console.error('Ошибка сторнирования позиции:', e); }
 }
@@ -744,22 +748,23 @@ async function reverseInventoryForOrder(orderId) {
             .eq('type', 'расход');
         if (error || !data || !data.length) return;
 
-        for (const r of data) {
-            if (r.batch_breakdown) await restoreFIFO(r.batch_breakdown);
-        }
-
         const o = orders.find(x => x.id === orderId);
         const oLabel = o && o.order_number ? '№' + o.order_number : '#' + orderId;
 
-        await db.from('inventory').insert(data.map(r => ({
-            org_id:           currentOrgId,
-            ingredient_id:    r.ingredient_id || null,
-            semi_finished_id: r.semi_finished_id || null,
-            type:     'сторно',
-            quantity: r.quantity,
-            order_id: orderId,
-            notes:    `Сторно заказа ${oLabel}`
-        })));
+        for (const r of data) {
+            if (!r.batch_breakdown) continue;
+            const itemType = r.semi_finished_id ? 'semi_finished' : 'ingredient';
+            const itemId = r.semi_finished_id || r.ingredient_id;
+            const { error: rpcError } = await db.rpc('rpc_restore_stock', {
+                p_org_id: currentOrgId,
+                p_item_type: itemType,
+                p_item_id: itemId,
+                p_breakdown: r.batch_breakdown,
+                p_notes: `Сторно заказа ${oLabel}`,
+                p_order_id: orderId
+            });
+            if (rpcError) console.error('Ошибка сторнирования (RPC):', rpcError);
+        }
         await loadInventory();
     } catch (e) { console.error('Ошибка сторнирования:', e); }
 }

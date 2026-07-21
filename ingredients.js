@@ -456,16 +456,20 @@ async function saveStockAndPrice() {
         }
 
         // Если указано количество — добавляем приход на склад и создаём партию (FIFO)
+        // атомарно (rpc_receive_stock) — раньше это были два отдельных запроса,
+        // которые теоретически могли разойтись при сбое между ними.
         if (stockQty > 0) {
-            await db.from('inventory').insert({
-                org_id: currentOrgId,
-                ingredient_id: ing.id,
-                type:          'приход',
-                quantity:      parseFloat(stockQty.toFixed(4)),
-                notes:         `${t('ing_purchase_note')} ${validFrom}`
-            });
             const unitPrice = packageSize > 0 ? packagePrice / packageSize : 0;
-            await createStockBatch('ingredient', ing.id, unitPrice, stockQty, 'приход', `${t('ing_purchase_note')} ${validFrom}`);
+            const { error: rpcError } = await db.rpc('rpc_receive_stock', {
+                p_org_id: currentOrgId,
+                p_item_type: 'ingredient',
+                p_item_id: ing.id,
+                p_unit_price: unitPrice,
+                p_qty: parseFloat(stockQty.toFixed(4)),
+                p_source: 'приход',
+                p_notes: `${t('ing_purchase_note')} ${validFrom}`
+            });
+            if (rpcError) throw rpcError;
             await loadInventory();
         }
 
@@ -552,15 +556,16 @@ async function saveWriteOff() {
 
     showLoading();
     try {
-        const { breakdown } = await consumeFIFO('ingredient', ing.id, qty);
-        await db.from('inventory').insert({
-            org_id: currentOrgId,
-            ingredient_id: ing.id,
-            type:          'расход',
-            quantity:      parseFloat(qty.toFixed(4)),
-            notes,
-            batch_breakdown: breakdown
+        const shortagePrice = ingredientUnitPrice(ing);
+        const { error: rpcError } = await db.rpc('rpc_write_off_stock', {
+            p_org_id: currentOrgId,
+            p_item_type: 'ingredient',
+            p_item_id: ing.id,
+            p_qty: qty,
+            p_shortage_price: shortagePrice,
+            p_notes: notes
         });
+        if (rpcError) throw rpcError;
         await loadInventory();
         closeModal();
         await renderIngredientStockBlock(ing);

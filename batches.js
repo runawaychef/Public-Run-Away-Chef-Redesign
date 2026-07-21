@@ -6,6 +6,14 @@
 // (ingredients.package_price или semiFinishedUnitCost), без создания батча.
 // Зависит от: db (supabaseClient.js), ingredients, ingredientUnitPrice (money.js),
 // semiFinished, semiFinishedUnitCost (semifinished.js).
+//
+// ВАЖНО (21.07.2026): функции createStockBatch/consumeFIFO/restoreFIFO ниже
+// БОЛЬШЕ НЕ ВЫЗЫВАЮТСЯ из остального кода — вся логика перенесена в атомарные
+// SQL RPC-функции (rpc_receive_stock/rpc_write_off_stock/rpc_restore_stock),
+// чтобы обновление партий и запись в inventory происходили одной транзакцией
+// и не могли разойтись при сбое между двумя отдельными запросами. Оставлены
+// здесь как справочная реализация той же логики — можно удалить позже,
+// когда новая схема будет обкатана.
 
 // Создаёт новую партию (используется при закупке ингредиента и производстве п/ф)
 async function createStockBatch(itemType, itemId, unitPrice, qty, source, notes) {
