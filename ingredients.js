@@ -369,6 +369,12 @@ async function openIngredientDetail(ingId) {
     const batchesLabel = document.getElementById('ingBatchesToggleLabel');
     if (batchesLabel) batchesLabel.textContent = t('ing_batches');
 
+    // Сворачиваем блок динамики цены (мог остаться развёрнут от предыдущей карточки)
+    const priceContent = document.getElementById('ingPriceContent');
+    if (priceContent) priceContent.classList.add('hidden');
+    const priceChevron = document.getElementById('ingPriceChevron');
+    if (priceChevron) priceChevron.style.transform = '';
+
 
     // Заголовок карточки — inline поля
     const nameInput = document.getElementById('idNameInput');
@@ -389,7 +395,6 @@ async function openIngredientDetail(ingId) {
         .eq('ingredient_id', ing.id)
         .order('valid_from', { ascending: true });
     ing.priceHistory = ph || [];
-    loadIngredientPriceHistory(ingId);
     renderIngredientStockBlock(ing);
     refreshFab();
 }
@@ -465,7 +470,7 @@ async function saveStockAndPrice() {
         }
 
         renderIngredientUnitPrice(ing);
-        await loadIngredientPriceHistory(ing.id);
+        await refreshIngredientPriceIfExpanded(ing.id);
         await renderIngredientStockBlock(ing);
         displayIngredients();
         logActivity('ingredient', `${t('log_stock_price_updated')}: «${ing.name}»${stockQty > 0 ? ` +${stockQty}` : ''}`);
@@ -606,7 +611,7 @@ async function saveIdNewPrice() {
         ing.package_price = parseFloat(packagePrice.toFixed(2));
         ing.package_size  = packageSize;
         renderIngredientUnitPrice(ing);
-        await loadIngredientPriceHistory(ing.id);
+        await refreshIngredientPriceIfExpanded(ing.id);
         displayIngredients(); // обновляем список
         logActivity('ingredient', `${t('log_price_updated')} «${ing.name}» ${t('log_from_date')} ${validFrom}`);
         await showInfo(t('ingredient_price_saved'));
@@ -670,6 +675,31 @@ function deleteCurrentIngredient() {
 
 // ==================== ИСТОРИЯ ЦЕН ИНГРЕДИЕНТА ====================
 let _ingredientPriceHistory = {}; // { ingredient_id: [{package_price, package_size, valid_from}] }
+
+// Разворачивает/сворачивает объединённый блок "Динамика цены" — график и
+// история строятся лениво, только при первом раскрытии (не при каждом
+// открытии карточки).
+function toggleIngredientPriceBlock() {
+    const content = document.getElementById('ingPriceContent');
+    const chevron = document.getElementById('ingPriceChevron');
+    if (!content) return;
+    const willShow = content.classList.contains('hidden');
+    content.classList.toggle('hidden');
+    if (chevron) chevron.style.transform = willShow ? 'rotate(180deg)' : '';
+    if (willShow && currentIngredientId != null) {
+        loadIngredientPriceHistory(currentIngredientId);
+    }
+}
+
+// Обновляет график/историю цены ПОСЛЕ редактирования — но только если блок
+// сейчас раскрыт (иначе нет смысла считать и рисовать то, что не видно;
+// свежие данные подтянутся сами при следующем раскрытии).
+function refreshIngredientPriceIfExpanded(ingredientId) {
+    const content = document.getElementById('ingPriceContent');
+    if (content && !content.classList.contains('hidden')) {
+        return loadIngredientPriceHistory(ingredientId);
+    }
+}
 
 async function loadIngredientPriceHistory(ingredientId) {
     try {
@@ -1022,7 +1052,7 @@ async function savePriceHistoryRecord() {
             if (error) throw error;
         }
         closeModal();
-        await loadIngredientPriceHistory(currentIngredientId);
+        await refreshIngredientPriceIfExpanded(currentIngredientId);
     } catch (e) { console.error(e); showInfo(t('error_save_generic') + (e.message ? ' ' + e.message : '')); }
     finally { hideLoading(); }
 }
@@ -1039,7 +1069,7 @@ async function deletePriceHistoryRecord(id) {
     try {
         const { error } = await db.from('ingredient_price_history').delete().eq('id', id);
         if (error) throw error;
-        await loadIngredientPriceHistory(currentIngredientId);
+        await refreshIngredientPriceIfExpanded(currentIngredientId);
     } catch (e) { console.error(e); showInfo(t('error_delete_generic')); }
     finally { hideLoading(); }
 }

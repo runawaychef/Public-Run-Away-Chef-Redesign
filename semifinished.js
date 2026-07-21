@@ -309,6 +309,12 @@ function openSemiFinishedDetail(sfId) {
     const sfBatchesLabel = document.getElementById('sfBatchesToggleLabel');
     if (sfBatchesLabel) sfBatchesLabel.textContent = t('ing_batches');
 
+    // Сворачиваем блок динамики себестоимости (мог остаться развёрнут от предыдущей карточки)
+    const sfPriceContent = document.getElementById('sfPriceContent');
+    if (sfPriceContent) sfPriceContent.classList.add('hidden');
+    const sfPriceChevron = document.getElementById('sfPriceChevron');
+    if (sfPriceChevron) sfPriceChevron.style.transform = '';
+
     document.getElementById('sfdName').value = sf.name;
     document.getElementById('sfdBatchSize').value = sf.batch_size;
     document.getElementById('sfdUnit').value = sf.unit;
@@ -320,7 +326,6 @@ function openSemiFinishedDetail(sfId) {
     fillNewSfRecipeIngredientSelect();
     setupCopySfRecipeControl(sf);
     renderSfStockBlock(sf);
-    renderSfCostChart(sf);
     refreshFab();
 }
 
@@ -640,8 +645,13 @@ async function renderSfStockBlock(sf) {
             daysEl.style.color = '';
         }
     }
+}
 
-    // История
+// История движений п/ф — вынесена отдельно от renderSfStockBlock, т.к. теперь
+// грузится лениво, только при раскрытии блока "Динамика себестоимости" (см.
+// toggleSfPriceBlock), а не всегда при открытии карточки.
+async function loadSfPriceHistory(sf) {
+    const unitLabel = unitAbbrev(sf.unit);
     const histEl = document.getElementById('sfStockHistory');
     if (!histEl) return;
     try {
@@ -673,6 +683,23 @@ async function renderSfStockBlock(sf) {
         html += '</tbody></table></div>';
         histEl.innerHTML = html;
     } catch(e) { console.error(e); }
+}
+
+// Разворачивает/сворачивает объединённый блок "Динамика себестоимости" —
+// график и история движений строятся лениво, только при первом раскрытии.
+async function toggleSfPriceBlock() {
+    const content = document.getElementById('sfPriceContent');
+    const chevron = document.getElementById('sfPriceChevron');
+    if (!content) return;
+    const willShow = content.classList.contains('hidden');
+    content.classList.toggle('hidden');
+    if (chevron) chevron.style.transform = willShow ? 'rotate(180deg)' : '';
+    if (willShow) {
+        const sf = semiFinished.find(s => s.id === currentSemiFinishedId);
+        if (!sf) return;
+        renderSfCostChart(sf);
+        loadSfPriceHistory(sf);
+    }
 }
 
 // Средний расход п/ф в день за последние 30 дней
