@@ -672,7 +672,12 @@ async function shareOrderDocumentPdf() {
     if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
 
     const { docType, snapshot, lang } = _docPreview;
-    const filename = `${docType === 'invoice' ? 'schet' : 'nakladnaya'}_${snapshot.number}.pdf`;
+    const filenameBaseByLang = {
+        en: { invoice: 'invoice', delivery_note: 'delivery_note' },
+        ru: { invoice: 'schet', delivery_note: 'nakladnaya' },
+    };
+    const filenameBase = (filenameBaseByLang[lang] || filenameBaseByLang.en)[docType === 'invoice' ? 'invoice' : 'delivery_note'];
+    const filename = `${filenameBase}_${snapshot.number}.pdf`;
 
     showLoading(t('customers_pdf_generating'));
     try {
