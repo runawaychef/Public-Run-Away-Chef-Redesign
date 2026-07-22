@@ -1529,6 +1529,7 @@
                     <div id="docLangSwitchContainer" class="lang-switch"></div>
                 </div>
                 <div id="orderDocumentRuNote" class="hidden text-xs mb-2" style="color:#a3493d; background:#f3ded9; border-radius:8px; padding:8px 10px;" data-i18n="inv_ru_self_employed_note">Этот документ не заменяет чек из приложения «Мой налог» — сформируйте чек отдельно при получении оплаты.</div>
+                <div id="orderDocumentUaNote" class="hidden text-xs mb-2" style="color:#a3493d; background:#f3ded9; border-radius:8px; padding:8px 10px;" data-i18n="inv_ua_rro_note">Этот документ не заменяет фискальный чек РРО/ПРРО. Если оплата принимается картой или через платёжный сервис — чек обязателен отдельно; при прямом переводе на IBAN чек, как правило, не требуется.</div>
                 <div id="orderDocumentContent" style="background:white;"></div>
                 <button id="generateDeliveryNoteBtn" onclick="openOrderDocumentPreview('delivery_note', _docPreview && _docPreview.lang)" class="pill-btn-secondary w-full mt-2 justify-center" style="display:none;" data-i18n="inv_generate_delivery_note">Сформировать Delivery Note</button>
                 <div class="flex gap-2 mt-3">
@@ -2833,12 +2834,12 @@
 
 <script src="dates.js?v=8"></script>
     <script src="money.js?v=10"></script>
-    <script src="i18n-core.js?v=8"></script>
+    <script src="i18n-core.js?v=9"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=6"></script>
     <script src="auth.js?v=15"></script>
     <script src="employees.js?v=29"></script>
-    <script src="company.js?v=19"></script>
+    <script src="company.js?v=20"></script>
     <script src="inventory.js?v=37"></script>
     <script src="push.js?v=3"></script>
 <script src="ingredients.js?v=34"></script>
@@ -2848,7 +2849,7 @@
 <script src="customers.js?v=36"></script>
 <script src="calendar.js?v=7"></script>
 <script src="orders.js?v=87"></script>
-<script src="invoice.js?v=28"></script>
+<script src="invoice.js?v=29"></script>
 <script src="payments.js?v=19"></script>
 <script src="stats.js?v=16"></script>
 <script src="history.js?v=9"></script>

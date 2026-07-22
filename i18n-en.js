@@ -55,6 +55,8 @@ I18N.en = {
         company_personal_code_label: 'Personal code',
         company_personal_code_label_lt: 'Individual activity certificate number',
         company_unp_label: 'UNP',
+        company_ipn_label: 'IPN (Ukraine)',
+        company_edrpou_label: 'EDRPOU',
         company_inn_label: 'INN',
         company_ogrn_label: 'OGRN',
         company_ogrnip_label: 'OGRNIP',
@@ -760,6 +762,7 @@ I18N.en = {
         inv_signature: 'Signature',
         inv_edit_due_date: 'Change due date',
         inv_ru_self_employed_note: 'This document does not replace the receipt from the "Мой налог" (My Tax) app — please issue that receipt separately when you receive payment.',
+        inv_ua_rro_note: 'This document does not replace a RRO/PRRO fiscal receipt. If payment is accepted by card or through a payment service, a separate fiscal receipt is required; a direct bank transfer to an IBAN usually does not require one.',
         inv_accepted: 'Received',
 
         // Payments

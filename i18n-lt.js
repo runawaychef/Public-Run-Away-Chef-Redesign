@@ -60,6 +60,8 @@ I18N.lt = {
         company_personal_code_label: 'Asmens kodas',
         company_personal_code_label_lt: 'Individualios veiklos pažymos numeris',
         company_unp_label: 'Įmonės kodas',
+        company_ipn_label: 'IPN (Ukraina)',
+        company_edrpou_label: 'EDRPOU',
         company_inn_label: 'Mokesčių mokėtojo kodas',
         company_ogrn_label: 'Valstybinis registracijos numeris',
         company_ogrnip_label: 'Individualios veiklos registracijos numeris',
@@ -750,6 +752,7 @@ I18N.lt = {
         inv_signature: 'Parašas',
         inv_edit_due_date: 'Keisti mokėjimo terminą',
         inv_ru_self_employed_note: 'Šis dokumentas nepakeičia čekio iš programėlės „Мой налог“ — čekį suformuokite atskirai gavę apmokėjimą.',
+        inv_ua_rro_note: 'Šis dokumentas nepakeičia RRO/PRRO fiskalinio čekio. Jei mokama kortele arba per mokėjimo paslaugą, būtinas atskiras fiskalinis čekis; tiesioginis pavedimas į IBAN paprastai čekio nereikalauja.',
         inv_accepted: 'Priimta',
 
         // Оплата

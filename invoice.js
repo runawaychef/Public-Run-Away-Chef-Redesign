@@ -338,6 +338,7 @@ async function applyEditDueDate() {
 function renderDocumentPreviewThumbnail() {
     const { org } = _docPreview.snapshot;
     document.getElementById('orderDocumentRuNote').classList.toggle('hidden', !(org.country === 'RU' && org.entity_type === 'individual'));
+    document.getElementById('orderDocumentUaNote').classList.toggle('hidden', !(org.country === 'UA'));
 
     const container = document.getElementById('orderDocumentContent');
     container.innerHTML = `<div id="orderDocumentPreviewWrap" style="overflow:hidden;margin:0 auto;background:#f4f1ea;">

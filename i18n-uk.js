@@ -60,6 +60,8 @@ I18N.uk = {
         company_personal_code_label: 'Особистий код',
         company_personal_code_label_lt: 'Номер свідоцтва про діяльність',
         company_unp_label: 'УНП',
+        company_ipn_label: 'ІПН',
+        company_edrpou_label: 'ЄДРПОУ',
         company_inn_label: 'ІПН',
         company_ogrn_label: 'ОГРН',
         company_ogrnip_label: 'ОГРНІП',
@@ -750,6 +752,7 @@ I18N.uk = {
         inv_signature: 'Підпис',
         inv_edit_due_date: 'Змінити термін оплати',
         inv_ru_self_employed_note: 'Цей документ не замінює чек із застосунку «Мій податок» — сформуйте чек окремо при отриманні оплати.',
+        inv_ua_rro_note: 'Цей документ не замінює фіскальний чек РРО/ПРРО. Якщо оплата приймається карткою або через платіжний сервіс — чек обов\'язковий окремо; при прямому переказі на IBAN чек, як правило, не потрібен.',
         inv_accepted: 'Прийнято',
 
         // Оплата

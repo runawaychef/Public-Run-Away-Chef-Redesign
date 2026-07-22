@@ -80,6 +80,10 @@ const COUNTRY_OPTIONS = [
 //   УНП (учётный номер плательщика), поэтому отдельное поле "Код НДС / PVM"
 //   для Беларуси скрывается целиком (не дублируем один и тот же номер),
 //   а "Рег. номер"/"Личный код" переименовываются в "УНП".
+// — Украина: "Личный код" → "ІПН" (у ФОП это основной идентификатор,
+//   отдельного номера для юрлиц не бывает), "Рег. номер" → "ЄДРПОУ" (только
+//   для юрлиц/ТОВ). Поле "Код НДС" скрыто по той же причине, что и в
+//   Беларуси — в Украине НДС-номер = тот же ІПН, отдельного кода нет.
 // Значение в БД (personal_code/reg_number/vat_code) при этом не меняется —
 // меняются только подписи и видимость полей.
 function updateCountrySpecificLabels() {
@@ -96,13 +100,14 @@ function updateCountrySpecificLabels() {
     const isBY = _cmpCurrentCountryCode === 'BY';
     const isLT = _cmpCurrentCountryCode === 'LT';
     const isRU = _cmpCurrentCountryCode === 'RU';
+    const isUA = _cmpCurrentCountryCode === 'UA';
 
-    personalCodeLabelEl.textContent = isBY ? t('company_unp_label') : isRU ? t('company_inn_label') : isLT ? t('company_personal_code_label_lt') : t('company_personal_code_label');
-    regNumberLabelEl.textContent = isBY ? t('company_unp_label') : isRU ? t('company_ogrn_label') : t('company_reg_number_label');
+    personalCodeLabelEl.textContent = isBY ? t('company_unp_label') : isRU ? t('company_inn_label') : isUA ? t('company_ipn_label') : isLT ? t('company_personal_code_label_lt') : t('company_personal_code_label');
+    regNumberLabelEl.textContent = isBY ? t('company_unp_label') : isRU ? t('company_ogrn_label') : isUA ? t('company_edrpou_label') : t('company_reg_number_label');
     vatCodeCompanyLabelEl.textContent = isRU ? t('company_inn_kpp_label') : t('company_vat_code_label');
     vatCodeIndividualLabelEl.textContent = isRU ? t('company_ogrnip_label') : t('company_vat_code_label');
-    vatCodeCompanyWrap.classList.toggle('hidden', isBY);
-    vatCodeIndividualWrap.classList.toggle('hidden', isBY);
+    vatCodeCompanyWrap.classList.toggle('hidden', isBY || isUA);
+    vatCodeIndividualWrap.classList.toggle('hidden', isBY || isUA);
 
     if (bankAccountLabelEl) bankAccountLabelEl.textContent = isRU ? t('company_bank_account_label_ru') : t('company_bank_account_label');
     if (bankSwiftLabelEl) bankSwiftLabelEl.textContent = isRU ? t('company_bank_swift_label_ru') : t('company_bank_swift_label');

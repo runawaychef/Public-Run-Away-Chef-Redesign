@@ -54,6 +54,8 @@ I18N.ru = {
         company_personal_code_label: 'Личный код',
         company_personal_code_label_lt: 'Номер свидетельства о деятельности',
         company_unp_label: 'УНП',
+        company_ipn_label: 'ІПН',
+        company_edrpou_label: 'ЄДРПОУ',
         company_inn_label: 'ИНН',
         company_ogrn_label: 'ОГРН',
         company_ogrnip_label: 'ОГРНИП',
@@ -759,6 +761,7 @@ I18N.ru = {
         inv_signature: 'Подпись',
         inv_edit_due_date: 'Изменить срок оплаты',
         inv_ru_self_employed_note: 'Этот документ не заменяет чек из приложения «Мой налог» — сформируйте чек отдельно при получении оплаты.',
+        inv_ua_rro_note: 'Этот документ не заменяет фискальный чек РРО/ПРРО. Если оплата принимается картой или через платёжный сервис — чек обязателен отдельно; при прямом переводе на IBAN чек, как правило, не требуется.',
         inv_accepted: 'Принято',
 
         // Оплата
