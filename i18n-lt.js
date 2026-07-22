@@ -609,7 +609,7 @@ I18N.lt = {
         sf_batch_produced_success: 'Partija pagaminta!',
         sf_in_stock: 'sandėlyje',
         sf_semifinished_word: 'Pusgaminis',
-        sf_current_balance: 'Dabartinis likutis',
+        sf_current_balance: 'Sandėlio likutis',
         sf_actual: 'Faktiškai',
         sf_no_changes: 'Pakeitimų nėra.',
         sf_record_adjustments_confirm: 'Įrašyti koregavimų:',

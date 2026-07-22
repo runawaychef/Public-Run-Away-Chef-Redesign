@@ -1177,7 +1177,7 @@
                     </div>
                     <button onclick="saveStockAndPrice()" class="pill-btn w-full justify-center" data-i18n="common_save">Сохранить</button>
                     <button onclick="openWriteOffModal()" class="pill-btn-danger w-full justify-center mt-1.5" style="background:#f3ded9; color:#a3493d; box-shadow:none;" data-i18n="ing_writeoff_btn">— Списать (корректировка)</button>
-                    <button onclick="closeIngredientDetail(); openInventarizationModal();" class="pill-btn-secondary w-full justify-center mt-1.5"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg><span data-i18n="inv_inventarization">Инвентаризация</span></button>
+                    <button onclick="openInventarizationModal(currentIngredientId); closeIngredientDetail();" class="pill-btn-secondary w-full justify-center mt-1.5"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg><span data-i18n="inv_inventarization">Инвентаризация</span></button>
 
                     <!-- История пополнений -->
                     <div id="ingStockHistory" class="mt-2"></div>
@@ -1335,7 +1335,7 @@
                     </div>
                     <button onclick="produceSfBatch()" class="pill-btn-secondary w-full justify-center mb-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"/></svg><span data-i18n="sf_produce_batch_btn">Произвести партию</span></button>
                     <button onclick="openSfWriteOffModal()" class="pill-btn-secondary w-full justify-center mb-2" data-i18n="ing_writeoff_btn">— Списать (корректировка)</button>
-                    <button onclick="closeSemiFinishedDetail(); openSfInventarizationModal();" class="pill-btn-secondary w-full justify-center mb-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg><span data-i18n="inv_inventarization">Инвентаризация</span></button>
+                    <button onclick="openSfInventarizationModal(currentSemiFinishedId); closeSemiFinishedDetail();" class="pill-btn-secondary w-full justify-center mb-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg><span data-i18n="inv_inventarization">Инвентаризация</span></button>
                     <label class="flex items-center gap-2 table-text text-gray-700 border-t pt-2 mb-1 cursor-pointer">
                         <input type="checkbox" id="sfdRecipeConfirmed" onchange="toggleSfRecipeConfirmed()" style="accent-color:#7c9473;">
                         <span data-i18n="sf_recipe_confirmed_label">Рецепт заполнен полностью</span>
@@ -2833,17 +2833,17 @@
 
 <script src="dates.js?v=8"></script>
     <script src="money.js?v=10"></script>
-    <script src="i18n-core.js?v=3"></script>
+    <script src="i18n-core.js?v=4"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=6"></script>
     <script src="auth.js?v=15"></script>
     <script src="employees.js?v=29"></script>
     <script src="company.js?v=19"></script>
-    <script src="inventory.js?v=35"></script>
+    <script src="inventory.js?v=36"></script>
     <script src="push.js?v=3"></script>
 <script src="ingredients.js?v=34"></script>
 <script src="batches.js?v=9"></script>
-<script src="semifinished.js?v=30"></script>
+<script src="semifinished.js?v=31"></script>
 <script src="products.js?v=27"></script>
 <script src="customers.js?v=36"></script>
 <script src="calendar.js?v=7"></script>

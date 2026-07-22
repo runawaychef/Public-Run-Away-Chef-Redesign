@@ -522,15 +522,17 @@ async function openInventoryModal() {
 
 // ── Инвентаризация ───────────────────────────────────────────────────────────
 
-function openInventarizationModal() {
-    const sorted = ingredients.slice().sort((a, b) => (a.name||'').localeCompare(b.name||''));
-    const today  = getLocalDateStr(0);
+function openInventarizationModal(singleIngId) {
+    const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
+    let list = ingredients.slice();
+    if (singleIngId != null) list = list.filter(ing => ing.id === singleIngId);
+    const sorted = list.sort((a, b) => (a.name||'').localeCompare(b.name||''));
 
     let html = '<table class="w-full text-xs table-clean">';
-    html += '<thead><tr style="background-color:#e3e8df;"><th class="p-1 text-left">Ингредиент</th><th class="p-1 text-right">Текущий остаток</th><th class="p-1 text-right">Фактически</th></tr></thead><tbody>';
+    html += '<thead><tr style="background-color:#e3e8df;"><th class="p-1 text-left">' + t('inv_col_ingredient') + '</th><th class="p-1 text-right">' + t('sf_current_balance') + '</th><th class="p-1 text-right">' + t('sf_actual') + '</th></tr></thead><tbody>';
     sorted.forEach(ing => {
         const unitLabel = unitAbbrev(ing.unit);
-        const balance   = getIngredientBalance(ing.id);
+        const balance   = getIngredientBalanceBeforeWriteoff(ing.id, pendingMap);
         const balStr    = balance !== null ? `${Number(balance).toFixed(2)} ${unitLabel}` : '—';
         html += `<tr class="border-b">
             <td class="p-1">${escapeHtml(ing.name)}</td>
@@ -553,12 +555,13 @@ async function saveInventarization() {
     const inputs = document.querySelectorAll('.inv-qty-input');
     const today  = getLocalDateStr(0);
     const rows   = [];
+    const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
 
     inputs.forEach(input => {
         const val = parseFloat(input.value);
         if (isNaN(val) || input.value === '') return; // пропускаем пустые
         const ingId   = Number(input.dataset.ingId);
-        const balance = getIngredientBalance(ingId) || 0;
+        const balance = getIngredientBalanceBeforeWriteoff(ingId, pendingMap) || 0;
         const diff    = parseFloat((val - balance).toFixed(4));
         if (Math.abs(diff) < 0.0001) return; // разницы нет — пропускаем
         rows.push({

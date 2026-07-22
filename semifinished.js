@@ -924,13 +924,16 @@ function editSfInventoryRecord(id, qty, notes) {
 }
 
 // Инвентаризация полуфабрикатов
-function openSfInventarizationModal() {
-    const sorted = semiFinished.slice().sort((a, b) => (a.name||'').localeCompare(b.name||''));
+function openSfInventarizationModal(singleSfId) {
+    const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
+    let list = semiFinished.slice();
+    if (singleSfId != null) list = list.filter(sf => sf.id === singleSfId);
+    const sorted = list.sort((a, b) => (a.name||'').localeCompare(b.name||''));
     let html = '<table class="w-full table-text table-clean">';
     html += '<thead><tr style="background-color:#e3e8df;"><th class="p-1 text-left">' + t('delete_label_semifinished') + '</th><th class="p-1 text-right">' + t('sf_current_balance') + '</th><th class="p-1 text-right">' + t('sf_actual') + '</th></tr></thead><tbody>';
     sorted.forEach(sf => {
         const unitLabel = unitAbbrev(sf.unit);
-        const balance   = getSemiFinishedBalance(sf.id);
+        const balance   = getSemiFinishedBalanceBeforeWriteoff(sf.id, pendingMap);
         const balStr    = balance !== null ? `${Number(balance).toFixed(2)} ${unitLabel}` : '—';
         html += `<tr class="border-b">
             <td class="p-0.5">${escapeHtml(sf.name)}</td>
@@ -952,11 +955,12 @@ async function saveSfInventarization() {
     const inputs = document.querySelectorAll('.sf-inv-qty-input');
     const today  = getLocalDateStr(0);
     const rows   = [];
+    const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
     inputs.forEach(input => {
         const val = parseFloat(input.value);
         if (isNaN(val) || input.value === '') return;
         const sfId    = Number(input.dataset.sfId);
-        const balance = getSemiFinishedBalance(sfId) || 0;
+        const balance = getSemiFinishedBalanceBeforeWriteoff(sfId, pendingMap) || 0;
         const diff    = parseFloat((val - balance).toFixed(4));
         if (Math.abs(diff) < 0.0001) return;
         rows.push({

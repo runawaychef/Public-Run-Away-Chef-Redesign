@@ -619,7 +619,7 @@ I18N.en = {
         sf_batch_produced_success: 'Batch produced!',
         sf_in_stock: 'in stock',
         sf_semifinished_word: 'Semi-finished item',
-        sf_current_balance: 'Current balance',
+        sf_current_balance: 'Stock balance',
         sf_actual: 'Actual',
         sf_no_changes: 'No changes.',
         sf_record_adjustments_confirm: 'Record adjustments:',
