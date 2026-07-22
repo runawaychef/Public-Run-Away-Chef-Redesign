@@ -547,6 +547,7 @@ function openInventarizationModal(singleIngId) {
     });
     html += '</tbody></table>';
 
+    document.getElementById('inventarizationHint').textContent = singleIngId != null ? t('ing_inventarization_desc') : t('inv_enter_actual_qty');
     document.getElementById('inventarizationContent').innerHTML = html;
     document.getElementById('inventarizationModal').style.display = 'flex';
 }

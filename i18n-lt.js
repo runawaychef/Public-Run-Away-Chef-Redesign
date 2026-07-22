@@ -542,7 +542,7 @@ I18N.lt = {
         // Инвентаризация (модалки)
         sf_inventarization_title: 'Pusgaminių inventorizacija',
         inv_enter_actual_qty: 'Įveskite faktinį kiekį. Tušti laukai bus praleisti.',
-        ing_inventarization_desc: 'Įveskite faktinį kiekį. Tušti laukai bus praleisti. Skirtumas bus įrašytas automatiškai.',
+        ing_inventarization_desc: 'Įveskite faktinį kiekį.',
         ing_save_inventarization: 'Išsaugoti inventorizaciją',
         ing_inventarization_note: 'Inventorizacija',
 

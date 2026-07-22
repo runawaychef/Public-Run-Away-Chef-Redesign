@@ -551,7 +551,7 @@ I18N.ru = {
         // Инвентаризация (модалки)
         sf_inventarization_title: 'Инвентаризация п/ф',
         inv_enter_actual_qty: 'Введите фактическое количество. Пустые поля — пропускаются.',
-        ing_inventarization_desc: 'Введите фактическое количество. Пустые поля — пропускаются. Разница запишется автоматически.',
+        ing_inventarization_desc: 'Введите фактическое количество.',
         ing_save_inventarization: 'Сохранить инвентаризацию',
         ing_inventarization_note: 'Инвентаризация',
 
@@ -618,7 +618,7 @@ I18N.ru = {
         sf_batch_produced_success: 'Партия произведена!',
         sf_in_stock: 'на складе',
         sf_semifinished_word: 'Полуфабрикат',
-        sf_current_balance: 'Текущий остаток',
+        sf_current_balance: 'Остаток на складе',
         sf_actual: 'Фактически',
         sf_no_changes: 'Нет изменений.',
         sf_record_adjustments_confirm: 'Записать корректировок:',

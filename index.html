@@ -2506,7 +2506,7 @@
         <div id="sfInventarizationModal" class="modal">
             <div class="modal-content" style="max-width:480px;">
                 <h2 class="text-sm font-semibold mb-1 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg><span data-i18n="sf_inventarization_title">Инвентаризация п/ф</span></h2>
-                <p class="text-xs text-gray-500 mb-3" data-i18n="inv_enter_actual_qty">Введите фактическое количество. Пустые поля — пропускаются.</p>
+                <p id="sfInventarizationHint" class="text-xs text-gray-500 mb-3" data-i18n="inv_enter_actual_qty">Введите фактическое количество. Пустые поля — пропускаются.</p>
                 <div id="sfInventarizationContent" style="max-height:60vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
                 <div class="flex gap-2 mt-3">
                     <button onclick="saveSfInventarization()" class="pill-btn flex-1 justify-center" data-i18n="common_save">Сохранить</button>
@@ -2541,7 +2541,7 @@
         <div id="inventarizationModal" class="modal">
             <div class="modal-content" style="max-width:480px;">
                 <h2 class="text-sm font-semibold mb-1 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg><span data-i18n="inv_inventarization">Инвентаризация</span></h2>
-                <p class="text-xs text-gray-500 mb-3" data-i18n="ing_inventarization_desc">Введите фактическое количество. Пустые поля — пропускаются. Разница запишется автоматически.</p>
+                <p id="inventarizationHint" class="text-xs text-gray-500 mb-3" data-i18n="inv_enter_actual_qty">Введите фактическое количество. Пустые поля — пропускаются.</p>
                 <div id="inventarizationContent" style="max-height:60vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
                 <div class="flex gap-2 mt-3">
                     <button onclick="saveInventarization()" class="pill-btn flex-1 justify-center" data-i18n="ing_save_inventarization">Сохранить инвентаризацию</button>
@@ -2833,17 +2833,17 @@
 
 <script src="dates.js?v=8"></script>
     <script src="money.js?v=10"></script>
-    <script src="i18n-core.js?v=4"></script>
+    <script src="i18n-core.js?v=5"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=6"></script>
     <script src="auth.js?v=15"></script>
     <script src="employees.js?v=29"></script>
     <script src="company.js?v=19"></script>
-    <script src="inventory.js?v=36"></script>
+    <script src="inventory.js?v=37"></script>
     <script src="push.js?v=3"></script>
 <script src="ingredients.js?v=34"></script>
 <script src="batches.js?v=9"></script>
-<script src="semifinished.js?v=31"></script>
+<script src="semifinished.js?v=32"></script>
 <script src="products.js?v=27"></script>
 <script src="customers.js?v=36"></script>
 <script src="calendar.js?v=7"></script>

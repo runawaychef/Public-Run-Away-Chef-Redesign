@@ -947,6 +947,7 @@ function openSfInventarizationModal(singleSfId) {
         </tr>`;
     });
     html += '</tbody></table>';
+    document.getElementById('sfInventarizationHint').textContent = singleSfId != null ? t('ing_inventarization_desc') : t('inv_enter_actual_qty');
     document.getElementById('sfInventarizationContent').innerHTML = html;
     document.getElementById('sfInventarizationModal').style.display = 'flex';
 }

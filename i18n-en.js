@@ -552,7 +552,7 @@ I18N.en = {
         // Inventory count (modals)
         sf_inventarization_title: 'Semi-finished inventory count',
         inv_enter_actual_qty: 'Enter the actual quantity. Empty fields are skipped.',
-        ing_inventarization_desc: 'Enter the actual quantity. Empty fields are skipped. The difference will be recorded automatically.',
+        ing_inventarization_desc: 'Enter the actual quantity.',
         ing_save_inventarization: 'Save inventory count',
         ing_inventarization_note: 'Inventory count',
 
