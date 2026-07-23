@@ -275,14 +275,6 @@ async function openInventoryModal() {
     await Promise.all([loadInventory(), loadShoppingList()]);
     hideLoading();
 
-    // Сбрасываем на вкладку «Склад» при каждом открытии
-    _activeInventoryTab = 'stock';
-    document.getElementById('inventoryTabStock').classList.remove('hidden');
-    document.getElementById('inventoryTabShop').classList.add('hidden');
-    document.getElementById('invTabStock').classList.add('active');
-    document.getElementById('invTabShop').classList.remove('active');
-
-
     // Сумма уже списанного по заказам, которые ещё не выполнены — нужна для
     // колонки "На складе" (физический остаток без учёта таких заказов).
     const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
@@ -781,19 +773,22 @@ async function reverseInventoryForOrder(orderId) {
 // Очистка: только кнопкой «Очистить всё».
 
 let _shoppingList = []; // кэш текущего списка покупок
-let _activeInventoryTab = 'stock'; // 'stock' | 'shop'
 
 // ── Переключение вкладок ─────────────────────────────────────────────────────
 
-function switchInventoryTab(tab) {
-    _activeInventoryTab = tab;
-    document.getElementById('inventoryTabStock').classList.toggle('hidden', tab !== 'stock');
-    document.getElementById('inventoryTabShop').classList.toggle('hidden', tab !== 'shop');
-    document.getElementById('invTabStock').classList.toggle('active', tab === 'stock');
-    document.getElementById('invTabShop').classList.toggle('active', tab === 'shop');
-    const title = document.getElementById('inventoryModalTitle');
-    if (title) title.innerHTML = tab === 'stock' ? (icon('cart') + t('inv_title')) : (icon('cart') + t('inv_shopping_cart_title'));
-    if (tab === 'shop') renderShoppingList();
+// ── Открыть отдельное окно "Корзина покупок" ─────────────────────────────────
+
+async function openShoppingListModal() {
+    closeModal();
+    if (!hasPermission('can_manage_inventory')) {
+        showInfo(t('inv_no_access'));
+        return;
+    }
+    showLoading();
+    await loadShoppingList();
+    hideLoading();
+    renderShoppingList();
+    document.getElementById('shoppingListModal').style.display = 'flex';
 }
 
 // ── Загрузка списка из Supabase ──────────────────────────────────────────────
@@ -839,23 +834,33 @@ function renderShoppingList() {
     let html = '<table class="w-full text-xs table-clean" style="table-layout:fixed;">';
     html += '<thead><tr style="background-color:#e3e8df;"><th class="p-1 text-left" style="width:38%;">' + t('inv_col_name') + '</th><th class="p-1 text-right" style="width:20%;">' + t('inv_col_have') + '</th><th class="p-1 text-right" style="width:24%;">' + t('inv_col_buy') + '</th><th class="p-1 text-center" style="width:18%;"></th></tr></thead><tbody>';
 
+    const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
+
     _shoppingList.forEach(row => {
-        let name = '—', balanceStr = '—', unit = '';
+        let name = '—', balanceStr = '—', afterStr = '', unit = '';
         if (row.ingredient_id) {
             const ing = (ingredients || []).find(i => i.id === row.ingredient_id);
             if (ing) {
                 name = ing.name;
                 unit = unitAbbrev(ing.unit);
-                const bal = getIngredientBalance(ing.id);
+                const bal    = getIngredientBalanceBeforeWriteoff(ing.id, pendingMap);
+                const balAfter = getIngredientBalance(ing.id);
                 balanceStr = bal !== null ? `${Number(bal).toFixed(1)} ${unit}` : '—';
+                if (balAfter !== null && bal !== null && Math.abs(balAfter - bal) > 0.01) {
+                    afterStr = `${t('ing_after_writeoff_colon')} ${Number(balAfter).toFixed(1)} ${unit}`;
+                }
             }
         } else if (row.semi_finished_id) {
             const sf = (semiFinished || []).find(s => s.id === row.semi_finished_id);
             if (sf) {
                 name = sf.name;
                 unit = unitAbbrev(sf.unit);
-                const bal = getSemiFinishedBalance(sf.id);
+                const bal    = getSemiFinishedBalanceBeforeWriteoff(sf.id, pendingMap);
+                const balAfter = getSemiFinishedBalance(sf.id);
                 balanceStr = bal !== null ? `${Number(bal).toFixed(1)} ${unit}` : '—';
+                if (balAfter !== null && bal !== null && Math.abs(balAfter - bal) > 0.01) {
+                    afterStr = `${t('ing_after_writeoff_colon')} ${Number(balAfter).toFixed(1)} ${unit}`;
+                }
             }
         }
 
@@ -869,7 +874,7 @@ function renderShoppingList() {
                     <span>${escapeHtml(name)}</span>
                 </label>
             </td>
-            <td class="p-1 text-right text-gray-500 ${doneClass}">${balanceStr}</td>
+            <td class="p-1 text-right text-gray-500 ${doneClass}">${balanceStr}${afterStr ? `<div style="font-size:10px;color:#b0a99c;">${afterStr}</div>` : ''}</td>
             <td class="p-1 text-right">
                 <input type="number" inputmode="decimal" step="0.01" min="0"
                     value="${Number(row.quantity_to_buy).toFixed(2)}"
@@ -986,7 +991,7 @@ async function addCriticalToShoppingList() {
             if (toBuy === 0 && daily > 0) toBuy = Math.ceil((daily * 14) / 100) * 100;
             await addToShoppingList(null, sf.id, toBuy);
         }
-        switchInventoryTab('shop');
+        renderShoppingList();
     } catch (e) { console.error(e); showInfo(t('error_add_generic')); }
     finally { hideLoading(); }
 }

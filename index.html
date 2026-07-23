@@ -2405,31 +2405,35 @@
         <div id="inventoryModal" class="modal modal-fullscreen">
             <div class="modal-content">
                 <h2 id="inventoryModalTitle" class="text-sm font-semibold mb-2 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.836l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.98-4.706 2.545-7.187.075-.323-.174-.63-.53-.63H5.106M7.5 14.25L5.106 5.653M7.5 14.25L5.25 20.25m9-6l2.25 6"/></svg><span data-i18n="inv_title">Аналитика склада</span><button onclick="showHelpModal('help_inventory_title','help_inventory_text')" class="help-marker" data-i18n-title="help_marker_label" title="Подробнее об этом разделе">?</button></h2>
-                <!-- Вкладки -->
-                <div class="flex gap-3 border-b mb-3">
-                    <button id="invTabStock" onclick="switchInventoryTab('stock')" class="tab active text-xs pb-1" data-i18n="inv_tab_stock">Склад</button>
-                    <button id="invTabShop" onclick="switchInventoryTab('shop')" class="tab text-xs pb-1"><span data-i18n="inv_tab_shopping_list">Список покупок</span> <span id="shopListBadge" class="hidden text-white rounded-full px-1.5 py-0.5 text-xs ml-1" style="background:#7c9473;"></span></button>
-                </div>
-                <!-- Склад -->
+                <button onclick="openShoppingListModal()" class="pill-btn-secondary w-full justify-center mb-3 flex items-center gap-1.5">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.836l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.98-4.706 2.545-7.187.075-.323-.174-.63-.53-.63H5.106M7.5 14.25L5.106 5.653M7.5 14.25L5.25 20.25m9-6l2.25 6"/></svg>
+                    <span data-i18n="inv_tab_shopping_list">Список покупок</span>
+                    <span id="shopListBadge" class="hidden text-white rounded-full px-1.5 py-0.5 text-xs" style="background:#7c9473;"></span>
+                </button>
                 <div id="inventoryTabStock" style="flex:1; min-height:0; display:flex; flex-direction:column;">
                     <div id="inventoryContent" style="flex:1; min-height:0; overflow-y:auto; touch-action:pan-y; overscroll-behavior:contain;"></div>
-                </div>
-                <!-- Список покупок -->
-                <div id="inventoryTabShop" class="hidden">
-                    <div class="flex gap-2 mb-2">
-                        <button onclick="addCriticalToShoppingList()" class="pill-btn-secondary flex-1" data-i18n="inv_add_critical">+ Добавить критичное</button>
-                        <button onclick="clearShoppingList()" class="pill-btn-danger" style="background:#f3ded9; color:#a3493d; box-shadow:none;" data-i18n="inv_clear_all">Очистить всё</button>
-                    </div>
-                    <div class="mb-2">
-                        <button onclick="shareShoppingList()" class="pill-btn w-full justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0-12l-4 4m4-4l4 4M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6"/></svg><span data-i18n="inv_share_list">Поделиться списком</span></button>
-                    </div>
-                    <div id="shopListContent" style="max-height:52vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;">
-                        <p class="text-xs text-gray-400 text-center py-4" data-i18n="inv_list_empty">Список пуст</p>
-                    </div>
                 </div>
                 <button onclick="closeModal()" class="pill-btn w-full justify-center mt-3" data-i18n="settings_close">Закрыть</button>
             </div>
         </div>
+
+        <div id="shoppingListModal" class="modal modal-fullscreen">
+            <div class="modal-content">
+                <h2 class="text-sm font-semibold mb-2 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.836l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.98-4.706 2.545-7.187.075-.323-.174-.63-.53-.63H5.106M7.5 14.25L5.106 5.653M7.5 14.25L5.25 20.25m9-6l2.25 6"/></svg><span data-i18n="inv_shopping_cart_title">Корзина покупок</span></h2>
+                <div class="flex gap-2 mb-2">
+                    <button onclick="addCriticalToShoppingList()" class="pill-btn-secondary flex-1" data-i18n="inv_add_critical">+ Добавить критичное</button>
+                    <button onclick="clearShoppingList()" class="pill-btn-danger" style="background:#f3ded9; color:#a3493d; box-shadow:none;" data-i18n="inv_clear_all">Очистить всё</button>
+                </div>
+                <div class="mb-2">
+                    <button onclick="shareShoppingList()" class="pill-btn w-full justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0-12l-4 4m4-4l4 4M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6"/></svg><span data-i18n="inv_share_list">Поделиться списком</span></button>
+                </div>
+                <div id="shopListContent" style="flex:1; min-height:0; overflow-y:auto; touch-action:pan-y; overscroll-behavior:contain;">
+                    <p class="text-xs text-gray-400 text-center py-4" data-i18n="inv_list_empty">Список пуст</p>
+                </div>
+                <button onclick="closeModal()" class="pill-btn w-full justify-center mt-3" data-i18n="settings_close">Закрыть</button>
+            </div>
+        </div>
+
 
         <!-- Подсказка по маркеру "?" — универсальная модалка, переиспользуется для
              любого раздела: openHelpModal передаёт свои ключи заголовка/текста.
@@ -2840,7 +2844,7 @@
     <script src="auth.js?v=15"></script>
     <script src="employees.js?v=29"></script>
     <script src="company.js?v=20"></script>
-    <script src="inventory.js?v=37"></script>
+    <script src="inventory.js?v=38"></script>
     <script src="push.js?v=3"></script>
 <script src="ingredients.js?v=34"></script>
 <script src="batches.js?v=9"></script>
