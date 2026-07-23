@@ -1,4 +1,4 @@
-const CACHE_NAME = 'runwaychef-public-cache-v332';
+const CACHE_NAME = 'runwaychef-public-cache-v333';
 const ASSETS = [
   './index.html',
   './i18n-core.js',

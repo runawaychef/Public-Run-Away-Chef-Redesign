@@ -1497,28 +1497,34 @@ async function saveDetailHeader() {
         custName = cust.name;
     }
 
-    // Запоминаем прежние значения для журнала
-    const old = { customer: order.customer, date: order.date, status: order.status, discount: order.discount, employee: order.employee, notes: order.notes || '' };
+    // Запоминаем прежние значения — на случай отката при ошибке сохранения, и для журнала
+    const old = {
+        customer_id: order.customer_id, customer: order.customer, date: order.date, status: order.status,
+        discount: order.discount, vat_exempt: order.vat_exempt, employee_id: order.employee_id,
+        employee: order.employee, notes: order.notes || '', inventory_pending: order.inventory_pending
+    };
 
-    showLoading();
+    // ── Применяем изменения сразу, не дожидаясь ответа сервера ──────────────
+    const emp = employees.find(e => e.id === employeeId);
+    order.customer_id = custId;
+    order.customer    = custName;
+    order.date        = date;
+    order.status      = status;
+    order.discount    = discount;
+    order.vat_exempt  = vatExempt;
+    order.employee_id = employeeId;
+    order.employee    = emp ? emp.name : '';
+    order.notes       = notes;
+    renderDetailItems(order); // пересчитывает и перерисовывает итоги/скидку/НДС
+
     try {
         await updateChecked(db.from('orders').update({
             customer_id: custId, order_date: date, status, discount, vat_exempt: vatExempt, employee_id: employeeId, notes
         }).eq('id', order.id));
-        const emp = employees.find(e => e.id === employeeId);
-        order.customer_id = custId;
-        order.customer    = custName;
-        order.date        = date;
-        order.status      = status;
-        order.discount    = discount;
-        order.vat_exempt  = vatExempt;
-        order.employee_id = employeeId;
-        order.employee    = emp ? emp.name : '';
-        order.notes       = notes;
-        renderDetailItems(order);
 
         // Дата заказа могла пересечь порог отложенного списания (INVENTORY_PENDING_DAYS) —
         // если да, нужно либо списать склад прямо сейчас, либо сторнировать уже списанное.
+        // Это не влияет на то, что уже видит пользователь, поэтому спокойно уходит в фон.
         if (old.date !== order.date && order.items && order.items.length) {
             const nowShould = shouldWriteOffNow(order.date);
             if (nowShould && order.inventory_pending) {
@@ -1547,8 +1553,23 @@ async function saveDetailHeader() {
         if (old.notes !== order.notes) changes.push(t('log_comment_changed'));
         if (changes.length) logActivity('order', `${t('log_order_changed')} №${order.id}: ${changes.join(', ')}`, order.id);
         showAutosaveToast();
-    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
-    finally { hideLoading(); }
+    } catch (e) {
+        console.error(e);
+        // ── Откат: возвращаем прежние значения и в объекте, и на самой форме ──
+        Object.assign(order, old);
+        document.getElementById('detailCustomer').value = old.customer || '';
+        document.getElementById('detailDate').value = old.date || '';
+        document.getElementById('detailDateBtnLabel').textContent = old.date ? formatDateDMY(old.date) : '—';
+        document.getElementById('detailStatus').value = old.status;
+        renderDetailStatusButton(old.status);
+        document.getElementById('detailDiscount').value = old.discount;
+        document.getElementById('detailVatExempt').checked = old.vat_exempt;
+        document.getElementById('detailNotes').value = old.notes;
+        document.getElementById('detailEmployee').value = old.employee_id || '';
+        document.getElementById('detailEmployeeBtnLabel').textContent = old.employee || '—';
+        renderDetailItems(order);
+        showInfo(t('error_save_check_connection'));
+    }
 }
 
 function renderDetailItems(order) {
