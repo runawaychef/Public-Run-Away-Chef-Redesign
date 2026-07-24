@@ -310,16 +310,15 @@ async function freezeDocumentSnapshot(order, docType, existing) {
 // телефона он умещается целиком за счёт CSS-трансформации масштаба).
 // Точечная правка даты выставления документа для ОДНОГО конкретного счёта/накладной —
 // не меняет ни дату заказа, ни другие документы. Доступна и для счёта, и для накладной.
+// Использует общий попап-календарь (calendar.js), а не системный <input type="date">.
 function promptEditIssueDate() {
     if (!_docPreview || !_docPreview.snapshot) return;
     document.getElementById('editIssueDateInput').value = _docPreview.snapshot.issueDate || '';
-    document.getElementById('editIssueDateModal').style.display = 'flex';
+    toggleCustomCalendar('globalCalendarPopup', 'editIssueDateInput', 'editIssueDateLabelUnused', { onPick: applyEditIssueDate });
 }
 
-async function applyEditIssueDate() {
-    const newDate = document.getElementById('editIssueDateInput').value;
+async function applyEditIssueDate(newDate) {
     if (!newDate || !_docPreview) return;
-    document.getElementById('editIssueDateModal').style.display = 'none';
     showLoading();
     try {
         _docPreview.snapshot.issueDate = newDate;
@@ -340,13 +339,11 @@ async function applyEditIssueDate() {
 function promptEditDueDate() {
     if (!_docPreview || !_docPreview.snapshot) return;
     document.getElementById('editDueDateInput').value = _docPreview.snapshot.dueDate || '';
-    document.getElementById('editDueDateModal').style.display = 'flex';
+    toggleCustomCalendar('globalCalendarPopup', 'editDueDateInput', 'editDueDateLabelUnused', { onPick: applyEditDueDate });
 }
 
-async function applyEditDueDate() {
-    const newDate = document.getElementById('editDueDateInput').value;
+async function applyEditDueDate(newDate) {
     if (!newDate || !_docPreview) return;
-    document.getElementById('editDueDateModal').style.display = 'none';
     showLoading();
     try {
         _docPreview.snapshot.dueDate = newDate;
