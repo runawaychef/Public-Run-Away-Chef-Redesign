@@ -760,6 +760,7 @@ I18N.en = {
         inv_total_due: 'Total due',
         inv_issued_by: 'Issued by',
         inv_signature: 'Signature',
+        inv_edit_issue_date: 'Change document date',
         inv_edit_due_date: 'Change due date',
         inv_ru_self_employed_note: 'This document does not replace the receipt from the "Мой налог" (My Tax) app — please issue that receipt separately when you receive payment.',
         inv_ua_rro_note: 'This document does not replace a RRO/PRRO fiscal receipt. If payment is accepted by card or through a payment service, a separate fiscal receipt is required; a direct bank transfer to an IBAN usually does not require one.',

@@ -750,6 +750,7 @@ I18N.lt = {
         inv_total_due: 'Iš viso mokėti',
         inv_issued_by: 'Išrašė',
         inv_signature: 'Parašas',
+        inv_edit_issue_date: 'Keisti dokumento datą',
         inv_edit_due_date: 'Keisti mokėjimo terminą',
         inv_ru_self_employed_note: 'Šis dokumentas nepakeičia čekio iš programėlės „Мой налог“ — čekį suformuokite atskirai gavę apmokėjimą.',
         inv_ua_rro_note: 'Šis dokumentas nepakeičia RRO/PRRO fiskalinio čekio. Jei mokama kortele arba per mokėjimo paslaugą, būtinas atskiras fiskalinis čekis; tiesioginis pavedimas į IBAN paprastai čekio nereikalauja.',

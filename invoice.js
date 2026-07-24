@@ -308,6 +308,33 @@ async function freezeDocumentSnapshot(order, docType, existing) {
 // Показывает документ в предпросмотре как уменьшенную копию целой страницы A4
 // (настоящий размер 794px используется только "под капотом" — на экране
 // телефона он умещается целиком за счёт CSS-трансформации масштаба).
+// Точечная правка даты выставления документа для ОДНОГО конкретного счёта/накладной —
+// не меняет ни дату заказа, ни другие документы. Доступна и для счёта, и для накладной.
+function promptEditIssueDate() {
+    if (!_docPreview || !_docPreview.snapshot) return;
+    document.getElementById('editIssueDateInput').value = _docPreview.snapshot.issueDate || '';
+    document.getElementById('editIssueDateModal').style.display = 'flex';
+}
+
+async function applyEditIssueDate() {
+    const newDate = document.getElementById('editIssueDateInput').value;
+    if (!newDate || !_docPreview) return;
+    document.getElementById('editIssueDateModal').style.display = 'none';
+    showLoading();
+    try {
+        _docPreview.snapshot.issueDate = newDate;
+        const field = snapshotField(_docPreview.docType);
+        await updateChecked(db.from('orders').update({ [field]: _docPreview.snapshot }).eq('id', currentOrderId));
+        renderDocumentPreviewThumbnail();
+        showAutosaveToast();
+    } catch (e) {
+        console.error(e);
+        showInfo(t('error_save_check_connection'));
+    } finally {
+        hideLoading();
+    }
+}
+
 // Точечная правка срока оплаты для ОДНОГО конкретного, уже выставленного
 // счёта — не меняет ни отсрочку клиента по умолчанию, ни другие счета.
 function promptEditDueDate() {
@@ -440,6 +467,8 @@ function buildDocumentHtml(docType, snapshot, lang) {
         </tr>`;
     });
 
+    const issueDateRow = `${tDoc('history_col_date', lang)}: ${formatDateDMY(issueDate)} <button onclick="promptEditIssueDate()" style="border:none;background:none;cursor:pointer;padding:0 0 0 4px;vertical-align:middle;color:#9ca3af;" title="${escapeHtml(t('inv_edit_issue_date'))}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/></svg></button>`;
+
     const dueDateRow = isInvoice
         ? `<div>${tDoc('inv_due_date', lang)}: ${formatDateDMY(dueDate)} <button onclick="promptEditDueDate()" style="border:none;background:none;cursor:pointer;padding:0 0 0 4px;vertical-align:middle;color:#9ca3af;" title="${escapeHtml(t('inv_edit_due_date'))}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/></svg></button></div>`
         : '';
@@ -460,7 +489,7 @@ function buildDocumentHtml(docType, snapshot, lang) {
             </div>
             <div style="text-align:right;font-size:15px;color:#374151;">
                 <div>${tDoc('inv_number', lang)}: ${numberPrefix}${escapeHtml(number)}</div>
-                <div>${tDoc('history_col_date', lang)}: ${formatDateDMY(issueDate)}</div>
+                <div>${issueDateRow}</div>
                 ${dueDateRow}
             </div>
         </div>

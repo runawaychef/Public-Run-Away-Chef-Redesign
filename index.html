@@ -1539,6 +1539,18 @@
             </div>
         </div>
 
+        <!-- Точечное изменение даты выставления для одного конкретного документа -->
+        <div id="editIssueDateModal" class="modal">
+            <div class="modal-content" style="max-width:300px;">
+                <h2 class="text-sm font-semibold mb-2 text-gray-800" data-i18n="inv_edit_issue_date">Изменить дату документа</h2>
+                <input id="editIssueDateInput" type="date" class="border p-1 rounded-xl w-full table-text">
+                <div class="flex gap-2 mt-3">
+                    <button onclick="document.getElementById('editIssueDateModal').style.display='none';" class="pill-btn-secondary flex-1 justify-center" data-i18n="company_logo_crop_cancel">Отмена</button>
+                    <button onclick="applyEditIssueDate()" class="pill-btn flex-1 justify-center" data-i18n="common_save">Сохранить</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Точечное изменение срока оплаты для одного конкретного счёта -->
         <div id="editDueDateModal" class="modal">
             <div class="modal-content" style="max-width:300px;">
@@ -2835,7 +2847,7 @@
 
 <script src="dates.js?v=8"></script>
     <script src="money.js?v=10"></script>
-    <script src="i18n-core.js?v=9"></script>
+    <script src="i18n-core.js?v=10"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=6"></script>
     <script src="auth.js?v=15"></script>
@@ -2850,7 +2862,7 @@
 <script src="customers.js?v=36"></script>
 <script src="calendar.js?v=7"></script>
 <script src="orders.js?v=88"></script>
-<script src="invoice.js?v=29"></script>
+<script src="invoice.js?v=30"></script>
 <script src="payments.js?v=19"></script>
 <script src="stats.js?v=16"></script>
 <script src="history.js?v=9"></script>
