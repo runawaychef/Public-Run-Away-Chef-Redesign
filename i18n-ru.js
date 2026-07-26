@@ -251,6 +251,13 @@ I18N.ru = {
         auth_error_reset_failed: 'Не удалось отправить письмо. Проверьте email и попробуйте ещё раз.',
         auth_error_google_failed: 'Не удалось войти через Google. Попробуйте ещё раз.',
         signout_confirm: 'Выйти из приложения полностью? Потребуется снова войти.',
+        ga_intro_title: 'Вход через Google',
+        ga_intro_desc: 'Сейчас откроется окно входа Google. После выбора аккаунта вы автоматически вернётесь в Simple Bake.',
+        ga_intro_point1: 'Мы получаем только email — для входа в аккаунт',
+        ga_intro_point2: 'Мы не читаем почту и не видим другие данные Google',
+        ga_intro_continue: 'Продолжить',
+        ga_returning_title: 'Возвращаемся в Simple Bake',
+        ga_returning_sub: 'Секунду...',
 
         // Раздел "Статистика"
         stats_title: 'Статистика',

@@ -257,6 +257,13 @@ I18N.lt = {
         auth_error_reset_failed: 'Nepavyko išsiųsti laiško. Patikrinkite el. pašto adresą ir bandykite dar kartą.',
         auth_error_google_failed: 'Nepavyko prisijungti naudojant Google. Bandykite dar kartą.',
         signout_confirm: 'Visiškai atsijungti nuo programėlės? Reikės prisijungti iš naujo.',
+        ga_intro_title: 'Prisijungimas su Google',
+        ga_intro_desc: 'Dabar atsidarys Google prisijungimo langas. Pasirinkus paskyrą, automatiškai grįšite į Simple Bake.',
+        ga_intro_point1: 'Gauname tik jūsų el. paštą — prisijungimui',
+        ga_intro_point2: 'Neskaitome jūsų pašto ir nematome kitų Google duomenų',
+        ga_intro_continue: 'Tęsti',
+        ga_returning_title: 'Grįžtama į Simple Bake',
+        ga_returning_sub: 'Akimirką...',
 
         // Раздел "Статистика"
         stats_title: 'Statistika',

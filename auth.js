@@ -14,16 +14,34 @@ async function initAuth() {
     // Supabase сам восстанавливает сессию из URL-хэша
     db.auth.onAuthStateChange(async (event, session) => {
         if (event === 'SIGNED_IN' && session) {
+            // Флаг ставится непосредственно перед уходом на Google (handleGoogleSignIn) —
+            // отличает "вернулись из Google OAuth" от обычного восстановления сессии
+            // (например, простого перезапуска приложения с уже активным входом).
+            const isGoogleReturn = sessionStorage.getItem('sb_google_oauth_pending') === '1';
+            if (isGoogleReturn) sessionStorage.removeItem('sb_google_oauth_pending');
+
             if (_instantRestoreDone && session.user?.id && _snapshotAuthUserId !== session.user.id) {
                 await handleInstantRestoreWrongAccount();
                 return;
             }
-            await showAuthedApp();
+
+            if (isGoogleReturn) {
+                document.getElementById('googleAuthReturningScreen').classList.remove('hidden');
+                // Держим экран минимум 2 сек, чтобы не мелькал — даже если showAuthedApp()
+                // отработает быстрее (например, данные уже есть в кэше).
+                const minDelay = new Promise(resolve => setTimeout(resolve, 2000));
+                await Promise.all([showAuthedApp(), minDelay]);
+                document.getElementById('googleAuthReturningScreen').classList.add('hidden');
+            } else {
+                await showAuthedApp();
+            }
         }
     });
 
     document.getElementById('authForm').addEventListener('submit', handleAuthSubmit);
-    document.getElementById('googleSignInBtn').addEventListener('click', handleGoogleSignIn);
+    document.getElementById('googleSignInBtn').addEventListener('click', showGoogleAuthIntro);
+    document.getElementById('googleAuthContinueBtn').addEventListener('click', handleGoogleSignIn);
+    document.getElementById('googleAuthCancelBtn').addEventListener('click', hideGoogleAuthIntro);
     document.getElementById('toggleAuthMode').addEventListener('click', toggleAuthMode);
     document.getElementById('forgotPasswordLink').addEventListener('click', showResetMode);
     document.getElementById('backToLoginLink').addEventListener('click', showLoginMode);
@@ -289,10 +307,23 @@ async function handlePasswordReset() {
 
 // ===== Вход через Google =====
 
+function showGoogleAuthIntro() {
+    document.getElementById('googleAuthIntroModal').classList.remove('hidden');
+}
+
+function hideGoogleAuthIntro() {
+    document.getElementById('googleAuthIntroModal').classList.add('hidden');
+}
+
 async function handleGoogleSignIn() {
     const errEl = document.getElementById('authError');
     errEl.classList.add('hidden');
+    hideGoogleAuthIntro();
     try {
+        // Ставим флаг ДО редиректа — по нему onAuthStateChange распознает
+        // возврат из Google OAuth и покажет экран "Возвращаемся в Simple Bake"
+        // (см. initAuth). sessionStorage переживает сам редирект на google.com и обратно.
+        sessionStorage.setItem('sb_google_oauth_pending', '1');
         const { error } = await db.auth.signInWithOAuth({
             provider: 'google',
             options: {
@@ -303,6 +334,7 @@ async function handleGoogleSignIn() {
         // Google перенаправит пользователя — дальнейший код не выполняется
     } catch (err) {
         console.error(err);
+        sessionStorage.removeItem('sb_google_oauth_pending');
         errEl.textContent = t('auth_error_google_failed');
         errEl.classList.remove('hidden');
     }

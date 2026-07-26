@@ -252,6 +252,13 @@ I18N.en = {
         auth_error_reset_failed: 'Failed to send the email. Check the address and try again.',
         auth_error_google_failed: 'Failed to sign in with Google. Please try again.',
         signout_confirm: 'Sign out completely? You will need to sign in again.',
+        ga_intro_title: 'Sign in with Google',
+        ga_intro_desc: 'The Google sign-in window will open next. Once you pick an account, you\'ll be brought back to Simple Bake automatically.',
+        ga_intro_point1: 'We only receive your email — to sign you in',
+        ga_intro_point2: 'We don\'t read your mail or see any other Google data',
+        ga_intro_continue: 'Continue',
+        ga_returning_title: 'Returning to Simple Bake',
+        ga_returning_sub: 'One moment...',
 
         // "Statistics" screen
         stats_title: 'Statistics',

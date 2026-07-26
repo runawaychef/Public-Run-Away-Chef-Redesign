@@ -257,6 +257,13 @@ I18N.uk = {
         auth_error_reset_failed: 'Не вдалося надіслати лист. Перевірте email і спробуйте ще раз.',
         auth_error_google_failed: 'Не вдалося увійти через Google. Спробуйте ще раз.',
         signout_confirm: 'Вийти із застосунку повністю? Потрібно буде увійти знову.',
+        ga_intro_title: 'Вхід через Google',
+        ga_intro_desc: 'Зараз відкриється вікно входу Google. Після вибору акаунта ви автоматично повернетесь у Simple Bake.',
+        ga_intro_point1: 'Ми отримуємо лише email — для входу в акаунт',
+        ga_intro_point2: 'Ми не читаємо пошту і не бачимо інші дані Google',
+        ga_intro_continue: 'Продовжити',
+        ga_returning_title: 'Повертаємось у Simple Bake',
+        ga_returning_sub: 'Хвилинку...',
 
         // Раздел "Статистика"
         stats_title: 'Статистика',
