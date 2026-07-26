@@ -2883,7 +2883,7 @@
     <script src="money.js?v=10"></script>
     <script src="i18n-core.js?v=11"></script>
     <script src="supabaseClient.js?v=7"></script>
-    <script src="cache.js?v=6"></script>
+    <script src="cache.js?v=7"></script>
     <script src="auth.js?v=18"></script>
     <script src="employees.js?v=29"></script>
     <script src="company.js?v=20"></script>
@@ -3646,14 +3646,26 @@ document.body.classList.remove('style-loading');
 // инициализация всего приложения), он иногда неверно считает начальный масштаб
 // страницы (выглядит как "десктопный" вид), и только следующее событие
 // (скролл/свайп/resize) заставляет пересчитать корректно. Форсируем этот
-// пересчёт сами сразу после полной загрузки, без участия пользователя.
-window.addEventListener('load', function () {
+// пересчёт сами, без участия пользователя.
+//
+// Вызывается в двух местах: (1) по window.load — покрывает обычный холодный
+// старт; (2) из revealAppReady() (cache.js) — покрывает сценарии, где реальная
+// тяжёлая отрисовка приложения происходит ПОЗЖЕ события load (например, вход
+// через Google: страница физически перезагружается с нуля после редиректа,
+// а затем ещё ждёт загрузку данных organization/employees — к этому моменту
+// window.load уже давно случился, и первая попытка пересчёта не попадает
+// в нужный момент). Без варианта (2) после входа через Google приложение
+// открывалось в "десктопном" масштабе, пока пользователь не проведёт по
+// экрану вручную (поймано на живом тестировании 26.07.2026).
+function forceViewportRecalc() {
     const viewport = document.querySelector('meta[name="viewport"]');
     if (!viewport) return;
     const original = viewport.getAttribute('content');
     viewport.setAttribute('content', original + ', shrink-to-fit=no');
     setTimeout(() => viewport.setAttribute('content', original), 50);
-});
+}
+window.addEventListener('load', forceViewportRecalc);
+
 </script>
 </body>
 </html>

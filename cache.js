@@ -34,6 +34,10 @@ let _resolveAppReady = null;
 const _appReadyPromise = new Promise(resolve => { _resolveAppReady = resolve; });
 function revealAppReady() {
     if (_resolveAppReady) { _resolveAppReady(); _resolveAppReady = null; }
+    // См. подробный комментарий у forceViewportRecalc() в index.html —
+    // здесь же, а не только по window.load, потому что к этому моменту точно
+    // случилась реальная тяжёлая отрисовка приложения (а не просто загрузка страницы).
+    if (typeof forceViewportRecalc === 'function') forceViewportRecalc();
 }
 // Подстраховка: если revealAppReady() почему-то не вызовется вовсе (необработанная
 // ошибка где-то в цепочке входа) — не даём сплэшу зависнуть навсегда.
