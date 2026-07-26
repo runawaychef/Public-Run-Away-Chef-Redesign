@@ -3410,6 +3410,13 @@ function closeHistoryScreen() {
         restoreAppFromSnapshot(snapshot);
         _instantRestoreDone = true;
         document.getElementById('splashScreen')?.classList.add('hide');
+        // См. подробный комментарий у forceViewportRecalc() ниже — именно
+        // restoreAppFromSnapshot() выше делает тяжёлую синхронную отрисовку
+        // ПЕРЕД первым показом экрана, а не window.load — тот самый момент,
+        // который вызывает "десктопный" масштаб на части устройств (поймано
+        // на живом тестировании 26.07.2026, воспроизводится через вход
+        // через Google, когда страница физически перезагружается с нуля).
+        if (typeof forceViewportRecalc === 'function') forceViewportRecalc();
         initAuth(); // намеренно без await — идёт в фоне, не блокируя уже показанный интерфейс
     } else {
         // Сплэш держим минимум 900мс (чтобы не мигал слишком быстро на мощных
@@ -3661,8 +3668,17 @@ function forceViewportRecalc() {
     const viewport = document.querySelector('meta[name="viewport"]');
     if (!viewport) return;
     const original = viewport.getAttribute('content');
-    viewport.setAttribute('content', original + ', shrink-to-fit=no');
-    setTimeout(() => viewport.setAttribute('content', original), 50);
+    // Двойной requestAnimationFrame — гарантирует, что браузер успел сделать
+    // хотя бы один реальный проход layout/paint после нашей синхронной
+    // отрисовки, прежде чем мы просим его пересчитать масштаб. Без этого
+    // тумблер иногда срабатывает "слишком рано", ещё до самого layout,
+    // который и вызывает баг — и тогда пересчитывать оказывается нечего.
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            viewport.setAttribute('content', original + ', shrink-to-fit=no');
+            setTimeout(() => viewport.setAttribute('content', original), 50);
+        });
+    });
 }
 window.addEventListener('load', forceViewportRecalc);
 
