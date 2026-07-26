@@ -2902,9 +2902,9 @@
 <script src="batches.js?v=9"></script>
 <script src="semifinished.js?v=32"></script>
 <script src="products.js?v=27"></script>
-<script src="customers.js?v=36"></script>
+<script src="customers.js?v=37"></script>
 <script src="calendar.js?v=7"></script>
-<script src="orders.js?v=88"></script>
+<script src="orders.js?v=89"></script>
 <script src="invoice.js?v=31"></script>
 <script src="payments.js?v=19"></script>
 <script src="stats.js?v=16"></script>
@@ -3704,8 +3704,18 @@ window.addEventListener('popstate', function () {
     if (_hasOpenOverlay()) {
         _closeTopOverlay();
         _pushBackBuffer();
+        return;
     }
-    // иначе ничего не делаем — даём Android закрыть приложение как обычно
+    // Ничего не открыто, но пользователь не на главной вкладке "Заказы" —
+    // сначала возвращаем туда (заказы считаем "домашним" экраном приложения),
+    // и только повторное нажатие ИМЕННО со вкладки заказов закрывает приложение.
+    if (typeof currentTabId !== 'undefined' && currentTabId !== 'orders' && typeof showTab === 'function') {
+        showTab('orders');
+        _pushBackBuffer();
+        return;
+    }
+    // иначе (уже на вкладке заказов, ничего не открыто) — ничего не делаем,
+    // даём Android закрыть приложение как обычно
 });
 
 

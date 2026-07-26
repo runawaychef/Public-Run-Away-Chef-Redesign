@@ -6,6 +6,12 @@
 // svgEdit/svgDelete, updateCustomerSelects, updateStatsCustomerFilter,
 // updateOrderCustomerFilter, openDeleteModal, closeModal (главный скрипт).
 
+// Если карточка клиента открыта кнопкой "Карточка клиента" из заказа (goToCustomerFromOrder
+// в orders.js) — тут запоминается id этого заказа, чтобы закрытие карточки (кнопкой "Назад"
+// в самой карточке или системной кнопкой "Назад" на Android) возвращало именно в заказ,
+// а не в список клиентов. Сбрасывается при открытии карточки клиента любым другим путём.
+let _customerOpenedFromOrderId = null;
+
 function customerDebt(c) {
     let debt = 0;
     orders.forEach(o => {
@@ -407,6 +413,7 @@ async function downloadCustomerReportPdf() {
 // ==================== КАРТОЧКА КЛИЕНТА ====================
 function openCustomerDetail(custId) {
     currentCustomerId = custId;
+    _customerOpenedFromOrderId = null; // сбрасываем — goToCustomerFromOrder выставит заново, если переход именно оттуда
     const cust = customers.find(c => c.id === custId);
     if (!cust) return;
 
@@ -447,6 +454,20 @@ async function closeCustomerDetail() {
     if (leavingId !== null) await cleanupCustomerDraftIfEmpty(leavingId);
     displayCustomers();
     refreshFab();
+
+    // Если карточка была открыта кнопкой "Карточка клиента" из заказа — возвращаемся
+    // именно в этот заказ (он всё ещё "активен" внутри вкладки Заказы, просто скрыт
+    // переключением вкладки), а не в список клиентов, который сейчас показали выше.
+    if (_customerOpenedFromOrderId !== null) {
+        const returnOrderId = _customerOpenedFromOrderId;
+        _customerOpenedFromOrderId = null;
+        showTab('orders');
+        // На случай если карточка заказа почему-то уже закрыта к этому моменту —
+        // открываем её заново, а не оставляем список заказов пустым экраном.
+        if (!document.getElementById('orderDetail')?.classList.contains('active') && typeof openOrderDetail === 'function') {
+            openOrderDetail(returnOrderId);
+        }
+    }
 }
 
 // Удаление клиента прямо из его карточки (то же окно подтверждения, что и из списка)

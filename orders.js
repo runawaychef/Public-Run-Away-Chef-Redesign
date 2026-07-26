@@ -1465,6 +1465,9 @@ function goToCustomerFromOrder() {
     if (!order || !order.customer_id) { showInfo(t('orders_no_customer_specified')); return; }
     showTab('customers');
     openCustomerDetail(order.customer_id);
+    // Запоминаем ПОСЛЕ openCustomerDetail — та сама сбрасывает этот флаг в начале
+    // (см. customers.js), чтобы не унаследовать чужой "хвост" от прошлого перехода.
+    _customerOpenedFromOrderId = order.id;
 }
 
 async function saveDetailHeader() {
