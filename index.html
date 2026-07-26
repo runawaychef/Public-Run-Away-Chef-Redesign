@@ -3685,11 +3685,16 @@ function _getOpenModalEl() {
 }
 
 function _hasOpenOverlay() {
+    if (document.querySelector('.calendar-popup.open')) return true;
     if (_getOpenModalEl()) return true;
     return _backHandledDetailScreens.some(s => document.getElementById(s.id)?.classList.contains('active'));
 }
 
 function _closeTopOverlay() {
+    if (document.querySelector('.calendar-popup.open')) {
+        if (typeof closeAllCalendarPopups === 'function') closeAllCalendarPopups();
+        return;
+    }
     if (_getOpenModalEl()) { closeModal(); return; }
     const openDetail = _backHandledDetailScreens.find(s => document.getElementById(s.id)?.classList.contains('active'));
     if (openDetail) openDetail.close();
@@ -3714,8 +3719,19 @@ window.addEventListener('popstate', function () {
         _pushBackBuffer();
         return;
     }
-    // иначе (уже на вкладке заказов, ничего не открыто) — ничего не делаем,
-    // даём Android закрыть приложение как обычно
+    // На вкладке "Заказы", но включён табличный вид, а не карточный —
+    // "домашним" считаем именно карточный вид (тот, что открывается по умолчанию).
+    if (typeof currentTabId !== 'undefined' && currentTabId === 'orders') {
+        const tableWrap = document.getElementById('orderTableWrap');
+        const isTableView = tableWrap && !tableWrap.classList.contains('hidden');
+        if (isTableView && typeof setOrdersViewMode === 'function') {
+            setOrdersViewMode('cards');
+            _pushBackBuffer();
+            return;
+        }
+    }
+    // иначе (уже на карточном виде вкладки заказов, ничего не открыто) — ничего
+    // не делаем, даём Android закрыть приложение как обычно
 });
 
 
