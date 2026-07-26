@@ -776,6 +776,22 @@
     </div>
 </div>
 
+<!-- Окно подтверждения (Да/Отмена) — намеренно ВНЕ #appContent, чтобы быть
+     доступным даже когда приложение ещё заблокировано (app-locked), например
+     на экране выбора сотрудника при попытке сменить аккаунт. Раньше жил
+     внутри #appContent и из-за display:none у app-locked открывался
+     физически невидимым — кнопка "Сменить аккаунт" выглядела зависшей
+     (поймано на живом тестировании 26.07.2026). -->
+<div id="confirmModal" class="modal">
+    <div class="modal-content text-center">
+        <p id="confirmMessage" class="text-sm text-gray-800 mb-4" style="white-space: pre-line;"></p>
+        <div class="flex justify-center gap-2">
+            <button id="confirmCancelBtn" class="btn bg-gray-300 text-gray-800 px-4 py-1.5 rounded-xl hover:bg-gray-400 text-sm" data-i18n="common_cancel">Отмена</button>
+            <button id="confirmOkBtn" class="btn bg-[#7c9473] text-white px-4 py-1.5 rounded-xl hover:bg-[#6c8464] text-sm" data-i18n="common_ok">OK</button>
+        </div>
+    </div>
+</div>
+
 <!-- Экран выбора сотрудника -->
 <div id="loginScreen" class="hidden">
     <div style="background:#fff;border-radius:22px;padding:30px 24px;box-shadow:0 10px 30px rgba(60,58,52,0.08);" class="w-full max-w-xs text-center">
@@ -2002,15 +2018,8 @@
         </div>
 
         <!-- Универсальное окно подтверждения (замена системного confirm()) -->
-        <div id="confirmModal" class="modal">
-            <div class="modal-content text-center">
-                <p id="confirmMessage" class="text-sm text-gray-800 mb-4" style="white-space: pre-line;"></p>
-                <div class="flex justify-center gap-2">
-                    <button id="confirmCancelBtn" class="btn bg-gray-300 text-gray-800 px-4 py-1.5 rounded-xl hover:bg-gray-400 text-sm" data-i18n="common_cancel">Отмена</button>
-                    <button id="confirmOkBtn" class="btn bg-[#7c9473] text-white px-4 py-1.5 rounded-xl hover:bg-[#6c8464] text-sm" data-i18n="common_ok">OK</button>
-                </div>
-            </div>
-        </div>
+        <!-- confirmModal перенесён за пределы #appContent — см. вставку рядом с authScreen/loginScreen -->
+
 
         <!-- Настройки (шестерёнка) — служебные функции, доступны из любого раздела -->
         <div id="settingsModal" class="modal">
@@ -3648,7 +3657,58 @@ function showUpdateBanner(reg) {
 // значит, показывать точно можно без вспышки нестилизованного вида.
 document.body.classList.remove('style-loading');
 
-// Известный баг мобильного Chrome: если перед первой отрисовкой браузер успевает
+// ===== Аппаратная кнопка "Назад" (Android) =====
+// TWA транслирует системную кнопку "Назад" в history.back() самого WebView —
+// если в истории браузера нет ни одной записи "назад", Android считает, что
+// возвращаться некуда, и закрывает приложение целиком (найдено 26.07.2026,
+// стало заметно только после того как TWA заработал по-настоящему полноэкранно
+// без адресной строки — до этого кнопка вела себя как в обычном браузере).
+//
+// Решение: держим одну "буферную" запись в истории всё время. Если в момент
+// нажатия открыто модальное окно или детальная карточка (заказ/клиент/
+// ингредиент/изделие/полуфабрикат) — закрываем именно её и сразу
+// восстанавливаем буфер, чтобы следующее нажатие тоже было перехвачено. Если
+// ничего не было открыто — буфер не восстанавливаем, и это нажатие ведёт себя
+// как обычно (даёт закрыть приложение) — так кнопка "Назад" всегда сначала
+// закрывает то, что открыто, и только с "пустого" главного экрана закрывает
+// само приложение.
+const _backHandledDetailScreens = [
+    { id: 'orderDetail',        close: () => { if (typeof closeOrderDetail === 'function') closeOrderDetail(); } },
+    { id: 'customerDetail',     close: () => { if (typeof closeCustomerDetail === 'function') closeCustomerDetail(); } },
+    { id: 'ingredientDetail',   close: () => { if (typeof closeIngredientDetail === 'function') closeIngredientDetail(); } },
+    { id: 'productDetail',      close: () => { if (typeof closeProductDetail === 'function') closeProductDetail(); } },
+    { id: 'semiFinishedDetail', close: () => { if (typeof closeSemiFinishedDetail === 'function') closeSemiFinishedDetail(); } },
+];
+
+function _getOpenModalEl() {
+    return Array.from(document.querySelectorAll('.modal')).find(m => getComputedStyle(m).display !== 'none') || null;
+}
+
+function _hasOpenOverlay() {
+    if (_getOpenModalEl()) return true;
+    return _backHandledDetailScreens.some(s => document.getElementById(s.id)?.classList.contains('active'));
+}
+
+function _closeTopOverlay() {
+    if (_getOpenModalEl()) { closeModal(); return; }
+    const openDetail = _backHandledDetailScreens.find(s => document.getElementById(s.id)?.classList.contains('active'));
+    if (openDetail) openDetail.close();
+}
+
+function _pushBackBuffer() {
+    history.pushState({ backBuffer: true }, '');
+}
+_pushBackBuffer();
+
+window.addEventListener('popstate', function () {
+    if (_hasOpenOverlay()) {
+        _closeTopOverlay();
+        _pushBackBuffer();
+    }
+    // иначе ничего не делаем — даём Android закрыть приложение как обычно
+});
+
+
 // выполнить много синхронного JS (как у нас — компиляция Tailwind на лету +
 // инициализация всего приложения), он иногда неверно считает начальный масштаб
 // страницы (выглядит как "десктопный" вид), и только следующее событие
