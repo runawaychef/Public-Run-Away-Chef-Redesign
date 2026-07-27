@@ -3684,10 +3684,24 @@ function _getOpenModalEl() {
     return Array.from(document.querySelectorAll('.modal')).find(m => getComputedStyle(m).display !== 'none') || null;
 }
 
+function _isReallyVisible(el) {
+    // offsetParent === null означает, что элемент (или кто-то из его родителей,
+    // например скрытая переключением вкладка) сейчас не отображается — надёжнее,
+    // чем просто проверка класса "active", потому что несколько детальных карточек
+    // могут оставаться "активными" одновременно на разных, сейчас невидимых
+    // вкладках (например, карточка заказа не закрывается по-настоящему при
+    // переходе в клиента кнопкой "Карточка клиента" — она просто прячется
+    // переключением вкладки, чтобы к ней можно было вернуться).
+    return !!el && el.offsetParent !== null;
+}
+
 function _hasOpenOverlay() {
     if (document.querySelector('.calendar-popup.open')) return true;
     if (_getOpenModalEl()) return true;
-    return _backHandledDetailScreens.some(s => document.getElementById(s.id)?.classList.contains('active'));
+    return _backHandledDetailScreens.some(s => {
+        const el = document.getElementById(s.id);
+        return el?.classList.contains('active') && _isReallyVisible(el);
+    });
 }
 
 function _closeTopOverlay() {
@@ -3696,7 +3710,10 @@ function _closeTopOverlay() {
         return;
     }
     if (_getOpenModalEl()) { closeModal(); return; }
-    const openDetail = _backHandledDetailScreens.find(s => document.getElementById(s.id)?.classList.contains('active'));
+    const openDetail = _backHandledDetailScreens.find(s => {
+        const el = document.getElementById(s.id);
+        return el?.classList.contains('active') && _isReallyVisible(el);
+    });
     if (openDetail) openDetail.close();
 }
 
