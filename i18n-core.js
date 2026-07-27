@@ -79,6 +79,22 @@ if (!currentLang) {
 }
 if (!SUPPORTED_LANGS.includes(currentLang)) currentLang = BASE_LANG;
 
+// "Второй язык" — тот, что показывается рядом с EN в переключателе, НЕ
+// то же самое, что currentLang (какой язык активен сейчас). Раньше это не
+// различалось (баг: переключение на EN как активный "стирало" второй язык
+// и прятало кнопку его смены). Хранится отдельно и переживает переключение
+// активного языка туда-обратно на EN.
+let secondLang = localStorage.getItem('appSecondLang');
+if (secondLang && (!SUPPORTED_LANGS.includes(secondLang) || secondLang === BASE_LANG)) {
+    secondLang = null;
+}
+if (!secondLang) {
+    // Миграция для тех, кто уже пользовался приложением до фикса: если
+    // сейчас активен не-английский язык — считаем его вторым языком, чтобы
+    // никто не потерял свой выбор при первом запуске после обновления.
+    secondLang = (currentLang !== BASE_LANG) ? currentLang : null;
+}
+
 function t(key) {
     const dict = I18N[currentLang] || I18N[BASE_LANG] || {};
     if (dict[key] !== undefined) return dict[key];
@@ -137,24 +153,28 @@ function renderLangSwitcher(containerId, secondLang, activeLang, onClickFnName) 
     ).join('');
 }
 
-// Подпись на кнопке "выбрать второй язык" — родное название текущего
-// выбранного второго языка. Кнопка скрывается, если выбран сам английский
-// (тогда нечего показывать во втором слоте — переключатель однокнопочный).
+// Подпись на кнопке "выбрать второй язык" — родное название выбранного
+// второго языка (независимо от того, какой язык активен сейчас). Если
+// второй язык ещё ни разу не выбирался — кнопка видна с одной иконкой,
+// без подписи (первый выбор через неё же).
 function updateLangPickButtonLabel() {
     const btn = document.getElementById('langPickBtn');
     if (!btn) return;
-    if (currentLang === BASE_LANG) {
-        btn.classList.add('hidden');
-        return;
-    }
+    // Кнопка теперь видна всегда — независимо от того, какой язык активен
+    // сейчас (раньше пряталась при активном EN, из-за чего второй язык было
+    // невозможно ни выбрать, ни поменять, вернувшись на EN).
     btn.classList.remove('hidden');
     const label = btn.querySelector('.lang-pick-label');
-    const native = (LANG_META[currentLang] && LANG_META[currentLang].native) || currentLang.toUpperCase();
+    if (!secondLang) {
+        if (label) label.textContent = '';
+        return;
+    }
+    const native = (LANG_META[secondLang] && LANG_META[secondLang].native) || secondLang.toUpperCase();
     if (label) label.textContent = `${native} · ${t('lang_pick_change_suffix')}`;
 }
 
 function updateLangSwitcherUI() {
-    renderLangSwitcher('langSwitchContainer', currentLang, currentLang, 'setLang');
+    renderLangSwitcher('langSwitchContainer', secondLang || BASE_LANG, currentLang, 'setLang');
     updateLangPickButtonLabel();
     // Переключатель языка документа обновляем тоже, если он сейчас на экране
     // (invoice.js) — тот же второй язык, но своя активная кнопка (_docPreview.lang).
@@ -167,7 +187,7 @@ function openLangPickerModal() {
     if (list) {
         list.innerHTML = SUPPORTED_LANGS.filter(code => code !== BASE_LANG).map(code => {
             const meta = LANG_META[code];
-            const selected = code === currentLang;
+            const selected = code === secondLang;
             return `<div class="lang-list-item${selected ? ' selected' : ''}" onclick="selectSecondLang('${code}')">
                 <span>${meta.native} <span class="lang-native-hint">${meta.english}</span></span>
                 ${selected ? '<svg class="lang-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>' : ''}
@@ -179,6 +199,8 @@ function openLangPickerModal() {
 
 async function selectSecondLang(code) {
     document.getElementById('langPickerModal').style.display = 'none';
+    secondLang = code;
+    localStorage.setItem('appSecondLang', code);
     await setLang(code);
 }
 
