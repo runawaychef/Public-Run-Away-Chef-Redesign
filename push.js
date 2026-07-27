@@ -98,7 +98,7 @@ async function togglePushMaster() {
         }
     } catch (e) {
         console.error('push toggle error:', e);
-        showInfo(t('push_error'));
+        showInfo(t('push_error') + ' [' + (e && e.message ? e.message : String(e)) + ']');
     } finally {
         btn.disabled = false;
         await refreshPushSettingsUI();
@@ -132,7 +132,7 @@ async function _enablePush() {
         lang: (typeof currentLang !== 'undefined' && currentLang) ? currentLang : 'ru'
     }, { onConflict: 'endpoint' });
 
-    if (error) { console.error('push_subscriptions upsert error:', error); showInfo(t('push_error')); return; }
+    if (error) { console.error('push_subscriptions upsert error:', error); showInfo(t('push_error') + ' [' + (error.message || error.code || 'db') + ']'); return; }
     showInfo(t('push_enabled_toast'));
 }
 
