@@ -44,21 +44,13 @@ async function refreshPushSettingsUI() {
     }
 
     let subscription = null;
-    let readErr = null;
     try {
         const reg = await navigator.serviceWorker.ready;
         subscription = await reg.pushManager.getSubscription();
-    } catch (e) { readErr = e; /* показываем ниже вместо тихого игнорирования */ }
+    } catch (e) { /* игнорируем — просто считаем, что подписки нет */ }
 
     const isOn = !!subscription && Notification.permission === 'granted';
     _setPushMasterUI(isOn);
-
-    // ВРЕМЕННО (диагностика) — показываем реальное состояние рядом с переключателем,
-    // чтобы понять, что именно не совпадает с ожиданием. Убрать после разбора бага.
-    const dbg = document.getElementById('pushMasterToggleState');
-    if (dbg) {
-        dbg.textContent += ` [sub:${subscription ? 'есть' : 'нет'} perm:${Notification.permission}${readErr ? ' err:' + (readErr.message || readErr) : ''}]`;
-    }
 
     if (isOn) await _loadNotificationPreferencesIntoUI();
 }
@@ -106,7 +98,7 @@ async function togglePushMaster() {
         }
     } catch (e) {
         console.error('push toggle error:', e);
-        showInfo(t('push_error') + ' [' + (e && e.message ? e.message : String(e)) + ']');
+        showInfo(t('push_error'));
     } finally {
         btn.disabled = false;
         await refreshPushSettingsUI();
@@ -140,7 +132,7 @@ async function _enablePush() {
         lang: (typeof currentLang !== 'undefined' && currentLang) ? currentLang : 'ru'
     }, { onConflict: 'endpoint' });
 
-    if (error) { console.error('push_subscriptions upsert error:', error); showInfo(t('push_error') + ' [' + (error.message || error.code || 'db') + ']'); return; }
+    if (error) { console.error('push_subscriptions upsert error:', error); showInfo(t('push_error')); return; }
     showInfo(t('push_enabled_toast'));
 }
 
