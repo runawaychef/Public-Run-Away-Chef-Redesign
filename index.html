@@ -3717,23 +3717,26 @@ function _closeTopOverlay() {
     if (openDetail) openDetail.close();
 }
 
-function _pushBackBuffer() {
-    history.pushState({ backBuffer: true }, '');
-}
-_pushBackBuffer();
+// Резервируем большой запас записей в истории браузера сразу при старте — вместо
+// того чтобы довешивать по одной записи внутри самого обработчика popstate
+// (так было раньше, и это оказалось ненадёжно: давняя, годами не решённая
+// неоднозначность в спецификации браузеров — при паттерне "push прямо в
+// обработчике нажатия назад" браузер иногда пропускает только что добавленную
+// запись на следующем нажатии). 200 записей с огромным запасом хватает на любую
+// реальную рабочую сессию — кнопка "Назад" теперь вообще никогда не закрывает
+// приложение целиком, только закрывает открытое/переключает на вкладку заказов.
+const BACK_BUFFER_SIZE = 200;
+for (let i = 0; i < BACK_BUFFER_SIZE; i++) history.pushState({ backBuffer: true }, '');
 
 window.addEventListener('popstate', function () {
     if (_hasOpenOverlay()) {
         _closeTopOverlay();
-        _pushBackBuffer();
         return;
     }
     // Ничего не открыто, но пользователь не на главной вкладке "Заказы" —
-    // сначала возвращаем туда (заказы считаем "домашним" экраном приложения),
-    // и только повторное нажатие ИМЕННО со вкладки заказов закрывает приложение.
+    // возвращаем туда (заказы считаем "домашним" экраном приложения).
     if (typeof currentTabId !== 'undefined' && currentTabId !== 'orders' && typeof showTab === 'function') {
         showTab('orders');
-        _pushBackBuffer();
         return;
     }
     // На вкладке "Заказы", но включён табличный вид, а не карточный —
@@ -3743,12 +3746,12 @@ window.addEventListener('popstate', function () {
         const isTableView = tableWrap && !tableWrap.classList.contains('hidden');
         if (isTableView && typeof setOrdersViewMode === 'function') {
             setOrdersViewMode('cards');
-            _pushBackBuffer();
             return;
         }
     }
-    // иначе (уже на карточном виде вкладки заказов, ничего не открыто) — ничего
-    // не делаем, даём Android закрыть приложение как обычно
+    // иначе (уже на карточном виде вкладки заказов, ничего не открыто) — просто
+    // ничего не делаем; запас записей в истории огромный, так что Android
+    // не закроет приложение — очередное нажатие "Назад" будет перехвачено точно так же
 });
 
 
