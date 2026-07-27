@@ -44,13 +44,21 @@ async function refreshPushSettingsUI() {
     }
 
     let subscription = null;
+    let readErr = null;
     try {
         const reg = await navigator.serviceWorker.ready;
         subscription = await reg.pushManager.getSubscription();
-    } catch (e) { /* игнорируем — просто считаем, что подписки нет */ }
+    } catch (e) { readErr = e; /* показываем ниже вместо тихого игнорирования */ }
 
     const isOn = !!subscription && Notification.permission === 'granted';
     _setPushMasterUI(isOn);
+
+    // ВРЕМЕННО (диагностика) — показываем реальное состояние рядом с переключателем,
+    // чтобы понять, что именно не совпадает с ожиданием. Убрать после разбора бага.
+    const dbg = document.getElementById('pushMasterToggleState');
+    if (dbg) {
+        dbg.textContent += ` [sub:${subscription ? 'есть' : 'нет'} perm:${Notification.permission}${readErr ? ' err:' + (readErr.message || readErr) : ''}]`;
+    }
 
     if (isOn) await _loadNotificationPreferencesIntoUI();
 }
