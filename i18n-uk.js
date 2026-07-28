@@ -11,6 +11,8 @@ window.I18N = window.I18N || {};
 I18N.uk = {
         lang_pick_change_suffix: 'змінити',
         lang_picker_title: 'Оберіть мову',
+        lang_draft_badge: 'Чернетка',
+        lang_draft_confirm: 'Цей переклад — чернетка, ще не перевірений носієм мови. Використати попри це?',
 
         // Нижняя навигация
         nav_orders: 'Замовлення',

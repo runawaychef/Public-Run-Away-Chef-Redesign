@@ -5,6 +5,8 @@ window.I18N = window.I18N || {};
 I18N.ru = {
         lang_pick_change_suffix: 'изменить',
         lang_picker_title: 'Выберите язык',
+        lang_draft_badge: 'Черновик',
+        lang_draft_confirm: 'Этот перевод — черновик, ещё не проверен носителем языка. Использовать всё равно?',
         // Нижняя навигация
         nav_orders: 'Заказы',
         nav_products: 'Ассортимент',

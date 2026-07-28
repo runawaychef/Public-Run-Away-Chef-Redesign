@@ -82,7 +82,7 @@ async function openOrderDocumentPreview(docType, langOverride) {
 // интерфейса приложения — просто перерисовывает превью на новом языке,
 // без похода в базу (снимок с данными уже загружен).
 async function setDocumentLang(lang) {
-    if (!_docPreview || (lang !== BASE_LANG && lang !== secondLang)) return;
+    if (!_docPreview || (lang !== BASE_LANG && lang !== currentLang)) return;
     if (typeof ensureLangLoaded === 'function') await ensureLangLoaded(lang);
     _docPreview.lang = lang;
     renderDocumentPreviewThumbnail();
@@ -91,8 +91,15 @@ async function setDocumentLang(lang) {
 
 function updateDocumentLangSwitcherUI() {
     if (!_docPreview) return;
-    if (typeof renderLangSwitcher === 'function') {
-        renderLangSwitcher('docLangSwitchContainer', secondLang || BASE_LANG, _docPreview.lang, 'setDocumentLang');
+    const container = document.getElementById('docLangSwitchContainer');
+    if (container) {
+        // Показываем переключатель, только если язык интерфейса не английский
+        // (иначе оба варианта совпали бы — нечего переключать).
+        if (currentLang === BASE_LANG) {
+            container.innerHTML = '';
+        } else if (typeof renderLangSwitcher === 'function') {
+            renderLangSwitcher('docLangSwitchContainer', [currentLang, BASE_LANG], _docPreview.lang, 'setDocumentLang');
+        }
     }
 
     // Кнопка "Сформировать Delivery Note" видна только когда открыт Invoice —

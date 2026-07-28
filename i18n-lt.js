@@ -11,6 +11,8 @@ window.I18N = window.I18N || {};
 I18N.lt = {
         lang_pick_change_suffix: 'Pakeisti',
         lang_picker_title: 'Pasirinkite kalbą',
+        lang_draft_badge: 'Juodraštis',
+        lang_draft_confirm: 'Šis vertimas yra juodraštis ir dar nebuvo peržiūrėtas gimtakalbio. Vis tiek naudoti?',
 
         // Нижняя навигация
         nav_orders: 'Užsakymai',
