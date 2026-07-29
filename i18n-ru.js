@@ -367,7 +367,7 @@ I18N.ru = {
         inv_nearest: 'ближайшее',
         inv_show_down: 'Показать ↓',
         inv_col_ingredient: 'Ингредиент',
-        inv_col_balance_before: 'Склад',
+        inv_col_balance_before: 'В наличии',
         inv_col_balance: 'Остаток',
         inv_col_lasts: 'Статус',
         inv_col_list: 'Список',
