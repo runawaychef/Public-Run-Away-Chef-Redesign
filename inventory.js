@@ -308,8 +308,36 @@ async function openInventoryModal() {
         });
     });
 
+    // ── Множества "отслеживаемых" ингредиентов/п-ф ──────────────────────────
+    // Показываем в аналитике склада только то, что участвует в рецепте хотя бы
+    // одного изделия/п-ф с галочкой "Отслеживать остатки постоянно" — иначе
+    // экран захламляется редкими/разовыми позициями, которые пользователю
+    // неинтересны. Каскад: отслеживаемое изделие → его прямые ингредиенты и
+    // п-ф в рецепте отслеживаются тоже → ингредиенты ВНУТРИ этих п-ф — тоже.
+    // П-ф также может отслеживаться напрямую своей собственной галочкой,
+    // независимо от того, используется ли он в каком-то изделии вообще.
+    const trackedProducts = (products || []).filter(p => p.track_stock);
+    const trackedSfIds = new Set();
+    (semiFinished || []).forEach(sf => { if (sf.track_stock) trackedSfIds.add(sf.id); });
+    trackedProducts.forEach(prod => {
+        (prod.ingredients || []).forEach(ri => { if (ri.semi_finished_id) trackedSfIds.add(ri.semi_finished_id); });
+    });
+    const trackedIngIds = new Set();
+    trackedProducts.forEach(prod => {
+        (prod.ingredients || []).forEach(ri => { if (ri.ingredient_id) trackedIngIds.add(ri.ingredient_id); });
+    });
+    (semiFinished || []).filter(sf => trackedSfIds.has(sf.id)).forEach(sf => {
+        (sf.ingredients || []).forEach(ri => { if (ri.ingredient_id) trackedIngIds.add(ri.ingredient_id); });
+    });
+    // Защитный сценарий: если во всей организации НИ ОДНА галочка нигде не
+    // стоит (например, свежая org без демо-данных) — не показываем пустой
+    // экран, а ведём себя как раньше (без фильтра), пока пользователь не
+    // отметит хотя бы что-то одно.
+    const anyTrackingSet = trackedProducts.length > 0 || trackedSfIds.size > 0;
+
     // Сортируем по алфавиту и разбиваем на три группы
-    const sorted = ingredients.slice().sort((a, b) => (a.name||'').localeCompare(b.name||''));
+    const sorted = (anyTrackingSet ? ingredients.filter(ing => trackedIngIds.has(ing.id)) : ingredients)
+        .slice().sort((a, b) => (a.name||'').localeCompare(b.name||''));
     const red    = []; // < 3 дней или нехватка для заказа
     const yellow = []; // 3-7 дней
     const rest   = []; // всё остальное
@@ -397,7 +425,8 @@ async function openInventoryModal() {
     }
 
     // Разбиваем п/ф на группы заранее — критичные и жёлтые поднимем наверх
-    const sfSorted = (semiFinished || []).slice().sort((a, b) => (a.name||'').localeCompare(b.name||''));
+    const sfSorted = (anyTrackingSet ? (semiFinished || []).filter(sf => trackedSfIds.has(sf.id)) : (semiFinished || []))
+        .slice().sort((a, b) => (a.name||'').localeCompare(b.name||''));
     const sfRed = [], sfYellow = [], sfRest = [];
     sfSorted.forEach(sf => {
         const balance  = getSemiFinishedBalance(sf.id);
