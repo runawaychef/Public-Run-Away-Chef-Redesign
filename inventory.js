@@ -517,11 +517,23 @@ async function openInventoryModal() {
     if (rest.length) {
         const hasUrgentAbove = red.length || yellow.length || sfRed.length || sfYellow.length;
         if (hasUrgentAbove) {
+            html += `<tr><td colspan="5" style="height:10px; border:none;"></td></tr>`;
             html += `<tr class="inv-rest-toggle" onclick="toggleInvRestGroup('invRestIng', this)" style="cursor:pointer; background:#f0ede3;">
                 <td colspan="5" class="p-2 text-xs font-semibold text-gray-600">
                     ${t('inv_group_rest')} (${rest.length})
                     <span class="inv-rest-arrow" style="float:right;">▸</span>
                 </td>
+            </tr>`;
+            // Заголовок колонок повторяем здесь же — открывается вместе со
+            // списком, чтобы не приходилось скроллить наверх, вспоминая,
+            // что означает каждая колонка (закреплённый заголовок таблицы
+            // к этому моменту уже далеко прокручен, если критичных позиций много).
+            html += `<tr class="invRestIng hidden" style="background-color:#e3e8df;">
+                <th class="p-1 text-center" style="width:34%;">${t('inv_col_ingredient')}</th>
+                <th class="p-1 text-center" style="width:17%;">${t('inv_col_balance_before')}</th>
+                <th class="p-1 text-center" style="width:17%;">${t('inv_col_balance')}</th>
+                <th class="p-1 text-center" style="width:20%;">${t('inv_col_lasts')}</th>
+                <th class="p-1 text-center" style="width:12%;">${cartIconSvg}</th>
             </tr>`;
         }
         rest.sort((a, b) => {
@@ -541,7 +553,7 @@ async function openInventoryModal() {
     if (sfRest.length) {
         const sfHasUrgentAbove = sfRed.length || sfYellow.length;
         if (sfHasUrgentAbove) {
-            html += `<div class="inv-rest-toggle p-2 rounded-lg mt-2" onclick="toggleInvRestGroup('invRestSf', this)" style="cursor:pointer; background:#f0ede3;">
+            html += `<div class="inv-rest-toggle p-2 rounded-lg" onclick="toggleInvRestGroup('invRestSf', this)" style="cursor:pointer; background:#f0ede3; margin-top:10px;">
                 <span class="text-xs font-semibold text-gray-600">${t('inv_semifinished_title')} (${sfRest.length})</span>
                 <span class="inv-rest-arrow" style="float:right;">▸</span>
             </div>`;
