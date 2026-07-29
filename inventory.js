@@ -262,6 +262,15 @@ function updateInventoryAlertDot() {
     dot.classList.toggle('hidden', !hasLowTracked && !hasLowTrackedSf && !hasShortage);
 }
 
+// Сворачивает/разворачивает группу "Остальные" (ингредиенты — строки таблицы,
+// полуфабрикаты — целая вторая таблица) по тапу на заголовок группы.
+function toggleInvRestGroup(sectionKey, headerEl) {
+    const container = document.getElementById('inventoryContent') || document;
+    container.querySelectorAll('.' + sectionKey).forEach(el => el.classList.toggle('hidden'));
+    const arrow = headerEl.querySelector('.inv-rest-arrow');
+    if (arrow) arrow.textContent = arrow.textContent === '▸' ? '▾' : '▸';
+}
+
 // ── Открытие окна склада ─────────────────────────────────────────────────────
 
 async function openInventoryModal() {
@@ -401,7 +410,7 @@ async function openInventoryModal() {
         }
     });
 
-    function renderRow(item, bgClass, daysClass, isSf) {
+    function renderRow(item, bgClass, daysClass, isSf, extraRowClass) {
         const { ing, balance, balanceBefore, daysLeft, unitLabel, shortage } = item;
         const balanceBeforeStr = balanceBefore !== null ? `${Math.round(Number(balanceBefore))} ${unitLabel}` : '—';
         const balanceStr = balance !== null ? `${Math.round(Number(balance))} ${unitLabel}` : '—';
@@ -415,7 +424,7 @@ async function openInventoryModal() {
         const detailClick = isSf
             ? `closeModal(); showTab('semiFinished'); openSemiFinishedDetail(${ing.id});`
             : `closeModal(); showTab('ingredients'); openIngredientDetail(${ing.id});`;
-        return `<tr class="border-b">
+        return `<tr class="border-b${extraRowClass ? ' ' + extraRowClass : ''}">
             <td class="p-1 table-text cursor-pointer hover:underline" style="overflow:hidden;text-overflow:ellipsis;" onclick="${detailClick}">${escapeHtml(ing.name)}</td>
             <td class="p-1 table-text text-right" style="color:#a29c8c;white-space:nowrap;">${balanceBeforeStr}</td>
             <td class="p-1 table-text text-right" style="white-space:nowrap;">${balanceStr}</td>
@@ -486,28 +495,34 @@ async function openInventoryModal() {
 
     // 🔴 Критично: ингредиенты
     if (red.length) {
-        html += `<tr><td colspan="5" class="p-1 text-xs font-semibold" style="color:#c0685c;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#c0685c;"></span>${t('inv_group_critical')}</td></tr>`;
+        html += `<tr><td colspan="5" class="p-2 text-xs font-semibold" style="background:#f6ded9; color:#a8483c;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#c0685c;"></span>${t('inv_group_critical')}</td></tr>`;
         red.forEach(item => { html += renderRow(item, null, 'stock-critical', false); });
     }
     // 🔴 Критично: полуфабрикаты
     if (sfRed.length) {
-        html += `<tr><td colspan="5" class="p-1 text-xs font-semibold" style="color:#c0685c;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#c0685c;"></span>${t('inv_group_critical_sf')}</td></tr>`;
+        html += `<tr><td colspan="5" class="p-2 text-xs font-semibold" style="background:#f6ded9; color:#a8483c;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#c0685c;"></span>${t('inv_group_critical_sf')}</td></tr>`;
         sfRed.forEach(item => { html += renderRow(item, null, 'stock-critical', true); });
     }
     // 🟡 Заканчивается: ингредиенты
     if (yellow.length) {
-        html += `<tr><td colspan="5" class="p-1 text-xs font-semibold" style="color:#96712a;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#d9a441;"></span>${t('inv_group_low')}</td></tr>`;
+        html += `<tr><td colspan="5" class="p-2 text-xs font-semibold" style="background:#faedcf; color:#8a641f;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#d9a441;"></span>${t('inv_group_low')}</td></tr>`;
         yellow.forEach(item => { html += renderRow(item, null, 'stock-low', false); });
     }
     // 🟡 Заканчивается: полуфабрикаты
     if (sfYellow.length) {
-        html += `<tr><td colspan="5" class="p-1 text-xs font-semibold" style="color:#96712a;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#d9a441;"></span>${t('inv_group_low_sf')}</td></tr>`;
+        html += `<tr><td colspan="5" class="p-2 text-xs font-semibold" style="background:#faedcf; color:#8a641f;"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#d9a441;"></span>${t('inv_group_low_sf')}</td></tr>`;
         sfYellow.forEach(item => { html += renderRow(item, null, 'stock-low', true); });
     }
-    // Остальные ингредиенты
+    // Остальные ингредиенты — свёрнуто по умолчанию, тап по заголовку разворачивает
     if (rest.length) {
-        if (red.length || yellow.length || sfRed.length || sfYellow.length) {
-            html += `<tr><td colspan="5" class="p-1 text-xs font-semibold text-gray-500">${t('inv_group_rest')}</td></tr>`;
+        const hasUrgentAbove = red.length || yellow.length || sfRed.length || sfYellow.length;
+        if (hasUrgentAbove) {
+            html += `<tr class="inv-rest-toggle" onclick="toggleInvRestGroup('invRestIng', this)" style="cursor:pointer; background:#f0ede3;">
+                <td colspan="5" class="p-2 text-xs font-semibold text-gray-600">
+                    ${t('inv_group_rest')} (${rest.length})
+                    <span class="inv-rest-arrow" style="float:right;">▸</span>
+                </td>
+            </tr>`;
         }
         rest.sort((a, b) => {
             if (a.daysLeft === null && b.daysLeft === null) return 0;
@@ -515,15 +530,25 @@ async function openInventoryModal() {
             if (b.daysLeft === null) return -1;
             return a.daysLeft - b.daysLeft;
         });
-        rest.forEach(item => { html += renderRow(item, '', 'text-gray-500', false); });
+        rest.forEach(item => { html += renderRow(item, '', 'text-gray-500', false, hasUrgentAbove ? 'invRestIng hidden' : ''); });
     }
 
     html += '</tbody></table>';
 
-    // Остальные полуфабрикаты — внизу отдельной таблицей
+    // Остальные полуфабрикаты — внизу отдельной таблицей, свёрнуто по умолчанию,
+    // если выше уже показаны критичные/заканчивающиеся п/ф (иначе сворачивать
+    // нечего — это единственная информация про п/ф на экране).
     if (sfRest.length) {
-        html += `<p class="text-xs font-semibold text-gray-600 mt-3 mb-1">${t('inv_semifinished_title')}</p>`;
-        html += '<table class="w-full text-xs table-clean" style="table-layout:fixed;"><thead><tr style="background-color:#e3e8df;" class="sticky top-0"><th class="p-1 text-center" style="width:34%;">' + t('inv_col_name') + '</th><th class="p-1 text-center" style="width:17%;">' + t('inv_col_balance_before') + '</th><th class="p-1 text-center" style="width:17%;">' + t('inv_col_balance') + '</th><th class="p-1 text-center" style="width:20%;">' + t('inv_col_lasts') + '</th><th class="p-1 text-center" style="width:12%;">' + cartIconSvg + '</th></tr></thead><tbody>';
+        const sfHasUrgentAbove = sfRed.length || sfYellow.length;
+        if (sfHasUrgentAbove) {
+            html += `<div class="inv-rest-toggle p-2 rounded-lg mt-2" onclick="toggleInvRestGroup('invRestSf', this)" style="cursor:pointer; background:#f0ede3;">
+                <span class="text-xs font-semibold text-gray-600">${t('inv_semifinished_title')} (${sfRest.length})</span>
+                <span class="inv-rest-arrow" style="float:right;">▸</span>
+            </div>`;
+        } else {
+            html += `<p class="text-xs font-semibold text-gray-600 mt-3 mb-1">${t('inv_semifinished_title')}</p>`;
+        }
+        html += `<table class="w-full text-xs table-clean${sfHasUrgentAbove ? ' invRestSf hidden' : ''}" style="table-layout:fixed;"><thead><tr style="background-color:#e3e8df;" class="sticky top-0"><th class="p-1 text-center" style="width:34%;">` + t('inv_col_name') + '</th><th class="p-1 text-center" style="width:17%;">' + t('inv_col_balance_before') + '</th><th class="p-1 text-center" style="width:17%;">' + t('inv_col_balance') + '</th><th class="p-1 text-center" style="width:20%;">' + t('inv_col_lasts') + '</th><th class="p-1 text-center" style="width:12%;">' + cartIconSvg + '</th></tr></thead><tbody>';
         sfRest.sort((a, b) => {
             if (a.daysLeft === null && b.daysLeft === null) return 0;
             if (a.daysLeft === null) return 1;
