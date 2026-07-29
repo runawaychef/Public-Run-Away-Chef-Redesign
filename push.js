@@ -129,7 +129,7 @@ async function _enablePush() {
         p256dh: json.keys.p256dh,
         auth: json.keys.auth,
         user_agent: navigator.userAgent,
-        lang: (typeof currentLang !== 'undefined' && currentLang) ? currentLang : 'ru'
+        lang: (typeof currentLang !== 'undefined' && currentLang) ? currentLang : 'en'
     }, { onConflict: 'endpoint' });
 
     if (error) { console.error('push_subscriptions upsert error:', error); showInfo(t('push_error')); return; }

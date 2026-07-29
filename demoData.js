@@ -157,7 +157,7 @@ function demoOrderPlan() {
 }
 
 async function createDemoData(orgId, employeeId) {
-    const lang = (typeof currentLang !== 'undefined' && currentLang === 'en') ? 'en' : 'ru';
+    const lang = (typeof currentLang !== 'undefined' && currentLang === 'ru') ? 'ru' : 'en';
     const C = DEMO_CONTENT[lang];
     // Некритичные сбои (склад, оплаты, отдельные заказы, снимок себестоимости)
     // не должны обрывать весь процесс — но и молча теряться в консоли браузера
