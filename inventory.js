@@ -523,7 +523,7 @@ async function openInventoryModal() {
     // Остальные полуфабрикаты — внизу отдельной таблицей
     if (sfRest.length) {
         html += `<p class="text-xs font-semibold text-gray-600 mt-3 mb-1">${t('inv_semifinished_title')}</p>`;
-        html += '<table class="w-full text-xs table-clean" style="table-layout:fixed;"><thead><tr style="background-color:#e3e8df;" class="sticky top-0"><th class="p-1 text-center" style="width:34%;">' + t('inv_col_name') + '</th><th class="p-1 text-center" style="width:17%;">' + t('inv_col_balance_before') + '</th><th class="p-1 text-center" style="width:17%;">' + t('inv_col_balance') + '</th><th class="p-1 text-center" style="width:20%;">' + t('inv_col_lasts') + '</th><th class="p-1 text-center" style="width:12%;">' + t('inv_col_list') + '</th></tr></thead><tbody>';
+        html += '<table class="w-full text-xs table-clean" style="table-layout:fixed;"><thead><tr style="background-color:#e3e8df;" class="sticky top-0"><th class="p-1 text-center" style="width:34%;">' + t('inv_col_name') + '</th><th class="p-1 text-center" style="width:17%;">' + t('inv_col_balance_before') + '</th><th class="p-1 text-center" style="width:17%;">' + t('inv_col_balance') + '</th><th class="p-1 text-center" style="width:20%;">' + t('inv_col_lasts') + '</th><th class="p-1 text-center" style="width:12%;">' + cartIconSvg + '</th></tr></thead><tbody>';
         sfRest.sort((a, b) => {
             if (a.daysLeft === null && b.daysLeft === null) return 0;
             if (a.daysLeft === null) return 1;
