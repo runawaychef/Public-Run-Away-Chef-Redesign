@@ -354,15 +354,15 @@ async function saveOrgNameSetup() {
     }
     const owner = _pendingOwnerForSetup;
     if (wantsDemo && owner) {
-        showLoading('Заполняю пример...');
+        showLoading(t('fill_demo_loading'));
         try {
             const warnings = await createDemoData(currentOrgId, owner.id);
             if (warnings && warnings.length) {
-                showInfo('Пример создан, но не всё удалось до конца:\n\n⚠️ ' + warnings.join('\n⚠️ '));
+                showInfo(t('fill_demo_success') + '\n\n⚠️ ' + warnings.join('\n⚠️ '));
             }
         } catch (e) {
             console.error(e);
-            showInfo('Не удалось полностью заполнить пример — но можно продолжить и добавить данные вручную.\n\nТехническая причина: ' + (e && e.message ? e.message : String(e)));
+            showInfo(t('fill_demo_error') + (e && e.message ? e.message : String(e)));
         } finally {
             hideLoading();
         }
