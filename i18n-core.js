@@ -100,20 +100,16 @@ async function ensureLangLoaded(lang) {
     await _loadLangScript(lang);
 }
 
-async function setLang(lang) {
+function setLang(lang) {
     if (!SUPPORTED_LANGS.includes(lang)) return;
-    await _loadLangScript(lang);
-    currentLang = lang;
+    // Полная перезагрузка вместо точечной перерисовки: applyI18n() обновляет
+    // только статичную разметку (data-i18n), но списки заказов/изделий/склада
+    // и т.п. собираются в JS через t() один раз при отрисовке экрана — сменa
+    // языка сама по себе их не перестраивает. Перезагрузка — самый надёжный
+    // способ гарантировать, что вообще всё в приложении окажется на новом
+    // языке, без риска забыть какую-то из функций отрисовки.
     localStorage.setItem('appLang', lang);
-    applyI18n();
-    updateLangSwitcherUI();
-    // Текст тарифа (Тариф/Лимиты) собирается в JS и зависит от языка —
-    // перерисовываем, если функция уже подключена (inventory.js).
-    if (typeof renderPlanInfo === 'function') renderPlanInfo();
-    // Страна/валюта в окне "Информация о компании" — та же логика (company.js).
-    if (typeof refreshCompanyLangDependentUI === 'function') refreshCompanyLangDependentUI();
-    if (typeof refreshVatLabels === 'function') refreshVatLabels();
-    if (typeof syncPushLangIfSubscribed === 'function') syncPushLangIfSubscribed();
+    location.reload();
 }
 
 function applyI18n() {
