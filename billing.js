@@ -52,12 +52,53 @@ function openPlanModal() {
     refreshPlanModalPrices();
 }
 
+// Чек-лист фич по тарифам. included: true/false — используется для отрисовки
+// галочки/крестика в развёрнутом виде карточки. Список соответствует
+// согласованному ранее фич-гейтингу (Free/Light — core, Full — всё).
+function planFeatureList() {
+    return [
+        { key: 'plan_feat_orders', free: true, light: true, full: true },
+        { key: 'plan_feat_customers', free: true, light: true, full: true },
+        { key: 'plan_feat_inventory', free: true, light: true, full: true },
+        { key: 'plan_feat_unlimited_orders', free: false, light: true, full: true },
+        { key: 'plan_feat_stats', free: false, light: false, full: true },
+        { key: 'plan_feat_cost_profit', free: false, light: false, full: true },
+        { key: 'plan_feat_charts_forecast', free: false, light: false, full: true },
+        { key: 'plan_feat_staff', free: false, light: false, full: true }
+    ];
+}
+
 function planCardConfig() {
     return [
         { key: 'free', name: t('plan_free_name'), price: t('plan_free_price'), desc: t('plan_free_desc'), sku: null },
         { key: 'light', name: t('plan_light_name'), price: t('plan_light_price'), desc: t('plan_light_desc'), sku: PLAN_PRODUCTS.light.sku },
         { key: 'full', name: t('plan_full_name'), price: t('plan_full_price'), desc: t('plan_full_desc'), sku: PLAN_PRODUCTS.full.sku }
     ];
+}
+
+function planFeatureRowsHtml(planKey) {
+    return planFeatureList().map(f => {
+        const included = !!f[planKey];
+        const icon = included
+            ? `<svg viewBox="0 0 24 24" fill="none" stroke="#7c9473" stroke-width="2.5" style="width:14px;height:14px;flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>`
+            : `<svg viewBox="0 0 24 24" fill="none" stroke="#c9c3b3" stroke-width="2.5" style="width:14px;height:14px;flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>`;
+        const textColor = included ? '#4a4a42' : '#b3ada0';
+        return `<div class="flex items-center gap-2" style="padding:3px 0;">${icon}<span class="text-xs" style="color:${textColor};">${escapeHtml(t(f.key))}</span></div>`;
+    }).join('');
+}
+
+// Раскрывает/сворачивает чек-лист конкретной карточки (аккордеон — за раз открыта
+// только одна). stopPropagation в кнопке покупки не даёт тапу по кнопке случайно
+// свернуть карточку.
+function togglePlanCard(planKey) {
+    planCardConfig().forEach(card => {
+        const rows = document.getElementById(`planFeatureRows_${card.key}`);
+        const chevron = document.getElementById(`planChevron_${card.key}`);
+        if (!rows) return;
+        const shouldOpen = card.key === planKey && rows.style.display === 'none';
+        rows.style.display = shouldOpen ? 'block' : 'none';
+        if (chevron) chevron.style.transform = shouldOpen ? 'rotate(90deg)' : 'rotate(0deg)';
+    });
 }
 
 function renderPlanModalCards() {
@@ -74,19 +115,23 @@ function renderPlanModalCards() {
         if (isCurrent) {
             actionHtml = `<span class="text-xs font-semibold px-3 py-1.5 rounded-full" style="background:#e3e8df; color:#5a6b52;">${escapeHtml(t('plan_current_badge'))}</span>`;
         } else if (card.sku) {
-            actionHtml = `<button type="button" id="planBuyBtn_${card.key}" onclick="purchasePlan('${card.key}')" class="pill-btn text-xs px-3 py-1.5" disabled style="opacity:0.5;">${escapeHtml(t('plan_coming_soon'))}</button>`;
+            actionHtml = `<button type="button" id="planBuyBtn_${card.key}" onclick="event.stopPropagation(); purchasePlan('${card.key}')" class="pill-btn text-xs px-3 py-1.5" disabled style="opacity:0.5;">${escapeHtml(t('plan_coming_soon'))}</button>`;
         } else {
             actionHtml = '';
         }
 
         return `
-            <div style="border:${border}; background:${bg}; border-radius:14px; padding:12px;">
+            <div onclick="togglePlanCard('${card.key}')" style="border:${border}; background:${bg}; border-radius:14px; padding:12px; cursor:pointer;">
                 <div class="flex justify-between items-center mb-1">
-                    <span class="text-sm font-semibold text-gray-800">${escapeHtml(card.name)}</span>
+                    <span class="flex items-center gap-1.5">
+                        <svg id="planChevron_${card.key}" viewBox="0 0 24 24" fill="none" stroke="#9a9488" stroke-width="2" style="width:11px;height:11px;transition:transform 0.15s;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                        <span class="text-sm font-semibold text-gray-800">${escapeHtml(card.name)}</span>
+                    </span>
                     ${actionHtml}
                 </div>
-                <div class="text-xs font-medium mb-1" id="planPriceLabel_${card.key}" style="color:#7c9473;">${escapeHtml(card.price)}</div>
-                <div class="text-xs text-gray-500">${escapeHtml(card.desc)}</div>
+                <div class="text-xs font-medium mb-1" id="planPriceLabel_${card.key}" style="color:#7c9473; margin-left:19px;">${escapeHtml(card.price)}</div>
+                <div class="text-xs text-gray-500" style="margin-left:19px;">${escapeHtml(card.desc)}</div>
+                <div id="planFeatureRows_${card.key}" style="display:none; margin-left:19px; margin-top:8px; padding-top:8px; border-top:1px solid #ece7d9;">${planFeatureRowsHtml(card.key)}</div>
             </div>`;
     }).join('');
 }
