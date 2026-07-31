@@ -2036,13 +2036,16 @@
                 <div style="overflow-y:auto; flex:1; min-height:0; margin:0 -4px; padding:0 4px;">
 
                 <!-- Группа 1: аккаунт / бизнес -->
-                <div class="flex flex-col gap-1 mb-3 rounded-xl p-2" style="background:#e3e8df;">
+                <button type="button" onclick="openPlanModal()" class="flex flex-col gap-1 mb-3 rounded-xl p-2 w-full text-left" style="background:#e3e8df;">
                     <div class="flex justify-between items-center">
                         <span class="text-xs text-gray-500" data-i18n="settings_tariff">Тариф</span>
-                        <span id="settingsPlanBadge" class="text-xs font-semibold px-2 py-0.5 rounded-full">—</span>
+                        <span class="flex items-center gap-1">
+                            <span id="settingsPlanBadge" class="text-xs font-semibold px-2 py-0.5 rounded-full">—</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="#9a9488" stroke-width="2" style="width:13px;height:13px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                        </span>
                     </div>
                     <div id="settingsPlanUsage" class="text-xs text-gray-500 mt-1"></div>
-                </div>
+                </button>
                 <div id="companyInfoBtnBlock" class="flex flex-col gap-1 mb-3 hidden">
                     <button onclick="openCompanyInfoModal()" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21"/></svg><span data-i18n="settings_company_info">Информация о компании</span></button>
                 </div>
@@ -2154,6 +2157,19 @@
         </div>
 
         <!-- Написать нам — приветственное окно с текстом сообщения перед открытием
+        <!-- Тарифы / подписка. Карточки рендерятся динамически в billing.js (renderPlanModal),
+             т.к. текущий тариф пользователя влияет на то, какая кнопка активна. Кнопка покупки
+             физически работает только внутри TWA-сборки с Google Play Billing (Digital Goods API) —
+             у остальных пользователей (включая тестировщиков на старой сборке) показывается как
+             "Скоро будет доступно", без риска сломанного вида или ошибок. -->
+        <div id="planModal" class="modal" onclick="if(event.target===this) this.style.display='none';">
+            <div class="modal-content" style="max-width:380px;max-height:85vh;overflow-y:auto;">
+                <h2 class="text-sm font-semibold mb-3 text-gray-800" data-i18n="plan_modal_title">Выберите тариф</h2>
+                <div id="planModalCards" class="flex flex-col gap-3"></div>
+                <button onclick="document.getElementById('planModal').style.display='none';" class="pill-btn-secondary w-full justify-center mt-3" data-i18n="common_ok">OK</button>
+            </div>
+        </div>
+
              системной почты (не сразу уводит из приложения). -->
         <div id="contactModal" class="modal">
             <div class="modal-content" style="max-width:360px;">
@@ -2894,6 +2910,7 @@
     <script src="employees.js?v=30"></script>
     <script src="company.js?v=20"></script>
     <script src="inventory.js?v=44"></script>
+    <script src="billing.js?v=1"></script>
     <script src="push.js?v=7"></script>
 <script src="ingredients.js?v=34"></script>
 <script src="batches.js?v=9"></script>

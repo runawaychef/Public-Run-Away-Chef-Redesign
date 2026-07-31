@@ -38,6 +38,7 @@ const ASSETS = [
   './ingredients.js',
   './batches.js',
   './inventory.js',
+  './billing.js',
   './push.js',
   './stats.js',
   './history.js',
