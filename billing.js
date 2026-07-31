@@ -108,8 +108,8 @@ function renderPlanModalCards() {
 
     wrap.innerHTML = planCardConfig().map(card => {
         const isCurrent = card.key === current;
-        const border = isCurrent ? '2px solid #7c9473' : '1px solid #ece7d9';
-        const bg = card.key === 'full' ? '#f4f1ea' : '#ffffff';
+        const border = isCurrent ? '2px solid #7c9473' : '1px solid #e2ddd0';
+        const bg = '#f4f1ea';
 
         let actionHtml;
         if (isCurrent) {
