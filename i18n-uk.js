@@ -47,6 +47,7 @@ I18N.uk = {
         plan_processing: 'Обробка…',
         plan_purchase_error: 'Щось пішло не так. Спробуйте ще раз.',
         plan_purchase_cancelled: 'Покупку скасовано.',
+        plan_purchase_success: 'Покупка успішна! Тариф оновлено.',
         plan_feat_orders: 'Замовлення — картки, календар, фільтри',
         plan_feat_customers: 'Картка клієнта — борг та історія замовлень',
         plan_feat_inventory: 'Склад — партії, надходження, списання',

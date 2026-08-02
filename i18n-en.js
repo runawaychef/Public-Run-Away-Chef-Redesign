@@ -41,6 +41,7 @@ I18N.en = {
         plan_processing: 'Processing…',
         plan_purchase_error: 'Something went wrong. Please try again.',
         plan_purchase_cancelled: 'Purchase cancelled.',
+        plan_purchase_success: 'Purchase successful! Your plan has been updated.',
         plan_feat_orders: 'Orders — cards, calendar, filters',
         plan_feat_customers: 'Customer card — debt & order history',
         plan_feat_inventory: 'Inventory — batches, receiving, write-off',

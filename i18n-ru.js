@@ -40,6 +40,7 @@ I18N.ru = {
         plan_processing: 'Обработка…',
         plan_purchase_error: 'Что-то пошло не так. Попробуйте ещё раз.',
         plan_purchase_cancelled: 'Покупка отменена.',
+        plan_purchase_success: 'Покупка прошла успешно! Тариф обновлён.',
         plan_feat_orders: 'Заказы — карточки, календарь, фильтры',
         plan_feat_customers: 'Карточка клиента — долг и история заказов',
         plan_feat_inventory: 'Склад — партии, приход, списание',

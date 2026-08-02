@@ -47,6 +47,7 @@ I18N.lt = {
         plan_processing: 'Apdorojama…',
         plan_purchase_error: 'Kažkas nepavyko. Bandykite dar kartą.',
         plan_purchase_cancelled: 'Pirkimas atšauktas.',
+        plan_purchase_success: 'Pirkimas sėkmingas! Jūsų planas atnaujintas.',
         plan_feat_orders: 'Užsakymai — kortelės, kalendorius, filtrai',
         plan_feat_customers: 'Kliento kortelė — skola ir užsakymų istorija',
         plan_feat_inventory: 'Sandėlis — partijos, priėmimas, nurašymas',

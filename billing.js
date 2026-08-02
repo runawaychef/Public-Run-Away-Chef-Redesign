@@ -199,12 +199,27 @@ async function purchasePlan(planKey) {
         const response = await request.show();
         await response.complete('success');
 
-        // TODO (следующий шаг плана монетизации): отправить response.details.purchaseToken
-        // на серверную Edge Function для проверки через Google Play Developer API и
-        // обновления organizations.plan / plan_override в базе. Пока покупка технически
-        // проходит на стороне Google, но локальный тариф не обновляется автоматически.
-        showInfo(t('plan_processing'));
+        // Отправляем purchaseToken на сервер для проверки через Google Play
+        // Developer API и обновления тарифа в базе (Edge Function verify-purchase).
+        const { data: verifyResult, error: verifyError } = await db.functions.invoke('verify-purchase', {
+            body: {
+                purchaseToken: response.details.purchaseToken,
+                productId: product.sku,
+                orgId: currentOrgId
+            }
+        });
+
+        if (verifyError || !verifyResult || verifyResult.error) {
+            // Покупка на стороне Google прошла, но проверка/синхронизация с базой
+            // не удалась — не обманываем пользователя "успехом", честно сообщаем.
+            showInfo(t('plan_purchase_error'));
+            return;
+        }
+
+        currentOrgPlan = verifyResult.plan;
+        showInfo(t('plan_purchase_success'));
         document.getElementById('planModal').style.display = 'none';
+        if (typeof renderPlanInfo === 'function') renderPlanInfo();
     } catch (e) {
         // Пользователь мог просто закрыть системное окно оплаты — это не ошибка.
         if (e && e.name === 'AbortError') {
