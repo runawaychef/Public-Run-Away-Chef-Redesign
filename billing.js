@@ -175,15 +175,16 @@ function renderPlanModalCards() {
 // Не блокирует открытие модалки — цены обновляются "тихо" по готовности.
 async function refreshPlanModalPrices() {
     const service = await getBillingService();
-    if (!service) return; // API недоступен здесь — оставляем статичные цены, кнопки остаются disabled ("Скоро будет доступно")
+    if (!service) { showInfo('DEBUG: getBillingService() = null'); return; } // API недоступен здесь — оставляем статичные цены, кнопки остаются disabled ("Скоро будет доступно")
 
     let details;
     try {
         details = await service.getDetails([PLAN_PRODUCTS.light.sku, PLAN_PRODUCTS.full.sku]);
     } catch (e) {
+        showInfo('DEBUG getDetails error: ' + (e && e.message ? e.message : String(e)));
         return;
     }
-    if (!details || !details.length) return;
+    if (!details || !details.length) { showInfo('DEBUG: getDetails returned empty, length=' + (details ? details.length : 'null')); return; }
 
     details.forEach(item => {
         const cardKey = Object.keys(PLAN_PRODUCTS).find(k => PLAN_PRODUCTS[k].sku === item.itemId);
