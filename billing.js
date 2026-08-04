@@ -25,6 +25,41 @@ const PLAN_PRODUCTS = {
 let _digitalGoodsService = null;
 let _digitalGoodsChecked = false;
 
+// ── obfuscatedAccountId: связываем покупку с организацией на стороне Google ──
+// Google Play Billing позволяет передать при покупке произвольный "obfuscated
+// account id" — он потом возвращается в ЛЮБОМ ответе Play Developer API по
+// текущему purchaseToken, включая RTDN-обработку продлений/отмен, даже если
+// сам purchaseToken со временем меняется. Так серверная сторона (rtdn-handler)
+// узнаёт orgId без своей таблицы соответствий "токен → организация".
+//
+// Формат — protobuf-сообщение PlayBillingAdditionalData:
+//   message PlayBillingAdditionalData { string obfuscated_account_id = 1; }
+// Кодируем вручную (без библиотек), как и JWT на сервере в verify-purchase —
+// сообщение крайне простое: один string-field.
+function _encodeVarint(n) {
+    const bytes = [];
+    while (n > 0x7f) {
+        bytes.push((n & 0x7f) | 0x80);
+        n >>>= 7;
+    }
+    bytes.push(n & 0x7f);
+    return bytes;
+}
+
+function _encodeProtoStringField(fieldNumber, str) {
+    const tag = (fieldNumber << 3) | 2; // wire type 2 = length-delimited
+    const strBytes = Array.from(new TextEncoder().encode(str));
+    const lenBytes = _encodeVarint(strBytes.length);
+    return [tag, ...lenBytes, ...strBytes];
+}
+
+function buildBillingAdditionalData(orgId) {
+    const bytes = _encodeProtoStringField(1, String(orgId));
+    let binary = '';
+    bytes.forEach(b => { binary += String.fromCharCode(b); });
+    return btoa(binary);
+}
+
 // Возвращает сервис Digital Goods, если он доступен в этом окружении (только
 // внутри TWA-сборки с включённым Play Billing), иначе null. Результат кешируется
 // на время сессии — сам факт доступности API не меняется на лету.
@@ -191,7 +226,7 @@ async function purchasePlan(planKey) {
         const request = new PaymentRequest(
             [{
                 supportedMethods: BILLING_METHOD,
-                data: { sku: product.sku }
+                data: { sku: product.sku, additionalData: buildBillingAdditionalData(currentOrgId) }
             }],
             { total: { label: product.sku, amount: { currency: 'EUR', value: '0' } } }
         );
