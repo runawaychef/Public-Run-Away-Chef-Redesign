@@ -22,6 +22,14 @@ let currentOrgVatRate = 0;          // ставка НДС организаци�
 // открыть premium всем при сбое сети.
 let monetizationLive = true;
 
+// Есть ли у ТЕКУЩЕЙ организации явно выставленный вручную plan_override
+// (из Simple Hub). Override — это осознанное решение администратора именно
+// для этой организации, поэтому он действует ВСЕГДА, даже когда глобальный
+// рубильник monetizationLive выключен. Так можно держать общий рубильник
+// выключенным (все тестировщики видят полную версию), но экспериментировать
+// с ограничениями конкретных тарифов на одной выбранной организации.
+let currentOrgPlanIsOverridden = false;
+
 async function loadMonetizationLiveFlag() {
     try {
         const { data, error } = await db.from('platform_settings').select('value').eq('key', 'monetization_live').maybeSingle();
@@ -60,7 +68,10 @@ const PLAN_FEATURES = {
 // (списки/карточки, где HTML пересоздаётся заново при отрисовке — статичная
 // CSS-метка plan-*-only тут не сработает, нужна проверка прямо в шаблоне).
 function hasPlanFeature(feature) {
-    if (!monetizationLive) return true; // рубильник выключен — гейтинг временно не действует ни для кого
+    // Рубильник выключен И для этой организации нет явного override — гейтинг
+    // временно не действует (все видят полный функционал). Если override есть —
+    // он "побеждает" рубильник и проверяется по-настоящему, независимо от него.
+    if (!monetizationLive && !currentOrgPlanIsOverridden) return true;
     const features = PLAN_FEATURES[currentOrgPlan] || PLAN_FEATURES.free;
     return features.includes(feature);
 }
@@ -129,7 +140,9 @@ async function loadCurrentOrg() {
         currentOrgName = (data.organizations && data.organizations.name) || '';
         // plan_override (выставляется вручную из Simple Hub, см. admin_set_org_plan) —
         // "побеждает" реальный тариф по оплате. Нужен для тестовых организаций,
-        // которые должны видеть полный функционал независимо от billing-статуса.
+        // которые должны видеть полный функционал независимо от billing-статуса,
+        // либо, наоборот, чтобы вручную экспериментировать с ограничениями тарифа.
+        currentOrgPlanIsOverridden = !!(data.organizations && data.organizations.plan_override);
         currentOrgPlan = (data.organizations && (data.organizations.plan_override || data.organizations.plan)) || 'free';
         currentOrgCustomersUsed = (data.organizations && data.organizations.customers_created_total) || 0;
         currentOrgOrdersUsed = (data.organizations && data.organizations.orders_created_total) || 0;
@@ -328,8 +341,10 @@ async function refreshCurrentEmployeePermissions() {
         let planChanged = false;
         if (!orgResult.error && orgResult.data) {
             const newPlan = orgResult.data.plan_override || orgResult.data.plan || 'free';
-            if (newPlan !== currentOrgPlan) {
+            const newIsOverridden = !!orgResult.data.plan_override;
+            if (newPlan !== currentOrgPlan || newIsOverridden !== currentOrgPlanIsOverridden) {
                 currentOrgPlan = newPlan;
+                currentOrgPlanIsOverridden = newIsOverridden;
                 planChanged = true;
             }
         }
