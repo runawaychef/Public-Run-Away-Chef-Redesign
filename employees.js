@@ -13,6 +13,23 @@ let currentOrgOrdersUsed = 0;       // сколько заказов созда�
 let currentOrgCurrency = 'EUR';     // код валюты расчёта организации (пригодится для formatMoney())
 let currentOrgVatRate = 0;          // ставка НДС организации (доля, не проценты — 0.21 = 21%); по умолчанию без НДС
 
+// Глобальный рубильник монетизации (таблица platform_settings, key='monetization_live').
+// Пока 'false' — ВСЕ организации видят полный функционал независимо от currentOrgPlan,
+// это сознательный режим на время тестирования (согласовано явно: тестировщики,
+// текущие и будущие, не должны упираться в тарифные ограничения). Значение по
+// умолчанию здесь — true (осторожный выбор): если строка в platform_settings ещё
+// не создана или не загрузилась, гейтинг лучше оставить активным, чем случайно
+// открыть premium всем при сбое сети.
+let monetizationLive = true;
+
+async function loadMonetizationLiveFlag() {
+    try {
+        const { data, error } = await db.from('platform_settings').select('value').eq('key', 'monetization_live').maybeSingle();
+        if (error || !data) return; // не нашли строку/сеть недоступна — оставляем текущее значение как есть
+        monetizationLive = data.value === 'true';
+    } catch (e) { /* тихо игнорируем — тот же принцип "не рискуем", что и везде рядом */ }
+}
+
 // Есть ли у организации ненулевой НДС — используется, чтобы скрывать/менять
 // любые упоминания "с НДС"/"VAT" в интерфейсе, когда ставка равна нулю
 // (организация вообще не работает с НДС).
@@ -43,6 +60,7 @@ const PLAN_FEATURES = {
 // (списки/карточки, где HTML пересоздаётся заново при отрисовке — статичная
 // CSS-метка plan-*-only тут не сработает, нужна проверка прямо в шаблоне).
 function hasPlanFeature(feature) {
+    if (!monetizationLive) return true; // рубильник выключен — гейтинг временно не действует ни для кого
     const features = PLAN_FEATURES[currentOrgPlan] || PLAN_FEATURES.free;
     return features.includes(feature);
 }
@@ -114,6 +132,7 @@ async function loadCurrentOrg() {
         currentOrgOrdersUsed = (data.organizations && data.organizations.orders_created_total) || 0;
         currentOrgCurrency = (data.organizations && data.organizations.currency_code) || 'EUR';
         currentOrgVatRate = (data.organizations && data.organizations.vat_rate != null) ? Number(data.organizations.vat_rate) : 0;
+        await loadMonetizationLiveFlag();
         if (typeof refreshVatLabels === 'function') refreshVatLabels();
         updateHeaderOrgName();
         return data;
@@ -282,9 +301,10 @@ function applyScreenAccessPermissions() {
 async function refreshCurrentEmployeePermissions() {
     if (!currentEmployee || !currentEmployee.id) return;
     try {
-        const [empResult, orgResult] = await Promise.all([
+        const [empResult, orgResult, settingsResult] = await Promise.all([
             db.from('employees').select(EMPLOYEE_SELECT_FIELDS).eq('id', currentEmployee.id).single(),
             currentOrgId ? db.from('organizations').select('plan').eq('id', currentOrgId).single() : Promise.resolve({ data: null, error: null }),
+            db.from('platform_settings').select('value').eq('key', 'monetization_live').maybeSingle(),
         ]);
 
         const { data, error } = empResult;
@@ -302,6 +322,17 @@ async function refreshCurrentEmployeePermissions() {
             if (newPlan !== currentOrgPlan) {
                 currentOrgPlan = newPlan;
                 planChanged = true;
+            }
+        }
+
+        // Глобальный рубильник монетизации — если владелец платформы его включил
+        // (запустил монетизацию по-настоящему), это должно применяться сразу у
+        // всех, кто в этот момент уже работает в открытом приложении.
+        if (!settingsResult.error && settingsResult.data) {
+            const newFlag = settingsResult.data.value === 'true';
+            if (newFlag !== monetizationLive) {
+                monetizationLive = newFlag;
+                planChanged = true; // переиспользуем тот же флажок для пересчёта UI ниже
             }
         }
 
