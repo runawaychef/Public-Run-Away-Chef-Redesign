@@ -25,9 +25,12 @@ let monetizationLive = true;
 async function loadMonetizationLiveFlag() {
     try {
         const { data, error } = await db.from('platform_settings').select('value').eq('key', 'monetization_live').maybeSingle();
+        if (typeof showInfo === 'function') showInfo('DEBUG loadMonetizationLiveFlag: data=' + JSON.stringify(data) + ' error=' + (error ? JSON.stringify(error) : 'null'));
         if (error || !data) return; // не нашли строку/сеть недоступна — оставляем текущее значение как есть
         monetizationLive = data.value === 'true';
-    } catch (e) { /* тихо игнорируем — тот же принцип "не рискуем", что и везде рядом */ }
+    } catch (e) {
+        if (typeof showInfo === 'function') showInfo('DEBUG loadMonetizationLiveFlag CATCH: ' + (e && e.message ? e.message : String(e)));
+    }
 }
 
 // Есть ли у организации ненулевой НДС — используется, чтобы скрывать/менять
