@@ -20,6 +20,54 @@ function hasVat() {
     return Number(currentOrgVatRate) > 0;
 }
 
+// ==================== ТАРИФНЫЙ ДОСТУП (feature gating) ====================
+// Зеркалит систему прав сотрудников ниже (PERM_CLASS_MAP / applyPermissions /
+// hasPermission) — тот же проверенный паттерн, только источник ограничения не
+// роль сотрудника, а тариф организации (currentOrgPlan). Обе системы полностью
+// независимы и КОМБИНИРУЮТСЯ: например, элемент себестоимости скрыт, если он
+// недоступен по тарифу, ИЛИ недоступен по правам конкретного сотрудника —
+// достаточно любого из двух ограничений.
+//
+// 'free' и 'light' получают одинаковый набор ограничений (согласовано ранее),
+// 'full' — все premium-фичи. Если вдруг придёт неизвестное/пустое значение
+// плана (сбой сети при обновлении и т.п.) — намеренно ведём себя как 'free',
+// т.е. НИКОГДА не открываем premium по ошибке ("не рискуем" — тот же принцип,
+// что и в refreshCurrentEmployeePermissions() ниже).
+const PLAN_FEATURES = {
+    free: [],
+    light: [],
+    full: ['stats', 'cost_analytics', 'activity_log'],
+};
+
+// Универсальная проверка фичи для мест, где интерфейс формируется через JS-шаблоны
+// (списки/карточки, где HTML пересоздаётся заново при отрисовке — статичная
+// CSS-метка plan-*-only тут не сработает, нужна проверка прямо в шаблоне).
+function hasPlanFeature(feature) {
+    const features = PLAN_FEATURES[currentOrgPlan] || PLAN_FEATURES.free;
+    return features.includes(feature);
+}
+
+// CSS-класс → имя фичи, аналог PERM_CLASS_MAP.
+const PLAN_CLASS_MAP = {
+    stats: 'plan-stats-only',
+    cost_analytics: 'plan-cost-only',
+    activity_log: 'plan-activity-log-only',
+};
+
+// Показывает/скрывает элементы интерфейса согласно тарифу организации.
+// Вызывается везде, где вызывается applyPermissions() — сразу после входа,
+// при восстановлении сессии из кэша, и при периодическом обновлении.
+function applyPlanGating() {
+    Object.keys(PLAN_CLASS_MAP).forEach(feature => {
+        const cls = PLAN_CLASS_MAP[feature];
+        const allowed = hasPlanFeature(feature);
+        document.querySelectorAll('.' + cls).forEach(el => el.classList.toggle('hidden', !allowed));
+    });
+    // Вкладка "Статистика" зависит СРАЗУ от двух условий (права сотрудника И
+    // тариф) — пересчитываем её через ту же функцию, что и права доступа.
+    if (typeof applyScreenAccessPermissions === 'function') applyScreenAccessPermissions();
+}
+
 function updateHeaderOrgName() {
     const el = document.getElementById('orgNameHeader');
     if (el && currentOrgName) el.textContent = currentOrgName;
@@ -207,7 +255,7 @@ function applyPermissions(emp) {
 // аккуратно возвращает его обратно (закрывает склад / переключает на заказы).
 function applyScreenAccessPermissions() {
     const canInventory = hasPermission('can_manage_inventory');
-    const canReports = hasPermission('can_view_reports');
+    const canReports = hasPermission('can_view_reports') && hasPlanFeature('stats');
 
     document.getElementById('inventoryBtn').classList.toggle('hidden', !canInventory);
     document.getElementById('statsBtn').classList.toggle('hidden', !canReports);
@@ -221,33 +269,57 @@ function applyScreenAccessPermissions() {
     }
 }
 
-// Тихо сверяет права текущего сотрудника с базой и, если владелец их поменял,
-// обновляет интерфейс на лету — без перезагрузки и без выхода/входа.
-// Вызывается периодически, пока сотрудник работает в открытом приложении.
+// Тихо сверяет права текущего сотрудника И тариф организации с базой, и если
+// что-то изменилось — обновляет интерфейс на лету, без перезагрузки и без
+// выхода/входа. Вызывается периодически, пока сотрудник работает в открытом
+// приложении.
+//
+// Тариф важно проверять здесь же (не только при входе): организация может
+// смениться в фоне через rtdn-handler (Google прислал уведомление об оплате,
+// отмене, окончании грейс-периода и т.п.), пока человек уже работает в
+// открытом приложении — без этой проверки он продолжал бы видеть premium-
+// функции до следующего входа.
 async function refreshCurrentEmployeePermissions() {
     if (!currentEmployee || !currentEmployee.id) return;
     try {
-        const { data, error } = await db
-            .from('employees')
-            .select(EMPLOYEE_SELECT_FIELDS)
-            .eq('id', currentEmployee.id)
-            .single();
+        const [empResult, orgResult] = await Promise.all([
+            db.from('employees').select(EMPLOYEE_SELECT_FIELDS).eq('id', currentEmployee.id).single(),
+            currentOrgId ? db.from('organizations').select('plan').eq('id', currentOrgId).single() : Promise.resolve({ data: null, error: null }),
+        ]);
+
+        const { data, error } = empResult;
         if (error || !data) return; // офлайн или ошибка — не рискуем, оставляем как было
         const changed = JSON.stringify(data) !== JSON.stringify(currentEmployee);
         currentEmployee = data;
         localStorage.setItem('currentEmployee', JSON.stringify(data));
+
+        // Тариф проверяем отдельно от прав сотрудника — у них разные источники
+        // изменений, не хотим упустить обновление плана, если по случайности
+        // сравнение currentEmployee в этот раз не изменилось.
+        let planChanged = false;
+        if (!orgResult.error && orgResult.data) {
+            const newPlan = orgResult.data.plan || 'free';
+            if (newPlan !== currentOrgPlan) {
+                currentOrgPlan = newPlan;
+                planChanged = true;
+            }
+        }
+
         if (changed) {
             applyPermissions(currentEmployee);
-            applyScreenAccessPermissions();
             document.getElementById('employeesManageBtn')?.classList.toggle('hidden', !hasPermission('can_manage_team'));
-            // Перерисовываем списки, где значок удаления решается в момент отрисовки
-            // (hasPermission() в шаблоне), а не статичным CSS-классом.
+        }
+        if (changed || planChanged) {
+            applyPlanGating(); // сам заодно пересчитывает вкладку "Статистика" через applyScreenAccessPermissions()
+            // Перерисовываем списки, где видимость решается в момент отрисовки
+            // (hasPermission()/hasPlanFeature() в шаблоне), а не статичным CSS-классом.
             if (typeof displayOrders === 'function') displayOrders();
             if (typeof displayCustomers === 'function') displayCustomers();
             if (typeof displayProducts === 'function') displayProducts();
             if (typeof displayIngredients === 'function') displayIngredients();
             if (typeof displaySemiFinished === 'function') displaySemiFinished();
         }
+        if (planChanged && typeof saveAppSnapshot === 'function') saveAppSnapshot(); // чтобы новый тариф пережил перезапуск из кэша
     } catch (e) { /* тихо игнорируем — плохая сеть не должна мешать работе */ }
 }
 
@@ -255,6 +327,7 @@ async function selectEmployee(emp) {
     currentEmployee = emp;
     localStorage.setItem('currentEmployee', JSON.stringify(emp));
     applyPermissions(emp);
+    applyPlanGating();
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('appContent').classList.remove('app-locked');
     document.getElementById('settingsBtn').classList.remove('hidden');

@@ -127,7 +127,7 @@ function restoreAppFromSnapshot(snapshot) {
 
     updateHeaderOrgName();
     applyPermissions(currentEmployee);
-    applyScreenAccessPermissions();
+    applyPlanGating(); // сам заодно вызывает applyScreenAccessPermissions()
 
     document.getElementById('authScreen').classList.add('hidden');
     document.getElementById('loginScreen').classList.add('hidden');
