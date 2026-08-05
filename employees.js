@@ -25,12 +25,9 @@ let monetizationLive = true;
 async function loadMonetizationLiveFlag() {
     try {
         const { data, error } = await db.from('platform_settings').select('value').eq('key', 'monetization_live').maybeSingle();
-        if (typeof showInfo === 'function') showInfo('DEBUG loadMonetizationLiveFlag: data=' + JSON.stringify(data) + ' error=' + (error ? JSON.stringify(error) : 'null'));
         if (error || !data) return; // не нашли строку/сеть недоступна — оставляем текущее значение как есть
         monetizationLive = data.value === 'true';
-    } catch (e) {
-        if (typeof showInfo === 'function') showInfo('DEBUG loadMonetizationLiveFlag CATCH: ' + (e && e.message ? e.message : String(e)));
-    }
+    } catch (e) { /* тихо игнорируем — тот же принцип "не рискуем", что и везде рядом */ }
 }
 
 // Есть ли у организации ненулевой НДС — используется, чтобы скрывать/менять
@@ -136,6 +133,12 @@ async function loadCurrentOrg() {
         currentOrgCurrency = (data.organizations && data.organizations.currency_code) || 'EUR';
         currentOrgVatRate = (data.organizations && data.organizations.vat_rate != null) ? Number(data.organizations.vat_rate) : 0;
         await loadMonetizationLiveFlag();
+        // Критично для пути быстрого восстановления из кэша (cache.js): там
+        // applyPlanGating() уже успевает отработать один раз со СТАРЫМ значением
+        // флага (снимок кэша не хранит monetizationLive) до того, как эта функция
+        // отработает в фоне. Перевызываем здесь ещё раз с уже свежим значением —
+        // иначе интерфейс молча остаётся в устаревшем (более строгом) состоянии.
+        if (typeof applyPlanGating === 'function') applyPlanGating();
         if (typeof refreshVatLabels === 'function') refreshVatLabels();
         updateHeaderOrgName();
         return data;
