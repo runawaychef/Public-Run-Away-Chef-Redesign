@@ -121,13 +121,16 @@ async function loadCurrentOrg() {
 
         const { data, error } = await db
             .from('memberships')
-            .select('org_id, role, organizations(id, name, plan, customers_created_total, orders_created_total, currency_code, vat_rate)')
+            .select('org_id, role, organizations(id, name, plan, plan_override, customers_created_total, orders_created_total, currency_code, vat_rate)')
             .eq('user_id', uid)
             .single();
         if (error) throw error;
         currentOrgId = data.org_id;
         currentOrgName = (data.organizations && data.organizations.name) || '';
-        currentOrgPlan = (data.organizations && data.organizations.plan) || 'free';
+        // plan_override (выставляется вручную из Simple Hub, см. admin_set_org_plan) —
+        // "побеждает" реальный тариф по оплате. Нужен для тестовых организаций,
+        // которые должны видеть полный функционал независимо от billing-статуса.
+        currentOrgPlan = (data.organizations && (data.organizations.plan_override || data.organizations.plan)) || 'free';
         currentOrgCustomersUsed = (data.organizations && data.organizations.customers_created_total) || 0;
         currentOrgOrdersUsed = (data.organizations && data.organizations.orders_created_total) || 0;
         currentOrgCurrency = (data.organizations && data.organizations.currency_code) || 'EUR';
@@ -309,7 +312,7 @@ async function refreshCurrentEmployeePermissions() {
     try {
         const [empResult, orgResult, settingsResult] = await Promise.all([
             db.from('employees').select(EMPLOYEE_SELECT_FIELDS).eq('id', currentEmployee.id).single(),
-            currentOrgId ? db.from('organizations').select('plan').eq('id', currentOrgId).single() : Promise.resolve({ data: null, error: null }),
+            currentOrgId ? db.from('organizations').select('plan, plan_override').eq('id', currentOrgId).single() : Promise.resolve({ data: null, error: null }),
             db.from('platform_settings').select('value').eq('key', 'monetization_live').maybeSingle(),
         ]);
 
@@ -324,7 +327,7 @@ async function refreshCurrentEmployeePermissions() {
         // сравнение currentEmployee в этот раз не изменилось.
         let planChanged = false;
         if (!orgResult.error && orgResult.data) {
-            const newPlan = orgResult.data.plan || 'free';
+            const newPlan = orgResult.data.plan_override || orgResult.data.plan || 'free';
             if (newPlan !== currentOrgPlan) {
                 currentOrgPlan = newPlan;
                 planChanged = true;
