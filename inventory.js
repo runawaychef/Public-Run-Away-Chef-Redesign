@@ -414,7 +414,10 @@ async function openInventoryModal() {
         const { ing, balance, balanceBefore, daysLeft, unitLabel, shortage } = item;
         const balanceBeforeStr = balanceBefore !== null ? `${Math.round(Number(balanceBefore))} ${unitLabel}` : '—';
         const balanceStr = balance !== null ? `${Math.round(Number(balance))} ${unitLabel}` : '—';
-        const daysStr    = shortage ? t('inv_shortage') : daysLeft !== null ? `~${daysLeft} ${t('inv_days_short')}` : '—';
+        // Точный прогноз "~N дней запаса" — premium-фича (см. согласованный список
+        // фич-гейтинга). Предупреждение "нет в наличии" остаётся видимым всегда —
+        // это базовая, а не аналитическая функция склада.
+        const daysStr = shortage ? t('inv_shortage') : (hasPlanFeature('cost_analytics') && daysLeft !== null) ? `~${daysLeft} ${t('inv_days_short')}` : '—';
         const inList     = isSf
             ? _shoppingList.some(r => r.semi_finished_id === ing.id)
             : _shoppingList.some(r => r.ingredient_id === ing.id);
