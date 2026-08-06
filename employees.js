@@ -92,6 +92,7 @@ function applyPlanGating() {
         const allowed = hasPlanFeature(feature);
         document.querySelectorAll('.' + cls).forEach(el => el.classList.toggle('hidden', !allowed));
     });
+    applyCostVisibility();
     // Вкладка "Статистика" зависит СРАЗУ от двух условий (права сотрудника И
     // тариф) — пересчитываем её через ту же функцию, что и права доступа.
     if (typeof applyScreenAccessPermissions === 'function') applyScreenAccessPermissions();
@@ -267,7 +268,6 @@ function renderEmployeePickerList() {
 
 // Соответствие столбца в базе и CSS-класса, которым помечены элементы интерфейса
 const PERM_CLASS_MAP = {
-    can_view_costs: 'perm-view-costs',
     can_delete: 'perm-delete',
     can_manage_inventory: 'perm-inventory',
     can_view_reports: 'perm-reports'
@@ -289,6 +289,19 @@ function applyPermissions(emp) {
         const allowed = allowAll || !!(emp && emp[field]);
         document.querySelectorAll('.' + cls).forEach(el => el.classList.toggle('hidden', !allowed));
     });
+    applyCostVisibility();
+}
+
+// Блоки себестоимости/прибыли (класс .perm-view-costs) скрыты, если недоступны
+// ЛИБО по правам сотрудника, ЛИБО по тарифу — оба условия проверяются здесь
+// вместе, в одном месте, а не двумя независимыми переключателями одного и того
+// же класса (иначе они бы "перетирали" результат друг друга при вызове).
+// Вызывается и из applyPermissions(), и из applyPlanGating() — какая бы из
+// систем ни сработала, итоговое состояние всегда пересчитывается заново из
+// обоих условий сразу.
+function applyCostVisibility() {
+    const allowed = hasPermission('can_view_costs') && hasPlanFeature('cost_analytics');
+    document.querySelectorAll('.perm-view-costs').forEach(el => el.classList.toggle('hidden', !allowed));
 }
 
 // Показывает/скрывает кнопки «Склад» и «Статистика» согласно правам сотрудника,
