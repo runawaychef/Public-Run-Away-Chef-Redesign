@@ -61,7 +61,7 @@ function hasVat() {
 const PLAN_FEATURES = {
     free: [],
     light: [],
-    full: ['stats', 'cost_analytics', 'activity_log'],
+    full: ['stats', 'cost_analytics', 'activity_log', 'team'],
 };
 
 // Универсальная проверка фичи для мест, где интерфейс формируется через JS-шаблоны
@@ -93,6 +93,7 @@ function applyPlanGating() {
     });
     applyCostVisibility();
     applyActivityLogVisibility();
+    applyTeamVisibility();
     // Вкладка "Статистика" зависит СРАЗУ от двух условий (права сотрудника И
     // тариф) — пересчитываем её через ту же функцию, что и права доступа.
     if (typeof applyScreenAccessPermissions === 'function') applyScreenAccessPermissions();
@@ -290,6 +291,16 @@ function applyActivityLogVisibility() {
     document.getElementById('activityLogBtn')?.classList.toggle('hidden', !allowed);
 }
 
+// "Команда и доступ" в Настройках (управление сотрудниками) — Full-only фича.
+// Видна, если у сотрудника есть право can_manage_team И тариф это позволяет.
+// Комбинированная функция по тому же принципу, что и applyCostVisibility()/
+// applyActivityLogVisibility() — вызывается и из applyPermissions(), и из
+// applyPlanGating(), чтобы два условия не перетирали результат друг друга.
+function applyTeamVisibility() {
+    const allowed = hasPermission('can_manage_team') && hasPlanFeature('team');
+    document.getElementById('employeesManageBtn')?.classList.toggle('hidden', !allowed);
+}
+
 function applyPermissions(emp) {
     const allowAll = !!(emp && emp.is_owner);
     document.querySelectorAll('.perm-owner-only').forEach(el => el.classList.toggle('hidden', !allowAll));
@@ -300,6 +311,7 @@ function applyPermissions(emp) {
     });
     applyCostVisibility();
     applyActivityLogVisibility();
+    applyTeamVisibility();
 }
 
 // Блоки себестоимости/прибыли (класс .perm-view-costs) скрыты, если недоступны
@@ -385,7 +397,7 @@ async function refreshCurrentEmployeePermissions() {
 
         if (changed) {
             applyPermissions(currentEmployee);
-            document.getElementById('employeesManageBtn')?.classList.toggle('hidden', !hasPermission('can_manage_team'));
+            applyTeamVisibility();
         }
         if (changed || planChanged) {
             applyPlanGating(); // сам заодно пересчитывает вкладку "Статистика" через applyScreenAccessPermissions()
@@ -419,7 +431,7 @@ async function selectEmployee(emp) {
     }
     if (typeof positionOrdersViewToggle === 'function') setTimeout(positionOrdersViewToggle, 150);
     applyScreenAccessPermissions();
-    document.getElementById('employeesManageBtn').classList.toggle('hidden', !hasPermission('can_manage_team'));
+    applyTeamVisibility();
     document.getElementById('companyInfoBtnBlock').classList.toggle('hidden', !emp.is_owner);
     await loadAllData();
     await loadInventory();
@@ -562,6 +574,7 @@ async function reloadEmployeesList() {
 
 async function openEmployeesModal() {
     if (!hasPermission('can_manage_team')) { showInfo(t('employees_no_access')); return; }
+    if (!hasPlanFeature('team')) { showInfo('Управление командой доступно на тарифе Full.'); return; }
     closeModal();
     await reloadEmployeesList();
     const content = document.getElementById('employeesListContent');
