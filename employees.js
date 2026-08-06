@@ -80,7 +80,6 @@ function hasPlanFeature(feature) {
 const PLAN_CLASS_MAP = {
     stats: 'plan-stats-only',
     cost_analytics: 'plan-cost-only',
-    activity_log: 'plan-activity-log-only',
 };
 
 // Показывает/скрывает элементы интерфейса согласно тарифу организации.
@@ -93,6 +92,7 @@ function applyPlanGating() {
         document.querySelectorAll('.' + cls).forEach(el => el.classList.toggle('hidden', !allowed));
     });
     applyCostVisibility();
+    applyActivityLogVisibility();
     // Вкладка "Статистика" зависит СРАЗУ от двух условий (права сотрудника И
     // тариф) — пересчитываем её через ту же функцию, что и права доступа.
     if (typeof applyScreenAccessPermissions === 'function') applyScreenAccessPermissions();
@@ -281,6 +281,15 @@ function hasPermission(field) {
 
 // Показывает/скрывает элементы интерфейса согласно правам сотрудника.
 // Владелец видит всё всегда, независимо от состояния чекбоксов.
+// "Журнал действий" в Настройках виден только владельцу И только если тариф
+// это позволяет — оба условия проверяются здесь вместе, аналогично
+// applyCostVisibility(), чтобы два независимых переключателя не перетирали
+// результат друг друга. Вызывается и из applyPermissions(), и из applyPlanGating().
+function applyActivityLogVisibility() {
+    const allowed = !!(currentEmployee && currentEmployee.is_owner) && hasPlanFeature('activity_log');
+    document.getElementById('activityLogBtn')?.classList.toggle('hidden', !allowed);
+}
+
 function applyPermissions(emp) {
     const allowAll = !!(emp && emp.is_owner);
     document.querySelectorAll('.perm-owner-only').forEach(el => el.classList.toggle('hidden', !allowAll));
@@ -290,6 +299,7 @@ function applyPermissions(emp) {
         document.querySelectorAll('.' + cls).forEach(el => el.classList.toggle('hidden', !allowed));
     });
     applyCostVisibility();
+    applyActivityLogVisibility();
 }
 
 // Блоки себестоимости/прибыли (класс .perm-view-costs) скрыты, если недоступны
