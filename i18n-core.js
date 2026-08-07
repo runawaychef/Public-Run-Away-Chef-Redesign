@@ -60,7 +60,7 @@ function _loadLangScript(lang) {
     if (_langLoadPromises[lang]) return _langLoadPromises[lang];
     _langLoadPromises[lang] = new Promise((resolve) => {
         const script = document.createElement('script');
-        script.src = `i18n-${lang}.js?v=16`;
+        script.src = `i18n-${lang}.js?v=17`;
         script.onload = () => resolve();
         script.onerror = () => {
             console.error(`Не удалось загрузить язык: ${lang}`);

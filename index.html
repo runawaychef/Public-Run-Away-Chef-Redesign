@@ -2902,6 +2902,20 @@
                     <div id="statsProductProfitability"></div>
                 </div>
 
+                <!-- Расход ингредиентов за период — использует уже выбранный период
+                     всего экрана Статистики, отдельного переключателя не нужно. -->
+                <div class="bg-white rounded-xl shadow-md p-2 mb-5 perm-view-costs">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-xs font-semibold text-gray-700" data-i18n="stats_ingredient_usage_title">Расход ингредиентов за период</h3>
+                        <button onclick="exportIngredientUsageReportPdf()" class="text-xs font-semibold" style="color:#4f6349;" data-i18n="stats_ingredient_usage_export">Экспорт в PDF</button>
+                    </div>
+                    <div class="rounded-xl p-2 mb-2 grid grid-cols-2 gap-1 text-center" style="background:#e3e8df;">
+                        <div><p class="text-xs text-gray-500" data-i18n="stats_ingredient_usage_count">Позиций ингредиентов</p><p id="ingUsageCount" class="text-sm font-bold text-gray-800">0</p></div>
+                        <div><p class="text-xs text-gray-500" data-i18n="stats_cost_price">Себестоимость</p><p id="ingUsageTotalCost" class="text-sm font-bold" style="color:#4f6349;">0.00</p></div>
+                    </div>
+                    <div id="ingredientUsageReport"></div>
+                </div>
+
                 <p class="text-xs text-gray-400 mb-3" data-i18n="stats_synced_footer">Данные синхронизированы с облаком (Supabase)</p>
         </div>
 
@@ -2912,7 +2926,7 @@
 
 <script src="dates.js?v=8"></script>
     <script src="money.js?v=10"></script>
-    <script src="i18n-core.js?v=18"></script>
+    <script src="i18n-core.js?v=19"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=9"></script>
     <script src="auth.js?v=18"></script>
@@ -2930,7 +2944,7 @@
 <script src="orders.js?v=89"></script>
 <script src="invoice.js?v=33"></script>
 <script src="payments.js?v=19"></script>
-<script src="stats.js?v=16"></script>
+<script src="stats.js?v=17"></script>
 <script src="history.js?v=9"></script>
 <script src="modals.js?v=13"></script>
 <script src="demoData.js?v=18"></script>

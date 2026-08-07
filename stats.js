@@ -216,6 +216,7 @@ function applyFilter() {
     drawProductTable(filtered);
     drawProfitabilitySummary(filtered);
     drawProductProfitabilityTable();
+    loadIngredientUsageReport(filtered);
 
     // Подписываемся на фильтр каждый раз при открытии статистики
     const filterEl = document.getElementById('productProfitFilter');
@@ -223,6 +224,95 @@ function applyFilter() {
         filterEl.value = '';
         filterEl.oninput = () => drawProductProfitabilityTable();
     }
+}
+
+// ==================== РАСХОД ИНГРЕДИЕНТОВ ЗА ПЕРИОД ====================
+// Использует уже существующий снимок рецепта на момент заказа
+// (order_item_ingredients, см. saveOrderItemIngredients в orders.js) —
+// полуфабрикаты там уже развёрнуты рекурсивно до базовых ингредиентов.
+// Период — тот же, что выбран для всего экрана Статистики (getFilteredOrders),
+// отдельный переключатель периода не нужен. Удалённые/отсутствующие в
+// filtered заказы естественным образом исключены — специальной фильтрации
+// по статусу "отменён" не требуется, т.к. такого статуса в приложении нет.
+let ingredientUsageReportData = []; // сохраняем последний расчёт для экспорта в PDF
+
+async function loadIngredientUsageReport(filteredOrders) {
+    const box = document.getElementById('ingredientUsageReport');
+    if (!box) return; // блок скрыт (не Full-тариф) — не тратим запрос впустую
+    box.innerHTML = `<p class="text-xs text-gray-400 text-center py-2">${t('stats_loading')}</p>`;
+
+    const itemIds = (filteredOrders || []).flatMap(o => (o.items || []).map(it => it.id)).filter(Boolean);
+    if (!itemIds.length) {
+        ingredientUsageReportData = [];
+        box.innerHTML = `<p class="text-xs text-gray-400 text-center py-2" data-i18n="stats_no_data_period">Нет данных за выбранный период</p>`;
+        document.getElementById('ingUsageCount').textContent = '0';
+        document.getElementById('ingUsageTotalCost').textContent = formatMoney(0);
+        return;
+    }
+
+    const { data, error } = await db
+        .from('order_item_ingredients')
+        .select('ingredient_name, unit, quantity, total_cost')
+        .in('order_item_id', itemIds);
+
+    if (error || !data) {
+        box.innerHTML = `<p class="text-xs" style="color:#c0685c;">${t('stats_load_error')}</p>`;
+        return;
+    }
+
+    const map = {};
+    data.forEach(r => {
+        const key = r.ingredient_name + '|' + r.unit;
+        if (!map[key]) map[key] = { name: r.ingredient_name, unit: r.unit, qty: 0, cost: 0 };
+        map[key].qty  += Number(r.quantity)   || 0;
+        map[key].cost += Number(r.total_cost) || 0;
+    });
+    const rows = Object.values(map).sort((a, b) => b.qty - a.qty); // сортировка по количеству
+    ingredientUsageReportData = rows;
+
+    const totalCost = rows.reduce((s, r) => s + r.cost, 0);
+    document.getElementById('ingUsageCount').textContent = rows.length;
+    document.getElementById('ingUsageTotalCost').textContent = formatMoney(totalCost);
+
+    if (!rows.length) {
+        box.innerHTML = `<p class="text-xs text-gray-400 text-center py-2" data-i18n="stats_no_data_period">Нет данных за выбранный период</p>`;
+        return;
+    }
+    box.innerHTML = rows.map(r => `
+        <div class="flex justify-between items-center py-1.5 border-b border-gray-50 last:border-0">
+            <span class="text-xs text-gray-800">${escapeHtml(r.name)}</span>
+            <span class="text-xs text-gray-500">${Number(r.qty.toFixed(2))} ${escapeHtml(r.unit)} · <b class="text-gray-800">${formatMoney(r.cost)}</b></span>
+        </div>
+    `).join('');
+}
+
+// Экспорт того же отчёта в PDF — переиспользует createPdfDoc()/autoTable
+// (см. invoice.js), тот же шрифт и стиль, что и у счетов/накладных.
+async function exportIngredientUsageReportPdf() {
+    if (!ingredientUsageReportData.length) { showInfo(t('stats_no_data_period')); return; }
+    const pdf = await createPdfDoc();
+    const pageW = pdf.internal.pageSize.getWidth();
+    const marginX = 14;
+    const rangeLabel = statsDateRangeLabel(document.getElementById('statsDateRange').value);
+
+    pdf.setFontSize(16); pdf.setFont('Roboto', 'bold'); pdf.setTextColor(...PDF_COLORS.textDark);
+    pdf.text(t('stats_ingredient_usage_title'), marginX, 18);
+    pdf.setFontSize(10); pdf.setFont('Roboto', 'normal'); pdf.setTextColor(...PDF_COLORS.textGray);
+    pdf.text(rangeLabel, marginX, 25);
+
+    const totalCost = ingredientUsageReportData.reduce((s, r) => s + r.cost, 0);
+    pdf.autoTable({
+        startY: 32,
+        margin: { left: marginX, right: marginX },
+        head: [[t('stats_col_ingredient'), t('stats_col_quantity'), t('stats_col_cost')]],
+        body: ingredientUsageReportData.map(r => [r.name, `${Number(r.qty.toFixed(2))} ${r.unit}`, formatMoney(r.cost)]),
+        foot: [[t('stats_col_total'), '', formatMoney(totalCost)]],
+        styles: { font: 'Roboto', fontSize: 9 },
+        headStyles: PDF_TABLE_HEAD_STYLE,
+        footStyles: { fillColor: PDF_COLORS.sageLight, textColor: PDF_COLORS.textDark, fontStyle: 'bold', font: 'Roboto' },
+    });
+
+    pdf.save(`ingredient-usage-${document.getElementById('statsDateRange').value}-${isoDate(new Date())}.pdf`);
 }
 
 function updateDisplay(filteredOrders = orders) {
