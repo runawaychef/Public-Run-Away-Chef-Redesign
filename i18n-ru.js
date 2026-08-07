@@ -34,7 +34,7 @@ I18N.ru = {
         plan_light_desc: 'Без лимита заказов. Без аналитики и отчётов.',
         plan_full_name: 'Full',
         plan_full_price: '4,99 € / мес',
-        plan_full_desc: 'Всё включено: сотрудники, отчёты, статистика, умный склад',
+        plan_full_desc: 'Всё включено: сотрудники, отчёты, статистика, push-уведомления, умный склад',
         plan_upgrade_btn: 'Улучшить',
         plan_coming_soon: 'Скоро будет доступно',
         plan_processing: 'Обработка…',
@@ -49,6 +49,7 @@ I18N.ru = {
         plan_feat_cost_profit: 'Себестоимость и прибыль',
         plan_feat_charts_forecast: 'Графики цен и прогноз запасов',
         plan_feat_staff: 'Сотрудники и журнал действий',
+        plan_feat_push: 'Push-уведомления',
 
         company_title: 'Информация о компании',
         company_autosave: 'Изменения сохраняются автоматически',

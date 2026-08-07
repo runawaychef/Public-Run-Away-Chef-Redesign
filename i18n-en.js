@@ -35,7 +35,7 @@ I18N.en = {
         plan_light_desc: 'Unlimited orders. No analytics or reports.',
         plan_full_name: 'Full',
         plan_full_price: '€4.99 / month',
-        plan_full_desc: 'Everything: staff, reports, statistics, smart inventory',
+        plan_full_desc: 'Everything: staff, reports, statistics, push notifications, smart inventory',
         plan_upgrade_btn: 'Upgrade',
         plan_coming_soon: 'Coming soon',
         plan_processing: 'Processing…',
@@ -50,6 +50,7 @@ I18N.en = {
         plan_feat_cost_profit: 'Cost & profit breakdown',
         plan_feat_charts_forecast: 'Price charts & stock forecast',
         plan_feat_staff: 'Staff & activity log',
+        plan_feat_push: 'Push notifications',
 
         company_title: 'Business Information',
         company_autosave: 'Changes are saved automatically',

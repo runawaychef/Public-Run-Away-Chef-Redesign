@@ -99,7 +99,8 @@ function planFeatureList() {
         { key: 'plan_feat_stats', free: false, light: false, full: true },
         { key: 'plan_feat_cost_profit', free: false, light: false, full: true },
         { key: 'plan_feat_charts_forecast', free: false, light: false, full: true },
-        { key: 'plan_feat_staff', free: false, light: false, full: true }
+        { key: 'plan_feat_staff', free: false, light: false, full: true },
+        { key: 'plan_feat_push', free: false, light: false, full: true }
     ];
 }
 
