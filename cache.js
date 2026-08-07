@@ -69,7 +69,7 @@ async function saveAppSnapshot() {
             orders, customers, products, ingredients, semiFinished, employees,
             _orderPaidTotals,
             _inventoryCache,
-            currentOrgId, currentOrgName, currentOrgPlan, currentOrgPlanIsOverridden,
+            currentOrgId, currentOrgName, currentOrgPlan, currentOrgPlanIsOverridden, currentOrgCreatedAt,
             currentOrgCustomersUsed, currentOrgOrdersUsed,
             currentOrgCurrency, currentOrgVatRate,
             currentEmployee,
@@ -119,6 +119,7 @@ function restoreAppFromSnapshot(snapshot) {
     currentOrgName = snapshot.currentOrgName || '';
     currentOrgPlan = snapshot.currentOrgPlan || 'free';
     currentOrgPlanIsOverridden = !!snapshot.currentOrgPlanIsOverridden;
+    currentOrgCreatedAt = snapshot.currentOrgCreatedAt || null;
     currentOrgCustomersUsed = snapshot.currentOrgCustomersUsed || 0;
     currentOrgOrdersUsed = snapshot.currentOrgOrdersUsed || 0;
     currentOrgCurrency = snapshot.currentOrgCurrency || 'EUR';

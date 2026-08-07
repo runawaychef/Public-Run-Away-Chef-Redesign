@@ -30,6 +30,27 @@ let monetizationLive = true;
 // с ограничениями конкретных тарифов на одной выбранной организации.
 let currentOrgPlanIsOverridden = false;
 
+// ── Пробный период: первые 7 дней с момента регистрации организации —
+// полный доступ ко всем функциям, без привязки карты (осознанное решение,
+// обсуждалось отдельно — упрощает вход новым пользователям сильнее, чем
+// экономит на редких недобросовестных). НЕ действует, если для организации
+// стоит явный ручной plan_override — override это осознанное решение
+// администратора, оно должно "побеждать" даже во время триала.
+//
+// Вычисляется мгновенно из даты регистрации (currentOrgCreatedAt), без
+// сетевого запроса — в отличие от monetizationLive/plan это не требует
+// похода в базу при каждой проверке, поэтому не подвержено гонке состояния
+// при быстром восстановлении из кэша (см. фикс той самой гонки выше по коду).
+const TRIAL_DAYS = 7;
+let currentOrgCreatedAt = null; // ISO-строка даты регистрации организации
+
+function isOrgInTrial() {
+    if (!currentOrgCreatedAt) return false;
+    const msSinceCreated = Date.now() - new Date(currentOrgCreatedAt).getTime();
+    return msSinceCreated < TRIAL_DAYS * 24 * 60 * 60 * 1000;
+}
+let _wasInTrialLastCheck = null; // используется в refreshCurrentEmployeePermissions() ниже, чтобы поймать момент окончания триала во время открытой сессии
+
 async function loadMonetizationLiveFlag() {
     try {
         const { data, error } = await db.from('platform_settings').select('value').eq('key', 'monetization_live').maybeSingle();
@@ -72,6 +93,8 @@ function hasPlanFeature(feature) {
     // временно не действует (все видят полный функционал). Если override есть —
     // он "побеждает" рубильник и проверяется по-настоящему, независимо от него.
     if (!monetizationLive && !currentOrgPlanIsOverridden) return true;
+    // Пробный период — та же логика: override "побеждает" даже триал.
+    if (!currentOrgPlanIsOverridden && isOrgInTrial()) return true;
     const features = PLAN_FEATURES[currentOrgPlan] || PLAN_FEATURES.free;
     return features.includes(feature);
 }
@@ -135,7 +158,7 @@ async function loadCurrentOrg() {
 
         const { data, error } = await db
             .from('memberships')
-            .select('org_id, role, organizations(id, name, plan, plan_override, customers_created_total, orders_created_total, currency_code, vat_rate)')
+            .select('org_id, role, organizations(id, name, plan, plan_override, created_at, customers_created_total, orders_created_total, currency_code, vat_rate)')
             .eq('user_id', uid)
             .single();
         if (error) throw error;
@@ -147,6 +170,8 @@ async function loadCurrentOrg() {
         // либо, наоборот, чтобы вручную экспериментировать с ограничениями тарифа.
         currentOrgPlanIsOverridden = !!(data.organizations && data.organizations.plan_override);
         currentOrgPlan = (data.organizations && (data.organizations.plan_override || data.organizations.plan)) || 'free';
+        currentOrgCreatedAt = (data.organizations && data.organizations.created_at) || null;
+        _wasInTrialLastCheck = isOrgInTrial();
         currentOrgCustomersUsed = (data.organizations && data.organizations.customers_created_total) || 0;
         currentOrgOrdersUsed = (data.organizations && data.organizations.orders_created_total) || 0;
         currentOrgCurrency = (data.organizations && data.organizations.currency_code) || 'EUR';
@@ -395,6 +420,15 @@ async function refreshCurrentEmployeePermissions() {
                 planChanged = true; // переиспользуем тот же флажок для пересчёта UI ниже
             }
         }
+
+        // Отдельно ловим момент, когда пробный период истекает ПРЯМО во время
+        // открытой сессии (сотрудник не выходил из приложения все 7+ дней).
+        // isOrgInTrial() сам по себе не требует сети — просто нужно заметить
+        // переход true→false и пересчитать интерфейс, иначе он "застынет" в
+        // полном доступе до следующего реального изменения плана.
+        const nowInTrial = isOrgInTrial();
+        if (_wasInTrialLastCheck === true && nowInTrial === false) planChanged = true;
+        _wasInTrialLastCheck = nowInTrial;
 
         if (changed) {
             applyPermissions(currentEmployee);
