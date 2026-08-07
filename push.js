@@ -34,6 +34,15 @@ function urlBase64ToUint8Array(base64String) {
 async function refreshPushSettingsUI() {
     const block = document.getElementById('pushSettingsBlock');
     if (!block) return;
+
+    // Push-уведомления — Full-only фича (см. согласованный список фич-гейтинга).
+    // Если тариф не позволяет — блок целиком скрыт, дальше даже не проверяем
+    // поддержку браузера/статус подписки, чтобы не тратить время впустую.
+    if (typeof hasPlanFeature === 'function' && !hasPlanFeature('push')) {
+        block.classList.add('hidden');
+        return;
+    }
+
     block.classList.remove('hidden');
 
     if (!_pushSupported()) {
@@ -87,6 +96,10 @@ async function _loadNotificationPreferencesIntoUI() {
 
 // Включает/выключает push целиком на этом устройстве.
 async function togglePushMaster() {
+    if (typeof hasPlanFeature === 'function' && !hasPlanFeature('push')) {
+        if (typeof showInfo === 'function') showInfo('Push-уведомления доступны на тарифе Full.');
+        return;
+    }
     const btn = document.getElementById('pushMasterToggleBtn');
     const alreadyOn = btn.classList.contains('active');
     btn.disabled = true;

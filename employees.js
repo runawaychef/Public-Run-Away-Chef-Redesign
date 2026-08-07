@@ -61,7 +61,7 @@ function hasVat() {
 const PLAN_FEATURES = {
     free: [],
     light: [],
-    full: ['stats', 'cost_analytics', 'activity_log', 'team'],
+    full: ['stats', 'cost_analytics', 'activity_log', 'team', 'push'],
 };
 
 // Универсальная проверка фичи для мест, где интерфейс формируется через JS-шаблоны
@@ -94,6 +94,7 @@ function applyPlanGating() {
     applyCostVisibility();
     applyActivityLogVisibility();
     applyTeamVisibility();
+    if (typeof refreshPushSettingsUI === 'function') refreshPushSettingsUI();
     // Вкладка "Статистика" зависит СРАЗУ от двух условий (права сотрудника И
     // тариф) — пересчитываем её через ту же функцию, что и права доступа.
     if (typeof applyScreenAccessPermissions === 'function') applyScreenAccessPermissions();
