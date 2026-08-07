@@ -278,12 +278,18 @@ async function loadIngredientUsageReport(filteredOrders) {
         box.innerHTML = `<p class="text-xs text-gray-400 text-center py-2" data-i18n="stats_no_data_period">Нет данных за выбранный период</p>`;
         return;
     }
-    box.innerHTML = rows.map(r => `
-        <div class="flex justify-between items-center py-1.5 border-b border-gray-50 last:border-0">
-            <span class="text-xs text-gray-800">${escapeHtml(r.name)}</span>
-            <span class="text-xs text-gray-500">${Number(r.qty.toFixed(2))} ${escapeHtml(r.unit)} · <b class="text-gray-800">${formatMoney(r.cost)}</b></span>
-        </div>
-    `).join('');
+    let html = '<table class="w-full stats-table table-clean" style="table-layout:fixed;"><thead><tr style="background-color:#e3e8df;">'
+        + '<th class="p-0.5 text-left" style="width:46%;">' + t('stats_col_ingredient') + '</th>'
+        + '<th class="p-0.5 text-right" style="width:28%;">' + t('stats_col_quantity') + '</th>'
+        + '<th class="p-0.5 text-right" style="width:26%;">' + t('stats_col_cost') + '</th>'
+        + '</tr></thead><tbody>';
+    rows.forEach(r => {
+        html += `<tr class="border-b"><td class="p-0.5" style="word-break:break-word;">${escapeHtml(r.name)}</td>`
+            + `<td class="p-0.5 text-right whitespace-nowrap">${Number(r.qty.toFixed(2))} ${escapeHtml(r.unit)}</td>`
+            + `<td class="p-0.5 text-right font-semibold whitespace-nowrap" style="color:#4f6349;">${formatMoney(r.cost)}</td></tr>`;
+    });
+    html += '</tbody></table>';
+    box.innerHTML = html;
 }
 
 // Экспорт того же отчёта в PDF — переиспользует createPdfDoc()/autoTable
