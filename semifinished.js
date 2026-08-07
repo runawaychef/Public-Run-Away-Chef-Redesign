@@ -89,7 +89,11 @@ function displaySemiFinished() {
         const colorStyle = shortage || (balance !== null && balance <= 0) || (daysLeft !== null && daysLeft < 3)
             ? 'color:#c0685c;' : daysLeft !== null && daysLeft < 7 ? 'color:#96712a;' : 'color:#4b5563;';
 
-        const daysStr = daysLeft !== null
+        // Точное число дней запаса — premium-фича (см. согласованный список
+        // фич-гейтинга). Предупреждение "нет в наличии" остаётся всегда.
+        const daysStr = !hasPlanFeature('cost_analytics')
+            ? (shortage ? `<span style="color:#c0685c;" class="font-semibold">${t('inv_shortage')}</span>` : '<span class="text-gray-400">—</span>')
+            : daysLeft !== null
             ? `<span style="${colorStyle}" class="font-semibold">${daysLeft} ${t('inv_days_short')}</span>`
             : shortage ? `<span style="color:#c0685c;" class="font-semibold">${t('inv_shortage')}</span>`
             : '<span class="text-gray-400">—</span>';
@@ -159,7 +163,9 @@ function renderSemiFinishedCards() {
         const notConfirmed = !sf.recipe_confirmed;
         const accentColor = (isCritical || notConfirmed) ? '#c0685c' : isWarning ? '#d9a441' : '';
         const afterColor = isCritical ? '#c0685c' : isWarning ? '#96712a' : '#4f6349';
-        const daysText = daysLeft !== null ? `${t('ing_lasts_colon')} ${daysLeft} ${t('inv_days_short')}` : shortage ? `${t('ing_lasts_colon')} ${t('inv_shortage')}` : '';
+        const daysText = !hasPlanFeature('cost_analytics')
+            ? (shortage ? `${t('ing_lasts_colon')} ${t('inv_shortage')}` : '')
+            : daysLeft !== null ? `${t('ing_lasts_colon')} ${daysLeft} ${t('inv_days_short')}` : shortage ? `${t('ing_lasts_colon')} ${t('inv_shortage')}` : '';
         const beforeText = balanceBefore !== null ? `${t('ing_before_writeoff_colon')} ${Number(balanceBefore).toFixed(1)} ${unitLabel}` : `${t('ing_before_writeoff_colon')} —`;
         const afterText = balance !== null ? `${Number(balance).toFixed(1)} ${unitLabel}` : '—';
         const priceText = `${formatMoney(unitCost, 4)}/${unitLabel}`;
@@ -633,7 +639,11 @@ async function renderSfStockBlock(sf) {
     }
     if (unitEl) unitEl.textContent = unitLabel;
     if (daysEl) {
-        if (balance !== null && balance > 0 && daily > 0) {
+        // Прогноз дней запаса — premium-фича (см. согласованный список фич-гейтинга).
+        if (!hasPlanFeature('cost_analytics')) {
+            daysEl.textContent = '';
+            daysEl.style.color = '';
+        } else if (balance !== null && balance > 0 && daily > 0) {
             const days = Math.floor(balance / daily);
             daysEl.textContent = `~${days} ${t('ing_days_of_stock')}`;
             if (days < 3)      { daysEl.className = 'table-text font-semibold'; daysEl.style.color = '#c0685c'; }
