@@ -356,7 +356,7 @@ function applyCostVisibility() {
 // и если сотрудник в момент потери права уже находится на закрытом для него экране —
 // аккуратно возвращает его обратно (закрывает склад / переключает на заказы).
 function applyScreenAccessPermissions() {
-    const canInventory = hasPermission('can_manage_inventory');
+    const canInventory = hasPermission('can_manage_inventory') && hasPlanFeature('cost_analytics');
     const canReports = hasPermission('can_view_reports') && hasPlanFeature('stats');
 
     document.getElementById('inventoryBtn').classList.toggle('hidden', !canInventory);

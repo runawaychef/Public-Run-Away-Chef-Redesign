@@ -279,6 +279,10 @@ async function openInventoryModal() {
         showInfo(t('inv_no_access'));
         return;
     }
+    if (!hasPlanFeature('cost_analytics')) {
+        showInfo('Сводный экран склада доступен на тарифе Full. Приход и списание по-прежнему доступны в карточке ингредиента/п/ф.');
+        return;
+    }
     document.getElementById('inventoryBtn').classList.add('active');
     showLoading(t('inv_loading_stock'));
     await Promise.all([loadInventory(), loadShoppingList()]);
