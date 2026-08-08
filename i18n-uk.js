@@ -16,7 +16,7 @@ I18N.uk = {
 
         // Нижняя навигация
         nav_orders: 'Замовлення',
-        nav_products: 'Асортимент',
+        nav_products: 'Меню',
         nav_ingredients: 'Склад',
         nav_customers: 'Клієнти',
 

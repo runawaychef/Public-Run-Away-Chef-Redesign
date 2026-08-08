@@ -10,7 +10,7 @@ I18N.en = {
         lang_draft_confirm: 'This translation is a draft and hasn\'t been reviewed by a native speaker yet. Use it anyway?',
         // Bottom navigation
         nav_orders: 'Orders',
-        nav_products: 'Products',
+        nav_products: 'Menu',
         nav_ingredients: 'Inventory',
         nav_customers: 'Customers',
 

@@ -9,7 +9,7 @@ I18N.ru = {
         lang_draft_confirm: 'Этот перевод — черновик, ещё не проверен носителем языка. Использовать всё равно?',
         // Нижняя навигация
         nav_orders: 'Заказы',
-        nav_products: 'Ассортимент',
+        nav_products: 'Меню',
         nav_ingredients: 'Склад',
         nav_customers: 'Клиенты',
 

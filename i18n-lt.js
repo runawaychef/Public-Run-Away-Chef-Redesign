@@ -16,7 +16,7 @@ I18N.lt = {
 
         // Нижняя навигация
         nav_orders: 'Užsakymai',
-        nav_products: 'Asortimentas',
+        nav_products: 'Meniu',
         nav_ingredients: 'Sandėlis',
         nav_customers: 'Klientai',
 
