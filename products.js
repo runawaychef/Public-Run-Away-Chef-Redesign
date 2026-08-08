@@ -58,11 +58,15 @@ function renderProductCards() {
             : `${t('prod_cost_price_colon')} —`;
         const stripe = needsAttention ? `<div class="stripe" style="background:#c0685c;"></div>` : '';
         const realIdx = products.indexOf(p);
+        const photoHtml = p.photo_url
+            ? `<div class="oc-photo-wrap"><img class="oc-photo" src="${escapeHtml(p.photo_url)}" loading="lazy"></div>`
+            : `<div class="oc-photo-wrap"><div class="oc-photo-placeholder"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="9" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div></div>`;
         html += `
         <div class="oc-swipe-wrap" data-name="${escapeHtml((p.name || '').toLowerCase())}" style="--oc-swipe-x:-72px;">
             ${refCopySwipeBtnHtml(`quickCopyProductFromSwipe(${realIdx})`)}
             <div class="order-card" style="cursor:pointer;" onclick="openProductDetail(${p.id})">
                 ${stripe}
+                ${photoHtml}
                 <div class="order-card-body">
                     <div class="oc-row">
                         <span class="oc-name">${escapeHtml(p.name || t('semifinished_no_name_fallback'))}</span>
@@ -399,6 +403,7 @@ function openProductDetail(productId) {
     document.getElementById('pdOtherCosts').value = (prod.other_costs || 0).toFixed(2);
     document.getElementById('pdRecipeConfirmed').checked = !!prod.recipe_confirmed;
     document.getElementById('pdTrackStock').checked = !!prod.track_stock;
+    renderPdPhotoUI(prod.photo_url);
 
     updatePdUnitUI(prod.unit);
     renderProductRecipe(prod);
@@ -776,4 +781,179 @@ async function copyRecipeFromProductByName(sourceName) {
         logActivity('product', `${t('log_copied_to_recipe')} «${prod.name}»: ${toCopy.length} ${t('sf_position_many')} ${t('sf_copy_positions_confirm_from')} «${sourceName}»`);
     } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
+}
+
+// ==================== ФОТО ИЗДЕЛИЯ ====================
+// Тот же принцип, что и кроп-инструмент логотипа компании (см. company.js:
+// openLogoCropModal/drawLogoCropCanvas/applyLogoCrop) — перетаскивание + зум
+// на canvas. Отличие: логотип один на организацию и хранится как base64
+// прямо в колонке organizations.logo_data_url, а фото изделий может быть
+// много (по одному на товар), поэтому используем Supabase Storage (бакет
+// product-photos) и храним в products.photo_url только ссылку.
+
+const PRODUCT_PHOTO_CROP_OUTPUT_SIZE = 800; // финальный размер сохранённого фото, px
+const PRODUCT_PHOTO_CROP_CANVAS_SIZE = 260; // размер видимой рамки кроп-инструмента, px
+const PRODUCT_PHOTO_MAX_UPLOAD_BYTES = 8 * 1024 * 1024; // 8 МБ — фото с телефона крупнее логотипа
+
+let _pdPhotoCropImg = null;
+let _pdPhotoCropBaseScale = 1;
+let _pdPhotoCropOffsetX = 0;
+let _pdPhotoCropOffsetY = 0;
+let _pdPhotoCropDragging = false;
+let _pdPhotoCropLastX = 0;
+let _pdPhotoCropLastY = 0;
+
+// Отрисовывает блок фото в развёрнутой карточке (вызывается из openProductDetail)
+function renderPdPhotoUI(photoUrl) {
+    const img = document.getElementById('pdPhotoImg');
+    const empty = document.getElementById('pdPhotoEmpty');
+    const editBtn = document.getElementById('pdPhotoEditBtn');
+    if (!img || !empty) return;
+    if (photoUrl) {
+        img.src = photoUrl;
+        img.style.display = 'block';
+        empty.style.display = 'none';
+        editBtn.classList.remove('hidden');
+    } else {
+        img.style.display = 'none';
+        empty.style.display = 'flex';
+        editBtn.classList.add('hidden'); // без фото — кликабельна вся плашка "Добавить фото", отдельная кнопка не нужна
+    }
+    // Пока фото нет — весь квадрат кликом открывает выбор файла (клик по empty-плашке)
+    empty.onclick = () => document.getElementById('pdPhotoFileInput').click();
+}
+
+function handleProductPhotoFileSelected(input) {
+    const file = input.files && input.files[0];
+    input.value = ''; // чтобы повторный выбор того же файла тоже сработал
+    if (!file) return;
+    if (file.size > PRODUCT_PHOTO_MAX_UPLOAD_BYTES) {
+        showInfo(t('company_logo_too_large'));
+        return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => openProductPhotoCropModal(img);
+        img.onerror = () => showInfo(t('company_logo_load_error'));
+        img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function openProductPhotoCropModal(img) {
+    _pdPhotoCropImg = img;
+    const size = PRODUCT_PHOTO_CROP_CANVAS_SIZE;
+    _pdPhotoCropBaseScale = Math.max(size / img.width, size / img.height);
+    _pdPhotoCropOffsetX = (size - img.width * _pdPhotoCropBaseScale) / 2;
+    _pdPhotoCropOffsetY = (size - img.height * _pdPhotoCropBaseScale) / 2;
+    document.getElementById('productPhotoCropZoom').value = 100;
+    drawProductPhotoCropCanvas();
+    document.getElementById('productPhotoCropModal').style.display = 'flex';
+}
+
+function closeProductPhotoCropModal() {
+    document.getElementById('productPhotoCropModal').style.display = 'none';
+    _pdPhotoCropImg = null;
+}
+
+function currentPdPhotoCropScale() {
+    const zoomPct = Number(document.getElementById('productPhotoCropZoom').value) || 100;
+    return _pdPhotoCropBaseScale * (zoomPct / 100);
+}
+
+function clampPdPhotoCropOffset() {
+    const size = PRODUCT_PHOTO_CROP_CANVAS_SIZE;
+    const scale = currentPdPhotoCropScale();
+    const w = _pdPhotoCropImg.width * scale;
+    const h = _pdPhotoCropImg.height * scale;
+    _pdPhotoCropOffsetX = Math.min(0, Math.max(size - w, _pdPhotoCropOffsetX));
+    _pdPhotoCropOffsetY = Math.min(0, Math.max(size - h, _pdPhotoCropOffsetY));
+}
+
+function drawProductPhotoCropCanvas() {
+    if (!_pdPhotoCropImg) return;
+    clampPdPhotoCropOffset();
+    const canvas = document.getElementById('productPhotoCropCanvas');
+    const ctx = canvas.getContext('2d');
+    const scale = currentPdPhotoCropScale();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(_pdPhotoCropImg, _pdPhotoCropOffsetX, _pdPhotoCropOffsetY, _pdPhotoCropImg.width * scale, _pdPhotoCropImg.height * scale);
+}
+
+(function initProductPhotoCropInteractions() {
+    document.addEventListener('DOMContentLoaded', () => {
+        const canvas = document.getElementById('productPhotoCropCanvas');
+        const zoomSlider = document.getElementById('productPhotoCropZoom');
+        if (!canvas || !zoomSlider) return;
+
+        canvas.addEventListener('pointerdown', (e) => {
+            _pdPhotoCropDragging = true;
+            _pdPhotoCropLastX = e.clientX;
+            _pdPhotoCropLastY = e.clientY;
+            canvas.setPointerCapture(e.pointerId);
+            canvas.style.cursor = 'grabbing';
+        });
+        canvas.addEventListener('pointermove', (e) => {
+            if (!_pdPhotoCropDragging) return;
+            _pdPhotoCropOffsetX += e.clientX - _pdPhotoCropLastX;
+            _pdPhotoCropOffsetY += e.clientY - _pdPhotoCropLastY;
+            _pdPhotoCropLastX = e.clientX;
+            _pdPhotoCropLastY = e.clientY;
+            drawProductPhotoCropCanvas();
+        });
+        const stopDrag = () => {
+            _pdPhotoCropDragging = false;
+            canvas.style.cursor = 'grab';
+        };
+        canvas.addEventListener('pointerup', stopDrag);
+        canvas.addEventListener('pointercancel', stopDrag);
+        canvas.addEventListener('pointerleave', stopDrag);
+
+        zoomSlider.addEventListener('input', () => drawProductPhotoCropCanvas());
+    });
+})();
+
+async function applyProductPhotoCrop() {
+    if (!_pdPhotoCropImg || !currentProductId) return;
+    const out = document.createElement('canvas');
+    out.width = PRODUCT_PHOTO_CROP_OUTPUT_SIZE;
+    out.height = PRODUCT_PHOTO_CROP_OUTPUT_SIZE;
+    const ctx = out.getContext('2d');
+    const ratio = PRODUCT_PHOTO_CROP_OUTPUT_SIZE / PRODUCT_PHOTO_CROP_CANVAS_SIZE;
+    const scale = currentPdPhotoCropScale() * ratio;
+    ctx.drawImage(_pdPhotoCropImg, _pdPhotoCropOffsetX * ratio, _pdPhotoCropOffsetY * ratio, _pdPhotoCropImg.width * scale, _pdPhotoCropImg.height * scale);
+
+    closeProductPhotoCropModal();
+    showLoading();
+    try {
+        const blob = await new Promise(resolve => out.toBlob(resolve, 'image/jpeg', 0.85));
+        // Уникальное имя на каждое сохранение (не перезаписываем старый файл по тому
+        // же пути) — иначе кэш браузера/CDN мог бы ещё долго показывать старое фото
+        // после замены. Путь начинается с org_id — так работает RLS-политика Storage
+        // (см. is_org_member((storage.foldername(name))[1]::bigint)).
+        const path = `${currentOrgId}/${currentProductId}-${Date.now()}.jpg`;
+        const { error: uploadError } = await db.storage.from('product-photos').upload(path, blob, {
+            contentType: 'image/jpeg',
+            upsert: false,
+        });
+        if (uploadError) throw uploadError;
+
+        const { data: urlData } = db.storage.from('product-photos').getPublicUrl(path);
+        const photoUrl = urlData.publicUrl;
+
+        await updateChecked(db.from('products').update({ photo_url: photoUrl }).eq('id', currentProductId));
+
+        const prod = products.find(p => p.id === currentProductId);
+        if (prod) prod.photo_url = photoUrl;
+        renderPdPhotoUI(photoUrl);
+        renderProductCards();
+        logActivity('product', `${t('log_field_changed')} «${t('prod_photo_label')}» «${prod ? prod.name : ''}»`);
+        showAutosaveToast();
+    } catch (e) {
+        console.error(e);
+        showInfo(t('error_save_check_connection'));
+    } finally {
+        hideLoading();
+    }
 }

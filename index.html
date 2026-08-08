@@ -425,6 +425,31 @@
         .order-card .oc-item-name { overflow-wrap: break-word; word-break: break-word; min-width: 0; }
         .order-card .oc-item-qty { flex-shrink: 0; width: 44px; text-align: right; white-space: nowrap; }
 
+        /* Фото товара — компактная карточка (круг слева) */
+        .oc-photo-wrap { flex-shrink: 0; display: flex; align-items: center; padding-left: 12px; }
+        .oc-photo { width: 56px; height: 56px; object-fit: cover; border-radius: 50%; background: #e9e5d9; }
+        .oc-photo-placeholder {
+            width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            background: #e9e5d9; color: #b7b1a3; flex-shrink: 0;
+        }
+
+        /* Фото товара — развёрнутая карточка (большой квадрат со скруглением) */
+        .pd-photo-wrap {
+            width: 100%; aspect-ratio: 1 / 1; border-radius: 18px; overflow: hidden;
+            background: #e9e5d9; position: relative; margin-bottom: 12px;
+        }
+        .pd-photo-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .pd-photo-empty {
+            width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: #b7b1a3; gap: 6px;
+        }
+        .pd-photo-edit-btn {
+            position: absolute; right: 10px; bottom: 10px; border: none; cursor: pointer;
+            background: rgba(50,47,40,0.72); color: #fff; border-radius: 10px;
+            padding: 6px 11px; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 5px;
+        }
+        .pd-photo-edit-btn svg { width: 13px; height: 13px; }
+
         /* ── Бейдж даты (месяц+число) в карточке заказа — заменяет текстовую дату ── */
         .oc-header { display: flex; gap: 10px; align-items: flex-start; }
         .oc-datebadge { width: 40px; flex-shrink: 0; border-radius: 9px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.14); border: 1px solid #eee; }
@@ -1042,6 +1067,21 @@
                         <button onclick="deleteCurrentProduct()" class="pill-btn-danger perm-delete" data-i18n="prod_delete_btn">Удалить изделие</button>
                     </div>
                     <p class="text-[11px] text-gray-400 mb-1" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
+                    <!-- Фото изделия — квадрат со скруглением, круг используется в компактной
+                         карточке списка (см. .oc-photo в CSS ниже). Хранится в Supabase Storage
+                         (бакет product-photos), в products.photo_url — только ссылка. -->
+                    <div id="pdPhotoWrap" class="pd-photo-wrap">
+                        <img id="pdPhotoImg" src="" style="display:none;">
+                        <div id="pdPhotoEmpty" class="pd-photo-empty">
+                            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="9" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                            <span class="table-text" data-i18n="prod_photo_add">Добавить фото</span>
+                        </div>
+                        <input type="file" id="pdPhotoFileInput" accept="image/png,image/jpeg,image/webp" class="hidden" onchange="handleProductPhotoFileSelected(this)">
+                        <button type="button" id="pdPhotoEditBtn" onclick="document.getElementById('pdPhotoFileInput').click()" class="pd-photo-edit-btn hidden">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+                            <span data-i18n="prod_photo_edit">Изменить</span>
+                        </button>
+                    </div>
                     <div id="pdUnitWarning" class="hidden text-xs rounded-xl p-1.5 mb-2" style="color:#a3493d; background:#f3ded9; border:1px solid #e8c4bb;">
                         <svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg><span data-i18n="prod_unit_warning_single">Для этого изделия не выбрана единица измерения. Пожалуйста, выберите «шт» или «кг».</span>
                     </div>
@@ -2348,6 +2388,24 @@
             </div>
         </div>
 
+        <!-- Кроп-инструмент для фото товара — тот же принцип, что и logoCropModal
+             (перетаскивание + зум на canvas), но отдельная модалка: другой размер
+             вывода (крупнее — фото показывается на весь квадрат карточки, а не 56px). -->
+        <div id="productPhotoCropModal" class="modal">
+            <div class="modal-content" style="max-width:340px;">
+                <h2 class="text-sm font-semibold mb-1 text-gray-800" data-i18n="prod_photo_crop_title">Подгонка фото</h2>
+                <p class="text-[11px] text-gray-400 mb-3" data-i18n="company_logo_crop_hint">Перетащите картинку и настройте масштаб ползунком</p>
+                <div style="position:relative; width:260px; height:260px; margin:0 auto; border-radius:12px; overflow:hidden; background:#f4f1ea; touch-action:none;">
+                    <canvas id="productPhotoCropCanvas" width="260" height="260" style="display:block; cursor:grab;"></canvas>
+                </div>
+                <input type="range" id="productPhotoCropZoom" min="100" max="400" value="100" step="1" style="width:100%; margin-top:14px; accent-color:#7c9473;">
+                <div class="flex gap-2 mt-3">
+                    <button onclick="closeProductPhotoCropModal()" class="pill-btn-secondary flex-1 justify-center" data-i18n="company_logo_crop_cancel">Отмена</button>
+                    <button onclick="applyProductPhotoCrop()" class="pill-btn flex-1 justify-center" data-i18n="company_logo_crop_apply">Применить</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Кроп-инструмент для логотипа: перетаскивание + зум на canvas -->
         <div id="logoCropModal" class="modal">
             <div class="modal-content" style="max-width:340px;">
@@ -2932,7 +2990,7 @@
 
 <script src="dates.js?v=8"></script>
     <script src="money.js?v=10"></script>
-    <script src="i18n-core.js?v=20"></script>
+    <script src="i18n-core.js?v=21"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=10"></script>
     <script src="auth.js?v=18"></script>
@@ -2944,7 +3002,7 @@
 <script src="ingredients.js?v=35"></script>
 <script src="batches.js?v=9"></script>
 <script src="semifinished.js?v=33"></script>
-<script src="products.js?v=27"></script>
+<script src="products.js?v=28"></script>
 <script src="customers.js?v=37"></script>
 <script src="calendar.js?v=7"></script>
 <script src="orders.js?v=89"></script>
@@ -3002,7 +3060,7 @@ async function loadAllData(silent) {
     if (!silent) showLoading();
     try {
         const [pRes, cRes, oRes, oiRes, eRes, ingRes, piRes, sfRes, sfiRes, opRes] = await Promise.all([
-            db.from('products').select('id, name, price, batch_size, other_costs, unit, recipe_confirmed, track_stock').eq('org_id', currentOrgId).order('name').limit(5000),
+            db.from('products').select('id, name, price, batch_size, other_costs, unit, recipe_confirmed, track_stock, photo_url').eq('org_id', currentOrgId).order('name').limit(5000),
             db.from('customers').select('id, name, contact, discount, vat_exempt, notes, address, reg_number, vat_code, personal_code, entity_type, payment_term_days').eq('org_id', currentOrgId).order('name').limit(5000),
             db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending, invoice_snapshot, delivery_note_snapshot').eq('org_id', currentOrgId).is('deleted_at', null).range(0, 9999),
             db.from('order_items').select('id, order_id, product_id, quantity, price, item_cost').eq('org_id', currentOrgId).range(0, 9999),
