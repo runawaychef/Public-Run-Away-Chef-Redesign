@@ -3114,6 +3114,7 @@ async function loadAllData(silent) {
             unit: p.unit || '',
             recipe_confirmed: !!p.recipe_confirmed,
             track_stock: !!p.track_stock,
+            photo_url: p.photo_url || null,
             ingredients: recipeByProduct[p.id] || []
         }));
         customers = (cRes.data || []).map(c => ({ id: c.id, name: c.name || '', contact: c.contact || '', discount: Number(c.discount || 0), vat_exempt: !!c.vat_exempt, notes: c.notes || '' }));
