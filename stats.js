@@ -257,7 +257,7 @@ async function loadIngredientUsageReport(filteredOrders) {
 
     const { data, error } = await db
         .from('order_item_ingredients')
-        .select('ingredient_name, unit, quantity, total_cost')
+        .select('ingredient_id, ingredient_name, unit, quantity, total_cost')
         .in('order_item_id', itemIds);
 
     if (error || !data) {
@@ -265,10 +265,20 @@ async function loadIngredientUsageReport(filteredOrders) {
         return;
     }
 
+    // Группируем по ingredient_id, а не по замороженному имени из снимка —
+    // если ингредиент переименовали (например, "Сливки" → "Сливки 30%"),
+    // старые заказы хранят СТАРОЕ имя в ingredient_name, и без этой поправки
+    // расход того же самого ингредиента разъезжался бы на две разные строки
+    // в отчёте. Берём актуальное название из уже загруженного списка
+    // ингредиентов (глобальный массив ingredients). Если ингредиент с тех
+    // пор удалили вовсе (ingredient_id не находится в списке) — используем
+    // имя-снимок как есть, это лучше, чем потерять запись из отчёта.
     const map = {};
     data.forEach(r => {
-        const key = r.ingredient_name + '|' + r.unit;
-        if (!map[key]) map[key] = { name: r.ingredient_name, unit: r.unit, qty: 0, cost: 0 };
+        const current = r.ingredient_id != null ? ingredients.find(i => i.id === r.ingredient_id) : null;
+        const displayName = current ? current.name : r.ingredient_name;
+        const key = r.ingredient_id != null ? ('id:' + r.ingredient_id) : ('name:' + r.ingredient_name + '|' + r.unit);
+        if (!map[key]) map[key] = { name: displayName, unit: r.unit, qty: 0, cost: 0 };
         map[key].qty  += Number(r.quantity)   || 0;
         map[key].cost += Number(r.total_cost) || 0;
     });
