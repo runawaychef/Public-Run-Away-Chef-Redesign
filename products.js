@@ -60,7 +60,7 @@ function renderProductCards() {
         const realIdx = products.indexOf(p);
         const photoHtml = p.photo_url
             ? `<div class="oc-photo-wrap"><img class="oc-photo" src="${escapeHtml(p.photo_url)}" loading="lazy"></div>`
-            : `<div class="oc-photo-wrap"><div class="oc-photo-placeholder"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="9" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg></div></div>`;
+            : `<div class="oc-photo-wrap"><img class="oc-photo" src="product-placeholder.png" loading="lazy"></div>`;
         html += `
         <div class="oc-swipe-wrap" data-name="${escapeHtml((p.name || '').toLowerCase())}" style="--oc-swipe-x:-72px;">
             ${refCopySwipeBtnHtml(`quickCopyProductFromSwipe(${realIdx})`)}
