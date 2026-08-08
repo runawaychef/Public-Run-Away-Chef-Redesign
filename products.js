@@ -948,6 +948,11 @@ async function applyProductPhotoCrop() {
         if (prod) prod.photo_url = photoUrl;
         renderPdPhotoUI(photoUrl);
         renderProductCards();
+        // Обновляем локальный снимок кэша немедленно — иначе он остаётся
+        // "устаревшим" (без нового фото) вплоть до следующей полной перезагрузки
+        // данных (loadAllData), и при быстром старте из кэша фото пропадало бы
+        // до тех пор, пока не подтянутся свежие данные из сети.
+        if (typeof saveAppSnapshot === 'function') saveAppSnapshot();
         logActivity('product', `${t('log_field_changed')} «${t('prod_photo_label')}» «${prod ? prod.name : ''}»`);
         showAutosaveToast();
     } catch (e) {
