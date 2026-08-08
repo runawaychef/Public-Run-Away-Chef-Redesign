@@ -3117,7 +3117,13 @@ async function loadAllData(silent) {
             photo_url: p.photo_url || null,
             ingredients: recipeByProduct[p.id] || []
         }));
-        customers = (cRes.data || []).map(c => ({ id: c.id, name: c.name || '', contact: c.contact || '', discount: Number(c.discount || 0), vat_exempt: !!c.vat_exempt, notes: c.notes || '' }));
+        customers = (cRes.data || []).map(c => ({
+            id: c.id, name: c.name || '', contact: c.contact || '', discount: Number(c.discount || 0),
+            vat_exempt: !!c.vat_exempt, notes: c.notes || '',
+            address: c.address || '', reg_number: c.reg_number || '', vat_code: c.vat_code || '',
+            personal_code: c.personal_code || '', entity_type: c.entity_type || '',
+            payment_term_days: c.payment_term_days != null ? c.payment_term_days : null
+        }));
         employees = (eRes.data || []).map(e => ({ id: e.id, name: e.name }));
 
         const customerById = {};
