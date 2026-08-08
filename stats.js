@@ -218,11 +218,16 @@ function applyFilter() {
     drawProductProfitabilityTable();
     loadIngredientUsageReport(filtered);
 
-    // Подписываемся на фильтр каждый раз при открытии статистики
+    // Подписываемся на фильтры каждый раз при открытии статистики
     const filterEl = document.getElementById('productProfitFilter');
     if (filterEl) {
         filterEl.value = '';
         filterEl.oninput = () => drawProductProfitabilityTable();
+    }
+    const productFilterEl = document.getElementById('statsProductFilter');
+    if (productFilterEl) {
+        productFilterEl.value = '';
+        productFilterEl.oninput = () => drawProductTable(getFilteredOrders());
     }
 }
 
@@ -274,11 +279,34 @@ async function loadIngredientUsageReport(filteredOrders) {
     document.getElementById('ingUsageCount').textContent = rows.length;
     document.getElementById('ingUsageTotalCost').textContent = formatMoney(totalCost);
 
+    renderIngredientUsageTable();
+
+    const filterEl = document.getElementById('ingUsageFilter');
+    if (filterEl) {
+        filterEl.value = '';
+        filterEl.oninput = renderIngredientUsageTable; // фильтруем уже загруженные данные, без нового запроса к базе
+    }
+}
+
+// Отрисовывает ingredientUsageReportData с учётом текущего значения поля
+// поиска — вызывается и после загрузки, и при каждом вводе в фильтр
+// (без повторного похода в базу, данные уже на клиенте).
+function renderIngredientUsageTable() {
+    const box = document.getElementById('ingredientUsageReport');
+    if (!box) return;
+    const filterEl = document.getElementById('ingUsageFilter');
+    const filterVal = filterEl ? filterEl.value.trim().toLowerCase() : '';
+    const rows = filterVal
+        ? ingredientUsageReportData.filter(r => r.name.toLowerCase().includes(filterVal))
+        : ingredientUsageReportData;
+
     if (!rows.length) {
         box.innerHTML = `<p class="text-xs text-gray-400 text-center py-2" data-i18n="stats_no_data_period">Нет данных за выбранный период</p>`;
         return;
     }
-    let html = '<table class="w-full stats-table table-clean" style="table-layout:fixed;"><thead><tr style="background-color:#e3e8df;">'
+    // Показываем все найденные строки внутри контейнера с ограниченной высотой
+    // (~10 строк) и прокруткой — раньше показывались вообще все без ограничения.
+    let html = '<div style="max-height:340px; overflow-y:auto;"><table class="w-full stats-table table-clean" style="table-layout:fixed;"><thead><tr style="background-color:#e3e8df; position:sticky; top:0;">'
         + '<th class="p-0.5 text-left" style="width:46%;">' + t('stats_col_ingredient') + '</th>'
         + '<th class="p-0.5 text-right" style="width:28%;">' + t('stats_col_quantity') + '</th>'
         + '<th class="p-0.5 text-right" style="width:26%;">' + t('stats_col_cost') + '</th>'
@@ -288,7 +316,7 @@ async function loadIngredientUsageReport(filteredOrders) {
             + `<td class="p-0.5 text-right whitespace-nowrap">${Number(r.qty.toFixed(2))} ${escapeHtml(r.unit)}</td>`
             + `<td class="p-0.5 text-right font-semibold whitespace-nowrap" style="color:#4f6349;">${formatMoney(r.cost)}</td></tr>`;
     });
-    html += '</tbody></table>';
+    html += '</tbody></table></div>';
     box.innerHTML = html;
 }
 
@@ -403,13 +431,20 @@ function drawProductTable(filtered) {
             qtys[it.product]   = (qtys[it.product] || 0) + Number(it.quantity || 0);
         });
     });
-    const sorted = Object.entries(totals).sort((a,b) => b[1] - a[1]).slice(0, 10);
+    const filterEl = document.getElementById('statsProductFilter');
+    const filterVal = filterEl ? filterEl.value.trim().toLowerCase() : '';
+    let sorted = Object.entries(totals).sort((a,b) => b[1] - a[1]);
+    if (filterVal) sorted = sorted.filter(([name]) => name.toLowerCase().includes(filterVal));
     if (!sorted.length) {
         document.getElementById('statsProductTable').innerHTML = `<p class="text-xs text-gray-400">${t('stats_no_data')}</p>`;
         return;
     }
     const max = sorted[0][1];
-    let html = '<table class="w-full stats-table table-clean"><thead><tr style="background-color:#e3e8df;"><th class="p-0.5 text-left">' + t('stats_col_product') + '</th><th class="p-0.5 text-right">' + t('stats_col_qty') + '</th><th class="p-0.5 text-right">' + t('stats_col_sum') + ' (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th></tr></thead><tbody>';
+    // Показываем все найденные строки, но внутри контейнера с ограниченной
+    // высотой (~10 строк) и прокруткой — не обрезаем данные жёстко, как
+    // раньше (.slice(0,10) без возможности увидеть остальное). Шапка таблицы
+    // "прилипает" сверху при прокрутке (position: sticky).
+    let html = '<div style="max-height:340px; overflow-y:auto;"><table class="w-full stats-table table-clean"><thead><tr style="background-color:#e3e8df; position:sticky; top:0;"><th class="p-0.5 text-left">' + t('stats_col_product') + '</th><th class="p-0.5 text-right">' + t('stats_col_qty') + '</th><th class="p-0.5 text-right">' + t('stats_col_sum') + ' (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th></tr></thead><tbody>';
     sorted.forEach(([name, val]) => {
         const barW = max > 0 ? Math.round(val/max*100) : 0;
         html += `<tr class="border-b"><td class="p-0.5">
@@ -419,7 +454,7 @@ function drawProductTable(filtered) {
             </div>
         </td><td class="p-0.5 text-right align-top">${qtys[name] || 0}</td><td class="p-0.5 text-right stats-num align-top">${val.toFixed(2)}</td></tr>`;
     });
-    html += '</tbody></table>';
+    html += '</tbody></table></div>';
     document.getElementById('statsProductTable').innerHTML = html;
 }
 
@@ -459,24 +494,24 @@ function drawProductProfitabilityTable() {
         return;
     }
 
-    // Без фильтра — топ-10, с фильтром — все найденные
+    // Показываем все найденные строки (и без фильтра тоже) — прокрутка
+    // внутри контейнера ниже заменяет прежнюю жёсткую обрезку до топ-10.
     const sorted = [...withRecipe]
-        .sort((a, b) => productProfitPct(b) - productProfitPct(a))
-        .slice(0, filter ? 100 : 10);
+        .sort((a, b) => productProfitPct(b) - productProfitPct(a));
 
     const title = filter
         ? t('stats_found_products').replace('{count}', sorted.length).replace('{filter}', filter)
         : t('stats_top_by_margin').replace('{count}', sorted.length);
 
     let html = `<p class="text-xs text-gray-500 mb-1">${title}</p>`;
-    html += '<table class="w-full stats-table table-clean" style="table-layout:fixed;"><thead><tr style="background-color:#e3e8df;"><th class="p-0.5 text-left" style="width:46%;">' + t('stats_col_product') + '</th><th class="p-0.5 text-right" style="width:18%;">' + t('stats_col_cost') + ' (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:18%;">' + t('stats_col_price') + ' (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:18%;">' + t('stats_col_margin_short') + '</th></tr></thead><tbody>';
+    html += '<div style="max-height:340px; overflow-y:auto;"><table class="w-full stats-table table-clean" style="table-layout:fixed;"><thead><tr style="background-color:#e3e8df; position:sticky; top:0;"><th class="p-0.5 text-left" style="width:46%;">' + t('stats_col_product') + '</th><th class="p-0.5 text-right" style="width:18%;">' + t('stats_col_cost') + ' (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:18%;">' + t('stats_col_price') + ' (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-0.5 text-right" style="width:18%;">' + t('stats_col_margin_short') + '</th></tr></thead><tbody>';
     sorted.forEach(p => {
         const cost = productUnitCost(p);
         const pct  = productProfitPct(p);
         const pctColor = pct >= 0 ? '#4f6349' : '#c0685c';
         html += `<tr class="border-b"><td class="p-0.5" style="word-break:break-word;">${escapeHtml(p.name)}</td><td class="p-0.5 text-right whitespace-nowrap">${cost.toFixed(2)}</td><td class="p-0.5 text-right whitespace-nowrap">${p.price.toFixed(2)}</td><td class="p-0.5 text-right font-semibold whitespace-nowrap" style="color:${pctColor};">${pct.toFixed(1)}%</td></tr>`;
     });
-    html += '</tbody></table>';
+    html += '</tbody></table></div>';
     container.innerHTML = html;
 }
 
