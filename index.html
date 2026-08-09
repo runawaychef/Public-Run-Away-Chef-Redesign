@@ -3527,7 +3527,6 @@ function closeHistoryScreen() {
     if (snapshot) {
         restoreAppFromSnapshot(snapshot);
         _instantRestoreDone = true;
-        document.getElementById('splashScreen')?.classList.add('hide');
         // См. подробный комментарий у forceViewportRecalc() ниже — именно
         // restoreAppFromSnapshot() выше делает тяжёлую синхронную отрисовку
         // ПЕРЕД первым показом экрана, а не window.load — тот самый момент,
@@ -3536,6 +3535,13 @@ function closeHistoryScreen() {
         // через Google, когда страница физически перезагружается с нуля).
         if (typeof forceViewportRecalc === 'function') forceViewportRecalc();
         initAuth(); // намеренно без await — идёт в фоне, не блокируя уже показанный интерфейс
+        // Интерфейс за сплэшем уже полностью готов (см. выше), но раньше сплэш
+        // скрывался в ту же миллисекунду — физически не успевал отрисоваться
+        // на экране (замечено пользователем 08.08.2026: "сплэш перестал
+        // показываться"). Держим его чуть дольше чисто визуально — короче,
+        // чем на холодном старте без кэша (там 900мс), т.к. тут это не
+        // реальное ожидание чего-либо, а сознательная задержка ради бренда.
+        setTimeout(() => { document.getElementById('splashScreen')?.classList.add('hide'); }, 500);
     } else {
         // Сплэш держим минимум 900мс (чтобы не мигал слишком быстро на мощных
         // устройствах), но не дольше реальной инициализации — обе задержки идут
