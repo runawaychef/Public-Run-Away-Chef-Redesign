@@ -146,6 +146,36 @@ async function logActivity(actionType, description, orderId = null) {
     }
 }
 
+// ==================== ПРИБЛИЗИТЕЛЬНАЯ ГЕОЛОКАЦИЯ (Simple Hub) ====================
+
+// Обновляет organizations.detected_country по IP не чаще раза в 30 дней.
+// Вызывается fire-and-forget из loadCurrentOrg() — не блокирует загрузку
+// приложения и не показывает ошибок пользователю: это справочное поле
+// для Simple Hub, отказ ipapi.co (сеть, рейт-лимит) просто откладывает
+// обновление до следующего запуска.
+const DETECTED_COUNTRY_REFRESH_DAYS = 30;
+
+async function maybeRefreshDetectedCountry(lastUpdatedAt) {
+    try {
+        if (lastUpdatedAt) {
+            const daysSince = (Date.now() - new Date(lastUpdatedAt).getTime()) / (1000 * 60 * 60 * 24);
+            if (daysSince < DETECTED_COUNTRY_REFRESH_DAYS) return;
+        }
+        const resp = await fetch('https://ipapi.co/json/');
+        if (!resp.ok) return;
+        const geo = await resp.json();
+        const countryCode = geo && geo.country_code ? String(geo.country_code).toUpperCase() : null;
+        if (!countryCode) return;
+        await db.from('organizations').update({
+            detected_country: countryCode,
+            detected_country_updated_at: new Date().toISOString()
+        }).eq('id', currentOrgId);
+    } catch (e) {
+        // Тихо игнорируем — не критичная для работы приложения функция.
+        console.warn('Не удалось определить страну по IP:', e);
+    }
+}
+
 // ==================== ЗАГРУЗКА ОРГАНИЗАЦИИ ====================
 
 // Определяем к какой пекарне принадлежит текущий Auth-пользователь
@@ -158,7 +188,7 @@ async function loadCurrentOrg() {
 
         const { data, error } = await db
             .from('memberships')
-            .select('org_id, role, organizations(id, name, plan, plan_override, created_at, customers_created_total, orders_created_total, currency_code, vat_rate)')
+            .select('org_id, role, organizations(id, name, plan, plan_override, created_at, customers_created_total, orders_created_total, currency_code, vat_rate, detected_country, detected_country_updated_at)')
             .eq('user_id', uid)
             .single();
         if (error) throw error;
@@ -176,6 +206,7 @@ async function loadCurrentOrg() {
         currentOrgOrdersUsed = (data.organizations && data.organizations.orders_created_total) || 0;
         currentOrgCurrency = (data.organizations && data.organizations.currency_code) || 'EUR';
         currentOrgVatRate = (data.organizations && data.organizations.vat_rate != null) ? Number(data.organizations.vat_rate) : 0;
+        const detectedCountryUpdatedAt = (data.organizations && data.organizations.detected_country_updated_at) || null;
         await loadMonetizationLiveFlag();
         // Критично для пути быстрого восстановления из кэша (cache.js): там
         // applyPlanGating() уже успевает отработать один раз со СТАРЫМ значением
@@ -185,6 +216,9 @@ async function loadCurrentOrg() {
         if (typeof applyPlanGating === 'function') applyPlanGating();
         if (typeof refreshVatLabels === 'function') refreshVatLabels();
         updateHeaderOrgName();
+        // Fire-and-forget: не блокируем UI и не показываем ошибок пользователю —
+        // это справочное поле для Simple Hub, а не критичная для работы функция.
+        maybeRefreshDetectedCountry(detectedCountryUpdatedAt);
         return data;
     } catch (e) {
         console.error('Ошибка загрузки организации:', e);
