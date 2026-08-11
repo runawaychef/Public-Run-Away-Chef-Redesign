@@ -227,7 +227,11 @@ function renderOrderCard(order) {
     let itemsLine = '';
     if (order.items && order.items.length) {
         itemsLine = `<div class="oc-items">` +
-            order.items.map(it => `<div class="oc-item-row"><span class="oc-item-name">· ${escapeHtml(it.product)}</span><span class="oc-item-qty">${it.quantity} ${t('unit_pcs')}.</span></div>`).join('') +
+            order.items.map(it => {
+                const prod = products.find(p => p.id === it.product_id);
+                const unitLabel = unitAbbrev(prod && prod.unit ? prod.unit : 'pcs');
+                return `<div class="oc-item-row"><span class="oc-item-name">· ${escapeHtml(it.product)}</span><span class="oc-item-qty">${it.quantity} ${unitLabel}</span></div>`;
+            }).join('') +
             `</div>`;
     }
 
@@ -450,7 +454,11 @@ function renderDoneOrderCard(order) {
 
     let itemsLine = '';
     if (order.items && order.items.length) {
-        itemsLine = order.items.map(it => `<div class="oc-item-row"><span class="oc-item-name">· ${escapeHtml(it.product)}</span><span class="oc-item-qty">${it.quantity} ${t('unit_pcs')}.</span></div>`).join('');
+        itemsLine = order.items.map(it => {
+            const prod = products.find(p => p.id === it.product_id);
+            const unitLabel = unitAbbrev(prod && prod.unit ? prod.unit : 'pcs');
+            return `<div class="oc-item-row"><span class="oc-item-name">· ${escapeHtml(it.product)}</span><span class="oc-item-qty">${it.quantity} ${unitLabel}</span></div>`;
+        }).join('');
     }
 
     // Кнопка смены статуса — идентична той, что в активных карточках
