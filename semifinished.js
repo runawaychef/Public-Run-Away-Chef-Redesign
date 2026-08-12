@@ -148,7 +148,7 @@ function renderSemiFinishedCards() {
     const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
 
     let html = '';
-    semiFinished.forEach(sf => {
+    semiFinished.forEach((sf, realIdx) => {
         const unitLabel = unitAbbrev(sf.unit);
         const unitCost  = semiFinishedUnitCost(sf);
         const balance   = typeof getSemiFinishedBalance === 'function' ? getSemiFinishedBalance(sf.id) : null;
@@ -170,7 +170,6 @@ function renderSemiFinishedCards() {
         const afterText = balance !== null ? `${Number(balance).toFixed(1)} ${unitLabel}` : '—';
         const priceText = `${formatMoney(unitCost, 4)}/${unitLabel}`;
         const stripe = accentColor ? `<div class="stripe" style="background:${accentColor};"></div>` : '';
-        const realIdx = semiFinished.indexOf(sf);
 
         html += `
         <div class="oc-swipe-wrap" data-name="${escapeHtml((sf.name || '').toLowerCase())}" data-critical="${accentColor ? '1' : '0'}" style="--oc-swipe-x:-72px;">

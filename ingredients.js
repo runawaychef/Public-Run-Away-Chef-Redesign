@@ -144,7 +144,7 @@ function renderIngredientCards() {
     const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
 
     let html = '';
-    ingredients.forEach(ing => {
+    ingredients.forEach((ing, realIdx) => {
         const unitPrice = ingredientUnitPrice(ing);
         const unitLabel = unitAbbrev(ing.unit);
         const balance  = typeof getIngredientBalance === 'function' ? getIngredientBalance(ing.id) : null;
@@ -165,7 +165,6 @@ function renderIngredientCards() {
         const afterText = balance !== null ? `${Number(balance).toFixed(1)} ${unitLabel}` : '—';
         const priceText = `${formatMoney(unitPrice, 4)}/${unitLabel}`;
         const stripe = accentColor ? `<div class="stripe" style="background:${accentColor};"></div>` : '';
-        const realIdx = ingredients.indexOf(ing);
 
         html += `
         <div class="oc-swipe-wrap" data-name="${escapeHtml((ing.name || '').toLowerCase())}" data-critical="${accentColor ? '1' : '0'}" style="--oc-swipe-x:-72px;">

@@ -9,12 +9,22 @@
 
 // ---- Список заказов ----
 
+// id заказа -> его реальный индекс в массиве orders. Пересобирается в начале
+// каждого displayOrders() и используется вместо orders.indexOf(order) в
+// renderOrderCard/renderDoneOrderCard (отдельные функции, вызываемые по одной
+// на карточку из отфильтрованных/отсортированных производных массивов —
+// напрямую индекс цикла тут не подходит, а indexOf на каждую карточку
+// давал O(n²) при росте числа заказов).
+let _ordersIndexById = new Map();
+
 function displayOrders() {
     // Список карточек сейчас перерисуется целиком — если у какого-то заказа был
     // открыт статус-дропдаун (и портал увёл его из карточки наружу, см. helpers.js
     // openPortalDropdown), его старый узел иначе останется висеть в портале с тем же
     // id, что и у свежесозданного в новой разметке — убираем такие "сироты" заранее.
     document.querySelectorAll('#dropdownPortal [id^="statusDropdown-"]').forEach(d => d.remove());
+
+    _ordersIndexById = new Map(orders.map((o, i) => [o.id, i]));
 
     const today    = getLocalDateStr(0);
     const tomorrow = getLocalDateStr(1);
@@ -100,7 +110,7 @@ function displayOrders() {
         currentMonthKey = monthKey;
         currentWeekKey  = weekKey;
 
-        const realIdx = orders.indexOf(order);
+        const realIdx = _ordersIndexById.get(order.id);
         const total = formatMoney(orderGrandTotal(order));
         const itemsCount = order.items ? order.items.length : 0;
         let flagClass = 'flag';
@@ -246,7 +256,7 @@ function renderOrderCard(order) {
     // панель слева (свайп вправо), логически рядом с цветной полосой статуса
     // оплаты. Ширина панели (переменная --oc-swipe-x) зависит от того, сколько
     // кнопок реально показано в правой панели.
-    const realIdx = orders.indexOf(order);
+    const realIdx = _ordersIndexById.get(order.id);
     let swipeBtns = '';
     let swipeBtnCount = 0;
     swipeBtnCount++;
@@ -474,7 +484,7 @@ function renderDoneOrderCard(order) {
     // карточки). "Оплатить" — отдельная левая панель, свайп вправо, как и у
     // активных карточек. Работает ТОЛЬКО в развёрнутом виде — см. data-no-swipe,
     // переключается в toggleDoneCardExpand().
-    const realIdx = orders.indexOf(order);
+    const realIdx = _ordersIndexById.get(order.id);
     let swipeBtns = '';
     let swipeBtnCount = 1;
     swipeBtns += `<button class="oc-swipe-btn oc-swipe-copy" onclick="event.stopPropagation(); quickCopyFromSwipe(${realIdx})">

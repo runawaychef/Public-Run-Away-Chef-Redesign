@@ -47,7 +47,7 @@ function renderProductCards() {
     const body = document.getElementById('productCardsBody');
     if (!body) return;
     let html = '';
-    products.forEach(p => {
+    products.forEach((p, realIdx) => {
         const hasUnit = !!p.unit;
         const recipeOk = !!p.recipe_confirmed;
         const needsAttention = !hasUnit || !recipeOk;
@@ -57,7 +57,6 @@ function renderProductCards() {
             ? `${t('prod_cost_price_colon')} ${formatMoney(unitCost)}/${unitLabel}`
             : `${t('prod_cost_price_colon')} —`;
         const stripe = needsAttention ? `<div class="stripe" style="background:#c0685c;"></div>` : '';
-        const realIdx = products.indexOf(p);
         const photoHtml = p.photo_url
             ? `<div class="oc-photo-wrap"><img class="oc-photo" src="${escapeHtml(p.photo_url)}" loading="lazy"></div>`
             : `<div class="oc-photo-wrap"><img class="oc-photo" src="product-placeholder.png" loading="lazy"></div>`;
