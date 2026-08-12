@@ -343,9 +343,15 @@
             flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
             gap: 3px; padding: 9px 2px 8px; background: none; border: none;
             color: #9a9488; font-size: 11px; font-weight: 700; cursor: pointer;
+            position: relative;
         }
-        .bottom-nav-item svg { width: 23px; height: 23px; }
-        .bottom-nav-item.active { color: #7c9473; background: #dbe4d3; border-radius: 10px; margin: 15px 10px; }
+        .bottom-nav-item svg { width: 23px; height: 23px; position: relative; z-index: 1; }
+        .bottom-nav-item span { position: relative; z-index: 1; }
+        .bottom-nav-item.active { color: #7c9473; }
+        .bottom-nav-item.active::before {
+            content: ""; position: absolute; top: 6px; bottom: 6px; left: 8px; right: 8px;
+            background: #dbe4d3; border-radius: 10px; z-index: 0;
+        }
         .bottom-nav-item.active svg { stroke: #7c9473; stroke-width: 2.1; }
 
         /* Скругление таблиц данных (клиенты/изделия/ингредиенты/п-ф/заказы и т.д.) —
