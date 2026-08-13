@@ -158,8 +158,13 @@ async function backgroundRefreshAfterInstantRestore() {
         await loadCurrentOrg();
         updateHeaderOrgName();
         await refreshCurrentEmployeePermissions();
-        await loadAllData(true);
-        await loadInventory();
+        // Та же оптимизация, что и в selectEmployee() (employees.js) — loadInventory()
+        // не зависит от loadAllData(), запускаем параллельно, а не строго друг за
+        // другом. Перерисовываем экраны склада на всякий случай после — см.
+        // подробный комментарий в employees.js.
+        await Promise.all([loadAllData(true), loadInventory()]);
+        if (typeof displayIngredients === 'function') displayIngredients();
+        if (typeof displaySemiFinished === 'function') displaySemiFinished();
         initRealtime();
         refreshFab();
     } catch (e) {

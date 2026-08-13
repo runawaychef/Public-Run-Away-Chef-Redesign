@@ -502,8 +502,18 @@ async function selectEmployee(emp) {
     applyScreenAccessPermissions();
     applyTeamVisibility();
     document.getElementById('companyInfoBtnBlock').classList.toggle('hidden', !emp.is_owner);
-    await loadAllData();
-    await loadInventory();
+    // loadInventory() не зависит от данных loadAllData() — независимый запрос,
+    // раньше шли строго друг за другом без необходимости. Пускаем параллельно.
+    // Единственный нюанс: displayIngredients()/displaySemiFinished() (внутри
+    // renderAllScreens(), которая идёт частью loadAllData()) читают
+    // _inventoryCache/_inventoryMovements — если сработают раньше, чем
+    // loadInventory() успеет их заполнить, разово покажут остаток 0/пусто.
+    // Перерисовываем эти два экрана ещё раз после Promise.all — дёшево (уже
+    // без O(n²), см. фикс indexOf), гарантирует верные остатки независимо
+    // от того, какой из двух запросов реально закончился первым.
+    await Promise.all([loadAllData(), loadInventory()]);
+    if (typeof displayIngredients === 'function') displayIngredients();
+    if (typeof displaySemiFinished === 'function') displaySemiFinished();
     initRealtime();
     refreshFab();
     setTimeout(refreshFab, 150);
