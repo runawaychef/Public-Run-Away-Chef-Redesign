@@ -13,6 +13,15 @@ function openStatsModal() {
     showTab('stats');
 }
 
+// Суммирование дробных количеств (кг-товары вроде 5.1, 1.3) через reduce/+=
+// накапливает погрешность плавающей точки (напр. 5070.400000001 вместо
+// 5070.4) — округляем перед выводом в таблицах "Сумма по клиентам"/"по
+// изделиям". Math.round убирает шум ДО деления, а не просто форматирует
+// строку — итог остаётся обычным числом (13, не "13.00").
+function roundQty(n) {
+    return Math.round(n * 100) / 100;
+}
+
 // Переключает подписи "(с НДС)"/"incl. VAT" на нейтральные версии и скрывает
 // строку "в т.ч. НДС" целиком, если у организации НДС не включён (ставка 0).
 // Вызывается после загрузки организации (когда известен currentOrgVatRate)
@@ -388,7 +397,7 @@ function buildCustomerRowsHtml(sorted, totals, vats, qtys, grandTotal) {
         const pct = grandTotal > 0 ? (val/grandTotal*100).toFixed(1) : '0.0';
         const color = `hsl(${i * 360 / sorted.length}, 60%, 50%)`;
         const vatCell = vat ? `<td class="p-0.5 text-right" style="color:#6b7280;">${(vats[name]||0).toFixed(2)}</td>` : '';
-        html += `<tr class="border-b"><td class="p-0.5 flex items-center gap-1"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></span>${escapeHtml(name)}</td><td class="p-0.5 text-right">${qtys[name] || 0}</td><td class="p-0.5 text-right stats-num">${val.toFixed(2)}</td>${vatCell}<td class="p-0.5 text-right stats-pct">${pct}%</td></tr>`;
+        html += `<tr class="border-b"><td class="p-0.5 flex items-center gap-1"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></span>${escapeHtml(name)}</td><td class="p-0.5 text-right">${roundQty(qtys[name] || 0)}</td><td class="p-0.5 text-right stats-num">${val.toFixed(2)}</td>${vatCell}<td class="p-0.5 text-right stats-pct">${pct}%</td></tr>`;
     });
     return html;
 }
@@ -428,7 +437,7 @@ function drawCustomerTable(filtered) {
     html += '</tbody></table>';
     container.innerHTML = html;
     totalContainer.innerHTML =
-        `<table class="w-full stats-table table-clean" style="table-layout:fixed;"><tr style="background-color:#e3e8df;" class="font-semibold"><td class="p-0.5" style="width:40%">${t('stats_col_total')}</td><td class="p-0.5 text-right" style="width:15%">${grandQty}</td><td class="p-0.5 text-right" style="width:${sumW}">${grandTotal.toFixed(2)}</td>${vatTd}<td class="p-0.5" style="width:${shareW}"></td></tr></table>`;
+        `<table class="w-full stats-table table-clean" style="table-layout:fixed;"><tr style="background-color:#e3e8df;" class="font-semibold"><td class="p-0.5" style="width:40%">${t('stats_col_total')}</td><td class="p-0.5 text-right" style="width:15%">${roundQty(grandQty)}</td><td class="p-0.5 text-right" style="width:${sumW}">${grandTotal.toFixed(2)}</td>${vatTd}<td class="p-0.5" style="width:${shareW}"></td></tr></table>`;
 }
 
 // --- Топ изделий ---
@@ -462,7 +471,7 @@ function drawProductTable(filtered) {
             <div style="background:#e5e7eb;border-radius:2px;height:4px;margin-top:2px;">
                 <div style="background:#6b7280;width:${barW}%;height:4px;border-radius:2px;"></div>
             </div>
-        </td><td class="p-0.5 text-right align-top">${qtys[name] || 0}</td><td class="p-0.5 text-right stats-num align-top">${val.toFixed(2)}</td></tr>`;
+        </td><td class="p-0.5 text-right align-top">${roundQty(qtys[name] || 0)}</td><td class="p-0.5 text-right stats-num align-top">${val.toFixed(2)}</td></tr>`;
     });
     html += '</tbody></table></div>';
     document.getElementById('statsProductTable').innerHTML = html;
