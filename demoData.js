@@ -21,6 +21,18 @@
 // он ищется по имени при удалении, см. clearDemoData).
 // Зависит от: db (supabaseClient.js), currentOrgId (employees.js), currentLang (i18n.js).
 
+// Фото демо-товаров — общие для всех языков (сама картинка не зависит от
+// currentLang), поэтому вынесены отдельно от DEMO_CONTENT, а не продублированы
+// в блоках ru/en. Файлы лежат в корне репо, кэшируются офлайн (см. sw.js).
+const DEMO_PRODUCT_PHOTOS = {
+    croissant:   'demo-croissant.jpg',
+    honeycake:   'demo-honeycake.jpg',
+    chocoCake:   'demo-chococake.jpg',
+    berryTart:   'demo-berrytart.jpg',
+    cinnamonBun: 'demo-cinnamonbun.jpg',
+    bananaBread: 'demo-bananabread.jpg',
+};
+
 const DEMO_CONTENT = {
     ru: {
         customers: ['Иван Иванов', 'Кафе «Ромашка»', 'Мария Петрова', 'Кофейня «Полночь»', 'Отель Švyturys', 'Ольга Кузнецова'],
@@ -218,7 +230,7 @@ async function createDemoData(orgId, employeeId) {
     // ---------- Изделия ----------
     const prodKeys = Object.keys(C.products);
     const { data: prodData, error: prodErr } = await db.from('products').insert(
-        prodKeys.map(key => ({ org_id: orgId, name: C.products[key].name, price: C.products[key].price, unit: C.products[key].unit, batch_size: C.products[key].batch_size, other_costs: C.products[key].other_costs, recipe_confirmed: true, track_stock: true, is_demo: true }))
+        prodKeys.map(key => ({ org_id: orgId, name: C.products[key].name, price: C.products[key].price, unit: C.products[key].unit, batch_size: C.products[key].batch_size, other_costs: C.products[key].other_costs, recipe_confirmed: true, track_stock: true, is_demo: true, photo_url: DEMO_PRODUCT_PHOTOS[key] || null }))
     ).select();
     if (prodErr) throw prodErr;
     const prodByKey = {};
