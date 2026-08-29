@@ -452,6 +452,7 @@ I18N.ru = {
         customers_delete_btn: 'Удалить клиента',
         customers_name_label: 'Имя',
         customers_contact_label: 'Способ связи',
+        customers_email_label: 'Email',
         customers_discount_label: 'Скидка (%)',
         customers_vat_exempt: 'Без НДС',
         customers_apply_vat_all: 'Применить текущий статус НДС ко всем заказам клиента',

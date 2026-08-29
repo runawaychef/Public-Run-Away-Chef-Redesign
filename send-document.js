@@ -99,18 +99,26 @@ function openEmailQuickEdit(custId) {
     document.getElementById('emailQuickEditModal').style.display = 'flex';
 }
 
-function saveEmailQuickEdit() {
+async function saveEmailQuickEdit() {
     const modal = document.getElementById('emailQuickEditModal');
     const custId = Number(modal.dataset.custId);
     const value = document.getElementById('emailQuickEditInput').value.trim();
     const cust = customers.find(c => c.id === custId);
     if (!cust) return;
 
-    // Заглушка: пока просто обновляем в памяти и перерисовываем шит отправки —
-    // сохранение в customers.email через Supabase подключится отдельным шагом.
-    cust.email = value || null;
-    closeModal();
-    if (_sendSheetState && _sendSheetState.custId === custId) {
-        openSendDocumentSheet(_sendSheetState.orderId, _sendSheetState.docType);
+    suppressRealtimeFor3s();
+    showLoading();
+    try {
+        await updateChecked(db.from('customers').update({ email: value || null }).eq('id', custId));
+        cust.email = value || null;
+        closeModal();
+        if (_sendSheetState && _sendSheetState.custId === custId) {
+            openSendDocumentSheet(_sendSheetState.orderId, _sendSheetState.docType);
+        }
+    } catch (e) {
+        console.error(e);
+        showInfo(t('error_save_check_connection'));
+    } finally {
+        hideLoading();
     }
 }

@@ -424,6 +424,7 @@ function openCustomerDetail(custId) {
 
     document.getElementById('cdName').value = cust.name;
     document.getElementById('cdContact').value = cust.contact;
+    document.getElementById('cdEmail').value = cust.email || '';
     document.getElementById('cdDiscount').value = cust.discount.toFixed(2);
     document.getElementById('cdVatExempt').checked = !!cust.vat_exempt;
     document.getElementById('cdNotes').value = cust.notes || '';
@@ -501,6 +502,7 @@ async function saveCdHeader() {
     if (!cust) return;
     const name     = document.getElementById('cdName').value.trim();
     const contact  = document.getElementById('cdContact').value.trim();
+    const email    = document.getElementById('cdEmail').value.trim();
     const discount = parseFloat(document.getElementById('cdDiscount').value) || 0;
     const vatExempt = document.getElementById('cdVatExempt').checked;
     const notes    = document.getElementById('cdNotes').value.trim();
@@ -516,11 +518,11 @@ async function saveCdHeader() {
     showLoading();
     try {
         await updateChecked(db.from('customers').update({
-            name, contact, discount: parseFloat(discount.toFixed(2)), vat_exempt: vatExempt, notes,
+            name, contact, email: email || null, discount: parseFloat(discount.toFixed(2)), vat_exempt: vatExempt, notes,
             address, reg_number: regNumber, vat_code: vatCode, personal_code: personalCode, entity_type: entityType,
             payment_term_days: paymentTermDays
         }).eq('id', cust.id));
-        cust.name = name; cust.contact = contact; cust.discount = parseFloat(discount.toFixed(2)); cust.vat_exempt = vatExempt; cust.notes = notes;
+        cust.name = name; cust.contact = contact; cust.email = email || null; cust.discount = parseFloat(discount.toFixed(2)); cust.vat_exempt = vatExempt; cust.notes = notes;
         cust.address = address; cust.reg_number = regNumber; cust.vat_code = vatCode; cust.personal_code = personalCode; cust.entity_type = entityType;
         cust.payment_term_days = paymentTermDays;
         orders.forEach(o => { if (o.customer_id === cust.id) o.customer = name; });

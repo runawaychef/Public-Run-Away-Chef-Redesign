@@ -443,6 +443,7 @@ I18N.lt = {
         customers_delete_btn: 'Ištrinti klientą',
         customers_name_label: 'Vardas',
         customers_contact_label: 'Kontaktavimo būdas',
+        customers_email_label: 'El. paštas',
         customers_discount_label: 'Nuolaida (%)',
         customers_vat_exempt: 'Be PVM',
         customers_apply_vat_all: 'Pritaikyti dabartinį PVM statusą visiems kliento užsakymams',

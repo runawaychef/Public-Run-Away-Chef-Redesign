@@ -453,6 +453,7 @@ I18N.en = {
         customers_delete_btn: 'Delete customer',
         customers_name_label: 'Name',
         customers_contact_label: 'Preferred contact method',
+        customers_email_label: 'Email',
         customers_discount_label: 'Discount (%)',
         customers_vat_exempt: 'VAT exempt',
         customers_apply_vat_all: "Apply the current VAT status to all of this customer's orders",

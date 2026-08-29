@@ -443,6 +443,7 @@ I18N.uk = {
         customers_delete_btn: 'Видалити клієнта',
         customers_name_label: 'Ім\'я',
         customers_contact_label: 'Спосіб зв\'язку',
+        customers_email_label: 'Email',
         customers_discount_label: 'Знижка (%)',
         customers_vat_exempt: 'Без ПДВ',
         customers_apply_vat_all: 'Застосувати поточний статус ПДВ до всіх замовлень клієнта',

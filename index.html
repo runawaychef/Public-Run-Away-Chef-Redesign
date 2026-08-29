@@ -1548,6 +1548,10 @@
                             <input id="cdContact" type="text" onblur="saveCdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                         <div>
+                            <label class="table-text text-gray-500" data-i18n="customers_email_label">Email</label>
+                            <input id="cdEmail" type="email" autocomplete="off" placeholder="client@example.com" onblur="saveCdHeader()" class="border p-0.5 rounded-xl w-full table-text">
+                        </div>
+                        <div>
                             <label class="table-text text-gray-500" data-i18n="customers_discount_label">Скидка (%)</label>
                             <input id="cdDiscount" type="number" autocomplete="off" inputmode="decimal" step="0.01" onchange="saveCdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
@@ -3044,11 +3048,11 @@
 <script src="batches.js?v=9"></script>
 <script src="semifinished.js?v=34"></script>
 <script src="products.js?v=30"></script>
-<script src="customers.js?v=37"></script>
+<script src="customers.js?v=38"></script>
 <script src="calendar.js?v=7"></script>
 <script src="orders.js?v=92"></script>
 <script src="invoice.js?v=33"></script>
-<script src="send-document.js?v=1"></script>
+<script src="send-document.js?v=2"></script>
 <script src="payments.js?v=19"></script>
 <script src="stats.js?v=21"></script>
 <script src="history.js?v=9"></script>
@@ -3103,7 +3107,7 @@ async function loadAllData(silent) {
     try {
         const [pRes, cRes, oRes, oiRes, eRes, ingRes, piRes, sfRes, sfiRes, opRes] = await Promise.all([
             db.from('products').select('id, name, price, batch_size, other_costs, unit, recipe_confirmed, track_stock, photo_url').eq('org_id', currentOrgId).order('name').limit(5000),
-            db.from('customers').select('id, name, contact, discount, vat_exempt, notes, address, reg_number, vat_code, personal_code, entity_type, payment_term_days').eq('org_id', currentOrgId).order('name').limit(5000),
+            db.from('customers').select('id, name, contact, email, discount, vat_exempt, notes, address, reg_number, vat_code, personal_code, entity_type, payment_term_days').eq('org_id', currentOrgId).order('name').limit(5000),
             db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending, invoice_snapshot, delivery_note_snapshot, is_confirmed, created_by').eq('org_id', currentOrgId).is('deleted_at', null).range(0, 9999),
             db.from('order_items').select('id, order_id, product_id, quantity, price, item_cost').eq('org_id', currentOrgId).range(0, 9999),
             db.from('employees').select('id, name').eq('org_id', currentOrgId).order('name').limit(1000),
@@ -3160,7 +3164,7 @@ async function loadAllData(silent) {
             ingredients: recipeByProduct[p.id] || []
         }));
         customers = (cRes.data || []).map(c => ({
-            id: c.id, name: c.name || '', contact: c.contact || '', discount: Number(c.discount || 0),
+            id: c.id, name: c.name || '', contact: c.contact || '', email: c.email || null, discount: Number(c.discount || 0),
             vat_exempt: !!c.vat_exempt, notes: c.notes || '',
             address: c.address || '', reg_number: c.reg_number || '', vat_code: c.vat_code || '',
             personal_code: c.personal_code || '', entity_type: c.entity_type || '',
