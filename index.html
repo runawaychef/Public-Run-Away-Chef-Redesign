@@ -64,6 +64,16 @@
         #settingsModal .modal-content { margin-top: 10vh; margin-bottom: auto; }
         #privacyModal .modal-content, #termsModal .modal-content, #faqModal .modal-content { margin-top: 6vh; margin-bottom: auto; height: 82vh; max-height: 82vh; }
         #planModal .modal-content { margin-top: 6vh; margin-bottom: auto; }
+        .modal-bottom-sheet { align-items: flex-end; padding: 0; }
+        .modal-bottom-sheet .modal-content { border-radius: 20px 20px 0 0; margin: 0; max-width: 480px; max-height: 88vh; overflow-y: auto; touch-action: pan-y; overscroll-behavior: contain; }
+        .send-doctype-switch { display: flex; background: #e3e8df; border-radius: 999px; padding: 2px; gap: 2px; }
+        .send-doctype-switch button { flex: 1; border: none; background: transparent; font-size: 13px; font-weight: 600; color: #6b675d; padding: 8px 10px; border-radius: 999px; transition: background .15s ease, color .15s ease; }
+        .send-doctype-switch button.active { background: #5b7c99; color: #fff; }
+        .send-recipient-row { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #f4f1ea; border-radius: 10px; }
+        .send-recipient-row span.email-value { flex: 1; font-size: 13px; color: #3c3a34; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .send-recipient-row .send-edit-link { font-size: 12px; color: #5b7c99; font-weight: 600; flex-shrink: 0; }
+        .send-attachment-row { display: flex; align-items: center; gap: 8px; padding: 8px 2px; font-size: 12px; color: #6b675d; }
+        .send-no-email-box { text-align: center; padding: 8px 4px 4px; }
 
         /* ── Вкладки — нижняя синяя черта вместо серой заливки ── */
         .tab:not(.bottom-nav-item) { cursor: pointer; position: relative; background: transparent !important; color: #6b7280 !important; border-radius: 0 !important; padding-bottom: 6px !important; border-bottom: 2px solid transparent; transition: color 0.2s, border-color 0.2s; font-size: 14px; font-weight: 500; }
@@ -417,6 +427,7 @@
         .oc-swipe-btn { width: 72px; border: none; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #fff; font-size: 11px; font-weight: 600; }
         .oc-swipe-btn svg { width: 20px; height: 20px; }
         .oc-swipe-btn.oc-swipe-pay { background: #7c9473; }
+        .oc-swipe-btn.oc-swipe-send { background: #5b7c99; }
         .oc-swipe-btn.oc-swipe-copy { background: #d9a441; }
         .oc-swipe-btn.oc-swipe-delete { background: #c0685c; }
         .order-card-body { flex: 1; padding: 12px 14px; display: flex; flex-direction: column; min-width: 0; }
@@ -1657,6 +1668,30 @@
                 <button id="generateDeliveryNoteBtn" onclick="openOrderDocumentPreview('delivery_note', _docPreview && _docPreview.lang)" class="pill-btn-secondary w-full mt-2 justify-center" style="display:none;" data-i18n="inv_generate_delivery_note">Сформировать Delivery Note</button>
                 <div class="flex gap-2 mt-3">
                     <button id="sendOrderDocumentBtn" onclick="shareOrderDocumentPdf()" class="pill-btn flex-1 justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"/></svg><span data-i18n="contact_send">Отправить</span></button>
+                    <button onclick="closeModal(); openSendDocumentSheet(currentOrderId, _docPreview && _docPreview.docType)" class="pill-btn-secondary flex-1 justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg><span data-i18n="send_email_btn">Отправить на почту</span></button>
+                    <button onclick="closeModal()" class="pill-btn-secondary flex-1" data-i18n="settings_close">Закрыть</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom-sheet отправки документа клиенту на email -->
+        <div id="sendDocumentSheet" class="modal modal-bottom-sheet">
+            <div class="modal-content">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-sm font-semibold text-gray-800" data-i18n="send_sheet_title">Отправить документ</h2>
+                    <button onclick="closeModal()" style="line-height:0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b675d" stroke-width="1.8"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                </div>
+                <div id="sendSheetBody"></div>
+            </div>
+        </div>
+
+        <!-- Мини-редактор email клиента, открывается из bottom-sheet отправки -->
+        <div id="emailQuickEditModal" class="modal">
+            <div class="modal-content" style="max-width:340px;">
+                <h2 class="text-sm font-semibold mb-3 text-gray-800" data-i18n="email_quick_edit_title">Email клиента</h2>
+                <input id="emailQuickEditInput" type="email" placeholder="client@example.com" class="border p-2 rounded-xl table-text w-full mb-3">
+                <div class="flex gap-2">
+                    <button onclick="saveEmailQuickEdit()" class="pill-btn flex-1 justify-center" data-i18n="common_save">Сохранить</button>
                     <button onclick="closeModal()" class="pill-btn-secondary flex-1" data-i18n="settings_close">Закрыть</button>
                 </div>
             </div>
@@ -3011,8 +3046,9 @@
 <script src="products.js?v=30"></script>
 <script src="customers.js?v=37"></script>
 <script src="calendar.js?v=7"></script>
-<script src="orders.js?v=91"></script>
+<script src="orders.js?v=92"></script>
 <script src="invoice.js?v=33"></script>
+<script src="send-document.js?v=1"></script>
 <script src="payments.js?v=19"></script>
 <script src="stats.js?v=21"></script>
 <script src="history.js?v=9"></script>

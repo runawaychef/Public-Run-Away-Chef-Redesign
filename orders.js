@@ -271,14 +271,22 @@ function renderOrderCard(order) {
             ${t('common_delete')}
         </button>`;
     }
-    let payPanel = '';
+    let leftBtns = '';
+    let leftBtnCount = 0;
     if (payInfo.status !== 'paid') {
-        payPanel = `<div class="oc-swipe-actions-left"><button class="oc-swipe-btn oc-swipe-pay" onclick="event.stopPropagation(); quickPayFromSwipe(${order.id})">
+        leftBtnCount++;
+        leftBtns += `<button class="oc-swipe-btn oc-swipe-pay" onclick="event.stopPropagation(); quickPayFromSwipe(${order.id})">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
             ${t('orders_pay_btn')}
-        </button></div>`;
+        </button>`;
     }
-    const swipeWrapStyle = ` style="--oc-swipe-x:-${swipeBtnCount * 72}px; --oc-swipe-pay-x:72px;"`;
+    leftBtnCount++;
+    leftBtns += `<button class="oc-swipe-btn oc-swipe-send" onclick="event.stopPropagation(); openSendDocumentSheet(${order.id})">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.769 59.769 0 0121.485 12 59.768 59.768 0 013.27 20.876L5.999 12zm0 0h7.5"/></svg>
+        ${t('orders_send_btn')}
+    </button>`;
+    const payPanel = `<div class="oc-swipe-actions-left">${leftBtns}</div>`;
+    const swipeWrapStyle = ` style="--oc-swipe-x:-${swipeBtnCount * 72}px; --oc-swipe-pay-x:${leftBtnCount * 72}px;"`;
     const swipeWrapOpen = '';
 
     return `
@@ -491,14 +499,22 @@ function renderDoneOrderCard(order) {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184"/></svg>
         ${t('icon_copy_title')}
     </button>`;
-    let payPanel = '';
+    let leftBtns = '';
+    let leftBtnCount = 0;
     if (payInfo.status !== 'paid') {
-        payPanel = `<div class="oc-swipe-actions-left"><button class="oc-swipe-btn oc-swipe-pay" onclick="event.stopPropagation(); quickPayFromSwipe(${order.id})">
+        leftBtnCount++;
+        leftBtns += `<button class="oc-swipe-btn oc-swipe-pay" onclick="event.stopPropagation(); quickPayFromSwipe(${order.id})">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg>
             ${t('orders_pay_btn')}
-        </button></div>`;
+        </button>`;
     }
-    const swipeWrapStyle = ` style="--oc-swipe-x:-${swipeBtnCount * 72}px; --oc-swipe-pay-x:72px;"`;
+    leftBtnCount++;
+    leftBtns += `<button class="oc-swipe-btn oc-swipe-send" onclick="event.stopPropagation(); openSendDocumentSheet(${order.id})">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.769 59.769 0 0121.485 12 59.768 59.768 0 013.27 20.876L5.999 12zm0 0h7.5"/></svg>
+        ${t('orders_send_btn')}
+    </button>`;
+    const payPanel = `<div class="oc-swipe-actions-left">${leftBtns}</div>`;
+    const swipeWrapStyle = ` style="--oc-swipe-x:-${swipeBtnCount * 72}px; --oc-swipe-pay-x:${leftBtnCount * 72}px;"`;
 
     return `
     <div class="oc-swipe-wrap" data-no-swipe="1"${swipeWrapStyle}>
