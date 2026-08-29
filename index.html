@@ -683,12 +683,11 @@
         .done-card .stripe { border-radius: 16px 0 0 0; }
         .expand-band {
             display: flex; align-items: center; justify-content: center;
-            padding: 5px 0; background: #eef2ea; border-top: 0.5px solid rgba(0,0,0,0.04);
-            color: #5a7a52; cursor: pointer; border-radius: 0 0 15px 15px;
+            padding: 9px 0; cursor: pointer;
         }
-        .expand-band svg { width: 16px; height: 16px; transition: transform 0.2s ease; }
+        .expand-band svg { width: 16px; height: 16px; color: #a6a196; transition: transform 0.2s ease; }
         .order-card.expanded .expand-band svg { transform: rotate(180deg); }
-        .expand-band:active { background: #e3e9dd; }
+        .expand-band:active svg { color: #7c9473; }
 
         /* Отступ сверху у списка заказов — чтобы верхняя карточка не оказывалась
            под переключателем вида (высота отступа выставляется тем же JS, что
