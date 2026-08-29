@@ -741,6 +741,7 @@ I18N.lt = {
         send_open_customer_card: 'Atidaryti kliento kortelę',
         send_edit_email: 'keisti',
         send_body_label: 'Laiško tekstas',
+        send_letter_lang_label: 'Laiško kalba',
         send_body_template: 'Sveiki, {customer}!\n\nSiunčiame {doc_label} {order_number} už {sum} sumą nuo {org_name}.\n\nAčiū už užsakymą!',
         send_attachment_base_invoice: 'saskaita',
         send_attachment_base_delivery: 'siuntos_lapas',

@@ -1,14 +1,30 @@
 // ==================== ОТПРАВКА ДОКУМЕНТА НА EMAIL (ВИЗУАЛ) ====================
 // Пока только разметка и переключение состояний на клиенте. Реальная генерация
-// PDF (переиспользуется freezeDocumentSnapshot из invoice.js), отправка через
-// Edge Function/Resend и сохранение email клиента будут добавлены отдельным
-// шагом — см. обсуждение в чате.
+// PDF (переиспользуется freezeDocumentSnapshot из invoice.js) и отправка через
+// Edge Function/Resend будут добавлены отдельным шагом — см. обсуждение в чате.
+//
+// Язык самого письма (emailLang) НЕЗАВИСИМ от языка интерфейса приложения —
+// пекарь может вести приложение на русском, но написать письмо клиенту на
+// литовском. Кнопки-переключатели (тип документа и т.п.) остаются на языке
+// интерфейса (t()), а тело письма и имя вложения генерируются через tLang()
+// на выбранном языке письма, с ленивой подгрузкой словаря при первом выборе.
 
-let _sendSheetState = null; // { orderId, custId, docType }
+let _sendSheetState = null; // { orderId, custId, docType, emailLang }
 
-function _sendDocTemplate(docType, custName, orgName, orderNumLabel, sumLabel) {
-    const docLabel = docType === 'invoice' ? t('orders_doc_invoice') : t('orders_doc_delivery_note');
-    return t('send_body_template')
+// Достаёт перевод НЕ из текущего языка интерфейса, а из конкретного lang —
+// нужно для генерации текста письма независимо от языка приложения.
+// Словарь должен быть уже загружен (см. ensureLangLoaded) до вызова.
+function tLang(key, lang) {
+    const dict = (typeof I18N !== 'undefined' && I18N[lang]) || {};
+    if (dict[key] !== undefined) return dict[key];
+    const base = (typeof I18N !== 'undefined' && I18N[BASE_LANG]) || {};
+    if (base[key] !== undefined) return base[key];
+    return key;
+}
+
+function _sendDocTemplate(docType, lang, custName, orgName, orderNumLabel, sumLabel) {
+    const docLabel = docType === 'invoice' ? tLang('orders_doc_invoice', lang) : tLang('orders_doc_delivery_note', lang);
+    return tLang('send_body_template', lang)
         .replace('{customer}', custName)
         .replace('{doc_label}', docLabel.toLowerCase())
         .replace('{order_number}', orderNumLabel)
@@ -16,16 +32,24 @@ function _sendDocTemplate(docType, custName, orgName, orderNumLabel, sumLabel) {
         .replace('{org_name}', orgName);
 }
 
-function _sendAttachmentName(docType, orderNumLabel) {
-    const base = docType === 'invoice' ? t('send_attachment_base_invoice') : t('send_attachment_base_delivery');
+function _sendAttachmentName(docType, lang, orderNumLabel) {
+    const base = docType === 'invoice' ? tLang('send_attachment_base_invoice', lang) : tLang('send_attachment_base_delivery', lang);
     return `${base}_${orderNumLabel}.pdf`;
 }
 
-function openSendDocumentSheet(orderId, docType) {
+function _renderSendEmailLangSwitch() {
+    return `<div class="lang-switch" id="sendEmailLangSwitch" style="margin-bottom:10px;">` +
+        AVAILABLE_LANGS.map(code =>
+            `<button type="button" class="${code === _sendSheetState.emailLang ? 'active' : ''}" onclick="selectSendEmailLang('${code}')">${code.toUpperCase()}</button>`
+        ).join('') +
+        `</div>`;
+}
+
+async function openSendDocumentSheet(orderId, docType) {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
     const cust = order.customer_id ? customers.find(c => c.id === order.customer_id) : null;
-    _sendSheetState = { orderId, custId: cust ? cust.id : null, docType: docType || 'invoice' };
+    _sendSheetState = { orderId, custId: cust ? cust.id : null, docType: docType || 'invoice', emailLang: currentLang };
 
     const custName = escapeHtml(order.customer || t('orders_no_customer'));
     const body = document.getElementById('sendSheetBody');
@@ -52,11 +76,15 @@ function openSendDocumentSheet(orderId, docType) {
                 <span class="email-value" id="sendRecipientEmail">${escapeHtml(cust.email)}</span>
                 <span class="send-edit-link" onclick="openEmailQuickEdit(${cust.id})">${t('send_edit_email')}</span>
             </div>
-            <p style="font-size:13px; color:#6b675d; margin:0 0 6px;">${t('send_body_label')}</p>
-            <textarea id="sendEmailBody" rows="6" class="border p-2 rounded-xl table-text w-full resize-none" style="margin-bottom:8px;">${_sendDocTemplate(_sendSheetState.docType, custName, escapeHtml(currentOrgName || ''), orderNumLabel, sumLabel)}</textarea>
+            <div class="flex items-center justify-between" style="margin-bottom:6px;">
+                <p style="font-size:13px; color:#6b675d; margin:0;">${t('send_body_label')}</p>
+                <p style="font-size:11px; color:#9a9488; margin:0;">${t('send_letter_lang_label')}</p>
+            </div>
+            ${_renderSendEmailLangSwitch()}
+            <textarea id="sendEmailBody" rows="6" class="border p-2 rounded-xl table-text w-full resize-none" style="margin-bottom:8px;">${_sendDocTemplate(_sendSheetState.docType, _sendSheetState.emailLang, custName, escapeHtml(currentOrgName || ''), orderNumLabel, sumLabel)}</textarea>
             <div class="send-attachment-row" style="margin-bottom:14px;">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6b675d" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
-                <span id="sendAttachmentName">${_sendAttachmentName(_sendSheetState.docType, orderNumLabel)}</span>
+                <span id="sendAttachmentName">${_sendAttachmentName(_sendSheetState.docType, _sendSheetState.emailLang, orderNumLabel)}</span>
             </div>
             <button class="pill-btn w-full justify-center" onclick="submitSendDocument()">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.769 59.769 0 0121.485 12 59.768 59.768 0 013.27 20.876L5.999 12zm0 0h7.5"/></svg>
@@ -79,8 +107,30 @@ function selectSendDocType(docType) {
 
     const orderNumLabel = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
     const sumLabel = formatMoney(orderGrandTotal(order));
-    document.getElementById('sendEmailBody').value = _sendDocTemplate(docType, escapeHtml(order.customer || t('orders_no_customer')), escapeHtml(currentOrgName || ''), orderNumLabel, sumLabel);
-    document.getElementById('sendAttachmentName').textContent = _sendAttachmentName(docType, orderNumLabel);
+    document.getElementById('sendEmailBody').value = _sendDocTemplate(docType, _sendSheetState.emailLang, escapeHtml(order.customer || t('orders_no_customer')), escapeHtml(currentOrgName || ''), orderNumLabel, sumLabel);
+    document.getElementById('sendAttachmentName').textContent = _sendAttachmentName(docType, _sendSheetState.emailLang, orderNumLabel);
+}
+
+// Переключает ЯЗЫК ПИСЬМА (не интерфейса) — подгружает словарь выбранного
+// языка при первом обращении к нему (LT/UK и т.п. грузятся лениво), затем
+// перегенерирует текст письма и имя вложения на этом языке.
+async function selectSendEmailLang(lang) {
+    if (!_sendSheetState || !AVAILABLE_LANGS.includes(lang)) return;
+    const order = orders.find(o => o.id === _sendSheetState.orderId);
+    const cust = customers.find(c => c.id === _sendSheetState.custId);
+    if (!order || !cust) return;
+
+    await ensureLangLoaded(lang);
+    _sendSheetState.emailLang = lang;
+
+    document.querySelectorAll('#sendEmailLangSwitch button').forEach((btn, i) => {
+        btn.classList.toggle('active', AVAILABLE_LANGS[i] === lang);
+    });
+
+    const orderNumLabel = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
+    const sumLabel = formatMoney(orderGrandTotal(order));
+    document.getElementById('sendEmailBody').value = _sendDocTemplate(_sendSheetState.docType, lang, escapeHtml(order.customer || t('orders_no_customer')), escapeHtml(currentOrgName || ''), orderNumLabel, sumLabel);
+    document.getElementById('sendAttachmentName').textContent = _sendAttachmentName(_sendSheetState.docType, lang, orderNumLabel);
 }
 
 function submitSendDocument() {

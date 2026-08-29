@@ -751,6 +751,7 @@ I18N.en = {
         send_open_customer_card: 'Open customer profile',
         send_edit_email: 'edit',
         send_body_label: 'Email text',
+        send_letter_lang_label: 'Letter language',
         send_body_template: 'Hello, {customer}!\n\nAttached is the {doc_label} {order_number} for {sum} from {org_name}.\n\nThank you for your order!',
         send_attachment_base_invoice: 'invoice',
         send_attachment_base_delivery: 'delivery_note',

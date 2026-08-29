@@ -750,6 +750,7 @@ I18N.ru = {
         send_open_customer_card: 'Открыть карточку клиента',
         send_edit_email: 'изменить',
         send_body_label: 'Текст письма',
+        send_letter_lang_label: 'Язык письма',
         send_body_template: 'Здравствуйте, {customer}!\n\nВысылаем {doc_label} {order_number} на сумму {sum} от {org_name}.\n\nСпасибо за заказ!',
         send_attachment_base_invoice: 'schet',
         send_attachment_base_delivery: 'nakladnaya',

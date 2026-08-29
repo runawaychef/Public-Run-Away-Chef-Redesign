@@ -741,6 +741,7 @@ I18N.uk = {
         send_open_customer_card: 'Відкрити картку клієнта',
         send_edit_email: 'змінити',
         send_body_label: 'Текст листа',
+        send_letter_lang_label: 'Мова листа',
         send_body_template: 'Вітаємо, {customer}!\n\nНадсилаємо {doc_label} {order_number} на суму {sum} від {org_name}.\n\nДякуємо за замовлення!',
         send_attachment_base_invoice: 'rahunok',
         send_attachment_base_delivery: 'nakladna',
