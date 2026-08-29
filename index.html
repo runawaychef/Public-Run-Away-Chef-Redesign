@@ -678,6 +678,14 @@
         .order-card.muted .oc-meta { color: #b7b1a3; }
         .order-card.muted:active { opacity: 0.8; }
         .order-card.muted .stripe { opacity: 0.45; }
+        .expand-band {
+            display: flex; align-items: center; justify-content: center;
+            padding: 5px 0; background: #eef2ea; border-top: 0.5px solid rgba(0,0,0,0.04);
+            color: #5a7a52; cursor: pointer;
+        }
+        .expand-band svg { width: 16px; height: 16px; transition: transform 0.2s ease; }
+        .order-card.expanded .expand-band svg { transform: rotate(180deg); }
+        .expand-band:active { background: #e3e9dd; }
 
         /* Отступ сверху у списка заказов — чтобы верхняя карточка не оказывалась
            под переключателем вида (высота отступа выставляется тем же JS, что
@@ -3043,7 +3051,7 @@
 <script src="products.js?v=30"></script>
 <script src="customers.js?v=38"></script>
 <script src="calendar.js?v=7"></script>
-<script src="orders.js?v=93"></script>
+<script src="orders.js?v=94"></script>
 <script src="invoice.js?v=33"></script>
 <script src="send-document.js?v=3"></script>
 <script src="payments.js?v=19"></script>
