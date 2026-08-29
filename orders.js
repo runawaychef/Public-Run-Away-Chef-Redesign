@@ -521,48 +521,50 @@ function renderDoneOrderCard(order) {
         <div class="oc-swipe-actions">${swipeBtns}</div>
         ${payPanel}
         <div class="order-card done-card muted" id="orderCard-${order.id}">
-            <div class="stripe" style="background:${stripeColor};" data-role="stripe"></div>
-            <div class="order-card-tap" onclick="handleDoneCardTap(event, ${order.id})">
-                <div class="order-card-body">
-                    <div data-role="collapsed-header">
-                        <div class="oc-row">
-                            <span class="oc-name">${escapeHtml(order.customer || t('orders_no_customer'))}</span>
-                            <span class="oc-sum">${total}</span>
-                        </div>
-                        <div class="oc-row" style="margin-top:1px;">
-                            <span></span>
-                            <span title="${statusLabel}" style="width:8px; height:8px; border-radius:50%; background:${statusColor}; display:inline-block;"></span>
-                        </div>
-                        <div class="oc-meta">${formatDateDMY(order.date)} · ${escapeHtml(oNum)}</div>
-                    </div>
-                    <div data-role="expanded-header" style="display:none;">
-                        <div class="oc-header">
-                            <div class="oc-datebadge">
-                                <div class="oc-datebadge-month" style="background:${statusColor};">${dateBadge.month}</div>
-                                <div class="oc-datebadge-day">${dateBadge.day}</div>
+            <div class="oc-card-top">
+                <div class="stripe" style="background:${stripeColor};" data-role="stripe"></div>
+                <div class="order-card-tap" onclick="handleDoneCardTap(event, ${order.id})">
+                    <div class="order-card-body">
+                        <div data-role="collapsed-header">
+                            <div class="oc-row">
+                                <span class="oc-name">${escapeHtml(order.customer || t('orders_no_customer'))}</span>
+                                <span class="oc-sum">${total}</span>
                             </div>
-                            <div style="flex:1; min-width:0;">
-                                <div class="oc-row">
-                                    <span class="oc-name">${escapeHtml(order.customer || t('orders_no_customer'))}</span>
-                                    <span class="oc-sum">${total}</span>
+                            <div class="oc-row" style="margin-top:1px;">
+                                <span></span>
+                                <span title="${statusLabel}" style="width:8px; height:8px; border-radius:50%; background:${statusColor}; display:inline-block;"></span>
+                            </div>
+                            <div class="oc-meta">${formatDateDMY(order.date)} · ${escapeHtml(oNum)}</div>
+                        </div>
+                        <div data-role="expanded-header" style="display:none;">
+                            <div class="oc-header">
+                                <div class="oc-datebadge">
+                                    <div class="oc-datebadge-month" style="background:${statusColor};">${dateBadge.month}</div>
+                                    <div class="oc-datebadge-day">${dateBadge.day}</div>
                                 </div>
-                                <div class="oc-row" style="margin-top:3px;">
-                                    <span class="oc-meta">${escapeHtml(oNum)}</span>
-                                    <div style="position:relative;" onclick="event.stopPropagation();">
-                                        <button class="status-btn" style="background:${statusColor};" onclick="toggleOrderStatusDropdown(${order.id})">
-                                            ${statusLabel}
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
-                                        </button>
-                                        <div class="status-dropdown" id="statusDropdown-${order.id}">${statusOptions}</div>
+                                <div style="flex:1; min-width:0;">
+                                    <div class="oc-row">
+                                        <span class="oc-name">${escapeHtml(order.customer || t('orders_no_customer'))}</span>
+                                        <span class="oc-sum">${total}</span>
+                                    </div>
+                                    <div class="oc-row" style="margin-top:3px;">
+                                        <span class="oc-meta">${escapeHtml(oNum)}</span>
+                                        <div style="position:relative;" onclick="event.stopPropagation();">
+                                            <button class="status-btn" style="background:${statusColor};" onclick="toggleOrderStatusDropdown(${order.id})">
+                                                ${statusLabel}
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
+                                            </button>
+                                            <div class="status-dropdown" id="statusDropdown-${order.id}">${statusOptions}</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                            ${noteLine}
+                            ${payLine}
+                            ${overdueLine}
                         </div>
-                        ${noteLine}
-                        ${payLine}
-                        ${overdueLine}
+                        <div class="oc-items" data-role="items" style="display:none;">${itemsLine}</div>
                     </div>
-                    <div class="oc-items" data-role="items" style="display:none;">${itemsLine}</div>
                 </div>
             </div>
             <div class="expand-band" onclick="event.stopPropagation(); toggleDoneCardExpand(${order.id})" title="${t('orders_expand_title')}">
