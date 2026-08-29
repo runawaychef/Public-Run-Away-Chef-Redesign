@@ -349,12 +349,35 @@ document.addEventListener('click', (e) => {
     if (!e.target.closest('.oc-swipe-wrap')) closeAllCardSwipes();
 });
 
+// Долгое нажатие на карточку ВЫПОЛНЕННОГО заказа переключает компакт/полный
+// вид (заменяет прежнюю кнопку .expand-btn — см. обсуждение в чате 29.08.2026).
+// Таймер отменяется при движении пальца (скролл списка или начало свайпа),
+// чтобы не срабатывать случайно во время этих жестов.
+let _longPressTimer = null, _longPressOrderId = null, _longPressStartX = 0, _longPressStartY = 0, _longPressSuppressClick = false;
+const LONG_PRESS_MS = 500;
+const LONG_PRESS_MAX_MOVE = 10;
+
 function initOrderCardSwipeDelegation() {
     const container = document.getElementById('orderCardsBody');
     if (!container || container._swipeInit) return;
     container._swipeInit = true;
 
     container.addEventListener('touchstart', (e) => {
+        const tapEl = e.target.closest('.order-card-tap');
+        if (tapEl) {
+            const cardEl = tapEl.closest('[id^="orderCard-"]');
+            _longPressOrderId = cardEl ? Number(cardEl.id.replace('orderCard-', '')) : null;
+            _longPressStartX = e.touches[0].clientX;
+            _longPressStartY = e.touches[0].clientY;
+            clearTimeout(_longPressTimer);
+            _longPressTimer = _longPressOrderId == null ? null : setTimeout(() => {
+                _longPressTimer = null;
+                _longPressSuppressClick = true;
+                if (navigator.vibrate) navigator.vibrate(12);
+                toggleDoneCardExpand(_longPressOrderId);
+            }, LONG_PRESS_MS);
+        }
+
         const wrap = e.target.closest('.oc-swipe-wrap');
         if (!wrap || wrap.dataset.noSwipe) return;
         _cardSwipeWrapEl = wrap;
@@ -364,6 +387,14 @@ function initOrderCardSwipeDelegation() {
     }, { passive: true });
 
     container.addEventListener('touchmove', (e) => {
+        if (_longPressTimer) {
+            const dx = e.touches[0].clientX - _longPressStartX;
+            const dy = e.touches[0].clientY - _longPressStartY;
+            if (Math.abs(dx) > LONG_PRESS_MAX_MOVE || Math.abs(dy) > LONG_PRESS_MAX_MOVE) {
+                clearTimeout(_longPressTimer);
+                _longPressTimer = null;
+            }
+        }
         if (!_cardSwipeDragging || !_cardSwipeWrapEl) return;
         const dx = e.touches[0].clientX - _cardSwipeStartX;
         const dy = e.touches[0].clientY - _cardSwipeStartY;
@@ -372,6 +403,9 @@ function initOrderCardSwipeDelegation() {
     }, { passive: true });
 
     container.addEventListener('touchend', (e) => {
+        clearTimeout(_longPressTimer);
+        _longPressTimer = null;
+
         if (!_cardSwipeDragging || !_cardSwipeWrapEl) { _cardSwipeDragging = false; return; }
         _cardSwipeDragging = false;
         const wrap = _cardSwipeWrapEl;
@@ -398,6 +432,13 @@ function initOrderCardSwipeDelegation() {
             wrap.classList.remove('swiped-right');
             e.stopPropagation();
         }
+    }, { passive: true });
+
+    container.addEventListener('touchcancel', () => {
+        clearTimeout(_longPressTimer);
+        _longPressTimer = null;
+        _cardSwipeDragging = false;
+        _cardSwipeWrapEl = null;
     }, { passive: true });
 
     // Тап по уже открытой (свайпнутой) карточке закрывает её вместо перехода в заказ.
@@ -523,7 +564,7 @@ function renderDoneOrderCard(order) {
         <div class="order-card done-card muted" id="orderCard-${order.id}">
             <div class="stripe" style="background:${stripeColor};" data-role="stripe"></div>
             <div class="order-card-tap" onclick="handleDoneCardTap(event, ${order.id})">
-                <div class="order-card-body" style="padding-right:34px;">
+                <div class="order-card-body">
                     <div data-role="collapsed-header">
                         <div class="oc-row">
                             <span class="oc-name">${escapeHtml(order.customer || t('orders_no_customer'))}</span>
@@ -565,15 +606,12 @@ function renderDoneOrderCard(order) {
                     <div class="oc-items" data-role="items" style="display:none;">${itemsLine}</div>
                 </div>
             </div>
-            <div class="expand-btn" onclick="event.stopPropagation(); toggleDoneCardExpand(${order.id})" title="${t('orders_expand_title')}">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
-            </div>
         </div>
     </div>`;
 }
 
 function handleDoneCardTap(e, orderId) {
-    if (e.target.closest('.expand-btn')) return;
+    if (_longPressSuppressClick) { _longPressSuppressClick = false; return; }
     openOrderDetail(orderId);
 }
 
