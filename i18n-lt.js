@@ -748,6 +748,8 @@ I18N.lt = {
         send_button: 'Siųsti',
         send_stub_notice: 'Siuntimas dar neprijungtas — tai tik išvaizdos peržiūra.',
         email_quick_edit_title: 'Kliento el. paštas',
+        send_via_email: 'El. paštu',
+        send_via_share: 'Bendrinta',
         orders_no_customer: '(be kliento)',
         orders_expand_title: 'Išskleisti',
         orders_status_change_error: 'Nepavyko pakeisti būsenos. Patikrinkite ryšį ir bandykite dar kartą.',

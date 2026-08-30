@@ -521,17 +521,23 @@ const PDF_TABLE_HEAD_STYLE = { fillColor: PDF_COLORS.sageLight, textColor: PDF_C
 // Пытается отправить готовый PDF через системное меню "Поделиться" (не на
 // всех браузерах поддерживается) — если нет, просто скачивает файл и
 // показывает подтверждение.
+// Возвращает true, если файл ушёл через нативное меню "Поделиться" (значит,
+// реально куда-то отправлен), и false, если пользователь просто скачал его
+// локально (отмена шаринга или браузер без поддержки Web Share API) — это
+// различие нужно, чтобы не отмечать документ как "отправленный", если он на
+// самом деле просто сохранён на устройство.
 async function pdfSaveOrShare(pdf, filename) {
     const blob = pdf.output('blob');
     const file = new File([blob], filename, { type: 'application/pdf' });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
             await navigator.share({ files: [file], title: filename });
-            return;
+            return true;
         } catch (e) { /* пользователь закрыл меню "Поделиться" — просто скачиваем ниже */ }
     }
     pdf.save(filename);
     await showInfo(`${t('common_done')}: ${t('backup_file_saved_prefix')} «${filename}» ${t('backup_file_saved_suffix')}.`);
+    return false;
 }
 
 // ==================== ПОРТАЛ ДЛЯ ВЫПАДАЮЩИХ МЕНЮ ====================

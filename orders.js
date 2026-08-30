@@ -308,7 +308,7 @@ function renderOrderCard(order) {
                                 <span class="oc-sum">${total}</span>
                             </div>
                             <div class="oc-row" style="margin-top:3px;">
-                                <span class="oc-meta">${escapeHtml(oNum)}</span>
+                                <span class="oc-meta">${escapeHtml(oNum)}${_sentIconHtml(order)}</span>
                                 <div style="position:relative;" onclick="event.stopPropagation();">
                                     <button class="status-btn" style="background:${statusColor};" onclick="toggleOrderStatusDropdown(${order.id})">
                                         ${orderStatusLabelCap(order.status)}
@@ -534,7 +534,7 @@ function renderDoneOrderCard(order) {
                                 <span></span>
                                 <span title="${statusLabel}" style="width:8px; height:8px; border-radius:50%; background:${statusColor}; display:inline-block;"></span>
                             </div>
-                            <div class="oc-meta">${formatDateDMY(order.date)} · ${escapeHtml(oNum)}</div>
+                            <div class="oc-meta">${formatDateDMY(order.date)} · ${escapeHtml(oNum)}${_sentIconHtml(order)}</div>
                         </div>
                         <div data-role="expanded-header" style="display:none;">
                             <div class="oc-header">
@@ -548,7 +548,7 @@ function renderDoneOrderCard(order) {
                                         <span class="oc-sum">${total}</span>
                                     </div>
                                     <div class="oc-row" style="margin-top:3px;">
-                                        <span class="oc-meta">${escapeHtml(oNum)}</span>
+                                        <span class="oc-meta">${escapeHtml(oNum)}${_sentIconHtml(order)}</span>
                                         <div style="position:relative;" onclick="event.stopPropagation();">
                                             <button class="status-btn" style="background:${statusColor};" onclick="toggleOrderStatusDropdown(${order.id})">
                                                 ${statusLabel}

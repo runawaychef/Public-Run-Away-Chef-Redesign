@@ -748,6 +748,8 @@ I18N.uk = {
         send_button: 'Надіслати',
         send_stub_notice: 'Надсилання ще не підключено — це лише візуальний перегляд.',
         email_quick_edit_title: 'Email клієнта',
+        send_via_email: 'Email',
+        send_via_share: 'Поділилися',
         orders_no_customer: '(без клієнта)',
         orders_expand_title: 'Розгорнути',
         orders_status_change_error: 'Не вдалося змінити статус. Перевірте з\'єднання і спробуйте ще раз.',

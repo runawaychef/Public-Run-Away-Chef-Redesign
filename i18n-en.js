@@ -758,6 +758,8 @@ I18N.en = {
         send_button: 'Send',
         send_stub_notice: 'Sending isn\u2019t wired up yet \u2014 this is a visual preview only.',
         email_quick_edit_title: 'Customer email',
+        send_via_email: 'Email',
+        send_via_share: 'Shared',
         orders_no_customer: '(No Customer)',
         orders_expand_title: 'Expand',
         orders_status_change_error: 'Failed to update the status. Check your connection and try again.',

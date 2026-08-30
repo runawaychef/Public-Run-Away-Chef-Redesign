@@ -757,6 +757,8 @@ I18N.ru = {
         send_button: 'Отправить',
         send_stub_notice: 'Отправка ещё не подключена — сейчас это только внешний вид.',
         email_quick_edit_title: 'Email клиента',
+        send_via_email: 'Email',
+        send_via_share: 'Поделились',
         orders_no_customer: '(без клиента)',
         orders_expand_title: 'Развернуть',
         orders_status_change_error: 'Не удалось изменить статус. Проверьте соединение и попробуйте ещё раз.',

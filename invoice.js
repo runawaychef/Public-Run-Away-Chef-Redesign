@@ -716,7 +716,10 @@ async function shareOrderDocumentPdf() {
     showLoading(t('customers_pdf_generating'));
     try {
         const pdf = await buildDocumentPdf(docType, snapshot, lang);
-        await pdfSaveOrShare(pdf, filename);
+        const shared = await pdfSaveOrShare(pdf, filename);
+        if (shared) {
+            await recordDocumentSent(currentOrderId, docType, 'share');
+        }
     } catch (e) {
         console.error(e);
         showInfo(t('inv_doc_error_prefix') + (e && e.message ? e.message : t('inv_unknown_error')) + t('customers_pdf_error_suffix'));
