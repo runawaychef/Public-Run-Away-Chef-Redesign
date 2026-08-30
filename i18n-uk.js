@@ -745,7 +745,7 @@ I18N.uk = {
         send_body_template: 'Вітаємо, {customer}!\n\nНадсилаємо {doc_label} {order_number} на суму {sum} від {org_name}.\n\nДякуємо за замовлення!',
         send_attachment_base_invoice: 'rahunok',
         send_attachment_base_delivery: 'nakladna',
-        send_button: 'Надіслати на email',
+        send_button: 'Надіслати на пошту',
         send_stub_notice: 'Надсилання ще не підключено — це лише візуальний перегляд.',
         email_quick_edit_title: 'Email клієнта',
         send_via_email: 'Email',
