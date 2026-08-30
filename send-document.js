@@ -5,9 +5,36 @@
 // или через нативное меню "Поделиться" (см. pdfSaveOrShare -> shareOrderDocumentPdf) —
 // НЕ простое локальное скачивание PDF на устройство.
 
+// ==================== ОТМЕТКА "ДОКУМЕНТ ОТПРАВЛЕН" (самолётик на карточке) ====================
+// Раздельно по типу документа (invoice/delivery_note), хранится только ПОСЛЕДНЯЯ
+// отправка (не история) — orders.invoice_sent_at/_via, orders.delivery_note_sent_at/_via.
+// Считается "отправленным" только реальная передача — через email или через
+// нативное меню "Поделиться" (см. pdfSaveOrShare -> shareOrderDocumentPdf) —
+// НЕ простое локальное скачивание PDF на устройство.
+//
+// Для email дополнительно отслеживается СТАТУС ДОСТАВКИ (invoice_delivery_status/
+// delivery_note_delivery_status: 'sent' → 'delivered' / 'bounced' / 'complained' /
+// 'delayed') — обновляется асинхронно через Resend Webhooks → Edge Function
+// resend-webhook, когда почта Resend узнаёт судьбу письма. Для 'share' статуса
+// доставки нет и быть не может (Web Share API не даёт такого подтверждения) —
+// там значок всегда нейтральный.
+
+// Смотрим на оба документа заказа и выбираем "худший" статус — так значок
+// сразу сигналит о проблеме, даже если второй документ ушёл нормально.
+function _worstDeliveryStatus(order) {
+    const statuses = [order.invoice_delivery_status, order.delivery_note_delivery_status].filter(Boolean);
+    if (statuses.includes('bounced') || statuses.includes('complained')) return 'alarm';
+    if (statuses.includes('delivered')) return 'delivered';
+    if (statuses.includes('delayed') || statuses.includes('sent')) return 'neutral';
+    // Отправлено через 'Поделиться' (или email без статуса, вебхук ещё не пришёл) — нейтрально.
+    if (order.invoice_sent_at || order.delivery_note_sent_at) return 'neutral';
+    return null;
+}
+
 function _sentIconHtml(order) {
-    if (!order.invoice_sent_at && !order.delivery_note_sent_at) return '';
-    return `<svg class="oc-sent-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" onclick="event.stopPropagation(); showDocumentSentInfo(${order.id})"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75A2.25 2.25 0 014.5 4.5h9a2.25 2.25 0 012.25 2.25v5.25M2.25 6.75v7.5A2.25 2.25 0 004.5 16.5h5.25M2.25 6.75L9 11.69a1.5 1.5 0 001.76 0L15.75 8.4"/><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 16.5l2.25 2.25 4.5-4.5"/></svg>`;
+    const state = _worstDeliveryStatus(order);
+    if (!state) return '';
+    return `<svg class="oc-sent-icon oc-sent-icon--${state}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" onclick="event.stopPropagation(); showDocumentSentInfo(${order.id})"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75A2.25 2.25 0 014.5 4.5h9a2.25 2.25 0 012.25 2.25v5.25M2.25 6.75v7.5A2.25 2.25 0 004.5 16.5h5.25M2.25 6.75L9 11.69a1.5 1.5 0 001.76 0L15.75 8.4"/><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 16.5l2.25 2.25 4.5-4.5"/></svg>`;
 }
 
 function _formatSentDateTime(iso) {
@@ -21,41 +48,68 @@ function _sentViaLabel(via) {
     return via === 'email' ? t('send_via_email') : t('send_via_share');
 }
 
+function _deliveryStatusLabel(status) {
+    switch (status) {
+        case 'delivered': return t('send_status_delivered');
+        case 'bounced': return t('send_status_bounced');
+        case 'complained': return t('send_status_complained');
+        case 'delayed': return t('send_status_delayed');
+        case 'sent': return t('send_status_sent');
+        default: return '';
+    }
+}
+
 function showDocumentSentInfo(orderId) {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
     const lines = [];
     if (order.invoice_sent_at) {
-        lines.push(`${t('orders_doc_invoice')}: ${_sentViaLabel(order.invoice_sent_via)}, ${_formatSentDateTime(order.invoice_sent_at)}`);
+        const statusPart = order.invoice_sent_via === 'email' && order.invoice_delivery_status
+            ? ` — ${_deliveryStatusLabel(order.invoice_delivery_status)}` : '';
+        lines.push(`${t('orders_doc_invoice')}: ${_sentViaLabel(order.invoice_sent_via)}, ${_formatSentDateTime(order.invoice_sent_at)}${statusPart}`);
     }
     if (order.delivery_note_sent_at) {
-        lines.push(`${t('orders_doc_delivery_note')}: ${_sentViaLabel(order.delivery_note_sent_via)}, ${_formatSentDateTime(order.delivery_note_sent_at)}`);
+        const statusPart = order.delivery_note_sent_via === 'email' && order.delivery_note_delivery_status
+            ? ` — ${_deliveryStatusLabel(order.delivery_note_delivery_status)}` : '';
+        lines.push(`${t('orders_doc_delivery_note')}: ${_sentViaLabel(order.delivery_note_sent_via)}, ${_formatSentDateTime(order.delivery_note_sent_at)}${statusPart}`);
     }
     if (!lines.length) return;
     showInfo(lines.join('\n'));
 }
 
-// Фиксирует факт отправки (docType: 'invoice'|'delivery_note', via: 'share'|'email').
-// Оптимистичное обновление, как и остальные быстрые действия в orders.js — сразу
-// перерисовываем список, откатываем при ошибке сохранения.
-async function recordDocumentSent(orderId, docType, via) {
+// Фиксирует факт отправки (docType: 'invoice'|'delivery_note', via: 'share'|'email',
+// messageId — ID письма от Resend, только для via==='email', нужен вебхуку, чтобы
+// потом найти этот заказ по событию доставки). Оптимистичное обновление, как и
+// остальные быстрые действия в orders.js — сразу перерисовываем список, откатываем
+// при ошибке сохранения.
+async function recordDocumentSent(orderId, docType, via, messageId) {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
     const atField = docType === 'invoice' ? 'invoice_sent_at' : 'delivery_note_sent_at';
     const viaField = docType === 'invoice' ? 'invoice_sent_via' : 'delivery_note_sent_via';
-    const prevAt = order[atField], prevVia = order[viaField];
+    const msgIdField = docType === 'invoice' ? 'invoice_sent_message_id' : 'delivery_note_sent_message_id';
+    const statusField = docType === 'invoice' ? 'invoice_delivery_status' : 'delivery_note_delivery_status';
+    const prev = { at: order[atField], via: order[viaField], msgId: order[msgIdField], status: order[statusField] };
     const nowIso = new Date().toISOString();
+    const newMsgId = via === 'email' ? (messageId || null) : null;
+    const newStatus = via === 'email' ? 'sent' : null;
 
     order[atField] = nowIso;
     order[viaField] = via;
+    order[msgIdField] = newMsgId;
+    order[statusField] = newStatus;
     displayOrders();
 
     try {
-        await updateChecked(db.from('orders').update({ [atField]: nowIso, [viaField]: via }).eq('id', orderId));
+        await updateChecked(db.from('orders').update({
+            [atField]: nowIso, [viaField]: via, [msgIdField]: newMsgId, [statusField]: newStatus,
+        }).eq('id', orderId));
     } catch (e) {
         console.error(e);
-        order[atField] = prevAt;
-        order[viaField] = prevVia;
+        order[atField] = prev.at;
+        order[viaField] = prev.via;
+        order[msgIdField] = prev.msgId;
+        order[statusField] = prev.status;
         displayOrders();
     }
 }
@@ -252,7 +306,7 @@ async function submitSendDocument() {
         if (fnError) throw fnError;
         if (!result || !result.success) throw new Error((result && result.error) || 'send failed');
 
-        await recordDocumentSent(orderId, docType, 'email');
+        await recordDocumentSent(orderId, docType, 'email', result.id);
         closeModal();
         showInfo(t('send_success'));
     } catch (e) {

@@ -434,7 +434,10 @@
         .order-card .oc-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
         .order-card .oc-name { font-size: 15px; font-weight: 700; color: #322f28; overflow-wrap: break-word; min-width: 0; }
         .order-card .oc-meta { font-size: 11.5px; color: #a29c8c; letter-spacing: 0.01em; min-width: 0; white-space: nowrap; }
-        .oc-sent-icon { display: inline-block; width: 22px; height: 22px; margin-left: 5px; vertical-align: -3px; color: #5b7c99; }
+        .oc-sent-icon { display: inline-block; width: 22px; height: 22px; margin-left: 5px; vertical-align: -3px; }
+        .oc-sent-icon--neutral { color: #a29c8c; }
+        .oc-sent-icon--delivered { color: #5b7c99; }
+        .oc-sent-icon--alarm { color: #c0685c; }
         .oc-sent-badge { position: absolute; left: 60%; top: 10px; z-index: 2; }
         .order-card .oc-sum { font-size: 15px; font-weight: 700; color: #322f28; font-variant-numeric: tabular-nums; white-space: nowrap; flex-shrink: 0; }
         .order-card .oc-pay-line { font-size: 11.5px; margin-top: 6px; }
@@ -3061,7 +3064,7 @@
 <script src="calendar.js?v=7"></script>
 <script src="orders.js?v=99"></script>
 <script src="invoice.js?v=35"></script>
-<script src="send-document.js?v=7"></script>
+<script src="send-document.js?v=8"></script>
 <script src="payments.js?v=19"></script>
 <script src="stats.js?v=21"></script>
 <script src="history.js?v=9"></script>
@@ -3117,7 +3120,7 @@ async function loadAllData(silent) {
         const [pRes, cRes, oRes, oiRes, eRes, ingRes, piRes, sfRes, sfiRes, opRes] = await Promise.all([
             db.from('products').select('id, name, price, batch_size, other_costs, unit, recipe_confirmed, track_stock, photo_url').eq('org_id', currentOrgId).order('name').limit(5000),
             db.from('customers').select('id, name, contact, email, discount, vat_exempt, notes, address, reg_number, vat_code, personal_code, entity_type, payment_term_days').eq('org_id', currentOrgId).order('name').limit(5000),
-            db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending, invoice_snapshot, delivery_note_snapshot, is_confirmed, created_by, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via').eq('org_id', currentOrgId).is('deleted_at', null).range(0, 9999),
+            db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending, invoice_snapshot, delivery_note_snapshot, is_confirmed, created_by, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via, invoice_sent_message_id, delivery_note_sent_message_id, invoice_delivery_status, delivery_note_delivery_status').eq('org_id', currentOrgId).is('deleted_at', null).range(0, 9999),
             db.from('order_items').select('id, order_id, product_id, quantity, price, item_cost').eq('org_id', currentOrgId).range(0, 9999),
             db.from('employees').select('id, name').eq('org_id', currentOrgId).order('name').limit(1000),
             db.from('ingredients').select('id, name, package_price, package_size, unit').eq('org_id', currentOrgId).order('name').limit(5000),
@@ -3225,6 +3228,10 @@ async function loadAllData(silent) {
                 invoice_sent_via: o.invoice_sent_via || null,
                 delivery_note_sent_at: o.delivery_note_sent_at || null,
                 delivery_note_sent_via: o.delivery_note_sent_via || null,
+                invoice_sent_message_id: o.invoice_sent_message_id || null,
+                delivery_note_sent_message_id: o.delivery_note_sent_message_id || null,
+                invoice_delivery_status: o.invoice_delivery_status || null,
+                delivery_note_delivery_status: o.delivery_note_delivery_status || null,
                 items: itemsByOrder[o.id] || []
             };
         });
