@@ -296,6 +296,7 @@ function renderOrderCard(order) {
         <div class="order-card" id="orderCard-${order.id}">
             <div class="order-card-tap" onclick="openOrderDetail(${order.id})">
                 <div class="stripe" style="background:${stripeColor}"></div>
+                ${_sentIconHtml(order) ? `<div class="oc-sent-badge">${_sentIconHtml(order)}</div>` : ''}
                 <div class="order-card-body">
                     <div class="oc-header">
                         <div class="oc-datebadge">
@@ -308,7 +309,7 @@ function renderOrderCard(order) {
                                 <span class="oc-sum">${total}</span>
                             </div>
                             <div class="oc-row" style="margin-top:3px;">
-                                <span class="oc-meta">${escapeHtml(oNum)}${_sentIconHtml(order)}</span>
+                                <span class="oc-meta">${escapeHtml(oNum)}</span>
                                 <div style="position:relative;" onclick="event.stopPropagation();">
                                     <button class="status-btn" style="background:${statusColor};" onclick="toggleOrderStatusDropdown(${order.id})">
                                         ${orderStatusLabelCap(order.status)}
@@ -523,6 +524,7 @@ function renderDoneOrderCard(order) {
         <div class="order-card done-card muted" id="orderCard-${order.id}">
             <div class="oc-card-top">
                 <div class="stripe" style="background:${stripeColor};" data-role="stripe"></div>
+                ${_sentIconHtml(order) ? `<div class="oc-sent-badge">${_sentIconHtml(order)}</div>` : ''}
                 <div class="order-card-tap" onclick="handleDoneCardTap(event, ${order.id})">
                     <div class="order-card-body">
                         <div data-role="collapsed-header">
@@ -534,7 +536,6 @@ function renderDoneOrderCard(order) {
                                 <span></span>
                                 <span title="${statusLabel}" style="width:8px; height:8px; border-radius:50%; background:${statusColor}; display:inline-block;"></span>
                             </div>
-                            ${_sentIconHtml(order) ? `<div class="oc-row" style="margin-top:3px;"><span></span>${_sentIconHtml(order)}</div>` : ''}
                             <div class="oc-meta">${formatDateDMY(order.date)} · ${escapeHtml(oNum)}</div>
                         </div>
                         <div data-role="expanded-header" style="display:none;">
@@ -549,7 +550,7 @@ function renderDoneOrderCard(order) {
                                         <span class="oc-sum">${total}</span>
                                     </div>
                                     <div class="oc-row" style="margin-top:3px;">
-                                        <span class="oc-meta">${escapeHtml(oNum)}${_sentIconHtml(order)}</span>
+                                        <span class="oc-meta">${escapeHtml(oNum)}</span>
                                         <div style="position:relative;" onclick="event.stopPropagation();">
                                             <button class="status-btn" style="background:${statusColor};" onclick="toggleOrderStatusDropdown(${order.id})">
                                                 ${statusLabel}

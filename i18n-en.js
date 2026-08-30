@@ -755,7 +755,7 @@ I18N.en = {
         send_body_template: 'Hello, {customer}!\n\nAttached is the {doc_label} {order_number} for {sum} from {org_name}.\n\nThank you for your order!',
         send_attachment_base_invoice: 'invoice',
         send_attachment_base_delivery: 'delivery_note',
-        send_button: 'Send',
+        send_button: 'Send by email',
         send_stub_notice: 'Sending isn\u2019t wired up yet \u2014 this is a visual preview only.',
         email_quick_edit_title: 'Customer email',
         send_via_email: 'Email',

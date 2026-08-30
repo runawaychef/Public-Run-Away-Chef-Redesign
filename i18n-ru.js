@@ -754,7 +754,7 @@ I18N.ru = {
         send_body_template: 'Здравствуйте, {customer}!\n\nВысылаем {doc_label} {order_number} на сумму {sum} от {org_name}.\n\nСпасибо за заказ!',
         send_attachment_base_invoice: 'schet',
         send_attachment_base_delivery: 'nakladnaya',
-        send_button: 'Отправить',
+        send_button: 'Отправить на email',
         send_stub_notice: 'Отправка ещё не подключена — сейчас это только внешний вид.',
         email_quick_edit_title: 'Email клиента',
         send_via_email: 'Email',

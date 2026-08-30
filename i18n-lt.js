@@ -745,7 +745,7 @@ I18N.lt = {
         send_body_template: 'Sveiki, {customer}!\n\nSiunčiame {doc_label} {order_number} už {sum} sumą nuo {org_name}.\n\nAčiū už užsakymą!',
         send_attachment_base_invoice: 'saskaita',
         send_attachment_base_delivery: 'siuntos_lapas',
-        send_button: 'Siųsti',
+        send_button: 'Siųsti el. paštu',
         send_stub_notice: 'Siuntimas dar neprijungtas — tai tik išvaizdos peržiūra.',
         email_quick_edit_title: 'Kliento el. paštas',
         send_via_email: 'El. paštu',
