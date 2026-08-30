@@ -534,7 +534,8 @@ function renderDoneOrderCard(order) {
                                 <span></span>
                                 <span title="${statusLabel}" style="width:8px; height:8px; border-radius:50%; background:${statusColor}; display:inline-block;"></span>
                             </div>
-                            <div class="oc-meta">${formatDateDMY(order.date)} · ${escapeHtml(oNum)}${_sentIconHtml(order)}</div>
+                            ${_sentIconHtml(order) ? `<div class="oc-row" style="margin-top:3px;"><span></span>${_sentIconHtml(order)}</div>` : ''}
+                            <div class="oc-meta">${formatDateDMY(order.date)} · ${escapeHtml(oNum)}</div>
                         </div>
                         <div data-role="expanded-header" style="display:none;">
                             <div class="oc-header">
