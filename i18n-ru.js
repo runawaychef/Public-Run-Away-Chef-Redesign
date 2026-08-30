@@ -78,6 +78,8 @@ I18N.ru = {
         company_address_label: 'Адрес',
         company_legal_name_label: 'Юридическое название',
         company_legal_name_placeholder: 'Например, MB Runaway Chef',
+        company_legal_name_individual_label: 'ФИО для документов',
+        company_legal_name_individual_placeholder: 'Например, Siarhei Sharah',
         company_reg_number_label: 'Рег. номер',
         company_vat_code_label: 'Код НДС / PVM',
         company_director_label: 'Директор / представитель',

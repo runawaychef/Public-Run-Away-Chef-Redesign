@@ -243,6 +243,7 @@ async function openCompanyInfoModal() {
         document.getElementById('cmpEmail').value        = data.email || '';
         document.getElementById('cmpAddress').value      = data.address || '';
         document.getElementById('cmpLegalName').value    = data.legal_name || '';
+        document.getElementById('cmpLegalNameIndividual').value = data.legal_name || '';
         document.getElementById('cmpRegNumber').value    = data.reg_number || '';
         document.getElementById('cmpVatCode').value      = data.vat_code || '';
         document.getElementById('cmpDirectorName').value = data.director_name || '';
@@ -298,6 +299,11 @@ async function saveCompanyInfo(field, value) {
         }
         if (field === 'vat_rate') {
             currentOrgVatRate = Number(value);
+        }
+        if (field === 'legal_name') {
+            const other = document.getElementById('cmpLegalName').id === document.activeElement?.id ? 'cmpLegalNameIndividual' : 'cmpLegalName';
+            const otherEl = document.getElementById(other);
+            if (otherEl) otherEl.value = value;
         }
 
         logActivity('system', `${t('log_field_changed')} «${field}» ${t('log_in_company_info')}`);

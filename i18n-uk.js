@@ -84,6 +84,8 @@ I18N.uk = {
         company_address_label: 'Адреса',
         company_legal_name_label: 'Юридична назва',
         company_legal_name_placeholder: 'Наприклад, ТОВ Runaway Chef',
+        company_legal_name_individual_label: 'ПІБ для документів',
+        company_legal_name_individual_placeholder: 'Наприклад, Siarhei Sharah',
         company_reg_number_label: 'Рег. номер',
         company_vat_code_label: 'Код ПДВ / PVM',
         company_director_label: 'Директор / представник',

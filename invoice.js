@@ -414,7 +414,7 @@ function buildDocumentHtml(docType, snapshot, lang) {
     const personalCodeLabel = org.country === 'LT' ? tDoc('company_personal_code_label_lt', lang) : tDoc('inv_personal_code', lang);
 
     // ---- Продавец ----
-    const sellerName = org.entity_type === 'individual' ? (org.name || '') : (org.legal_name || org.name || '');
+    const sellerName = org.legal_name || org.name || '';
     const sellerIdLine = org.entity_type === 'individual'
         ? (org.personal_code ? `${personalCodeLabel}: ${escapeHtml(org.personal_code)}` : '')
         : (org.reg_number ? `${tDoc('inv_reg_number', lang)}: ${escapeHtml(org.reg_number)}` : '');
@@ -560,7 +560,7 @@ async function buildDocumentPdf(docType, snapshot, lang) {
     const money = n => Number(n).toFixed(2) + ' ' + sym;
     const personalCodeLabel = org.country === 'LT' ? tDoc('company_personal_code_label_lt', lang) : tDoc('inv_personal_code', lang);
 
-    const sellerName = org.entity_type === 'individual' ? (org.name || '') : (org.legal_name || org.name || '');
+    const sellerName = org.legal_name || org.name || '';
     const sellerIdLine = org.entity_type === 'individual'
         ? (org.personal_code ? `${personalCodeLabel}: ${org.personal_code}` : '')
         : (org.reg_number ? `${tDoc('inv_reg_number', lang)}: ${org.reg_number}` : '');

@@ -84,6 +84,8 @@ I18N.lt = {
         company_address_label: 'Adresas',
         company_legal_name_label: 'Juridinis pavadinimas',
         company_legal_name_placeholder: 'Pavyzdžiui, MB Runaway Chef',
+        company_legal_name_individual_label: 'Vardas pavardė dokumentams',
+        company_legal_name_individual_placeholder: 'Pvz., Siarhei Sharah',
         company_reg_number_label: 'Registracijos numeris',
         company_vat_code_label: 'PVM kodas',
         company_director_label: 'Vadovas / atstovas',

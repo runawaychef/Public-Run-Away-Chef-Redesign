@@ -2404,6 +2404,10 @@
                 <!-- Только для физического лица -->
                 <div id="cmpIndividualFields" class="border-t pt-2 mb-3">
                     <div class="grid grid-cols-2 gap-1">
+                        <div class="col-span-2">
+                            <label class="table-text text-gray-500" data-i18n="company_legal_name_individual_label">ФИО для документов</label>
+                            <input id="cmpLegalNameIndividual" type="text" autocomplete="off" onblur="saveCompanyInfo('legal_name', this.value)" class="border p-1 rounded-xl w-full table-text" placeholder="Например, Siarhei Sharah" data-i18n-placeholder="company_legal_name_individual_placeholder">
+                        </div>
                         <div>
                             <label id="cmpPersonalCodeLabel" class="table-text text-gray-500" data-i18n="company_personal_code_label">Личный код</label>
                             <input id="cmpPersonalCode" type="text" autocomplete="off" onblur="saveCompanyInfo('personal_code', this.value)" class="border p-1 rounded-xl w-full table-text">
@@ -3045,7 +3049,7 @@
     <script src="cache.js?v=11"></script>
     <script src="auth.js?v=18"></script>
     <script src="employees.js?v=44"></script>
-    <script src="company.js?v=20"></script>
+    <script src="company.js?v=21"></script>
     <script src="inventory.js?v=46"></script>
     <script src="billing.js?v=10"></script>
     <script src="push.js?v=8"></script>
@@ -3056,7 +3060,7 @@
 <script src="customers.js?v=38"></script>
 <script src="calendar.js?v=7"></script>
 <script src="orders.js?v=99"></script>
-<script src="invoice.js?v=34"></script>
+<script src="invoice.js?v=35"></script>
 <script src="send-document.js?v=7"></script>
 <script src="payments.js?v=19"></script>
 <script src="stats.js?v=21"></script>
