@@ -99,6 +99,14 @@ function _sendAttachmentName(docType, lang, orderNumLabel) {
     return `${base}_${orderNumLabel}.pdf`;
 }
 
+function _sendSubject(docType, lang, orderNumLabel, orgName) {
+    const docLabel = docType === 'invoice' ? tLang('orders_doc_invoice', lang) : tLang('orders_doc_delivery_note', lang);
+    return tLang('send_subject_template', lang)
+        .replace('{doc_label}', docLabel)
+        .replace('{order_number}', orderNumLabel)
+        .replace('{org_name}', orgName);
+}
+
 function _renderSendEmailLangSwitch() {
     return `<div class="lang-switch" id="sendEmailLangSwitch" style="margin-bottom:10px;">` +
         AVAILABLE_LANGS.map(code =>
@@ -148,7 +156,7 @@ async function openSendDocumentSheet(orderId, docType) {
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6b675d" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
                 <span id="sendAttachmentName">${_sendAttachmentName(_sendSheetState.docType, _sendSheetState.emailLang, orderNumLabel)}</span>
             </div>
-            <button class="pill-btn w-full justify-center" onclick="submitSendDocument()">
+            <button class="pill-btn w-full justify-center" id="sendDocSubmitBtn" onclick="submitSendDocument()">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.769 59.769 0 0121.485 12 59.768 59.768 0 013.27 20.876L5.999 12zm0 0h7.5"/></svg>
                 <span>${t('send_button')}</span>
             </button>`;
@@ -195,12 +203,65 @@ async function selectSendEmailLang(lang) {
     document.getElementById('sendAttachmentName').textContent = _sendAttachmentName(_sendSheetState.docType, lang, orderNumLabel);
 }
 
-function submitSendDocument() {
-    // Заглушка на этапе визуала — реальная отправка (генерация PDF через
-    // freezeDocumentSnapshot + вызов Edge Function/Resend) подключится отдельно.
-    // Когда подключим реальную отправку — после успешного ответа Edge Function
-    // здесь нужно вызвать: recordDocumentSent(_sendSheetState.orderId, _sendSheetState.docType, 'email');
-    showInfo(t('send_stub_notice'));
+// Реальная отправка: замораживает/обновляет снимок документа (та же логика,
+// что и просмотр — freezeDocumentSnapshot из invoice.js, номер не дублируется),
+// генерирует PDF на выбранном языке письма, кодирует в base64 и вызывает
+// Edge Function send-document-email (она уже сама зовёт Resend). При успехе
+// фиксирует факт отправки — recordDocumentSent(...,'email') — самолётик
+// на карточке появится сразу.
+async function submitSendDocument() {
+    if (!_sendSheetState) return;
+    const { orderId, docType, custId, emailLang } = _sendSheetState;
+    const order = orders.find(o => o.id === orderId);
+    const cust = customers.find(c => c.id === custId);
+    if (!order || !cust || !cust.email) return;
+
+    const btn = document.getElementById('sendDocSubmitBtn');
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+    showLoading(t('customers_pdf_generating'));
+
+    try {
+        // Как и в openOrderDocumentPreview — проверяем номер напрямую в базе,
+        // а не в локальном кэше orders, чтобы не разойтись с сервером.
+        const field = snapshotField(docType);
+        const { data: freshRow, error: freshErr } = await db.from('orders').select(field).eq('id', order.id).single();
+        if (freshErr) throw freshErr;
+        const existing = freshRow ? freshRow[field] : null;
+        const snapshot = await freezeDocumentSnapshot(order, docType, existing);
+
+        await ensureLangLoaded(emailLang);
+        const pdf = await buildDocumentPdf(docType, snapshot, emailLang);
+        const pdfBase64 = pdf.output('datauristring').split(',')[1];
+
+        const orderNumLabel = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
+        const pdfFilename = _sendAttachmentName(docType, emailLang, orderNumLabel);
+        const subject = _sendSubject(docType, emailLang, orderNumLabel, currentOrgName || '');
+        const bodyText = document.getElementById('sendEmailBody').value;
+
+        const { data: result, error: fnError } = await db.functions.invoke('send-document-email', {
+            body: {
+                orgId: currentOrgId,
+                recipientEmail: cust.email,
+                subject,
+                bodyText,
+                pdfBase64,
+                pdfFilename,
+                senderName: currentOrgName || '',
+            },
+        });
+        if (fnError) throw fnError;
+        if (!result || !result.success) throw new Error((result && result.error) || 'send failed');
+
+        await recordDocumentSent(orderId, docType, 'email');
+        closeModal();
+        showInfo(t('send_success'));
+    } catch (e) {
+        console.error(e);
+        showInfo(t('send_error_prefix') + (e && e.message ? e.message : t('inv_unknown_error')));
+    } finally {
+        hideLoading();
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+    }
 }
 
 // ---- Мини-редактор email клиента (открывается по "изменить" в шите отправки) ----
