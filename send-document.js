@@ -1,3 +1,65 @@
+// ==================== ОТМЕТКА "ДОКУМЕНТ ОТПРАВЛЕН" (самолётик на карточке) ====================
+// Раздельно по типу документа (invoice/delivery_note), хранится только ПОСЛЕДНЯЯ
+// отправка (не история) — orders.invoice_sent_at/_via, orders.delivery_note_sent_at/_via.
+// Считается "отправленным" только реальная передача — через email (когда подключим)
+// или через нативное меню "Поделиться" (см. pdfSaveOrShare -> shareOrderDocumentPdf) —
+// НЕ простое локальное скачивание PDF на устройство.
+
+function _sentIconHtml(order) {
+    if (!order.invoice_sent_at && !order.delivery_note_sent_at) return '';
+    return `<svg class="oc-sent-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" onclick="event.stopPropagation(); showDocumentSentInfo(${order.id})"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.769 59.769 0 0121.485 12 59.768 59.768 0 013.27 20.876L5.999 12zm0 0h7.5"/></svg>`;
+}
+
+function _formatSentDateTime(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const pad = n => String(n).padStart(2, '0');
+    return `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function _sentViaLabel(via) {
+    return via === 'email' ? t('send_via_email') : t('send_via_share');
+}
+
+function showDocumentSentInfo(orderId) {
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+    const lines = [];
+    if (order.invoice_sent_at) {
+        lines.push(`${t('orders_doc_invoice')}: ${_sentViaLabel(order.invoice_sent_via)}, ${_formatSentDateTime(order.invoice_sent_at)}`);
+    }
+    if (order.delivery_note_sent_at) {
+        lines.push(`${t('orders_doc_delivery_note')}: ${_sentViaLabel(order.delivery_note_sent_via)}, ${_formatSentDateTime(order.delivery_note_sent_at)}`);
+    }
+    if (!lines.length) return;
+    showInfo(lines.join('\n'));
+}
+
+// Фиксирует факт отправки (docType: 'invoice'|'delivery_note', via: 'share'|'email').
+// Оптимистичное обновление, как и остальные быстрые действия в orders.js — сразу
+// перерисовываем список, откатываем при ошибке сохранения.
+async function recordDocumentSent(orderId, docType, via) {
+    const order = orders.find(o => o.id === orderId);
+    if (!order) return;
+    const atField = docType === 'invoice' ? 'invoice_sent_at' : 'delivery_note_sent_at';
+    const viaField = docType === 'invoice' ? 'invoice_sent_via' : 'delivery_note_sent_via';
+    const prevAt = order[atField], prevVia = order[viaField];
+    const nowIso = new Date().toISOString();
+
+    order[atField] = nowIso;
+    order[viaField] = via;
+    displayOrders();
+
+    try {
+        await updateChecked(db.from('orders').update({ [atField]: nowIso, [viaField]: via }).eq('id', orderId));
+    } catch (e) {
+        console.error(e);
+        order[atField] = prevAt;
+        order[viaField] = prevVia;
+        displayOrders();
+    }
+}
+
 // ==================== ОТПРАВКА ДОКУМЕНТА НА EMAIL (ВИЗУАЛ) ====================
 // Пока только разметка и переключение состояний на клиенте. Реальная генерация
 // PDF (переиспользуется freezeDocumentSnapshot из invoice.js) и отправка через
@@ -136,6 +198,8 @@ async function selectSendEmailLang(lang) {
 function submitSendDocument() {
     // Заглушка на этапе визуала — реальная отправка (генерация PDF через
     // freezeDocumentSnapshot + вызов Edge Function/Resend) подключится отдельно.
+    // Когда подключим реальную отправку — после успешного ответа Edge Function
+    // здесь нужно вызвать: recordDocumentSent(_sendSheetState.orderId, _sendSheetState.docType, 'email');
     showInfo(t('send_stub_notice'));
 }
 
