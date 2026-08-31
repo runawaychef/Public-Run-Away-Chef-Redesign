@@ -698,7 +698,7 @@ I18N.en = {
         orders_col_total_novat: 'Total',
         orders_customer_card: 'Customer Card',
         orders_share_order: 'Share Order',
-        orders_invoice_doc: 'Invoice / Delivery Note',
+        orders_invoice_doc: 'Documents & Send',
         orders_delete_order: 'Delete Order',
         order_status_accepted_cap: 'Accepted',
         order_status_in_progress_cap: 'In Progress',

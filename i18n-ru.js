@@ -697,7 +697,7 @@ I18N.ru = {
         orders_col_total_novat: 'Итого',
         orders_customer_card: 'Карточка клиента',
         orders_share_order: 'Поделиться заказом',
-        orders_invoice_doc: 'Счёт / накладная',
+        orders_invoice_doc: 'Документы и отправка',
         orders_delete_order: 'Удалить заказ',
         order_status_accepted_cap: 'Принят',
         order_status_in_progress_cap: 'В работе',
