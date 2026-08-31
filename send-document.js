@@ -111,6 +111,7 @@ async function recordDocumentSent(orderId, docType, via, messageId) {
         order[msgIdField] = prev.msgId;
         order[statusField] = prev.status;
         displayOrders();
+        showInfo(t('send_status_save_error') + (e && e.message ? e.message : ''));
     }
 }
 

@@ -760,6 +760,7 @@ I18N.uk = {
         send_subject_template: '{doc_label} {order_number} — {org_name}',
         send_success: 'Лист надіслано',
         send_error_prefix: 'Не вдалося надіслати лист: ',
+        send_status_save_error: 'Лист надіслано, але не вдалося зберегти позначку про це: ',
         send_status_sent: 'надіслано',
         send_status_delivered: 'доставлено',
         send_status_bounced: 'не доставлено',

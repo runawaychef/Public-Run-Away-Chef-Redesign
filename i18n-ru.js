@@ -769,6 +769,7 @@ I18N.ru = {
         send_subject_template: '{doc_label} {order_number} — {org_name}',
         send_success: 'Письмо отправлено',
         send_error_prefix: 'Не удалось отправить письмо: ',
+        send_status_save_error: 'Письмо отправлено, но не удалось сохранить отметку об этом: ',
         send_status_sent: 'отправлено',
         send_status_delivered: 'доставлено',
         send_status_bounced: 'не доставлено',

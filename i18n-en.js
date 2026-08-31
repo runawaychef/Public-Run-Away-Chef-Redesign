@@ -770,6 +770,7 @@ I18N.en = {
         send_subject_template: '{doc_label} {order_number} — {org_name}',
         send_success: 'Email sent',
         send_error_prefix: 'Failed to send email: ',
+        send_status_save_error: 'Email sent, but failed to save the record of it: ',
         send_status_sent: 'sent',
         send_status_delivered: 'delivered',
         send_status_bounced: 'not delivered',

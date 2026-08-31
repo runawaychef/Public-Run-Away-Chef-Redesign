@@ -760,6 +760,7 @@ I18N.lt = {
         send_subject_template: '{doc_label} {order_number} — {org_name}',
         send_success: 'Laiškas išsiųstas',
         send_error_prefix: 'Nepavyko išsiųsti laiško: ',
+        send_status_save_error: 'Laiškas išsiųstas, bet nepavyko išsaugoti žymos apie tai: ',
         send_status_sent: 'išsiųsta',
         send_status_delivered: 'pristatyta',
         send_status_bounced: 'nepristatyta',
