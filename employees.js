@@ -12,6 +12,7 @@ let currentOrgCustomersUsed = 0;    // сколько клиентов созд�
 let currentOrgOrdersUsed = 0;       // сколько заказов создано за всё время (для лимита бесплатного тарифа)
 let currentOrgCurrency = 'EUR';     // код валюты расчёта организации (пригодится для formatMoney())
 let currentOrgVatRate = 0;          // ставка НДС организации (доля, не проценты — 0.21 = 21%); по умолчанию без НДС
+let currentOrgBccSelf = false;      // глобальный тумблер "присылать копию себе" при email-отправке документов — дефолт для чекбокса в шите отправки
 
 // Глобальный рубильник монетизации (таблица platform_settings, key='monetization_live').
 // Пока 'false' — ВСЕ организации видят полный функционал независимо от currentOrgPlan,
@@ -188,7 +189,7 @@ async function loadCurrentOrg() {
 
         const { data, error } = await db
             .from('memberships')
-            .select('org_id, role, organizations(id, name, plan, plan_override, created_at, customers_created_total, orders_created_total, currency_code, vat_rate, detected_country, detected_country_updated_at)')
+            .select('org_id, role, organizations(id, name, plan, plan_override, created_at, customers_created_total, orders_created_total, currency_code, vat_rate, detected_country, detected_country_updated_at, bcc_self_on_send)')
             .eq('user_id', uid)
             .single();
         if (error) throw error;
@@ -206,6 +207,7 @@ async function loadCurrentOrg() {
         currentOrgOrdersUsed = (data.organizations && data.organizations.orders_created_total) || 0;
         currentOrgCurrency = (data.organizations && data.organizations.currency_code) || 'EUR';
         currentOrgVatRate = (data.organizations && data.organizations.vat_rate != null) ? Number(data.organizations.vat_rate) : 0;
+        currentOrgBccSelf = !!(data.organizations && data.organizations.bcc_self_on_send);
         const detectedCountryUpdatedAt = (data.organizations && data.organizations.detected_country_updated_at) || null;
         await loadMonetizationLiveFlag();
         // Критично для пути быстрого восстановления из кэша (cache.js): там

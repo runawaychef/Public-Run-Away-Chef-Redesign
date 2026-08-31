@@ -2376,6 +2376,12 @@
                         <label class="table-text text-gray-500" data-i18n="company_address_label">Адрес</label>
                         <input id="cmpAddress" type="text" autocomplete="off" onblur="saveCompanyInfo('address', this.value)" class="border p-1 rounded-xl w-full table-text">
                     </div>
+                    <div class="col-span-2">
+                        <label class="table-text flex items-center gap-1.5">
+                            <input id="cmpBccSelf" type="checkbox" onchange="saveCompanyInfo('bcc_self_on_send', this.checked)" class="w-4 h-4" style="accent-color:#7c9473;">
+                            <span data-i18n="company_bcc_self_label">Присылать копию себе при отправке документов</span>
+                        </label>
+                    </div>
                 </div>
 
                 <!-- Только для юридического лица -->
@@ -3049,10 +3055,10 @@
     <script src="money.js?v=10"></script>
     <script src="i18n-core.js?v=21"></script>
     <script src="supabaseClient.js?v=7"></script>
-    <script src="cache.js?v=11"></script>
+    <script src="cache.js?v=12"></script>
     <script src="auth.js?v=18"></script>
-    <script src="employees.js?v=44"></script>
-    <script src="company.js?v=21"></script>
+    <script src="employees.js?v=45"></script>
+    <script src="company.js?v=22"></script>
     <script src="inventory.js?v=46"></script>
     <script src="billing.js?v=10"></script>
     <script src="push.js?v=8"></script>
@@ -3064,7 +3070,7 @@
 <script src="calendar.js?v=7"></script>
 <script src="orders.js?v=99"></script>
 <script src="invoice.js?v=35"></script>
-<script src="send-document.js?v=8"></script>
+<script src="send-document.js?v=10"></script>
 <script src="payments.js?v=19"></script>
 <script src="stats.js?v=21"></script>
 <script src="history.js?v=9"></script>

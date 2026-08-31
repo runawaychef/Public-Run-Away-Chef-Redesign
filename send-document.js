@@ -173,7 +173,7 @@ async function openSendDocumentSheet(orderId, docType) {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
     const cust = order.customer_id ? customers.find(c => c.id === order.customer_id) : null;
-    _sendSheetState = { orderId, custId: cust ? cust.id : null, docType: docType || 'invoice', emailLang: currentLang };
+    _sendSheetState = { orderId, custId: cust ? cust.id : null, docType: docType || 'invoice', emailLang: currentLang, bccSelf: currentOrgBccSelf };
 
     const custName = escapeHtml(order.customer || t('orders_no_customer'));
     const body = document.getElementById('sendSheetBody');
@@ -210,6 +210,12 @@ async function openSendDocumentSheet(orderId, docType) {
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6b675d" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
                 <span id="sendAttachmentName">${_sendAttachmentName(_sendSheetState.docType, _sendSheetState.emailLang, orderNumLabel)}</span>
             </div>
+            <label class="flex items-center gap-1.5" style="margin-bottom:10px; cursor:pointer;">
+                <input type="checkbox" id="sendBccSelf" ${_sendSheetState.bccSelf ? 'checked' : ''} onchange="_sendSheetState.bccSelf = this.checked;" class="w-4 h-4" style="accent-color:#7c9473;">
+                <span style="font-size:13px; color:#3c3a34;">${t('send_bcc_self_label')}</span>
+            </label>
+            <p style="font-size:13px; color:#6b675d; margin:0 0 6px;">${t('send_extra_cc_label')}</p>
+            <input type="text" id="sendExtraCc" placeholder="${t('send_extra_cc_placeholder')}" class="border p-2 rounded-xl table-text w-full" style="margin-bottom:14px;">
             <button class="pill-btn w-full justify-center" id="sendDocSubmitBtn" onclick="submitSendDocument()">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75A2.25 2.25 0 014.5 4.5h15A2.25 2.25 0 0121.75 6.75v10.5A2.25 2.25 0 0119.5 19.5h-15a2.25 2.25 0 01-2.25-2.25V6.75zm0 0l9.75 6.75 9.75-6.75"/></svg>
                 <span>${t('send_button')}</span>
@@ -271,6 +277,18 @@ async function submitSendDocument() {
     if (!order || !cust || !cust.email) return;
 
     const btn = document.getElementById('sendDocSubmitBtn');
+
+    // Разбираем "Дополнительные получатели" (через запятую) — валидируем на
+    // клиенте, чтобы сразу подсказать про опечатку, а не после похода на сервер.
+    const extraCcRaw = (document.getElementById('sendExtraCc')?.value || '').trim();
+    const extraCc = extraCcRaw ? extraCcRaw.split(',').map(s => s.trim()).filter(Boolean) : [];
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const invalidCc = extraCc.filter(e => !emailRe.test(e));
+    if (invalidCc.length) {
+        showInfo(t('send_extra_cc_invalid') + ' ' + invalidCc.join(', '));
+        return;
+    }
+
     if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
     showLoading(t('customers_pdf_generating'));
 
@@ -301,6 +319,8 @@ async function submitSendDocument() {
                 pdfBase64,
                 pdfFilename,
                 senderName: currentOrgName || '',
+                bccSelf: !!_sendSheetState.bccSelf,
+                extraCc,
             },
         });
         if (fnError) throw fnError;

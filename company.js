@@ -226,7 +226,7 @@ async function openCompanyInfoModal() {
     showLoading();
     try {
         const { data, error } = await db.from('organizations')
-            .select('name, currency_code, country, vat_rate, entity_type, phone, email, address, legal_name, reg_number, vat_code, director_name, director_position, personal_code, bank_name, bank_account, bank_swift, logo_data_url, logo_on_documents')
+            .select('name, currency_code, country, vat_rate, entity_type, phone, email, address, legal_name, reg_number, vat_code, director_name, director_position, personal_code, bank_name, bank_account, bank_swift, logo_data_url, logo_on_documents, bcc_self_on_send')
             .eq('id', currentOrgId)
             .single();
         if (error) throw error;
@@ -242,6 +242,8 @@ async function openCompanyInfoModal() {
         document.getElementById('cmpPhone').value        = data.phone || '';
         document.getElementById('cmpEmail').value        = data.email || '';
         document.getElementById('cmpAddress').value      = data.address || '';
+        document.getElementById('cmpBccSelf').checked    = !!data.bcc_self_on_send;
+        currentOrgBccSelf = !!data.bcc_self_on_send;
         document.getElementById('cmpLegalName').value    = data.legal_name || '';
         document.getElementById('cmpLegalNameIndividual').value = data.legal_name || '';
         document.getElementById('cmpRegNumber').value    = data.reg_number || '';
@@ -304,6 +306,9 @@ async function saveCompanyInfo(field, value) {
             const other = document.getElementById('cmpLegalName').id === document.activeElement?.id ? 'cmpLegalNameIndividual' : 'cmpLegalName';
             const otherEl = document.getElementById(other);
             if (otherEl) otherEl.value = value;
+        }
+        if (field === 'bcc_self_on_send') {
+            currentOrgBccSelf = !!value;
         }
 
         logActivity('system', `${t('log_field_changed')} «${field}» ${t('log_in_company_info')}`);
