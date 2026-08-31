@@ -744,7 +744,7 @@ I18N.ru = {
         orders_paid_lower: 'оплачено',
         orders_remaining_lower: 'осталось',
         orders_payment_overdue: 'Просрочен платёж',
-        orders_pay_btn: 'Оплатить',
+        orders_pay_btn: 'Оплата',
         orders_send_btn: 'Отправить',
         send_email_btn: 'Отправить на почту',
         send_sheet_title: 'Отправить документ',

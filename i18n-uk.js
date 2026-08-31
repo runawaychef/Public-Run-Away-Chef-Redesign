@@ -735,7 +735,7 @@ I18N.uk = {
         orders_paid_lower: 'оплачено',
         orders_remaining_lower: 'залишилось',
         orders_payment_overdue: 'Прострочено платіж',
-        orders_pay_btn: 'Оплатити',
+        orders_pay_btn: 'Оплата',
         orders_send_btn: 'Надіслати',
         send_email_btn: 'Надіслати на пошту',
         send_sheet_title: 'Надіслати документ',
