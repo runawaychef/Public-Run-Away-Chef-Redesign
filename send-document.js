@@ -183,21 +183,19 @@ function _formatDocNumber(docType, rawNumber) {
     return (docType === 'invoice' ? 'INV-' : 'DN-') + rawNumber;
 }
 
-// Смотрим, генерировался ли уже документ этого типа для заказа — БЕЗ траты
-// нового номера (простой SELECT). Если да — берём его реальный номер сразу
-// в предпросмотр письма, чтобы текст не противоречил тому, что окажется на
-// самом PDF после отправки.
-async function _fetchExistingDocNumber(orderId, docType) {
-    try {
-        const field = snapshotField(docType);
-        const { data, error } = await db.from('orders').select(field).eq('id', orderId).single();
-        if (error) throw error;
-        const snap = data ? data[field] : null;
-        return _formatDocNumber(docType, snap && snap.number);
-    } catch (e) {
-        console.error(e);
-        return null;
-    }
+// Резервирует номер документа (Счёта или Накладной) СРАЗУ, в момент открытия
+// шита отправки / переключения типа документа — а не откладывает до реального
+// нажатия "Отправить". Так текст письма никогда не показывает "временный"
+// номер, который потом может не совпасть с тем, что окажется на PDF. Цена
+// компромисса: если человек откроет шит и передумает — номер останется
+// зарезервированным за этим заказом (пропуск в последовательности), но
+// НИКОГДА не будет задвоен — присвоение атомарно на уровне самой SQL-функции.
+async function _reserveDocSnapshot(order, docType) {
+    const field = snapshotField(docType);
+    const { data: freshRow, error: freshErr } = await db.from('orders').select(field).eq('id', order.id).single();
+    if (freshErr) throw freshErr;
+    const existing = freshRow ? freshRow[field] : null;
+    return await freezeDocumentSnapshot(order, docType, existing);
 }
 
 function _renderSendEmailLangSwitch() {
@@ -212,7 +210,7 @@ async function openSendDocumentSheet(orderId, docType) {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
     const cust = order.customer_id ? customers.find(c => c.id === order.customer_id) : null;
-    _sendSheetState = { orderId, custId: cust ? cust.id : null, docType: docType || 'invoice', emailLang: currentLang, bccSelf: currentOrgBccSelf };
+    _sendSheetState = { orderId, custId: cust ? cust.id : null, docType: docType || 'invoice', emailLang: currentLang, bccSelf: currentOrgBccSelf, snapshot: null, docNumber: null };
 
     const custName = escapeHtml(order.customer || t('orders_no_customer'));
     const body = document.getElementById('sendSheetBody');
@@ -226,41 +224,57 @@ async function openSendDocumentSheet(orderId, docType) {
                 <p style="font-size:13px; color:#6b675d; margin:0 0 14px;" data-i18n="send_no_email_body">${t('send_no_email_body')}</p>
                 <button class="pill-btn-secondary w-full justify-center" onclick="closeModal(); openCustomerDetail(${cust ? cust.id : 'null'})" ${cust ? '' : 'disabled style="opacity:.5;"'}>${t('send_open_customer_card')}</button>
             </div>`;
-    } else {
-        const orderNumLabel = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
-        const sumLabel = formatMoney(orderGrandTotal(order));
-        _sendSheetState.docNumber = await _fetchExistingDocNumber(orderId, _sendSheetState.docType);
-        body.innerHTML = `
-            <div class="send-doctype-switch" style="margin-bottom:14px;">
-                <button id="sendDocTypeInvoice" class="${_sendSheetState.docType === 'invoice' ? 'active' : ''}" onclick="selectSendDocType('invoice')">${t('orders_doc_invoice')}</button>
-                <button id="sendDocTypeDelivery" class="${_sendSheetState.docType === 'delivery_note' ? 'active' : ''}" onclick="selectSendDocType('delivery_note')">${t('orders_doc_delivery_note')}</button>
-            </div>
-            <div class="send-recipient-row" style="margin-bottom:14px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b675d" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
-                <span class="email-value" id="sendRecipientEmail">${escapeHtml(cust.email)}</span>
-                <span class="send-edit-link" onclick="openEmailQuickEdit(${cust.id})">${t('send_edit_email')}</span>
-            </div>
-            <div class="flex items-center justify-between" style="margin-bottom:6px;">
-                <p style="font-size:13px; color:#6b675d; margin:0;">${t('send_body_label')}</p>
-                <p style="font-size:11px; color:#9a9488; margin:0;">${t('send_letter_lang_label')}</p>
-            </div>
-            ${_renderSendEmailLangSwitch()}
-            <textarea id="sendEmailBody" rows="6" class="border p-2 rounded-xl table-text w-full resize-none" style="margin-bottom:8px;">${_sendDocTemplate(_sendSheetState.docType, _sendSheetState.emailLang, custName, escapeHtml(currentOrgName || ''), orderNumLabel, _sendSheetState.docNumber, sumLabel)}</textarea>
-            <div class="send-attachment-row" style="margin-bottom:14px;">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6b675d" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
-                <span id="sendAttachmentName">${_sendAttachmentName(_sendSheetState.docType, _sendSheetState.emailLang, _sendSheetState.docNumber, orderNumLabel)}</span>
-            </div>
-            <label class="flex items-center gap-1.5" style="margin-bottom:10px; cursor:pointer;">
-                <input type="checkbox" id="sendBccSelf" ${_sendSheetState.bccSelf ? 'checked' : ''} onchange="_sendSheetState.bccSelf = this.checked;" class="w-4 h-4" style="accent-color:#7c9473;">
-                <span style="font-size:13px; color:#3c3a34;">${t('send_bcc_self_label')}</span>
-            </label>
-            <p style="font-size:13px; color:#6b675d; margin:0 0 6px;">${t('send_extra_cc_label')}</p>
-            <input type="text" id="sendExtraCc" placeholder="${t('send_extra_cc_placeholder')}" class="border p-2 rounded-xl table-text w-full" style="margin-bottom:14px;">
-            <button class="pill-btn w-full justify-center" id="sendDocSubmitBtn" onclick="submitSendDocument()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75A2.25 2.25 0 014.5 4.5h15A2.25 2.25 0 0121.75 6.75v10.5A2.25 2.25 0 0119.5 19.5h-15a2.25 2.25 0 01-2.25-2.25V6.75zm0 0l9.75 6.75 9.75-6.75"/></svg>
-                <span>${t('send_button')}</span>
-            </button>`;
+        document.getElementById('sendDocumentSheet').style.display = 'flex';
+        return;
     }
+
+    // Резервируем номер документа СЕЙЧАС, до отрисовки текста письма — см.
+    // комментарий у _reserveDocSnapshot. Без email резервировать смысла нет
+    // (см. return выше), поэтому этот шаг только в ветке "email есть".
+    showLoading(t('customers_pdf_generating'));
+    try {
+        _sendSheetState.snapshot = await _reserveDocSnapshot(order, _sendSheetState.docType);
+        _sendSheetState.docNumber = _formatDocNumber(_sendSheetState.docType, _sendSheetState.snapshot.number);
+    } catch (e) {
+        console.error(e);
+        hideLoading();
+        showInfo(t('inv_doc_error_prefix') + (e && e.message ? e.message : t('inv_unknown_error')));
+        return;
+    }
+    hideLoading();
+
+    const orderNumLabel = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
+    const sumLabel = formatMoney(orderGrandTotal(order));
+    body.innerHTML = `
+        <div class="send-doctype-switch" style="margin-bottom:14px;">
+            <button id="sendDocTypeInvoice" class="${_sendSheetState.docType === 'invoice' ? 'active' : ''}" onclick="selectSendDocType('invoice')">${t('orders_doc_invoice')}</button>
+            <button id="sendDocTypeDelivery" class="${_sendSheetState.docType === 'delivery_note' ? 'active' : ''}" onclick="selectSendDocType('delivery_note')">${t('orders_doc_delivery_note')}</button>
+        </div>
+        <div class="send-recipient-row" style="margin-bottom:14px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b675d" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
+            <span class="email-value" id="sendRecipientEmail">${escapeHtml(cust.email)}</span>
+            <span class="send-edit-link" onclick="openEmailQuickEdit(${cust.id})">${t('send_edit_email')}</span>
+        </div>
+        <div class="flex items-center justify-between" style="margin-bottom:6px;">
+            <p style="font-size:13px; color:#6b675d; margin:0;">${t('send_body_label')}</p>
+            <p style="font-size:11px; color:#9a9488; margin:0;">${t('send_letter_lang_label')}</p>
+        </div>
+        ${_renderSendEmailLangSwitch()}
+        <textarea id="sendEmailBody" rows="6" class="border p-2 rounded-xl table-text w-full resize-none" style="margin-bottom:8px;">${_sendDocTemplate(_sendSheetState.docType, _sendSheetState.emailLang, custName, escapeHtml(currentOrgName || ''), orderNumLabel, _sendSheetState.docNumber, sumLabel)}</textarea>
+        <div class="send-attachment-row" style="margin-bottom:14px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6b675d" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
+            <span id="sendAttachmentName">${_sendAttachmentName(_sendSheetState.docType, _sendSheetState.emailLang, _sendSheetState.docNumber, orderNumLabel)}</span>
+        </div>
+        <label class="flex items-center gap-1.5" style="margin-bottom:10px; cursor:pointer;">
+            <input type="checkbox" id="sendBccSelf" ${_sendSheetState.bccSelf ? 'checked' : ''} onchange="_sendSheetState.bccSelf = this.checked;" class="w-4 h-4" style="accent-color:#7c9473;">
+            <span style="font-size:13px; color:#3c3a34;">${t('send_bcc_self_label')}</span>
+        </label>
+        <p style="font-size:13px; color:#6b675d; margin:0 0 6px;">${t('send_extra_cc_label')}</p>
+        <input type="text" id="sendExtraCc" placeholder="${t('send_extra_cc_placeholder')}" class="border p-2 rounded-xl table-text w-full" style="margin-bottom:14px;">
+        <button class="pill-btn w-full justify-center" id="sendDocSubmitBtn" onclick="submitSendDocument()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75A2.25 2.25 0 014.5 4.5h15A2.25 2.25 0 0121.75 6.75v10.5A2.25 2.25 0 0119.5 19.5h-15a2.25 2.25 0 01-2.25-2.25V6.75zm0 0l9.75 6.75 9.75-6.75"/></svg>
+            <span>${t('send_button')}</span>
+        </button>`;
 
     document.getElementById('sendDocumentSheet').style.display = 'flex';
 }
@@ -275,9 +289,19 @@ async function selectSendDocType(docType) {
     document.getElementById('sendDocTypeInvoice').classList.toggle('active', docType === 'invoice');
     document.getElementById('sendDocTypeDelivery').classList.toggle('active', docType === 'delivery_note');
 
-    // У Счёта и Накладной РАЗНЫЕ номера — при переключении типа обязательно
-    // перепроверяем существующий номер заново, а не переиспользуем от другого типа.
-    _sendSheetState.docNumber = await _fetchExistingDocNumber(_sendSheetState.orderId, docType);
+    // У Счёта и Накладной РАЗНЫЕ номера — при переключении типа резервируем
+    // номер заново под новый тип (та же логика, что при открытии шита).
+    showLoading(t('customers_pdf_generating'));
+    try {
+        _sendSheetState.snapshot = await _reserveDocSnapshot(order, docType);
+        _sendSheetState.docNumber = _formatDocNumber(docType, _sendSheetState.snapshot.number);
+    } catch (e) {
+        console.error(e);
+        hideLoading();
+        showInfo(t('inv_doc_error_prefix') + (e && e.message ? e.message : t('inv_unknown_error')));
+        return;
+    }
+    hideLoading();
 
     const orderNumLabel = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
     const sumLabel = formatMoney(orderGrandTotal(order));
@@ -308,18 +332,19 @@ async function selectSendEmailLang(lang) {
     document.getElementById('sendAttachmentName').textContent = _sendAttachmentName(_sendSheetState.docType, lang, _sendSheetState.docNumber, orderNumLabel);
 }
 
-// Реальная отправка: замораживает/обновляет снимок документа (та же логика,
-// что и просмотр — freezeDocumentSnapshot из invoice.js, номер не дублируется),
-// генерирует PDF на выбранном языке письма, кодирует в base64 и вызывает
+// Реальная отправка: номер документа УЖЕ зарезервирован при открытии шита
+// (см. _reserveDocSnapshot в openSendDocumentSheet/selectSendDocType) — здесь
+// просто переиспользуем готовый снимок, без повторного похода в базу.
+// Генерирует PDF на выбранном языке письма, кодирует в base64 и вызывает
 // Edge Function send-document-email (она уже сама зовёт Resend). При успехе
 // фиксирует факт отправки — recordDocumentSent(...,'email') — самолётик
 // на карточке появится сразу.
 async function submitSendDocument() {
     if (!_sendSheetState) return;
-    const { orderId, docType, custId, emailLang } = _sendSheetState;
+    const { orderId, docType, custId, emailLang, snapshot } = _sendSheetState;
     const order = orders.find(o => o.id === orderId);
     const cust = customers.find(c => c.id === custId);
-    if (!order || !cust || !cust.email) return;
+    if (!order || !cust || !cust.email || !snapshot) return;
 
     const btn = document.getElementById('sendDocSubmitBtn');
 
@@ -338,21 +363,10 @@ async function submitSendDocument() {
     showLoading(t('customers_pdf_generating'));
 
     try {
-        // Как и в openOrderDocumentPreview — проверяем номер напрямую в базе,
-        // а не в локальном кэше orders, чтобы не разойтись с сервером.
-        const field = snapshotField(docType);
-        const { data: freshRow, error: freshErr } = await db.from('orders').select(field).eq('id', order.id).single();
-        if (freshErr) throw freshErr;
-        const existing = freshRow ? freshRow[field] : null;
-        const snapshot = await freezeDocumentSnapshot(order, docType, existing);
-
         await ensureLangLoaded(emailLang);
         const pdf = await buildDocumentPdf(docType, snapshot, emailLang);
         const pdfBase64 = pdf.output('datauristring').split(',')[1];
 
-        // Здесь номер документа УЖЕ гарантированно есть (freezeDocumentSnapshot
-        // только что либо переиспользовал существующий, либо присвоил новый) —
-        // поэтому тема и имя файла всегда точно совпадают с тем, что на самом PDF.
         // Текст письма (bodyText) НЕ пересобираем — берём как есть из textarea,
         // чтобы не затереть возможные ручные правки пекаря.
         const orderNumLabel = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
