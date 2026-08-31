@@ -711,7 +711,8 @@ async function shareOrderDocumentPdf() {
         ru: { invoice: 'schet', delivery_note: 'nakladnaya' },
     };
     const filenameBase = (filenameBaseByLang[lang] || filenameBaseByLang.en)[docType === 'invoice' ? 'invoice' : 'delivery_note'];
-    const filename = `${filenameBase}_${snapshot.number}.pdf`;
+    const numberPrefix = docType === 'invoice' ? 'INV-' : 'DN-';
+    const filename = `${filenameBase}_${numberPrefix}${snapshot.number}.pdf`;
 
     showLoading(t('customers_pdf_generating'));
     try {

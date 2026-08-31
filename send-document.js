@@ -139,27 +139,65 @@ function tLang(key, lang) {
     return key;
 }
 
-function _sendDocTemplate(docType, lang, custName, orgName, orderNumLabel, sumLabel) {
+function _sendDocTemplate(docType, lang, custName, orgName, orderNumLabel, docNumberLabel, sumLabel) {
     const docLabel = docType === 'invoice' ? tLang('orders_doc_invoice', lang) : tLang('orders_doc_delivery_note', lang);
-    return tLang('send_body_template', lang)
+    const key = docNumberLabel ? 'send_body_template_known' : 'send_body_template_new';
+    return tLang(key, lang)
         .replace('{customer}', custName)
         .replace('{doc_label}', docLabel.toLowerCase())
         .replace('{order_number}', orderNumLabel)
+        .replace('{doc_number}', docNumberLabel || '')
         .replace('{sum}', sumLabel)
         .replace('{org_name}', orgName);
 }
 
-function _sendAttachmentName(docType, lang, orderNumLabel) {
+// Имя вложения: если документ для этого заказа уже когда-то генерировался —
+// используем его реальный номер (совпадает с тем, что видно на самом PDF).
+// Если это первая генерация — временно используем номер заказа, до момента
+// реальной отправки (см. submitSendDocument — там имя пересчитывается заново
+// с уже гарантированно присвоенным номером документа).
+function _sendAttachmentName(docType, lang, docNumberLabel, orderNumLabel) {
     const base = docType === 'invoice' ? tLang('send_attachment_base_invoice', lang) : tLang('send_attachment_base_delivery', lang);
-    return `${base}_${orderNumLabel}.pdf`;
+    return `${base}_${docNumberLabel || orderNumLabel}.pdf`;
 }
 
-function _sendSubject(docType, lang, orderNumLabel, orgName) {
+function _sendSubject(docType, lang, orderNumLabel, docNumberLabel, orgName) {
     const docLabel = docType === 'invoice' ? tLang('orders_doc_invoice', lang) : tLang('orders_doc_delivery_note', lang);
-    return tLang('send_subject_template', lang)
+    const key = docNumberLabel ? 'send_subject_template_known' : 'send_subject_template_new';
+    return tLang(key, lang)
         .replace('{doc_label}', docLabel)
         .replace('{order_number}', orderNumLabel)
+        .replace('{doc_number}', docNumberLabel || '')
         .replace('{org_name}', orgName);
+}
+
+// Номер ЗАКАЗА (order.order_number) и номер ДОКУМЕНТА (свой отдельный счётчик,
+// присваивается только когда документ реально сформирован — snapshot.number)
+// — это два РАЗНЫХ значения, которые легко перепутать. Текст письма должен
+// явно ссылаться на правильный из них, а не показывать номер заказа так,
+// будто это номер документа (было именно так раньше — вводило в заблуждение,
+// см. обсуждение в чате 31.08.2026). Префикс INV-/DN- — тот же, что рисуется
+// на самом PDF (invoice.js, numberPrefix).
+function _formatDocNumber(docType, rawNumber) {
+    if (!rawNumber) return null;
+    return (docType === 'invoice' ? 'INV-' : 'DN-') + rawNumber;
+}
+
+// Смотрим, генерировался ли уже документ этого типа для заказа — БЕЗ траты
+// нового номера (простой SELECT). Если да — берём его реальный номер сразу
+// в предпросмотр письма, чтобы текст не противоречил тому, что окажется на
+// самом PDF после отправки.
+async function _fetchExistingDocNumber(orderId, docType) {
+    try {
+        const field = snapshotField(docType);
+        const { data, error } = await db.from('orders').select(field).eq('id', orderId).single();
+        if (error) throw error;
+        const snap = data ? data[field] : null;
+        return _formatDocNumber(docType, snap && snap.number);
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
 }
 
 function _renderSendEmailLangSwitch() {
@@ -191,6 +229,7 @@ async function openSendDocumentSheet(orderId, docType) {
     } else {
         const orderNumLabel = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
         const sumLabel = formatMoney(orderGrandTotal(order));
+        _sendSheetState.docNumber = await _fetchExistingDocNumber(orderId, _sendSheetState.docType);
         body.innerHTML = `
             <div class="send-doctype-switch" style="margin-bottom:14px;">
                 <button id="sendDocTypeInvoice" class="${_sendSheetState.docType === 'invoice' ? 'active' : ''}" onclick="selectSendDocType('invoice')">${t('orders_doc_invoice')}</button>
@@ -206,10 +245,10 @@ async function openSendDocumentSheet(orderId, docType) {
                 <p style="font-size:11px; color:#9a9488; margin:0;">${t('send_letter_lang_label')}</p>
             </div>
             ${_renderSendEmailLangSwitch()}
-            <textarea id="sendEmailBody" rows="6" class="border p-2 rounded-xl table-text w-full resize-none" style="margin-bottom:8px;">${_sendDocTemplate(_sendSheetState.docType, _sendSheetState.emailLang, custName, escapeHtml(currentOrgName || ''), orderNumLabel, sumLabel)}</textarea>
+            <textarea id="sendEmailBody" rows="6" class="border p-2 rounded-xl table-text w-full resize-none" style="margin-bottom:8px;">${_sendDocTemplate(_sendSheetState.docType, _sendSheetState.emailLang, custName, escapeHtml(currentOrgName || ''), orderNumLabel, _sendSheetState.docNumber, sumLabel)}</textarea>
             <div class="send-attachment-row" style="margin-bottom:14px;">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6b675d" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
-                <span id="sendAttachmentName">${_sendAttachmentName(_sendSheetState.docType, _sendSheetState.emailLang, orderNumLabel)}</span>
+                <span id="sendAttachmentName">${_sendAttachmentName(_sendSheetState.docType, _sendSheetState.emailLang, _sendSheetState.docNumber, orderNumLabel)}</span>
             </div>
             <label class="flex items-center gap-1.5" style="margin-bottom:10px; cursor:pointer;">
                 <input type="checkbox" id="sendBccSelf" ${_sendSheetState.bccSelf ? 'checked' : ''} onchange="_sendSheetState.bccSelf = this.checked;" class="w-4 h-4" style="accent-color:#7c9473;">
@@ -226,7 +265,7 @@ async function openSendDocumentSheet(orderId, docType) {
     document.getElementById('sendDocumentSheet').style.display = 'flex';
 }
 
-function selectSendDocType(docType) {
+async function selectSendDocType(docType) {
     if (!_sendSheetState) return;
     _sendSheetState.docType = docType;
     const order = orders.find(o => o.id === _sendSheetState.orderId);
@@ -236,15 +275,20 @@ function selectSendDocType(docType) {
     document.getElementById('sendDocTypeInvoice').classList.toggle('active', docType === 'invoice');
     document.getElementById('sendDocTypeDelivery').classList.toggle('active', docType === 'delivery_note');
 
+    // У Счёта и Накладной РАЗНЫЕ номера — при переключении типа обязательно
+    // перепроверяем существующий номер заново, а не переиспользуем от другого типа.
+    _sendSheetState.docNumber = await _fetchExistingDocNumber(_sendSheetState.orderId, docType);
+
     const orderNumLabel = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
     const sumLabel = formatMoney(orderGrandTotal(order));
-    document.getElementById('sendEmailBody').value = _sendDocTemplate(docType, _sendSheetState.emailLang, escapeHtml(order.customer || t('orders_no_customer')), escapeHtml(currentOrgName || ''), orderNumLabel, sumLabel);
-    document.getElementById('sendAttachmentName').textContent = _sendAttachmentName(docType, _sendSheetState.emailLang, orderNumLabel);
+    document.getElementById('sendEmailBody').value = _sendDocTemplate(docType, _sendSheetState.emailLang, escapeHtml(order.customer || t('orders_no_customer')), escapeHtml(currentOrgName || ''), orderNumLabel, _sendSheetState.docNumber, sumLabel);
+    document.getElementById('sendAttachmentName').textContent = _sendAttachmentName(docType, _sendSheetState.emailLang, _sendSheetState.docNumber, orderNumLabel);
 }
 
 // Переключает ЯЗЫК ПИСЬМА (не интерфейса) — подгружает словарь выбранного
 // языка при первом обращении к нему (LT/UK и т.п. грузятся лениво), затем
-// перегенерирует текст письма и имя вложения на этом языке.
+// перегенерирует текст письма и имя вложения на этом языке. Номер документа
+// НЕ пересматриваем — тип документа не менялся, значение уже в _sendSheetState.docNumber.
 async function selectSendEmailLang(lang) {
     if (!_sendSheetState || !AVAILABLE_LANGS.includes(lang)) return;
     const order = orders.find(o => o.id === _sendSheetState.orderId);
@@ -260,8 +304,8 @@ async function selectSendEmailLang(lang) {
 
     const orderNumLabel = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
     const sumLabel = formatMoney(orderGrandTotal(order));
-    document.getElementById('sendEmailBody').value = _sendDocTemplate(_sendSheetState.docType, lang, escapeHtml(order.customer || t('orders_no_customer')), escapeHtml(currentOrgName || ''), orderNumLabel, sumLabel);
-    document.getElementById('sendAttachmentName').textContent = _sendAttachmentName(_sendSheetState.docType, lang, orderNumLabel);
+    document.getElementById('sendEmailBody').value = _sendDocTemplate(_sendSheetState.docType, lang, escapeHtml(order.customer || t('orders_no_customer')), escapeHtml(currentOrgName || ''), orderNumLabel, _sendSheetState.docNumber, sumLabel);
+    document.getElementById('sendAttachmentName').textContent = _sendAttachmentName(_sendSheetState.docType, lang, _sendSheetState.docNumber, orderNumLabel);
 }
 
 // Реальная отправка: замораживает/обновляет снимок документа (та же логика,
@@ -306,9 +350,15 @@ async function submitSendDocument() {
         const pdf = await buildDocumentPdf(docType, snapshot, emailLang);
         const pdfBase64 = pdf.output('datauristring').split(',')[1];
 
+        // Здесь номер документа УЖЕ гарантированно есть (freezeDocumentSnapshot
+        // только что либо переиспользовал существующий, либо присвоил новый) —
+        // поэтому тема и имя файла всегда точно совпадают с тем, что на самом PDF.
+        // Текст письма (bodyText) НЕ пересобираем — берём как есть из textarea,
+        // чтобы не затереть возможные ручные правки пекаря.
         const orderNumLabel = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
-        const pdfFilename = _sendAttachmentName(docType, emailLang, orderNumLabel);
-        const subject = _sendSubject(docType, emailLang, orderNumLabel, currentOrgName || '');
+        const docNumberLabel = _formatDocNumber(docType, snapshot.number);
+        const pdfFilename = _sendAttachmentName(docType, emailLang, docNumberLabel, orderNumLabel);
+        const subject = _sendSubject(docType, emailLang, orderNumLabel, docNumberLabel, currentOrgName || '');
         const bodyText = document.getElementById('sendEmailBody').value;
 
         const { data: result, error: fnError } = await db.functions.invoke('send-document-email', {
