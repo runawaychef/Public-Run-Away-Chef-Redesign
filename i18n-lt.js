@@ -914,6 +914,8 @@ I18N.lt = {
         log_position_added: 'Pridėta pozicija',
         log_to_order: 'į užsakymą',
         log_position_changed: 'Pakeista pozicija',
+        log_doc_email_sent: 'išsiųsta el. paštu',
+        log_doc_shared: 'išsiųsta per "Bendrinti"',
         log_in_order: 'užsakyme',
         log_cost_recalculated: 'Perskaičiuota užsakymo savikaina',
         log_by_current_recipe: 'pagal galiojantį receptą',

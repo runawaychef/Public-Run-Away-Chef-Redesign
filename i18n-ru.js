@@ -924,6 +924,8 @@ I18N.ru = {
         log_position_added: 'Добавлена позиция',
         log_to_order: 'в заказ',
         log_position_changed: 'Изменена позиция',
+        log_doc_email_sent: 'отправлен на email',
+        log_doc_shared: 'отправлен через "Поделиться"',
         log_in_order: 'в заказе',
         log_cost_recalculated: 'Пересчитана себестоимость заказа',
         log_by_current_recipe: 'по актуальному рецепту',

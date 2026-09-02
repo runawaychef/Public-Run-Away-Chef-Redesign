@@ -914,6 +914,8 @@ I18N.uk = {
         log_position_added: 'Додано позицію',
         log_to_order: 'до замовлення',
         log_position_changed: 'Змінено позицію',
+        log_doc_email_sent: 'надіслано на email',
+        log_doc_shared: 'надіслано через "Поділитися"',
         log_in_order: 'у замовленні',
         log_cost_recalculated: 'Перераховано собівартість замовлення',
         log_by_current_recipe: 'за актуальним рецептом',

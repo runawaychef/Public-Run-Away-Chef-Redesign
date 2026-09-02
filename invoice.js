@@ -720,6 +720,8 @@ async function shareOrderDocumentPdf() {
         const shared = await pdfSaveOrShare(pdf, filename);
         if (shared) {
             await recordDocumentSent(currentOrderId, docType, 'share');
+            const docLabel = docType === 'invoice' ? t('orders_doc_invoice') : t('orders_doc_delivery_note');
+            logActivity('order', `${docLabel} ${numberPrefix}${snapshot.number} ${t('log_doc_shared')}`, currentOrderId);
         }
     } catch (e) {
         console.error(e);

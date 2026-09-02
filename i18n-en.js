@@ -925,6 +925,8 @@ I18N.en = {
         log_position_added: 'Item added',
         log_to_order: 'to order',
         log_position_changed: 'Item updated',
+        log_doc_email_sent: 'sent by email',
+        log_doc_shared: 'sent via "Share"',
         log_in_order: 'in order',
         log_cost_recalculated: 'Order cost recalculated',
         log_by_current_recipe: 'using the current recipe',

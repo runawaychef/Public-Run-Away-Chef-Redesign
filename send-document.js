@@ -392,6 +392,8 @@ async function submitSendDocument() {
         if (!result || !result.success) throw new Error((result && result.error) || 'send failed');
 
         await recordDocumentSent(orderId, docType, 'email', result.id);
+        const docLabel = docType === 'invoice' ? t('orders_doc_invoice') : t('orders_doc_delivery_note');
+        logActivity('order', `${docLabel} ${docNumberLabel} ${t('log_doc_email_sent')} (${cust.email})`, orderId);
         closeModal();
         showInfo(t('send_success'));
     } catch (e) {
