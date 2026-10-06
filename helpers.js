@@ -281,7 +281,13 @@ function updateProductSelects() {
     // Для строки добавления / редактирования позиции в детальном виде заказа
     setupSearchDropdown('newItemProduct', 'newItemProductDropdown',
         () => products.slice().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).map(p => p.name),
-        () => autoFillNewItemPrice());
+        () => {
+            autoFillNewItemPrice();
+            // Убираем фокус: клавиатура закрывается сразу, макет успокаивается ДО нажатия
+            // на "Добавить" (иначе кнопка сдвигалась между касанием и отпусканием)
+            const inp = document.getElementById('newItemProduct');
+            if (inp) inp.blur();
+        });
     setupSearchDropdown('editItemProduct', 'editItemProductDropdown',
         () => products.slice().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).map(p => p.name),
         () => autoFillEditItemPrice());

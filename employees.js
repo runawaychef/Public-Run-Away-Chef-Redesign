@@ -514,6 +514,7 @@ async function selectEmployee(emp) {
     // без O(n²), см. фикс indexOf), гарантирует верные остатки независимо
     // от того, какой из двух запросов реально закончился первым.
     await Promise.all([loadAllData(), loadInventory()]);
+    if (typeof cleanupAbandonedDrafts === 'function') await cleanupAbandonedDrafts();
     if (typeof displayIngredients === 'function') displayIngredients();
     if (typeof displaySemiFinished === 'function') displaySemiFinished();
     initRealtime();

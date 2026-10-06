@@ -1302,6 +1302,28 @@ function onDetailCustomerChange() {
 // чтобы в базе не копились пустые заказы "(удалённый клиент)".
 let _draftOrderIds = new Set();
 
+// Страховка на случай, когда приложение убили (смахнули) на карточке нового заказа:
+// список _draftOrderIds живёт только в памяти, и пустой черновик оставался в базе.
+// Вызывается один раз после первой загрузки данных. Удаляем только СВОИ черновики:
+// не подтверждены, без позиций, не открыты сейчас.
+async function cleanupAbandonedDrafts() {
+    try {
+        const myId = currentEmployee ? currentEmployee.id : null;
+        if (!myId) return;
+        const stale = orders.filter(o =>
+            !o.is_confirmed && o.created_by === myId &&
+            (!o.items || o.items.length === 0) &&
+            o.id !== currentOrderId && !_draftOrderIds.has(o.id));
+        for (const o of stale) {
+            const { error } = await db.from('orders').delete().eq('id', o.id);
+            if (error) { console.error('Не удалось удалить брошенный черновик:', error); continue; }
+            const idx = orders.findIndex(x => x.id === o.id);
+            if (idx !== -1) orders.splice(idx, 1);
+        }
+        if (stale.length) displayOrders();
+    } catch (e) { console.error('cleanupAbandonedDrafts:', e); }
+}
+
 async function cleanupOrderDraftIfEmpty(orderId) {
     if (!_draftOrderIds.has(orderId)) return;
     _draftOrderIds.delete(orderId);
@@ -1675,10 +1697,20 @@ function renderDetailItems(order) {
     if (profitPctEl) profitPctEl.textContent = profitPct.toFixed(1);
 }
 
+let _addingItem = false; // защита от двойного срабатывания (pointerup + повторное касание)
 async function addItemToOrder() {
+    if (_addingItem) return;
+    // Закрываем все календари/выпадающие списки — открытый невидимый слой мог перехватывать нажатия
+    if (typeof closeAllCalendarPopups === 'function') closeAllCalendarPopups();
+    if (typeof closeAllOrderStatusDropdowns === 'function') closeAllOrderStatusDropdowns();
     suppressRealtimeFor3s();
     const order = orders.find(o => o.id === currentOrderId);
-    if (!order) return;
+    if (!order) {
+        // раньше здесь был тихий выход — кнопка просто "не работала" без объяснений
+        console.error('addItemToOrder: заказ не найден, currentOrderId =', currentOrderId);
+        showInfo(t('error_save_check_connection'));
+        return;
+    }
     const productName = document.getElementById('newItemProduct').value;
     const quantity = parseFloat(document.getElementById('newItemQty').value);
     const price    = parseFloat(document.getElementById('newItemPrice').value);
@@ -1689,6 +1721,7 @@ async function addItemToOrder() {
     if (!prod) { showInfo(t('orders_product_not_found')); return; }
     const itemCost = parseFloat((productUnitCost(prod) * quantity).toFixed(4));
 
+    _addingItem = true;
     showLoading();
     try {
         const { data, error } = await db.from('order_items').insert({
@@ -1735,7 +1768,7 @@ async function addItemToOrder() {
         document.getElementById('newItemQty').value    = '';
         document.getElementById('newItemPrice').value  = '';
     } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
-    finally { hideLoading(); }
+    finally { _addingItem = false; hideLoading(); }
 }
 
 function autoFillNewItemPrice() {
