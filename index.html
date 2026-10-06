@@ -32,7 +32,7 @@
            десктопный вид. max-width: 100vw + overflow-x: hidden исключают
            этот сценарий в принципе. */
         html { overflow-x: hidden; max-width: 100vw; }
-        body { overflow-x: hidden; max-width: 100vw; background: #f4f1ea; padding-bottom: calc(60px + env(safe-area-inset-bottom)); }
+        body { overflow-x: hidden; max-width: 100vw; background: #f4f1ea; padding-bottom: calc(72px + env(safe-area-inset-bottom)); }
         /* Пока Tailwind CDN не скомпилировал и не применил стили (он делает это
            уже в браузере пользователя, а не заранее, поэтому при холодной
            загрузке страница долю секунды выглядит нестилизованной — как
@@ -232,7 +232,7 @@
 
         /* Realtime-тост */
         #realtimeToast {
-            position: fixed; bottom: calc(136px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
+            position: fixed; bottom: calc(144px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
             background: #1f2937; color: #fff;
             padding: 8px 16px; border-radius: 20px;
             font-size: 13px; white-space: nowrap;
@@ -244,7 +244,7 @@
 
         /* Тост подтверждения автосохранения поля в карточке */
         #autosaveToast {
-            position: fixed; bottom: calc(136px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
+            position: fixed; bottom: calc(144px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
             background: #7c9473; color: #fff;
             padding: 8px 16px; border-radius: 20px;
             font-size: 13px; white-space: nowrap;
@@ -310,7 +310,7 @@
 
         /* ── FAB кнопка "+" — создание новой записи ── */
         #fabAddBtn {
-            position: fixed; right: 16px; bottom: calc(80px + env(safe-area-inset-bottom));
+            position: fixed; right: 16px; bottom: calc(88px + env(safe-area-inset-bottom));
             width: 56px; height: 56px; border-radius: 50%;
             background: linear-gradient(135deg, #8fa885, #7c9473);
             color: white; border: none;
@@ -344,10 +344,19 @@
            onclick="showTab('...')", так что document.querySelector по onclick
            и TAB_ORDER продолжают работать как раньше. ── */
         #bottomNav {
-            position: fixed; left: 0; right: 0; bottom: 0; z-index: 150;
+            /* Плавающая «таблетка» на белой подложке со скруглением — как верхняя шапка
+               (bg-white rounded-xl shadow-md, отступ 8px от краёв экрана) */
+            position: fixed; left: 8px; right: 8px; bottom: max(8px, env(safe-area-inset-bottom)); z-index: 150;
             display: flex; background: #ffffff;
-            box-shadow: 0 -1px 4px rgba(0,0,0,0.06);
-            padding-bottom: env(safe-area-inset-bottom);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -2px rgba(0,0,0,0.1);
+            max-width: 42rem; margin: 0 auto; /* как container max-w-2xl у шапки */
+        }
+        /* Подложка цвета страницы под плавающей панелью — чтобы карточки,
+           прокручиваясь, не просвечивали в зазорах (как у sticky-шапки сверху) */
+        body::after {
+            content: ""; position: fixed; left: 0; right: 0; bottom: 0; z-index: 149;
+            height: calc(72px + env(safe-area-inset-bottom)); background: #f4f1ea; pointer-events: none;
         }
         .bottom-nav-item {
             flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
