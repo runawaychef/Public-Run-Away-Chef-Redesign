@@ -788,7 +788,9 @@ function getFilteredOrdersForList() {
     const dateTo    = document.getElementById('orderDateTo')   ? document.getElementById('orderDateTo').value   : '';
     const employeeFilter = document.getElementById('orderEmployeeFilter') ? document.getElementById('orderEmployeeFilter').value : '';
     const paymentFilter  = document.getElementById('orderPaymentFilter')  ? document.getElementById('orderPaymentFilter').value  : '';
-    let filtered = [...orders];
+    // Пустые черновики (не подтверждены, без клиента и позиций) в списке не показываем —
+    // это либо заказ, который сейчас заполняют, либо брошенный черновик, ожидающий удаления
+    let filtered = orders.filter(o => o.is_confirmed || o.customer_id || (o.items && o.items.length > 0));
     if (selectedOrderCustomers.length > 0) filtered = filtered.filter(o => selectedOrderCustomers.includes(o.customer));
     if (employeeFilter) filtered = filtered.filter(o => String(o.employee_id) === employeeFilter);
     if (paymentFilter) {
@@ -1332,10 +1334,14 @@ async function cleanupOrderDraftIfEmpty(orderId) {
     const order = orders[idx];
     // Не удаляем если выбран клиент, ИЛИ уже добавлены позиции, ИЛИ заказ подтверждён вручную
     if (order.customer_id || (order.items && order.items.length > 0) || order.is_confirmed) return;
+    // Убираем из локального списка сразу — не ждём ответа сервера, иначе пустой заказ
+    // успевает мелькнуть в списке, а при медленной сети остаётся в нём
+    orders.splice(idx, 1);
+    suppressRealtimeFor3s();
     try {
-        await db.from('orders').delete().eq('id', orderId);
-        orders.splice(idx, 1);
-    } catch (e) { console.error('Не удалось удалить пустой черновик заказа:', e); }
+        const { error } = await db.from('orders').delete().eq('id', orderId);
+        if (error) throw error;
+    } catch (e) { console.error('Не удалось удалить пустой черновик заказа (будет убран при следующем запуске):', e); }
 }
 
 // Кнопка "Сохранить" в шапке карточки заказа — подтверждает черновик вручную,
