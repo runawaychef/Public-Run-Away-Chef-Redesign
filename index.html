@@ -268,11 +268,17 @@
             40% { transform: scale(1); opacity: 1; }
         }
 
+        /* Три иконки шапки (Склад/Статистика/Настройки) позиционируются ЧИСТО через CSS,
+           от правого края карточки шапки: карточка = контейнер max-w-2xl (42rem) по центру
+           с отступом 8px + внутренний отступ иконок 8px. Раньше позицию считал JS по
+           getBoundingClientRect() и после возврата из фона/клавиатуры иногда ставил иконки
+           за пределы экрана — они «пропадали» до перезапуска. */
+        :root { --hdr-icons-right: calc((100vw - min(100vw, 42rem)) / 2 + 16px); }
         /* Кнопка настроек (шестерёнка) в правом верхнем углу.
            top учитывает безопасную зону iPhone (чёлка/динамический остров) —
            на Android env() равен 0, поведение не меняется. */
         #settingsBtn {
-            position: fixed; top: calc(6px + env(safe-area-inset-top)); right: 6px;
+            position: fixed; top: calc(max(8px, env(safe-area-inset-top)) + 8px); right: var(--hdr-icons-right);
             background: white; border: 1px solid #e5e7eb; border-radius: 50%;
             width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
             z-index: 150; box-shadow: 0 1px 3px rgba(0,0,0,0.08); cursor: pointer;
@@ -283,7 +289,7 @@
 
         /* Иконка "Статистика" — та же стилистика, что и шестерёнка, левее неё */
         #statsBtn {
-            position: fixed; top: calc(6px + env(safe-area-inset-top)); right: 46px;
+            position: fixed; top: calc(max(8px, env(safe-area-inset-top)) + 8px); right: calc(var(--hdr-icons-right) + 40px);
             background: white; border: 1px solid #e5e7eb; border-radius: 50%;
             width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
             z-index: 150; box-shadow: 0 1px 3px rgba(0,0,0,0.08); cursor: pointer;
@@ -294,7 +300,7 @@
 
         /* Иконка "Склад" — корзина, левее статистики */
         #inventoryBtn {
-            position: fixed; top: calc(6px + env(safe-area-inset-top)); right: 86px;
+            position: fixed; top: calc(max(8px, env(safe-area-inset-top)) + 8px); right: calc(var(--hdr-icons-right) + 80px);
             background: white; border: 1px solid #e5e7eb; border-radius: 50%;
             width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
             z-index: 150; box-shadow: 0 1px 3px rgba(0,0,0,0.08); cursor: pointer;
@@ -3085,7 +3091,7 @@
 <script src="history.js?v=9"></script>
 <script src="modals.js?v=13"></script>
 <script src="demoData.js?v=19"></script>
-<script src="helpers.js?v=33"></script>
+<script src="helpers.js?v=34"></script>
 <script>
 // SUPABASE_URL, SUPABASE_KEY, db перенесены в supabaseClient.js
 

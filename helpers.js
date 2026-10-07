@@ -155,32 +155,14 @@ function escapeHtml(str) {
 let _headerIconsResizeObserver = null, _headerIconsResizeTarget = null;
 
 function positionHeaderIcons() {
-    const headerCard = document.querySelector('#appStickyHeader .bg-white');
-    const btns = ['inventoryBtn', 'statsBtn', 'settingsBtn'].map(id => document.getElementById(id)).filter(Boolean);
-    if (!headerCard || !btns.length) return;
-
-    const rect = headerCard.getBoundingClientRect();
-    const BTN = 34, GAP = 6, PAD = 8; // 8px — тот же отступ, что и у карточки заказа (p-2), для единообразия
-    const groupWidth = btns.length * BTN + (btns.length - 1) * GAP;
-    let left = Math.round(rect.right - groupWidth - PAD);
-    const top = Math.round(rect.top + PAD);
-
-    btns.forEach(btn => {
-        btn.style.right = 'auto';
-        btn.style.left = left + 'px';
-        btn.style.top = top + 'px';
-        left += BTN + GAP;
+    // Позиционирование теперь целиком в CSS (см. --hdr-icons-right в index.html).
+    // Функция оставлена как «очиститель»: убирает inline-стили, которые могли остаться
+    // от прежней JS-логики, чтобы они не перебивали CSS.
+    ['inventoryBtn', 'statsBtn', 'settingsBtn'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) { btn.style.left = ''; btn.style.top = ''; btn.style.right = ''; }
     });
-
-    if (typeof ResizeObserver !== 'undefined' && _headerIconsResizeTarget !== headerCard) {
-        if (_headerIconsResizeObserver) _headerIconsResizeObserver.disconnect();
-        _headerIconsResizeObserver = new ResizeObserver(() => positionHeaderIcons());
-        _headerIconsResizeObserver.observe(headerCard);
-        _headerIconsResizeTarget = headerCard;
-    }
 }
-window.addEventListener('resize', positionHeaderIcons);
-if (window.visualViewport) window.visualViewport.addEventListener('resize', positionHeaderIcons);
 positionHeaderIcons();
 // Проблема, которую это решает: раньше имена/названия вставлялись прямо в
 // строку onclick="..." — если в названии попадалась кавычка (частый случай:
