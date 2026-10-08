@@ -491,8 +491,7 @@ function renderDoneOrderCard(order) {
     // Свайп-действия — "Копировать" в правой панели (кроме "Удалить" — заказ
     // уже выполнен, удалять из свайпа этого экрана не даём, только из полной
     // карточки). "Оплатить" — отдельная левая панель, свайп вправо, как и у
-    // активных карточек. Работает ТОЛЬКО в развёрнутом виде — см. data-no-swipe,
-    // переключается в toggleDoneCardExpand().
+    // активных карточек. Работает и в свёрнутом, и в развёрнутом виде.
     const realIdx = _ordersIndexById.get(order.id);
     let swipeBtns = '';
     let swipeBtnCount = 1;
@@ -518,27 +517,16 @@ function renderDoneOrderCard(order) {
     const swipeWrapStyle = ` style="--oc-swipe-x:-${swipeBtnCount * 72}px; --oc-swipe-pay-x:${leftBtnCount * 72}px;"`;
 
     return `
-    <div class="oc-swipe-wrap" data-no-swipe="1"${swipeWrapStyle}>
+    <div class="oc-swipe-wrap"${swipeWrapStyle}>
         <div class="oc-swipe-actions">${swipeBtns}</div>
         ${payPanel}
-        <div class="order-card done-card muted" id="orderCard-${order.id}">
+        <div class="order-card done-card" id="orderCard-${order.id}">
             <div class="oc-card-top">
                 <div class="stripe" style="background:${stripeColor};" data-role="stripe"></div>
                 ${_sentIconHtml(order) ? `<div class="oc-sent-badge">${_sentIconHtml(order)}</div>` : ''}
                 <div class="order-card-tap" onclick="handleDoneCardTap(event, ${order.id})">
                     <div class="order-card-body">
-                        <div data-role="collapsed-header">
-                            <div class="oc-row">
-                                <span class="oc-name">${escapeHtml(order.customer || t('orders_no_customer'))}</span>
-                                <span class="oc-sum">${total}</span>
-                            </div>
-                            <div class="oc-row" style="margin-top:1px;">
-                                <span></span>
-                                <span title="${statusLabel}" style="width:8px; height:8px; border-radius:50%; background:${statusColor}; display:inline-block;"></span>
-                            </div>
-                            <div class="oc-meta">${formatDateDMY(order.date)} · ${escapeHtml(oNum)}</div>
-                        </div>
-                        <div data-role="expanded-header" style="display:none;">
+                        <div data-role="header">
                             <div class="oc-header">
                                 <div class="oc-datebadge">
                                     <div class="oc-datebadge-month" style="background:${statusColor};">${dateBadge.month}</div>
@@ -584,22 +572,10 @@ function handleDoneCardTap(e, orderId) {
 function toggleDoneCardExpand(orderId) {
     const card = document.getElementById('orderCard-' + orderId);
     if (!card) return;
-    const wrap = card.closest('.oc-swipe-wrap');
+    // Свёрнутый и развёрнутый вид отличаются только списком позиций;
+    // шапка, статус и свайп-действия одинаковы в обоих видах.
     const expanded = card.classList.toggle('expanded');
-    card.classList.toggle('muted', !expanded);
     card.querySelector('[data-role="items"]').style.display = expanded ? 'block' : 'none';
-    card.querySelector('[data-role="collapsed-header"]').style.display = expanded ? 'none' : '';
-    card.querySelector('[data-role="expanded-header"]').style.display = expanded ? '' : 'none';
-    // Свайп-действия доступны только в развёрнутом виде — в свёрнутом закрываем
-    // панель, если она была открыта, и снова блокируем жест.
-    if (wrap) {
-        if (expanded) {
-            wrap.removeAttribute('data-no-swipe');
-        } else {
-            wrap.setAttribute('data-no-swipe', '1');
-            wrap.classList.remove('swiped-left', 'swiped-right');
-        }
-    }
 }
 
 function toggleOrderStatusDropdown(orderId) {
