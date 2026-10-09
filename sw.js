@@ -1,4 +1,4 @@
-const CACHE_NAME = 'runwaychef-public-cache-v461';
+const CACHE_NAME = 'runwaychef-public-cache-v462';
 const ASSETS = [
   './index.html',
   './i18n-core.js',
@@ -20,12 +20,7 @@ const ASSETS = [
   './notification-icon-192.png',
   './notification-icon-96.png',
   './product-placeholder.png',
-  './demo-croissant.jpg',
-  './demo-honeycake.jpg',
-  './demo-chococake.jpg',
-  './demo-berrytart.jpg',
-  './demo-cinnamonbun.jpg',
-  './demo-bananabread.jpg',
+  // demo-*.jpg в предзагрузке нет: нужны только демо-организации, закэшируются при первом показе
   './supabaseClient.js',
   './cache.js',
   './auth.js',
