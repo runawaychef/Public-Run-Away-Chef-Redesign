@@ -515,6 +515,8 @@ async function selectEmployee(emp) {
     // от того, какой из двух запросов реально закончился первым.
     await Promise.all([loadAllData(), loadInventory()]);
     if (typeof cleanupAbandonedDrafts === 'function') await cleanupAbandonedDrafts();
+    if (typeof cleanupAbandonedCustomerDrafts === 'function') await cleanupAbandonedCustomerDrafts();
+    if (typeof cleanupAbandonedSemiFinishedDrafts === 'function') await cleanupAbandonedSemiFinishedDrafts();
     if (typeof displayIngredients === 'function') displayIngredients();
     if (typeof displaySemiFinished === 'function') displaySemiFinished();
     initRealtime();

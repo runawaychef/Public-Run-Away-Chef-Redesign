@@ -259,11 +259,34 @@ async function cleanupSemiFinishedDraftIfEmpty(sfId) {
     const idx = semiFinished.findIndex(s => s.id === sfId);
     if (idx === -1) return;
     if (semiFinished[idx].name && semiFinished[idx].name.trim()) return; // название вписали — уже не пустой черновик
+    // Убираем из локального списка сразу; ошибку удаления проверяем (supabase-js её не бросает)
+    semiFinished.splice(idx, 1);
+    suppressRealtimeFor3s();
     try {
-        suppressRealtimeFor3s();
-        await db.from('semi_finished').delete().eq('id', sfId);
-        semiFinished.splice(idx, 1);
-    } catch (e) { console.error('Не удалось удалить пустой черновик полуфабриката:', e); }
+        const { error } = await db.from('semi_finished').delete().eq('id', sfId);
+        if (error) throw error;
+    } catch (e) { console.error('Не удалось удалить пустой черновик полуфабриката (будет убран при следующем запуске):', e); }
+}
+
+// Страховка на случай, когда приложение убили на карточке нового полуфабриката:
+// список _draftSemiFinishedIds живёт только в памяти. Вызывается один раз после первой
+// загрузки данных. Удаляем только полностью пустые: без названия, без рецепта и не
+// используемые ни в одном изделии.
+async function cleanupAbandonedSemiFinishedDrafts() {
+    try {
+        const usedIds = new Set();
+        (products || []).forEach(p => (p.ingredients || []).forEach(ri => { if (ri.semi_finished_id != null) usedIds.add(ri.semi_finished_id); }));
+        const stale = semiFinished.filter(sf =>
+            !(sf.name && sf.name.trim()) && !(sf.ingredients && sf.ingredients.length) &&
+            !usedIds.has(sf.id) && sf.id !== currentSemiFinishedId && !_draftSemiFinishedIds.has(sf.id));
+        for (const sf of stale) {
+            const { error } = await db.from('semi_finished').delete().eq('id', sf.id);
+            if (error) { console.error('Не удалось удалить брошенный черновик полуфабриката:', error); continue; }
+            const idx = semiFinished.findIndex(x => x.id === sf.id);
+            if (idx !== -1) semiFinished.splice(idx, 1);
+        }
+        if (stale.length) displaySemiFinished();
+    } catch (e) { console.error('cleanupAbandonedSemiFinishedDrafts:', e); }
 }
 
 // Копирует полуфабрикат (название/размер партии/единица/доп.расходы — без рецепта,

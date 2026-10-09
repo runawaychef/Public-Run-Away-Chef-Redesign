@@ -165,10 +165,37 @@ async function cleanupCustomerDraftIfEmpty(custId) {
     const idx = customers.findIndex(c => c.id === custId);
     if (idx === -1) return;
     if (customers[idx].name && customers[idx].name.trim()) return; // имя вписали — это уже не пустой черновик
+    // Убираем из локального списка сразу, не дожидаясь сервера; ошибку удаления проверяем
+    // (supabase-js её не бросает, а возвращает) — иначе брошенный черновик оставался в базе молча.
+    customers.splice(idx, 1);
+    suppressRealtimeFor3s();
     try {
-        await db.from('customers').delete().eq('id', custId);
-        customers.splice(idx, 1);
-    } catch (e) { console.error('Не удалось удалить пустой черновик клиента:', e); }
+        const { error } = await db.from('customers').delete().eq('id', custId);
+        if (error) throw error;
+    } catch (e) { console.error('Не удалось удалить пустой черновик клиента (будет убран при следующем запуске):', e); }
+}
+
+// Страховка на случай, когда приложение убили на карточке нового клиента: список
+// _draftCustomerIds живёт только в памяти, и пустая запись оставалась в базе.
+// Вызывается один раз после первой загрузки данных. Удаляем только записи, где
+// ВСЁ пусто и нет ни одного заказа — клиентов без имени, но с данными или заказами не трогаем.
+async function cleanupAbandonedCustomerDrafts() {
+    try {
+        const blank = v => !(v && String(v).trim());
+        const withOrders = new Set((orders || []).map(o => o.customer_id).filter(x => x != null));
+        const stale = customers.filter(c =>
+            blank(c.name) && blank(c.contact) && blank(c.email) && blank(c.address) && blank(c.notes) &&
+            blank(c.reg_number) && blank(c.vat_code) && blank(c.personal_code) &&
+            !Number(c.discount) && !c.vat_exempt &&
+            !withOrders.has(c.id) && c.id !== currentCustomerId && !_draftCustomerIds.has(c.id));
+        for (const c of stale) {
+            const { error } = await db.from('customers').delete().eq('id', c.id);
+            if (error) { console.error('Не удалось удалить брошенный черновик клиента:', error); continue; }
+            const idx = customers.findIndex(x => x.id === c.id);
+            if (idx !== -1) customers.splice(idx, 1);
+        }
+        if (stale.length) displayCustomers();
+    } catch (e) { console.error('cleanupAbandonedCustomerDrafts:', e); }
 }
 
 // Массово проставляет текущий НДС-статус клиента во ВСЕХ его существующих заказах.
