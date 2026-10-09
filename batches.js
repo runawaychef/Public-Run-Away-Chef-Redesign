@@ -98,6 +98,7 @@ async function consumeFIFO(itemType, itemId, quantity) {
 // Записи с batch_id=null (недостача) пропускаются — возвращать некуда.
 async function restoreFIFO(breakdown) {
     if (!breakdown || !breakdown.length) return;
+    let failed = false;
     for (const b of breakdown) {
         if (!b.batch_id) continue;
         try {
@@ -105,9 +106,10 @@ async function restoreFIFO(breakdown) {
                 .select('qty_remaining').eq('id', b.batch_id).single();
             if (error || !data) continue; // партия могла быть удалена — пропускаем
             const newQty = parseFloat((Number(data.qty_remaining) + Number(b.quantity)).toFixed(4));
-            await db.from('stock_batches').update({ qty_remaining: newQty }).eq('id', b.batch_id);
-        } catch (e) { console.error('Ошибка восстановления партии:', e); }
+            await dbMust(db.from('stock_batches').update({ qty_remaining: newQty }).eq('id', b.batch_id));
+        } catch (e) { console.error('Ошибка восстановления партии:', e); failed = true; }
     }
+    if (failed) showInfo(t('error_save_generic'));
 }
 
 // ==================== ОТОБРАЖЕНИЕ ПАРТИЙ В КАРТОЧКЕ ====================
@@ -184,22 +186,22 @@ async function saveBatchEdit() {
 
         const delta = parseFloat((newQty - Number(batch.qty_remaining)).toFixed(4));
         if (Math.abs(delta) > 0.0001) {
-            await db.from('inventory').insert({
+            await dbMust(db.from('inventory').insert({
                 org_id: currentOrgId,
                 ingredient_id: itemType === 'ingredient' ? batch.ingredient_id : null,
                 semi_finished_id: itemType === 'semi_finished' ? batch.semi_finished_id : null,
                 type: delta > 0 ? 'приход' : 'расход',
                 quantity: Math.abs(delta),
                 notes: t('batch_manual_edit_note')
-            });
+            }));
         }
 
         const qtyOriginal = newQty > Number(batch.qty_original) ? newQty : Number(batch.qty_original);
-        await db.from('stock_batches').update({
+        await dbMust(db.from('stock_batches').update({
             unit_price: parseFloat(newPrice.toFixed(6)),
             qty_remaining: parseFloat(newQty.toFixed(4)),
             qty_original: qtyOriginal
-        }).eq('id', batchId);
+        }).eq('id', batchId));
 
         await loadInventory();
         closeModal();
@@ -224,16 +226,16 @@ async function deleteBatch() {
         if (readErr || !batch) throw readErr || new Error(t('batch_not_found'));
 
         if (Number(batch.qty_remaining) > 0.0001) {
-            await db.from('inventory').insert({
+            await dbMust(db.from('inventory').insert({
                 org_id: currentOrgId,
                 ingredient_id: itemType === 'ingredient' ? batch.ingredient_id : null,
                 semi_finished_id: itemType === 'semi_finished' ? batch.semi_finished_id : null,
                 type: 'расход',
                 quantity: Number(batch.qty_remaining),
                 notes: t('batch_manual_delete_note')
-            });
+            }));
         }
-        await db.from('stock_batches').delete().eq('id', batchId);
+        await dbMust(db.from('stock_batches').delete().eq('id', batchId));
 
         await loadInventory();
         closeModal();

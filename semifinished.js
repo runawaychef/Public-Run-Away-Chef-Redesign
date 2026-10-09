@@ -569,7 +569,7 @@ async function resetSfRecipeConfirmed(sf) {
     if (checkbox) checkbox.checked = false;
     try {
         suppressRealtimeFor3s();
-        await db.from('semi_finished').update({ recipe_confirmed: false }).eq('id', sf.id);
+        await dbMust(db.from('semi_finished').update({ recipe_confirmed: false }).eq('id', sf.id));
     } catch (e) { console.error('Не удалось сбросить recipe_confirmed:', e); }
 }
 
@@ -765,13 +765,13 @@ async function setSfPrimaryIngredient(idx) {
         // Снимаем is_primary со всех
         for (const ri of sf.ingredients) {
             if (ri.is_primary) {
-                await db.from('semi_finished_ingredients').update({ is_primary: false }).eq('id', ri.id);
+                await dbMust(db.from('semi_finished_ingredients').update({ is_primary: false }).eq('id', ri.id));
                 ri.is_primary = false;
             }
         }
         // Ставим на выбранный
         const ri = sf.ingredients[idx];
-        await db.from('semi_finished_ingredients').update({ is_primary: true }).eq('id', ri.id);
+        await dbMust(db.from('semi_finished_ingredients').update({ is_primary: true }).eq('id', ri.id));
         ri.is_primary = true;
         renderSemiFinishedRecipe(sf);
     } catch(e) { console.error(e); showInfo(t('error_save_generic')); }

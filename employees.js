@@ -134,14 +134,14 @@ function updateHeaderOrgName() {
 async function logActivity(actionType, description, orderId = null) {
     if (!currentOrgId) return;
     try {
-        await db.from('activity_log').insert({
+        await dbMust(db.from('activity_log').insert({
             org_id: currentOrgId,
             employee_id: currentEmployee ? currentEmployee.id : null,
             employee_name: currentEmployee ? currentEmployee.name : '—',
             action_type: actionType,
             description: description,
             order_id: orderId
-        });
+        }));
     } catch (e) {
         console.error('Activity log error:', e);
     }

@@ -351,7 +351,8 @@ async function cleanupIngredientDraftIfEmpty(ingId) {
     if (idx === -1) return;
     if (ingredients[idx].name && ingredients[idx].name.trim()) return; // название вписали — уже не пустой черновик
     try {
-        await db.from('ingredients').delete().eq('id', ingId);
+        suppressRealtimeFor3s();
+        await dbMust(db.from('ingredients').delete().eq('id', ingId));
         ingredients.splice(idx, 1);
     } catch (e) { console.error('Не удалось удалить пустой черновик ингредиента:', e); }
 }
@@ -448,17 +449,17 @@ async function saveStockAndPrice() {
             .select('id').eq('ingredient_id', ing.id).eq('valid_from', validFrom).limit(1);
         const existing = existingArr && existingArr.length > 0 ? existingArr[0] : null;
         if (existing) {
-            await db.from('ingredient_price_history')
+            await dbMust(db.from('ingredient_price_history')
                 .update({ package_price: parseFloat(packagePrice.toFixed(2)), package_size: packageSize })
-                .eq('id', existing.id);
+                .eq('id', existing.id));
         } else {
-            await db.from('ingredient_price_history').insert({
+            await dbMust(db.from('ingredient_price_history').insert({
                 org_id: currentOrgId,
                 ingredient_id: ing.id,
                 package_price: parseFloat(packagePrice.toFixed(2)),
                 package_size:  packageSize,
                 valid_from:    validFrom
-            });
+            }));
         }
 
         // Если указано количество — добавляем приход на склад и создаём партию (FIFO)
@@ -606,17 +607,17 @@ async function saveIdNewPrice() {
             .select('id').eq('ingredient_id', ing.id).eq('valid_from', validFrom).limit(1);
         const existing = existingArr && existingArr.length > 0 ? existingArr[0] : null;
         if (existing) {
-            await db.from('ingredient_price_history')
+            await dbMust(db.from('ingredient_price_history')
                 .update({ package_price: parseFloat(packagePrice.toFixed(2)), package_size: packageSize })
-                .eq('id', existing.id);
+                .eq('id', existing.id));
         } else {
-            await db.from('ingredient_price_history').insert({
+            await dbMust(db.from('ingredient_price_history').insert({
                 org_id: currentOrgId,
                 ingredient_id: ing.id,
                 package_price: parseFloat(packagePrice.toFixed(2)),
                 package_size: packageSize,
                 valid_from: validFrom
-            });
+            }));
         }
         // Обновляем локальный объект — чтобы список сразу показывал новую цену
         ing.package_price = parseFloat(packagePrice.toFixed(2));

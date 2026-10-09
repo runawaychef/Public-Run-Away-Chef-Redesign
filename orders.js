@@ -811,8 +811,10 @@ async function processPendingInventory() {
             if (!prod) continue;
             const actualCost = await writeOffInventoryForItem(prod, it.quantity, order.id, it.id);
             if (actualCost != null && Math.abs(actualCost - (it.item_cost || 0)) > 0.0001) {
-                await db.from('order_items').update({ item_cost: actualCost }).eq('id', it.id);
-                it.item_cost = actualCost;
+                try {
+                    await dbMust(db.from('order_items').update({ item_cost: actualCost }).eq('id', it.id));
+                    it.item_cost = actualCost;
+                } catch (e) { console.error('Не удалось обновить себестоимость позиции:', e); }
             }
         }
         try {
@@ -1131,7 +1133,7 @@ async function copyOrder(i) {
                 if (shouldWriteOffNow(copy.date)) {
                     const actualCost = await writeOffInventoryForItem(prod, it.quantity, copy.id, it.id);
                     if (actualCost != null && it.item_cost != null && Math.abs(actualCost - it.item_cost) > 0.0001) {
-                        await db.from('order_items').update({ item_cost: actualCost }).eq('id', it.id);
+                        await dbMust(db.from('order_items').update({ item_cost: actualCost }).eq('id', it.id));
                         it.item_cost = actualCost;
                     }
                 } else if (!copy.inventory_pending) {
@@ -1374,10 +1376,12 @@ async function openOrdersTrash() {
         // Автоочистка — физически удаляем заказы старше 30 дней
         const cutoff = new Date();
         cutoff.setDate(cutoff.getDate() - 30);
-        await db.from('orders')
-            .delete()
-            .not('deleted_at', 'is', null)
-            .lt('deleted_at', cutoff.toISOString());
+        try {
+            await dbMust(db.from('orders')
+                .delete()
+                .not('deleted_at', 'is', null)
+                .lt('deleted_at', cutoff.toISOString()));
+        } catch (e) { console.error('Не удалось очистить старые заказы из корзины:', e); }
 
         // Загружаем оставшиеся удалённые заказы
         const { data, error } = await db.from('orders')
@@ -1730,7 +1734,7 @@ async function addItemToOrder() {
         if (shouldWriteOffNow(order.date)) {
             const actualCost = await writeOffInventoryForItem(prod, Number(data.quantity), order.id, data.id);
             if (actualCost != null && Math.abs(actualCost - itemCost) > 0.0001) {
-                await db.from('order_items').update({ item_cost: actualCost }).eq('id', data.id);
+                await dbMust(db.from('order_items').update({ item_cost: actualCost }).eq('id', data.id));
                 const pushedItem = order.items.find(it => it.id === data.id);
                 if (pushedItem) pushedItem.item_cost = actualCost;
             }
@@ -1811,7 +1815,7 @@ async function saveItemEdit() {
         if (!order.inventory_pending) {
             await reverseInventoryForOrderItem(item.id);
         }
-        await db.from('order_item_ingredients').delete().eq('order_item_id', item.id);
+        await dbMust(db.from('order_item_ingredients').delete().eq('order_item_id', item.id));
 
         const itemCost = parseFloat((productUnitCost(prod) * quantity).toFixed(4));
         await updateChecked(db.from('order_items').update({
@@ -1824,7 +1828,7 @@ async function saveItemEdit() {
         if (!order.inventory_pending) {
             const actualCost = await writeOffInventoryForItem(prod, quantity, order.id, item.id);
             if (actualCost != null && Math.abs(actualCost - itemCost) > 0.0001) {
-                await db.from('order_items').update({ item_cost: actualCost }).eq('id', item.id);
+                await dbMust(db.from('order_items').update({ item_cost: actualCost }).eq('id', item.id));
                 order.items[editItemIdx].item_cost = actualCost;
             }
         }
@@ -1971,8 +1975,8 @@ async function saveOrderItemIngredients(orderItemId, prod, itemQty) {
         org_id:           currentOrgId
     }));
     try {
-        await db.from('order_item_ingredients').insert(rows);
-    } catch (e) { console.error('Не удалось сохранить снимок рецепта:', e); }
+        await dbMust(db.from('order_item_ingredients').insert(rows));
+    } catch (e) { console.error('Не удалось сохранить снимок рецепта:', e); showInfo(t('error_save_generic')); }
 }
 
 // Пересчитывает снимок рецепта для текущего заказа по актуальному рецепту и ценам.

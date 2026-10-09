@@ -725,7 +725,7 @@ async function resetProductRecipeConfirmed(prod) {
     if (checkbox) checkbox.checked = false;
     try {
         suppressRealtimeFor3s();
-        await db.from('products').update({ recipe_confirmed: false }).eq('id', prod.id);
+        await dbMust(db.from('products').update({ recipe_confirmed: false }).eq('id', prod.id));
     } catch (e) { console.error('Не удалось сбросить recipe_confirmed:', e); }
 }
 

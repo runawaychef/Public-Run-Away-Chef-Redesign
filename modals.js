@@ -88,7 +88,7 @@ async function confirmDelete() {
                 if (!order.inventory_pending) {
                     await reverseInventoryForOrderItem(item.id);
                 }
-                await db.from('order_item_ingredients').delete().eq('order_item_id', item.id);
+                await dbMust(db.from('order_item_ingredients').delete().eq('order_item_id', item.id));
                 const { error } = await db.from('order_items').delete().eq('id', item.id);
                 if (error) throw error;
                 order.items.splice(deleteId, 1);
