@@ -414,6 +414,31 @@ async function updateChecked(query) {
     return data;
 }
 
+// ==================== ЗАГРУЗКА ТЯЖЁЛЫХ БИБЛИОТЕК ПО ТРЕБОВАНИЮ ====================
+// Chart.js и jsPDF не нужны на старте — подгружаются при первом использовании.
+const _scriptLoads = {};
+function loadScriptOnce(url) {
+    if (_scriptLoads[url]) return _scriptLoads[url];
+    _scriptLoads[url] = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = url;
+        s.onload = () => resolve();
+        s.onerror = () => { delete _scriptLoads[url]; s.remove(); reject(new Error('Не удалось загрузить ' + url)); };
+        document.head.appendChild(s);
+    });
+    return _scriptLoads[url];
+}
+async function ensureChartJs() {
+    if (window.Chart) return;
+    await loadScriptOnce('https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js');
+}
+async function ensureJsPdf() {
+    if (window.jspdf && window.jspdf.jsPDF && window.jspdf.jsPDF.API && window.jspdf.jsPDF.API.autoTable) return;
+    await loadScriptOnce('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js');
+    // autotable дополняет уже загруженный jsPDF, поэтому строго после него
+    await loadScriptOnce('https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js');
+}
+
 // Обычная запись (insert/update/delete) с проверкой ошибки.
 // supabase-js НЕ бросает исключение при ошибке, а возвращает {error} —
 // без проверки try/catch не срабатывает и сбой остаётся незамеченным.
@@ -459,6 +484,7 @@ const PDF_COLORS = {
 // встроенные шрифты jsPDF (Helvetica и т.д.) кириллицу не поддерживают
 // вообще, текст на русском вышел бы нечитаемым набором символов.
 async function createPdfDoc() {
+    try { await ensureJsPdf(); } catch (e) { console.error(e); }
     if (!window.jspdf) throw new Error(t('helpers_jspdf_not_loaded'));
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF('p', 'mm', 'a4');

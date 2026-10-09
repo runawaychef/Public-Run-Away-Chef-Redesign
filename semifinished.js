@@ -1123,6 +1123,8 @@ async function renderSfCostChart(sf) {
         return;
     }
 
+    try { await ensureChartJs(); } catch (e) { console.error(e); return; }
+    if (!canvas.isConnected) return;
     if (_sfCostChartInstance) { _sfCostChartInstance.destroy(); _sfCostChartInstance = null; }
 
     canvas.style.display = 'block';

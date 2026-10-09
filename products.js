@@ -341,6 +341,8 @@ async function renderProductCostChart(prod) {
     const labels = points.map(p => formatDateDMY(p.date));
     const data   = points.map(p => parseFloat(p.cost.toFixed(4)));
 
+    try { await ensureChartJs(); } catch (e) { console.error(e); return; }
+    if (!canvas.isConnected) return;
     if (_productCostChartInstance) { _productCostChartInstance.destroy(); _productCostChartInstance = null; }
 
     const ctx = canvas.getContext('2d');

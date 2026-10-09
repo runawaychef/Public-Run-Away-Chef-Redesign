@@ -20,9 +20,7 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+    <!-- Chart.js и jsPDF(+autotable) грузятся по требованию: ensureChartJs() / ensureJsPdf() в helpers.js -->
     <style>
         html, body { font-size: 13px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         /* Жёстко запрещаем странице становиться шире экрана. Если любой
@@ -3077,10 +3075,10 @@
     <script src="inventory.js?v=48"></script>
     <script src="billing.js?v=10"></script>
     <script src="push.js?v=8"></script>
-<script src="ingredients.js?v=37"></script>
+<script src="ingredients.js?v=38"></script>
 <script src="batches.js?v=10"></script>
-<script src="semifinished.js?v=36"></script>
-<script src="products.js?v=31"></script>
+<script src="semifinished.js?v=37"></script>
+<script src="products.js?v=32"></script>
 <script src="customers.js?v=39"></script>
 <script src="calendar.js?v=7"></script>
 <script src="orders.js?v=105"></script>
@@ -3091,7 +3089,7 @@
 <script src="history.js?v=9"></script>
 <script src="modals.js?v=14"></script>
 <script src="demoData.js?v=19"></script>
-<script src="helpers.js?v=35"></script>
+<script src="helpers.js?v=36"></script>
 <script>
 // SUPABASE_URL, SUPABASE_KEY, db перенесены в supabaseClient.js
 

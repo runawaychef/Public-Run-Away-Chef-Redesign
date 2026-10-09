@@ -927,7 +927,7 @@ async function deleteInventoryRecord(id) {
     finally { hideLoading(); }
 }
 
-function renderIngredientPriceChart(ingredientId) {
+async function renderIngredientPriceChart(ingredientId) {
     const canvas = document.getElementById('ingredientPriceChart');
     const emptyEl = document.getElementById('ingredientPriceChartEmpty');
     if (!canvas || !emptyEl) return;
@@ -948,6 +948,8 @@ function renderIngredientPriceChart(ingredientId) {
     const labels = history.map(h => formatDateDMY(h.valid_from));
     const data   = history.map(h => parseFloat((h.package_price / h.package_size).toFixed(6)));
 
+    try { await ensureChartJs(); } catch (e) { console.error(e); return; }
+    if (!canvas.isConnected) return;
     // Уничтожаем предыдущий экземпляр чтобы не накапливались
     if (_ingredientPriceChartInstance) { _ingredientPriceChartInstance.destroy(); _ingredientPriceChartInstance = null; }
 
