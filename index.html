@@ -3074,7 +3074,7 @@
     <script src="auth.js?v=18"></script>
     <script src="employees.js?v=46"></script>
     <script src="company.js?v=22"></script>
-    <script src="inventory.js?v=46"></script>
+    <script src="inventory.js?v=47"></script>
     <script src="billing.js?v=10"></script>
     <script src="push.js?v=8"></script>
 <script src="ingredients.js?v=36"></script>
@@ -3131,6 +3131,25 @@ function showLoading(message) {
 }
 function hideLoading() { document.getElementById('loadingOverlay').classList.add('hidden'); }
 
+// Загрузка таблицы порциями по 1000 строк. У Supabase есть потолок «Max rows» на один
+// запрос (по умолчанию 1000): если просить .limit(5000) или .range(0, 9999), сервер всё равно
+// вернёт не больше потолка, и остальные строки МОЛЧА теряются (позиции заказов, платежи и т.д.).
+// buildQuery — функция, возвращающая НОВЫЙ запрос с фильтрами и стабильной сортировкой (по id);
+// страницы запрашиваются последовательно, пока не придёт неполная порция.
+// Возвращает {data, error} — тот же вид, что и у обычного запроса, чтобы остальной код не менять.
+async function fetchAllRows(buildQuery) {
+    const PAGE = 1000;
+    const all = [];
+    for (let from = 0; ; from += PAGE) {
+        const { data, error } = await buildQuery().range(from, from + PAGE - 1);
+        if (error) return { data: null, error };
+        if (data && data.length) all.push(...data);
+        if (!data || data.length < PAGE) break;
+        if (from > 200000) break; // страховка от бесконечного цикла
+    }
+    return { data: all, error: null };
+}
+
 // ==================== ЗАГРУЗКА ВСЕХ ДАННЫХ ====================
 // silent=true — для фоновых обновлений (realtime-событие, полуночная проверка даты),
 // где пользователь ничего не запрашивал и не должен видеть оверлей загрузки.
@@ -3139,16 +3158,16 @@ async function loadAllData(silent) {
     if (!silent) showLoading();
     try {
         const [pRes, cRes, oRes, oiRes, eRes, ingRes, piRes, sfRes, sfiRes, opRes] = await Promise.all([
-            db.from('products').select('id, name, price, batch_size, other_costs, unit, recipe_confirmed, track_stock, photo_url').eq('org_id', currentOrgId).order('name').limit(5000),
-            db.from('customers').select('id, name, contact, email, discount, vat_exempt, notes, address, reg_number, vat_code, personal_code, entity_type, payment_term_days').eq('org_id', currentOrgId).order('name').limit(5000),
-            db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending, invoice_snapshot, delivery_note_snapshot, is_confirmed, created_by, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via, invoice_sent_message_id, delivery_note_sent_message_id, invoice_delivery_status, delivery_note_delivery_status').eq('org_id', currentOrgId).is('deleted_at', null).range(0, 9999),
-            db.from('order_items').select('id, order_id, product_id, quantity, price, item_cost').eq('org_id', currentOrgId).range(0, 9999),
+            fetchAllRows(() => db.from('products').select('id, name, price, batch_size, other_costs, unit, recipe_confirmed, track_stock, photo_url').eq('org_id', currentOrgId).order('name').order('id')),
+            fetchAllRows(() => db.from('customers').select('id, name, contact, email, discount, vat_exempt, notes, address, reg_number, vat_code, personal_code, entity_type, payment_term_days').eq('org_id', currentOrgId).order('name').order('id')),
+            fetchAllRows(() => db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending, invoice_snapshot, delivery_note_snapshot, is_confirmed, created_by, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via, invoice_sent_message_id, delivery_note_sent_message_id, invoice_delivery_status, delivery_note_delivery_status').eq('org_id', currentOrgId).is('deleted_at', null).order('id')),
+            fetchAllRows(() => db.from('order_items').select('id, order_id, product_id, quantity, price, item_cost').eq('org_id', currentOrgId).order('id')),
             db.from('employees').select('id, name').eq('org_id', currentOrgId).order('name').limit(1000),
-            db.from('ingredients').select('id, name, package_price, package_size, unit').eq('org_id', currentOrgId).order('name').limit(5000),
-            db.from('product_ingredients').select('id, product_id, ingredient_id, semi_finished_id, quantity').eq('org_id', currentOrgId).limit(10000),
-            db.from('semi_finished').select('id, name, batch_size, unit, other_costs, recipe_confirmed, track_stock').eq('org_id', currentOrgId).order('name').limit(5000),
-            db.from('semi_finished_ingredients').select('id, semi_finished_id, ingredient_id, quantity, is_primary').eq('org_id', currentOrgId).limit(10000),
-            db.from('order_payments').select('order_id, amount').eq('org_id', currentOrgId).limit(20000)
+            fetchAllRows(() => db.from('ingredients').select('id, name, package_price, package_size, unit').eq('org_id', currentOrgId).order('name').order('id')),
+            fetchAllRows(() => db.from('product_ingredients').select('id, product_id, ingredient_id, semi_finished_id, quantity').eq('org_id', currentOrgId).order('id')),
+            fetchAllRows(() => db.from('semi_finished').select('id, name, batch_size, unit, other_costs, recipe_confirmed, track_stock').eq('org_id', currentOrgId).order('name').order('id')),
+            fetchAllRows(() => db.from('semi_finished_ingredients').select('id, semi_finished_id, ingredient_id, quantity, is_primary').eq('org_id', currentOrgId).order('id')),
+            fetchAllRows(() => db.from('order_payments').select('order_id, amount').eq('org_id', currentOrgId).order('id'))
         ]);
         if (pRes.error) throw pRes.error;
         if (cRes.error) throw cRes.error;

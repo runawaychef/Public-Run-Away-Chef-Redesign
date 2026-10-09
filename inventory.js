@@ -61,10 +61,12 @@ let _inventoryMovements = []; // сырые движения (нужны для 
 
 async function loadInventory() {
     try {
-        const { data, error } = await db
+        // Порциями по 1000: потолок «Max rows» у Supabase обрезал бы длинный .limit(50000),
+        // а остатки склада считаются суммой ВСЕХ движений — обрезка дала бы неверные остатки.
+        const { data, error } = await fetchAllRows(() => db
             .from('inventory')
             .select('ingredient_id, semi_finished_id, type, quantity, order_item_id')
-            .limit(50000);
+            .order('id'));
         if (error) throw error;
 
         const cache = {};
