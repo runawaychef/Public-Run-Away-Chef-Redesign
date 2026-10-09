@@ -59,6 +59,14 @@ let _inventoryMovements = []; // сырые движения (нужны для 
 
 // ── Загрузка и расчёт остатков ──────────────────────────────────────────────
 
+// Отложенная перезагрузка склада: несколько вызовов подряд сливаются в один,
+// пользователь не ждёт её окончания (остатки нужны на экране склада, не в заказе).
+let _invReloadTimer = null;
+function scheduleLoadInventory() {
+    clearTimeout(_invReloadTimer);
+    _invReloadTimer = setTimeout(() => { loadInventory().catch(e => console.error(e)); }, 400);
+}
+
 async function loadInventory() {
     try {
         // Порциями по 1000: потолок «Max rows» у Supabase обрезал бы длинный .limit(50000),
@@ -762,7 +770,8 @@ async function writeOffInventoryForItem(prod, itemQty, orderId, orderItemId = nu
     if (!rows.length) return 0;
     let actualCost = 0;
     try {
-        for (const r of rows) {
+        // Ингредиенты разные → партии разные: списываем параллельно, а не по очереди
+        const results = await Promise.all(rows.map(async r => {
             const itemType = r.semi_finished_id ? 'semi_finished' : 'ingredient';
             const id = r.semi_finished_id || r.ingredient_id;
             const shortagePrice = typeof currentUnitPriceFor === 'function' ? currentUnitPriceFor(itemType, id) : 0;
@@ -777,10 +786,11 @@ async function writeOffInventoryForItem(prod, itemQty, orderId, orderItemId = nu
                 p_order_item_id: orderItemId
             });
             if (error) throw error;
-            actualCost += Number(data.totalCost) || 0;
-        }
-        await loadInventory();
-    } catch (e) { console.error('Ошибка списания со склада:', e); }
+            return Number(data.totalCost) || 0;
+        }));
+        actualCost = results.reduce((a, b) => a + b, 0);
+        scheduleLoadInventory();
+    } catch (e) { console.error('Ошибка списания со склада:', e); scheduleLoadInventory(); }
     return parseFloat(actualCost.toFixed(4));
 }
 
@@ -797,8 +807,8 @@ async function reverseInventoryForOrderItem(orderItemId) {
             .eq('type', 'расход');
         if (error || !data || !data.length) return;
 
-        for (const r of data) {
-            if (!r.batch_breakdown) continue;
+        await Promise.all(data.map(async r => {
+            if (!r.batch_breakdown) return;
             const itemType = r.semi_finished_id ? 'semi_finished' : 'ingredient';
             const itemId = r.semi_finished_id || r.ingredient_id;
             const o = orders.find(x => x.id === r.order_id);
@@ -813,8 +823,8 @@ async function reverseInventoryForOrderItem(orderItemId) {
                 p_order_item_id: orderItemId
             });
             if (rpcError) console.error('Ошибка сторнирования позиции (RPC):', rpcError);
-        }
-        await loadInventory();
+        }));
+        scheduleLoadInventory();
     } catch (e) { console.error('Ошибка сторнирования позиции:', e); }
 }
 

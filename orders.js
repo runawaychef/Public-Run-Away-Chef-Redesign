@@ -1729,16 +1729,21 @@ async function addItemToOrder() {
 
         // Фиксируем снимок рецепта с ценами на момент создания позиции —
         // это нужно всегда, независимо от того, спишем ли склад сейчас или позже
-        await saveOrderItemIngredients(data.id, prod, Number(data.quantity));
+        // Снимок рецепта и списание склада независимы — выполняем одновременно
+        const snapshotPromise = saveOrderItemIngredients(data.id, prod, Number(data.quantity));
 
         if (shouldWriteOffNow(order.date)) {
-            const actualCost = await writeOffInventoryForItem(prod, Number(data.quantity), order.id, data.id);
+            const [actualCost] = await Promise.all([
+                writeOffInventoryForItem(prod, Number(data.quantity), order.id, data.id),
+                snapshotPromise
+            ]);
             if (actualCost != null && Math.abs(actualCost - itemCost) > 0.0001) {
                 await dbMust(db.from('order_items').update({ item_cost: actualCost }).eq('id', data.id));
                 const pushedItem = order.items.find(it => it.id === data.id);
                 if (pushedItem) pushedItem.item_cost = actualCost;
             }
         } else if (!order.inventory_pending) {
+            await snapshotPromise;
             // Заказ далеко вперёд — списание отложено до момента, когда до него
             // останется INVENTORY_PENDING_DAYS дней (см. processPendingInventory)
             try {
@@ -1747,6 +1752,7 @@ async function addItemToOrder() {
             } catch (e) { console.error('Не удалось отметить inventory_pending:', e); }
         }
 
+        await snapshotPromise; // на случай ветки без ожидания выше
         renderDetailItems(order);
         logActivity('item', `${t('log_position_added')} ${t('log_to_order')} №${order.id}: «${prod.name}» × ${quantity}`, order.id);
         // Сбросить поля
@@ -1824,14 +1830,18 @@ async function saveItemEdit() {
         order.items[editItemIdx] = { id: item.id, product_id: prod.id, product: prod.name, quantity, price: parseFloat(price.toFixed(2)), item_cost: itemCost };
 
         // Новый снимок рецепта — нужен всегда, независимо от того, спишем ли склад сейчас
-        await saveOrderItemIngredients(item.id, prod, quantity);
+        const snapPromise = saveOrderItemIngredients(item.id, prod, quantity);
         if (!order.inventory_pending) {
-            const actualCost = await writeOffInventoryForItem(prod, quantity, order.id, item.id);
+            const [actualCost] = await Promise.all([
+                writeOffInventoryForItem(prod, quantity, order.id, item.id),
+                snapPromise
+            ]);
             if (actualCost != null && Math.abs(actualCost - itemCost) > 0.0001) {
                 await dbMust(db.from('order_items').update({ item_cost: actualCost }).eq('id', item.id));
                 order.items[editItemIdx].item_cost = actualCost;
             }
         }
+        await snapPromise;
 
         renderDetailItems(order);
         closeModal();
