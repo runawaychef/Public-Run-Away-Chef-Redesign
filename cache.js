@@ -166,6 +166,11 @@ async function backgroundRefreshAfterInstantRestore() {
         await Promise.all([loadAllData(true), loadInventory()]);
         if (typeof displayIngredients === 'function') displayIngredients();
         if (typeof displaySemiFinished === 'function') displaySemiFinished();
+        // Чистка брошенных пустых черновиков — тот же набор вызовов, что и в selectEmployee()
+        // (employees.js). Раньше при мгновенном запуске из кэша она не выполнялась вовсе.
+        if (typeof cleanupAbandonedDrafts === 'function') await cleanupAbandonedDrafts();
+        if (typeof cleanupAbandonedCustomerDrafts === 'function') await cleanupAbandonedCustomerDrafts();
+        if (typeof cleanupAbandonedSemiFinishedDrafts === 'function') await cleanupAbandonedSemiFinishedDrafts();
         initRealtime();
         refreshFab();
     } catch (e) {
