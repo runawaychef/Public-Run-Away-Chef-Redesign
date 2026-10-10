@@ -1695,7 +1695,7 @@ async function addItemToOrder() {
     if (!order) {
         // раньше здесь был тихий выход — кнопка просто "не работала" без объяснений
         console.error('addItemToOrder: заказ не найден, currentOrderId =', currentOrderId);
-        showInfo(t('error_save_check_connection'));
+        showInfo(t('error_save_check_connection') + '\n[diag: order ' + currentOrderId + ' not in list, size ' + orders.length + ']');
         return;
     }
     const productName = document.getElementById('newItemProduct').value;
@@ -1762,7 +1762,7 @@ async function addItemToOrder() {
         document.getElementById('newItemPrice').value  = '';
     } catch (e) {
         console.error(e);
-        showInfo(t('error_save_check_connection'));
+        showInfo(t('error_save_check_connection') + '\n[diag: ' + ((e && e.code) ? e.code + ' ' : '') + ((e && e.message) ? e.message : String(e)) + ']');
     }
     finally { _addingItem = false; hideLoading(); }
 }
