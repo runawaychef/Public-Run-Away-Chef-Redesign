@@ -3154,6 +3154,10 @@ async function fetchAllRows(buildQuery) {
 // По умолчанию (silent=false) — как раньше, для действий, где пользователь реально ждёт.
 async function loadAllData(silent) {
     if (!silent) showLoading();
+    // Запоминаем, какие заказы были в памяти на момент СТАРТА загрузки: всё, что появится
+    // локально за время запроса (новый черновик по кнопке "+"), в ответ сервера не попадёт
+    // и не должно затираться (см. ниже, после сборки orders).
+    const _orderIdsAtStart = new Set((orders || []).map(o => o.id));
     try {
         const [pRes, cRes, oRes, oiRes, eRes, ingRes, piRes, sfRes, sfiRes, opRes] = await Promise.all([
             fetchAllRows(() => db.from('products').select('id, name, price, batch_size, other_costs, unit, recipe_confirmed, track_stock, photo_url').eq('org_id', currentOrgId).order('name').order('id')),
@@ -3243,6 +3247,7 @@ async function loadAllData(silent) {
             });
         });
 
+        const _ordersBeforeReplace = orders;
         orders = (oRes.data || []).map(o => {
             const cust = customerById[o.customer_id];
             const emp  = employeeById[o.employee_id];
@@ -3273,6 +3278,15 @@ async function loadAllData(silent) {
                 items: itemsByOrder[o.id] || []
             };
         });
+
+        // Заказы, созданные локально ПОКА шёл запрос (стартовал до вставки в базу), в ответ не вошли.
+        // Раньше они пропадали из списка: карточка открыта, а "Добавить позицию" говорила "заказ не найден".
+        {
+            const _fetchedIds = new Set(orders.map(o => o.id));
+            (_ordersBeforeReplace || []).forEach(o => {
+                if (!_orderIdsAtStart.has(o.id) && !_fetchedIds.has(o.id)) orders.push(o);
+            });
+        }
 
         saveAppSnapshot(); // кэш для мгновенного запуска (см. cache.js) — держим свежим после каждой успешной загрузки
         renderAllScreens();
