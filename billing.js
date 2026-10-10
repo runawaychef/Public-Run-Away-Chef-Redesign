@@ -267,3 +267,71 @@ async function purchasePlan(planKey) {
         if (btn) { btn.disabled = false; btn.textContent = originalLabel; }
     }
 }
+
+
+// ==================== КВОТА ЗАКАЗОВ БЕСПЛАТНОГО ТАРИФА ====================
+// Числа считает сервер (RPC get_order_quota): живые заказы + удалённые сверх
+// бесплатных удалений, лимит и порог напоминания лежат в platform_settings.
+// Демо-заказы и черновики-призраки сервер учитывает по своим правилам — поэтому
+// клиент НЕ считает заказы сам (иначе показывал бы 38 из 50 из-за демо-данных).
+let _orderQuota = null;
+let _orderQuotaTimer = null;
+
+// Форма слова по числу: 'one' | 'few' | 'many'. Для каждого языка свои правила
+// (ru/uk: 1, 2–4, 5+ с исключением 11–14; lt: 1, 2–9, остальное; en: 1 / не 1).
+function pluralForm(n, lang) {
+    n = Math.abs(Math.trunc(Number(n) || 0));
+    const m10 = n % 10, m100 = n % 100;
+    if (lang === 'ru' || lang === 'uk') {
+        if (m10 === 1 && m100 !== 11) return 'one';
+        if (m10 >= 2 && m10 <= 4 && !(m100 >= 12 && m100 <= 14)) return 'few';
+        return 'many';
+    }
+    if (lang === 'lt') {
+        if (m10 === 1 && m100 !== 11) return 'one';
+        if (m10 >= 2 && m10 <= 9 && !(m100 >= 11 && m100 <= 19)) return 'few';
+        return 'many';
+    }
+    return n === 1 ? 'one' : 'many';
+}
+
+// nWord(5, 'word_orders') → «заказов». Ключи: word_orders_one / _few / _many.
+function nWord(n, baseKey) {
+    return t(`${baseKey}_${pluralForm(n, currentLang)}`);
+}
+
+// Запрашивает у сервера актуальную квоту. Для платных тарифов не нужна.
+async function refreshOrderQuota() {
+    if (typeof db === 'undefined' || !currentOrgId) return null;
+    if (currentOrgPlan !== 'free') {
+        _orderQuota = null;
+        if (typeof renderPlanInfo === 'function') renderPlanInfo();
+        return null;
+    }
+    try {
+        const { data, error } = await db.rpc('get_order_quota', { p_org_id: currentOrgId });
+        if (error) throw error;
+        _orderQuota = data || null;
+    } catch (e) {
+        console.error('refreshOrderQuota:', e);
+    }
+    if (typeof renderPlanInfo === 'function') renderPlanInfo();
+    return _orderQuota;
+}
+
+// С задержкой и «склейкой» нескольких вызовов подряд — чтобы не дёргать сервер на каждый чих.
+function scheduleRefreshOrderQuota() {
+    clearTimeout(_orderQuotaTimer);
+    _orderQuotaTimer = setTimeout(refreshOrderQuota, 600);
+}
+
+// Окно «лимит достигнут»: текст собирается здесь (с правильной формой слова
+// для языка), а не приходит готовой фразой из базы.
+async function showOrderLimitDialog(limit) {
+    const lim = Number(limit) || (_orderQuota && _orderQuota.limit) || 50;
+    const msg = t('quota_limit_reached')
+        .replace('{n}', String(lim))
+        .replace('{orders}', nWord(lim, 'word_orders'));
+    const goToPlans = await showConfirm(msg, { ok: t('quota_open_plans'), cancel: t('quota_dialog_close') });
+    if (goToPlans && typeof openPlanModal === 'function') openPlanModal();
+}

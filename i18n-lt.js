@@ -29,6 +29,16 @@ I18N.lt = {
         settings_plan_paid: 'Mokamas',
         settings_orders_label: 'Užsakymai',
         settings_of: 'iš',
+        settings_free_deletions_label: 'Nemokami ištrynimai',
+        word_orders_one: 'užsakymas',
+        word_orders_few: 'užsakymai',
+        word_orders_many: 'užsakymų',
+        word_deletions_one: 'ištrynimas',
+        word_deletions_few: 'ištrynimai',
+        word_deletions_many: 'ištrynimų',
+        quota_limit_reached: 'Pasiektas nemokamo plano limitas: {n} {orders}. Norėdami tęsti, pereikite prie mokamo plano.',
+        quota_open_plans: 'Planai',
+        quota_dialog_close: 'Uždaryti',
 
         // Planų / prenumeratos langas
         plan_modal_title: 'Pasirinkite planą',

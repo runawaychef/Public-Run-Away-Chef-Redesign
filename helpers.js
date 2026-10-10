@@ -69,7 +69,7 @@ function showInfo(message) {
 // которое на Android/Chrome всегда показывает адрес сайта в заголовке —
 // это выглядит как "чужое"/системное окно, а не часть приложения).
 // Использование: const ok = await showConfirm('Сменить сотрудника?');
-function showConfirm(message) {
+function showConfirm(message, opts) {
     return new Promise((resolve) => {
         const modal = document.getElementById('confirmModal');
         const msgEl = document.getElementById('confirmMessage');
@@ -77,11 +77,18 @@ function showConfirm(message) {
         const cancelBtn = document.getElementById('confirmCancelBtn');
         if (!modal || !msgEl || !okBtn || !cancelBtn) { resolve(window.confirm(message)); return; }
 
+        // opts.ok / opts.cancel — свои подписи кнопок на один показ (например «Тарифы» / «Закрыть»)
+        const origOk = okBtn.textContent, origCancel = cancelBtn.textContent;
+        if (opts && opts.ok) okBtn.textContent = opts.ok;
+        if (opts && opts.cancel) cancelBtn.textContent = opts.cancel;
+
         msgEl.textContent = message;
         modal.style.display = 'flex';
 
         function cleanup(result) {
             modal.style.display = 'none';
+            okBtn.textContent = origOk;
+            cancelBtn.textContent = origCancel;
             okBtn.removeEventListener('click', onOk);
             cancelBtn.removeEventListener('click', onCancel);
             resolve(result);
@@ -390,6 +397,12 @@ async function shareOrCopyText(text) {
 // не JS-фронтенд. Клиентская обвязка вокруг него переведена.
 function showDbError(e, fallbackMsg) {
     const code = e && e.message;
+    if (code === 'FREE_LIMIT_ORDERS' && typeof showOrderLimitDialog === 'function') {
+        // Число лимита берём из серверной квоты, а если её нет — из текста ошибки
+        const fromDetails = e.details && (String(e.details).match(/\d+/) || [])[0];
+        showOrderLimitDialog((typeof _orderQuota !== 'undefined' && _orderQuota && _orderQuota.limit) || fromDetails);
+        return true;
+    }
     if (code === 'FREE_LIMIT_CUSTOMERS' || code === 'FREE_LIMIT_ORDERS') {
         showInfo((e.details || t('helpers_free_limit_reached')) + '\n\n' + t('helpers_upgrade_to_continue'));
         return true;

@@ -22,6 +22,16 @@ I18N.ru = {
         settings_plan_paid: 'Платный',
         settings_orders_label: 'Заказы',
         settings_of: 'из',
+        settings_free_deletions_label: 'Бесплатные удаления',
+        word_orders_one: 'заказ',
+        word_orders_few: 'заказа',
+        word_orders_many: 'заказов',
+        word_deletions_one: 'удаление',
+        word_deletions_few: 'удаления',
+        word_deletions_many: 'удалений',
+        quota_limit_reached: 'Достигнут лимит бесплатного тарифа: {n} {orders}. Чтобы продолжить, перейдите на платный тариф.',
+        quota_open_plans: 'Тарифы',
+        quota_dialog_close: 'Закрыть',
 
         // Модалка тарифов / подписки
         plan_modal_title: 'Выберите тариф',

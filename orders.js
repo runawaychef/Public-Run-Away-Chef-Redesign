@@ -1061,6 +1061,7 @@ async function createDraftOrderAndOpen() {
         displayOrders();
         openOrderDetail(newOrder.id);
         logActivity('order', `${t('log_order_draft_created')} №${newOrder.id}`, newOrder.id);
+        if (typeof scheduleRefreshOrderQuota === 'function') scheduleRefreshOrderQuota();
     } catch (e) { console.error(e); showDbError(e, t('orders_create_error')); }
     finally { hideLoading(); }
 }
@@ -1459,8 +1460,9 @@ async function restoreOrder(orderId) {
         closeModal();
         await loadAllData();
         logActivity('order', `${t('trash_order_word')} №${orderId} ${t('log_restored_from_trash')}`);
+        if (typeof scheduleRefreshOrderQuota === 'function') scheduleRefreshOrderQuota();
         await showInfo(`${t('trash_order_word')} ${t('order_number_symbol')}${orderId} ${t('orders_restored')}.`);
-    } catch(e) { console.error(e); showInfo(t('orders_restore_error')); }
+    } catch(e) { console.error(e); showDbError(e, t('orders_restore_error')); }
     finally { hideLoading(); }
 }
 

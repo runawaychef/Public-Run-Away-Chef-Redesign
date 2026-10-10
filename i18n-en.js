@@ -23,6 +23,16 @@ I18N.en = {
         settings_plan_paid: 'Paid',
         settings_orders_label: 'Orders',
         settings_of: 'of',
+        settings_free_deletions_label: 'Free deletions',
+        word_orders_one: 'order',
+        word_orders_few: 'orders',
+        word_orders_many: 'orders',
+        word_deletions_one: 'deletion',
+        word_deletions_few: 'deletions',
+        word_deletions_many: 'deletions',
+        quota_limit_reached: 'Free plan limit reached: {n} {orders}. To continue, upgrade to a paid plan.',
+        quota_open_plans: 'Plans',
+        quota_dialog_close: 'Close',
 
         // Plan / subscription modal
         plan_modal_title: 'Choose your plan',

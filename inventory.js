@@ -18,6 +18,7 @@ function openSettingsModal() {
     document.getElementById('settingsBtn').classList.add('active');
     document.getElementById('settingsCurrentEmployee').textContent = currentEmployee ? currentEmployee.name : '—';
     renderPlanInfo();
+    if (typeof scheduleRefreshOrderQuota === 'function') scheduleRefreshOrderQuota();
     if (typeof refreshDeleteDemoDataVisibility === 'function') refreshDeleteDemoDataVisibility();
     if (typeof refreshFillDemoDataVisibility === 'function') refreshFillDemoDataVisibility(); // ВРЕМЕННО, см. demoData.js
     if (typeof refreshPushSettingsUI === 'function') refreshPushSettingsUI();
@@ -38,13 +39,19 @@ function renderPlanInfo() {
         badge.className = 'text-xs font-semibold px-2 py-0.5 rounded-full';
         badge.style.cssText = 'background:#ece7db; color:#6b6355;';
 
-        // Лимита по клиентам больше нет (решение зафиксировано ранее) — показываем
-        // только счётчик заказов, который единственный реально ограничивает.
-        const orderLimit = 50;
-        const orderCount = (orders || []).length;
-        const orderColor = orderCount >= orderLimit ? '#c0685c' : orderCount >= orderLimit * 0.8 ? '#96712a' : '#6b7280';
-
-        usage.innerHTML = `<div style="color:${orderColor};">${t('settings_orders_label')}: ${orderCount} ${t('settings_of')} ${orderLimit}</div>`;
+        // Лимита по клиентам нет — показываем только квоту заказов. Числа считает сервер
+        // (get_order_quota): демо-заказы и удалённые заказы учитываются по правилам базы.
+        const q = (typeof _orderQuota !== 'undefined') ? _orderQuota : null;
+        if (q && q.limited === false) {
+            usage.innerHTML = `<div>${t('settings_limits_not_apply')}</div>`;
+        } else if (q) {
+            const orderColor = q.used >= q.limit ? '#c0685c' : q.used >= q.warn_at ? '#96712a' : '#6b7280';
+            usage.innerHTML =
+                `<div style="color:${orderColor};">${t('settings_orders_label')}: ${q.used} ${t('settings_of')} ${q.limit}</div>` +
+                `<div style="color:#6b7280;">${t('settings_free_deletions_label')}: ${q.deletes_left} ${t('settings_of')} ${q.allowance}</div>`;
+        } else {
+            usage.innerHTML = `<div style="color:#6b7280;">${t('settings_orders_label')}: …</div>`;
+        }
     } else {
         badge.textContent = t('settings_plan_paid');
         badge.className = 'text-xs font-semibold px-2 py-0.5 rounded-full';

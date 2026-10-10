@@ -77,6 +77,7 @@ async function confirmDelete() {
             }
             displayOrders();
             logActivity('order', `${t('trash_order_word')} №${order.id} (${t('delete_label_customer')} «${order.customer}») ${t('log_moved_to_trash')}`);
+            if (typeof scheduleRefreshOrderQuota === 'function') scheduleRefreshOrderQuota();
         } else if (deleteType === 'item') {
             const order = orders.find(o => o.id === currentOrderId);
             if (order) {

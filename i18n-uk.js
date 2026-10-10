@@ -29,6 +29,16 @@ I18N.uk = {
         settings_plan_paid: 'Платний',
         settings_orders_label: 'Замовлення',
         settings_of: 'з',
+        settings_free_deletions_label: 'Безкоштовні видалення',
+        word_orders_one: 'замовлення',
+        word_orders_few: 'замовлення',
+        word_orders_many: 'замовлень',
+        word_deletions_one: 'видалення',
+        word_deletions_few: 'видалення',
+        word_deletions_many: 'видалень',
+        quota_limit_reached: 'Досягнуто ліміт безкоштовного тарифу: {n} {orders}. Щоб продовжити, перейдіть на платний тариф.',
+        quota_open_plans: 'Тарифи',
+        quota_dialog_close: 'Закрити',
 
         // Вікно тарифів / підписки
         plan_modal_title: 'Оберіть тариф',
