@@ -39,6 +39,8 @@ I18N.lt = {
         quota_limit_reached: 'Pasiektas nemokamo plano limitas: {n} {orders}. Norėdami tęsti, pereikite prie mokamo plano.',
         quota_open_plans: 'Planai',
         quota_dialog_close: 'Uždaryti',
+        quota_delete_note_left: 'Šis ištrynimas nemokamas: užsakymas neužims vietos limite. Liko nemokamų ištrynimų: {n} iš {m}.',
+        quota_delete_note_none: 'Nemokami ištrynimai baigėsi. Ištrintas užsakymas ir toliau užims vietą limite.',
 
         // Planų / prenumeratos langas
         plan_modal_title: 'Pasirinkite planą',

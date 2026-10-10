@@ -12,7 +12,14 @@
 function openDeleteModal(id, type, label) {
     deleteId   = id;
     deleteType = type;
-    document.getElementById('deleteModalText').textContent = `${t('delete_confirm_prefix')} ${label}?`;
+    let text = `${t('delete_confirm_prefix')} ${label}?`;
+    if (type === 'order' && typeof orderDeleteQuotaNote === 'function') {
+        const note = orderDeleteQuotaNote(orders[id]);
+        if (note) text += '\n\n' + note;
+    }
+    const textEl = document.getElementById('deleteModalText');
+    textEl.style.whiteSpace = 'pre-line';
+    textEl.textContent = text;
     document.getElementById('deleteModal').style.display = 'flex';
 }
 

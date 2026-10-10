@@ -335,3 +335,15 @@ async function showOrderLimitDialog(limit) {
     const goToPlans = await showConfirm(msg, { ok: t('quota_open_plans'), cancel: t('quota_dialog_close') });
     if (goToPlans && typeof openPlanModal === 'function') openPlanModal();
 }
+
+// Строка в окне подтверждения удаления заказа: бесплатное это удаление или заказ продолжит
+// занимать место в лимите. Только для подтверждённых не-демо заказов на Free-тарифе
+// (черновики и демо на квоту не влияют).
+function orderDeleteQuotaNote(order) {
+    const q = _orderQuota;
+    if (!q || !q.limited || !order || order.is_demo || !order.is_confirmed) return '';
+    if (q.deletes_left > 0) {
+        return t('quota_delete_note_left').replace('{n}', String(q.deletes_left)).replace('{m}', String(q.allowance));
+    }
+    return t('quota_delete_note_none');
+}

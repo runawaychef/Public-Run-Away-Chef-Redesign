@@ -33,6 +33,8 @@ I18N.en = {
         quota_limit_reached: 'Free plan limit reached: {n} {orders}. To continue, upgrade to a paid plan.',
         quota_open_plans: 'Plans',
         quota_dialog_close: 'Close',
+        quota_delete_note_left: 'This deletion is free: the order will not take up space in your limit. Free deletions left: {n} of {m}.',
+        quota_delete_note_none: 'Free deletions are used up. A deleted order will keep taking up space in your limit.',
 
         // Plan / subscription modal
         plan_modal_title: 'Choose your plan',

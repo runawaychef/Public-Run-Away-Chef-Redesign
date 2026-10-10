@@ -3066,14 +3066,14 @@
 
 <script src="dates.js?v=8"></script>
     <script src="money.js?v=10"></script>
-    <script src="i18n-core.js?v=22"></script>
+    <script src="i18n-core.js?v=23"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=13"></script>
     <script src="auth.js?v=18"></script>
     <script src="employees.js?v=48"></script>
     <script src="company.js?v=22"></script>
     <script src="inventory.js?v=49"></script>
-    <script src="billing.js?v=11"></script>
+    <script src="billing.js?v=12"></script>
     <script src="push.js?v=8"></script>
 <script src="ingredients.js?v=38"></script>
 <script src="batches.js?v=10"></script>
@@ -3087,7 +3087,7 @@
 <script src="payments.js?v=19"></script>
 <script src="stats.js?v=21"></script>
 <script src="history.js?v=9"></script>
-<script src="modals.js?v=15"></script>
+<script src="modals.js?v=16"></script>
 <script src="demoData.js?v=19"></script>
 <script src="helpers.js?v=38"></script>
 <script>
@@ -3162,7 +3162,7 @@ async function loadAllData(silent) {
         const [pRes, cRes, oRes, oiRes, eRes, ingRes, piRes, sfRes, sfiRes, opRes] = await Promise.all([
             fetchAllRows(() => db.from('products').select('id, name, price, batch_size, other_costs, unit, recipe_confirmed, track_stock, photo_url').eq('org_id', currentOrgId).order('name').order('id')),
             fetchAllRows(() => db.from('customers').select('id, name, contact, email, discount, vat_exempt, notes, address, reg_number, vat_code, personal_code, entity_type, payment_term_days').eq('org_id', currentOrgId).order('name').order('id')),
-            fetchAllRows(() => db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending, invoice_snapshot, delivery_note_snapshot, is_confirmed, created_by, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via, invoice_sent_message_id, delivery_note_sent_message_id, invoice_delivery_status, delivery_note_delivery_status').eq('org_id', currentOrgId).is('deleted_at', null).order('id')),
+            fetchAllRows(() => db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending, invoice_snapshot, delivery_note_snapshot, is_confirmed, is_demo, created_by, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via, invoice_sent_message_id, delivery_note_sent_message_id, invoice_delivery_status, delivery_note_delivery_status').eq('org_id', currentOrgId).is('deleted_at', null).order('id')),
             fetchAllRows(() => db.from('order_items').select('id, order_id, product_id, quantity, price, item_cost').eq('org_id', currentOrgId).order('id')),
             db.from('employees').select('id, name').eq('org_id', currentOrgId).order('name').limit(1000),
             fetchAllRows(() => db.from('ingredients').select('id, name, package_price, package_size, unit').eq('org_id', currentOrgId).order('name').order('id')),
@@ -3266,6 +3266,7 @@ async function loadAllData(silent) {
                 due_date: o.due_date || null,
                 inventory_pending: !!o.inventory_pending,
                 is_confirmed: !!o.is_confirmed,
+                is_demo: !!o.is_demo,
                 created_by: o.created_by || null,
                 invoice_sent_at: o.invoice_sent_at || null,
                 invoice_sent_via: o.invoice_sent_via || null,
