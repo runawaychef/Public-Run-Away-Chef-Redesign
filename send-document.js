@@ -339,6 +339,24 @@ async function selectSendEmailLang(lang) {
 // Edge Function send-document-email (она уже сама зовёт Resend). При успехе
 // фиксирует факт отправки — recordDocumentSent(...,'email') — самолётик
 // на карточке появится сразу.
+// Текст отказа по лимитам писем на языке интерфейса (числа склоняются по форме слова).
+function _sendLimitMessage(r) {
+    switch (r.code) {
+        case 'DAILY_LIMIT':
+            return t('send_err_daily').replace('{n}', String(r.limit)).replace('{emails}', nWord(r.limit, 'word_emails'));
+        case 'HOURLY_LIMIT':
+            return t('send_err_hourly').replace('{n}', String(r.limit)).replace('{emails}', nWord(r.limit, 'word_emails'));
+        case 'TOO_LARGE':
+            return t('send_err_too_large').replace('{mb}', String(r.maxMb));
+        case 'TOO_MANY_CC':
+            return t('send_err_too_many_cc').replace('{n}', String(r.max)).replace('{addresses}', nWord(r.max, 'word_addresses'));
+        case 'TOO_LONG':
+            return t('send_err_too_long');
+        default:
+            return t('send_error_prefix') + (r.error || r.code);
+    }
+}
+
 async function submitSendDocument() {
     if (!_sendSheetState) return;
     const { orderId, docType, custId, emailLang, snapshot } = _sendSheetState;
@@ -389,6 +407,11 @@ async function submitSendDocument() {
             },
         });
         if (fnError) throw fnError;
+        // Отказ по лимитам: сервер отвечает success:false и кодом (см. send-document-email).
+        if (result && !result.success && result.code) {
+            showInfo(_sendLimitMessage(result));
+            return;
+        }
         if (!result || !result.success) throw new Error((result && result.error) || 'send failed');
 
         await recordDocumentSent(orderId, docType, 'email', result.id);
