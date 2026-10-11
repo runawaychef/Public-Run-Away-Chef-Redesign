@@ -301,11 +301,9 @@ function nWord(n, baseKey) {
 }
 
 // Запрашивает у сервера актуальную квоту. Для платных тарифов не нужна.
-let _quotaWhy = ''; // ВРЕМЕННАЯ диагностика плашки (показывается в Настройках)
 async function refreshOrderQuota() {
-    if (typeof db === 'undefined' || !currentOrgId) { _quotaWhy = 'нет db/org'; return null; }
+    if (typeof db === 'undefined' || !currentOrgId) return null;
     if (currentOrgPlan !== 'free') {
-        _quotaWhy = 'тариф ' + currentOrgPlan;
         _orderQuota = null;
         if (typeof renderPlanInfo === 'function') renderPlanInfo();
         return null;
@@ -373,21 +371,21 @@ function _isAnyModalOpen() {
 function maybeShowOrderQuotaReminder() {
     try {
         const q = _orderQuota;
-        if (!q || !q.limited || q.used >= q.limit) { _quotaWhy = 'нет квоты/лимит'; return; }
-        if (typeof monetizationLive !== 'undefined' && !monetizationLive && !currentOrgPlanIsOverridden) { _quotaWhy = 'монетизация выкл'; return; }
-        if (document.getElementById('quotaBanner')) { _quotaWhy = 'плашка уже есть'; return; }
+        if (!q || !q.limited || q.used >= q.limit) return;
+        if (typeof monetizationLive !== 'undefined' && !monetizationLive && !currentOrgPlanIsOverridden) return;
+        if (document.getElementById('quotaBanner')) return;
         const detail = document.getElementById('orderDetail');
-        if (detail && detail.classList.contains('active')) { _quotaWhy = 'открыт заказ'; return; }
-        if (_isAnyModalOpen()) { _quotaWhy = 'открыто окно'; return; }
+        if (detail && detail.classList.contains('active')) return;
+        if (_isAnyModalOpen()) return;
 
         const level = _quotaReminderLevel(q);
-        if (!level) { _quotaWhy = 'уровень 0 (used ' + q.used + ', warn ' + q.warn_at + ')'; return; }
+        if (!level) return;
 
         const key = 'quotaReminder_' + currentOrgId;
         const today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(0) : new Date().toISOString().slice(0, 10);
         let stored = null;
         try { stored = JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) { stored = null; }
-        if (stored && stored.date === today && stored.level >= level) { _quotaWhy = 'уже показывали сегодня'; return; }
+        if (stored && stored.date === today && stored.level >= level) return;
         try { localStorage.setItem(key, JSON.stringify({ date: today, level })); } catch (e) { /* без хранилища просто покажем */ }
 
         const left = Math.max(q.limit - q.used, 0);
@@ -408,12 +406,11 @@ function maybeShowOrderQuotaReminder() {
             `<button type="button" id="quotaBannerClose" class="pill-btn text-xs px-3 py-1.5" style="background:#ece7d9; color:#6b6355;">${escapeHtml(t('quota_dialog_close'))}</button>` +
             `</div>`;
         document.body.appendChild(el);
-        _quotaWhy = 'показана ' + new Date().toLocaleTimeString();
         const close = () => { el.remove(); };
         document.getElementById('quotaBannerClose').addEventListener('click', close);
         document.getElementById('quotaBannerPlans').addEventListener('click', () => { close(); if (typeof openPlanModal === 'function') openPlanModal(); });
         setTimeout(close, 20000);
     } catch (e) {
-        console.error('maybeShowOrderQuotaReminder:', e); _quotaWhy = 'ошибка: ' + (e && e.message);
+        console.error('maybeShowOrderQuotaReminder:', e);
     }
 }
