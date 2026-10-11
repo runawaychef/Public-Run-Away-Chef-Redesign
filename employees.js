@@ -221,6 +221,9 @@ async function loadCurrentOrg() {
         // Fire-and-forget: не блокируем UI и не показываем ошибок пользователю —
         // это справочное поле для Simple Hub, а не критичная для работы функция.
         maybeRefreshDetectedCountry(detectedCountryUpdatedAt);
+        // Тариф стал известен — теперь можно узнать квоту заказов (на старте loadAllData
+        // может отработать раньше, и тогда напоминание о лимите не показалось бы).
+        if (typeof scheduleRefreshOrderQuota === 'function') scheduleRefreshOrderQuota();
         return data;
     } catch (e) {
         console.error('Ошибка загрузки организации:', e);
@@ -480,6 +483,7 @@ async function refreshCurrentEmployeePermissions() {
             if (typeof displayIngredients === 'function') displayIngredients();
             if (typeof displaySemiFinished === 'function') displaySemiFinished();
         }
+        if (planChanged && typeof scheduleRefreshOrderQuota === 'function') scheduleRefreshOrderQuota(); // смена тарифа → пересчитать квоту/плашку
         if (planChanged && typeof saveAppSnapshot === 'function') saveAppSnapshot(); // чтобы новый тариф пережил перезапуск из кэша
     } catch (e) { /* тихо игнорируем — плохая сеть не должна мешать работе */ }
 }
