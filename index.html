@@ -3712,7 +3712,8 @@ function closeHistoryScreen() {
 // ==================== REALTIME ====================
 // Подписка на изменения в таблицах orders, order_items, customers, ingredients,
 // products, product_ingredients, semi_finished, semi_finished_ingredients,
-// employees, order_payments. При любом изменении — перезагружаем все данные
+// employees, order_payments — только для своей организации (фильтр org_id на сервере;
+// удаления без фильтра, см. initRealtime). При любом изменении — перезагружаем все данные
 // и показываем тост.
 
 let _realtimeToastTimer = null;
@@ -3732,18 +3733,25 @@ function initRealtime() {
     // Не создаём второй канал если уже подписаны (смена сотрудника без перезагрузки)
     if (_realtimeChannel) return;
 
-    _realtimeChannel = db.channel('realtime-sync')
+    // Без organization id фильтр не построить — тогда подписку не создаём (она запросилась бы
+    // на всю базу). Оба места вызова стоят после загрузки данных, org уже известна.
+    if (!currentOrgId) return;
+
+    // Вставки и правки — только своей организации (фильтр по org_id на стороне сервера:
+    // чужие события телефону вообще не приходят). У каждой из этих таблиц есть колонка org_id.
+    // Удаления Realtime не умеет фильтровать (в событии удаления только id), поэтому
+    // на них подписка отдельная и без фильтра: удаления редки, а лишняя перезагрузка
+    // безопаснее пропущенного удаления.
+    const RT_TABLES = ['orders', 'order_items', 'customers', 'ingredients', 'products',
+        'product_ingredients', 'semi_finished', 'semi_finished_ingredients', 'employees', 'order_payments'];
+    _realtimeChannel = db.channel('realtime-sync-' + currentOrgId);
+    RT_TABLES.forEach(table => {
+        _realtimeChannel
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table, filter: 'org_id=eq.' + currentOrgId }, () => handleRealtimeEvent())
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table, filter: 'org_id=eq.' + currentOrgId }, () => handleRealtimeEvent())
+            .on('postgres_changes', { event: 'DELETE', schema: 'public', table }, () => handleRealtimeEvent());
+    });
     _realtimeChannel
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' },        () => handleRealtimeEvent())
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'order_items' },   () => handleRealtimeEvent())
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'customers' },     () => handleRealtimeEvent())
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'ingredients' },   () => handleRealtimeEvent())
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'products' },              () => handleRealtimeEvent())
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'product_ingredients' },    () => handleRealtimeEvent())
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'semi_finished' },          () => handleRealtimeEvent())
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'semi_finished_ingredients' }, () => handleRealtimeEvent())
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'employees' },              () => handleRealtimeEvent())
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'order_payments' },         () => handleRealtimeEvent())
         .subscribe((status) => {
             if (status === 'SUBSCRIBED') console.log('[Realtime] подписка активна');
             else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') console.warn('[Realtime] ошибка:', status);
@@ -3772,6 +3780,7 @@ async function handleRealtimeEvent() {
         _realtimePending = false;
         if (_suppressRealtime) return;
         await loadAllData(true);
+        showRealtimeToast(); // «Данные обновлены» — только для чужих правок (свои глушит _suppressRealtime)
     }, 1500);
 }
 
