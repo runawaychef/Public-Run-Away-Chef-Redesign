@@ -48,7 +48,8 @@ function renderPlanInfo() {
             const orderColor = q.used >= q.limit ? '#c0685c' : q.used >= q.warn_at ? '#96712a' : '#6b7280';
             usage.innerHTML =
                 `<div style="color:${orderColor};">${t('settings_orders_label')}: ${q.used} ${t('settings_of')} ${q.limit}</div>` +
-                `<div style="color:#6b7280;">${t('settings_free_deletions_label')}: ${q.deletes_left} ${t('settings_of')} ${q.allowance}</div>`;
+                `<div style="color:#6b7280;">${t('settings_free_deletions_label')}: ${q.deletes_left} ${t('settings_of')} ${q.allowance}</div>` +
+                `<div style="color:#9ca3af; font-size:11px;">[diag] напоминание: ${typeof _quotaWhy !== 'undefined' ? _quotaWhy : '?'}</div>`;
         } else {
             usage.innerHTML = `<div style="color:#6b7280;">${t('settings_orders_label')}: …</div>`;
         }
