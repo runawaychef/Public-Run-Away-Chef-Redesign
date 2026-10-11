@@ -3072,7 +3072,7 @@
     <script src="auth.js?v=18"></script>
     <script src="employees.js?v=49"></script>
     <script src="company.js?v=22"></script>
-    <script src="inventory.js?v=51"></script>
+    <script src="inventory.js?v=52"></script>
     <script src="billing.js?v=15"></script>
     <script src="push.js?v=8"></script>
 <script src="ingredients.js?v=38"></script>
@@ -3137,16 +3137,40 @@ function hideLoading() { document.getElementById('loadingOverlay').classList.add
 // Возвращает {data, error} — тот же вид, что и у обычного запроса, чтобы остальной код не менять.
 async function fetchAllRows(buildQuery) {
     const PAGE = 1000;
-    const all = [];
-    for (let from = 0; ; from += PAGE) {
-        const { data, error } = await buildQuery().range(from, from + PAGE - 1);
-        if (error) return { data: null, error };
-        if (data && data.length) all.push(...data);
-        if (!data || data.length < PAGE) break;
-        if (from > 200000) break; // страховка от бесконечного цикла
+    const WAVE = 6; // сколько следующих страниц запрашиваем одновременно
+    // Первая страница отдельно: если строк меньше PAGE — больше запросов не нужно
+    // (так маленькие таблицы не делают лишних обращений к серверу).
+    const first = await buildQuery().range(0, PAGE - 1);
+    if (first.error) return { data: null, error: first.error };
+    const all = first.data ? first.data.slice() : [];
+    if (!first.data || first.data.length < PAGE) return { data: all, error: null };
+
+    // Таблица длиннее одной страницы: дальше страницы идут «волнами» параллельно.
+    // Порядок строк сохраняется (склеиваем строго по номеру страницы), остановка — на первой
+    // неполной странице. Раньше страницы шли строго по очереди: 6 страниц = 6 ожиданий сети подряд.
+    for (let page = 1; page < 400; ) {
+        const reqs = [];
+        for (let k = 0; k < WAVE; k++) {
+            const from = (page + k) * PAGE;
+            reqs.push(buildQuery().range(from, from + PAGE - 1));
+        }
+        const results = await Promise.all(reqs);
+        let finished = false;
+        for (const r of results) {
+            if (r.error) return { data: null, error: r.error };
+            if (r.data && r.data.length) all.push(...r.data);
+            if (!r.data || r.data.length < PAGE) { finished = true; break; }
+        }
+        if (finished) break;
+        page += WAVE;
     }
     return { data: all, error: null };
 }
+
+// ВРЕМЕННАЯ диагностика скорости запуска (показывается в Настройках, убрать после разбора).
+// Берём только первую загрузку после старта — последующие обновления её не затирают.
+const _bootTiming = {};
+function _bootMark(key, ms) { if (_bootTiming[key] === undefined) _bootTiming[key] = Math.round(ms); }
 
 // ==================== ЗАГРУЗКА ВСЕХ ДАННЫХ ====================
 // silent=true — для фоновых обновлений (realtime-событие, полуночная проверка даты),
@@ -3154,6 +3178,7 @@ async function fetchAllRows(buildQuery) {
 // По умолчанию (silent=false) — как раньше, для действий, где пользователь реально ждёт.
 async function loadAllData(silent) {
     if (!silent) showLoading();
+    const _tLoad0 = performance.now();
     // Запоминаем, какие заказы были в памяти на момент СТАРТА загрузки: всё, что появится
     // локально за время запроса (новый черновик по кнопке "+"), в ответ сервера не попадёт
     // и не должно затираться (см. ниже, после сборки orders).
@@ -3171,6 +3196,7 @@ async function loadAllData(silent) {
             fetchAllRows(() => db.from('semi_finished_ingredients').select('id, semi_finished_id, ingredient_id, quantity, is_primary').eq('org_id', currentOrgId).order('id')),
             fetchAllRows(() => db.from('order_payments').select('order_id, amount').eq('org_id', currentOrgId).order('id'))
         ]);
+        _bootMark('data', performance.now() - _tLoad0);
         if (pRes.error) throw pRes.error;
         if (cRes.error) throw cRes.error;
         if (oRes.error) throw oRes.error;
@@ -3290,7 +3316,7 @@ async function loadAllData(silent) {
         }
 
         saveAppSnapshot(); // кэш для мгновенного запуска (см. cache.js) — держим свежим после каждой успешной загрузки
-        renderAllScreens();
+        { const _tR = performance.now(); renderAllScreens(); _bootMark('render', performance.now() - _tR); }
         if (typeof scheduleRefreshOrderQuota === 'function') scheduleRefreshOrderQuota();
         await processPendingInventory();
     } catch (e) {

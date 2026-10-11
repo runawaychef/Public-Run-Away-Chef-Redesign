@@ -58,6 +58,10 @@ function renderPlanInfo() {
         badge.style.cssText = 'background:#e3e8df; color:#4f6349;';
         usage.innerHTML = `<div>${t('settings_limits_not_apply')}</div>`;
     }
+    // ВРЕМЕННО: диагностика скорости запуска (для всех тарифов)
+    if (typeof _bootTiming !== 'undefined') {
+        usage.innerHTML += `<div style="color:#9ca3af; font-size:11px;">[diag] запуск, мс: данные ${_bootTiming.data ?? '?'}, склад ${_bootTiming.inv ?? '?'} (${typeof _inventoryMovements !== 'undefined' ? _inventoryMovements.length : '?'} стр.), отрисовка ${_bootTiming.render ?? '?'}</div>`;
+    }
 }
 
 // Кэш данных склада: { ingredient_id: { total_in, total_out, balance } }
@@ -75,6 +79,7 @@ function scheduleLoadInventory() {
 }
 
 async function loadInventory() {
+    const _tInv0 = performance.now();
     try {
         // Порциями по 1000: потолок «Max rows» у Supabase обрезал бы длинный .limit(50000),
         // а остатки склада считаются суммой ВСЕХ движений — обрезка дала бы неверные остатки.
@@ -94,6 +99,7 @@ async function loadInventory() {
         });
         _inventoryCache = cache;
         _inventoryMovements = data || [];
+        if (typeof _bootMark === 'function') _bootMark('inv', performance.now() - _tInv0);
         updateInventoryAlertDot();
     } catch (e) { console.error('Ошибка загрузки склада:', e); }
 }
