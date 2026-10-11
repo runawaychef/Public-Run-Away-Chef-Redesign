@@ -41,13 +41,14 @@ I18N.lt = {
         quota_dialog_close: 'Uždaryti',
         quota_delete_note_left: 'Šis ištrynimas nemokamas: užsakymas neužims vietos limite. Liko nemokamų ištrynimų: {n} iš {m}.',
         quota_delete_note_none: 'Nemokami ištrynimai baigėsi. Ištrintas užsakymas ir toliau užims vietą limite.',
+        quota_banner_text: 'Panaudota {used} iš {limit} nemokamų užsakymų. Liko {left} {orders}. Mokamuose planuose limito nėra.',
 
         // Planų / prenumeratos langas
         plan_modal_title: 'Pasirinkite planą',
         plan_current_badge: 'Dabartinis planas',
         plan_free_name: 'Free',
         plan_free_price: '7 dienos nemokamai, vėliau su apribojimu',
-        plan_free_desc: 'Pilna prieiga 7 dienas, vėliau iki 50 užsakymų iš viso',
+        plan_free_desc: 'Pilna prieiga 7 dienas, vėliau iki 50 užsakymų + 10 nemokamų ištrynimų',
         plan_light_name: 'Light',
         plan_light_price: '1,99 € / mėn.',
         plan_light_desc: 'Neribotas užsakymų kiekis. Be analitikos ir ataskaitų.',

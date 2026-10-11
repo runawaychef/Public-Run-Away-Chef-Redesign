@@ -35,13 +35,14 @@ I18N.en = {
         quota_dialog_close: 'Close',
         quota_delete_note_left: 'This deletion is free: the order will not take up space in your limit. Free deletions left: {n} of {m}.',
         quota_delete_note_none: 'Free deletions are used up. A deleted order will keep taking up space in your limit.',
+        quota_banner_text: '{used} of {limit} free orders used. {left} {orders} left. Paid plans have no limit.',
 
         // Plan / subscription modal
         plan_modal_title: 'Choose your plan',
         plan_current_badge: 'Current plan',
         plan_free_name: 'Free',
         plan_free_price: 'Free for 7 days, then limited',
-        plan_free_desc: 'Full access for 7 days, then up to 50 orders in total',
+        plan_free_desc: 'Full access for 7 days, then up to 50 orders + 10 free deletions',
         plan_light_name: 'Light',
         plan_light_price: '€1.99 / month',
         plan_light_desc: 'Unlimited orders. No analytics or reports.',
