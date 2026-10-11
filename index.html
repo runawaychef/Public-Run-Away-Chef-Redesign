@@ -183,6 +183,11 @@
             display: flex; align-items: center; justify-content: center;
             z-index: 210;
         }
+        /* Значок Google Play на экране входа */
+        .play-badge { display:inline-flex; align-items:center; gap:7px; margin-top:16px; padding:8px 14px; border-radius:12px;
+            border:1.5px solid #e3ded0; background:#fbfaf6; font-size:12px; color:#5b5b4f; text-decoration:none; }
+        .play-badge-off { opacity:0.5; pointer-events:none; filter:grayscale(0.6); }
+        .play-badge.hidden { display:none; }
         #authScreen.hidden { display: none; }
 
         #googleAuthIntroModal, #googleAuthReturningScreen {
@@ -753,8 +758,10 @@
     <div style="background:#fff;border-radius:22px;padding:30px 24px;box-shadow:0 10px 30px rgba(60,58,52,0.08);" class="w-full max-w-xs text-center">
 
         <!-- Логотип -->
-        <img src="icon-192.png" alt="Simple Bake" style="width:64px;height:64px;border-radius:16px;margin:0 auto 14px;">
-        <p style="font-size:12px;color:#a6a196;margin:0 0 22px;" data-i18n="auth_tagline">Учёт заказов и рецептур</p>
+        <img src="icon-192.png" alt="Simple Bake" style="width:64px;height:64px;border-radius:16px;margin:0 auto 12px;">
+        <div style="font-family:'Fraunces',serif; font-weight:600; font-size:24px; color:#4f6349; line-height:1.1;">Simple bake</div>
+        <div style="font-size:10px; color:#a29c8c; letter-spacing:0.05em; margin-top:3px;">by Runaway Chef Lab</div>
+        <p style="font-size:12px;color:#a6a196;margin:12px 0 22px;" data-i18n="auth_tagline">Учёт заказов и рецептур</p>
 
         <!-- Заголовок режима (Вход / Регистрация / Сброс пароля) -->
         <p id="authTitle" style="font-family:'Fraunces',serif;font-weight:600;font-size:17px;margin:0 0 18px;color:#3c3a34;" data-i18n="auth_title_login">Вход</p>
@@ -769,6 +776,7 @@
             </svg>
             <span data-i18n="auth_google_signin">Войти через Google</span>
         </button>
+        <p id="googleAuthNote" style="font-size:11px;line-height:1.45;color:#a6a196;margin:8px 4px 14px;"><span data-i18n="ga_intro_point1">Мы получаем только email — для входа в аккаунт</span>. <span data-i18n="ga_intro_point2">Мы не читаем почту и не видим другие данные Google</span></p>
 
         <div class="flex items-center gap-2" style="margin-bottom:16px;">
             <div class="flex-1 h-px" style="background:#e3ded0;"></div>
@@ -807,34 +815,18 @@
             Нет аккаунта? Зарегистрироваться
         </p>
 
-    </div>
-</div>
-
-<!-- Промежуточный экран перед уходом на Google — объясняет, что сейчас произойдёт -->
-<div id="googleAuthIntroModal" class="hidden">
-    <div style="background:#fff;border-radius:22px;padding:30px 24px;box-shadow:0 10px 30px rgba(60,58,52,0.08);" class="w-full max-w-xs text-center">
-        <div style="width:56px;height:56px;border-radius:16px;background:#e3e8df;display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">
-            <svg width="26" height="26" viewBox="0 0 48 48">
-                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+        <!-- Значок Google Play: пока приложение не опубликовано (PLAY_STORE_URL пуст в auth.js) — серый и неактивный.
+             В установленном приложении (standalone / из Google Play) скрывается — см. setupPlayBadge() в auth.js. -->
+        <a id="playBadge" class="play-badge play-badge-off" aria-disabled="true" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
+                <path fill="#34A853" d="M3.6 1.9c-.3.3-.5.8-.5 1.4v17.4c0 .6.2 1.1.5 1.4l9.7-10.1L3.6 1.9z"/>
+                <path fill="#FBBC05" d="M16.5 15.4l-3.2-3.4 3.2-3.4 4 2.3c1.1.6 1.1 1.7 0 2.3l-4 2.2z"/>
+                <path fill="#EA4335" d="M13.3 12L3.6 22.1c.4.4 1 .4 1.7.1l11.2-6.4-3.2-3.8z"/>
+                <path fill="#4285F4" d="M13.3 12l3.2-3.8L5.3 1.8c-.7-.4-1.3-.3-1.7.1L13.3 12z"/>
             </svg>
-        </div>
-        <p style="font-family:'Fraunces',serif;font-weight:600;font-size:17px;margin:0 0 12px;color:#3c3a34;" data-i18n="ga_intro_title">Вход через Google</p>
-        <p style="font-size:12.5px;line-height:1.6;color:#5b5b4f;margin:0 0 18px;" data-i18n="ga_intro_desc">Сейчас откроется окно входа Google. После выбора аккаунта вы автоматически вернётесь в Simple Bake.</p>
-        <div style="text-align:left;margin-bottom:22px;">
-            <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:9px;font-size:12px;color:#4a4a40;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4f6349" stroke-width="2.4" style="flex-shrink:0;margin-top:2px;"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
-                <span data-i18n="ga_intro_point1">Мы получаем только email — для входа в аккаунт</span>
-            </div>
-            <div style="display:flex;gap:8px;align-items:flex-start;font-size:12px;color:#4a4a40;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#4f6349" stroke-width="2.4" style="flex-shrink:0;margin-top:2px;"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
-                <span data-i18n="ga_intro_point2">Мы не читаем почту и не видим другие данные Google</span>
-            </div>
-        </div>
-        <button id="googleAuthContinueBtn" class="btn w-full" style="background:#4f6349;color:#f4f1ea;border-radius:14px;padding:13px;font-size:14px;font-weight:600;" data-i18n="ga_intro_continue">Продолжить</button>
-        <button id="googleAuthCancelBtn" style="background:none;border:none;font-size:12.5px;color:#a6a196;margin-top:12px;" data-i18n="company_logo_crop_cancel">Отмена</button>
+            <span id="playBadgeText" data-i18n="auth_play_soon">Скоро в Google Play</span>
+        </a>
+
     </div>
 </div>
 
@@ -3066,11 +3058,11 @@
 
 <script src="dates.js?v=8"></script>
     <script src="money.js?v=10"></script>
-    <script src="i18n-core.js?v=26"></script>
+    <script src="i18n-core.js?v=28"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=13"></script>
-    <script src="auth.js?v=18"></script>
-    <script src="employees.js?v=49"></script>
+    <script src="auth.js?v=20"></script>
+    <script src="employees.js?v=50"></script>
     <script src="company.js?v=22"></script>
     <script src="inventory.js?v=52"></script>
     <script src="billing.js?v=15"></script>

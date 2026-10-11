@@ -259,6 +259,7 @@ I18N.en = {
         employees_delete_error: 'Failed to delete employee.',
         employees_our_bakery_fallback: 'our organization',
         employees_invite_share_text: 'Hi, {name}! I\'d like to invite you to the "{org}" app for managing bakery orders.\nOpen: {url}\nRegister using this exact email: {email}\nOnce you\'ve registered, you\'ll automatically gain access.',
+        employees_invite_play_line: '\n\nThe app is also available on Google Play: {play}',
         employees_cancel_invite_confirm: 'Cancel this invitation?',
         employees_cancel_invite_error: 'Failed to cancel the invitation.',
         employees_switch_confirm: 'Switch to another employee?',
@@ -273,6 +274,9 @@ I18N.en = {
         // Login / registration / password reset screen
         auth_tagline: 'Order & Recipe Management',
         auth_google_signin: 'Sign in with Google',
+        auth_google_opening: 'Opening Google…',
+        auth_play_soon: 'Coming soon to Google Play',
+        auth_play_get: 'Get it on Google Play',
         auth_or: 'or',
         auth_password_placeholder: 'Password',
         auth_forgot_password: 'Forgot password?',

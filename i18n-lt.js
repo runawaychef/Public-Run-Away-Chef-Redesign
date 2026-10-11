@@ -264,6 +264,7 @@ I18N.lt = {
         employees_delete_error: 'Nepavyko pašalinti darbuotojo.',
         employees_our_bakery_fallback: 'mūsų kepyklą',
         employees_invite_share_text: 'Sveiki, {name}! Kviečiu jus prisijungti prie programėlės „{org}“, skirtos užsakymų apskaitai.\n\n1. Atidarykite: {url}\n2. Užsiregistruokite naudodami būtent šį el. pašto adresą: {email}\n\nPo registracijos prieiga bus suteikta automatiškai.',
+        employees_invite_play_line: '\n\nProgramėlė taip pat pasiekiama „Google Play“: {play}',
         employees_cancel_invite_confirm: 'Atšaukti šį kvietimą?',
         employees_cancel_invite_error: 'Nepavyko atšaukti kvietimo.',
         employees_switch_confirm: 'Pakeisti darbuotoją?',
@@ -278,6 +279,9 @@ I18N.lt = {
         // Экран входа / регистрации / сброса пароля
         auth_tagline: 'Užsakymų ir receptų apskaita',
         auth_google_signin: 'Prisijungti naudojant Google',
+        auth_google_opening: 'Atidarome Google…',
+        auth_play_soon: 'Netrukus „Google Play“',
+        auth_play_get: 'Atsisiųsti iš „Google Play“',
         auth_or: 'arba',
         auth_password_placeholder: 'Slaptažodis',
         auth_forgot_password: 'Pamiršote slaptažodį?',

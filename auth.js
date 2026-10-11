@@ -1,3 +1,26 @@
+// Адрес приложения в Google Play. Пока приложение не опубликовано — оставить пустым:
+// значок на экране входа остаётся серым и неактивным, а в тексте приглашения сотруднику строки про магазин нет.
+// После публикации вписать сюда ссылку вида 'https://play.google.com/store/apps/details?id=...'.
+const PLAY_STORE_URL = '';
+
+// Значок Google Play на экране входа: до публикации серый, после — ссылка.
+// Не показываем тем, кто уже пользуется установленным приложением (иконка на экране / из Google Play).
+function setupPlayBadge() {
+    const el = document.getElementById('playBadge');
+    if (!el) return;
+    const standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+        || window.navigator.standalone === true
+        || (document.referrer || '').startsWith('android-app://');
+    if (standalone) { el.classList.add('hidden'); return; }
+    const txt = document.getElementById('playBadgeText');
+    if (PLAY_STORE_URL) {
+        el.href = PLAY_STORE_URL;
+        el.classList.remove('play-badge-off');
+        el.removeAttribute('aria-disabled');
+        if (txt) { txt.setAttribute('data-i18n', 'auth_play_get'); txt.textContent = t('auth_play_get'); }
+    }
+}
+
 // ==================== АУТЕНТИФИКАЦИЯ (Supabase Auth) ====================
 // Поддерживает три режима: вход, регистрация, сброс пароля.
 // Поддерживает вход через Google OAuth.
@@ -39,9 +62,8 @@ async function initAuth() {
     });
 
     document.getElementById('authForm').addEventListener('submit', handleAuthSubmit);
-    document.getElementById('googleSignInBtn').addEventListener('click', showGoogleAuthIntro);
-    document.getElementById('googleAuthContinueBtn').addEventListener('click', handleGoogleSignIn);
-    document.getElementById('googleAuthCancelBtn').addEventListener('click', hideGoogleAuthIntro);
+    document.getElementById('googleSignInBtn').addEventListener('click', handleGoogleSignIn);
+    setupPlayBadge();
     document.getElementById('toggleAuthMode').addEventListener('click', toggleAuthMode);
     document.getElementById('forgotPasswordLink').addEventListener('click', showResetMode);
     document.getElementById('backToLoginLink').addEventListener('click', showLoginMode);
@@ -307,18 +329,16 @@ async function handlePasswordReset() {
 
 // ===== Вход через Google =====
 
-function showGoogleAuthIntro() {
-    document.getElementById('googleAuthIntroModal').classList.remove('hidden');
-}
-
-function hideGoogleAuthIntro() {
-    document.getElementById('googleAuthIntroModal').classList.add('hidden');
-}
-
 async function handleGoogleSignIn() {
     const errEl = document.getElementById('authError');
     errEl.classList.add('hidden');
-    hideGoogleAuthIntro();
+    // Переход на Google занимает около секунды — всё это время кнопка показывает «Открываем Google…»
+    // и заблокирована (иначе из-за двойного нажатия можно запустить вход дважды).
+    const gBtn = document.getElementById('googleSignInBtn');
+    const gLabel = gBtn.querySelector('span');
+    const gLabelText = gLabel ? gLabel.textContent : '';
+    gBtn.disabled = true;
+    if (gLabel) gLabel.textContent = t('auth_google_opening');
     try {
         // Ставим флаг ДО редиректа — по нему onAuthStateChange распознает
         // возврат из Google OAuth и покажет экран "Возвращаемся в Simple Bake"
@@ -335,6 +355,8 @@ async function handleGoogleSignIn() {
     } catch (err) {
         console.error(err);
         sessionStorage.removeItem('sb_google_oauth_pending');
+        gBtn.disabled = false;
+        if (gLabel) gLabel.textContent = gLabelText;
         errEl.textContent = t('auth_error_google_failed');
         errEl.classList.remove('hidden');
     }
@@ -354,3 +376,15 @@ async function signOutAccount() {
     document.getElementById('statsBtn').classList.add('hidden');
     showAuthScreen();
 }
+
+// Если пользователь вернулся кнопкой «Назад» со страницы Google (браузер восстановил экран
+// из кэша), кнопка не должна остаться заблокированной с надписью «Открываем Google…».
+window.addEventListener('pageshow', (e) => {
+    if (!e.persisted) return;
+    const gBtn = document.getElementById('googleSignInBtn');
+    if (!gBtn) return;
+    gBtn.disabled = false;
+    const gLabel = gBtn.querySelector('span');
+    if (gLabel) gLabel.textContent = t('auth_google_signin');
+    sessionStorage.removeItem('sb_google_oauth_pending');
+});

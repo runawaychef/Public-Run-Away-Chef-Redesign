@@ -827,7 +827,9 @@ async function shareInvitation(inv) {
         .replace('{name}', inv.name)
         .replace('{org}', orgLabel)
         .replace('{url}', appUrl)
-        .replace('{email}', inv.email);
+        .replace('{email}', inv.email)
+        // Строка про Google Play — только когда заполнен PLAY_STORE_URL (auth.js)
+        + ((typeof PLAY_STORE_URL !== 'undefined' && PLAY_STORE_URL) ? t('employees_invite_play_line').replace('{play}', PLAY_STORE_URL) : '');
     await shareOrCopyText(text);
 }
 

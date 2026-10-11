@@ -264,6 +264,7 @@ I18N.uk = {
         employees_delete_error: 'Помилка видалення співробітника.',
         employees_our_bakery_fallback: 'нашу пекарню',
         employees_invite_share_text: 'Вітаю, {name}! Запрошую вас до застосунку «{org}» для обліку замовлень.\n\n1. Відкрийте: {url}\n2. Зареєструйтеся саме на цей email: {email}\n\nПісля реєстрації ви автоматично отримаєте доступ.',
+        employees_invite_play_line: '\n\nЗастосунок також доступний у Google Play: {play}',
         employees_cancel_invite_confirm: 'Скасувати це запрошення?',
         employees_cancel_invite_error: 'Помилка скасування запрошення.',
         employees_switch_confirm: 'Змінити співробітника?',
@@ -278,6 +279,9 @@ I18N.uk = {
         // Экран входа / регистрации / сброса пароля
         auth_tagline: 'Облік замовлень і рецептур',
         auth_google_signin: 'Увійти за допомогою Google',
+        auth_google_opening: 'Відкриваємо Google…',
+        auth_play_soon: 'Незабаром у Google Play',
+        auth_play_get: 'Завантажити з Google Play',
         auth_or: 'або',
         auth_password_placeholder: 'Пароль',
         auth_forgot_password: 'Забули пароль?',

@@ -258,6 +258,7 @@ I18N.ru = {
         employees_delete_error: 'Ошибка удаления сотрудника.',
         employees_our_bakery_fallback: 'нашу пекарню',
         employees_invite_share_text: 'Здравствуйте, {name}! Приглашаю вас в приложение «{org}» для учёта заказов.\n\n1. Откройте: {url}\n2. Зарегистрируйтесь именно на этот email: {email}\n\nПосле регистрации вы автоматически получите доступ.',
+        employees_invite_play_line: '\n\nПриложение также доступно в Google Play: {play}',
         employees_cancel_invite_confirm: 'Отменить это приглашение?',
         employees_cancel_invite_error: 'Ошибка отмены приглашения.',
         employees_switch_confirm: 'Сменить сотрудника?',
@@ -272,6 +273,9 @@ I18N.ru = {
         // Экран входа / регистрации / сброса пароля
         auth_tagline: 'Учёт заказов и рецептур',
         auth_google_signin: 'Войти через Google',
+        auth_google_opening: 'Открываем Google…',
+        auth_play_soon: 'Скоро в Google Play',
+        auth_play_get: 'Скачать в Google Play',
         auth_or: 'или',
         auth_password_placeholder: 'Пароль',
         auth_forgot_password: 'Забыли пароль?',
