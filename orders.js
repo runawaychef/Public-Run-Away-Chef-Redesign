@@ -54,19 +54,22 @@ function displayOrders() {
 
     const hasVat = (typeof currentOrgVatRate !== 'undefined') && currentOrgVatRate > 0;
 
-    function weekSummaryHtml(weekKey) {
+    function weekHeadHtml(weekKey) {
         const monday = new Date(weekKey + 'T00:00:00');
         const sunday = new Date(monday);
         sunday.setDate(sunday.getDate() + 6);
-        const wt = calcGroupTotals(sorted, o => weekKeyOf(o) === weekKey);
         const weekLabel = formatDateDMY(localStr(monday)) + ' – ' + formatDateDMY(localStr(sunday));
+        return `<div class="ot-week-head">${t('orders_week_word')} ${weekLabel}</div>`;
+    }
+
+    function weekSummaryHtml(weekKey) {
+        const wt = calcGroupTotals(sorted, o => weekKeyOf(o) === weekKey);
         const countsText = `${wt.count} ${t('orders_orders_short')}, ${wt.qty} ${t('unit_pcs')}`;
         const sumsText = hasVat
             ? `${formatMoney(wt.net)} ${t('orders_sum_novat_short')} · <b>${formatMoney(wt.sum)}</b> ${t('orders_sum_withvat_short')}`
             : `<b>${formatMoney(wt.sum)}</b>`;
         return `<div class="ot-week-summary">
-            <div class="ot-week-label">${t('orders_week_word')} ${weekLabel}</div>
-            <div class="ot-week-line"><span class="ot-week-counts">${countsText}</span><span class="ot-week-sums">${sumsText}</span></div>
+            <span class="ot-week-counts">${countsText}</span><span class="ot-week-sums">${sumsText}</span>
         </div>`;
     }
 
@@ -94,14 +97,14 @@ function displayOrders() {
     sorted.forEach(order => {
         const wk = weekKeyOf(order);
         if (curWeek !== null && wk !== curWeek) {
-            tableHtml += `<div class="ot-island">${weekRows}</div>` + weekSummaryHtml(curWeek);
+            tableHtml += weekHeadHtml(curWeek) + `<div class="ot-island">${weekRows}</div>` + weekSummaryHtml(curWeek);
             weekRows = '';
         }
         curWeek = wk;
         weekRows += tableRowHtml(order);
     });
     if (curWeek !== null) {
-        tableHtml += `<div class="ot-island">${weekRows}</div>` + weekSummaryHtml(curWeek);
+        tableHtml += weekHeadHtml(curWeek) + `<div class="ot-island">${weekRows}</div>` + weekSummaryHtml(curWeek);
     }
     tbody.innerHTML = tableHtml || `<p class="text-xs text-gray-400 text-center py-4">${t('orders_none_found')}</p>`;
 
