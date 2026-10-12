@@ -746,9 +746,11 @@
            Зелёные элементы (статус, месяц, «оплачен») — фильтром насыщенности ×0.36.
            Красный/охру фильтром не гасим (уходят в грязно-коричневый) — для них заданы
            готовые приглушённые оттенки: терракота, охра, тёмно-красный (просрочен). */
+        .done-card:not(.expanded) [data-pay="paid"] { filter: saturate(0.36); }
+        /* Фисташковые элементы свёрнутой карточки — тот же оттенок, что подсветка активного пункта нижнего меню */
         .done-card:not(.expanded) .oc-datebadge-month,
         .done-card:not(.expanded) .status-btn,
-        .done-card:not(.expanded) [data-pay="paid"] { filter: saturate(0.36); }
+        .done-card:not(.expanded) .pay-pill[data-pay="paid"] { background: #dbe4d3 !important; filter: none; }
         .done-card:not(.expanded) .oc-pay-line,
         .done-card:not(.expanded) .oc-note { filter: saturate(0.7); }
         .done-card:not(.expanded) [data-pay="unpaid"]  { background: #cf8f86 !important; }
