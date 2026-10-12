@@ -501,11 +501,12 @@ function renderDoneOrderCard(order) {
     // Плашка статуса оплаты (левый нижний угол) — дублирует цвет боковой полосы и
     // нажимается: если есть что доплатить — открывает ввод платежа с остатком,
     // если заказ оплачен — открывает список платежей по заказу.
+    const payKey = payInfo.overdue ? 'overdue' : payInfo.status; // paid | partial | unpaid | overdue
     const payPillLabel = payInfo.overdue ? t('pay_status_overdue')
         : payInfo.status === 'paid' ? t('pay_status_paid')
         : payInfo.status === 'partial' ? t('pay_status_partial')
         : t('pay_status_unpaid');
-    const payPill = `<button type="button" class="pay-pill" style="background:${stripeColor};" onclick="event.stopPropagation(); quickPayPillTap(${order.id}, ${payInfo.status === 'paid' ? 'true' : 'false'})">${payPillLabel}</button>`;
+    const payPill = `<button type="button" class="pay-pill" data-pay="${payKey}" style="background:${stripeColor};" onclick="event.stopPropagation(); quickPayPillTap(${order.id}, ${payInfo.status === 'paid' ? 'true' : 'false'})">${payPillLabel}</button>`;
 
     // Свайп-действия — "Копировать" в правой панели (кроме "Удалить" — заказ
     // уже выполнен, удалять из свайпа этого экрана не даём, только из полной
@@ -541,7 +542,7 @@ function renderDoneOrderCard(order) {
         ${payPanel}
         <div class="order-card done-card" id="orderCard-${order.id}">
             <div class="oc-card-top">
-                <div class="stripe" style="background:${stripeColor};" data-role="stripe"></div>
+                <div class="stripe" style="background:${stripeColor};" data-role="stripe" data-pay="${payKey}"></div>
                 ${_sentIconHtml(order) ? `<div class="oc-sent-badge">${_sentIconHtml(order)}</div>` : ''}
                 <div class="order-card-tap" onclick="handleDoneCardTap(event, ${order.id})">
                     <div class="order-card-body">

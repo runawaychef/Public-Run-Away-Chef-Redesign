@@ -717,15 +717,18 @@
         .oc-chev svg { width: 16px; height: 16px; color: #a6a196; transition: transform 0.2s ease; }
         .order-card.expanded .oc-chev svg { transform: rotate(180deg); }
         .oc-chev:active svg { color: #7c9473; }
-        /* Свёрнутые (не развёрнутые) карточки «Выполнен»: приглушены и цвета (насыщенность ×0.45 — полоса, плашка
-           месяца, плашка оплаты, кнопка статуса, цветные строки оплаты/заметки), и текст
-           (серо-коричневые тона вместо почти чёрного). Насыщенность меняется одним числом. */
-        .done-card:not(.expanded) .stripe,
+        /* Свёрнутые (не развёрнутые) карточки «Выполнен» приглушены; в развёрнутом виде всё обычное.
+           Зелёные элементы (статус, месяц, «оплачен») — фильтром насыщенности ×0.36.
+           Красный/охру фильтром не гасим (уходят в грязно-коричневый) — для них заданы
+           готовые приглушённые оттенки: терракота, охра, тёмно-красный (просрочен). */
         .done-card:not(.expanded) .oc-datebadge-month,
-        .done-card:not(.expanded) .pay-pill,
         .done-card:not(.expanded) .status-btn,
+        .done-card:not(.expanded) [data-pay="paid"] { filter: saturate(0.36); }
         .done-card:not(.expanded) .oc-pay-line,
-        .done-card:not(.expanded) .oc-note { filter: saturate(0.45); }
+        .done-card:not(.expanded) .oc-note { filter: saturate(0.7); }
+        .done-card:not(.expanded) [data-pay="unpaid"]  { background: #cf8f86 !important; }
+        .done-card:not(.expanded) [data-pay="partial"] { background: #d9b46a !important; }
+        .done-card:not(.expanded) [data-pay="overdue"] { background: #a96b6b !important; }
         .done-card:not(.expanded) .oc-name,
         .done-card:not(.expanded) .oc-sum { color: #6f6a5f; font-weight: 600; }
         .done-card:not(.expanded) .oc-datebadge-day { color: #7d786c; }
@@ -3105,7 +3108,7 @@
 <script src="products.js?v=32"></script>
 <script src="customers.js?v=40"></script>
 <script src="calendar.js?v=8"></script>
-<script src="orders.js?v=111"></script>
+<script src="orders.js?v=112"></script>
 <script src="invoice.js?v=39"></script>
 <script src="send-document.js?v=15"></script>
 <script src="payments.js?v=19"></script>
