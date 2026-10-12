@@ -717,6 +717,12 @@
         .oc-chev svg { width: 16px; height: 16px; color: #a6a196; transition: transform 0.2s ease; }
         .order-card.expanded .oc-chev svg { transform: rotate(180deg); }
         .oc-chev:active svg { color: #7c9473; }
+        /* Свёрнутые карточки «Выполнен»: цвета приглушены примерно на 23% по насыщенности
+           (полоса, плашка месяца, плашка оплаты, кнопка статуса). Меняется одним числом. */
+        .done-card .stripe,
+        .done-card .oc-datebadge-month,
+        .done-card .pay-pill,
+        .done-card .status-btn { filter: saturate(0.77); }
 
         /* Отступ сверху у списка заказов — чтобы верхняя карточка не оказывалась
            под переключателем вида (высота отступа выставляется тем же JS, что
