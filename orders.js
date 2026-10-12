@@ -65,8 +65,8 @@ function displayOrders() {
             ? `${formatMoney(wt.net)} ${t('orders_sum_novat_short')} · <b>${formatMoney(wt.sum)}</b> ${t('orders_sum_withvat_short')}`
             : `<b>${formatMoney(wt.sum)}</b>`;
         return `<div class="ot-week-summary">
-            <div class="ot-week-line"><span class="ot-week-label">${t('orders_week_word')} ${weekLabel}</span><span class="ot-week-counts">${countsText}</span></div>
-            <div class="ot-week-sums">${sumsText}</div>
+            <div class="ot-week-label">${t('orders_week_word')} ${weekLabel}</div>
+            <div class="ot-week-line"><span class="ot-week-counts">${countsText}</span><span class="ot-week-sums">${sumsText}</span></div>
         </div>`;
     }
 
