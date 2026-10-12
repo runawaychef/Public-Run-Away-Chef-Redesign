@@ -21,7 +21,7 @@ function getMondayOf(d) {
 
 // Возвращает Date — понедельник текущей недели (в локальном времени)
 function getCurrentWeekStart() {
-    return getMondayOf(new Date());
+    return getMondayOf(orgNowDate());
 }
 
 // Возвращает строку YYYY-MM-DD — понедельник текущей недели

@@ -267,12 +267,9 @@ async function freezeDocumentSnapshot(order, docType, existing) {
         issueDate = existing.issueDate;
         dueDate = existing.dueDate;
     } else {
-        const now = new Date();
         const termDays = (cust && cust.payment_term_days != null) ? Number(cust.payment_term_days) : 7;
-        const due = new Date(now);
-        due.setDate(due.getDate() + termDays);
-        issueDate = now.toISOString().slice(0, 10);
-        dueDate = due.toISOString().slice(0, 10);
+        issueDate = getLocalDateStr(0);
+        dueDate = getLocalDateStr(termDays);
     }
 
     const snapshot = {

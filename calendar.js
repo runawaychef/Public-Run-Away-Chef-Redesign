@@ -43,7 +43,7 @@ function toggleCustomCalendar(popupId, hiddenInputId, labelId, opts) {
     if (wasOpen) return;
 
     const currentVal = document.getElementById(hiddenInputId)?.value || '';
-    const base = currentVal ? new Date(currentVal + 'T00:00:00') : new Date();
+    const base = currentVal ? new Date(currentVal + 'T00:00:00') : orgNowDate();
     _calInstances[popupId] = {
         mode: 'single',
         hiddenInputId, labelId,
@@ -76,7 +76,7 @@ function toggleCustomCalendarRange(popupId, fromInputId, toInputId, fromLabelId,
 
     const fromVal = document.getElementById(fromInputId)?.value || '';
     const toVal = document.getElementById(toInputId)?.value || '';
-    const base = fromVal ? new Date(fromVal + 'T00:00:00') : new Date();
+    const base = fromVal ? new Date(fromVal + 'T00:00:00') : orgNowDate();
     _calInstances[popupId] = {
         mode: 'range',
         fromInputId, toInputId, fromLabelId, toLabelId,
@@ -109,7 +109,7 @@ function calNavMonth(popupId, delta) {
 function calGoToday(popupId) {
     const st = _calInstances[popupId];
     if (!st) return;
-    const now = new Date();
+    const now = orgNowDate();
     st.viewYear = now.getFullYear();
     st.viewMonth = now.getMonth();
     renderCalendarPopup(popupId);
@@ -174,7 +174,7 @@ function renderCalendarPopup(popupId) {
     const isRange = st.mode === 'range';
 
     const selectedIso = !isRange ? (document.getElementById(st.hiddenInputId)?.value || '') : '';
-    const now = new Date();
+    const now = orgNowDate();
     const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
     const firstOfMonth = new Date(st.viewYear, st.viewMonth, 1);

@@ -237,7 +237,7 @@ function getCustomerOrdersForRange(cust) {
     const range = document.getElementById('cdDateRange').value;
     let custOrders = orders.filter(o => o.customer_id === cust.id);
     if (range === 'week' || range === 'month' || range === 'year') {
-        const today = new Date();
+        const today = orgNowDate();
         let start;
         if (range === 'week') {
             start = getCurrentWeekStart();
@@ -606,7 +606,7 @@ function renderCustomerOrders() {
     let custOrders = orders.filter(o => o.customer_id === cust.id);
 
     if (range === 'week' || range === 'month' || range === 'year') {
-        const today = new Date();
+        const today = orgNowDate();
         let startStr;
         if (range === 'week') {
             startStr = getCurrentWeekStartStr();

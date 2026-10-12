@@ -777,7 +777,7 @@ function getFilteredOrdersForList() {
         });
     }
     if (dateRange === 'week' || dateRange === 'month') {
-        const today = new Date();
+        const today = orgNowDate();
         let startStr, endStr;
         if (dateRange === 'week') {
             // Неделя Пн–Вс: от понедельника до воскресенья включительно
@@ -1079,7 +1079,7 @@ async function copyOrder(i) {
         const { data, error } = await db.from('orders').insert({
             org_id: currentOrgId,
             customer_id: o.customer_id,
-            order_date: new Date().toISOString().split('T')[0],
+            order_date: getLocalDateStr(0),
             status: 'принят',
             discount: o.discount || 0,
             vat_exempt: !!o.vat_exempt,

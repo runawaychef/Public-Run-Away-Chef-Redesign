@@ -2343,6 +2343,19 @@
                     <p class="text-[11px] text-gray-400 mt-0.5" data-i18n="company_country_hint">При выборе страны валюта и ставка НДС ниже подставятся автоматически — их можно изменить вручную</p>
                 </div>
 
+                <div class="mb-3">
+                    <label class="table-text text-gray-500" data-i18n="company_timezone_label">Часовой пояс пекарни</label>
+                    <div class="relative">
+                        <button type="button" onclick="toggleTimezoneDropdown()" id="cmpTimezoneBtn" class="field-select-btn">
+                            <span id="cmpTimezoneLabel">—</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
+                        </button>
+                        <div id="cmpTimezoneDropdown" class="hidden absolute z-10 bg-white border rounded-xl shadow-md w-full mt-1 max-h-52 overflow-y-auto p-1"></div>
+                    </div>
+                    <p class="text-[11px] text-gray-400 mt-0.5" id="cmpTimezoneNow"></p>
+                    <p class="text-[11px] text-gray-400" data-i18n="company_timezone_hint">По этому поясу считаются даты заказов, счетов и «сегодня» — независимо от того, где находится сотрудник</p>
+                </div>
+
                 <div class="grid grid-cols-2 gap-1 mb-3" id="cmpProgressiveFields">
                     <div>
                         <label class="table-text text-gray-500" data-i18n="company_currency_label">Валюта расчёта</label>
@@ -3056,32 +3069,32 @@
     </div><!-- p-2 -->
 </div><!-- container -->
 
-<script src="dates.js?v=8"></script>
+<script src="dates.js?v=9"></script>
     <script src="money.js?v=10"></script>
-    <script src="i18n-core.js?v=28"></script>
+    <script src="i18n-core.js?v=29"></script>
     <script src="supabaseClient.js?v=7"></script>
-    <script src="cache.js?v=13"></script>
+    <script src="cache.js?v=14"></script>
     <script src="auth.js?v=20"></script>
-    <script src="employees.js?v=50"></script>
-    <script src="company.js?v=22"></script>
-    <script src="inventory.js?v=52"></script>
+    <script src="employees.js?v=51"></script>
+    <script src="company.js?v=23"></script>
+    <script src="inventory.js?v=53"></script>
     <script src="billing.js?v=15"></script>
     <script src="push.js?v=8"></script>
-<script src="ingredients.js?v=38"></script>
+<script src="ingredients.js?v=39"></script>
 <script src="batches.js?v=10"></script>
-<script src="semifinished.js?v=37"></script>
+<script src="semifinished.js?v=38"></script>
 <script src="products.js?v=32"></script>
-<script src="customers.js?v=39"></script>
-<script src="calendar.js?v=7"></script>
-<script src="orders.js?v=109"></script>
-<script src="invoice.js?v=37"></script>
+<script src="customers.js?v=40"></script>
+<script src="calendar.js?v=8"></script>
+<script src="orders.js?v=110"></script>
+<script src="invoice.js?v=38"></script>
 <script src="send-document.js?v=15"></script>
 <script src="payments.js?v=19"></script>
-<script src="stats.js?v=21"></script>
+<script src="stats.js?v=22"></script>
 <script src="history.js?v=9"></script>
 <script src="modals.js?v=16"></script>
 <script src="demoData.js?v=19"></script>
-<script src="helpers.js?v=38"></script>
+<script src="helpers.js?v=39"></script>
 <script>
 // SUPABASE_URL, SUPABASE_KEY, db перенесены в supabaseClient.js
 

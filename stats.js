@@ -69,7 +69,7 @@ function downloadBackup() {
     const blob = new Blob([json], { type: 'application/json' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
-    const date = new Date().toISOString().slice(0,10);
+    const date = getLocalDateStr(0);
     a.href     = url;
     a.download = `runwaychef_backup_${date}.json`;
     document.body.appendChild(a);
@@ -85,7 +85,7 @@ function getFilteredOrders() {
     let filtered = [...orders];
     if (selectedStatsCustomers.length > 0) filtered = filtered.filter(o => selectedStatsCustomers.includes(o.customer));
     if (dateRange === 'week' || dateRange === 'month' || dateRange === 'year') {
-        const today = new Date();
+        const today = orgNowDate();
         let start;
         if (dateRange === 'week') {
             // Неделя Пн–Вс
@@ -111,7 +111,7 @@ function getFilteredOrders() {
 }
 
 function calculateStats(filteredOrders) {
-    const today = new Date();
+    const today = orgNowDate();
     const weekStart  = getCurrentWeekStart();
     const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
     const sum    = list => list.reduce((s, o) => s + orderGrandTotal(o), 0).toFixed(2);
@@ -365,7 +365,7 @@ async function exportIngredientUsageReportPdf() {
         footStyles: { fillColor: PDF_COLORS.sageLight, textColor: PDF_COLORS.textDark, fontStyle: 'bold', font: 'Roboto' },
     });
 
-    pdf.save(`ingredient-usage-${document.getElementById('statsDateRange').value}-${isoDate(new Date())}.pdf`);
+    pdf.save(`ingredient-usage-${document.getElementById('statsDateRange').value}-${isoDate(orgNowDate())}.pdf`);
 }
 
 function updateDisplay(filteredOrders = orders) {
@@ -711,7 +711,7 @@ function isoDate(d) {
 
 function initDailyRevenueChart() {
     if (!_dailyChartWindowEnd) {
-        _dailyChartWindowEnd = new Date();
+        _dailyChartWindowEnd = orgNowDate();
         _dailyChartWindowEnd.setHours(0,0,0,0);
     }
     drawDailyRevenueChart();
@@ -741,7 +741,7 @@ function initDailyRevenueChart() {
         const dx = e.clientX - dragStartX;
         const dayWidthPx = canvas._dayStepX || 16;
         const deltaDays = Math.round(-dx / dayWidthPx); // тащим влево -> более поздние даты
-        const today = new Date(); today.setHours(0,0,0,0);
+        const today = orgNowDate(); today.setHours(0,0,0,0);
         let candidate = new Date(dragStartWindowEnd);
         candidate.setDate(candidate.getDate() + deltaDays);
         if (candidate > today) candidate = today;

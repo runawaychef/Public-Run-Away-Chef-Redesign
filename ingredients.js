@@ -46,7 +46,7 @@ function displayIngredients() {
     tbody.innerHTML = '';
 
     // Считаем сколько нужно для принятых заказов
-    const today = typeof getLocalDateStr === 'function' ? getLocalDateStr(0) : new Date().toISOString().slice(0, 10);
+    const today = typeof getLocalDateStr === 'function' ? getLocalDateStr(0) : getLocalDateStr(0);
     const neededForOrders = {};
     (orders || []).filter(o => o.status !== 'выполнен' && o.date >= today).forEach(o => {
         (o.items || []).forEach(item => {
@@ -126,7 +126,7 @@ function renderIngredientCards() {
     const body = document.getElementById('ingredientCardsBody');
     if (!body) return;
 
-    const today = typeof getLocalDateStr === 'function' ? getLocalDateStr(0) : new Date().toISOString().slice(0, 10);
+    const today = typeof getLocalDateStr === 'function' ? getLocalDateStr(0) : getLocalDateStr(0);
     const neededForOrders = {};
     (orders || []).filter(o => o.status !== 'выполнен' && o.date >= today).forEach(o => {
         (o.items || []).forEach(item => {
@@ -257,7 +257,7 @@ async function createDraftIngredientAndOpen() {
     if (unitInput) unitInput.value = 'g';
 
     // Сбрасываем поля склада
-    calSetFieldValue('idNewPriceDate', 'idNewPriceDateBtnLabel', new Date().toISOString().slice(0, 10));
+    calSetFieldValue('idNewPriceDate', 'idNewPriceDateBtnLabel', getLocalDateStr(0));
     document.getElementById('idPackagePrice').value = '0.00';
     document.getElementById('idPackageSize').value = '1';
     document.getElementById('idStockQty').value = '';
@@ -389,7 +389,7 @@ async function openIngredientDetail(ingId) {
     if (nameInput) { nameInput.value = ing.name; }
     if (unitInput) { unitInput.value = ing.unit || 'g'; }
     // Фокус на поле названия если это новый черновик
-    calSetFieldValue('idNewPriceDate', 'idNewPriceDateBtnLabel', new Date().toISOString().slice(0, 10));
+    calSetFieldValue('idNewPriceDate', 'idNewPriceDateBtnLabel', getLocalDateStr(0));
     document.getElementById('idPackagePrice').value = ing.package_price.toFixed(2);
     document.getElementById('idPackageSize').value = ing.package_size;
     document.getElementById('idStockQty').value = '';
@@ -1021,7 +1021,7 @@ function openAddPriceHistoryModal() {
     if (!ing) return;
     document.getElementById('priceHistoryModalTitle').textContent = t('ing_add_price_record');
     document.getElementById('priceHistoryRecordId').value = '';
-    calSetFieldValue('priceHistoryDate', 'priceHistoryDateBtnLabel', new Date().toISOString().slice(0, 10));
+    calSetFieldValue('priceHistoryDate', 'priceHistoryDateBtnLabel', getLocalDateStr(0));
     document.getElementById('priceHistoryPrice').value = ing.package_price.toFixed(2);
     document.getElementById('priceHistorySize').value = ing.package_size;
     document.getElementById('priceHistoryModal').style.display = 'flex';

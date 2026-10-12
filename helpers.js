@@ -7,8 +7,35 @@
 // Возвращает текущую дату в локальном часовом поясе в формате YYYY-MM-DD.
 // Важно: НЕ использовать toISOString() — она возвращает UTC, что в Литве
 // (UTC+3) даёт неверный день в ночное время (с 00:00 до 03:00).
+//
+// Бизнес-дата считается по часовому поясу ОРГАНИЗАЦИИ (currentOrgTimezone, IANA),
+// а не по устройству сотрудника: пекарня в Литве => все даты литовские, даже если
+// владелец в командировке в другом часовом поясе. Если пояс не задан — как раньше,
+// по времени устройства.
+//
+// orgNowDate() возвращает Date, ЛОКАЛЬНЫЕ поля которого (getFullYear/getDate/getHours…)
+// равны настенному времени организации. Это "сдвинутая" дата — только для чтения
+// календарных полей, не для вычисления моментов времени (не сравнивать с Date.now()).
+function orgNowDate() {
+    const tz = (typeof currentOrgTimezone !== 'undefined') ? currentOrgTimezone : null;
+    if (!tz) return new Date();
+    try {
+        const parts = new Intl.DateTimeFormat('en-CA', {
+            timeZone: tz, hourCycle: 'h23',
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', second: '2-digit'
+        }).formatToParts(new Date());
+        const p = {};
+        parts.forEach(x => { p[x.type] = x.value; });
+        return new Date(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second);
+    } catch (e) {
+        return new Date(); // неизвестный пояс — не ломаем приложение
+    }
+}
+
+// Сегодняшняя дата организации строкой YYYY-MM-DD (со сдвигом в днях)
 function getLocalDateStr(offsetDays) {
-    const d = new Date();
+    const d = orgNowDate();
     if (offsetDays) d.setDate(d.getDate() + offsetDays);
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');

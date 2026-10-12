@@ -184,9 +184,7 @@ function getSfAlertZone(sf, neededSfForOrders) {
 
 // Средний расход ингредиента в день за последние 30 дней из выполненных заказов
 function avgDailyUsage(ingId) {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 30);
-    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    const cutoffStr = getLocalDateStr(-30);
 
     let totalUsed = 0;
     orders.forEach(o => {

@@ -736,9 +736,7 @@ async function toggleSfPriceBlock() {
 
 // Средний расход п/ф в день за последние 30 дней
 function avgDailySfUsage(sfId) {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 30);
-    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    const cutoffStr = getLocalDateStr(-30);
     let totalUsed = 0;
     orders.forEach(o => {
         if (o.date < cutoffStr) return;

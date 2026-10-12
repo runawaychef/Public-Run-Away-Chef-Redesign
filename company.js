@@ -147,6 +147,76 @@ function selectCurrency(code) {
     saveCompanyInfo('currency_code', code);
 }
 
+// ── Часовой пояс организации ─────────────────────────────────────────────────
+// Все бизнес-даты (дата заказа, счёта, «сегодня», недели/месяцы) считаются по этому поясу.
+// null = "по устройству" (как было раньше).
+const TIMEZONE_OPTIONS = [
+    'Europe/Vilnius', 'Europe/Riga', 'Europe/Tallinn', 'Europe/Warsaw', 'Europe/Berlin',
+    'Europe/London', 'Europe/Kyiv', 'Europe/Chisinau', 'Europe/Minsk', 'Europe/Moscow',
+    'Asia/Tbilisi', 'Asia/Yerevan', 'Asia/Baku', 'Asia/Dubai', 'Asia/Tashkent',
+    'Asia/Ashgabat', 'Asia/Dushanbe', 'Asia/Almaty', 'Asia/Bishkek',
+    'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles'
+];
+
+// Пояс по умолчанию для страны (подставляется при выборе страны, если пояс ещё не задан)
+const COUNTRY_DEFAULT_TIMEZONE = {
+    LT: 'Europe/Vilnius', LV: 'Europe/Riga', EE: 'Europe/Tallinn', DE: 'Europe/Berlin',
+    PL: 'Europe/Warsaw', RU: 'Europe/Moscow', BY: 'Europe/Minsk', KZ: 'Asia/Almaty',
+    KG: 'Asia/Bishkek', UZ: 'Asia/Tashkent', TJ: 'Asia/Dushanbe', TM: 'Asia/Ashgabat',
+    AZ: 'Asia/Baku', AM: 'Asia/Yerevan', GE: 'Asia/Tbilisi', MD: 'Europe/Chisinau',
+    UA: 'Europe/Kyiv', GB: 'Europe/London', AE: 'Asia/Dubai'
+};
+
+function _tzOffsetLabel(tz) {
+    try {
+        const part = new Intl.DateTimeFormat('en', { timeZone: tz, timeZoneName: 'shortOffset' })
+            .formatToParts(new Date()).find(p => p.type === 'timeZoneName');
+        return part ? part.value.replace('GMT', 'UTC') : '';
+    } catch (e) { return ''; }
+}
+
+function timezoneLabel(tz) {
+    if (!tz) return t('company_timezone_device');
+    const city = tz.split('/').pop().replace(/_/g, ' ');
+    const off = _tzOffsetLabel(tz);
+    return off ? `${city} (${off})` : city;
+}
+
+function renderTimezoneDropdown() {
+    const dropdown = document.getElementById('cmpTimezoneDropdown');
+    if (!dropdown) return;
+    const list = [null, ...TIMEZONE_OPTIONS];
+    if (currentOrgTimezone && !TIMEZONE_OPTIONS.includes(currentOrgTimezone)) list.splice(1, 0, currentOrgTimezone);
+    dropdown.innerHTML = list.map(tz =>
+        `<div onclick="selectTimezone(${tz ? `'${tz}'` : 'null'})" class="table-text px-2 py-1.5 rounded hover:bg-gray-100 cursor-pointer">${timezoneLabel(tz)}</div>`
+    ).join('');
+}
+
+function toggleTimezoneDropdown() {
+    document.getElementById('cmpTimezoneDropdown').classList.toggle('hidden');
+}
+
+// Подпись выбранного пояса + строка «Сейчас в пекарне: дата, время»
+function updateTimezoneUI() {
+    const lbl = document.getElementById('cmpTimezoneLabel');
+    if (lbl) lbl.textContent = timezoneLabel(currentOrgTimezone);
+    const now = document.getElementById('cmpTimezoneNow');
+    if (now) {
+        const d = orgNowDate();
+        const pad = n => String(n).padStart(2, '0');
+        const dateStr = `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        now.textContent = t('company_timezone_now').replace('{time}', dateStr);
+    }
+}
+
+async function selectTimezone(tz) {
+    document.getElementById('cmpTimezoneDropdown').classList.add('hidden');
+    currentOrgTimezone = tz;
+    updateTimezoneUI();
+    await saveCompanyInfo('timezone', tz);
+    updateTimezoneUI();
+}
+
 function renderCountryDropdown() {
     const dropdown = document.getElementById('cmpCountryDropdown');
     dropdown.innerHTML = COUNTRY_OPTIONS.map(c =>
@@ -171,6 +241,9 @@ async function selectCountry(code) {
 
     if (!found) { await saveCompanyInfo('country', code); return; }
 
+    // Пояс подставляем только если он ещё не задан — уже выбранный не трогаем
+    const defaultTz = !currentOrgTimezone ? COUNTRY_DEFAULT_TIMEZONE[code] : null;
+
     _cmpCurrentCurrencyCode = found.currency;
     document.getElementById('cmpCurrencyLabel').textContent = currencyLabel(found.currency);
     document.getElementById('cmpVatRate').value = (found.vatRate * 100).toString();
@@ -178,10 +251,11 @@ async function selectCountry(code) {
     showLoading(t('common_saving'));
     try {
         await updateChecked(db.from('organizations')
-            .update({ country: code, currency_code: found.currency, vat_rate: found.vatRate })
+            .update(Object.assign({ country: code, currency_code: found.currency, vat_rate: found.vatRate }, defaultTz ? { timezone: defaultTz } : {}))
             .eq('id', currentOrgId));
         currentOrgCurrency = found.currency;
         currentOrgVatRate = found.vatRate;
+        if (defaultTz) { currentOrgTimezone = defaultTz; renderTimezoneDropdown(); updateTimezoneUI(); }
         logActivity('system', `${t('log_country_changed')}: ${found.label}`);
         showAutosaveToast();
     } catch (e) {
@@ -222,11 +296,21 @@ document.addEventListener('click', function(e) {
     }
 });
 
+// Закрытие выпадающего списка часовых поясов по клику снаружи
+document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('cmpTimezoneDropdown');
+    const btn = document.getElementById('cmpTimezoneBtn');
+    if (!dropdown || dropdown.classList.contains('hidden')) return;
+    if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
+        dropdown.classList.add('hidden');
+    }
+});
+
 async function openCompanyInfoModal() {
     showLoading();
     try {
         const { data, error } = await db.from('organizations')
-            .select('name, currency_code, country, vat_rate, entity_type, phone, email, address, legal_name, reg_number, vat_code, director_name, director_position, personal_code, bank_name, bank_account, bank_swift, logo_data_url, logo_on_documents, bcc_self_on_send')
+            .select('name, currency_code, country, vat_rate, entity_type, phone, email, address, legal_name, reg_number, vat_code, director_name, director_position, personal_code, bank_name, bank_account, bank_swift, logo_data_url, logo_on_documents, bcc_self_on_send, timezone')
             .eq('id', currentOrgId)
             .single();
         if (error) throw error;
@@ -238,6 +322,9 @@ async function openCompanyInfoModal() {
         document.getElementById('cmpCountryLabel').textContent = countryLabel(data.country);
         renderCurrencyDropdown();
         document.getElementById('cmpCurrencyLabel').textContent = currencyLabel(data.currency_code || 'EUR');
+        currentOrgTimezone = data.timezone || null;
+        renderTimezoneDropdown();
+        updateTimezoneUI();
         document.getElementById('cmpVatRate').value = data.vat_rate != null ? (Number(data.vat_rate) * 100).toString() : '0';
         document.getElementById('cmpPhone').value        = data.phone || '';
         document.getElementById('cmpEmail').value        = data.email || '';
@@ -299,6 +386,11 @@ async function saveCompanyInfo(field, value) {
         if (field === 'currency_code') {
             currentOrgCurrency = value;
         }
+        if (field === 'timezone') {
+            currentOrgTimezone = value || null;
+            if (typeof saveAppSnapshot === 'function') saveAppSnapshot();
+            if (typeof displayOrders === 'function') displayOrders();
+        }
         if (field === 'vat_rate') {
             currentOrgVatRate = Number(value);
         }
@@ -329,6 +421,8 @@ function refreshCompanyLangDependentUI() {
     document.getElementById('cmpCurrencyLabel').textContent = currencyLabel(_cmpCurrentCurrencyCode);
     renderCountryDropdown();
     renderCurrencyDropdown();
+    renderTimezoneDropdown();
+    updateTimezoneUI();
     updateCountrySpecificLabels();
 }
 
