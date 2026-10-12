@@ -282,6 +282,15 @@ async function freezeDocumentSnapshot(order, docType, existing) {
             discount: order.discount,
             vat_exempt: order.vat_exempt,
         },
+        // Версия формулы расчёта сумм. Документы, выставленные ДО введения единого
+        // расчёта в центах (calc не задан), остаются на прежней формуле и со ставкой
+        // НДС организации; новые получают calc: 2 и фиксируют ставку НДС на момент выставления.
+        ...(existing && existing.calc !== 2 ? {} : {
+            calc: 2,
+            vat_rate: (existing && existing.calc === 2 && existing.vat_rate != null)
+                ? Number(existing.vat_rate)
+                : (typeof currentOrgVatRate !== 'undefined' ? Number(currentOrgVatRate) : 0),
+        }),
         org: {
             name: org.name, legal_name: org.legal_name, entity_type: org.entity_type,
             personal_code: org.personal_code, reg_number: org.reg_number, vat_code: org.vat_code,
@@ -401,6 +410,39 @@ function issuedByLineText(org, sellerName, lang) {
     return name;
 }
 
+// Суммы документа из снимка — ОДНА точка для HTML-просмотра и PDF.
+// calc === 2: единый расчёт в центах (money.js, calcTotals) со ставкой НДС из снимка.
+// Иначе (старые документы): прежняя формула без округления, ставка — текущая у организации;
+// старые счета намеренно не пересчитываются.
+function documentTotals(snapshot) {
+    const order = snapshot.order;
+    const items = order.items || [];
+    if (snapshot.calc === 2) {
+        const vatRate = Number(snapshot.vat_rate) || 0;
+        const tt = calcTotals(items, order.discount, !!order.vat_exempt, vatRate);
+        return {
+            lines: tt.lines, afterDiscountAll: tt.net, vatAll: tt.vat, grandAll: tt.grand,
+            vatPctLabel: order.vat_exempt ? '0%' : (vatRate * 100).toFixed(0) + '%',
+        };
+    }
+    const subtotalAll = items.reduce((s, it) => s + it.quantity * it.price, 0);
+    const discountAll = subtotalAll * (Number(order.discount) || 0) / 100;
+    const afterDiscountAll = subtotalAll - discountAll;
+    const vatRate = typeof currentOrgVatRate !== 'undefined' ? currentOrgVatRate : 0;
+    const vatAll = order.vat_exempt ? 0 : afterDiscountAll * vatRate;
+    const lines = items.map(item => {
+        const lineNet = item.quantity * item.price;
+        const discShare = subtotalAll > 0 ? (lineNet / subtotalAll) * discountAll : 0;
+        const net = lineNet - discShare;
+        const vat = order.vat_exempt ? 0 : net * vatRate;
+        return { net, vat, gross: net + vat };
+    });
+    return {
+        lines, afterDiscountAll, vatAll, grandAll: afterDiscountAll + vatAll,
+        vatPctLabel: order.vat_exempt ? '0%' : (vatRate * 100).toFixed(0) + '%',
+    };
+}
+
 function buildDocumentHtml(docType, snapshot, lang) {
     const { order, org, cust, number, issueDate, dueDate, customerNameFallback } = snapshot;
     const isInvoice = docType === 'invoice';
@@ -437,24 +479,15 @@ function buildDocumentHtml(docType, snapshot, lang) {
     ].filter(Boolean) : [];
 
     // ---- Позиции с распределением скидки и НДС по строкам ----
-    // Считаем по тем же формулам, что и money.js, но на данных из снимка
     const items = order.items || [];
-    const subtotalAll = items.reduce((s, it) => s + it.quantity * it.price, 0);
-    const discountAll = subtotalAll * (Number(order.discount) || 0) / 100;
-    const afterDiscountAll = subtotalAll - discountAll;
-    const vatRate = typeof currentOrgVatRate !== 'undefined' ? currentOrgVatRate : 0;
-    const vatAll = order.vat_exempt ? 0 : afterDiscountAll * vatRate;
-    const grandAll = afterDiscountAll + vatAll;
-    const vatPctLabel = order.vat_exempt ? '0%' : (vatRate * 100).toFixed(0) + '%';
+    const { lines: docLines, afterDiscountAll, vatAll, grandAll, vatPctLabel } = documentTotals(snapshot);
 
     let itemsHtml = '';
     let totalQty = 0;
-    items.forEach(item => {
-        const lineNet = item.quantity * item.price;
-        const discShare = subtotalAll > 0 ? (lineNet / subtotalAll) * discountAll : 0;
-        const lineNetAfterDiscount = lineNet - discShare;
-        const lineVat = order.vat_exempt ? 0 : lineNetAfterDiscount * vatRate;
-        const lineSubtotal = lineNetAfterDiscount + lineVat;
+    items.forEach((item, idx) => {
+        const lineNetAfterDiscount = docLines[idx].net;
+        const lineVat = docLines[idx].vat;
+        const lineSubtotal = docLines[idx].gross;
         totalQty += Number(item.quantity);
         itemsHtml += `<tr>
             <td style="padding:9px 8px;border-bottom:1px solid #e5e7eb;">${escapeHtml(item.product)}</td>
@@ -582,21 +615,13 @@ async function buildDocumentPdf(docType, snapshot, lang) {
     ].filter(Boolean) : [];
 
     const items = order.items || [];
-    const subtotalAll = items.reduce((s, it) => s + it.quantity * it.price, 0);
-    const discountAll = subtotalAll * (Number(order.discount) || 0) / 100;
-    const afterDiscountAll = subtotalAll - discountAll;
-    const vatRate = typeof currentOrgVatRate !== 'undefined' ? currentOrgVatRate : 0;
-    const vatAll = order.vat_exempt ? 0 : afterDiscountAll * vatRate;
-    const grandAll = afterDiscountAll + vatAll;
-    const vatPctLabel = order.vat_exempt ? '0%' : (vatRate * 100).toFixed(0) + '%';
+    const { lines: docLines, afterDiscountAll, vatAll, grandAll, vatPctLabel } = documentTotals(snapshot);
 
     let totalQty = 0;
-    const bodyRows = items.map(item => {
-        const lineNet = item.quantity * item.price;
-        const discShare = subtotalAll > 0 ? (lineNet / subtotalAll) * discountAll : 0;
-        const lineNetAfterDiscount = lineNet - discShare;
-        const lineVat = order.vat_exempt ? 0 : lineNetAfterDiscount * vatRate;
-        const lineSubtotal = lineNetAfterDiscount + lineVat;
+    const bodyRows = items.map((item, idx) => {
+        const lineNetAfterDiscount = docLines[idx].net;
+        const lineVat = docLines[idx].vat;
+        const lineSubtotal = docLines[idx].gross;
         totalQty += Number(item.quantity);
         return [
             item.product, String(item.quantity), unitAbbrevDoc(item.unit, lang), money(item.price),

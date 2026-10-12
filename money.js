@@ -22,30 +22,86 @@ function formatMoney(amount, decimals) {
     return Number(amount || 0).toFixed(decimals != null ? decimals : 2) + ' ' + sym;
 }
 
+// ==================== РАСЧЁТ СУММ ЗАКАЗА (единственная формула) ====================
+// ВСЕ суммы заказа и документов (экран, статистика, оплаты, счёт HTML и PDF) считаются
+// ЗДЕСЬ, в целых центах, чтобы не накапливались дробные хвосты и сумма строк
+// всегда в точности равнялась итогу:
+//   1. сумма строки = округлённое до цента кол-во × цена;
+//   2. скидка = процент от суммы всех строк, округлена до цента;
+//   3. НДС считается ОДИН РАЗ от итога без НДС и округляется до цента (0,005 вверх);
+//   4. скидка и НДС раскладываются по строкам "методом наибольшего остатка" —
+//      сумма долей по строкам ровно равна общей скидке / общему НДС.
+
+// Округление неотрицательного числа до целого (0,5 вверх) с поправкой на двоичную
+// дробь (31.499999999999996 тоже должно давать 31.5 → 32).
+function _roundCents(x) {
+    return Math.round(x + 1e-7);
+}
+
+// Раскладывает целое число центов total пропорционально весам weights так, чтобы
+// сумма долей была ровно total. Остаток раздаётся строкам с наибольшей дробной частью.
+function _allocateCents(total, weights) {
+    const n = weights.length;
+    const sumW = weights.reduce((s, w) => s + w, 0);
+    if (!n || sumW <= 0 || !total) return weights.map(() => 0);
+    const exact = weights.map(w => total * w / sumW);
+    const parts = exact.map(e => Math.floor(e + 1e-9));
+    let left = total - parts.reduce((s, p) => s + p, 0);
+    const order = exact.map((e, i) => ({ i, frac: e - Math.floor(e + 1e-9) }))
+        .sort((x, y) => (y.frac - x.frac) || (x.i - y.i));
+    for (let k = 0; left > 0 && k < order.length; k++, left--) parts[order[k].i] += 1;
+    return parts;
+}
+
+// Главная функция. items: [{quantity, price}], discountPct: число (проценты),
+// vatExempt: bool, vatRate: доля (0.21). Возвращает суммы в валюте (не в центах):
+// { lines: [{net, vat, gross}], subtotal, discount, net, vat, grand }
+function calcTotals(items, discountPct, vatExempt, vatRate) {
+    const list = items || [];
+    const lineC = list.map(it => _roundCents(Math.max(0, (Number(it.quantity) || 0) * (Number(it.price) || 0)) * 100));
+    const subtotalC = lineC.reduce((s, v) => s + v, 0);
+    const pct = Math.min(100, Math.max(0, Number(discountPct) || 0));
+    const discountC = _roundCents(subtotalC * pct / 100);
+    const netC = subtotalC - discountC;
+    const discShares = _allocateCents(discountC, lineC);
+    const lineNetC = lineC.map((v, i) => v - discShares[i]);
+    const rate = Number(vatRate) || 0;
+    const vatC = vatExempt ? 0 : _roundCents(netC * rate);
+    const lineVatC = _allocateCents(vatC, lineNetC);
+    return {
+        lines: lineNetC.map((n, i) => ({ net: n / 100, vat: lineVatC[i] / 100, gross: (n + lineVatC[i]) / 100 })),
+        subtotal: subtotalC / 100,
+        discount: discountC / 100,
+        net: netC / 100,
+        vat: vatC / 100,
+        grand: (netC + vatC) / 100
+    };
+}
+
+function _orderTotals(order) {
+    const rate = typeof currentOrgVatRate !== 'undefined' ? currentOrgVatRate : 0;
+    return calcTotals(order.items, order.discount, !!order.vat_exempt, rate);
+}
+
 // Сумма позиций без скидки и НДС
 function orderTotal(order) {
-    if (!order.items || !order.items.length) return 0;
-    return order.items.reduce((s, it) => s + (it.quantity * it.price || 0), 0);
+    return _orderTotals(order).subtotal;
 }
 
 function orderDiscountAmount(order) {
-    const subtotal = orderTotal(order);
-    const pct = order.discount || 0;
-    return subtotal * (pct / 100);
+    return _orderTotals(order).discount;
 }
 
 function orderAfterDiscount(order) {
-    return orderTotal(order) - orderDiscountAmount(order);
+    return _orderTotals(order).net;
 }
 
 function orderVatAmount(order) {
-    if (order.vat_exempt) return 0;
-    const rate = typeof currentOrgVatRate !== 'undefined' ? currentOrgVatRate : 0;
-    return orderAfterDiscount(order) * rate;
+    return _orderTotals(order).vat;
 }
 
 function orderGrandTotal(order) {
-    return orderAfterDiscount(order) + orderVatAmount(order);
+    return _orderTotals(order).grand;
 }
 
 // ==================== СЕБЕСТОИМОСТЬ ИЗДЕЛИЙ ====================
