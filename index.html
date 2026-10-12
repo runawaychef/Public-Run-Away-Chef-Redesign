@@ -704,13 +704,19 @@
         .order-card.done-card { flex-direction: column; }
         .oc-card-top { display: flex; min-width: 0; padding-left: 5px; }
         .done-card .stripe { position: absolute; top: 0; left: 0; bottom: 0; width: 5px; border-radius: 16px 0 0 16px; }
-        .expand-band {
-            display: flex; align-items: center; justify-content: center;
-            padding: 9px 0; cursor: pointer;
+        /* Нижний ряд свёрнутой карточки: плашка оплаты слева, стрелка «развернуть» по центру, статус справа */
+        .oc-bottom { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-top: 8px; }
+        .pay-pill {
+            border: none; cursor: pointer; border-radius: 10px; padding: 5px 10px;
+            font-size: 11.5px; font-weight: 700; color: #fff; white-space: nowrap;
+            display: inline-flex; align-items: center;
+            transition: all 0.15s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.12);
         }
-        .expand-band svg { width: 16px; height: 16px; color: #a6a196; transition: transform 0.2s ease; }
-        .order-card.expanded .expand-band svg { transform: rotate(180deg); }
-        .expand-band:active svg { color: #7c9473; }
+        .pay-pill:active { transform: scale(0.96); opacity: 0.88; }
+        .oc-chev { flex: 1; align-self: stretch; display: flex; align-items: center; justify-content: center; min-height: 34px; background: none; border: none; cursor: pointer; padding: 0; }
+        .oc-chev svg { width: 16px; height: 16px; color: #a6a196; transition: transform 0.2s ease; }
+        .order-card.expanded .oc-chev svg { transform: rotate(180deg); }
+        .oc-chev:active svg { color: #7c9473; }
 
         /* Отступ сверху у списка заказов — чтобы верхняя карточка не оказывалась
            под переключателем вида (высота отступа выставляется тем же JS, что
@@ -3086,7 +3092,7 @@
 <script src="products.js?v=32"></script>
 <script src="customers.js?v=40"></script>
 <script src="calendar.js?v=8"></script>
-<script src="orders.js?v=110"></script>
+<script src="orders.js?v=111"></script>
 <script src="invoice.js?v=39"></script>
 <script src="send-document.js?v=15"></script>
 <script src="payments.js?v=19"></script>

@@ -424,6 +424,15 @@ async function quickPayFromSwipe(orderId) {
     openAddPaymentModal(true);
 }
 
+// Нажатие на плашку оплаты в свёрнутой карточке: доплатить остаток или посмотреть платежи
+async function quickPayPillTap(orderId, isPaid) {
+    closeAllCardSwipes();
+    openOrderDetail(orderId);
+    await loadOrderPayments(orderId);
+    if (isPaid) openPaymentModal();
+    else openAddPaymentModal(true);
+}
+
 function quickCopyFromSwipe(realIdx) {
     closeAllCardSwipes();
     copyOrder(realIdx);
@@ -489,6 +498,15 @@ function renderDoneOrderCard(order) {
             <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
         </div>`).join('');
 
+    // Плашка статуса оплаты (левый нижний угол) — дублирует цвет боковой полосы и
+    // нажимается: если есть что доплатить — открывает ввод платежа с остатком,
+    // если заказ оплачен — открывает список платежей по заказу.
+    const payPillLabel = payInfo.overdue ? t('pay_status_overdue')
+        : payInfo.status === 'paid' ? t('pay_status_paid')
+        : payInfo.status === 'partial' ? t('pay_status_partial')
+        : t('pay_status_unpaid');
+    const payPill = `<button type="button" class="pay-pill" style="background:${stripeColor};" onclick="event.stopPropagation(); quickPayPillTap(${order.id}, ${payInfo.status === 'paid' ? 'true' : 'false'})">${payPillLabel}</button>`;
+
     // Свайп-действия — "Копировать" в правой панели (кроме "Удалить" — заказ
     // уже выполнен, удалять из свайпа этого экрана не даём, только из полной
     // карточки). "Оплатить" — отдельная левая панель, свайп вправо, как и у
@@ -540,13 +558,6 @@ function renderDoneOrderCard(order) {
                                     </div>
                                     <div class="oc-row" style="margin-top:3px;">
                                         <span class="oc-meta">${escapeHtml(oNum)}</span>
-                                        <div style="position:relative;" onclick="event.stopPropagation();">
-                                            <button class="status-btn" style="background:${statusColor};" onclick="toggleOrderStatusDropdown(${order.id})">
-                                                ${statusLabel}
-                                                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
-                                            </button>
-                                            <div class="status-dropdown" id="statusDropdown-${order.id}">${statusOptions}</div>
-                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -555,18 +566,28 @@ function renderDoneOrderCard(order) {
                             ${overdueLine}
                         </div>
                         <div class="oc-items" data-role="items" style="display:none;">${itemsLine}</div>
+                        <div class="oc-bottom">
+                            ${payPill}
+                            <button type="button" class="oc-chev" onclick="event.stopPropagation(); toggleDoneCardExpand(${order.id})" title="${t('orders_expand_title')}" aria-label="${t('orders_expand_title')}">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg>
+                            </button>
+                            <div style="position:relative;" onclick="event.stopPropagation();">
+                                <button class="status-btn" style="background:${statusColor};" onclick="toggleOrderStatusDropdown(${order.id})">
+                                    ${statusLabel}
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
+                                </button>
+                                <div class="status-dropdown" id="statusDropdown-${order.id}">${statusOptions}</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="expand-band" onclick="event.stopPropagation(); toggleDoneCardExpand(${order.id})" title="${t('orders_expand_title')}">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg>
             </div>
         </div>
     </div>`;
 }
 
 function handleDoneCardTap(e, orderId) {
-    if (e.target.closest('.expand-band')) return;
+    if (e.target.closest('.oc-bottom')) return;
     openOrderDetail(orderId);
 }
 
