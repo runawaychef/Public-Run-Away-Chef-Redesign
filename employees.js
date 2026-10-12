@@ -534,28 +534,47 @@ async function selectEmployee(emp) {
     startPeriodicRefresh();
 }
 
-// Раз в минуту проверяет, не наступила ли новая дата (перезагружает всё, если да)
-// и тихо сверяет права текущего сотрудника с базой. Вынесено в отдельную функцию
-// и защищено флагом, чтобы интервал заводился РОВНО ОДИН РАЗ за время жизни
-// страницы — иначе при мгновенном восстановлении из локального кэша (см. cache.js),
-// которое НЕ проходит через selectEmployee(), эта проверка вообще не запускалась бы,
-// а при обычном повторном вызове selectEmployee() (смена сотрудника без перезагрузки
-// страницы) интервалы бы задваивались.
+// Фоновые проверки. Вынесено в отдельную функцию и защищено флагом, чтобы
+// интервал заводился РОВНО ОДИН РАЗ за время жизни страницы — иначе при мгновенном
+// восстановлении из локального кэша (cache.js), которое НЕ проходит через
+// selectEmployee(), проверка вообще не запускалась бы, а при повторном вызове
+// selectEmployee() (смена сотрудника без перезагрузки) интервалы задваивались бы.
+//
+// Раз в минуту (локально, без запросов к базе): не сменилась ли дата ПЕКАРНИ —
+// если да, перезагружаем данные (просроченные счета, «сегодня», списание склада).
+// Права сотрудника и тариф сверяем с базой реже: раз в 5 минут и при возврате
+// в приложение после паузы. На скрытой вкладке ничего не делаем.
+const PERMISSIONS_REFRESH_MS = 5 * 60 * 1000;
 let _periodicRefreshStarted = false;
 function startPeriodicRefresh() {
     if (_periodicRefreshStarted) return;
     _periodicRefreshStarted = true;
     let _lastKnownDate = getLocalDateStr(0);
-    setInterval(() => {
+    let _lastPermissionsCheck = Date.now();
+
+    const checkPermissions = () => {
+        _lastPermissionsCheck = Date.now();
+        refreshCurrentEmployeePermissions();
+    };
+    const checkDate = () => {
         const currentDate = getLocalDateStr(0);
         if (currentDate !== _lastKnownDate) {
             _lastKnownDate = currentDate;
             loadAllData(true);
-        } else {
-            displayOrders();
         }
-        refreshCurrentEmployeePermissions();
+    };
+
+    setInterval(() => {
+        if (document.visibilityState === 'hidden') return;
+        checkDate();
+        if (Date.now() - _lastPermissionsCheck >= PERMISSIONS_REFRESH_MS) checkPermissions();
     }, 60000);
+
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState !== 'visible') return;
+        checkDate();
+        if (Date.now() - _lastPermissionsCheck >= 60000) checkPermissions();
+    });
 }
 
 async function logoutEmployee() {
