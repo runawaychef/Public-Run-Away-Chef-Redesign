@@ -704,6 +704,31 @@
         .order-card.done-card { flex-direction: column; }
         .oc-card-top { display: flex; min-width: 0; padding-left: 5px; }
         .done-card .stripe { position: absolute; top: 0; left: 0; bottom: 0; width: 5px; border-radius: 16px 0 0 16px; }
+
+        /* ── Табличный вид списка заказов: недели-«острова» + итог недели отдельной строкой ── */
+        .ot-head, .ot-row { display: grid; grid-template-columns: 62px minmax(0, 1fr) 26px 62px 84px; align-items: center; }
+        .ot-head { padding: 0 12px 6px; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: #a29c8c; font-weight: 600; }
+        .ot-h-pos { text-align: center; font-size: 9.5px; letter-spacing: 0.02em; }
+        .ot-h-sum { text-align: right; padding-right: 6px; }
+        .ot-h-cust { padding: 0 6px; }
+        .ot-h-st { text-align: right; }
+        .ot-island { background: #fff; border-radius: 16px; padding: 4px 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.05); }
+        .ot-row { padding: 11px 0; border-bottom: 1px solid #f1efe9; cursor: pointer; transition: background 0.12s; font-size: 12px; }
+        .ot-row:last-child { border-bottom: none; }
+        .ot-row:active { background: #f6f8f4; }
+        .ot-date { color: #7a7568; white-space: nowrap; }
+        .ot-cust { font-weight: 600; color: #322f28; min-width: 0; overflow-wrap: anywhere; padding: 0 6px; }
+        .ot-pos { text-align: center; color: #7a7568; }
+        .ot-sum { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; padding-right: 6px; }
+        .ot-st { text-align: right; position: relative; }
+        .ot-st .status-btn { font-size: 10.5px; padding: 4px 6px 4px 8px; gap: 3px; }
+        .ot-week-summary { margin: 10px 4px 26px; padding: 0 4px; color: #6c8464; }
+        .ot-week-line { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+        .ot-week-label { font-size: 11.5px; font-weight: 700; letter-spacing: 0.02em; }
+        .ot-week-counts { font-size: 11.5px; color: #8d887b; white-space: nowrap; }
+        .ot-week-sums { text-align: right; font-size: 11.5px; color: #8d887b; margin-top: 2px; font-variant-numeric: tabular-nums; }
+        .ot-week-sums b { color: #4f6349; font-weight: 700; }
+
         /* Нижний ряд свёрнутой карточки: плашка оплаты слева, стрелка «развернуть» по центру, статус справа */
         .oc-bottom { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-top: 8px; }
         .pay-pill {
@@ -1873,18 +1898,15 @@
                 </div>
 
                 <!-- Табличный вид (переключается кнопкой вверху экрана) -->
-                <div id="orderTableWrap" class="hidden bg-white p-2 rounded-xl shadow-md">
-                    <table class="w-full table-auto table-clean">
-                        <thead><tr style="background-color:#e3e8df;">
-                            <th class="p-1 text-xs w-[17%]" data-i18n="history_col_date">Дата</th>
-                            <th class="p-1 text-xs w-[28%]" data-i18n="customers_col_number_alt">Клиент</th>
-                            <th class="p-1 text-xs w-[7%]" data-i18n="orders_col_positions">Позиций</th>
-                            <th id="ordersColTotalVat" class="p-1 text-xs w-[24%] text-center" data-i18n="orders_col_total_vat">Итого с НДС</th>
-                            <th class="p-1 text-xs w-[8%] text-center" data-i18n="customers_col_status">Статус</th>
-                            <th class="p-1 text-xs w-[16%]" data-i18n="sf_col_actions">Действия</th>
-                        </tr></thead>
-                        <tbody id="orderTableBody"></tbody>
-                    </table>
+                <div id="orderTableWrap" class="hidden">
+                    <div class="ot-head">
+                        <span class="ot-h-date" data-i18n="history_col_date">Дата</span>
+                        <span class="ot-h-cust" data-i18n="customers_col_number_alt">Клиент</span>
+                        <span class="ot-h-pos" data-i18n="orders_col_pos_short">Поз.</span>
+                        <span class="ot-h-sum" data-i18n="orders_col_sum">Сумма</span>
+                        <span class="ot-h-st" data-i18n="customers_col_status">Статус</span>
+                    </div>
+                    <div id="orderTableBody"></div>
                 </div>
             </div>
 
@@ -3093,7 +3115,7 @@
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=29"></script>
+    <script src="i18n-core.js?v=30"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=14"></script>
     <script src="auth.js?v=20"></script>
@@ -3108,7 +3130,7 @@
 <script src="products.js?v=32"></script>
 <script src="customers.js?v=40"></script>
 <script src="calendar.js?v=8"></script>
-<script src="orders.js?v=112"></script>
+<script src="orders.js?v=113"></script>
 <script src="invoice.js?v=39"></script>
 <script src="send-document.js?v=15"></script>
 <script src="payments.js?v=19"></script>

@@ -22,7 +22,7 @@ function displayOrders() {
     // открыт статус-дропдаун (и портал увёл его из карточки наружу, см. helpers.js
     // openPortalDropdown), его старый узел иначе останется висеть в портале с тем же
     // id, что и у свежесозданного в новой разметке — убираем такие "сироты" заранее.
-    document.querySelectorAll('#dropdownPortal [id^="statusDropdown-"]').forEach(d => d.remove());
+    document.querySelectorAll('#dropdownPortal [id^="statusDropdown-"], #dropdownPortal [id^="statusDropdownT-"]').forEach(d => d.remove());
 
     _ordersIndexById = new Map(orders.map((o, i) => [o.id, i]));
 
@@ -37,108 +37,73 @@ function displayOrders() {
         return o.date <= tomorrow && o.status !== 'выполнен';
     }
 
-    // ---- Табличный вид: как и раньше, с фильтрами ----
+    // ---- Табличный вид: блоки-«острова» по неделям (Пн–Вс), итог недели — отдельной
+    // строкой под блоком; итогов за месяц нет. Состав и сортировка — как раньше,
+    // фильтры общие с карточным видом. ----
     const filteredOrders = getFilteredOrdersForList();
     const sorted = [...filteredOrders].sort((a, b) => new Date(b.date) - new Date(a.date));
     const tbody = document.getElementById('orderTableBody');
-    tbody.innerHTML = '';
-
-    let currentMonthKey = null; // 'YYYY-MM' — календарный месяц самого заказа
-    let currentWeekKey  = null; // 'YYYY-MM-DD' понедельника — неделя всегда целая, Пн–Вс
 
     function localStr(d) {
         return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
     }
-
-    // Неделя и месяц — независимые понятия. Неделя всегда целая (Пн–Вс, не режется
-    // границей месяца) — так недельный итог сохраняет смысл (полный производственный
-    // цикл). Месяц считается строго по календарной дате заказа и закрывается там, где
-    // реально заканчивается — даже если это происходит посреди недельного блока.
-    function keysFor(order) {
-        const d = new Date(order.date);
-        const monthKey = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-        const weekKey  = localStr(getMondayOf(d));
-        return { monthKey, weekKey };
+    // Неделя всегда целая (Пн–Вс) — недельный итог сохраняет смысл производственного цикла.
+    function weekKeyOf(order) {
+        return localStr(getMondayOf(new Date(order.date)));
     }
 
-    function appendWeekSummary(weekKey) {
+    const hasVat = (typeof currentOrgVatRate !== 'undefined') && currentOrgVatRate > 0;
+
+    function weekSummaryHtml(weekKey) {
         const monday = new Date(weekKey + 'T00:00:00');
         const sunday = new Date(monday);
         sunday.setDate(sunday.getDate() + 6);
-        const weekTotals = calcGroupTotals(sorted, o => keysFor(o).weekKey === weekKey);
+        const wt = calcGroupTotals(sorted, o => weekKeyOf(o) === weekKey);
         const weekLabel = formatDateDMY(localStr(monday)) + ' – ' + formatDateDMY(localStr(sunday));
-        const weekRow = document.createElement('tr');
-        weekRow.innerHTML = `<td colspan="6" class="text-xs font-medium p-0.5" style="background-color:#7c9473; color:#fff;">
-            ${t('orders_week_word')} ${weekLabel} — ${weekTotals.count} ${t('orders_orders_short')}, ${weekTotals.qty} ${t('unit_pcs')}, ${formatMoney(weekTotals.sum)}
-        </td>`;
-        tbody.appendChild(weekRow);
+        const countsText = `${wt.count} ${t('orders_orders_short')}, ${wt.qty} ${t('unit_pcs')}`;
+        const sumsText = hasVat
+            ? `${formatMoney(wt.net)} ${t('orders_sum_novat_short')} · <b>${formatMoney(wt.sum)}</b> ${t('orders_sum_withvat_short')}`
+            : `<b>${formatMoney(wt.sum)}</b>`;
+        return `<div class="ot-week-summary">
+            <div class="ot-week-line"><span class="ot-week-label">${t('orders_week_word')} ${weekLabel}</span><span class="ot-week-counts">${countsText}</span></div>
+            <div class="ot-week-sums">${sumsText}</div>
+        </div>`;
     }
 
-    function appendMonthSummary(monthKey) {
-        const [y, m] = monthKey.split('-').map(Number);
-        const monthTotals = calcGroupTotals(sorted, o => keysFor(o).monthKey === monthKey);
-        const monthLabel = `${monthName(m - 1)} ${y}`;
-        const monthRow = document.createElement('tr');
-        monthRow.innerHTML = `<td colspan="6" class="text-xs font-semibold p-0.5.5" style="background-color:#d9a441; color:#fff;">
-            ${t('orders_total_for')} ${monthLabel} — ${monthTotals.count} ${t('orders_orders_short')}, ${monthTotals.qty} ${t('unit_pcs')}, ${formatMoney(monthTotals.sum)}
-        </td>`;
-        tbody.appendChild(monthRow);
-    }
-
-    function appendSpacer() {
-        const spacerRow = document.createElement('tr');
-        spacerRow.innerHTML = `<td colspan="6" class="p-0.5.5 border-b border-gray-300"></td>`;
-        tbody.appendChild(spacerRow);
-    }
-
-    sorted.forEach((order) => {
-        const { monthKey, weekKey } = keysFor(order);
-
-        const monthChanged = currentMonthKey !== null && monthKey !== currentMonthKey;
-        const weekChanged  = currentWeekKey  !== null && weekKey  !== currentWeekKey;
-
-        // Месяц закрывается сам по себе, независимо от недели — может попасть
-        // прямо посреди недельного блока.
-        if (monthChanged) {
-            appendMonthSummary(currentMonthKey);
-        }
-        // Неделя закрывается только когда реально меняется сама неделя.
-        if (weekChanged) {
-            appendWeekSummary(currentWeekKey);
-            appendSpacer();
-        }
-
-        currentMonthKey = monthKey;
-        currentWeekKey  = weekKey;
-
-        const realIdx = _ordersIndexById.get(order.id);
-        const total = formatMoney(orderGrandTotal(order));
+    function tableRowHtml(order) {
+        const statusColor = ORDER_STATUS_COLORS[order.status] || ORDER_STATUS_COLORS['принят'];
         const itemsCount = order.items ? order.items.length : 0;
-        let flagClass = 'flag';
-        if (order.status === 'принят')    flagClass += ' flag-red';
-        else if (order.status === 'в работе') flagClass += ' flag-yellow';
-        else if (order.status === 'выполнен') flagClass += ' flag-green';
-
-        const row = document.createElement('tr');
-        row.className = 'order-row border-b';
-        row.innerHTML = `
-            <td class=" p-0.5 table-text whitespace-nowrap" onclick="openOrderDetail(${order.id})">${formatDateDMY(order.date)}</td>
-            <td class=" p-0.5 table-text" onclick="openOrderDetail(${order.id})">${escapeHtml(order.customer)}</td>
-            <td class=" p-0.5 table-text text-center" onclick="openOrderDetail(${order.id})">${itemsCount}</td>
-            <td class=" p-0.5 table-text font-medium whitespace-nowrap text-center" onclick="openOrderDetail(${order.id})">${total}</td>
-            <td class=" p-0.5 text-center" onclick="openOrderDetail(${order.id})"><span class="${flagClass}"></span></td>
-            <td class=" p-0.5 text-center">
-                ${hasPermission('can_delete') ? svgDeleteSafe('openDeleteModal', [realIdx, 'order', `${t('delete_label_order_of')} «${order.customer}»`]) : ''}
-                ${svgCopy(`copyOrder(${realIdx})`)}
-            </td>`;
-        tbody.appendChild(row);
-    });
-
-    // Закрываем последнюю неделю и месяц (таблица)
-    if (currentWeekKey !== null) {
-        appendWeekSummary(currentWeekKey);
-        appendMonthSummary(currentMonthKey);
+        return `<div class="ot-row" onclick="openOrderDetail(${order.id})">
+            <span class="ot-date">${formatDateDMY(order.date)}</span>
+            <span class="ot-cust">${escapeHtml(order.customer || t('orders_no_customer'))}</span>
+            <span class="ot-pos">${itemsCount}</span>
+            <span class="ot-sum">${formatMoney(orderGrandTotal(order))}</span>
+            <span class="ot-st" onclick="event.stopPropagation();">
+                <button class="status-btn" style="background:${statusColor};" onclick="toggleOrderStatusDropdown(${order.id}, 'T')">
+                    ${orderStatusLabelCap(order.status)}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="status-dropdown" id="statusDropdownT-${order.id}">${orderStatusOptionsHtml(order)}</div>
+            </span>
+        </div>`;
     }
+
+    let tableHtml = '';
+    let curWeek = null;
+    let weekRows = '';
+    sorted.forEach(order => {
+        const wk = weekKeyOf(order);
+        if (curWeek !== null && wk !== curWeek) {
+            tableHtml += `<div class="ot-island">${weekRows}</div>` + weekSummaryHtml(curWeek);
+            weekRows = '';
+        }
+        curWeek = wk;
+        weekRows += tableRowHtml(order);
+    });
+    if (curWeek !== null) {
+        tableHtml += `<div class="ot-island">${weekRows}</div>` + weekSummaryHtml(curWeek);
+    }
+    tbody.innerHTML = tableHtml || `<p class="text-xs text-gray-400 text-center py-4">${t('orders_none_found')}</p>`;
 
     // ---- Карточный вид: та же фильтрация, что и в таблице (общее состояние
     // фильтров теперь единое для обоих видов — включая новый календарь-фильтр
@@ -601,8 +566,18 @@ function toggleDoneCardExpand(orderId) {
     card.querySelector('[data-role="items"]').style.display = expanded ? 'block' : 'none';
 }
 
-function toggleOrderStatusDropdown(orderId) {
-    const dd = document.getElementById('statusDropdown-' + orderId);
+// Пункты меню смены статуса (используется в табличном виде; в карточках то же собирается inline)
+function orderStatusOptionsHtml(order) {
+    return ORDER_STATUS_LIST.map(s => `
+        <div class="status-option${s === order.status ? ' selected' : ''}" onclick="event.stopPropagation(); quickSetOrderStatus(${order.id}, '${s}')">
+            <span><span class="dot" style="background:${ORDER_STATUS_COLORS[s]}"></span> ${orderStatusLabelCap(s)}</span>
+            <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+        </div>`).join('');
+}
+
+function toggleOrderStatusDropdown(orderId, variant) {
+    // variant 'T' — меню статуса в табличном виде (отдельный id, чтобы не пересекаться с карточкой)
+    const dd = document.getElementById('statusDropdown' + (variant || '') + '-' + orderId);
     if (!dd) return;
     const isOpen = dd.classList.contains('open');
     closeAllOrderStatusDropdowns();
@@ -743,15 +718,16 @@ function watchHeaderResize(headerCard) {
 
 // Считает сумму (с НДС) и общее кол-во изделий по подмножеству заказов, отобранных predicate
 function calcGroupTotals(allOrders, predicate) {
-    let sum = 0, qty = 0, count = 0;
+    let sum = 0, net = 0, qty = 0, count = 0;
     allOrders.forEach(o => {
         if (predicate(o)) {
             sum += orderGrandTotal(o);
+            net += orderAfterDiscount(o);
             qty += (o.items || []).reduce((s, it) => s + Number(it.quantity || 0), 0);
             count++;
         }
     });
-    return { sum, qty, count };
+    return { sum, net, qty, count };
 }
 
 // Статус оплаты заказа — единая логика для цветной точки в списке и для фильтра "Оплата",
