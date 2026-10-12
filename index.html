@@ -717,19 +717,19 @@
         .oc-chev svg { width: 16px; height: 16px; color: #a6a196; transition: transform 0.2s ease; }
         .order-card.expanded .oc-chev svg { transform: rotate(180deg); }
         .oc-chev:active svg { color: #7c9473; }
-        /* Свёрнутые карточки «Выполнен»: приглушены и цвета (насыщенность ×0.6 — полоса, плашка
+        /* Свёрнутые (не развёрнутые) карточки «Выполнен»: приглушены и цвета (насыщенность ×0.45 — полоса, плашка
            месяца, плашка оплаты, кнопка статуса, цветные строки оплаты/заметки), и текст
            (серо-коричневые тона вместо почти чёрного). Насыщенность меняется одним числом. */
-        .done-card .stripe,
-        .done-card .oc-datebadge-month,
-        .done-card .pay-pill,
-        .done-card .status-btn,
-        .done-card .oc-pay-line,
-        .done-card .oc-note { filter: saturate(0.6); }
-        .done-card .oc-name,
-        .done-card .oc-sum { color: #6f6a5f; font-weight: 600; }
-        .done-card .oc-datebadge-day { color: #7d786c; }
-        .done-card .oc-items { color: #8d887b; }
+        .done-card:not(.expanded) .stripe,
+        .done-card:not(.expanded) .oc-datebadge-month,
+        .done-card:not(.expanded) .pay-pill,
+        .done-card:not(.expanded) .status-btn,
+        .done-card:not(.expanded) .oc-pay-line,
+        .done-card:not(.expanded) .oc-note { filter: saturate(0.45); }
+        .done-card:not(.expanded) .oc-name,
+        .done-card:not(.expanded) .oc-sum { color: #6f6a5f; font-weight: 600; }
+        .done-card:not(.expanded) .oc-datebadge-day { color: #7d786c; }
+        .done-card:not(.expanded) .oc-items { color: #8d887b; }
 
         /* Отступ сверху у списка заказов — чтобы верхняя карточка не оказывалась
            под переключателем вида (высота отступа выставляется тем же JS, что
