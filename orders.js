@@ -674,7 +674,6 @@ function openOrdersHelp() {
 function setOrdersViewMode(mode) {
     document.getElementById('orderCardsWrap')?.classList.toggle('hidden', mode !== 'cards');
     document.getElementById('orderTableWrap')?.classList.toggle('hidden', mode !== 'table');
-    document.getElementById('orderFiltersPanel')?.classList.toggle('hidden', mode !== 'table');
     document.getElementById('ordersViewBtnCards')?.classList.toggle('active', mode === 'cards');
     document.getElementById('ordersViewBtnTable')?.classList.toggle('active', mode === 'table');
     // Перерисовка здесь не нужна: фильтры общие для обоих видов, а displayOrders()
