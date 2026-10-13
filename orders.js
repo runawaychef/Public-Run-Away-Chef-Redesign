@@ -202,6 +202,7 @@ function displayOrders() {
     }
 
     updateTotals(filteredOrders);
+    updateOrdersFilterSummary(filteredOrders);
 
     // Пересчитываем позицию переключателя вида при каждой перерисовке списка —
     // не полагаемся на одноразовый расчёт при входе, который мог сработать
@@ -1035,6 +1036,86 @@ function applyOrderFilter() {
     resetOrdersRenderLimits();
     updateOrderFilterButtonsState();
     displayOrders();
+}
+
+
+// ==================== ИТОГ ПО ФИЛЬТРУ + ОКНО «ИЗДЕЛИЯ» ====================
+// Полоса под блоком иконок: видна, только если включён хотя бы один фильтр.
+// Считает по ВСЕМ отфильтрованным заказам (а не по подгруженной части списка).
+let _ofsFiltered = [];
+
+function ordersFilterDescription() {
+    const parts = [];
+    if (selectedOrderCustomers.length === 1) parts.push(selectedOrderCustomers[0]);
+    else if (selectedOrderCustomers.length === 2) parts.push(selectedOrderCustomers.join(', '));
+    else if (selectedOrderCustomers.length > 2) parts.push(t('stats_all_customers_short') + ': ' + selectedOrderCustomers.length);
+    const range = document.getElementById('orderDateRangeFilter')?.value || 'all';
+    if (range === 'week') parts.push(t('stats_range_week'));
+    else if (range === 'month') parts.push(t('stats_range_month'));
+    else if (range === 'custom') {
+        const f = document.getElementById('orderDateFrom')?.value, to = document.getElementById('orderDateTo')?.value;
+        if (f && to) parts.push(f === to ? formatDateDMY(f) : formatDateDMY(f) + ' – ' + formatDateDMY(to));
+    }
+    const empId = document.getElementById('orderEmployeeFilter')?.value || '';
+    if (empId) {
+        const emp = (typeof employees !== 'undefined' ? employees : []).find(e => String(e.id) === empId);
+        parts.push(t('orders_master') + ': ' + (emp ? emp.name : '?'));
+    }
+    const pay = document.getElementById('orderPaymentFilter')?.value || '';
+    if (pay) parts.push(t('orders_payment') + ': ' + t('pay_status_' + pay));
+    return parts.join(' · ');
+}
+
+function updateOrdersFilterSummary(filtered) {
+    const el = document.getElementById('ordersFilterSummary');
+    if (!el) return;
+    const desc = ordersFilterDescription();
+    if (!desc) { el.classList.add('hidden'); _ofsFiltered = []; return; }
+    _ofsFiltered = filtered;
+    const hasVat = (typeof currentOrgVatRate !== 'undefined') && currentOrgVatRate > 0;
+    const wt = calcGroupTotals(filtered, () => true);
+    const counts = `${wt.count} ${t('orders_orders_short')}, ${wt.qty} ${t('unit_pcs')}`;
+    const sums = hasVat
+        ? `${formatMoney(wt.net)} ${t('orders_sum_novat_short')} · <b>${formatMoney(wt.sum)}</b> ${t('orders_sum_withvat_short')}`
+        : `<b>${formatMoney(wt.sum)}</b>`;
+    el.innerHTML = `<div class="ofs-row1"><span class="ofs-filters">${escapeHtml(desc)}</span><span class="ofs-link">${t('orders_summary_products')} ›</span></div>
+        <div class="ofs-row2"><span class="ofs-counts">${counts}</span><span class="ofs-sums">${sums}</span></div>`;
+    el.classList.remove('hidden');
+}
+
+function openOrdersProductsModal() {
+    const orders_ = _ofsFiltered || [];
+    const hasVat = (typeof currentOrgVatRate !== 'undefined') && currentOrgVatRate > 0;
+    const agg = {};
+    orders_.forEach(o => {
+        const tot = _orderTotals(o);
+        (o.items || []).forEach((it, i) => {
+            const key = it.product || '—';
+            const line = tot.lines[i] || { net: 0, vat: 0, gross: 0 };
+            const a = agg[key] || (agg[key] = { qty: 0, gross: 0, vat: 0 });
+            a.qty += Number(it.quantity || 0);
+            a.gross += line.gross;
+            a.vat += line.vat;
+        });
+    });
+    const rows = Object.entries(agg).sort((a, b) => b[1].gross - a[1].gross);
+    let tq = 0, tg = 0, tv = 0;
+    rows.forEach(([, a]) => { tq += a.qty; tg += a.gross; tv += a.vat; });
+    const sumHead = t('stats_col_sum');
+    let html = '<table class="w-full stats-table table-clean"><thead><tr style="background-color:#e3e8df; position:sticky; top:0;">'
+        + `<th class="p-0.5 text-left">${t('stats_col_product')}</th><th class="p-0.5 text-right">${t('stats_col_qty')}</th><th class="p-0.5 text-right">${sumHead}</th>`
+        + (hasVat ? `<th class="p-0.5 text-right">${t('stats_col_vat')}</th>` : '') + '</tr></thead><tbody>';
+    rows.forEach(([name, a]) => {
+        html += `<tr class="border-b"><td class="p-0.5">${escapeHtml(name)}</td><td class="p-0.5 text-right">${roundQty(a.qty)}</td><td class="p-0.5 text-right stats-num">${a.gross.toFixed(2)}</td>`
+            + (hasVat ? `<td class="p-0.5 text-right" style="color:#6b7280;">${a.vat.toFixed(2)}</td>` : '') + '</tr>';
+    });
+    html += `<tr style="font-weight:700;"><td class="p-0.5">${t('orders_products_total')}</td><td class="p-0.5 text-right">${roundQty(tq)}</td><td class="p-0.5 text-right stats-num">${tg.toFixed(2)}</td>`
+        + (hasVat ? `<td class="p-0.5 text-right">${tv.toFixed(2)}</td>` : '') + '</tr></tbody></table>';
+    if (hasVat) html += `<p class="text-xs mt-2" style="color:#6b7280;">${formatMoney(tg - tv)} ${t('orders_sum_novat_short')} · ${formatMoney(tg)} ${t('orders_sum_withvat_short')}</p>`;
+    document.getElementById('ordersProductsModalTitle').textContent = t('orders_products_title');
+    document.getElementById('ordersProductsModalSub').textContent = ordersFilterDescription() + ' · ' + orders_.length + ' ' + t('orders_orders_short');
+    document.getElementById('ordersProductsModalBody').innerHTML = rows.length ? html : `<p class="text-xs text-gray-400">${t('stats_no_data')}</p>`;
+    document.getElementById('ordersProductsModal').style.display = 'flex';
 }
 
 // ==================== КАЛЕНДАРЬ-ФИЛЬТР ПО ДАТЕ (иконка в переключателе
