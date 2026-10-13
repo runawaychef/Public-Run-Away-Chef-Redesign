@@ -124,10 +124,10 @@ function displayOrders() {
         if (last && last.wk === wk) last.list.push(order);
         else weekGroups.push({ wk, list: [order] });
     });
-    const weekGroupHtml = g => weekHeadHtml(g.wk) + `<div class="ot-island">${g.list.map(tableRowHtml).join('')}</div>` + weekSummaryHtml(g.wk);
+    const weekGroupHtml = (g, idx) => (idx > 0 ? '<div class="ot-week-sep"></div>' : '') + weekHeadHtml(g.wk) + `<div class="ot-island">${g.list.map(tableRowHtml).join('')}</div>` + weekSummaryHtml(g.wk);
     const _otFirst = Math.min(weekGroups.length, _otWeeksLimit);
     let tableHtml = '';
-    for (let i = 0; i < _otFirst; i++) tableHtml += weekGroupHtml(weekGroups[i]);
+    for (let i = 0; i < _otFirst; i++) tableHtml += weekGroupHtml(weekGroups[i], i);
     let _otRendered = _otFirst;
     if (_otRendered < weekGroups.length) tableHtml += '<div id="otMoreSentinel" style="height:1px"></div>';
     _otLoadMore = function () {
@@ -135,7 +135,7 @@ function displayOrders() {
         if (!sentinel) return;
         const end = Math.min(weekGroups.length, _otRendered + ORDERS_WEEKS_CHUNK);
         let html = '';
-        for (let i = _otRendered; i < end; i++) html += weekGroupHtml(weekGroups[i]);
+        for (let i = _otRendered; i < end; i++) html += weekGroupHtml(weekGroups[i], i);
         _otRendered = end;
         _otWeeksLimit = end;
         sentinel.insertAdjacentHTML('beforebegin', html);

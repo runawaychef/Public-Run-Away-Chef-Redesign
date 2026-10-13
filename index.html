@@ -710,7 +710,7 @@
 
         /* ── Табличный вид списка заказов: недели-«острова» + итог недели отдельной строкой ── */
         .ot-head, .ot-row { display: grid; grid-template-columns: 62px minmax(0, 1fr) 26px 62px 84px; align-items: center; }
-        .ot-head { padding: 0 12px 6px; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: #5f6b58; font-weight: 700; }
+        .ot-head { margin: 24px 0 2px; padding: 0 12px 4px; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: #5f6b58; font-weight: 700; }
         .ot-h-pos { text-align: center; font-size: 9.5px; letter-spacing: 0.02em; }
         .ot-h-sum { text-align: right; padding-right: 6px; }
         .ot-h-cust { padding: 0 6px; text-align: center; }
@@ -726,7 +726,9 @@
         .ot-st { text-align: center; position: relative; }
         .ot-st .status-btn { font-size: 10.5px; padding: 4px 6px 4px 8px; gap: 3px; }
         .ot-week-head { margin: 18px 4px 8px; padding: 0 4px; font-size: 12px; font-weight: 700; letter-spacing: 0.02em; color: #6c8464; }
-        .ot-week-head:first-child { margin-top: 4px; }
+        .ot-week-head:first-child { margin-top: 6px; }
+        .ot-week-sep { height: 2px; border-radius: 2px; margin: 16px 0 0; background: linear-gradient(90deg, transparent, #cfc8b3 14%, #cfc8b3 86%, transparent); }
+        .ot-week-sep + .ot-week-head { margin-top: 14px; }
         .ot-week-summary { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 8px 4px 10px; padding: 0 4px; }
         .ot-week-counts { font-size: 11.5px; color: #8d887b; white-space: nowrap; text-align: left; }
         .ot-week-sums { text-align: right; font-size: 11.5px; color: #8d887b; font-variant-numeric: tabular-nums; }
@@ -1894,6 +1896,13 @@
 
                 <!-- Табличный вид (переключается кнопкой вверху экрана) -->
                 <div id="orderTableWrap" class="hidden">
+                    <div class="ot-head">
+                        <span class="ot-h-date" data-i18n="history_col_date">Дата</span>
+                        <span class="ot-h-cust" data-i18n="customers_col_number_alt">Клиент</span>
+                        <span class="ot-h-pos" data-i18n="orders_col_pos_short">Поз.</span>
+                        <span class="ot-h-sum" data-i18n="orders_col_sum">Сумма</span>
+                        <span class="ot-h-st" data-i18n="customers_col_status">Статус</span>
+                    </div>
                     <div id="orderTableBody"></div>
                 </div>
             </div>
@@ -3118,7 +3127,7 @@
 <script src="products.js?v=32"></script>
 <script src="customers.js?v=40"></script>
 <script src="calendar.js?v=8"></script>
-<script src="orders.js?v=120"></script>
+<script src="orders.js?v=121"></script>
 <script src="invoice.js?v=39"></script>
 <script src="send-document.js?v=15"></script>
 <script src="payments.js?v=19"></script>
