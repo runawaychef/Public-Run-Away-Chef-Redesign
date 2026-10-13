@@ -17,7 +17,30 @@
 // давал O(n²) при росте числа заказов).
 let _ordersIndexById = new Map();
 
+// ---- Порционная отрисовка списка заказов (автоподгрузка при прокрутке) ----
+// Активные заказы показываются всегда целиком; «Выполненные» (карточки) и
+// недели (таблица) — порциями. Лимиты запоминаются, чтобы перерисовка после
+// смены статуса не «схлопывала» уже подгруженное, и сбрасываются при смене фильтров.
+const ORDERS_DONE_CHUNK = 30;
+const ORDERS_WEEKS_CHUNK = 8;
+let _ocDoneLimit = ORDERS_DONE_CHUNK;
+let _otWeeksLimit = ORDERS_WEEKS_CHUNK;
+let _ocLoadMore = null;
+let _otLoadMore = null;
+const _ordersMoreObserver = new IntersectionObserver(entries => {
+    entries.forEach(en => {
+        if (!en.isIntersecting) return;
+        if (en.target.id === 'ocMoreSentinel' && _ocLoadMore) _ocLoadMore();
+        else if (en.target.id === 'otMoreSentinel' && _otLoadMore) _otLoadMore();
+    });
+}, { rootMargin: '800px 0px' });
+function resetOrdersRenderLimits() {
+    _ocDoneLimit = ORDERS_DONE_CHUNK;
+    _otWeeksLimit = ORDERS_WEEKS_CHUNK;
+}
+
 function displayOrders() {
+    _ordersMoreObserver.disconnect(); // старые sentinel'ы уйдут вместе с перерисованным DOM
     // Список карточек сейчас перерисуется целиком — если у какого-то заказа был
     // открыт статус-дропдаун (и портал увёл его из карточки наружу, см. helpers.js
     // openPortalDropdown), его старый узел иначе останется висеть в портале с тем же
@@ -92,23 +115,38 @@ function displayOrders() {
         </div>`;
     }
 
-    let tableHtml = '';
-    let curWeek = null;
-    let weekRows = '';
+    // Недели группируем заранее, но в DOM кладём только первые _otWeeksLimit —
+    // остальные догружаются при прокрутке (см. _ordersMoreObserver ниже).
+    // Раньше рисовались ВСЕ заказы разом: на 470+ заказах это секунды на телефоне.
+    const weekGroups = [];
     sorted.forEach(order => {
         const wk = weekKeyOf(order);
-        if (curWeek !== null && wk !== curWeek) {
-            tableHtml += weekHeadHtml(curWeek) + `<div class="ot-island">${weekRows}</div>` + weekSummaryHtml(curWeek);
-            weekRows = '';
-        }
-        curWeek = wk;
-        weekRows += tableRowHtml(order);
+        const last = weekGroups[weekGroups.length - 1];
+        if (last && last.wk === wk) last.list.push(order);
+        else weekGroups.push({ wk, list: [order] });
     });
-    if (curWeek !== null) {
-        tableHtml += weekHeadHtml(curWeek) + `<div class="ot-island">${weekRows}</div>` + weekSummaryHtml(curWeek);
-    }
+    const weekGroupHtml = g => weekHeadHtml(g.wk) + `<div class="ot-island">${g.list.map(tableRowHtml).join('')}</div>` + weekSummaryHtml(g.wk);
+    const _otFirst = Math.min(weekGroups.length, _otWeeksLimit);
+    let tableHtml = '';
+    for (let i = 0; i < _otFirst; i++) tableHtml += weekGroupHtml(weekGroups[i]);
+    let _otRendered = _otFirst;
+    if (_otRendered < weekGroups.length) tableHtml += '<div id="otMoreSentinel" style="height:1px"></div>';
+    _otLoadMore = function () {
+        const sentinel = document.getElementById('otMoreSentinel');
+        if (!sentinel) return;
+        const end = Math.min(weekGroups.length, _otRendered + ORDERS_WEEKS_CHUNK);
+        let html = '';
+        for (let i = _otRendered; i < end; i++) html += weekGroupHtml(weekGroups[i]);
+        _otRendered = end;
+        _otWeeksLimit = end;
+        sentinel.insertAdjacentHTML('beforebegin', html);
+        if (_otRendered >= weekGroups.length) { _ordersMoreObserver.unobserve(sentinel); sentinel.remove(); }
+        else { _ordersMoreObserver.unobserve(sentinel); _ordersMoreObserver.observe(sentinel); }
+    };
     window._diagTableMs = performance.now() - _dTable0; // [diag]
     tbody.innerHTML = tableHtml || `<p class="text-xs text-gray-400 text-center py-4">${t('orders_none_found')}</p>`;
+
+    { const sn = document.getElementById('otMoreSentinel'); if (sn) _ordersMoreObserver.observe(sn); }
 
     // ---- Карточный вид: та же фильтрация, что и в таблице (общее состояние
     // фильтров теперь единое для обоих видов — включая новый календарь-фильтр
@@ -141,11 +179,27 @@ function displayOrders() {
         if (doneOrders.length) {
             cardsHtml += sectionDividerHtml(t('orders_section_done'),
                 '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>');
-            doneOrders.forEach(order => { cardsHtml += renderDoneOrderCard(order); });
+            const doneFirst = Math.min(doneOrders.length, _ocDoneLimit);
+            for (let i = 0; i < doneFirst; i++) cardsHtml += renderDoneOrderCard(doneOrders[i]);
+            let doneRendered = doneFirst;
+            if (doneRendered < doneOrders.length) cardsHtml += '<div id="ocMoreSentinel" style="height:1px"></div>';
+            _ocLoadMore = function () {
+                const sentinel = document.getElementById('ocMoreSentinel');
+                if (!sentinel) return;
+                const end = Math.min(doneOrders.length, doneRendered + ORDERS_DONE_CHUNK);
+                let html = '';
+                for (let i = doneRendered; i < end; i++) html += renderDoneOrderCard(doneOrders[i]);
+                doneRendered = end;
+                _ocDoneLimit = end;
+                sentinel.insertAdjacentHTML('beforebegin', html);
+                if (doneRendered >= doneOrders.length) { _ordersMoreObserver.unobserve(sentinel); sentinel.remove(); }
+                else { _ordersMoreObserver.unobserve(sentinel); _ordersMoreObserver.observe(sentinel); }
+            };
         }
 
         cardsBody.innerHTML = cardsHtml || `<p class="text-xs text-gray-400 text-center py-4">${t('orders_none_found')}</p>`;
         initOrderCardSwipeDelegation();
+        { const sn = document.getElementById('ocMoreSentinel'); if (sn) _ordersMoreObserver.observe(sn); }
     }
 
     updateTotals(filteredOrders);
@@ -630,7 +684,7 @@ function setOrdersViewMode(mode) {
     document.getElementById('ordersViewBtnTable')?.classList.toggle('active', mode === 'table');
     // Фильтры теперь общие для карточного и табличного видов (см.
     // openOrdersCardFilterCalendar) — просто перерисовываем список.
-    if (mode === 'cards') { const d0 = performance.now(); displayOrders(); _tDisp = performance.now() - d0; }
+    // (перерисовка здесь больше не нужна: displayOrders() и так обновляет оба вида при любом изменении данных/фильтров)
     const _tSync = performance.now() - _t0;
     requestAnimationFrame(() => requestAnimationFrame(() => {
         const total = performance.now() - _t0;
@@ -984,6 +1038,7 @@ function toggleOrderDateRange() {
 }
 
 function applyOrderFilter() {
+    resetOrdersRenderLimits();
     updateOrderFilterButtonsState();
     displayOrders();
 }
