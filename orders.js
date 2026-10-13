@@ -65,7 +65,6 @@ function displayOrders() {
     // фильтры общие с карточным видом. ----
     const filteredOrders = getFilteredOrdersForList();
     const sorted = [...filteredOrders].sort((a, b) => new Date(b.date) - new Date(a.date));
-    const _dTable0 = performance.now(); // [diag]
     const tbody = document.getElementById('orderTableBody');
 
     function localStr(d) {
@@ -143,7 +142,6 @@ function displayOrders() {
         if (_otRendered >= weekGroups.length) { _ordersMoreObserver.unobserve(sentinel); sentinel.remove(); }
         else { _ordersMoreObserver.unobserve(sentinel); _ordersMoreObserver.observe(sentinel); }
     };
-    window._diagTableMs = performance.now() - _dTable0; // [diag]
     tbody.innerHTML = tableHtml || `<p class="text-xs text-gray-400 text-center py-4">${t('orders_none_found')}</p>`;
 
     { const sn = document.getElementById('otMoreSentinel'); if (sn) _ordersMoreObserver.observe(sn); }
@@ -674,37 +672,13 @@ function openOrdersHelp() {
 
 // Переключатель "Карточки / Таблица" — верхний правый угол экрана.
 function setOrdersViewMode(mode) {
-    // [diag] временный замер переключения вида (убрать вместе с остальной диагностикой)
-    const _t0 = performance.now();
-    let _tDisp = 0;
     document.getElementById('orderCardsWrap')?.classList.toggle('hidden', mode !== 'cards');
     document.getElementById('orderTableWrap')?.classList.toggle('hidden', mode !== 'table');
     document.getElementById('orderFiltersPanel')?.classList.toggle('hidden', mode !== 'table');
     document.getElementById('ordersViewBtnCards')?.classList.toggle('active', mode === 'cards');
     document.getElementById('ordersViewBtnTable')?.classList.toggle('active', mode === 'table');
-    // Фильтры теперь общие для карточного и табличного видов (см.
-    // openOrdersCardFilterCalendar) — просто перерисовываем список.
-    // (перерисовка здесь больше не нужна: displayOrders() и так обновляет оба вида при любом изменении данных/фильтров)
-    const _tSync = performance.now() - _t0;
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-        const total = performance.now() - _t0;
-        _diagShowToast(`[diag] → ${mode === 'cards' ? 'карточки' : 'таблица'}: код ${_tSync.toFixed(0)} мс (из них displayOrders ${_tDisp.toFixed(0)}, сборка таблицы ${(window._diagTableMs || 0).toFixed(0)}), до отрисовки ${total.toFixed(0)} мс, заказов ${orders.length}`);
-    }));
-}
-
-// [diag] временная плашка с замером (убрать вместе с остальной диагностикой)
-function _diagShowToast(text) {
-    let el = document.getElementById('_diagToast');
-    if (!el) {
-        el = document.createElement('div');
-        el.id = '_diagToast';
-        el.style.cssText = 'position:fixed;left:8px;right:8px;bottom:96px;z-index:99999;background:rgba(40,40,40,.9);color:#fff;font-size:11px;padding:6px 8px;border-radius:8px;pointer-events:none;';
-        document.body.appendChild(el);
-    }
-    el.textContent = text;
-    el.style.display = 'block';
-    clearTimeout(el._t);
-    el._t = setTimeout(() => { el.style.display = 'none'; }, 7000);
+    // Перерисовка здесь не нужна: фильтры общие для обоих видов, а displayOrders()
+    // и так обновляет и карточки, и таблицу при любом изменении данных или фильтров.
 }
 
 // Ставит переключатель ровно посередине зазора между нижним краем шапки
