@@ -97,20 +97,21 @@ function displayOrders() {
     }
 
     function tableRowHtml(order) {
-        const statusColor = ORDER_STATUS_COLORS[order.status] || ORDER_STATUS_COLORS['принят'];
         const itemsCount = order.items ? order.items.length : 0;
+        // Плашка оплаты — как в карточках: цвет = статус оплаты, тап = ввод платежа / список платежей
+        const payInfo = getOrderPaymentStatus(order);
+        const payKey = payInfo.overdue ? 'overdue' : payInfo.status;
+        const payLabel = payInfo.overdue ? t('pay_status_overdue')
+            : payInfo.status === 'paid' ? t('pay_status_paid')
+            : payInfo.status === 'partial' ? t('pay_status_partial')
+            : t('pay_status_unpaid');
+        const payPillHtml = `<button type="button" class="pay-pill" data-pay="${payKey}" style="background:${getPaymentStripeColor(payInfo)};" onclick="event.stopPropagation(); quickPayPillTap(${order.id}, ${payInfo.status === 'paid' ? 'true' : 'false'})">${payLabel}</button>`;
         return `<div class="ot-row" onclick="openOrderDetail(${order.id})">
             <span class="ot-date">${formatDateDMY(order.date)}</span>
             <span class="ot-cust">${escapeHtml(order.customer || t('orders_no_customer'))}</span>
             <span class="ot-pos">${itemsCount}</span>
             <span class="ot-sum">${formatMoney(orderGrandTotal(order))}</span>
-            <span class="ot-st" onclick="event.stopPropagation();">
-                <button class="status-btn" style="background:${statusColor};" onclick="toggleOrderStatusDropdown(${order.id}, 'T')">
-                    ${orderStatusLabelCap(order.status)}
-                    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
-                </button>
-                <div class="status-dropdown" id="statusDropdownT-${order.id}">${orderStatusOptionsHtml(order)}</div>
-            </span>
+            <span class="ot-pay">${payPillHtml}</span>
         </div>`;
     }
 

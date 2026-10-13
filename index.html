@@ -709,8 +709,8 @@
         .done-card .stripe { position: absolute; top: 0; left: 0; bottom: 0; width: 5px; border-radius: 16px 0 0 16px; }
 
         /* ── Табличный вид списка заказов: недели-«острова» + итог недели отдельной строкой ── */
-        .ot-head, .ot-row { display: grid; grid-template-columns: 62px minmax(0, 1fr) 26px 62px 84px; align-items: center; }
-        .ot-head { margin: 24px 0 2px; padding: 0 12px 4px; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: #5f6b58; font-weight: 700; }
+        .ot-head, .ot-row { display: grid; grid-template-columns: 62px minmax(0, 1fr) 26px 62px 92px; align-items: center; }
+        .ot-head { margin: 24px 0 6px; padding: 9px 12px; background: #fff; border: 1px solid #e3ddcc; border-radius: 14px; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: #5f6b58; font-weight: 700; }
         .ot-h-pos { text-align: center; font-size: 9.5px; letter-spacing: 0.02em; }
         .ot-h-sum { text-align: right; padding-right: 6px; }
         .ot-h-cust { padding: 0 6px; text-align: center; }
@@ -723,8 +723,8 @@
         .ot-cust { font-weight: 600; color: #322f28; min-width: 0; overflow-wrap: anywhere; padding: 0 6px; }
         .ot-pos { text-align: center; color: #7a7568; }
         .ot-sum { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; padding-right: 6px; }
-        .ot-st { text-align: center; position: relative; }
-        .ot-st .status-btn { font-size: 10.5px; padding: 4px 6px 4px 8px; gap: 3px; }
+        .ot-pay { text-align: center; }
+        .ot-pay .pay-pill { font-size: 10px; padding: 4px 7px; white-space: normal; line-height: 1.15; text-align: center; max-width: 100%; justify-content: center; }
         .ot-week-head { margin: 18px 4px 8px; padding: 0 4px; font-size: 12px; font-weight: 700; letter-spacing: 0.02em; color: #6c8464; }
         .ot-week-head:first-child { margin-top: 6px; }
         .ot-week-sep { height: 2px; border-radius: 2px; margin: 16px 0 0; background: linear-gradient(90deg, transparent, #cfc8b3 14%, #cfc8b3 86%, transparent); }
@@ -1901,7 +1901,7 @@
                         <span class="ot-h-cust" data-i18n="customers_col_number_alt">Клиент</span>
                         <span class="ot-h-pos" data-i18n="orders_col_pos_short">Поз.</span>
                         <span class="ot-h-sum" data-i18n="orders_col_sum">Сумма</span>
-                        <span class="ot-h-st" data-i18n="customers_col_status">Статус</span>
+                        <span class="ot-h-st" data-i18n="orders_payment">Оплата</span>
                     </div>
                     <div id="orderTableBody"></div>
                 </div>
@@ -3127,7 +3127,7 @@
 <script src="products.js?v=32"></script>
 <script src="customers.js?v=40"></script>
 <script src="calendar.js?v=8"></script>
-<script src="orders.js?v=121"></script>
+<script src="orders.js?v=122"></script>
 <script src="invoice.js?v=39"></script>
 <script src="send-document.js?v=15"></script>
 <script src="payments.js?v=19"></script>
