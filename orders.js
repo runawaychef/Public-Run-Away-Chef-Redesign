@@ -887,13 +887,33 @@ function updateOrderCustomerFilter() {
     const list = document.getElementById('orderFilterList');
     if (!list) return;
     list.innerHTML = '';
-    customers.slice().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).forEach(c => {
+    // Сверху — до 5 клиентов с наибольшим числом заказов (по убыванию), затем все
+    // остальные по алфавиту. При ≤5 клиентах отдельная верхняя группа не нужна.
+    const byName = (a, b) => (a.name || '').localeCompare(b.name || '');
+    const orderCount = {};
+    orders.forEach(o => {
+        if (!(o.is_confirmed || o.customer_id || (o.items && o.items.length > 0))) return;
+        if (o.customer) orderCount[o.customer] = (orderCount[o.customer] || 0) + 1;
+    });
+    const sortedAll = customers.slice().sort(byName);
+    let top = [];
+    if (sortedAll.length > 5) {
+        top = sortedAll
+            .filter(c => orderCount[c.name] > 0)
+            .sort((a, b) => (orderCount[b.name] - orderCount[a.name]) || byName(a, b))
+            .slice(0, 5);
+    }
+    const topSet = new Set(top);
+    const ordered = top.concat(sortedAll.filter(c => !topSet.has(c)));
+    ordered.forEach((c, i) => {
         const selected = selectedOrderCustomers.includes(c.name);
         const row = document.createElement('div');
         row.className = 'status-option' + (selected ? ' selected' : '');
         row.style.justifyContent = 'flex-start';
         row.style.gap = '4px';
         row.style.padding = '9px 6px';
+        // тонкая линия между «топ-5» и остальными
+        if (top.length && i === top.length - 1 && ordered.length > top.length) row.style.borderBottom = '1px solid #e8e3d6';
         row.addEventListener('click', () => onOrderCustomerFilterChange(c.name));
         row.innerHTML = `<svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg><span>${escapeHtml(c.name)}</span>`;
         list.appendChild(row);
