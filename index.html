@@ -55,7 +55,7 @@
         .stats-table td.stats-pct { font-size: 12px; color: #6b7280; }
         .modal-content { background: white; padding: 16px; border-radius: 16px; max-width: 380px; width: 100%; margin: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
         .modal.modal-fullscreen { background: #f4f1ea; padding: 0; align-items: stretch; }
-        .modal.modal-fullscreen .modal-content { max-width: 100%; width: 100%; height: 100%; margin: 0; border-radius: 0; box-shadow: none; box-sizing: border-box; display: flex; flex-direction: column; overflow-y: auto; }
+        .modal.modal-fullscreen .modal-content { max-width: 100%; width: 100%; height: 100%; margin: 0; border-radius: 0; box-shadow: none; box-sizing: border-box; display: flex; flex-direction: column; overflow-y: auto; padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
         /* Окно настроек (шестерёнка) — фиксированный отступ сверху 22vh вместо
            плавающего вертикального центрирования, чтобы позиция не "гуляла"
            в зависимости от объёма контента (список настроек будет расти). */
