@@ -841,6 +841,7 @@ I18N.en = {
         send_phr_dn_upd: 'the updated delivery note {doc_number}',
         send_and: ' and ',
         send_cons_invoice: 'Consolidated invoice',
+        send_inv_title: 'Invoice (per order / per period)',
         send_cons_status_new: 'Will be issued on send · one invoice for several orders',
         send_inv_kind_order: 'This order',
         send_inv_kind_cons: 'Consolidated',

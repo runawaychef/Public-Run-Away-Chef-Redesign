@@ -353,7 +353,8 @@ function _renderSendEmailLangSwitch() {
 function _sendDocRowHtml(dt, order) {
     const st = _sendSheetState, d = st.docs[dt], on = !!st.checked[dt];
     const isCons = dt === 'invoice' && (st.consExisting || (st.invKind === 'cons' && !d.issued));
-    const label = dt === 'invoice' ? (isCons ? t('send_cons_invoice') : t('orders_doc_invoice')) : t('orders_doc_delivery_note');
+    const segShown = dt === 'invoice' && !st.consExisting && st.consCand.length && !d.issued;
+    const label = dt === 'invoice' ? (st.consExisting ? t('send_cons_invoice') : segShown ? t('send_inv_title') : t('orders_doc_invoice')) : t('orders_doc_delivery_note');
     let status;
     if (isCons && st.consExisting) {
         const c = st.consExisting;
