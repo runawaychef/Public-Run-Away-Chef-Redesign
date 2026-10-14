@@ -762,6 +762,7 @@ I18N.ru = {
         orders_week_word: 'Неделя',
         orders_orders_short: 'зак.',
         orders_draft_label: 'Черновик',
+        orders_draft_hint: 'Черновик. Чтобы создать заказ, выберите клиента, добавьте позиции и нажмите «Сохранить заказ» внизу.',
         orders_new_order_title: 'Новый заказ',
         orders_save_need_customer: 'Выберите клиента — без него заказ сохранить нельзя.',
         orders_save_empty_team_confirm: 'В заказе нет позиций. Сохранить и отправить уведомление команде?',

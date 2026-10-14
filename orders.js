@@ -1194,6 +1194,19 @@ function isOrderVisible(o) {
     return !o.created_by && !!(o.customer_id || (o.items && o.items.length > 0));
 }
 
+// Подпись под заголовком карточки и кнопка «Сохранить заказ» (внизу, под позициями) зависят от того,
+// сохранён ли заказ: у черновика — подсказка про сохранение и кнопка, у сохранённого — «автосохранение».
+function updateDetailSaveUi(order) {
+    const saved = isOrderSaved(order);
+    document.getElementById('confirmOrderWrap')?.classList.toggle('hidden', saved);
+    const note = document.getElementById('detailAutosaveNote');
+    if (note) {
+        const key = saved ? 'company_autosave' : 'orders_draft_hint';
+        note.setAttribute('data-i18n', key);
+        note.textContent = t(key);
+    }
+}
+
 function orderNumLabel(o) { return o.order_number ? ('№' + o.order_number) : t('orders_draft_label'); }
 
 // Есть ли в пекарне другие сотрудники, которым уйдёт уведомление о сохранённом заказе
@@ -1364,7 +1377,7 @@ function openOrderDetail(orderId) {
     document.getElementById('detailVatExempt').checked = !!order.vat_exempt;
     document.getElementById('detailNotes').value = order.notes || '';
     fillDetailEmployeeSelect(order.employee_id);
-    document.getElementById('confirmOrderBtn')?.classList.toggle('hidden', isOrderSaved(order));
+    updateDetailSaveUi(order);
 
     renderDetailItems(order);
     updateProductSelects();
@@ -1530,7 +1543,7 @@ async function saveDraftOrder(order) {
         if (order.id === currentOrderId) {
             const hdr = document.getElementById('detailOrderId');
             if (hdr && order.order_number) hdr.textContent = `${t('trash_order_word')} ${order.order_number}`;
-            document.getElementById('confirmOrderBtn')?.classList.add('hidden');
+            updateDetailSaveUi(order);
         }
         logActivity('order', `${t('log_order_saved')} ${order.order_number || '#' + order.id}`, order.id);
         if (typeof scheduleRefreshOrderQuota === 'function') scheduleRefreshOrderQuota();

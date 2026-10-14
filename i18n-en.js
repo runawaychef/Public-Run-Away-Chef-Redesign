@@ -763,6 +763,7 @@ I18N.en = {
         orders_week_word: 'Week',
         orders_orders_short: 'ord.',
         orders_draft_label: 'Draft',
+        orders_draft_hint: 'Draft. To create the order, select a customer, add items and tap “Save order” at the bottom.',
         orders_new_order_title: 'New order',
         orders_save_need_customer: 'Select a customer: the order cannot be saved without one.',
         orders_save_empty_team_confirm: 'The order has no items. Save it and notify the team?',

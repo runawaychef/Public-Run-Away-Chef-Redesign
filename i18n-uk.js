@@ -757,6 +757,7 @@ I18N.uk = {
         orders_sum_withvat_short: 'з ПДВ',
         orders_orders_short: 'зам.',
         orders_draft_label: 'Чернетка',
+        orders_draft_hint: 'Чернетка. Щоб створити замовлення, оберіть клієнта, додайте позиції та натисніть «Зберегти замовлення» внизу.',
         orders_new_order_title: 'Нове замовлення',
         orders_save_need_customer: 'Оберіть клієнта — без нього замовлення зберегти не можна.',
         orders_save_empty_team_confirm: 'У замовленні немає позицій. Зберегти й повідомити команду?',

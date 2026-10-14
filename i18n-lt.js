@@ -757,6 +757,7 @@ I18N.lt = {
         orders_sum_withvat_short: 'su PVM',
         orders_orders_short: 'užs.',
         orders_draft_label: 'Juodraštis',
+        orders_draft_hint: 'Juodraštis. Norėdami sukurti užsakymą, pasirinkite klientą, pridėkite pozicijų ir apačioje paspauskite „Išsaugoti užsakymą“.',
         orders_new_order_title: 'Naujas užsakymas',
         orders_save_need_customer: 'Pasirinkite klientą — be jo užsakymo išsaugoti negalima.',
         orders_save_empty_team_confirm: 'Užsakyme nėra pozicijų. Išsaugoti ir pranešti komandai?',
