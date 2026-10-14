@@ -3184,7 +3184,7 @@
     <script src="auth.js?v=20"></script>
     <script src="employees.js?v=52"></script>
     <script src="company.js?v=23"></script>
-    <script src="inventory.js?v=53"></script>
+    <script src="inventory.js?v=54"></script>
     <script src="billing.js?v=15"></script>
     <script src="push.js?v=8"></script>
 <script src="ingredients.js?v=39"></script>
@@ -3193,7 +3193,7 @@
 <script src="products.js?v=32"></script>
 <script src="customers.js?v=43"></script>
 <script src="calendar.js?v=9"></script>
-<script src="orders.js?v=128"></script>
+<script src="orders.js?v=129"></script>
 <script src="invoice.js?v=44"></script>
 <script src="send-document.js?v=21"></script>
 <script src="payments.js?v=21"></script>
@@ -3201,7 +3201,7 @@
 <script src="history.js?v=9"></script>
 <script src="modals.js?v=16"></script>
 <script src="demoData.js?v=19"></script>
-<script src="helpers.js?v=43"></script>
+<script src="helpers.js?v=44"></script>
 <script>
 // SUPABASE_URL, SUPABASE_KEY, db перенесены в supabaseClient.js
 
@@ -3279,18 +3279,12 @@ async function fetchAllRows(buildQuery) {
     return { data: all, error: null };
 }
 
-// ВРЕМЕННАЯ диагностика скорости запуска (показывается в Настройках, убрать после разбора).
-// Берём только первую загрузку после старта — последующие обновления её не затирают.
-const _bootTiming = {};
-function _bootMark(key, ms) { if (_bootTiming[key] === undefined) _bootTiming[key] = Math.round(ms); }
-
 // ==================== ЗАГРУЗКА ВСЕХ ДАННЫХ ====================
 // silent=true — для фоновых обновлений (realtime-событие, полуночная проверка даты),
 // где пользователь ничего не запрашивал и не должен видеть оверлей загрузки.
 // По умолчанию (silent=false) — как раньше, для действий, где пользователь реально ждёт.
 async function loadAllData(silent) {
     if (!silent) showLoading();
-    const _tLoad0 = performance.now();
     // Запоминаем, какие заказы были в памяти на момент СТАРТА загрузки: всё, что появится
     // локально за время запроса (новый черновик по кнопке "+"), в ответ сервера не попадёт
     // и не должно затираться (см. ниже, после сборки orders).
@@ -3310,7 +3304,6 @@ async function loadAllData(silent) {
             fetchAllRows(() => db.from('semi_finished_ingredients').select('id, semi_finished_id, ingredient_id, quantity, is_primary').eq('org_id', currentOrgId).order('id')),
             fetchAllRows(() => db.from('order_payments').select('order_id, amount').eq('org_id', currentOrgId).order('id'))
         ]);
-        _bootMark('data', performance.now() - _tLoad0);
         if (pRes.error) throw pRes.error;
         if (cRes.error) throw cRes.error;
         if (oRes.error) throw oRes.error;
@@ -3432,7 +3425,7 @@ async function loadAllData(silent) {
         }
 
         saveAppSnapshot(); // кэш для мгновенного запуска (см. cache.js) — держим свежим после каждой успешной загрузки
-        { const _tR = performance.now(); renderAllScreens(); _bootMark('render', performance.now() - _tR); }
+        renderAllScreens();
         if (typeof scheduleRefreshOrderQuota === 'function') scheduleRefreshOrderQuota();
         await processPendingInventory();
     } catch (e) {

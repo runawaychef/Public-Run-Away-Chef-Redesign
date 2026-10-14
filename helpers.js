@@ -449,8 +449,8 @@ function showDbError(e, fallbackMsg) {
         showInfo((e.details || t('helpers_free_limit_reached')) + '\n\n' + t('helpers_upgrade_to_continue'));
         return true;
     }
-    // ДИАГНОСТИКА (временно): показываем код/текст ошибки, чтобы найти причину сбоя после обновления
-    showInfo(fallbackMsg + '\n[diag: ' + ((e && e.code) ? e.code + ' ' : '') + ((e && e.message) ? e.message : String(e)) + ']');
+    console.error('showDbError:', e);
+    showInfo(fallbackMsg);
     return false;
 }
 
