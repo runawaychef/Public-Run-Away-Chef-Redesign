@@ -52,6 +52,7 @@ function openDocumentTypeModal() {
 // самого первого формирования (см. reuseNumber: номер при этом не меняется).
 async function openOrderDocumentPreview(docType, langOverride) {
     closeModal();
+    if (typeof _setPreviewReadOnlyUi === 'function') _setPreviewReadOnlyUi(false, false);
     const order = orders.find(o => o.id === currentOrderId);
     if (!order) return;
 
@@ -92,6 +93,13 @@ async function setDocumentLang(lang) {
 function updateDocumentLangSwitcherUI() {
     if (!_docPreview) return;
     const container = document.getElementById('docLangSwitchContainer');
+    // Предпросмотр из формы «Документ»: язык задаётся в самой форме, переключатель не нужен
+    if (_docPreview.readOnly) {
+        if (container) container.innerHTML = '';
+        const dnBtnRo = document.getElementById('generateDeliveryNoteBtn');
+        if (dnBtnRo) dnBtnRo.style.display = 'none';
+        return;
+    }
     if (container) {
         // Показываем переключатель, только если язык интерфейса не английский
         // (иначе оба варианта совпали бы — нечего переключать).
@@ -234,7 +242,10 @@ function amountInWords(amount, currencyCode, lang) {
     return `${numberToWordsEn(intPart)} ${currencyCode} and ${cents ? numberToWordsEn(cents) : 'zero'} ${centsWordEn}`;
 }
 
-async function freezeDocumentSnapshot(order, docType, existing) {
+// opts (необязательно): { preview:true } — собрать снимок ТОЛЬКО в памяти (без номера из счётчика,
+// номер-заглушка «…», без записи в базу); { issueDate, dueDate } — даты для ещё не выставленного
+// документа (выбраны в предпросмотре), у уже выставленного даты остаются прежними.
+async function freezeDocumentSnapshot(order, docType, existing, opts) {
     const productIds = [...new Set((order.items || []).map(it => it.product_id).filter(Boolean))];
     const [{ data: org, error: orgErr }, { data: cust, error: custErr }, { data: prods, error: prodErr }] = await Promise.all([
         db.from('organizations').select('*').eq('id', currentOrgId).single(),
@@ -252,7 +263,9 @@ async function freezeDocumentSnapshot(order, docType, existing) {
     (prods || []).forEach(p => { unitById[p.id] = p.unit; });
 
     let number = existing ? existing.number : undefined;
-    if (!number) {
+    if (!number && opts && opts.preview) {
+        number = '…';
+    } else if (!number) {
         const rpcName = docType === 'invoice' ? 'get_next_invoice_number' : 'get_next_delivery_note_number';
         const { data, error } = await db.rpc(rpcName, { p_org_id: currentOrgId });
         if (error) throw error;
@@ -268,8 +281,8 @@ async function freezeDocumentSnapshot(order, docType, existing) {
         dueDate = existing.dueDate;
     } else {
         const termDays = (cust && cust.payment_term_days != null) ? Number(cust.payment_term_days) : 7;
-        issueDate = getLocalDateStr(0);
-        dueDate = getLocalDateStr(termDays);
+        issueDate = (opts && opts.issueDate) || getLocalDateStr(0);
+        dueDate = (opts && opts.dueDate) || getLocalDateStr(termDays);
     }
 
     const snapshot = {
@@ -306,6 +319,8 @@ async function freezeDocumentSnapshot(order, docType, existing) {
         } : null,
     };
 
+    if (opts && opts.preview) return snapshot;
+
     const field = snapshotField(docType);
     await updateChecked(db.from('orders').update({ [field]: snapshot }).eq('id', order.id));
     order[field] = snapshot;
@@ -332,11 +347,19 @@ function promptEditIssueDate() {
 
 async function applyEditIssueDate(newDate) {
     if (!newDate || !_docPreview) return;
+    // Ещё не выставленный документ (предпросмотр из формы): дата только запоминается
+    // и применится при отправке; в базу сейчас ничего не пишем.
+    if (_docPreview.persisted === false) {
+        _docPreview.snapshot.issueDate = newDate;
+        if (typeof _sendSheetState !== 'undefined' && _sendSheetState) _sendSheetState.dates[_docPreview.docType].issueDate = newDate;
+        renderDocumentPreviewThumbnail();
+        return;
+    }
     showLoading();
     try {
         _docPreview.snapshot.issueDate = newDate;
         const field = snapshotField(_docPreview.docType);
-        await updateChecked(db.from('orders').update({ [field]: _docPreview.snapshot }).eq('id', currentOrderId));
+        await updateChecked(db.from('orders').update({ [field]: _docPreview.snapshot }).eq('id', _docPreview.orderId || currentOrderId));
         renderDocumentPreviewThumbnail();
         showAutosaveToast();
     } catch (e) {
@@ -357,11 +380,19 @@ function promptEditDueDate() {
 
 async function applyEditDueDate(newDate) {
     if (!newDate || !_docPreview) return;
+    // Ещё не выставленный документ (предпросмотр из формы): дата только запоминается
+    // и применится при отправке; в базу сейчас ничего не пишем.
+    if (_docPreview.persisted === false) {
+        _docPreview.snapshot.dueDate = newDate;
+        if (typeof _sendSheetState !== 'undefined' && _sendSheetState) _sendSheetState.dates[_docPreview.docType].dueDate = newDate;
+        renderDocumentPreviewThumbnail();
+        return;
+    }
     showLoading();
     try {
         _docPreview.snapshot.dueDate = newDate;
         const field = snapshotField(_docPreview.docType);
-        await updateChecked(db.from('orders').update({ [field]: _docPreview.snapshot }).eq('id', currentOrderId));
+        await updateChecked(db.from('orders').update({ [field]: _docPreview.snapshot }).eq('id', _docPreview.orderId || currentOrderId));
         renderDocumentPreviewThumbnail();
         showAutosaveToast();
     } catch (e) {

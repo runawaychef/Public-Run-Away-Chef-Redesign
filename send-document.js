@@ -115,22 +115,28 @@ async function recordDocumentSent(orderId, docType, via, messageId) {
     }
 }
 
-// ==================== ОТПРАВКА ДОКУМЕНТА НА EMAIL (ВИЗУАЛ) ====================
-// Пока только разметка и переключение состояний на клиенте. Реальная генерация
-// PDF (переиспользуется freezeDocumentSnapshot из invoice.js) и отправка через
-// Edge Function/Resend будут добавлены отдельным шагом — см. обсуждение в чате.
+// ==================== ЕДИНАЯ ФОРМА «ДОКУМЕНТ» ====================
+// Одна форма и для свайпа карточки, и для кнопки «Счёт / накладная» в заказе.
+// При открытии НИЧЕГО не собирается: ни PDF, ни номера, ни записи в базу — форма
+// только читает, что уже выставлено по заказу, и показывает статус. Номер документа
+// присваивается и PDF собирается лишь в момент «Отправить» / «Поделиться»
+// (_sendPrepareDocs). Кнопка «Посмотреть» строит документ только в памяти
+// (freezeDocumentSnapshot с preview:true, номер-заглушка «…»).
 //
-// Язык самого письма (emailLang) НЕЗАВИСИМ от языка интерфейса приложения —
-// пекарь может вести приложение на русском, но написать письмо клиенту на
-// литовском. Кнопки-переключатели (тип документа и т.п.) остаются на языке
-// интерфейса (t()), а тело письма и имя вложения генерируются через tLang()
-// на выбранном языке письма, с ленивой подгрузкой словаря при первом выборе.
+// Язык письма и документов (emailLang) НЕЗАВИСИМ от языка интерфейса. Тексты письма
+// и имена вложений строятся через tLang() на выбранном языке, словарь подгружается
+// лениво (ensureLangLoaded).
+//
+// Повторная отправка уже выставленного документа — по ТЕКУЩИМ данным заказа, но с
+// прежними номером и датами (так работает freezeDocumentSnapshot). Если сумма заказа
+// изменилась с момента выставления, форма предупреждает, а письмо говорит «обновлённый».
 
-let _sendSheetState = null; // { orderId, custId, docType, emailLang }
+let _sendSheetState = null;
+// { orderId, custId, emailLang, bccSelf, via:'email'|'share', checked:{invoice,delivery_note},
+//   docs:{invoice:{...},delivery_note:{...}}, bodyText, bodyEdited, extraCc, dates:{invoice:{},delivery_note:{}} }
 
-// Достаёт перевод НЕ из текущего языка интерфейса, а из конкретного lang —
-// нужно для генерации текста письма независимо от языка приложения.
-// Словарь должен быть уже загружен (см. ensureLangLoaded) до вызова.
+const _SEND_DOC_TYPES = ['delivery_note', 'invoice']; // порядок вложений: накладная, затем счёт
+
 function tLang(key, lang) {
     const dict = (typeof I18N !== 'undefined' && I18N[lang]) || {};
     if (dict[key] !== undefined) return dict[key];
@@ -139,63 +145,92 @@ function tLang(key, lang) {
     return key;
 }
 
-function _sendDocTemplate(docType, lang, custName, orgName, orderNumLabel, docNumberLabel, sumLabel) {
-    const docLabel = docType === 'invoice' ? tLang('orders_doc_invoice', lang) : tLang('orders_doc_delivery_note', lang);
-    const key = docNumberLabel ? 'send_body_template_known' : 'send_body_template_new';
-    return tLang(key, lang)
-        .replace('{customer}', custName)
-        .replace('{doc_label}', docLabel.toLowerCase())
-        .replace('{order_number}', orderNumLabel)
-        .replace('{doc_number}', docNumberLabel || '')
-        .replace('{sum}', sumLabel)
-        .replace('{org_name}', orgName);
-}
+function _sendDocKey(docType) { return docType === 'invoice' ? 'invoice' : 'dn'; }
 
-// Имя вложения: если документ для этого заказа уже когда-то генерировался —
-// используем его реальный номер (совпадает с тем, что видно на самом PDF).
-// Если это первая генерация — временно используем номер заказа, до момента
-// реальной отправки (см. submitSendDocument — там имя пересчитывается заново
-// с уже гарантированно присвоенным номером документа).
 function _sendAttachmentName(docType, lang, docNumberLabel, orderNumLabel) {
     const base = docType === 'invoice' ? tLang('send_attachment_base_invoice', lang) : tLang('send_attachment_base_delivery', lang);
     return `${base}_${docNumberLabel || orderNumLabel}.pdf`;
 }
 
-function _sendSubject(docType, lang, orderNumLabel, docNumberLabel, orgName) {
-    const docLabel = docType === 'invoice' ? tLang('orders_doc_invoice', lang) : tLang('orders_doc_delivery_note', lang);
-    const key = docNumberLabel ? 'send_subject_template_known' : 'send_subject_template_new';
-    return tLang(key, lang)
-        .replace('{doc_label}', docLabel)
-        .replace('{order_number}', orderNumLabel)
-        .replace('{doc_number}', docNumberLabel || '')
-        .replace('{org_name}', orgName);
-}
-
-// Номер ЗАКАЗА (order.order_number) и номер ДОКУМЕНТА (свой отдельный счётчик,
-// присваивается только когда документ реально сформирован — snapshot.number)
-// — это два РАЗНЫХ значения, которые легко перепутать. Текст письма должен
-// явно ссылаться на правильный из них, а не показывать номер заказа так,
-// будто это номер документа (было именно так раньше — вводило в заблуждение,
-// см. обсуждение в чате 31.08.2026). Префикс INV-/DN- — тот же, что рисуется
-// на самом PDF (invoice.js, numberPrefix).
+// Префикс INV-/DN- — тот же, что рисуется на самом PDF (invoice.js, numberPrefix).
 function _formatDocNumber(docType, rawNumber) {
     if (!rawNumber) return null;
     return (docType === 'invoice' ? 'INV-' : 'DN-') + rawNumber;
 }
 
-// Резервирует номер документа (Счёта или Накладной) СРАЗУ, в момент открытия
-// шита отправки / переключения типа документа — а не откладывает до реального
-// нажатия "Отправить". Так текст письма никогда не показывает "временный"
-// номер, который потом может не совпасть с тем, что окажется на PDF. Цена
-// компромисса: если человек откроет шит и передумает — номер останется
-// зарезервированным за этим заказом (пропуск в последовательности), но
-// НИКОГДА не будет задвоен — присвоение атомарно на уровне самой SQL-функции.
-async function _reserveDocSnapshot(order, docType) {
+function _sendOrderNumLabel(order) {
+    return order.order_number ? ('№' + order.order_number) : ('#' + order.id);
+}
+
+// Резервирует номер документа и сохраняет снимок. Вызывается ТОЛЬКО при реальной
+// отправке. Если документ уже выставлялся — номер и даты прежние. dateOverride —
+// даты, выбранные в предпросмотре ещё не выставленного документа.
+async function _reserveDocSnapshot(order, docType, dateOverride) {
     const field = snapshotField(docType);
     const { data: freshRow, error: freshErr } = await db.from('orders').select(field).eq('id', order.id).single();
     if (freshErr) throw freshErr;
     const existing = freshRow ? freshRow[field] : null;
-    return await freezeDocumentSnapshot(order, docType, existing);
+    return await freezeDocumentSnapshot(order, docType, existing, dateOverride || undefined);
+}
+
+async function _sendLoadRow(orderId) {
+    const { data, error } = await db.from('orders')
+        .select('invoice_snapshot, delivery_note_snapshot, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via')
+        .eq('id', orderId).single();
+    if (error) throw error;
+    return data || {};
+}
+
+function _sendBuildDocInfo(order, row) {
+    const info = {};
+    _SEND_DOC_TYPES.forEach(dt => {
+        const snap = row[snapshotField(dt)] || null;
+        const issued = !!(snap && snap.number);
+        let changed = false, oldTotal = null;
+        if (issued) {
+            try {
+                oldTotal = documentTotals(snap).grandAll;
+                const tol = snap.calc === 2 ? 0.004 : 0.05;
+                changed = Math.abs(orderGrandTotal(order) - oldTotal) > tol;
+            } catch (e) { console.error(e); }
+        }
+        info[dt] = {
+            issued, changed, oldTotal,
+            number: issued ? _formatDocNumber(dt, snap.number) : null,
+            issueDate: snap ? snap.issueDate : null,
+            sentAt: row[dt === 'invoice' ? 'invoice_sent_at' : 'delivery_note_sent_at'] || null,
+            sentVia: row[dt === 'invoice' ? 'invoice_sent_via' : 'delivery_note_sent_via'] || null,
+        };
+    });
+    return info;
+}
+
+function _sendCheckedTypes() {
+    return _SEND_DOC_TYPES.filter(dt => _sendSheetState.checked[dt]);
+}
+
+function _sendBuildBody() {
+    const st = _sendSheetState;
+    const order = orders.find(o => o.id === st.orderId);
+    const types = _sendCheckedTypes();
+    if (!order || !types.length) return '';
+    const lang = st.emailLang;
+    const phrases = types.map(dt => {
+        const d = st.docs[dt], k = _sendDocKey(dt);
+        if (!d.issued) return tLang(`send_phr_${k}_new`, lang);
+        return tLang(`send_phr_${k}_${d.changed ? 'upd' : 'num'}`, lang).replace('{doc_number}', d.number);
+    });
+    return tLang('send_body_docs', lang)
+        .replace('{customer}', order.customer || t('orders_no_customer'))
+        .replace('{docs}', phrases.join(tLang('send_and', lang)))
+        .replace('{order_number}', _sendOrderNumLabel(order))
+        .replace('{sum}', formatMoney(orderGrandTotal(order)))
+        .replace('{org_name}', currentOrgName || '');
+}
+
+function _sendBuildSubject(entries, lang, orgName) {
+    const parts = entries.map(e => tLang(`send_subj_${_sendDocKey(e.dt)}${e.updated ? '_upd' : ''}`, lang).replace('{doc_number}', e.num));
+    return parts.join(', ') + (orgName ? ' — ' + orgName : '');
 }
 
 function _renderSendEmailLangSwitch() {
@@ -206,139 +241,220 @@ function _renderSendEmailLangSwitch() {
         `</div>`;
 }
 
+function _sendDocRowHtml(dt, order) {
+    const st = _sendSheetState, d = st.docs[dt], on = !!st.checked[dt];
+    const label = dt === 'invoice' ? t('orders_doc_invoice') : t('orders_doc_delivery_note');
+    let status;
+    if (!d.issued) {
+        status = t('send_doc_status_new');
+    } else {
+        status = t('send_doc_status_issued').replace('{number}', d.number).replace('{date}', formatDateDMY(d.issueDate));
+        if (d.sentAt) status += t('send_doc_status_sent').replace('{date}', _formatSentDateTime(d.sentAt)).replace('{via}', _sentViaLabel(d.sentVia));
+    }
+    const warn = d.changed
+        ? `<div style="margin:6px 0 0 28px; font-size:12px; background:#f8efd9; color:#8a6a1f; border-radius:8px; padding:6px 8px;">${t('send_doc_changed_warn').replace('{old}', formatMoney(d.oldTotal)).replace('{new}', formatMoney(orderGrandTotal(order)))}</div>`
+        : '';
+    return `<div style="border:1px solid ${on ? '#7c9473' : '#d9d4c3'}; background:${on ? '#f3f5ef' : '#fff'}; border-radius:14px; padding:10px 12px; margin-bottom:8px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <input type="checkbox" ${on ? 'checked' : ''} onchange="toggleSendDoc('${dt}', this.checked)" style="accent-color:#7c9473; width:18px; height:18px; flex:none;">
+            <b style="font-size:14px; color:#3c3a34;">${label}</b>
+            <span onclick="openSendDocPreview('${dt}')" style="margin-left:auto; color:#4f6349; font-weight:700; font-size:12px; text-decoration:underline; cursor:pointer;">${t('send_view')}</span>
+        </div>
+        <div style="font-size:12px; color:#888; margin:4px 0 0 28px;">${status}</div>${warn}</div>`;
+}
+
+function _renderSendSheet() {
+    const st = _sendSheetState;
+    const body = document.getElementById('sendSheetBody');
+    if (!st || !body) return;
+    const order = orders.find(o => o.id === st.orderId);
+    const cust = st.custId ? customers.find(c => c.id === st.custId) : null;
+    if (!order) return;
+
+    // Сохраняем то, что пользователь уже набрал, до перерисовки
+    const ccEl = document.getElementById('sendExtraCc');
+    if (ccEl) st.extraCc = ccEl.value;
+    const bodyEl = document.getElementById('sendEmailBody');
+    if (bodyEl && st.bodyEdited) st.bodyText = bodyEl.value;
+    if (!st.bodyEdited) st.bodyText = _sendBuildBody();
+
+    const hasEmail = !!(cust && cust.email);
+    const types = _sendCheckedTypes();
+    const isEmail = st.via === 'email';
+    const orderNumLabel = _sendOrderNumLabel(order);
+
+    const chips = types.map(dt => {
+        const d = st.docs[dt];
+        const label = dt === 'invoice' ? t('orders_doc_invoice') : t('orders_doc_delivery_note');
+        const text = d.issued ? _sendAttachmentName(dt, st.emailLang, d.number, orderNumLabel) : `${label} (${t('send_number_on_send')})`;
+        return `<span style="display:inline-block; background:#f1eee3; border-radius:10px; padding:5px 9px; font-size:12px; color:#555; margin:0 6px 4px 0;">📎 ${escapeHtml(text)}</span>`;
+    }).join('');
+
+    let howBlock = '';
+    if (isEmail) {
+        const recipient = hasEmail
+            ? `<div class="send-recipient-row" style="margin-bottom:12px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b675d" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
+                <span class="email-value">${escapeHtml(cust.email)}</span>
+                <span class="send-edit-link" onclick="openEmailQuickEdit(${cust.id})">${t('send_edit_email')}</span>
+            </div>`
+            : `<div style="font-size:12px; background:#f3ded9; color:#a3493d; border-radius:10px; padding:8px 10px; margin-bottom:12px;">${t('send_no_email_inline')} ${cust ? `<span class="send-edit-link" style="color:#a3493d; text-decoration:underline;" onclick="openEmailQuickEdit(${cust.id})">${t('send_add_email')}</span>` : ''}</div>`;
+        howBlock = `${recipient}
+            <div class="flex items-center justify-between" style="margin-bottom:6px;">
+                <p style="font-size:13px; color:#6b675d; margin:0;">${t('send_body_label')}</p>
+                <p style="font-size:11px; color:#9a9488; margin:0;">${t('send_letter_lang_label')}</p>
+            </div>
+            ${_renderSendEmailLangSwitch()}
+            <textarea id="sendEmailBody" rows="6" oninput="_sendSheetState.bodyEdited = true; _sendSheetState.bodyText = this.value;" class="border p-2 rounded-xl table-text w-full resize-none" style="margin-bottom:8px;">${escapeHtml(st.bodyText || '')}</textarea>
+            <div style="margin-bottom:10px;">${chips}</div>
+            <label class="flex items-center gap-1.5" style="margin-bottom:10px; cursor:pointer;">
+                <input type="checkbox" id="sendBccSelf" ${st.bccSelf ? 'checked' : ''} onchange="_sendSheetState.bccSelf = this.checked;" class="w-4 h-4" style="accent-color:#7c9473;">
+                <span style="font-size:13px; color:#3c3a34;">${t('send_bcc_self_label')}</span>
+            </label>
+            <p style="font-size:13px; color:#6b675d; margin:0 0 6px;">${t('send_extra_cc_label')}</p>
+            <input type="text" id="sendExtraCc" value="${escapeHtml(st.extraCc || '')}" placeholder="${t('send_extra_cc_placeholder')}" class="border p-2 rounded-xl table-text w-full" style="margin-bottom:14px;">`;
+    } else {
+        howBlock = `<div style="font-size:12px; color:#888; margin-bottom:10px;">${t('send_share_hint')}${!hasEmail && cust ? ` <span class="send-edit-link" style="text-decoration:underline;" onclick="openEmailQuickEdit(${cust.id})">${t('send_add_email')}</span>` : ''}</div>
+            <p style="font-size:11px; color:#9a9488; margin:0 0 6px;">${t('send_doc_lang_label')}</p>
+            ${_renderSendEmailLangSwitch()}
+            <div style="margin-bottom:14px;">${chips}</div>`;
+    }
+
+    const canSubmit = types.length > 0 && (!isEmail || hasEmail);
+    const btnLabel = isEmail ? t('send_button') : (t('send_share_btn') + (types.length > 1 ? ` (${types.length})` : ''));
+    const icon = isEmail
+        ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75A2.25 2.25 0 014.5 4.5h15A2.25 2.25 0 0121.75 6.75v10.5A2.25 2.25 0 0119.5 19.5h-15a2.25 2.25 0 01-2.25-2.25V6.75zm0 0l9.75 6.75 9.75-6.75"/></svg>`
+        : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"/></svg>`;
+
+    body.innerHTML = `
+        <p style="font-size:13px; color:#888; margin:0 0 6px;">${escapeHtml(order.customer || t('orders_no_customer'))} · ${escapeHtml(orderNumLabel)} · ${formatMoney(orderGrandTotal(order))}</p>
+        <p class="send-section-label">${t('send_what')}</p>
+        ${_SEND_DOC_TYPES.map(dt => _sendDocRowHtml(dt, order)).join('')}
+        <p class="send-section-label">${t('send_how')}</p>
+        <div class="send-doctype-switch" style="margin-bottom:12px;">
+            <button class="${isEmail ? 'active' : ''}" onclick="setSendVia('email')">${t('send_how_email')}</button>
+            <button class="${!isEmail ? 'active' : ''}" onclick="setSendVia('share')">${t('send_how_share')}</button>
+        </div>
+        ${howBlock}
+        <button class="pill-btn w-full justify-center" id="sendDocSubmitBtn" onclick="submitSendDocument()" ${canSubmit ? '' : 'disabled style="opacity:.5;"'}>
+            ${icon}<span>${btnLabel}</span>
+        </button>`;
+}
+
 async function openSendDocumentSheet(orderId, docType) {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
     const cust = order.customer_id ? customers.find(c => c.id === order.customer_id) : null;
-    _sendSheetState = { orderId, custId: cust ? cust.id : null, docType: docType || 'invoice', emailLang: currentLang, bccSelf: currentOrgBccSelf, snapshot: null, docNumber: null };
 
-    const custName = escapeHtml(order.customer || t('orders_no_customer'));
-    const body = document.getElementById('sendSheetBody');
-    if (!body) return;
-
-    if (!cust || !cust.email) {
-        body.innerHTML = `
-            <div class="send-no-email-box">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#c99a3b" stroke-width="1.6" style="margin:0 auto 8px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>
-                <p style="font-size:14px; font-weight:600; margin:0 0 4px; color:#3c3a34;" data-i18n="send_no_email_title">${t('send_no_email_title')}</p>
-                <p style="font-size:13px; color:#6b675d; margin:0 0 14px;" data-i18n="send_no_email_body">${t('send_no_email_body')}</p>
-                <button class="pill-btn-secondary w-full justify-center" onclick="closeModal(); openCustomerDetail(${cust ? cust.id : 'null'})" ${cust ? '' : 'disabled style="opacity:.5;"'}>${t('send_open_customer_card')}</button>
-            </div>`;
-        document.getElementById('sendDocumentSheet').style.display = 'flex';
-        return;
-    }
-
-    // Резервируем номер документа СЕЙЧАС, до отрисовки текста письма — см.
-    // комментарий у _reserveDocSnapshot. Без email резервировать смысла нет
-    // (см. return выше), поэтому этот шаг только в ветке "email есть".
-    showLoading(t('customers_pdf_generating'));
+    showLoading();
+    let row;
     try {
-        _sendSheetState.snapshot = await _reserveDocSnapshot(order, _sendSheetState.docType);
-        _sendSheetState.docNumber = _formatDocNumber(_sendSheetState.docType, _sendSheetState.snapshot.number);
+        row = await _sendLoadRow(orderId);
     } catch (e) {
         console.error(e);
         hideLoading();
-        showInfo(t('inv_doc_error_prefix') + (e && e.message ? e.message : t('inv_unknown_error')));
+        showInfo(t('error_save_check_connection'));
         return;
     }
     hideLoading();
 
-    const orderNumLabel = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
-    const sumLabel = formatMoney(orderGrandTotal(order));
-    body.innerHTML = `
-        <div class="send-doctype-switch" style="margin-bottom:14px;">
-            <button id="sendDocTypeInvoice" class="${_sendSheetState.docType === 'invoice' ? 'active' : ''}" onclick="selectSendDocType('invoice')">${t('orders_doc_invoice')}</button>
-            <button id="sendDocTypeDelivery" class="${_sendSheetState.docType === 'delivery_note' ? 'active' : ''}" onclick="selectSendDocType('delivery_note')">${t('orders_doc_delivery_note')}</button>
-        </div>
-        <div class="send-recipient-row" style="margin-bottom:14px;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b675d" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
-            <span class="email-value" id="sendRecipientEmail">${escapeHtml(cust.email)}</span>
-            <span class="send-edit-link" onclick="openEmailQuickEdit(${cust.id})">${t('send_edit_email')}</span>
-        </div>
-        <div class="flex items-center justify-between" style="margin-bottom:6px;">
-            <p style="font-size:13px; color:#6b675d; margin:0;">${t('send_body_label')}</p>
-            <p style="font-size:11px; color:#9a9488; margin:0;">${t('send_letter_lang_label')}</p>
-        </div>
-        ${_renderSendEmailLangSwitch()}
-        <textarea id="sendEmailBody" rows="6" class="border p-2 rounded-xl table-text w-full resize-none" style="margin-bottom:8px;">${_sendDocTemplate(_sendSheetState.docType, _sendSheetState.emailLang, custName, escapeHtml(currentOrgName || ''), orderNumLabel, _sendSheetState.docNumber, sumLabel)}</textarea>
-        <div class="send-attachment-row" style="margin-bottom:14px;">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6b675d" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
-            <span id="sendAttachmentName">${_sendAttachmentName(_sendSheetState.docType, _sendSheetState.emailLang, _sendSheetState.docNumber, orderNumLabel)}</span>
-        </div>
-        <label class="flex items-center gap-1.5" style="margin-bottom:10px; cursor:pointer;">
-            <input type="checkbox" id="sendBccSelf" ${_sendSheetState.bccSelf ? 'checked' : ''} onchange="_sendSheetState.bccSelf = this.checked;" class="w-4 h-4" style="accent-color:#7c9473;">
-            <span style="font-size:13px; color:#3c3a34;">${t('send_bcc_self_label')}</span>
-        </label>
-        <p style="font-size:13px; color:#6b675d; margin:0 0 6px;">${t('send_extra_cc_label')}</p>
-        <input type="text" id="sendExtraCc" placeholder="${t('send_extra_cc_placeholder')}" class="border p-2 rounded-xl table-text w-full" style="margin-bottom:14px;">
-        <button class="pill-btn w-full justify-center" id="sendDocSubmitBtn" onclick="submitSendDocument()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75A2.25 2.25 0 014.5 4.5h15A2.25 2.25 0 0121.75 6.75v10.5A2.25 2.25 0 0119.5 19.5h-15a2.25 2.25 0 01-2.25-2.25V6.75zm0 0l9.75 6.75 9.75-6.75"/></svg>
-            <span>${t('send_button')}</span>
-        </button>`;
+    const checked = { invoice: false, delivery_note: false };
+    if (docType === 'invoice' || docType === 'delivery_note') checked[docType] = true;
+    else if (cust && cust.invoice_mode === 'consolidated') checked.delivery_note = true;
+    else checked.invoice = true;
 
+    _sendSheetState = {
+        orderId, custId: cust ? cust.id : null, emailLang: currentLang, bccSelf: currentOrgBccSelf,
+        via: (cust && cust.email) ? 'email' : 'share', checked,
+        docs: _sendBuildDocInfo(order, row), bodyText: null, bodyEdited: false, extraCc: '',
+        dates: { invoice: {}, delivery_note: {} },
+    };
+    _renderSendSheet();
     document.getElementById('sendDocumentSheet').style.display = 'flex';
 }
 
-async function selectSendDocType(docType) {
+function toggleSendDoc(docType, on) {
     if (!_sendSheetState) return;
-    _sendSheetState.docType = docType;
-    const order = orders.find(o => o.id === _sendSheetState.orderId);
-    const cust = customers.find(c => c.id === _sendSheetState.custId);
-    if (!order || !cust) return;
-
-    document.getElementById('sendDocTypeInvoice').classList.toggle('active', docType === 'invoice');
-    document.getElementById('sendDocTypeDelivery').classList.toggle('active', docType === 'delivery_note');
-
-    // У Счёта и Накладной РАЗНЫЕ номера — при переключении типа резервируем
-    // номер заново под новый тип (та же логика, что при открытии шита).
-    showLoading(t('customers_pdf_generating'));
-    try {
-        _sendSheetState.snapshot = await _reserveDocSnapshot(order, docType);
-        _sendSheetState.docNumber = _formatDocNumber(docType, _sendSheetState.snapshot.number);
-    } catch (e) {
-        console.error(e);
-        hideLoading();
-        showInfo(t('inv_doc_error_prefix') + (e && e.message ? e.message : t('inv_unknown_error')));
-        return;
-    }
-    hideLoading();
-
-    const orderNumLabel = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
-    const sumLabel = formatMoney(orderGrandTotal(order));
-    document.getElementById('sendEmailBody').value = _sendDocTemplate(docType, _sendSheetState.emailLang, escapeHtml(order.customer || t('orders_no_customer')), escapeHtml(currentOrgName || ''), orderNumLabel, _sendSheetState.docNumber, sumLabel);
-    document.getElementById('sendAttachmentName').textContent = _sendAttachmentName(docType, _sendSheetState.emailLang, _sendSheetState.docNumber, orderNumLabel);
+    _sendSheetState.checked[docType] = !!on;
+    _sendSheetState.bodyEdited = false; // текст письма зависит от набора документов
+    _renderSendSheet();
 }
 
-// Переключает ЯЗЫК ПИСЬМА (не интерфейса) — подгружает словарь выбранного
-// языка при первом обращении к нему (LT/UK и т.п. грузятся лениво), затем
-// перегенерирует текст письма и имя вложения на этом языке. Номер документа
-// НЕ пересматриваем — тип документа не менялся, значение уже в _sendSheetState.docNumber.
+function setSendVia(via) {
+    if (!_sendSheetState) return;
+    _sendSheetState.via = via;
+    _renderSendSheet();
+}
+
+// Переключает ЯЗЫК ПИСЬМА И ДОКУМЕНТОВ (не интерфейса): подгружает словарь выбранного
+// языка при первом обращении (LT/UK и т.п. грузятся лениво) и перегенерирует текст письма.
 async function selectSendEmailLang(lang) {
     if (!_sendSheetState || !AVAILABLE_LANGS.includes(lang)) return;
-    const order = orders.find(o => o.id === _sendSheetState.orderId);
-    const cust = customers.find(c => c.id === _sendSheetState.custId);
-    if (!order || !cust) return;
-
     await ensureLangLoaded(lang);
     _sendSheetState.emailLang = lang;
-
-    document.querySelectorAll('#sendEmailLangSwitch button').forEach((btn, i) => {
-        btn.classList.toggle('active', AVAILABLE_LANGS[i] === lang);
-    });
-
-    const orderNumLabel = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
-    const sumLabel = formatMoney(orderGrandTotal(order));
-    document.getElementById('sendEmailBody').value = _sendDocTemplate(_sendSheetState.docType, lang, escapeHtml(order.customer || t('orders_no_customer')), escapeHtml(currentOrgName || ''), orderNumLabel, _sendSheetState.docNumber, sumLabel);
-    document.getElementById('sendAttachmentName').textContent = _sendAttachmentName(_sendSheetState.docType, lang, _sendSheetState.docNumber, orderNumLabel);
+    _sendSheetState.bodyEdited = false;
+    _renderSendSheet();
 }
 
-// Реальная отправка: номер документа УЖЕ зарезервирован при открытии шита
-// (см. _reserveDocSnapshot в openSendDocumentSheet/selectSendDocType) — здесь
-// просто переиспользуем готовый снимок, без повторного похода в базу.
-// Генерирует PDF на выбранном языке письма, кодирует в base64 и вызывает
-// Edge Function send-document-email (она уже сама зовёт Resend). При успехе
-// фиксирует факт отправки — recordDocumentSent(...,'email') — самолётик
-// на карточке появится сразу.
+// ---- Предпросмотр: документ строится только в памяти, номер-заглушка «…» ----
+
+function _setPreviewReadOnlyUi(on, showBanner) {
+    ['sendOrderDocumentBtn', 'emailOrderDocumentBtn'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = on ? 'none' : '';
+    });
+    const banner = document.getElementById('orderDocumentPreviewBanner');
+    if (banner) banner.classList.toggle('hidden', !(on && showBanner));
+}
+
+async function openSendDocPreview(docType) {
+    const st = _sendSheetState;
+    if (!st) return;
+    const order = orders.find(o => o.id === st.orderId);
+    if (!order) return;
+    showLoading(t('inv_generating_document'));
+    try {
+        const row = await _sendLoadRow(st.orderId);
+        const existing = row[snapshotField(docType)] || null;
+        const persisted = !!(existing && existing.number);
+        const snap = await freezeDocumentSnapshot(order, docType, existing, {
+            preview: true, issueDate: st.dates[docType].issueDate, dueDate: st.dates[docType].dueDate,
+        });
+        await ensureLangLoaded(st.emailLang);
+        _docPreview = { docType, snapshot: snap, lang: st.emailLang, readOnly: true, persisted, orderId: st.orderId };
+        renderDocumentPreviewThumbnail();
+        _setPreviewReadOnlyUi(true, !persisted);
+        document.getElementById('sendDocumentSheet').style.display = 'none';
+        document.getElementById('orderDocumentModal').style.display = 'flex';
+    } catch (e) {
+        console.error(e);
+        showInfo(t('inv_doc_error_prefix') + (e && e.message ? e.message : t('inv_unknown_error')));
+    } finally {
+        hideLoading();
+    }
+}
+
+// Кнопка «Закрыть» в предпросмотре: из формы — возвращаемся в форму (с перечитыванием
+// статусов, т.к. в предпросмотре выставленного документа можно было поправить даты).
+async function closeOrderDocumentModal() {
+    if (_docPreview && _docPreview.readOnly && _sendSheetState) {
+        document.getElementById('orderDocumentModal').style.display = 'none';
+        _docPreview = null;
+        _setPreviewReadOnlyUi(false, false);
+        try {
+            const order = orders.find(o => o.id === _sendSheetState.orderId);
+            const row = await _sendLoadRow(_sendSheetState.orderId);
+            if (order) _sendSheetState.docs = _sendBuildDocInfo(order, row);
+        } catch (e) { console.error(e); }
+        _renderSendSheet();
+        document.getElementById('sendDocumentSheet').style.display = 'flex';
+        return;
+    }
+    closeModal();
+}
+
+// ---- Отправка ----
+
 // Текст отказа по лимитам писем на языке интерфейса (числа склоняются по форме слова).
 function _sendLimitMessage(r) {
     switch (r.code) {
@@ -357,14 +473,33 @@ function _sendLimitMessage(r) {
     }
 }
 
-async function submitSendDocument() {
-    if (!_sendSheetState) return;
-    const { orderId, docType, custId, emailLang, snapshot } = _sendSheetState;
-    const order = orders.find(o => o.id === orderId);
-    const cust = customers.find(c => c.id === custId);
-    if (!order || !cust || !cust.email || !snapshot) return;
+// Резервирует номера (если ещё не выставлены), сохраняет снимки и собирает PDF
+// для всех отмеченных документов. Только здесь документ становится «выставленным».
+async function _sendPrepareDocs(order, types, lang) {
+    const st = _sendSheetState;
+    const orderNumLabel = _sendOrderNumLabel(order);
+    await ensureLangLoaded(lang);
+    const out = [];
+    for (const dt of types) {
+        const info = st.docs[dt];
+        const snap = await _reserveDocSnapshot(order, dt, st.dates[dt]);
+        const num = _formatDocNumber(dt, snap.number);
+        const pdf = await buildDocumentPdf(dt, snap, lang);
+        out.push({ dt, snap, num, updated: !!(info && info.issued && info.changed), pdf, filename: _sendAttachmentName(dt, lang, num, orderNumLabel) });
+    }
+    return out;
+}
 
-    const btn = document.getElementById('sendDocSubmitBtn');
+async function submitSendDocument() {
+    const st = _sendSheetState;
+    if (!st) return;
+    const order = orders.find(o => o.id === st.orderId);
+    const cust = st.custId ? customers.find(c => c.id === st.custId) : null;
+    if (!order) return;
+    const types = _sendCheckedTypes();
+    if (!types.length) { showInfo(t('send_need_one_doc')); return; }
+    if (st.via === 'share') return _sendByShare(order, types);
+    if (!cust || !cust.email) return;
 
     // Разбираем "Дополнительные получатели" (через запятую) — валидируем на
     // клиенте, чтобы сразу подсказать про опечатку, а не после похода на сервер.
@@ -377,35 +512,38 @@ async function submitSendDocument() {
         return;
     }
 
+    const btn = document.getElementById('sendDocSubmitBtn');
     if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
     showLoading(t('customers_pdf_generating'));
 
     try {
-        await ensureLangLoaded(emailLang);
-        const pdf = await buildDocumentPdf(docType, snapshot, emailLang);
-        const pdfBase64 = pdf.output('datauristring').split(',')[1];
+        const lang = st.emailLang;
+        const prepared = await _sendPrepareDocs(order, types, lang);
+        prepared.forEach(p => { p.b64 = p.pdf.output('datauristring').split(',')[1]; });
 
         // Текст письма (bodyText) НЕ пересобираем — берём как есть из textarea,
         // чтобы не затереть возможные ручные правки пекаря.
-        const orderNumLabel = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
-        const docNumberLabel = _formatDocNumber(docType, snapshot.number);
-        const pdfFilename = _sendAttachmentName(docType, emailLang, docNumberLabel, orderNumLabel);
-        const subject = _sendSubject(docType, emailLang, orderNumLabel, docNumberLabel, currentOrgName || '');
         const bodyText = document.getElementById('sendEmailBody').value;
+        const subject = _sendBuildSubject(prepared, lang, currentOrgName || '');
 
-        const { data: result, error: fnError } = await db.functions.invoke('send-document-email', {
-            body: {
-                orgId: currentOrgId,
-                recipientEmail: cust.email,
-                subject,
-                bodyText,
-                pdfBase64,
-                pdfFilename,
-                senderName: currentOrgName || '',
-                bccSelf: !!_sendSheetState.bccSelf,
-                extraCc,
-            },
-        });
+        const payload = {
+            orgId: currentOrgId,
+            recipientEmail: cust.email,
+            subject, bodyText,
+            senderName: currentOrgName || '',
+            bccSelf: !!st.bccSelf,
+            extraCc,
+        };
+        // Один документ — прежний формат (работает и со старой версией серверной функции).
+        // Два — список вложений: старая функция такой запрос отклонит, а не отправит неполное письмо.
+        if (prepared.length === 1) {
+            payload.pdfBase64 = prepared[0].b64;
+            payload.pdfFilename = prepared[0].filename;
+        } else {
+            payload.attachments = prepared.map(p => ({ filename: p.filename, pdfBase64: p.b64 }));
+        }
+
+        const { data: result, error: fnError } = await db.functions.invoke('send-document-email', { body: payload });
         if (fnError) throw fnError;
         // Отказ по лимитам: сервер отвечает success:false и кодом (см. send-document-email).
         if (result && !result.success && result.code) {
@@ -414,9 +552,11 @@ async function submitSendDocument() {
         }
         if (!result || !result.success) throw new Error((result && result.error) || 'send failed');
 
-        await recordDocumentSent(orderId, docType, 'email', result.id);
-        const docLabel = docType === 'invoice' ? t('orders_doc_invoice') : t('orders_doc_delivery_note');
-        logActivity('order', `${docLabel} ${docNumberLabel} ${t('log_doc_email_sent')} (${cust.email})`, orderId);
+        for (const p of prepared) {
+            await recordDocumentSent(order.id, p.dt, 'email', result.id);
+            const docLabel = p.dt === 'invoice' ? t('orders_doc_invoice') : t('orders_doc_delivery_note');
+            logActivity('order', `${docLabel} ${p.num} ${t('log_doc_email_sent')} (${cust.email})`, order.id);
+        }
         closeModal();
         showInfo(t('send_success'));
     } catch (e) {
@@ -428,14 +568,50 @@ async function submitSendDocument() {
     }
 }
 
-// ---- Мини-редактор email клиента (открывается по "изменить" в шите отправки) ----
+// «PDF / мессенджер»: все отмеченные документы одним вызовом системного меню «Поделиться».
+async function _sendByShare(order, types) {
+    const st = _sendSheetState;
+    const btn = document.getElementById('sendDocSubmitBtn');
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+    showLoading(t('customers_pdf_generating'));
+    try {
+        const prepared = await _sendPrepareDocs(order, types, st.emailLang);
+        const files = prepared.map(p => new File([p.pdf.output('blob')], p.filename, { type: 'application/pdf' }));
+        let shared = false;
+        if (navigator.canShare && navigator.canShare({ files })) {
+            try { await navigator.share({ files, title: files[0].name }); shared = true; }
+            catch (e) { /* закрыли меню или браузер отклонил — сохраняем файлы на устройство ниже */ }
+        }
+        if (shared) {
+            for (const p of prepared) {
+                await recordDocumentSent(order.id, p.dt, 'share');
+                const docLabel = p.dt === 'invoice' ? t('orders_doc_invoice') : t('orders_doc_delivery_note');
+                logActivity('order', `${docLabel} ${p.num} ${t('log_doc_shared')}`, order.id);
+            }
+            closeModal();
+        } else {
+            prepared.forEach(p => p.pdf.save(p.filename));
+            await showInfo(`${t('common_done')}: ${t('send_share_saved')}`);
+        }
+    } catch (e) {
+        console.error(e);
+        showInfo(t('inv_doc_error_prefix') + (e && e.message ? e.message : t('inv_unknown_error')) + t('customers_pdf_error_suffix'));
+    } finally {
+        hideLoading();
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+    }
+}
+
+// ---- Мини-редактор email клиента (открывается по «изменить» / «Добавить e-mail») ----
 
 function openEmailQuickEdit(custId) {
     const cust = customers.find(c => c.id === custId);
     if (!cust) return;
     document.getElementById('emailQuickEditInput').value = cust.email || '';
-    document.getElementById('emailQuickEditModal').dataset.custId = custId;
-    document.getElementById('emailQuickEditModal').style.display = 'flex';
+    const modal = document.getElementById('emailQuickEditModal');
+    modal.dataset.custId = custId;
+    modal.style.zIndex = '170'; // выше нижней шторки отправки (z-index 160)
+    modal.style.display = 'flex';
 }
 
 async function saveEmailQuickEdit() {
@@ -450,9 +626,13 @@ async function saveEmailQuickEdit() {
     try {
         await updateChecked(db.from('customers').update({ email: value || null }).eq('id', custId));
         cust.email = value || null;
-        closeModal();
+        modal.style.display = 'none';
         if (_sendSheetState && _sendSheetState.custId === custId) {
-            openSendDocumentSheet(_sendSheetState.orderId, _sendSheetState.docType);
+            // Форма остаётся открытой, выбранные документы и набранное сохраняются
+            if (value) _sendSheetState.via = 'email';
+            _renderSendSheet();
+        } else {
+            closeModal();
         }
     } catch (e) {
         console.error(e);
@@ -460,4 +640,8 @@ async function saveEmailQuickEdit() {
     } finally {
         hideLoading();
     }
+}
+
+function closeEmailQuickEdit() {
+    document.getElementById('emailQuickEditModal').style.display = 'none';
 }
