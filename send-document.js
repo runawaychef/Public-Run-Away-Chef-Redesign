@@ -275,7 +275,10 @@ function _consBlockHtml(order) {
         const c = st.consExisting, co = c.snapshot.consolidated;
         const rows = co.orders.map(o => `<div style="display:flex; justify-content:space-between; font-size:12px; color:#555; padding:2px 0;"><span>${escapeHtml(o.number ? '№' + o.number : '#' + o.id)} · ${formatDateDMY(o.date)}${o.dn ? ' · ' + escapeHtml(o.dn) : ''}</span><span>${formatMoney(o.grossC / 100)}</span></div>`).join('');
         const warn = c.changed ? `<div style="margin-top:6px; font-size:12px; background:#f8efd9; color:#8a6a1f; border-radius:8px; padding:6px 8px;">${t('send_cons_changed_warn').replace('{old}', formatMoney(c.oldTotal)).replace('{new}', formatMoney(c.curTotal))}</div>` : '';
-        return `<div style="${box}"><div style="font-size:12px; color:#6b675d; margin-bottom:4px;">${t('send_cons_member')}</div>${rows}${warn}</div>`;
+        // Справка об оплате счёта (оплату вносят из окна оплаты любого заказа счёта)
+        const pc = typeof _payConsState === 'function' ? _payConsState(order) : null;
+        const paidLine = pc ? `<div style="display:flex; justify-content:space-between; font-size:12px; color:#4f6349; border-top:1px solid #e5e0d0; margin-top:4px; padding-top:5px;"><span>${t('send_cons_paid_line').replace('{paid}', formatMoney(pc.paidC / 100)).replace('{total}', formatMoney(pc.totalC / 100))}</span></div>` : '';
+        return `<div style="${box}"><div style="font-size:12px; color:#6b675d; margin-bottom:4px;">${t('send_cons_member')}</div>${rows}${paidLine}${warn}</div>`;
     }
     if (!st.consCand.length || st.docs.invoice.issued) return '';
     const seg = `<div class="send-doctype-switch" style="margin:8px 0 0 28px;">
