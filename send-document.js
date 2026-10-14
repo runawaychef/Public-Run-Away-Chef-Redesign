@@ -239,6 +239,11 @@ async function _sendLoadConsolidated(order) {
         issueDate: data.issue_date, dueDate: data.due_date, memberIds, changed: Math.abs(cur - old) > 0.004, oldTotal: old, curTotal: cur };
 }
 
+// Клиент «сводный», если ему уже выставляли сводные счета (отдельной настройки в карточке нет).
+function _custUsesConsolidated(order) {
+    return !!order.customer_id && orders.some(o => o.customer_id === order.customer_id && o.consolidated_invoice_id);
+}
+
 function _consCandidates(order) {
     if (!order.customer_id) return [];
     return orders.filter(o => o.customer_id === order.customer_id && o.is_confirmed && !o.consolidated_invoice_id)
@@ -473,7 +478,7 @@ async function openSendDocumentSheet(orderId, docType) {
 
     const checked = { invoice: false, delivery_note: false };
     if (docType === 'invoice' || docType === 'delivery_note') checked[docType] = true;
-    else if (cust && cust.invoice_mode === 'consolidated') checked.delivery_note = true;
+    else if (_custUsesConsolidated(order)) checked.delivery_note = true;
     else checked.invoice = true;
 
     _sendSheetState = {
@@ -489,7 +494,7 @@ async function openSendDocumentSheet(orderId, docType) {
         // По умолчанию — все ещё не включённые в счёт заказы клиента до даты этого заказа включительно
         stNew.consSel = stNew.consCand.filter(o => o.id === orderId || String(o.date || '') <= String(order.date || '')).map(o => o.id);
         if (!stNew.consSel.includes(orderId) && stNew.consCand.some(o => o.id === orderId)) stNew.consSel.push(orderId);
-        if (cust && cust.invoice_mode === 'consolidated' && stNew.consCand.length && !stNew.docs.invoice.issued) stNew.invKind = 'cons';
+        if (_custUsesConsolidated(order) && stNew.consCand.length && !stNew.docs.invoice.issued) stNew.invKind = 'cons';
         if (!stNew.consCand.some(o => o.id === orderId)) stNew.consCand = []; // сам заказ не может быть в сводном (не подтверждён и т.п.)
     }
     _renderSendSheet();

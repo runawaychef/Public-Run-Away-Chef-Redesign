@@ -1680,14 +1680,6 @@
                             <input id="cdPaymentTermDays" type="number" inputmode="numeric" min="0" step="1" autocomplete="off" onblur="saveCdHeader()" class="border p-0.5 rounded-xl w-full table-text" placeholder="7" data-i18n-placeholder="customers_payment_term_placeholder">
                         </div>
 
-                        <div class="mb-1 mt-2">
-                            <label class="table-text text-gray-500 mb-1 block" data-i18n="customers_invoice_mode_label">Счета</label>
-                            <div class="flex gap-1.5">
-                                <button id="cdInvModePerOrderBtn" onclick="setCustomerInvoiceMode('per_order')" class="field-select-btn flex-1" style="justify-content:center;" data-i18n="customers_invoice_mode_per_order">По каждому заказу</button>
-                                <button id="cdInvModeConsolidatedBtn" onclick="setCustomerInvoiceMode('consolidated')" class="field-select-btn flex-1" style="justify-content:center;" data-i18n="customers_invoice_mode_consolidated">Сводный счёт</button>
-                            </div>
-                            <p class="text-[11px] text-gray-400 mt-1" data-i18n="customers_invoice_mode_hint">Сводный счёт: накладная на каждую поставку, общий счёт — за период.</p>
-                        </div>
                     </div>
 
                     <div class="mt-2">
@@ -3147,7 +3139,7 @@
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=38"></script>
+    <script src="i18n-core.js?v=40"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=14"></script>
     <script src="auth.js?v=20"></script>
@@ -3160,11 +3152,11 @@
 <script src="batches.js?v=10"></script>
 <script src="semifinished.js?v=38"></script>
 <script src="products.js?v=32"></script>
-<script src="customers.js?v=42"></script>
+<script src="customers.js?v=43"></script>
 <script src="calendar.js?v=9"></script>
 <script src="orders.js?v=128"></script>
-<script src="invoice.js?v=40"></script>
-<script src="send-document.js?v=16"></script>
+<script src="invoice.js?v=42"></script>
+<script src="send-document.js?v=18"></script>
 <script src="payments.js?v=19"></script>
 <script src="stats.js?v=22"></script>
 <script src="history.js?v=9"></script>
@@ -3270,7 +3262,7 @@ async function loadAllData(silent) {
             fetchAllRows(() => db.from('customers').select('id, name, contact, email, discount, vat_exempt, notes, address, reg_number, vat_code, personal_code, entity_type, payment_term_days, invoice_mode').eq('org_id', currentOrgId).order('name').order('id')),
             // invoice_snapshot / delivery_note_snapshot сюда НЕ входят: это копии документов с логотипом
             // (у большой пекарни ~15 МБ), в списке они не нужны — документы читают свой снимок из базы сами.
-            fetchAllRows(() => db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending, is_confirmed, is_demo, created_by, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via, invoice_sent_message_id, delivery_note_sent_message_id, invoice_delivery_status, delivery_note_delivery_status').eq('org_id', currentOrgId).is('deleted_at', null).order('id')),
+            fetchAllRows(() => db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending, is_confirmed, is_demo, created_by, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via, invoice_sent_message_id, delivery_note_sent_message_id, invoice_delivery_status, delivery_note_delivery_status, consolidated_invoice_id').eq('org_id', currentOrgId).is('deleted_at', null).order('id')),
             fetchAllRows(() => db.from('order_items').select('id, order_id, product_id, quantity, price, item_cost').eq('org_id', currentOrgId).order('id')),
             db.from('employees').select('id, name').eq('org_id', currentOrgId).order('name').limit(1000),
             fetchAllRows(() => db.from('ingredients').select('id, name, package_price, package_size, unit').eq('org_id', currentOrgId).order('name').order('id')),
@@ -3378,6 +3370,7 @@ async function loadAllData(silent) {
                 is_confirmed: !!o.is_confirmed,
                 is_demo: !!o.is_demo,
                 created_by: o.created_by || null,
+                consolidated_invoice_id: o.consolidated_invoice_id || null,
                 invoice_sent_at: o.invoice_sent_at || null,
                 invoice_sent_via: o.invoice_sent_via || null,
                 delivery_note_sent_at: o.delivery_note_sent_at || null,

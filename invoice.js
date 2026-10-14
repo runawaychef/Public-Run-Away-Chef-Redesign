@@ -616,7 +616,7 @@ function buildDocumentHtml(docType, snapshot, lang) {
             ${tDoc('inv_amount_in_words', lang)}: ${escapeHtml(amountWords)}
         </div>
         ${cons ? `<div style="margin-top:14px;font-size:14px;color:#374151;line-height:1.6;">
-            ${cons.dnNumbers && cons.dnNumbers.length ? `<div>${escapeHtml(tDoc('inv_cons_dn_list', lang).replace('{list}', cons.dnNumbers.join(', ')))}</div>` : ''}
+            ${_consDnLine(cons, lang) ? `<div>${escapeHtml(_consDnLine(cons, lang))}</div>` : ''}
             <div>${escapeHtml(tDoc('inv_payment_ref', lang).replace('{ref}', 'INV-' + number))}</div>
         </div>` : ''}
 
@@ -764,8 +764,8 @@ async function buildDocumentPdf(docType, snapshot, lang) {
     if (cons) {
         pdf.setFontSize(9.5); pdf.setFont('Roboto', 'normal'); pdf.setTextColor(...PDF_COLORS.textGray);
         y += 3;
-        if (cons.dnNumbers && cons.dnNumbers.length) {
-            const dnSplit = pdf.splitTextToSize(tDoc('inv_cons_dn_list', lang).replace('{list}', cons.dnNumbers.join(', ')), pageW - marginX * 2);
+        if (_consDnLine(cons, lang)) {
+            const dnSplit = pdf.splitTextToSize(_consDnLine(cons, lang), pageW - marginX * 2);
             pdf.text(dnSplit, marginX, y);
             y += 4.5 * dnSplit.length;
         }
@@ -794,10 +794,24 @@ async function buildDocumentPdf(docType, snapshot, lang) {
 // Суммы — сумма по заказам, каждый заказ считается обычной формулой в центах (calcTotals).
 
 function _consDocItems(cons, lang) {
+    // Новый формат: одна строка на продукт (название, цена). Старые снимки — одна общая строка.
+    if (cons.rows.length && cons.rows[0].product !== undefined) {
+        return cons.rows.map(r => ({ product: r.product, quantity: r.qty, unit: r.unit, price: r.price, vatPct: r.vatPct }));
+    }
     const desc = tDoc('inv_cons_desc', lang)
         .replace('{from}', formatDateDMY(cons.periodFrom))
         .replace('{to}', formatDateDMY(cons.periodTo));
     return cons.rows.map(r => ({ product: desc, quantity: r.qty, unit: r.unit, price: null, vatPct: r.vatPct }));
+}
+
+// Строка «На основании накладных: DN-0085 от 02.10.2026, …»
+function _consDnLine(cons, lang) {
+    const docs = (cons.orders || []).filter(o => o.dn);
+    if (docs.length) {
+        const list = docs.map(o => o.dnDate ? tDoc('inv_cons_dn_item', lang).replace('{number}', o.dn).replace('{date}', formatDateDMY(o.dnDate)) : o.dn).join(', ');
+        return tDoc('inv_cons_dn_list', lang).replace('{list}', list);
+    }
+    return (cons.dnNumbers && cons.dnNumbers.length) ? tDoc('inv_cons_dn_list', lang).replace('{list}', cons.dnNumbers.join(', ')) : '';
 }
 
 // opts: { preview:true } — только в памяти (номер-заглушка «…», в базу ничего не пишется);
@@ -812,7 +826,7 @@ async function freezeConsolidatedInvoice(orderIds, custId, opts) {
         db.from('organizations').select('*').eq('id', currentOrgId).single(),
         custId ? db.from('customers').select('*').eq('id', custId).single() : Promise.resolve({ data: null, error: null }),
         productIds.length ? db.from('products').select('id, unit').in('id', productIds) : Promise.resolve({ data: [], error: null }),
-        db.from('orders').select('id, dn:delivery_note_snapshot->>number').in('id', ids),
+        db.from('orders').select('id, dn:delivery_note_snapshot->>number, dnDate:delivery_note_snapshot->>issueDate').in('id', ids),
     ]);
     if (orgRes.error) throw orgRes.error;
     if (custRes.error) throw custRes.error;
@@ -820,7 +834,7 @@ async function freezeConsolidatedInvoice(orderIds, custId, opts) {
     if (dnRes.error) throw dnRes.error;
     const org = orgRes.data, cust = custRes.data;
     const unitById = {}; (prodRes.data || []).forEach(p => { unitById[p.id] = p.unit; });
-    const dnById = {}; (dnRes.data || []).forEach(r => { if (r.dn) dnById[r.id] = r.dn; });
+    const dnById = {}, dnDateById = {}; (dnRes.data || []).forEach(r => { if (r.dn) { dnById[r.id] = r.dn; dnDateById[r.id] = r.dnDate || null; } });
 
     const rate = Number(typeof currentOrgVatRate !== 'undefined' ? currentOrgVatRate : 0) || 0;
     const groups = new Map();
@@ -830,19 +844,20 @@ async function freezeConsolidatedInvoice(orderIds, custId, opts) {
         const pct = o.vat_exempt ? '0%' : (rate * 100).toFixed(0) + '%';
         (o.items || []).forEach((it, i) => {
             const unit = it.product_id ? (unitById[it.product_id] || null) : null;
-            const key = pct + '|' + (unit || '');
-            const g = groups.get(key) || { unit, vatPct: pct, qty: 0, netC: 0, vatC: 0, grossC: 0 };
+            const price = Number(it.price) || 0;
+            const key = (it.product || '') + '|' + (unit || '') + '|' + price + '|' + pct;
+            const g = groups.get(key) || { product: it.product || '', unit, price, vatPct: pct, qty: 0, netC: 0, vatC: 0, grossC: 0 };
             g.qty += Number(it.quantity) || 0;
             g.netC += Math.round(tt.lines[i].net * 100);
             g.vatC += Math.round(tt.lines[i].vat * 100);
             g.grossC += Math.round(tt.lines[i].gross * 100);
             groups.set(key, g);
         });
-        orderInfos.push({ id: o.id, number: o.order_number || null, date: o.date || null, dn: dnById[o.id] ? 'DN-' + dnById[o.id] : null, grossC: Math.round(tt.grand * 100) });
+        orderInfos.push({ id: o.id, number: o.order_number || null, date: o.date || null, dn: dnById[o.id] ? 'DN-' + dnById[o.id] : null, dnDate: dnDateById[o.id] || null, grossC: Math.round(tt.grand * 100) });
     });
     const rows = [...groups.values()]
-        .sort((a, b) => (a.unit === 'pcs' ? 0 : 1) - (b.unit === 'pcs' ? 0 : 1))
-        .map(g => ({ unit: g.unit, vatPct: g.vatPct, qty: Math.round(g.qty * 1000) / 1000, net: g.netC / 100, vat: g.vatC / 100, gross: g.grossC / 100 }));
+        .sort((a, b) => a.product.localeCompare(b.product) || a.price - b.price)
+        .map(g => ({ product: g.product, price: g.price, unit: g.unit, vatPct: g.vatPct, qty: Math.round(g.qty * 1000) / 1000, net: g.netC / 100, vat: g.vatC / 100, gross: g.grossC / 100 }));
     const sumC = f => [...groups.values()].reduce((s, g) => s + g[f], 0);
     const totals = { net: sumC('netC') / 100, vat: sumC('vatC') / 100, grand: sumC('grossC') / 100 };
     const dates = list.map(o => o.date).filter(Boolean).sort();
