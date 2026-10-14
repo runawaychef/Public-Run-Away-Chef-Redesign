@@ -265,7 +265,7 @@ function setupSearchDropdown(inputId, dropdownId, getItems, onPick, onCreate, op
         function makeCreateRow() {
             const row = document.createElement('div');
             row.className = 'search-dropdown-item';
-            row.style.color = '#2563eb';
+            row.style.color = '#4f6349';
             row.style.fontWeight = '600';
             row.textContent = (opts && opts.createLabel) ? opts.createLabel(queryText) : `+ Создать «${queryText}»`;
             row.addEventListener('mousedown', (e) => {
