@@ -1779,6 +1779,66 @@ function deleteCurrentOrder() {
 }
 
 // Переход из карточки заказа в карточку его клиента (раздел "Клиенты")
+// Клиент, созданный из заказа с пустым именем: после заполнения карточки привязывается к заказу
+// (см. closeCustomerDetail в customers.js).
+let _attachCustomerAfterCard = null;
+// id клиента, выбранного точно (а не по имени) — используется saveDetailHeader вместо поиска по имени
+let _pendingCustomerPickId = null;
+
+// Привязывает клиента к открытой карточке заказа: подставляет имя, скидку и НДС клиента и сохраняет.
+async function attachCustomerToOrder(cust) {
+    const order = orders.find(o => o.id === currentOrderId);
+    if (!order || !cust) return;
+    document.getElementById('detailCustomer').value = cust.name;
+    document.getElementById('detailDiscount').value = cust.discount || 0;
+    document.getElementById('detailVatExempt').checked = !!cust.vat_exempt;
+    _pendingCustomerPickId = cust.id;
+    try { await saveDetailHeader(); } finally { _pendingCustomerPickId = null; }
+}
+
+// Верхняя строка «+ Новый клиент» в списке выбора клиента заказа.
+// С введённым именем создаёт клиента сразу, без имени — открывает пустую карточку.
+// Если такой клиент уже есть, предупреждает и предлагает выбрать его или изменить имя.
+async function createCustomerFromOrder(typedName) {
+    const order = orders.find(o => o.id === currentOrderId);
+    if (!order) return;
+    const input = document.getElementById('detailCustomer');
+    const name = String(typedName || '').replace(/\s+/g, ' ').trim();
+    if (name) {
+        const dup = findCustomerByName(name);
+        if (dup) {
+            const useExisting = await showConfirm(
+                t('customers_duplicate_confirm').replace('{name}', dup.name),
+                { ok: t('customers_use_existing'), cancel: t('customers_change_name') });
+            if (useExisting) await attachCustomerToOrder(dup);
+            else if (input) { input.value = name; input.focus(); }
+            return;
+        }
+    }
+    suppressRealtimeFor3s();
+    showLoading();
+    let newCust;
+    try {
+        const { data, error } = await db.from('customers').insert({ org_id: currentOrgId, name, contact: '', discount: 0, vat_exempt: false }).select().single();
+        if (error) throw error;
+        newCust = { id: data.id, name, contact: '', discount: 0, vat_exempt: false };
+        customers.push(newCust);
+        if (!name) _draftCustomerIds.add(newCust.id);
+        logActivity('customer', `${t('log_customer_draft_created')} ${name ? '«' + name + '»' : '№' + newCust.id}`);
+    } catch (e) { console.error(e); showDbError(e, t('customers_create_error')); return; }
+    finally { hideLoading(); }
+
+    if (name) await attachCustomerToOrder(newCust);
+    else _attachCustomerAfterCard = { orderId: order.id, custId: newCust.id };
+
+    // Пустой черновик заказа не должен удалиться при уходе в карточку клиента
+    _draftOrderIds.delete(order.id);
+    showTab('customers');
+    openCustomerDetail(newCust.id);
+    _customerOpenedFromOrderId = order.id;
+    displayCustomers();
+}
+
 function goToCustomerFromOrder() {
     const order = orders.find(o => o.id === currentOrderId);
     if (!order || !order.customer_id) { showInfo(t('orders_no_customer_specified')); return; }
@@ -1808,8 +1868,10 @@ async function saveDetailHeader() {
     // не совпадает 1-в-1 с текущим списком клиентов.
     let custId = order.customer_id;
     let custName = order.customer;
-    if (customerName !== (order.customer || '')) {
-        const cust = customers.find(c => c.name === customerName);
+    if (_pendingCustomerPickId != null || customerName !== (order.customer || '')) {
+        const cust = _pendingCustomerPickId != null
+            ? customers.find(c => c.id === _pendingCustomerPickId)
+            : customers.find(c => c.name === customerName);
         if (!cust) {
             showInfo(t('orders_customer_not_found').replace('{name}', customerName));
             document.getElementById('detailCustomer').value = order.customer || ''; // откатываем поле

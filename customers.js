@@ -495,6 +495,14 @@ async function closeCustomerDetail() {
         if (!document.getElementById('orderDetail')?.classList.contains('active') && typeof openOrderDetail === 'function') {
             openOrderDetail(returnOrderId);
         }
+        // Клиент создан из заказа с пустым именем: имя вписали в карточке — привязываем к заказу
+        if (typeof _attachCustomerAfterCard !== 'undefined' && _attachCustomerAfterCard && _attachCustomerAfterCard.orderId === returnOrderId) {
+            const pending = _attachCustomerAfterCard;
+            _attachCustomerAfterCard = null;
+            _draftOrderIds.add(returnOrderId);
+            const c = customers.find(x => x.id === pending.custId);
+            if (c && c.name && currentOrderId === returnOrderId) attachCustomerToOrder(c);
+        }
     }
 }
 
@@ -541,6 +549,13 @@ async function saveCdHeader() {
     const paymentTermDays = paymentTermRaw === '' ? null : Math.max(0, parseInt(paymentTermRaw, 10) || 0);
     const entityType  = _customerEntityType;
     if (!name) { showInfo(t('customers_name_required')); return; }
+    // Защита от дубликатов: имя нового или переименованного клиента не должно совпадать с чужим
+    const dupCust = findCustomerByName(name, cust.id);
+    if (dupCust) {
+        showInfo(t('customers_duplicate_name').replace('{name}', dupCust.name));
+        document.getElementById('cdName').focus();
+        return;
+    }
     const oldName = cust.name;
     showLoading();
     try {

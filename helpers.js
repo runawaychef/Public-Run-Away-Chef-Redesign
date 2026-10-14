@@ -235,7 +235,9 @@ document.addEventListener('click', function(e) {
 // onCreate(text) — необязательный колбэк; если задан и среди items нет точного совпадения
 //                  (без учёта регистра) с введённым текстом, в списке появляется пункт
 //                  "+ Создать «текст»", по клику на который вызывается onCreate(text)
-function setupSearchDropdown(inputId, dropdownId, getItems, onPick, onCreate) {
+// opts (необязательно): { createOnTop: true, createLabel: (текст) => подпись } — строка «создать»
+// всегда первая в списке (даже при пустом поле); onCreate получает введённый текст (может быть пустым).
+function setupSearchDropdown(inputId, dropdownId, getItems, onPick, onCreate, opts) {
     const input = document.getElementById(inputId);
     const dropdown = document.getElementById(dropdownId);
     if (!input || !dropdown) return;
@@ -256,9 +258,24 @@ function setupSearchDropdown(inputId, dropdownId, getItems, onPick, onCreate) {
 
         const queryText = (filterText || '').trim();
         const exactMatch = queryText && items.some(name => name.toLowerCase() === queryText.toLowerCase());
-        const showCreate = onCreate && queryText && !exactMatch;
+        const createOnTop = !!(opts && opts.createOnTop);
+        const showCreate = onCreate && (createOnTop || (queryText && !exactMatch));
 
         if (!filtered.length && !showCreate) { dropdown.classList.add('hidden'); return; }
+        function makeCreateRow() {
+            const row = document.createElement('div');
+            row.className = 'search-dropdown-item';
+            row.style.color = '#2563eb';
+            row.style.fontWeight = '600';
+            row.textContent = (opts && opts.createLabel) ? opts.createLabel(queryText) : `+ Создать «${queryText}»`;
+            row.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                dropdown.classList.add('hidden');
+                onCreate(queryText);
+            });
+            return row;
+        }
+        if (showCreate && createOnTop) dropdown.appendChild(makeCreateRow());
         filtered.forEach(name => {
             const row = document.createElement('div');
             row.className = 'search-dropdown-item';
@@ -272,19 +289,7 @@ function setupSearchDropdown(inputId, dropdownId, getItems, onPick, onCreate) {
             });
             dropdown.appendChild(row);
         });
-        if (showCreate) {
-            const row = document.createElement('div');
-            row.className = 'search-dropdown-item';
-            row.style.color = '#2563eb';
-            row.style.fontWeight = '600';
-            row.textContent = `+ Создать «${queryText}»`;
-            row.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                dropdown.classList.add('hidden');
-                onCreate(queryText);
-            });
-            dropdown.appendChild(row);
-        }
+        if (showCreate && !createOnTop) dropdown.appendChild(makeCreateRow());
         dropdown.classList.remove('hidden');
     }
 
@@ -324,7 +329,18 @@ function updateCustomerSelects() {
 
     setupSearchDropdown('detailCustomer', 'detailCustomerDropdown',
         byPopularityThenAlpha,
-        () => onDetailCustomerChange());
+        () => onDetailCustomerChange(),
+        (typed) => createCustomerFromOrder(typed),
+        { createOnTop: true,
+          createLabel: (q) => q ? t('customers_new_row_named').replace('{name}', q) : t('customers_new_row') });
+}
+
+// Сравнение имён клиентов для защиты от дубликатов: без учёта регистра и лишних пробелов.
+function _normCustName(s) { return String(s || '').replace(/\s+/g, ' ').trim().toLowerCase(); }
+function findCustomerByName(name, excludeId) {
+    const n = _normCustName(name);
+    if (!n) return null;
+    return customers.find(c => c.id !== excludeId && _normCustName(c.name) === n) || null;
 }
 
 // Подставляет текущее значение клиента в поле детального просмотра заказа
