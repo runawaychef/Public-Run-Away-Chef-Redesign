@@ -821,6 +821,15 @@ async function freezeConsolidatedInvoice(orderIds, custId, opts) {
         .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')) || (a.id - b.id));
     if (!list.length) throw new Error('No orders selected');
     const ids = list.map(o => o.id);
+    // В сводном счёте указываются накладные: тем заказам, у которых накладной ещё нет, она
+    // выставляется сейчас (датой поставки = дата заказа), по порядку дат — номера идут по возрастанию.
+    if (!(opts && opts.preview)) {
+        for (const o of list) {
+            const { data: r, error: re } = await db.from('orders').select('dn:delivery_note_snapshot').eq('id', o.id).single();
+            if (re) throw re;
+            if (!(r && r.dn && r.dn.number)) await freezeDocumentSnapshot(o, 'delivery_note', null, { issueDate: o.date || undefined });
+        }
+    }
     const productIds = [...new Set(list.flatMap(o => (o.items || []).map(it => it.product_id).filter(Boolean)))];
     const [orgRes, custRes, prodRes, dnRes] = await Promise.all([
         db.from('organizations').select('*').eq('id', currentOrgId).single(),
@@ -853,7 +862,7 @@ async function freezeConsolidatedInvoice(orderIds, custId, opts) {
             g.grossC += Math.round(tt.lines[i].gross * 100);
             groups.set(key, g);
         });
-        orderInfos.push({ id: o.id, number: o.order_number || null, date: o.date || null, dn: dnById[o.id] ? 'DN-' + dnById[o.id] : null, dnDate: dnDateById[o.id] || null, grossC: Math.round(tt.grand * 100) });
+        orderInfos.push({ id: o.id, number: o.order_number || null, date: o.date || null, dn: dnById[o.id] ? 'DN-' + dnById[o.id] : ((opts && opts.preview) ? 'DN-…' : null), dnDate: dnDateById[o.id] || o.date || null, grossC: Math.round(tt.grand * 100) });
     });
     const rows = [...groups.values()]
         .sort((a, b) => a.product.localeCompare(b.product) || a.price - b.price)
