@@ -322,6 +322,14 @@ function _sendBuildBody() {
             const pr = _consPeriod(_consSelectedOrders());
             from = pr.from; to = pr.to; sum = _consSelectedTotal();
         }
+        if (from === to) {
+            return tLang('send_body_docs_cons_day', lang)
+                .replace('{customer}', order.customer || t('orders_no_customer'))
+                .replace('{docs}', phrases.join(tLang('send_and', lang)))
+                .replace('{date}', formatDateDMY(from))
+                .replace('{sum}', formatMoney(sum))
+                .replace('{org_name}', currentOrgName || '');
+        }
         return tLang('send_body_docs_cons', lang)
             .replace('{customer}', order.customer || t('orders_no_customer'))
             .replace('{docs}', phrases.join(tLang('send_and', lang)))
