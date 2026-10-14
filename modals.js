@@ -21,6 +21,17 @@ function openDeleteModal(id, type, label) {
     textEl.style.whiteSpace = 'pre-line';
     textEl.textContent = text;
     document.getElementById('deleteModal').style.display = 'flex';
+
+    // Заказ из сводного счёта: предупреждаем, что он выпадет из счёта (номер счёта догружаем при необходимости)
+    const ord = type === 'order' ? orders[id] : null;
+    if (ord && ord.consolidated_invoice_id && typeof _payConsNumber === 'function') {
+        const cid = ord.consolidated_invoice_id;
+        const withNote = () => text + '\n\n' + t('order_delete_cons_note').replace('{number}', _payConsNumber(cid));
+        textEl.textContent = withNote();
+        if (typeof _payLoadConsNumbers === 'function' && _payConsNumber(cid) === '…') {
+            _payLoadConsNumbers([cid]).then(() => { if (deleteId === id && deleteType === 'order') textEl.textContent = withNote(); });
+        }
+    }
 }
 
 async function confirmDelete() {

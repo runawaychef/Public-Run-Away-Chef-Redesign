@@ -232,11 +232,16 @@ async function _sendLoadConsolidated(order) {
     if (!data || !data.snapshot) return null;
     const snap = data.snapshot;
     const memberIds = (snap.consolidated.orders || []).map(o => o.id);
-    const cur = memberIds.map(id => orders.find(o => o.id === id)).filter(Boolean)
-        .reduce((s, o) => s + Math.round(orderGrandTotal(o) * 100), 0) / 100;
+    // Текущий состав — заказы, которые сейчас числятся в счёте (удалённые в корзину сюда не попадают)
+    const curOrders = orders.filter(o => o.consolidated_invoice_id === data.id)
+        .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')) || (a.id - b.id));
+    const curMemberIds = curOrders.map(o => o.id);
+    const cur = curOrders.reduce((s, o) => s + Math.round(orderGrandTotal(o) * 100), 0) / 100;
     const old = snap.consolidated.totals.grand;
-    return { id: data.id, number: _formatDocNumber('invoice', data.number), snapshot: snap,
-        issueDate: data.issue_date, dueDate: data.due_date, memberIds, changed: Math.abs(cur - old) > 0.004, oldTotal: old, curTotal: cur };
+    const sameMembers = curMemberIds.length === memberIds.length && memberIds.every(id => curMemberIds.includes(id));
+    return { id: data.id, number: _formatDocNumber('invoice', data.number), rawNumber: data.number, snapshot: snap,
+        issueDate: data.issue_date, dueDate: data.due_date, memberIds, curMemberIds,
+        changed: !sameMembers || Math.abs(cur - old) > 0.004, oldTotal: old, curTotal: cur };
 }
 
 // Клиент «сводный», если ему уже выставляли сводные счета (отдельной настройки в карточке нет).
@@ -313,12 +318,19 @@ function _sendBuildBody() {
     const lang = st.emailLang;
     const phrases = types.map(dt => {
         const d = st.docs[dt], k = _sendDocKey(dt);
+        if (dt === 'invoice' && st.consExisting) {
+            return tLang(`send_phr_${k}_${st.consExisting.changed ? 'upd' : 'num'}`, lang).replace('{doc_number}', st.consExisting.number);
+        }
         if (!d.issued) return tLang(`send_phr_${k}_new`, lang);
         return tLang(`send_phr_${k}_${d.changed ? 'upd' : 'num'}`, lang).replace('{doc_number}', d.number);
     });
     if (_isConsInvoice()) {
         let from, to, sum;
-        if (st.consExisting) {
+        if (st.consExisting && st.consExisting.changed) {
+            const curList = st.consExisting.curMemberIds.map(id => orders.find(o => o.id === id)).filter(Boolean);
+            const pr = _consPeriod(curList);
+            from = pr.from; to = pr.to; sum = st.consExisting.curTotal;
+        } else if (st.consExisting) {
             const co = st.consExisting.snapshot.consolidated;
             from = co.periodFrom; to = co.periodTo; sum = co.totals.grand;
         } else {
@@ -556,7 +568,15 @@ async function openSendDocPreview(docType) {
     try {
         let snap, persisted, consolidatedId = null;
         if (docType === 'invoice' && (st.consExisting || st.invKind === 'cons')) {
-            if (st.consExisting) {
+            if (st.consExisting && st.consExisting.changed) {
+                const c = st.consExisting;
+                if (!c.curMemberIds.length) { showInfo(t('send_cons_empty')); return; }
+                snap = (await freezeConsolidatedInvoice(c.curMemberIds, st.custId, { preview: true,
+                    existing: { id: c.id, number: c.rawNumber || c.snapshot.number, issueDate: c.issueDate, dueDate: c.dueDate } })).snapshot;
+                // Номер прежний (баннер «номер присвоится при отправке» не нужен). Если в предпросмотре
+                // поменять дату, сохранится уже обновлённый вид счёта — это то, что пекарь сейчас видит.
+                persisted = true; consolidatedId = c.id;
+            } else if (st.consExisting) {
                 snap = st.consExisting.snapshot; persisted = true; consolidatedId = st.consExisting.id;
             } else {
                 if (!st.consSel.length) { showInfo(t('send_cons_none')); return; }
@@ -649,7 +669,19 @@ async function _sendPrepareDocs(order, types, lang) {
                     issueDate: r.snapshot.issueDate, dueDate: r.snapshot.dueDate, memberIds: [...st.consSel], changed: false,
                     oldTotal: r.snapshot.consolidated.totals.grand, curTotal: r.snapshot.consolidated.totals.grand };
             }
-            snap = st.consExisting.snapshot; updated = false;
+            if (st.consExisting.changed) {
+                if (!st.consExisting.curMemberIds.length) throw new Error(t('send_cons_empty'));
+                const c = st.consExisting;
+                const r = await freezeConsolidatedInvoice(c.curMemberIds, st.custId, {
+                    existing: { id: c.id, number: c.rawNumber || c.snapshot.number, issueDate: c.issueDate, dueDate: c.dueDate } });
+                c.snapshot = r.snapshot; c.memberIds = [...c.curMemberIds];
+                c.oldTotal = r.snapshot.consolidated.totals.grand; c.curTotal = c.oldTotal;
+                c.changed = false;
+                updated = true;
+            } else {
+                updated = false;
+            }
+            snap = st.consExisting.snapshot;
         } else {
             snap = await _reserveDocSnapshot(order, dt, st.dates[dt]);
         }

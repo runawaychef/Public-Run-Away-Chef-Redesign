@@ -815,7 +815,11 @@ function _consDnLine(cons, lang) {
 }
 
 // opts: { preview:true } — только в памяти (номер-заглушка «…», в базу ничего не пишется);
-// { issueDate, dueDate } — даты, выбранные в предпросмотре. Возвращает { id, snapshot }.
+// { issueDate, dueDate } — даты, выбранные в предпросмотре;
+// { existing: { id, number, issueDate, dueDate } } — пересобрать уже выставленный счёт по текущим
+// заказам (изменённые суммы, удалённые заказы выпадают): номер и даты прежние, строка в
+// consolidated_invoices обновляется, новый номер не берётся. Вместе с preview — только в памяти.
+// Возвращает { id, snapshot }.
 async function freezeConsolidatedInvoice(orderIds, custId, opts) {
     const list = orderIds.map(id => orders.find(o => o.id === id)).filter(Boolean)
         .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')) || (a.id - b.id));
@@ -871,8 +875,11 @@ async function freezeConsolidatedInvoice(orderIds, custId, opts) {
     const totals = { net: sumC('netC') / 100, vat: sumC('vatC') / 100, grand: sumC('grossC') / 100 };
     const dates = list.map(o => o.date).filter(Boolean).sort();
 
+    const existing = (opts && opts.existing) || null;
     let number;
-    if (opts && opts.preview) {
+    if (existing) {
+        number = existing.number;
+    } else if (opts && opts.preview) {
         number = '…';
     } else {
         const { data, error } = await db.rpc('get_next_invoice_number', { p_org_id: currentOrgId });
@@ -880,8 +887,8 @@ async function freezeConsolidatedInvoice(orderIds, custId, opts) {
         number = data;
     }
     const termDays = (cust && cust.payment_term_days != null) ? Number(cust.payment_term_days) : 7;
-    const issueDate = (opts && opts.issueDate) || getLocalDateStr(0);
-    const dueDate = (opts && opts.dueDate) || getLocalDateStr(termDays);
+    const issueDate = (existing && existing.issueDate) || (opts && opts.issueDate) || getLocalDateStr(0);
+    const dueDate = (existing && existing.dueDate) || (opts && opts.dueDate) || getLocalDateStr(termDays);
 
     const snapshot = {
         number, issueDate, dueDate, calc: 2, vat_rate: rate,
@@ -906,7 +913,12 @@ async function freezeConsolidatedInvoice(orderIds, custId, opts) {
             reg_number: cust.reg_number, vat_code: cust.vat_code, address: cust.address, contact: cust.contact,
         } : null,
     };
-    if (opts && opts.preview) return { id: null, snapshot };
+    if (opts && opts.preview) return { id: existing ? existing.id : null, snapshot };
+    if (existing) {
+        await updateChecked(db.from('consolidated_invoices').update({ snapshot }).eq('id', existing.id).eq('org_id', currentOrgId));
+        if (typeof saveAppSnapshot === 'function') saveAppSnapshot();
+        return { id: existing.id, snapshot };
+    }
 
     const createdBy = (typeof currentEmployee !== 'undefined' && currentEmployee) ? currentEmployee.id : null;
     const { data: ins, error: insErr } = await db.from('consolidated_invoices').insert({

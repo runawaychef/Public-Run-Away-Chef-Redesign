@@ -9,6 +9,8 @@ let _orderPayments = [];
 let _orderPaidTotals = {}; // { orderId: сумма всех платежей } — для отметки статуса оплаты в списке заказов
 
 async function loadOrderPayments(orderId) {
+    const banner = document.getElementById('detailConsBanner');
+    if (banner) banner.classList.add('hidden'); // не показываем плашку предыдущего заказа, пока грузится
     try {
         const { data, error } = await db.from('order_payments')
             .select('id, amount, method, paid_at, note, created_by, created_at, consolidated_invoice_id')
@@ -27,6 +29,7 @@ async function loadOrderPayments(orderId) {
     const consIds = new Set(_orderPayments.map(p => p.consolidated_invoice_id).filter(Boolean));
     if (order && order.consolidated_invoice_id) consIds.add(order.consolidated_invoice_id);
     await _payLoadConsNumbers([...consIds]);
+    _renderDetailConsBanner(order);
     const dueInput = document.getElementById('orderDueDate');
     if (dueInput) calSetFieldValue('orderDueDate', 'orderDueDateBtnLabel', order && order.due_date ? order.due_date : '');
 
@@ -119,7 +122,7 @@ function renderPayments() {
     const list = document.getElementById('paymentsListContent');
     if (!list) return;
     if (!_orderPayments.length) {
-        list.innerHTML = `<p class="text-xs text-gray-400">${t('pay_no_payments_yet')}</p>`;
+        list.innerHTML = `<p class="text-gray-400" style="font-size:13px;">${t('pay_no_payments_yet')}</p>`;
         return;
     }
     let html = '<div class="flex flex-col gap-1.5">';
@@ -127,8 +130,8 @@ function renderPayments() {
         const emp = employees.find(e => e.id === p.created_by);
         const parts = [formatDateDMY(p.paid_at), formatMoney(p.amount), escapeHtml(p.method || '—')];
         if (emp) parts.push(escapeHtml(emp.name));
-        html += `<div class="flex justify-between items-center text-xs bg-[#f4f1ea] hover:bg-[#e3e8df] active:bg-[#e3e8df] rounded-lg px-3 py-2.5 cursor-pointer" ${dataAction('openEditPaymentModal', [p.id])}>
-            <div class="min-w-0"><div class="font-medium text-gray-800 truncate">${parts.join(' · ')}${p.note ? ' · ' + escapeHtml(p.note) : ''}</div>${p.consolidated_invoice_id ? `<div style="font-size:11px; color:#4f6349;">${escapeHtml(t('pay_cons_tag').replace('{number}', _payConsNumber(p.consolidated_invoice_id)))}</div>` : ''}</div>
+        html += `<div class="flex justify-between items-center bg-[#f4f1ea] hover:bg-[#e3e8df] active:bg-[#e3e8df] rounded-lg px-3 py-2.5 cursor-pointer" ${dataAction('openEditPaymentModal', [p.id])}>
+            <div class="min-w-0" style="font-size:13px;"><div class="font-medium text-gray-800 truncate">${parts.join(' · ')}${p.note ? ' · ' + escapeHtml(p.note) : ''}</div>${p.consolidated_invoice_id ? `<div style="font-size:12px; color:#4f6349;">${escapeHtml(t('pay_cons_tag').replace('{number}', _payConsNumber(p.consolidated_invoice_id)))}</div>` : ''}</div>
             <span class="action-icon icon-edit shrink-0 ml-2">${icon('edit', 'w-4 h-4')}</span>
         </div>`;
     });
@@ -305,14 +308,15 @@ async function deletePayment() {
 let _payModal = null;        // { cons, mode: 'cons' | 'order', fillRemaining }
 let _payBatchDelete = null;  // { payment, rows } — выбор при удалении оплаты из пачки
 const _consInvNumbers = {};  // { consolidatedInvoiceId: 'INV-…' }
+const _consInvDates = {};    // { consolidatedInvoiceId: 'YYYY-MM-DD' } — дата выставления
 
 async function _payLoadConsNumbers(ids) {
     const need = ids.filter(id => !_consInvNumbers[id]);
     if (!need.length) return;
     try {
-        const { data, error } = await db.from('consolidated_invoices').select('id, number').in('id', need);
+        const { data, error } = await db.from('consolidated_invoices').select('id, number, issue_date').in('id', need);
         if (error) throw error;
-        (data || []).forEach(r => { _consInvNumbers[r.id] = _formatDocNumber('invoice', r.number) || ('#' + r.id); });
+        (data || []).forEach(r => { _consInvNumbers[r.id] = _formatDocNumber('invoice', r.number) || ('#' + r.id); _consInvDates[r.id] = r.issue_date || null; });
     } catch (e) {
         console.error('Не удалось загрузить номера сводных счетов:', e);
     }
@@ -386,6 +390,18 @@ function _renderPaymentConsLine() {
         .replace('{number}', cons.number)
         .replace('{paid}', formatMoney(cons.paidC / 100))
         .replace('{total}', formatMoney(cons.totalC / 100));
+    el.classList.remove('hidden');
+}
+
+// Плашка в карточке заказа: заказ входит в сводный счёт, изменения попадут в счёт при следующей отправке
+function _renderDetailConsBanner(order) {
+    const el = document.getElementById('detailConsBanner');
+    if (!el) return;
+    if (!order || order.id !== currentOrderId || !order.consolidated_invoice_id) { el.classList.add('hidden'); return; }
+    const cid = order.consolidated_invoice_id;
+    el.textContent = t('order_cons_banner')
+        .replace('{number}', _payConsNumber(cid))
+        .replace('{date}', _consInvDates[cid] ? formatDateDMY(_consInvDates[cid]) : '…');
     el.classList.remove('hidden');
 }
 
