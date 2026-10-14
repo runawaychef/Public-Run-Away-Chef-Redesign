@@ -467,6 +467,7 @@ function openCustomerDetail(custId) {
     document.getElementById('cdPersonalCode').value = cust.personal_code || '';
     document.getElementById('cdPaymentTermDays').value = cust.payment_term_days != null ? cust.payment_term_days : '';
     setCustomerEntityType(cust.entity_type || 'company', /*skipSave*/ true);
+    setCustomerInvoiceMode(cust.invoice_mode || 'per_order', /*skipSave*/ true);
 
     renderCustomerStats(cust);
     renderCustomerOrders();
@@ -514,6 +515,15 @@ function deleteCurrentCustomer() {
     openDeleteModal(idx, 'customer', `${t('delete_label_customer')} «${cust.name || t('customers_no_name_fallback')}»`);
 }
 
+let _customerInvoiceMode = 'per_order';
+
+function setCustomerInvoiceMode(mode, skipSave) {
+    _customerInvoiceMode = mode === 'consolidated' ? 'consolidated' : 'per_order';
+    document.getElementById('cdInvModePerOrderBtn').classList.toggle('active', _customerInvoiceMode === 'per_order');
+    document.getElementById('cdInvModeConsolidatedBtn').classList.toggle('active', _customerInvoiceMode === 'consolidated');
+    if (!skipSave) saveCdHeader();
+}
+
 let _customerEntityType = 'company';
 
 function setCustomerEntityType(type, skipSave) {
@@ -548,6 +558,7 @@ async function saveCdHeader() {
     const paymentTermRaw = document.getElementById('cdPaymentTermDays').value;
     const paymentTermDays = paymentTermRaw === '' ? null : Math.max(0, parseInt(paymentTermRaw, 10) || 0);
     const entityType  = _customerEntityType;
+    const invoiceMode = _customerInvoiceMode;
     if (!name) { showInfo(t('customers_name_required')); return; }
     // Защита от дубликатов: имя нового или переименованного клиента не должно совпадать с чужим
     const dupCust = findCustomerByName(name, cust.id);
@@ -562,11 +573,11 @@ async function saveCdHeader() {
         await updateChecked(db.from('customers').update({
             name, contact, email: email || null, discount: parseFloat(discount.toFixed(2)), vat_exempt: vatExempt, notes,
             address, reg_number: regNumber, vat_code: vatCode, personal_code: personalCode, entity_type: entityType,
-            payment_term_days: paymentTermDays
+            payment_term_days: paymentTermDays, invoice_mode: invoiceMode
         }).eq('id', cust.id));
         cust.name = name; cust.contact = contact; cust.email = email || null; cust.discount = parseFloat(discount.toFixed(2)); cust.vat_exempt = vatExempt; cust.notes = notes;
         cust.address = address; cust.reg_number = regNumber; cust.vat_code = vatCode; cust.personal_code = personalCode; cust.entity_type = entityType;
-        cust.payment_term_days = paymentTermDays;
+        cust.payment_term_days = paymentTermDays; cust.invoice_mode = invoiceMode;
         orders.forEach(o => { if (o.customer_id === cust.id) o.customer = name; });
         logActivity('customer', `${t('log_customer_changed')} «${oldName}»${oldName !== name ? ` → «${name}»` : ''}`);
         renderCustomerStats(cust);

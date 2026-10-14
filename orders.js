@@ -1754,23 +1754,6 @@ async function permanentDeleteOrder(orderId) {
     finally { hideLoading(); }
 }
 
-// Формирует текстовую сводку по заказу и открывает системное меню "Поделиться"
-// (владелец сам выбирает получателя — клиента, коллегу или просто копирует себе)
-function shareOrderInfo() {
-    const order = orders.find(o => o.id === currentOrderId);
-    if (!order) return;
-    const oNum = order.order_number || `#${order.id}`;
-    const total = (document.getElementById('detailTotal').textContent || '').trim();
-
-    let text = `${t('trash_order_word')} ${oNum}\n${t('customers_col_number_alt')}: ${order.customer}\n${t('history_col_date')}: ${formatDateDMY(order.date)}\n${t('customers_col_status')}: ${orderStatusLabelCap(order.status)}\n\n${t('orders_positions_title')}:\n`;
-    (order.items || []).forEach(item => {
-        text += `• ${item.product} — ${item.quantity} × ${formatMoney(item.price)} = ${formatMoney(item.quantity * item.price)}\n`;
-    });
-    text += `\n${t('customers_total_due')}: ${total}`;
-
-    shareOrCopyText(text);
-}
-
 function deleteCurrentOrder() {
     const idx = orders.findIndex(o => o.id === currentOrderId);
     if (idx === -1) return;
