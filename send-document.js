@@ -205,6 +205,94 @@ function _sendBuildDocInfo(order, row) {
     return info;
 }
 
+
+// ---- Сводный счёт (один счёт на несколько заказов клиента) ----
+// st.invKind: 'order' — счёт по этому заказу; 'cons' — сводный. Для уже выставленного
+// сводного (st.consExisting) состав фиксирован — его меняют отдельным действием.
+
+function _consSelectedOrders() {
+    const st = _sendSheetState;
+    return (st.consSel || []).map(id => orders.find(o => o.id === id)).filter(Boolean);
+}
+
+function _consSelectedTotal() {
+    return _consSelectedOrders().reduce((s, o) => s + Math.round(orderGrandTotal(o) * 100), 0) / 100;
+}
+
+function _consPeriod(list) {
+    const d = list.map(o => o.date).filter(Boolean).sort();
+    return { from: d[0] || '', to: d[d.length - 1] || '' };
+}
+
+async function _sendLoadConsolidated(order) {
+    if (!order.consolidated_invoice_id) return null;
+    const { data, error } = await db.from('consolidated_invoices')
+        .select('id, number, issue_date, due_date, snapshot').eq('id', order.consolidated_invoice_id).single();
+    if (error) throw error;
+    if (!data || !data.snapshot) return null;
+    const snap = data.snapshot;
+    const memberIds = (snap.consolidated.orders || []).map(o => o.id);
+    const cur = memberIds.map(id => orders.find(o => o.id === id)).filter(Boolean)
+        .reduce((s, o) => s + Math.round(orderGrandTotal(o) * 100), 0) / 100;
+    const old = snap.consolidated.totals.grand;
+    return { id: data.id, number: _formatDocNumber('invoice', data.number), snapshot: snap,
+        issueDate: data.issue_date, dueDate: data.due_date, memberIds, changed: Math.abs(cur - old) > 0.004, oldTotal: old, curTotal: cur };
+}
+
+function _consCandidates(order) {
+    if (!order.customer_id) return [];
+    return orders.filter(o => o.customer_id === order.customer_id && o.is_confirmed && !o.consolidated_invoice_id)
+        .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')) || (a.id - b.id));
+}
+
+function setSendInvKind(kind) {
+    const st = _sendSheetState;
+    if (!st || st.consExisting) return;
+    st.invKind = kind === 'cons' ? 'cons' : 'order';
+    st.bodyEdited = false;
+    _renderSendSheet();
+}
+
+function toggleConsOrder(id, on) {
+    const st = _sendSheetState;
+    if (!st || st.consExisting) return;
+    const set = new Set(st.consSel);
+    if (on) set.add(id); else if (id !== st.orderId) set.delete(id);
+    st.consSel = [...set];
+    st.bodyEdited = false;
+    _renderSendSheet();
+}
+
+function _consBlockHtml(order) {
+    const st = _sendSheetState;
+    const box = 'margin:8px 0 0 28px;';
+    if (st.consExisting) {
+        const c = st.consExisting, co = c.snapshot.consolidated;
+        const rows = co.orders.map(o => `<div style="display:flex; justify-content:space-between; font-size:12px; color:#555; padding:2px 0;"><span>${escapeHtml(o.number ? '№' + o.number : '#' + o.id)} · ${formatDateDMY(o.date)}${o.dn ? ' · ' + escapeHtml(o.dn) : ''}</span><span>${formatMoney(o.grossC / 100)}</span></div>`).join('');
+        const warn = c.changed ? `<div style="margin-top:6px; font-size:12px; background:#f8efd9; color:#8a6a1f; border-radius:8px; padding:6px 8px;">${t('send_cons_changed_warn').replace('{old}', formatMoney(c.oldTotal)).replace('{new}', formatMoney(c.curTotal))}</div>` : '';
+        return `<div style="${box}"><div style="font-size:12px; color:#6b675d; margin-bottom:4px;">${t('send_cons_member')}</div>${rows}${warn}</div>`;
+    }
+    if (!st.consCand.length || st.docs.invoice.issued) return '';
+    const seg = `<div class="send-doctype-switch" style="margin:8px 0 0 28px;">
+        <button class="${st.invKind === 'order' ? 'active' : ''}" onclick="setSendInvKind('order')">${t('send_inv_kind_order')}</button>
+        <button class="${st.invKind === 'cons' ? 'active' : ''}" onclick="setSendInvKind('cons')">${t('send_inv_kind_cons')}</button></div>`;
+    if (st.invKind !== 'cons') return seg;
+    const rows = st.consCand.map(o => {
+        const on = st.consSel.includes(o.id);
+        const dn = o.delivery_note_sent_at ? ' ✓' : '';
+        return `<label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#3c3a34; padding:3px 0; cursor:pointer;">
+            <input type="checkbox" ${on ? 'checked' : ''} ${o.id === st.orderId ? 'disabled' : ''} onchange="toggleConsOrder(${o.id}, this.checked)" style="accent-color:#7c9473; width:16px; height:16px;">
+            <span style="flex:1;">${escapeHtml(o.order_number ? '№' + o.order_number : '#' + o.id)} · ${formatDateDMY(o.date)}${dn}</span><span>${formatMoney(orderGrandTotal(o))}</span></label>`;
+    }).join('');
+    return seg + `<div style="${box}"><div style="font-size:12px; color:#6b675d; margin-bottom:4px;">${t('send_cons_pick_orders')}</div>${rows}
+        <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700; color:#3c3a34; border-top:1px solid #e5e0d0; margin-top:4px; padding-top:5px;"><span>${t('send_cons_total')} (${st.consSel.length})</span><span>${formatMoney(_consSelectedTotal())}</span></div></div>`;
+}
+
+function _isConsInvoice() {
+    const st = _sendSheetState;
+    return !!(st && (st.consExisting || st.invKind === 'cons') && st.checked.invoice);
+}
+
 function _sendCheckedTypes() {
     return _SEND_DOC_TYPES.filter(dt => _sendSheetState.checked[dt]);
 }
@@ -220,6 +308,22 @@ function _sendBuildBody() {
         if (!d.issued) return tLang(`send_phr_${k}_new`, lang);
         return tLang(`send_phr_${k}_${d.changed ? 'upd' : 'num'}`, lang).replace('{doc_number}', d.number);
     });
+    if (_isConsInvoice()) {
+        let from, to, sum;
+        if (st.consExisting) {
+            const co = st.consExisting.snapshot.consolidated;
+            from = co.periodFrom; to = co.periodTo; sum = co.totals.grand;
+        } else {
+            const pr = _consPeriod(_consSelectedOrders());
+            from = pr.from; to = pr.to; sum = _consSelectedTotal();
+        }
+        return tLang('send_body_docs_cons', lang)
+            .replace('{customer}', order.customer || t('orders_no_customer'))
+            .replace('{docs}', phrases.join(tLang('send_and', lang)))
+            .replace('{from}', formatDateDMY(from)).replace('{to}', formatDateDMY(to))
+            .replace('{sum}', formatMoney(sum))
+            .replace('{org_name}', currentOrgName || '');
+    }
     return tLang('send_body_docs', lang)
         .replace('{customer}', order.customer || t('orders_no_customer'))
         .replace('{docs}', phrases.join(tLang('send_and', lang)))
@@ -243,15 +347,22 @@ function _renderSendEmailLangSwitch() {
 
 function _sendDocRowHtml(dt, order) {
     const st = _sendSheetState, d = st.docs[dt], on = !!st.checked[dt];
-    const label = dt === 'invoice' ? t('orders_doc_invoice') : t('orders_doc_delivery_note');
+    const isCons = dt === 'invoice' && (st.consExisting || (st.invKind === 'cons' && !d.issued));
+    const label = dt === 'invoice' ? (isCons ? t('send_cons_invoice') : t('orders_doc_invoice')) : t('orders_doc_delivery_note');
     let status;
-    if (!d.issued) {
+    if (isCons && st.consExisting) {
+        const c = st.consExisting;
+        status = t('send_doc_status_issued').replace('{number}', c.number).replace('{date}', formatDateDMY(c.issueDate));
+        if (d.sentAt) status += t('send_doc_status_sent').replace('{date}', _formatSentDateTime(d.sentAt)).replace('{via}', _sentViaLabel(d.sentVia));
+    } else if (isCons) {
+        status = t('send_cons_status_new');
+    } else if (!d.issued) {
         status = t('send_doc_status_new');
     } else {
         status = t('send_doc_status_issued').replace('{number}', d.number).replace('{date}', formatDateDMY(d.issueDate));
         if (d.sentAt) status += t('send_doc_status_sent').replace('{date}', _formatSentDateTime(d.sentAt)).replace('{via}', _sentViaLabel(d.sentVia));
     }
-    const warn = d.changed
+    const warn = (d.changed && !isCons)
         ? `<div style="margin:6px 0 0 28px; font-size:12px; background:#f8efd9; color:#8a6a1f; border-radius:8px; padding:6px 8px;">${t('send_doc_changed_warn').replace('{old}', formatMoney(d.oldTotal)).replace('{new}', formatMoney(orderGrandTotal(order)))}</div>`
         : '';
     return `<div style="border:1px solid ${on ? '#7c9473' : '#d9d4c3'}; background:${on ? '#f3f5ef' : '#fff'}; border-radius:14px; padding:10px 12px; margin-bottom:8px;">
@@ -260,7 +371,7 @@ function _sendDocRowHtml(dt, order) {
             <b style="font-size:14px; color:#3c3a34;">${label}</b>
             <span onclick="openSendDocPreview('${dt}')" style="margin-left:auto; color:#4f6349; font-weight:700; font-size:12px; text-decoration:underline; cursor:pointer;">${t('send_view')}</span>
         </div>
-        <div style="font-size:12px; color:#888; margin:4px 0 0 28px;">${status}</div>${warn}</div>`;
+        <div style="font-size:12px; color:#888; margin:4px 0 0 28px;">${status}</div>${warn}${(dt === 'invoice' && on) ? _consBlockHtml(order) : ''}</div>`;
 }
 
 function _renderSendSheet() {
@@ -286,7 +397,7 @@ function _renderSendSheet() {
     const chips = types.map(dt => {
         const d = st.docs[dt];
         const label = dt === 'invoice' ? t('orders_doc_invoice') : t('orders_doc_delivery_note');
-        const text = d.issued ? _sendAttachmentName(dt, st.emailLang, d.number, orderNumLabel) : `${label} (${t('send_number_on_send')})`;
+        const text = (dt === 'invoice' && st.consExisting) ? _sendAttachmentName(dt, st.emailLang, st.consExisting.number, orderNumLabel) : d.issued ? _sendAttachmentName(dt, st.emailLang, d.number, orderNumLabel) : `${label} (${t('send_number_on_send')})`;
         return `<span style="display:inline-block; background:#f1eee3; border-radius:10px; padding:5px 9px; font-size:12px; color:#555; margin:0 6px 4px 0;">📎 ${escapeHtml(text)}</span>`;
     }).join('');
 
@@ -320,7 +431,7 @@ function _renderSendSheet() {
             <div style="margin-bottom:14px;">${chips}</div>`;
     }
 
-    const canSubmit = types.length > 0 && (!isEmail || hasEmail);
+    const canSubmit = types.length > 0 && (!isEmail || hasEmail) && !(_isConsInvoice() && !st.consExisting && !st.consSel.length);
     const btnLabel = isEmail ? t('send_button') : (t('send_share_btn') + (types.length > 1 ? ` (${types.length})` : ''));
     const icon = isEmail
         ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75A2.25 2.25 0 014.5 4.5h15A2.25 2.25 0 0121.75 6.75v10.5A2.25 2.25 0 0119.5 19.5h-15a2.25 2.25 0 01-2.25-2.25V6.75zm0 0l9.75 6.75 9.75-6.75"/></svg>`
@@ -356,6 +467,8 @@ async function openSendDocumentSheet(orderId, docType) {
         showInfo(t('error_save_check_connection'));
         return;
     }
+    let consExisting = null;
+    try { consExisting = await _sendLoadConsolidated(order); } catch (e) { console.error(e); }
     hideLoading();
 
     const checked = { invoice: false, delivery_note: false };
@@ -368,7 +481,17 @@ async function openSendDocumentSheet(orderId, docType) {
         via: (cust && cust.email) ? 'email' : 'share', checked,
         docs: _sendBuildDocInfo(order, row), bodyText: null, bodyEdited: false, extraCc: '',
         dates: { invoice: {}, delivery_note: {} },
+        consExisting, consCand: [], consSel: [], invKind: 'order',
     };
+    const stNew = _sendSheetState;
+    if (!consExisting) {
+        stNew.consCand = _consCandidates(order);
+        // По умолчанию — все ещё не включённые в счёт заказы клиента до даты этого заказа включительно
+        stNew.consSel = stNew.consCand.filter(o => o.id === orderId || String(o.date || '') <= String(order.date || '')).map(o => o.id);
+        if (!stNew.consSel.includes(orderId) && stNew.consCand.some(o => o.id === orderId)) stNew.consSel.push(orderId);
+        if (cust && cust.invoice_mode === 'consolidated' && stNew.consCand.length && !stNew.docs.invoice.issued) stNew.invKind = 'cons';
+        if (!stNew.consCand.some(o => o.id === orderId)) stNew.consCand = []; // сам заказ не может быть в сводном (не подтверждён и т.п.)
+    }
     _renderSendSheet();
     document.getElementById('sendDocumentSheet').style.display = 'flex';
 }
@@ -414,14 +537,27 @@ async function openSendDocPreview(docType) {
     if (!order) return;
     showLoading(t('inv_generating_document'));
     try {
-        const row = await _sendLoadRow(st.orderId);
-        const existing = row[snapshotField(docType)] || null;
-        const persisted = !!(existing && existing.number);
-        const snap = await freezeDocumentSnapshot(order, docType, existing, {
-            preview: true, issueDate: st.dates[docType].issueDate, dueDate: st.dates[docType].dueDate,
-        });
+        let snap, persisted, consolidatedId = null;
+        if (docType === 'invoice' && (st.consExisting || st.invKind === 'cons')) {
+            if (st.consExisting) {
+                snap = st.consExisting.snapshot; persisted = true; consolidatedId = st.consExisting.id;
+            } else {
+                if (!st.consSel.length) { showInfo(t('send_cons_none')); return; }
+                snap = (await freezeConsolidatedInvoice(st.consSel, st.custId, {
+                    preview: true, issueDate: st.dates.invoice.issueDate, dueDate: st.dates.invoice.dueDate,
+                })).snapshot;
+                persisted = false;
+            }
+        } else {
+            const row = await _sendLoadRow(st.orderId);
+            const existing = row[snapshotField(docType)] || null;
+            persisted = !!(existing && existing.number);
+            snap = await freezeDocumentSnapshot(order, docType, existing, {
+                preview: true, issueDate: st.dates[docType].issueDate, dueDate: st.dates[docType].dueDate,
+            });
+        }
         await ensureLangLoaded(st.emailLang);
-        _docPreview = { docType, snapshot: snap, lang: st.emailLang, readOnly: true, persisted, orderId: st.orderId };
+        _docPreview = { docType, snapshot: snap, lang: st.emailLang, readOnly: true, persisted, orderId: st.orderId, consolidatedId };
         renderDocumentPreviewThumbnail();
         _setPreviewReadOnlyUi(true, !persisted);
         document.getElementById('sendDocumentSheet').style.display = 'none';
@@ -445,6 +581,10 @@ async function closeOrderDocumentModal() {
             const order = orders.find(o => o.id === _sendSheetState.orderId);
             const row = await _sendLoadRow(_sendSheetState.orderId);
             if (order) _sendSheetState.docs = _sendBuildDocInfo(order, row);
+            if (_sendSheetState.consExisting) {
+                const fresh = await _sendLoadConsolidated(order);
+                if (fresh) _sendSheetState.consExisting = fresh;
+            }
         } catch (e) { console.error(e); }
         _renderSendSheet();
         document.getElementById('sendDocumentSheet').style.display = 'flex';
@@ -482,10 +622,23 @@ async function _sendPrepareDocs(order, types, lang) {
     const out = [];
     for (const dt of types) {
         const info = st.docs[dt];
-        const snap = await _reserveDocSnapshot(order, dt, st.dates[dt]);
+        const cons = dt === 'invoice' && (st.consExisting || st.invKind === 'cons');
+        let snap, updated = !!(info && info.issued && info.changed);
+        if (cons) {
+            if (!st.consExisting) {
+                // Выставляем сводный счёт один раз; при повторной попытке (ошибка отправки) берём уже созданный
+                const r = await freezeConsolidatedInvoice(st.consSel, st.custId, st.dates.invoice);
+                st.consExisting = { id: r.id, number: _formatDocNumber('invoice', r.snapshot.number), snapshot: r.snapshot,
+                    issueDate: r.snapshot.issueDate, dueDate: r.snapshot.dueDate, memberIds: [...st.consSel], changed: false,
+                    oldTotal: r.snapshot.consolidated.totals.grand, curTotal: r.snapshot.consolidated.totals.grand };
+            }
+            snap = st.consExisting.snapshot; updated = false;
+        } else {
+            snap = await _reserveDocSnapshot(order, dt, st.dates[dt]);
+        }
         const num = _formatDocNumber(dt, snap.number);
         const pdf = await buildDocumentPdf(dt, snap, lang);
-        out.push({ dt, snap, num, updated: !!(info && info.issued && info.changed), pdf, filename: _sendAttachmentName(dt, lang, num, orderNumLabel) });
+        out.push({ dt, snap, num, updated, cons: !!cons, pdf, filename: _sendAttachmentName(dt, lang, num, orderNumLabel) });
     }
     return out;
 }
@@ -553,7 +706,7 @@ async function submitSendDocument() {
         if (!result || !result.success) throw new Error((result && result.error) || 'send failed');
 
         for (const p of prepared) {
-            await recordDocumentSent(order.id, p.dt, 'email', result.id);
+            await _recordSentFor(order.id, p, 'email', result.id);
             const docLabel = p.dt === 'invoice' ? t('orders_doc_invoice') : t('orders_doc_delivery_note');
             logActivity('order', `${docLabel} ${p.num} ${t('log_doc_email_sent')} (${cust.email})`, order.id);
         }
@@ -566,6 +719,17 @@ async function submitSendDocument() {
         hideLoading();
         if (btn) { btn.disabled = false; btn.style.opacity = ''; }
     }
+}
+
+// Сводный счёт считается отправленным по каждому включённому заказу.
+async function _recordSentFor(orderId, p, via, messageId) {
+    const st = _sendSheetState;
+    if (p.cons && st && st.consExisting) {
+        const ids = (st.consExisting.memberIds && st.consExisting.memberIds.length) ? st.consExisting.memberIds : [orderId];
+        for (const id of ids) await recordDocumentSent(id, 'invoice', via, messageId);
+        return;
+    }
+    await recordDocumentSent(orderId, p.dt, via, messageId);
 }
 
 // «PDF / мессенджер»: все отмеченные документы одним вызовом системного меню «Поделиться».
@@ -584,7 +748,7 @@ async function _sendByShare(order, types) {
         }
         if (shared) {
             for (const p of prepared) {
-                await recordDocumentSent(order.id, p.dt, 'share');
+                await _recordSentFor(order.id, p, 'share');
                 const docLabel = p.dt === 'invoice' ? t('orders_doc_invoice') : t('orders_doc_delivery_note');
                 logActivity('order', `${docLabel} ${p.num} ${t('log_doc_shared')}`, order.id);
             }

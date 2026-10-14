@@ -358,8 +358,12 @@ async function applyEditIssueDate(newDate) {
     showLoading();
     try {
         _docPreview.snapshot.issueDate = newDate;
-        const field = snapshotField(_docPreview.docType);
-        await updateChecked(db.from('orders').update({ [field]: _docPreview.snapshot }).eq('id', _docPreview.orderId || currentOrderId));
+        if (_docPreview.consolidatedId) {
+            await updateChecked(db.from('consolidated_invoices').update({ snapshot: _docPreview.snapshot, issue_date: newDate }).eq('id', _docPreview.consolidatedId));
+        } else {
+            const field = snapshotField(_docPreview.docType);
+            await updateChecked(db.from('orders').update({ [field]: _docPreview.snapshot }).eq('id', _docPreview.orderId || currentOrderId));
+        }
         renderDocumentPreviewThumbnail();
         showAutosaveToast();
     } catch (e) {
@@ -391,8 +395,12 @@ async function applyEditDueDate(newDate) {
     showLoading();
     try {
         _docPreview.snapshot.dueDate = newDate;
-        const field = snapshotField(_docPreview.docType);
-        await updateChecked(db.from('orders').update({ [field]: _docPreview.snapshot }).eq('id', _docPreview.orderId || currentOrderId));
+        if (_docPreview.consolidatedId) {
+            await updateChecked(db.from('consolidated_invoices').update({ snapshot: _docPreview.snapshot, due_date: newDate }).eq('id', _docPreview.consolidatedId));
+        } else {
+            const field = snapshotField(_docPreview.docType);
+            await updateChecked(db.from('orders').update({ [field]: _docPreview.snapshot }).eq('id', _docPreview.orderId || currentOrderId));
+        }
         renderDocumentPreviewThumbnail();
         showAutosaveToast();
     } catch (e) {
@@ -446,6 +454,14 @@ function issuedByLineText(org, sellerName, lang) {
 // Иначе (старые документы): прежняя формула без округления, ставка — текущая у организации;
 // старые счета намеренно не пересчитываются.
 function documentTotals(snapshot) {
+    if (snapshot.consolidated) {
+        const c = snapshot.consolidated;
+        return {
+            lines: c.rows.map(r => ({ net: r.net, vat: r.vat, gross: r.gross })),
+            afterDiscountAll: c.totals.net, vatAll: c.totals.vat, grandAll: c.totals.grand,
+            vatPctLabel: (c.rows[0] && c.rows[0].vatPct) || '',
+        };
+    }
     const order = snapshot.order;
     const items = order.items || [];
     if (snapshot.calc === 2) {
@@ -510,7 +526,8 @@ function buildDocumentHtml(docType, snapshot, lang) {
     ].filter(Boolean) : [];
 
     // ---- Позиции с распределением скидки и НДС по строкам ----
-    const items = order.items || [];
+    const cons = snapshot.consolidated || null;
+    const items = cons ? _consDocItems(cons, lang) : (order.items || []);
     const { lines: docLines, afterDiscountAll, vatAll, grandAll, vatPctLabel } = documentTotals(snapshot);
 
     let itemsHtml = '';
@@ -524,10 +541,10 @@ function buildDocumentHtml(docType, snapshot, lang) {
             <td style="padding:9px 8px;border-bottom:1px solid #e5e7eb;">${escapeHtml(item.product)}</td>
             <td style="padding:9px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">${item.quantity}</td>
             <td style="padding:9px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">${escapeHtml(unitAbbrevDoc(item.unit, lang))}</td>
-            <td style="padding:9px 8px;border-bottom:1px solid #e5e7eb;text-align:right;">${money(item.price)}</td>
+            <td style="padding:9px 8px;border-bottom:1px solid #e5e7eb;text-align:right;">${item.price == null ? '—' : money(item.price)}</td>
             <td style="padding:9px 8px;border-bottom:1px solid #e5e7eb;text-align:right;">${money(lineNetAfterDiscount)}</td>
             <td style="padding:9px 8px;border-bottom:1px solid #e5e7eb;text-align:right;">${money(lineVat)}</td>
-            <td style="padding:9px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">${vatPctLabel}</td>
+            <td style="padding:9px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">${item.vatPct || vatPctLabel}</td>
             <td style="padding:9px 8px;border-bottom:1px solid #e5e7eb;text-align:right;">${money(lineSubtotal)}</td>
         </tr>`;
     });
@@ -598,6 +615,10 @@ function buildDocumentHtml(docType, snapshot, lang) {
         <div style="margin-top:18px;font-size:13px;color:#4b5563;">
             ${tDoc('inv_amount_in_words', lang)}: ${escapeHtml(amountWords)}
         </div>
+        ${cons ? `<div style="margin-top:14px;font-size:14px;color:#374151;line-height:1.6;">
+            ${cons.dnNumbers && cons.dnNumbers.length ? `<div>${escapeHtml(tDoc('inv_cons_dn_list', lang).replace('{list}', cons.dnNumbers.join(', ')))}</div>` : ''}
+            <div>${escapeHtml(tDoc('inv_payment_ref', lang).replace('{ref}', 'INV-' + number))}</div>
+        </div>` : ''}
 
         <div style="margin-top:56px;display:flex;justify-content:space-between;font-size:15px;">
             <div>
@@ -645,7 +666,8 @@ async function buildDocumentPdf(docType, snapshot, lang) {
         cust.contact || '',
     ].filter(Boolean) : [];
 
-    const items = order.items || [];
+    const cons = snapshot.consolidated || null;
+    const items = cons ? _consDocItems(cons, lang) : (order.items || []);
     const { lines: docLines, afterDiscountAll, vatAll, grandAll, vatPctLabel } = documentTotals(snapshot);
 
     let totalQty = 0;
@@ -655,8 +677,8 @@ async function buildDocumentPdf(docType, snapshot, lang) {
         const lineSubtotal = docLines[idx].gross;
         totalQty += Number(item.quantity);
         return [
-            item.product, String(item.quantity), unitAbbrevDoc(item.unit, lang), money(item.price),
-            money(lineNetAfterDiscount), money(lineVat), vatPctLabel, money(lineSubtotal),
+            item.product, String(item.quantity), unitAbbrevDoc(item.unit, lang), item.price == null ? '—' : money(item.price),
+            money(lineNetAfterDiscount), money(lineVat), item.vatPct || vatPctLabel, money(lineSubtotal),
         ];
     });
 
@@ -738,6 +760,19 @@ async function buildDocumentPdf(docType, snapshot, lang) {
     pdf.text(amountWordsSplit, marginX, y);
     y += 4.5 * amountWordsSplit.length;
 
+    // ---- Сводный счёт: список накладных и назначение платежа ----
+    if (cons) {
+        pdf.setFontSize(9.5); pdf.setFont('Roboto', 'normal'); pdf.setTextColor(...PDF_COLORS.textGray);
+        y += 3;
+        if (cons.dnNumbers && cons.dnNumbers.length) {
+            const dnSplit = pdf.splitTextToSize(tDoc('inv_cons_dn_list', lang).replace('{list}', cons.dnNumbers.join(', ')), pageW - marginX * 2);
+            pdf.text(dnSplit, marginX, y);
+            y += 4.5 * dnSplit.length;
+        }
+        pdf.text(tDoc('inv_payment_ref', lang).replace('{ref}', 'INV-' + number), marginX, y);
+        y += 4.5;
+    }
+
     // ---- Подписи ----
     y += 16;
     pdf.setFontSize(9.5); pdf.setFont('Roboto', 'normal'); pdf.setTextColor(...PDF_COLORS.textGray);
@@ -749,6 +784,116 @@ async function buildDocumentPdf(docType, snapshot, lang) {
     }
 
     return pdf;
+}
+
+// ==================== СВОДНЫЙ СЧЁТ ====================
+// Один счёт на несколько заказов клиента (партнёры: накладная на каждую поставку,
+// общий счёт раз в 7–10 дней). Хранится в таблице consolidated_invoices (snapshot —
+// замороженный документ); у включённых заказов проставляется orders.consolidated_invoice_id.
+// Номер — из ОБЩЕГО счётчика счетов (get_next_invoice_number), как у счетов по заказу.
+// Суммы — сумма по заказам, каждый заказ считается обычной формулой в центах (calcTotals).
+
+function _consDocItems(cons, lang) {
+    const desc = tDoc('inv_cons_desc', lang)
+        .replace('{from}', formatDateDMY(cons.periodFrom))
+        .replace('{to}', formatDateDMY(cons.periodTo));
+    return cons.rows.map(r => ({ product: desc, quantity: r.qty, unit: r.unit, price: null, vatPct: r.vatPct }));
+}
+
+// opts: { preview:true } — только в памяти (номер-заглушка «…», в базу ничего не пишется);
+// { issueDate, dueDate } — даты, выбранные в предпросмотре. Возвращает { id, snapshot }.
+async function freezeConsolidatedInvoice(orderIds, custId, opts) {
+    const list = orderIds.map(id => orders.find(o => o.id === id)).filter(Boolean)
+        .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')) || (a.id - b.id));
+    if (!list.length) throw new Error('No orders selected');
+    const ids = list.map(o => o.id);
+    const productIds = [...new Set(list.flatMap(o => (o.items || []).map(it => it.product_id).filter(Boolean)))];
+    const [orgRes, custRes, prodRes, dnRes] = await Promise.all([
+        db.from('organizations').select('*').eq('id', currentOrgId).single(),
+        custId ? db.from('customers').select('*').eq('id', custId).single() : Promise.resolve({ data: null, error: null }),
+        productIds.length ? db.from('products').select('id, unit').in('id', productIds) : Promise.resolve({ data: [], error: null }),
+        db.from('orders').select('id, dn:delivery_note_snapshot->>number').in('id', ids),
+    ]);
+    if (orgRes.error) throw orgRes.error;
+    if (custRes.error) throw custRes.error;
+    if (prodRes.error) throw prodRes.error;
+    if (dnRes.error) throw dnRes.error;
+    const org = orgRes.data, cust = custRes.data;
+    const unitById = {}; (prodRes.data || []).forEach(p => { unitById[p.id] = p.unit; });
+    const dnById = {}; (dnRes.data || []).forEach(r => { if (r.dn) dnById[r.id] = r.dn; });
+
+    const rate = Number(typeof currentOrgVatRate !== 'undefined' ? currentOrgVatRate : 0) || 0;
+    const groups = new Map();
+    const orderInfos = [];
+    list.forEach(o => {
+        const tt = calcTotals(o.items, o.discount, !!o.vat_exempt, rate);
+        const pct = o.vat_exempt ? '0%' : (rate * 100).toFixed(0) + '%';
+        (o.items || []).forEach((it, i) => {
+            const unit = it.product_id ? (unitById[it.product_id] || null) : null;
+            const key = pct + '|' + (unit || '');
+            const g = groups.get(key) || { unit, vatPct: pct, qty: 0, netC: 0, vatC: 0, grossC: 0 };
+            g.qty += Number(it.quantity) || 0;
+            g.netC += Math.round(tt.lines[i].net * 100);
+            g.vatC += Math.round(tt.lines[i].vat * 100);
+            g.grossC += Math.round(tt.lines[i].gross * 100);
+            groups.set(key, g);
+        });
+        orderInfos.push({ id: o.id, number: o.order_number || null, date: o.date || null, dn: dnById[o.id] ? 'DN-' + dnById[o.id] : null, grossC: Math.round(tt.grand * 100) });
+    });
+    const rows = [...groups.values()]
+        .sort((a, b) => (a.unit === 'pcs' ? 0 : 1) - (b.unit === 'pcs' ? 0 : 1))
+        .map(g => ({ unit: g.unit, vatPct: g.vatPct, qty: Math.round(g.qty * 1000) / 1000, net: g.netC / 100, vat: g.vatC / 100, gross: g.grossC / 100 }));
+    const sumC = f => [...groups.values()].reduce((s, g) => s + g[f], 0);
+    const totals = { net: sumC('netC') / 100, vat: sumC('vatC') / 100, grand: sumC('grossC') / 100 };
+    const dates = list.map(o => o.date).filter(Boolean).sort();
+
+    let number;
+    if (opts && opts.preview) {
+        number = '…';
+    } else {
+        const { data, error } = await db.rpc('get_next_invoice_number', { p_org_id: currentOrgId });
+        if (error) throw error;
+        number = data;
+    }
+    const termDays = (cust && cust.payment_term_days != null) ? Number(cust.payment_term_days) : 7;
+    const issueDate = (opts && opts.issueDate) || getLocalDateStr(0);
+    const dueDate = (opts && opts.dueDate) || getLocalDateStr(termDays);
+
+    const snapshot = {
+        number, issueDate, dueDate, calc: 2, vat_rate: rate,
+        customerNameFallback: (list[0] && list[0].customer) || '—',
+        order: { items: [], discount: 0, vat_exempt: false },
+        consolidated: {
+            periodFrom: dates[0] || issueDate, periodTo: dates[dates.length - 1] || issueDate,
+            orders: orderInfos, rows, totals,
+            dnNumbers: orderInfos.map(o => o.dn).filter(Boolean),
+        },
+        org: {
+            name: org.name, legal_name: org.legal_name, entity_type: org.entity_type,
+            personal_code: org.personal_code, reg_number: org.reg_number, vat_code: org.vat_code,
+            address: org.address, phone: org.phone, email: org.email,
+            bank_name: org.bank_name, bank_account: org.bank_account, bank_swift: org.bank_swift,
+            director_name: org.director_name, director_position: org.director_position, currency_code: org.currency_code,
+            country: org.country,
+            logo_data_url: org.logo_data_url || null, logo_on_documents: !!org.logo_on_documents,
+        },
+        cust: cust ? {
+            name: cust.name, entity_type: cust.entity_type, personal_code: cust.personal_code,
+            reg_number: cust.reg_number, vat_code: cust.vat_code, address: cust.address, contact: cust.contact,
+        } : null,
+    };
+    if (opts && opts.preview) return { id: null, snapshot };
+
+    const createdBy = (typeof currentEmployee !== 'undefined' && currentEmployee) ? currentEmployee.id : null;
+    const { data: ins, error: insErr } = await db.from('consolidated_invoices').insert({
+        org_id: currentOrgId, customer_id: custId || null, number: String(number),
+        issue_date: issueDate, due_date: dueDate, snapshot, created_by: createdBy,
+    }).select('id').single();
+    if (insErr) throw insErr;
+    await updateChecked(db.from('orders').update({ consolidated_invoice_id: ins.id }).in('id', ids).eq('org_id', currentOrgId));
+    list.forEach(o => { o.consolidated_invoice_id = ins.id; });
+    if (typeof saveAppSnapshot === 'function') saveAppSnapshot();
+    return { id: ins.id, snapshot };
 }
 
 // Шаг 2: превращаем предпросмотр в PDF (нативно, через jsPDF+autoTable — см.
