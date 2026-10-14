@@ -809,6 +809,18 @@
             box-shadow: 0 0 0px 1000px #fbfaf6 inset;
             transition: background-color 5000s ease-in-out 0s;
         }
+
+        /* ── Всплывающие окна (кроме полноэкранных): единый размер шрифта, вариант Б (14.10.2026) ──
+           Подписи над полями остаются 12px (text-xs), поля ввода и выбора — 13px, как основной текст,
+           и чуть выше; заголовок окна — 15px; кнопки — 13px. Поля со своим inline-стилем не затрагиваются. */
+        .modal:not(.modal-fullscreen) .modal-content input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=range]):not([type=file]),
+        .modal:not(.modal-fullscreen) .modal-content select,
+        .modal:not(.modal-fullscreen) .modal-content textarea,
+        .modal:not(.modal-fullscreen) .modal-content .field-select-btn { font-size: 13px; padding: 7px 9px; }
+        .modal:not(.modal-fullscreen) .modal-content h2.text-sm { font-size: 15px; }
+        .modal:not(.modal-fullscreen) .modal-content .pill-btn,
+        .modal:not(.modal-fullscreen) .modal-content .pill-btn-secondary,
+        .modal:not(.modal-fullscreen) .modal-content .pill-btn-danger { font-size: 13px; padding: 9px 12px; }
     </style>
 </head>
 <body class="font-sans style-loading">
@@ -2084,7 +2096,7 @@
                     <div id="paymentProgressBar" class="h-1.5 rounded-full" style="width:0%; background:#7c9473;"></div>
                 </div>
 
-                <div class="text-xs text-gray-600 space-y-0.5 mb-2">
+                <div class="text-gray-600 space-y-0.5 mb-2" style="font-size:13px;">
                     <div><span data-i18n="orders_paid">Оплачено</span>: <span id="paymentPaidAmount" class="font-medium text-gray-800">0.00</span></div>
                     <div><span data-i18n="orders_remaining">Осталось</span>: <span id="paymentRemainingAmount" class="font-semibold text-gray-900">0.00</span></div>
                     <div id="paymentOverpaidRow" class="hidden"><span data-i18n="orders_overpaid">Переплата</span>: <span id="paymentOverpaidAmount" class="font-semibold" style="color:#4f6349;">0.00</span></div>
@@ -3184,7 +3196,7 @@
 <script src="orders.js?v=128"></script>
 <script src="invoice.js?v=44"></script>
 <script src="send-document.js?v=21"></script>
-<script src="payments.js?v=20"></script>
+<script src="payments.js?v=21"></script>
 <script src="stats.js?v=22"></script>
 <script src="history.js?v=9"></script>
 <script src="modals.js?v=16"></script>
