@@ -433,6 +433,7 @@ function renderDocumentPreviewThumbnail() {
         wrap.style.height = Math.round(trueHeight * scale) + 'px';
     });
     updateDocumentLangSwitcherUI();
+    if (typeof renderRegistryDocActions === 'function') renderRegistryDocActions();
 }
 
 // Строит HTML-разметку документа из ЗАМОРОЖЕННОГО снимка (не из текущих

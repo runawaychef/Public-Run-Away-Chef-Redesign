@@ -478,7 +478,8 @@ function _renderSendSheet() {
         ${howBlock}
         <button class="pill-btn w-full justify-center" id="sendDocSubmitBtn" onclick="submitSendDocument()" ${canSubmit ? '' : 'disabled style="opacity:.5;"'}>
             ${icon}<span>${btnLabel}</span>
-        </button>`;
+        </button>
+        ${st.custId && typeof openDocumentsSection === 'function' ? `<div style="text-align:center; margin-top:12px;"><span onclick="openDocumentsSection({ custId: ${st.custId} })" style="color:#4f6349; font-size:13px; font-weight:700; cursor:pointer;">${t('docs_all_of_customer')} ›</span></div>` : ''}`;
 }
 
 async function openSendDocumentSheet(orderId, docType) {
@@ -610,6 +611,10 @@ async function openSendDocPreview(docType) {
 // Кнопка «Закрыть» в предпросмотре: из формы — возвращаемся в форму (с перечитыванием
 // статусов, т.к. в предпросмотре выставленного документа можно было поправить даты).
 async function closeOrderDocumentModal() {
+    if (_docPreview && _docPreview.fromRegistry && typeof closeRegistryDocPreview === 'function') {
+        closeRegistryDocPreview();
+        return;
+    }
     if (_docPreview && _docPreview.readOnly && _sendSheetState) {
         document.getElementById('orderDocumentModal').style.display = 'none';
         _docPreview = null;
