@@ -241,7 +241,7 @@ function renderOrderCard(order) {
     const payInfo = getOrderPaymentStatus(order);
     const stripeColor = getPaymentStripeColor(payInfo);
     const statusColor = ORDER_STATUS_COLORS[order.status] || ORDER_STATUS_COLORS['принят'];
-    const oNum = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
+    const oNum = orderNumLabel(order);
     const total = formatMoney(orderGrandTotal(order));
     const dateBadge = orderDateBadgeParts(order.date);
 
@@ -487,7 +487,7 @@ function renderDoneOrderCard(order) {
     const payInfo = getOrderPaymentStatus(order);
     const stripeColor = getPaymentStripeColor(payInfo);
     const statusColor = ORDER_STATUS_COLORS[order.status] || ORDER_STATUS_COLORS['принят'];
-    const oNum = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
+    const oNum = orderNumLabel(order);
     const total = formatMoney(orderGrandTotal(order));
     const dateBadge = orderDateBadgeParts(order.date);
     const statusLabel = orderStatusLabelCap(order.status);
@@ -820,9 +820,9 @@ function getFilteredOrdersForList() {
     const dateTo    = document.getElementById('orderDateTo')   ? document.getElementById('orderDateTo').value   : '';
     const employeeFilter = document.getElementById('orderEmployeeFilter') ? document.getElementById('orderEmployeeFilter').value : '';
     const paymentFilter  = document.getElementById('orderPaymentFilter')  ? document.getElementById('orderPaymentFilter').value  : '';
-    // Пустые черновики (не подтверждены, без клиента и позиций) в списке не показываем —
-    // это либо заказ, который сейчас заполняют, либо брошенный черновик, ожидающий удаления
-    let filtered = orders.filter(o => o.is_confirmed || o.customer_id || (o.items && o.items.length > 0));
+    // Черновики (заказ без номера) видит только автор; чужие черновики и пустые брошенные
+    // черновики ожидающие удаления в списке не показываем
+    let filtered = orders.filter(isOrderVisible);
     if (selectedOrderCustomers.length > 0) filtered = filtered.filter(o => selectedOrderCustomers.includes(o.customer));
     if (employeeFilter) filtered = filtered.filter(o => String(o.employee_id) === employeeFilter);
     if (paymentFilter) {
@@ -893,7 +893,7 @@ function updateOrderCustomerFilter() {
     const byName = (a, b) => (a.name || '').localeCompare(b.name || '');
     const orderCount = {};
     orders.forEach(o => {
-        if (!(o.is_confirmed || o.customer_id || (o.items && o.items.length > 0))) return;
+        if (!isOrderVisible(o)) return;
         if (o.customer) orderCount[o.customer] = (orderCount[o.customer] || 0) + 1;
     });
     const sortedAll = customers.slice().sort(byName);
@@ -1179,6 +1179,28 @@ function updateOrderFilterButtonsState() {
 // stopPropagation), так что просто: клик долетел до document — снаружи.
 document.addEventListener('click', closeAllFilterDropdowns);
 
+// ---- Черновик и сохранённый заказ ----
+// Номер заказа выдаётся только при сохранении (кнопка «Сохранить» или выход из карточки
+// с клиентом и позициями). Пока номера нет — это черновик: его видит только автор.
+// Старые заказы (с номером или подтверждённые) всегда считаются сохранёнными.
+function isOrderSaved(o) { return !!(o && (o.order_number || o.is_confirmed)); }
+
+function isOrderVisible(o) {
+    if (isOrderSaved(o)) return true;
+    const me = currentEmployee ? currentEmployee.id : null;
+    // Свой черновик показываем, только когда в нём уже есть клиент или позиции (пустой — это заготовка)
+    if ((o.created_by || null) === me) return !!(o.customer_id || (o.items && o.items.length > 0));
+    // Совсем старые заказы без автора и без номера: показываем, если в них есть клиент или позиции
+    return !o.created_by && !!(o.customer_id || (o.items && o.items.length > 0));
+}
+
+function orderNumLabel(o) { return o.order_number ? ('№' + o.order_number) : t('orders_draft_label'); }
+
+// Есть ли в пекарне другие сотрудники, которым уйдёт уведомление о сохранённом заказе
+function orderTeamHasOthers() {
+    return employees.some(e => !currentEmployee || e.id !== currentEmployee.id);
+}
+
 // ---- Создание и копирование заказа ----
 
 // Кнопка "+": сразу создаёт черновик заказа (клиент пока не выбран,
@@ -1190,14 +1212,11 @@ async function createDraftOrderAndOpen() {
     const employeeId = currentEmployee ? currentEmployee.id : null;
     showLoading();
     try {
-        // Номер заказа выдаёт база данных (атомарно, без риска дублей при одновременном создании)
-        const { data: orderNumberData, error: numErr } = await db.rpc('next_order_number', { p_org_id: currentOrgId });
-        if (numErr) throw numErr;
-        const orderNumber = orderNumberData;
-
+        // Черновик создаётся БЕЗ номера: номер выдаётся при сохранении заказа (saveDraftOrder),
+        // поэтому брошенные пустые черновики не оставляют дыр в нумерации.
         const { data, error } = await db.from('orders').insert({
             org_id: currentOrgId, customer_id: null, order_date: today, status: 'принят', discount: 0, vat_exempt: false,
-            employee_id: employeeId, order_number: orderNumber, is_confirmed: false, created_by: employeeId
+            employee_id: employeeId, order_number: null, is_confirmed: false, created_by: employeeId
         }).select().single();
         if (error) throw error;
         const emp = employees.find(e => e.id === data.employee_id);
@@ -1206,10 +1225,11 @@ async function createDraftOrderAndOpen() {
             date: data.order_date, status: data.status, discount: 0,
             vat_exempt: false,
             employee_id: data.employee_id || null, employee: emp ? emp.name : '',
-            notes: '', order_number: data.order_number || orderNumber,
+            notes: '', order_number: data.order_number || null,
             due_date: null,
             inventory_pending: false,
             is_confirmed: false,
+            created_by: employeeId,
             items: []
         };
         orders.push(newOrder);
@@ -1330,8 +1350,9 @@ function openOrderDetail(orderId) {
     // Переключатель "Карточки/Таблица" бессмысленен внутри самой карточки заказа — прячем
     document.getElementById('ordersViewToggle')?.classList.add('hidden');
 
-    const _oNum = order.order_number || `#${orderId}`;
-    document.getElementById('detailOrderId').textContent = `${t('trash_order_word')} ${_oNum}`;
+    document.getElementById('detailOrderId').textContent = order.order_number
+        ? `${t('trash_order_word')} ${order.order_number}`
+        : t('orders_new_order_title');
 
     // Заполнить шапку
     fillDetailCustomerSelect(order.customer);
@@ -1343,7 +1364,7 @@ function openOrderDetail(orderId) {
     document.getElementById('detailVatExempt').checked = !!order.vat_exempt;
     document.getElementById('detailNotes').value = order.notes || '';
     fillDetailEmployeeSelect(order.employee_id);
-    document.getElementById('confirmOrderBtn')?.classList.toggle('hidden', !!order.is_confirmed);
+    document.getElementById('confirmOrderBtn')?.classList.toggle('hidden', isOrderSaved(order));
 
     renderDetailItems(order);
     updateProductSelects();
@@ -1480,25 +1501,105 @@ async function cleanupOrderDraftIfEmpty(orderId) {
     } catch (e) { console.error('Не удалось удалить пустой черновик заказа (будет убран при следующем запуске):', e); }
 }
 
-// Кнопка "Сохранить" в шапке карточки заказа — подтверждает черновик вручную,
-// даже если позиции ещё не добавлены (например, приняли заказ по телефону и
-// хотят зафиксировать хотя бы клиента/дату сразу, а позиции внести позже).
-// Именно этот момент запускает push-уведомление сотрудникам (см. send-push).
-async function confirmOrderManually() {
-    const order = orders.find(o => o.id === currentOrderId);
-    if (!order || order.is_confirmed) return;
+// Сохраняет черновик как настоящий заказ: клиент обязателен; номер заказа выдаётся здесь
+// и записывается ОДНИМ обновлением вместе с is_confirmed = true (push сотрудникам
+// срабатывает на этот переход и берёт номер из той же записи). Возвращает true при успехе.
+async function saveDraftOrder(order) {
+    if (!order) return false;
+    if (isOrderSaved(order)) return true;
+    if (!order.customer_id) { showInfo(t('orders_save_need_customer')); return false; }
+    suppressRealtimeFor3s();
     showLoading();
     try {
-        await updateChecked(db.from('orders').update({ is_confirmed: true }).eq('id', order.id));
+        const { data: num, error: numErr } = await db.rpc('next_order_number', { p_org_id: currentOrgId });
+        if (numErr) throw numErr;
+        // eq('is_confirmed', false): если заказ уже сохранили с другого устройства, повторно не перезапишем
+        const { data: upd, error } = await db.from('orders')
+            .update({ order_number: num, is_confirmed: true })
+            .eq('id', order.id).eq('is_confirmed', false)
+            .select('id, order_number');
+        if (error) throw error;
+        if (upd && upd.length) {
+            order.order_number = upd[0].order_number;
+        } else {
+            const { data: fresh } = await db.from('orders').select('order_number').eq('id', order.id).single();
+            if (fresh && fresh.order_number) order.order_number = fresh.order_number;
+        }
         order.is_confirmed = true;
-        document.getElementById('confirmOrderBtn')?.classList.add('hidden');
         _draftOrderIds.delete(order.id);
-    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
+        if (order.id === currentOrderId) {
+            const hdr = document.getElementById('detailOrderId');
+            if (hdr && order.order_number) hdr.textContent = `${t('trash_order_word')} ${order.order_number}`;
+            document.getElementById('confirmOrderBtn')?.classList.add('hidden');
+        }
+        logActivity('order', `${t('log_order_saved')} ${order.order_number || '#' + order.id}`, order.id);
+        if (typeof scheduleRefreshOrderQuota === 'function') scheduleRefreshOrderQuota();
+        return true;
+    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); return false; }
     finally { hideLoading(); }
+}
+
+// Кнопка "Сохранить заказ" в шапке карточки заказа — явное действие владельца: сохраняет
+// даже заказ без позиций (приняли заказ по телефону, позиции внесут позже).
+// Если в пекарне есть другие сотрудники, а позиций нет — переспрашиваем: им уйдёт push.
+async function confirmOrderManually() {
+    const order = orders.find(o => o.id === currentOrderId);
+    if (!order || isOrderSaved(order)) return;
+    if (!order.customer_id) { showInfo(t('orders_save_need_customer')); return; }
+    if ((!order.items || order.items.length === 0) && orderTeamHasOthers()) {
+        const ok = await showConfirm(t('orders_save_empty_team_confirm'), { ok: t('orders_btn_save'), cancel: t('common_cancel') });
+        if (!ok) return;
+    }
+    await saveDraftOrder(order);
+}
+
+// Мягко удаляет черновик с позициями (в корзину, склад возвращается, как при обычном удалении).
+async function discardDraftOrder(order) {
+    suppressRealtimeFor3s();
+    showLoading();
+    try {
+        await reverseInventoryForOrder(order.id);
+        await updateChecked(db.from('orders').update({ deleted_at: new Date().toISOString() }).eq('id', order.id));
+        const idx = orders.findIndex(o => o.id === order.id);
+        if (idx !== -1) orders.splice(idx, 1);
+        _draftOrderIds.delete(order.id);
+        return true;
+    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); return false; }
+    finally { hideLoading(); }
+}
+
+// Что делать с черновиком при выходе из карточки кнопкой «Назад».
+// true — можно выходить, false — остаёмся в карточке.
+async function resolveDraftOnLeave(order) {
+    if (!order || isOrderSaved(order)) return true;
+    const hasClient = !!order.customer_id;
+    const hasItems = !!(order.items && order.items.length > 0);
+    if (!hasClient && !hasItems) return true; // пустой черновик удалит cleanupOrderDraftIfEmpty
+    if (hasClient && hasItems) return await saveDraftOrder(order);
+    if (hasClient && !hasItems) {
+        const save = await showConfirm(t('orders_leave_empty_confirm'), { ok: t('orders_btn_save'), cancel: t('orders_btn_delete') });
+        if (save) {
+            if (orderTeamHasOthers()) {
+                const ok = await showConfirm(t('orders_save_empty_team_confirm'), { ok: t('orders_btn_save'), cancel: t('common_cancel') });
+                if (!ok) return false;
+            }
+            return await saveDraftOrder(order);
+        }
+        // Удалить пустой черновик с клиентом — без позиций, склад не затронут
+        _draftOrderIds.add(order.id);
+        order.customer_id = null; order.customer = '';
+        return true;
+    }
+    // позиции есть, клиента нет
+    const stay = await showConfirm(t('orders_leave_no_customer_confirm'), { ok: t('orders_btn_pick_customer'), cancel: t('orders_btn_delete_draft') });
+    if (stay) return false;
+    return await discardDraftOrder(order);
 }
 
 async function closeOrderDetail() {
     const leavingId = currentOrderId;
+    const leavingOrder = leavingId !== null ? orders.find(o => o.id === leavingId) : null;
+    if (leavingOrder && !(await resolveDraftOnLeave(leavingOrder))) return;
     currentOrderId = null;
     document.getElementById('ordersList').classList.remove('hidden');
     document.getElementById('orderDetail').classList.remove('active');
@@ -1875,16 +1976,7 @@ async function addItemToOrder() {
             item_cost: itemCost
         }).select().single();
         if (error) throw error;
-        const wasEmpty = order.items.length === 0;
         order.items.push({ id: data.id, product_id: prod.id, product: prod.name, quantity: Number(data.quantity), price: Number(data.price), item_cost: itemCost });
-
-        if (wasEmpty && !order.is_confirmed) {
-            try {
-                await updateChecked(db.from('orders').update({ is_confirmed: true }).eq('id', order.id));
-                order.is_confirmed = true;
-                document.getElementById('confirmOrderBtn')?.classList.add('hidden');
-            } catch (e) { console.error('Не удалось подтвердить заказ:', e); }
-        }
 
         // Фиксируем снимок рецепта с ценами на момент создания позиции —
         // это нужно всегда, независимо от того, спишем ли склад сейчас или позже

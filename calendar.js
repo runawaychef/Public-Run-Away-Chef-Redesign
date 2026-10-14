@@ -288,7 +288,7 @@ function orderSeverityColor(order) {
 // его цвет — по самому критичному заказу дня (просрочен > принят > в работе > выполнен).
 function orderCountBadgeForDay(y, m, d) {
     const iso = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    const dayOrders = orders.filter(o => o.date === iso);
+    const dayOrders = orders.filter(o => o.date === iso && (typeof isOrderVisible !== 'function' || isOrderVisible(o)));
     if (!dayOrders.length) return null;
     if (dayOrders.length <= 3) {
         return { dots: dayOrders.map(orderSeverityColor) };
