@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Bank sync</title>
+<!-- Служебная страница наблюдения за банковскими поступлениями. Не входит в приложение; заменится экраном «Поступления». -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabaseClient.js?v=7"></script>
+<style>
+  body { font: 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 16px; background: #f7f5ef; color: #2d2d2d; }
+  h1 { font-size: 16px; margin: 0 0 12px; }
+  .box { background: #fff; border: 1px solid #e3ddcc; border-radius: 14px; padding: 12px; margin-bottom: 12px; }
+  .box h2 { font-size: 14px; margin: 0 0 8px; }
+  button { font: inherit; font-weight: 600; background: #7c9473; color: #fff; border: 0; border-radius: 10px; padding: 8px 11px; margin: 4px 6px 4px 0; }
+  button.sec { background: #fff; color: #4f6349; border: 1px solid #7c9473; }
+  button:disabled { opacity: .5; }
+  select, label { font: inherit; margin: 4px 6px 4px 0; }
+  select { padding: 6px; border: 1px solid #e3ddcc; border-radius: 8px; background: #fff; }
+  .muted { color: #777; font-size: 12px; }
+  .err { color: #b3261e; white-space: pre-wrap; word-break: break-word; }
+  .ok { color: #4f6349; }
+  .tabs button { background: #fff; color: #4f6349; border: 1px solid #7c9473; }
+  .tabs button.on { background: #4f6349; color: #fff; }
+  .tx { border-top: 1px solid #eee; padding: 8px 0; }
+  .tx:first-child { border-top: 0; }
+  .tx .top { display: flex; justify-content: space-between; gap: 8px; }
+  .amt { font-weight: 700; white-space: nowrap; color: #4f6349; }
+  .rem { background: #f3f1ea; border-radius: 6px; padding: 4px 6px; margin-top: 4px; word-break: break-word; }
+  .tag { display: inline-block; font-size: 11px; background: #eef2ea; color: #4f6349; border-radius: 6px; padding: 1px 6px; margin-top: 4px; }
+  .tag.warn { background: #fbefd9; color: #8a5a00; }
+  pre { font-size: 11px; white-space: pre-wrap; word-break: break-word; background: #f3f1ea; padding: 8px; border-radius: 8px; }
+</style>
+</head>
+<body>
+<h1>Банк: поступления (наблюдение)</h1>
+<div id="auth" class="box muted">Проверяю вход…</div>
+
+<div class="box">
+  <h2>1. Подключение банка</h2>
+  <div id="conns" class="muted">…</div>
+  <label><input type="radio" name="psu" value="personal" checked> Личный счёт</label>
+  <label><input type="radio" name="psu" value="business"> Бизнес-счёт</label><br>
+  <button id="btnStart">Подключить Swedbank</button>
+  <div id="connMsg"></div>
+</div>
+
+<div class="box">
+  <h2>2. Загрузка и сортировка</h2>
+  <button id="btnSync">Проверить сейчас</button>
+  <button id="btnRe" class="sec">Пересортировать нерешённые</button>
+  <div id="syncMsg"></div>
+</div>
+
+<div class="box">
+  <h2>3. Поступления</h2>
+  <div class="tabs" id="tabs"></div>
+  <div id="list" class="muted">…</div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const LS = 'bank_sync_pending';
+let orgId = null, orgRole = null, conns = [], tab = 'needs_review';
+
+const REASONS = {
+  number_amount_match: 'номер и сумма совпали',
+  numbers_sum_match: 'несколько номеров, сумма совпала',
+  partial_payment: 'частичная оплата по номеру',
+  number_amount_match_unverified_payer: 'номер и сумма совпали, плательщик неизвестен',
+  foreign_series_amount_match: 'серия AA (Invoice123), сумма совпала с нашим счётом',
+  foreign_series_amount_differs: 'серия AA (Invoice123)',
+  amount_differs_foreign_series: 'серия AA, сумма другая',
+  payer_other_customer: 'плательщик — другой клиент',
+  payer_other_customer_amount_differs: 'плательщик — другой клиент, сумма другая',
+  number_found_amount_differs_unknown_payer: 'номер найден, сумма другая, плательщик неизвестен',
+  amount_over_remaining: 'сумма больше остатка',
+  amount_differs: 'сумма отличается от остатка',
+  amount_matches_snapshot_not_live: 'сумма как в счёте, но заказ изменён после отправки',
+  payer_amount_single_candidate: 'нет номера; по плательщику и сумме найден один счёт',
+  payer_amount_several_candidates: 'нет номера; несколько подходящих счетов',
+  payer_amount_all_open: 'сумма равна всем открытым счетам клиента',
+  number_not_ours_or_closed: 'номер не наш или счёт уже закрыт',
+  no_match: 'нет совпадений',
+  own_transfer: 'свой перевод',
+  manual: 'подтверждено вручную',
+  payment_deleted: 'оплата удалена — вернулось на проверку',
+  partial_allocation: 'зачтено частично',
+};
+function reasonText(r) {
+  if (!r) return '';
+  if (r.startsWith('would_auto:')) return 'АВТОМАТИКА ЗАКРЫЛА БЫ: ' + (REASONS[r.slice(11)] || r.slice(11));
+  if (r.startsWith('apply_failed:')) return 'ошибка автозачёта: ' + r.slice(13);
+  return REASONS[r] || r;
+}
+const TABS = [
+  ['needs_review', 'Проверить'], ['other', 'Прочие'], ['done', 'Закрытые'], ['own', 'Свои'], ['hidden', 'Скрытые'],
+];
+
+async function call(body) {
+  const { data, error } = await db.functions.invoke('bank-sync', { body: { org_id: orgId, ...body } });
+  if (error) {
+    let detail = error.message;
+    try { if (error.context) detail = JSON.stringify(await error.context.json(), null, 2); } catch {}
+    return { ok: false, error: detail };
+  }
+  return data;
+}
+function showErr(el, r) {
+  el.innerHTML = '<div class="err">Ошибка: ' + esc(typeof r.error === 'string' ? r.error : JSON.stringify(r.error)) +
+    (r.eb ? '\n' + esc(JSON.stringify(r.eb, null, 2)) : '') + '</div>';
+}
+
+async function init() {
+  const { data: { session } } = await db.auth.getSession();
+  if (!session) { $('auth').innerHTML = '<span class="err">Нет входа. Войдите в приложение под владельцем и откройте страницу снова.</span>'; return; }
+  const { data: mems, error } = await db.from('memberships').select('org_id, role, organizations(name, is_protected)');
+  if (error) { $('auth').innerHTML = '<span class="err">' + esc(error.message) + '</span>'; return; }
+  const ok = (mems || []).filter((m) => ['owner', 'manager'].includes(m.role));
+  const pick = ok.find((m) => m.organizations && m.organizations.is_protected) || ok[0];
+  if (!pick) { $('auth').innerHTML = '<span class="err">Нет организации с правами владельца.</span>'; return; }
+  orgId = pick.org_id; orgRole = pick.role;
+  $('auth').innerHTML = 'Вход: ' + esc(session.user.email) + ' · организация ' + esc(pick.organizations.name) + ' (id ' + orgId + ')';
+
+  // возврат из банка
+  const code = new URLSearchParams(location.search).get('code');
+  if (code) {
+    $('connMsg').textContent = 'Завершаю подключение…';
+    let psu = 'personal';
+    try { psu = JSON.parse(localStorage.getItem(LS) || '{}').psu || 'personal'; } catch {}
+    const r = await call({ action: 'connect_finish', code, psu_type: psu });
+    history.replaceState(null, '', location.pathname);
+    if (!r.ok) showErr($('connMsg'), r); else $('connMsg').innerHTML = '<div class="ok">Банк подключён. Счетов: ' + r.connections.length + '</div>';
+  }
+  await loadConns();
+  renderTabs();
+  await loadList();
+}
+
+async function loadConns() {
+  const { data, error } = await db.from('bank_connections')
+    .select('id, bank_name, account_iban, account_holder, valid_until, status, last_sync_at, last_error, auto_apply').eq('org_id', orgId);
+  if (error) { $('conns').innerHTML = '<span class="err">' + esc(error.message) + '</span>'; return; }
+  conns = data || [];
+  if (!conns.length) { $('conns').textContent = 'Банк не подключён.'; $('btnSync').disabled = true; return; }
+  $('btnSync').disabled = false;
+  $('conns').innerHTML = conns.map((c) => {
+    const mode = c.auto_apply ? '<b class="err">Автозачёт ВКЛЮЧЁН</b>' : '<b class="ok">Режим наблюдения</b> (ничего не закрывается само)';
+    return '<div style="margin-bottom:8px">' + esc(c.bank_name) + ' · …' + esc((c.account_iban || '').slice(-4)) + ' · ' + esc(c.account_holder || '') +
+      '<br><span class="muted">статус: ' + esc(c.status) + ' · доступ до ' + esc((c.valid_until || '—').slice(0, 10)) +
+      ' · последняя загрузка: ' + esc(c.last_sync_at ? new Date(c.last_sync_at).toLocaleString('ru-RU') : '—') + '</span>' +
+      (c.last_error ? '<br><span class="err">' + esc(c.last_error) + '</span>' : '') +
+      '<br>' + mode + ' <button class="sec" data-auto="' + c.id + '" data-v="' + (!c.auto_apply) + '">' +
+      (c.auto_apply ? 'Вернуть наблюдение' : 'Включить автозачёт') + '</button></div>';
+  }).join('');
+  document.querySelectorAll('[data-auto]').forEach((b) => b.onclick = async () => {
+    const on = b.dataset.v === 'true';
+    if (on && !confirm('Включить автозачёт? Совпавшие платежи начнут закрывать счета сами.')) return;
+    const r = await call({ action: 'set_auto_apply', connection_id: b.dataset.auto, value: on });
+    if (!r.ok) return alert('Не получилось: ' + (r.error || ''));
+    await loadConns();
+  });
+}
+
+function renderTabs() {
+  $('tabs').innerHTML = TABS.map(([k, n]) => '<button class="' + (k === tab ? 'on' : '') + '" data-tab="' + k + '">' + n + '</button>').join('');
+  document.querySelectorAll('[data-tab]').forEach((b) => b.onclick = async () => { tab = b.dataset.tab; renderTabs(); await loadList(); });
+}
+
+async function loadList() {
+  $('list').textContent = 'Загружаю…';
+  const statuses = tab === 'done' ? ['auto_matched', 'matched_manual'] : [tab];
+  const { data, error } = await db.from('bank_transactions')
+    .select('id, booking_date, amount, payer_name, payer_iban, remittance, match_status, match_reason')
+    .eq('org_id', orgId).in('match_status', statuses).order('booking_date', { ascending: false }).limit(100);
+  if (error) { $('list').innerHTML = '<span class="err">' + esc(error.message) + '</span>'; return; }
+  if (!data.length) { $('list').textContent = 'Пусто.'; return; }
+  $('list').innerHTML = data.map((t) => {
+    const would = (t.match_reason || '').startsWith('would_auto');
+    let btns = '';
+    if (t.match_status === 'needs_review') {
+      btns = '<button data-act="preview" data-id="' + t.id + '" class="sec">Предложение</button>' +
+        '<button data-act="confirm" data-id="' + t.id + '">Применить</button>' +
+        '<button data-act="manual" data-id="' + t.id + '" class="sec">Вручную</button>' +
+        '<button data-act="hide" data-id="' + t.id + '" class="sec">Скрыть</button>';
+    } else if (t.match_status === 'other') {
+      btns = '<button data-act="preview" data-id="' + t.id + '" class="sec">Предложение</button>' +
+        '<button data-act="manual" data-id="' + t.id + '" class="sec">Вручную</button>' +
+        '<button data-act="hide" data-id="' + t.id + '" class="sec">Скрыть</button>';
+    } else if (t.match_status === 'hidden') {
+      btns = '<button data-act="unhide" data-id="' + t.id + '" class="sec">Вернуть</button>';
+    }
+    return '<div class="tx"><div class="top"><div><b>' + esc(t.payer_name || '—') + '</b><br><span class="muted">' + esc(t.booking_date) +
+      (t.payer_iban ? ' · …' + esc(t.payer_iban.slice(-4)) : '') + '</span></div><div class="amt">' + Number(t.amount).toFixed(2) + ' €</div></div>' +
+      '<div class="rem">' + esc(t.remittance || '—') + '</div>' +
+      (t.match_reason ? '<span class="tag ' + (would ? '' : 'warn') + '">' + esc(reasonText(t.match_reason)) + '</span><br>' : '') +
+      '<div id="p' + t.id + '" class="muted"></div>' + btns + '</div>';
+  }).join('');
+  document.querySelectorAll('[data-act]').forEach((b) => b.onclick = () => act(b.dataset.act, b.dataset.id));
+}
+
+function fmtPreview(r) {
+  if (!r.ok) return '<span class="err">' + esc(r.error) + '</span>';
+  const inv = (r.invoices || []).map((i) => (i.kind === 'cons' ? 'сводный ' : '') + i.number + ' (остаток ' + i.remaining.toFixed(2) + ')').join(', ');
+  const al = (r.allocations || []).map((a) => 'заказ ' + (a.order_number || a.order_id) + ': ' + a.amount.toFixed(2)).join('; ');
+  return 'Решение автоматики: <b>' + esc(r.verdict) + '</b> — ' + esc(reasonText(r.reason)) +
+    (r.customer ? '<br>Клиент: ' + esc(r.customer) : '') + (inv ? '<br>Счета: ' + esc(inv) : '') + (al ? '<br>Зачесть: ' + esc(al) : '<br>Зачесть: —');
+}
+
+async function act(kind, id) {
+  const box = $('p' + id);
+  if (kind === 'preview') { box.textContent = '…'; box.innerHTML = fmtPreview(await call({ action: 'preview', tx_id: id })); return; }
+  if (kind === 'confirm') {
+    const p = await call({ action: 'preview', tx_id: id });
+    box.innerHTML = fmtPreview(p);
+    if (!p.ok || !(p.allocations || []).length) return;
+    if (!confirm('Зачесть так?\n' + p.allocations.map((a) => 'заказ ' + (a.order_number || a.order_id) + ': ' + a.amount.toFixed(2)).join('\n'))) return;
+    const r = await call({ action: 'confirm', tx_id: id });
+    if (!r.ok) { box.innerHTML = '<span class="err">Не применено: ' + esc(r.error) + '</span>'; return; }
+    await loadList(); return;
+  }
+  if (kind === 'manual') {
+    const s = prompt('Номера заказов и суммы, например:\n1011=50.00; 1012=20', '');
+    if (!s) return;
+    const allocs = s.split(/[;,]\s*/).map((x) => x.trim()).filter(Boolean).map((x) => {
+      const [n, a] = x.split('='); return { order_number: (n || '').trim(), amount: Number(String(a || '').replace(',', '.')) };
+    });
+    if (!allocs.length || allocs.some((a) => !a.order_number || !(a.amount > 0))) { alert('Не понял формат'); return; }
+    if (!confirm('Зачесть вручную?\n' + allocs.map((a) => 'заказ ' + a.order_number + ': ' + a.amount.toFixed(2)).join('\n'))) return;
+    const r = await call({ action: 'confirm', tx_id: id, allocations: allocs });
+    if (!r.ok) { box.innerHTML = '<span class="err">Не применено: ' + esc(r.error) + (r.order_id ? ' (заказ id ' + r.order_id + ')' : '') + '</span>'; return; }
+    await loadList(); return;
+  }
+  if (kind === 'hide' || kind === 'unhide') { await call({ action: kind, tx_id: id }); await loadList(); }
+}
+
+$('btnStart').onclick = async () => {
+  const psu = document.querySelector('input[name=psu]:checked').value;
+  try { localStorage.setItem(LS, JSON.stringify({ psu })); } catch {}
+  $('connMsg').textContent = 'Готовлю вход в банк…';
+  const r = await call({ action: 'connect_start', psu_type: psu });
+  if (!r.ok) return showErr($('connMsg'), r);
+  location.href = r.url;
+};
+
+$('btnSync').onclick = async () => {
+  $('syncMsg').textContent = 'Загружаю из банка…';
+  $('btnSync').disabled = true;
+  for (const c of conns) {
+    const r = await call({ action: 'sync', connection_id: c.id });
+    if (!r.ok) { showErr($('syncMsg'), r); break; }
+    const k = r.classified || {};
+    $('syncMsg').innerHTML = '<div class="ok">Готово. Получено операций: ' + r.fetched + ', поступлений: ' + r.credits + ', новых: ' + r.inserted +
+      '</div><div class="muted">Отсортировано: проверить ' + (k.check || 0) + ' (автоматика закрыла бы ' + (k.would_auto || 0) + '), прочие ' + (k.other || 0) +
+      ', свои ' + (k.own || 0) + ', закрыто автоматически ' + (k.auto || 0) + (k.failed ? ', ошибок ' + k.failed : '') + '</div>';
+  }
+  $('btnSync').disabled = false;
+  await loadConns(); await loadList();
+};
+
+$('btnRe').onclick = async () => {
+  $('syncMsg').textContent = 'Сортирую…';
+  const r = await call({ action: 'reclassify' });
+  if (!r.ok) return showErr($('syncMsg'), r);
+  $('syncMsg').innerHTML = '<div class="ok">Готово.</div>';
+  await loadList();
+};
+
+init();
+</script>
+</body>
+</html>
