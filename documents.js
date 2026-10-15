@@ -42,7 +42,7 @@ function _docsSnapGrandC(orderPart, calc, vatRate) {
 async function _docsLoad() {
     const [ordRes, consRes] = await Promise.all([
         fetchAllRows(() => db.from('orders')
-            .select('id, customer_id, order_number, order_date, deleted_at, consolidated_invoice_id, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via, '
+            .select('id, customer_id, order_number, order_date, deleted_at, consolidated_invoice_id, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via, invoice_delivery_status, delivery_note_delivery_status, '
                 + 'inv:invoice_snapshot->>number, invDate:invoice_snapshot->>issueDate, invOrder:invoice_snapshot->order, invCalc:invoice_snapshot->calc, invVat:invoice_snapshot->vat_rate, '
                 + 'dn:delivery_note_snapshot->>number, dnDate:delivery_note_snapshot->>issueDate, dnOrder:delivery_note_snapshot->order, dnCalc:delivery_note_snapshot->calc, dnVat:delivery_note_snapshot->vat_rate')
             .eq('org_id', currentOrgId)
@@ -65,7 +65,7 @@ async function _docsLoad() {
         const base = { orderId: r.id, orderNumber: r.order_number || null, custId: r.customer_id || null, custName, deleted, live };
         if (r.consolidated_invoice_id && r.invoice_sent_at) {
             const prev = sentByCons[r.consolidated_invoice_id];
-            if (!prev || r.invoice_sent_at > prev.at) sentByCons[r.consolidated_invoice_id] = { at: r.invoice_sent_at, via: r.invoice_sent_via };
+            if (!prev || r.invoice_sent_at > prev.at) sentByCons[r.consolidated_invoice_id] = { at: r.invoice_sent_at, via: r.invoice_sent_via, status: r.invoice_delivery_status || null };
         }
         if (r.inv) {
             const pay = live ? getOrderPaymentStatus(live).status : null;
@@ -73,7 +73,7 @@ async function _docsLoad() {
                 key: 'inv-' + r.id, kind: 'inv', docType: 'invoice', rawNumber: r.inv,
                 number: _formatDocNumber('invoice', r.inv), date: r.invDate || r.order_date || '',
                 sumC: live ? Math.round(orderGrandTotal(live) * 100) : _docsSnapGrandC(r.invOrder, r.invCalc, r.invVat),
-                pay, sentAt: r.invoice_sent_at || null, sentVia: r.invoice_sent_via || null,
+                pay, sentAt: r.invoice_sent_at || null, sentVia: r.invoice_sent_via || null, delivery: r.invoice_delivery_status || null,
             }));
         }
         if (r.dn) {
@@ -81,7 +81,7 @@ async function _docsLoad() {
                 key: 'dn-' + r.id, kind: 'dn', docType: 'delivery_note', rawNumber: r.dn,
                 number: _formatDocNumber('delivery_note', r.dn), date: r.dnDate || r.order_date || '',
                 sumC: live ? Math.round(orderGrandTotal(live) * 100) : _docsSnapGrandC(r.dnOrder, r.dnCalc, r.dnVat),
-                pay: null, sentAt: r.delivery_note_sent_at || null, sentVia: r.delivery_note_sent_via || null,
+                pay: null, sentAt: r.delivery_note_sent_at || null, sentVia: r.delivery_note_sent_via || null, delivery: r.delivery_note_delivery_status || null,
             }));
         }
     });
@@ -108,7 +108,7 @@ async function _docsLoad() {
             sumC: c.grand != null ? Math.round(Number(c.grand) * 100) : null,
             pay, cancelled: !!c.cancelled_at, memberCount: liveMembers.length || memberInfos.length,
             memberIds: liveMembers.map(o => o.id), liveMemberId: liveMembers.length ? liveMembers[0].id : null,
-            sentAt: sent ? sent.at : null, sentVia: sent ? sent.via : null,
+            sentAt: sent ? sent.at : null, sentVia: sent ? sent.via : null, delivery: sent ? sent.status : null,
         });
     });
 
@@ -187,6 +187,29 @@ function _docsFiltered() {
     });
 }
 
+// Значок отправки — тот же, что в карточках заказов (конверт с галочкой): серый — отправлен,
+// синеватый — письмо доставлено, красный — письмо не дошло; без значка — не отправлялся.
+function _docsSentState(d) {
+    if (!d.sentAt) return null;
+    if (d.delivery === 'bounced' || d.delivery === 'complained') return 'alarm';
+    if (d.delivery === 'delivered') return 'delivered';
+    return 'neutral';
+}
+
+function _docsSentIcon(d) {
+    const state = _docsSentState(d);
+    if (!state) return '<span style="width:22px; flex:none;"></span>';
+    return `<svg class="oc-sent-icon oc-sent-icon--${state}" style="margin-left:0; flex:none;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" onclick="event.stopPropagation(); showDocSentInfo('${d.key}')"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75A2.25 2.25 0 014.5 4.5h9a2.25 2.25 0 012.25 2.25v5.25M2.25 6.75v7.5A2.25 2.25 0 004.5 16.5h5.25M2.25 6.75L9 11.69a1.5 1.5 0 001.76 0L15.75 8.4"/><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 16.5l2.25 2.25 4.5-4.5"/></svg>`;
+}
+
+function showDocSentInfo(key) {
+    const d = _docsAll.find(x => x.key === key);
+    if (!d || !d.sentAt) return;
+    const label = d.kind === 'dn' ? t('orders_doc_delivery_note') : (d.kind === 'cons' ? t('send_cons_invoice') : t('orders_doc_invoice'));
+    const status = d.sentVia === 'email' && d.delivery ? ` — ${_deliveryStatusLabel(d.delivery)}` : '';
+    showInfo(`${label} ${d.number}: ${_sentViaLabel(d.sentVia)}, ${_formatSentDateTime(d.sentAt)}${status}`);
+}
+
 function _docsSelect(field, value, options) {
     const opts = options.map(o => `<option value="${escapeHtml(String(o.v))}" ${String(o.v) === String(value ?? '') ? 'selected' : ''}>${escapeHtml(o.l)}</option>`).join('');
     return `<select onchange="setDocsFilter('${field}', this.value)" style="font-size:12px; border-radius:999px; padding:5px 10px; background:#fff; border:1px solid #e3ddcc; color:#4f6349; max-width:100%;">${opts}</select>`;
@@ -234,7 +257,6 @@ function renderDocumentsSection() {
         else if (d.orderNumber) sub.push('№' + escapeHtml(d.orderNumber));
         if (d.cancelled) sub.push(escapeHtml(t('docs_cancelled')));
         else if (d.deleted) sub.push(escapeHtml(t('docs_order_deleted')));
-        else sub.push(escapeHtml(d.sentAt ? (d.sentVia === 'email' ? t('docs_sent_email') : t('docs_sent_share')) : t('docs_not_sent')));
         const sum = d.sumC != null ? formatMoney(d.sumC / 100) : '—';
         const pay = d.pay ? `<span style="font-size:11px; font-weight:700; border-radius:999px; padding:3px 8px; white-space:nowrap; ${_DOCS_PAY_STYLE[d.pay]}">${escapeHtml(t('pay_status_' + d.pay))}</span>` : '';
         const dim = (d.cancelled || d.deleted) ? 'opacity:.55;' : '';
@@ -242,7 +264,8 @@ function renderDocumentsSection() {
             <span style="font-size:11px; font-weight:700; border-radius:8px; padding:3px 0; flex:none; width:44px; text-align:center; ${_DOCS_TYPE_STYLE[d.kind]}">${label}</span>
             <div style="flex:1; min-width:0;"><div style="font-size:13px; color:#3c3a34;"><b>${escapeHtml(d.number || '—')}</b> · ${formatDateDMY(d.date)}</div>
                 <div style="font-size:12px; color:#888; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${sub.join(' · ')}</div></div>
-            <div style="text-align:right; flex:none;"><div style="font-size:13px; color:#3c3a34; ${d.cancelled ? 'text-decoration:line-through;' : (d.kind !== 'dn' ? 'font-weight:700;' : '')}">${sum}</div>${pay}</div>
+            ${_docsSentIcon(d)}
+            <div style="text-align:right; flex:none; min-width:74px;"><div style="font-size:13px; color:#3c3a34; ${d.cancelled ? 'text-decoration:line-through;' : (d.kind !== 'dn' ? 'font-weight:700;' : '')}">${sum}</div>${pay}</div>
         </div>`;
     });
     if (!list.length) rows = `<p style="font-size:13px; color:#9a9488; margin:16px 0; text-align:center;">${escapeHtml(t('docs_empty'))}</p>`;
