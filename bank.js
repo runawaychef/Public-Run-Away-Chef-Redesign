@@ -130,8 +130,14 @@ function closeBankSection() {
     bankRefreshState();
 }
 
+function bankToggleOld() {
+    bankState.oldOpen = !bankState.oldOpen;
+    bankRender(false);
+}
+
 async function bankSetTab(tab) {
     bankState.tab = tab;
+    bankState.oldOpen = false;
     await bankLoadTab();
 }
 
@@ -240,7 +246,20 @@ function bankRender(loading) {
     } else if (tab === 'review') {
         html += bankState.rows.map(bankCardReview).join('');
     } else {
-        html += bankState.rows.map((r, i) => bankRowCompact(r, i)).join('');
+        // Решённое старше 2 недель сворачиваем (только отображение, данные не меняются)
+        const lim = new Date(); lim.setDate(lim.getDate() - 14);
+        const limKey = `${lim.getFullYear()}-${String(lim.getMonth() + 1).padStart(2, '0')}-${String(lim.getDate()).padStart(2, '0')}`;
+        const recent = [], old = [];
+        bankState.rows.forEach((r, i) => { (String(r.date || '') < limKey ? old : recent).push([r, i]); });
+        html += recent.map(([r, i]) => bankRowCompact(r, i)).join('');
+        if (old.length) {
+            const open = !!bankState.oldOpen;
+            html += `<div style="margin-top:8px; background:#fff; border-radius:16px; box-shadow:0 1px 3px rgba(0,0,0,.08); padding:2px 12px;">
+                <div onclick="bankToggleOld()" style="display:flex; align-items:center; gap:8px; font-size:13px; color:#6b675d; min-height:44px; cursor:pointer;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b675d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform:rotate(${open ? 90 : 0}deg);"><polyline points="9 6 15 12 9 18"/></svg>
+                    <span style="flex:1;">${escapeHtml(t('bank_old_fold').replace('{n}', old.length))}</span></div></div>`;
+            if (open) html += old.map(([r, i]) => bankRowCompact(r, i)).join('');
+        }
     }
     box.innerHTML = html;
 }

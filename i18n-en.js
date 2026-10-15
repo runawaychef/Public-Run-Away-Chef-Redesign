@@ -954,6 +954,7 @@ I18N.en = {
         bank_tab_hidden: 'Hidden',
         bank_empty_review: 'Nothing here: all payments are sorted out.',
         bank_empty_other: 'Nothing here.',
+        bank_old_fold: 'Older than 2 weeks: {n}',
         bank_empty_closed: 'No payments applied to invoices yet.',
         bank_empty_hidden: 'No hidden payments.',
         bank_other_hint: 'Payments not linked to your invoices, for example payments for invoices from a previous program. Any of them can be applied manually or hidden.',

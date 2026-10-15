@@ -948,6 +948,7 @@ I18N.lt = {
         bank_tab_hidden: 'Paslėptos',
         bank_empty_review: 'Čia tuščia: visi mokėjimai išnagrinėti.',
         bank_empty_other: 'Čia tuščia.',
+        bank_old_fold: 'Senesni nei 2 savaitės: {n}',
         bank_empty_closed: 'Kol kas nėra į sąskaitas įskaitytų mokėjimų.',
         bank_empty_hidden: 'Paslėptų mokėjimų nėra.',
         bank_other_hint: 'Čia mokėjimai, nesusiję su jūsų sąskaitomis, pavyzdžiui, mokėjimai pagal ankstesnės programos sąskaitas. Bet kurį galima įskaityti rankiniu būdu arba paslėpti.',
