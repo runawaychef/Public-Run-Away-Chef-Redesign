@@ -864,6 +864,7 @@ I18N.lt = {
         send_inv_kind_order: 'Pagal šį užsakymą',
         send_inv_kind_cons: 'Suvestinė',
         send_cons_pick_orders: 'Užsakymai sąskaitoje',
+        send_cons_old: 'Seni užsakymai: {n}',
         send_cons_total: 'Iš viso',
         send_cons_member: 'Užsakymai šioje sąskaitoje:',
         send_cons_changed_warn: 'Išrašyta {old} sumai, dabar užsakymų suma {new} — bus išsiųsta atnaujinta sąskaita tuo pačiu numeriu',

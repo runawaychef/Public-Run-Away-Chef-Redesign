@@ -869,6 +869,7 @@ I18N.ru = {
         send_inv_kind_order: 'По этому заказу',
         send_inv_kind_cons: 'Сводный за период',
         send_cons_pick_orders: 'Заказы в счёте',
+        send_cons_old: 'Старые заказы: {n}',
         send_cons_total: 'Итого',
         send_cons_member: 'Заказы в этом счёте:',
         send_cons_changed_warn: 'Выставлено на {old}, сейчас по заказам {new} — будет отправлен обновлённый счёт с тем же номером',

@@ -870,6 +870,7 @@ I18N.en = {
         send_inv_kind_order: 'This order',
         send_inv_kind_cons: 'Consolidated',
         send_cons_pick_orders: 'Orders on the invoice',
+        send_cons_old: 'Older orders: {n}',
         send_cons_total: 'Total',
         send_cons_member: 'Orders on this invoice:',
         send_cons_changed_warn: 'Issued for {old}, orders now total {new} — an updated invoice with the same number will be sent',

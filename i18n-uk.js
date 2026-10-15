@@ -864,6 +864,7 @@ I18N.uk = {
         send_inv_kind_order: 'За цим замовленням',
         send_inv_kind_cons: 'Зведений за період',
         send_cons_pick_orders: 'Замовлення в рахунку',
+        send_cons_old: 'Старі замовлення: {n}',
         send_cons_total: 'Разом',
         send_cons_member: 'Замовлення в цьому рахунку:',
         send_cons_changed_warn: 'Виставлено на {old}, зараз за замовленнями {new} — буде надіслано оновлений рахунок з тим самим номером',

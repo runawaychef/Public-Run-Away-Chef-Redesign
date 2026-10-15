@@ -273,6 +273,13 @@ function toggleConsOrder(id, on) {
     _renderSendSheet();
 }
 
+function toggleConsOld() {
+    const st = _sendSheetState;
+    if (!st) return;
+    st.consOldOpen = !st.consOldOpen;
+    _renderSendSheet();
+}
+
 function _consBlockHtml(order) {
     const st = _sendSheetState;
     const box = 'margin:8px 0 0 28px;';
@@ -290,14 +297,27 @@ function _consBlockHtml(order) {
         <button class="${st.invKind === 'order' ? 'active' : ''}" onclick="setSendInvKind('order')">${t('send_inv_kind_order')}</button>
         <button class="${st.invKind === 'cons' ? 'active' : ''}" onclick="setSendInvKind('cons')">${t('send_inv_kind_cons')}</button></div>`;
     if (st.invKind !== 'cons') return seg;
-    const rows = st.consCand.map(o => {
+    const rowHtml = o => {
         const on = st.consSel.includes(o.id);
         const dn = o.delivery_note_sent_at ? ' ✓' : '';
         return `<label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#3c3a34; padding:3px 0; cursor:pointer;">
             <input type="checkbox" ${on ? 'checked' : ''} ${o.id === st.orderId ? 'disabled' : ''} onchange="toggleConsOrder(${o.id}, this.checked)" style="accent-color:#7c9473; width:16px; height:16px;">
             <span style="flex:1;">${escapeHtml(o.order_number ? '№' + o.order_number : '#' + o.id)} · ${formatDateDMY(o.date)}${dn}</span><span>${formatMoney(orderGrandTotal(o))}</span></label>`;
-    }).join('');
-    return seg + `<div style="${box}"><div style="font-size:12px; color:#6b675d; margin-bottom:4px;">${t('send_cons_pick_orders')}</div>${rows}
+    };
+    // Заказы, помеченные «выставлено вне программы» (cons_excluded), сворачиваются в отдельную строку
+    const isOld = o => o.cons_excluded && o.id !== st.orderId;
+    const rows = st.consCand.filter(o => !isOld(o)).map(rowHtml).join('');
+    const oldList = st.consCand.filter(isOld);
+    let oldHtml = '';
+    if (oldList.length) {
+        const open = !!st.consOldOpen;
+        oldHtml = `<div style="margin-top:6px; background:#f6f4ec; border-radius:10px; padding:2px 12px;">
+            <div onclick="toggleConsOld()" style="display:flex; align-items:center; gap:8px; font-size:13px; color:#6b675d; min-height:36px; cursor:pointer;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b675d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform:rotate(${open ? 90 : 0}deg);"><polyline points="9 6 15 12 9 18"/></svg>
+                <span style="flex:1;">${t('send_cons_old').replace('{n}', oldList.length)}</span></div>
+            ${open ? `<div style="padding-bottom:4px; color:#6b675d;">${oldList.map(rowHtml).join('')}</div>` : ''}</div>`;
+    }
+    return seg + `<div style="${box}"><div style="font-size:12px; color:#6b675d; margin-bottom:4px;">${t('send_cons_pick_orders')}</div>${rows}${oldHtml}
         <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700; color:#3c3a34; border-top:1px solid #e5e0d0; margin-top:4px; padding-top:5px;"><span>${t('send_cons_total')} (${st.consSel.length})</span><span>${formatMoney(_consSelectedTotal())}</span></div></div>`;
 }
 
@@ -517,7 +537,7 @@ async function openSendDocumentSheet(orderId, docType) {
     if (!consExisting) {
         stNew.consCand = _consCandidates(order);
         // По умолчанию — все ещё не включённые в счёт заказы клиента до даты этого заказа включительно
-        stNew.consSel = stNew.consCand.filter(o => o.id === orderId || String(o.date || '') <= String(order.date || '')).map(o => o.id);
+        stNew.consSel = stNew.consCand.filter(o => o.id === orderId || (!o.cons_excluded && String(o.date || '') <= String(order.date || ''))).map(o => o.id);
         if (!stNew.consSel.includes(orderId) && stNew.consCand.some(o => o.id === orderId)) stNew.consSel.push(orderId);
         if (_custUsesConsolidated(order) && stNew.consCand.length && !stNew.docs.invoice.issued) stNew.invKind = 'cons';
         if (!stNew.consCand.some(o => o.id === orderId)) stNew.consCand = []; // сам заказ не может быть в сводном (не подтверждён и т.п.)
