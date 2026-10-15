@@ -27,7 +27,7 @@ async function bankCall(body) {
 
 function bankErrText(code) {
     const map = { PLAN_REQUIRED: 'bank_err_plan', FORBIDDEN: 'bank_err_forbidden', NO_AUTH: 'bank_err_forbidden',
-        ALREADY_APPLIED: 'bank_err_already', NO_MANUAL_PAYMENT: 'bank_err_nomanual', AMBIGUOUS: 'bank_err_nomanual', LINK_FAILED: 'bank_err_nomanual', NOT_APPLIED: 'bank_err_already', OVER_REMAINING: 'bank_err_over', OVER_TX_AMOUNT: 'bank_err_over' };
+        ALREADY_APPLIED: 'bank_err_already', NO_MANUAL_PAYMENT: 'bank_err_nomanual', BAD_COUNTRY: 'bank_err_bank', BANK_NOT_FOUND: 'bank_err_bank', NOT_EURO: 'bank_err_not_euro', AMBIGUOUS: 'bank_err_nomanual', LINK_FAILED: 'bank_err_nomanual', NOT_APPLIED: 'bank_err_already', OVER_REMAINING: 'bank_err_over', OVER_TX_AMOUNT: 'bank_err_over' };
     return t(map[code] || 'bank_err_generic');
 }
 
@@ -37,9 +37,10 @@ async function bankRefreshState() {
         const { data: au } = await db.auth.getUser();
         const uid = au && au.user ? au.user.id : null;
         if (!uid || !currentOrgId) { bankState.fresh = true; return bankApplyButton(); }
-        const [m, c] = await Promise.all([
+        const [, m, c] = await Promise.all([
+            bankLoadProtected(),
             db.from('memberships').select('role').eq('org_id', currentOrgId).eq('user_id', uid).maybeSingle(),
-            db.from('bank_connections').select('id, bank_name, account_iban, valid_until, status, last_sync_at, last_error, psu_type, auto_apply').eq('org_id', currentOrgId).order('created_at', { ascending: false }).limit(1),
+            db.from('bank_connections').select('id, bank_name, bank_country, account_iban, valid_until, status, last_sync_at, last_error, psu_type, auto_apply').eq('org_id', currentOrgId).order('created_at', { ascending: false }).limit(1),
         ]);
         bankState.role = m && m.data ? m.data.role : null;
         bankState.conn = c && c.data && c.data[0] ? c.data[0] : null;
@@ -49,13 +50,24 @@ async function bankRefreshState() {
             bankState.counts.review = count || 0;
         }
         bankState.fresh = true;
+        try {
+            const res = localStorage.getItem('bank_sync_result');
+            if (res) { localStorage.removeItem('bank_sync_result'); setTimeout(() => showInfo(bankErrText(res)), 400); }
+        } catch (e) { /* без хранилища */ }
     } catch (e) {
         console.error('Банк: не удалось обновить состояние', e);
     }
     bankApplyButton();
 }
 
+function bankApplySettingsRow() {
+    const row = document.getElementById('settingsBankBtn');
+    if (!row) return;
+    const has = !!bankState.conn && bankState.conn.status !== 'revoked';
+    row.style.display = (bankState.protectedOrg || has) ? '' : 'none';
+}
 function bankApplyButton() {
+    if (bankState.fresh) bankApplySettingsRow();
     // До первого ответа сервера берём запомненное состояние, чтобы кнопка появлялась сразу
     let show, n, until = null, owner = false;
     if (bankState.fresh) {
@@ -76,7 +88,7 @@ function bankApplyButton() {
     }
     // Срок доступа: точка на кнопке и плашка на экране «Заказы» за 7 дней и меньше
     const left = show && until ? Math.ceil((new Date(until).getTime() - Date.now()) / 86400000) : null;
-    const warn = left != null && left <= 7 && (bankState.fresh ? bankPlanOk() : true);
+    const warn = left != null && left <= 7;
     const dot = document.getElementById('ordersBankDot');
     if (dot) { dot.classList.toggle('hidden', !warn); dot.style.background = left != null && left <= 0 ? '#c0654f' : '#d9a441'; }
     bankRenderNotice(warn && !!bankState.fresh, left, owner); // текст нужен переводам: только после ответа сервера
@@ -500,7 +512,8 @@ async function bankSheetApply() {
 }
 
 // ==================== НАСТРОЙКИ → БАНК ====================
-function bankPlanOk() { return currentOrgPlan === 'full' || bankState.protectedOrg; }
+// Банк пока доступен только защищённым организациям (id1). Позже: платная надстройка.
+function bankPlanOk() { return !!bankState.protectedOrg; }
 
 async function bankLoadProtected() {
     try {
@@ -547,24 +560,18 @@ function bankSettingsRender() {
                 <button type="button" role="switch" aria-checked="${on}" aria-label="${escapeHtml(t('bank_set_auto'))}" onclick="bankToggleAuto()" style="width:44px; height:26px; border-radius:13px; border:0; background:${on ? '#7c9473' : '#cfc9b8'}; position:relative; flex:none; cursor:pointer;"><span style="position:absolute; top:3px; left:${on ? 21 : 3}px; width:20px; height:20px; border-radius:50%; background:#fff; transition:left .15s;"></span></button></div>`;
         }
         let btns = '';
-        if (planOk) btns += `<button type="button" onclick="bankConnect('${conn.psu_type || 'personal'}')" style="${_bk.btn2}">${escapeHtml(t('bank_set_reconfirm'))}</button>`;
+        if (planOk) btns += `<button type="button" onclick="bankConnect('${conn.psu_type || 'personal'}', '${escapeHtml(conn.bank_name || 'Swedbank').replace(/'/g, '')}', '${conn.bank_country || 'LT'}')" style="${_bk.btn2}">${escapeHtml(t('bank_set_reconfirm'))}</button>`;
         else btns += `<button type="button" onclick="bankOpenPlans()" style="${_bk.btn1}">${escapeHtml(t('bank_set_plans'))}</button>`;
         if (owner) btns += `<button type="button" onclick="bankDisconnect()" style="${_bk.danger}">${escapeHtml(t('bank_set_disconnect'))}</button>`;
         html += bankCard(dot, `<div style="display:flex; align-items:center; gap:8px;"><div style="width:10px; height:10px; border-radius:50%; background:${dot};"></div><div style="font-size:14px; font-weight:700; color:#3c3a34;">${escapeHtml(title)}</div></div>${info}${auto}<div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">${btns}</div>`);
         if (left != null && left > 0 && left <= 30 && planOk) {
-            html += bankCard('#d9a441', `<div style="font-size:13px; font-weight:700; color:#7a5a00;">${escapeHtml(t('bank_expiring').replace('{n}', left))}</div><div style="font-size:12px; color:#6b675d; margin-top:4px; line-height:1.45;">${escapeHtml(t('bank_set_expiring_text'))}</div><button type="button" onclick="bankConnect('${conn.psu_type || 'personal'}')" style="${_bk.btn1} margin-top:8px;">${escapeHtml(t('bank_reconfirm_now'))}</button>`);
+            html += bankCard('#d9a441', `<div style="font-size:13px; font-weight:700; color:#7a5a00;">${escapeHtml(t('bank_expiring').replace('{n}', left))}</div><div style="font-size:12px; color:#6b675d; margin-top:4px; line-height:1.45;">${escapeHtml(t('bank_set_expiring_text'))}</div><button type="button" onclick="bankConnect('${conn.psu_type || 'personal'}', '${escapeHtml(conn.bank_name || 'Swedbank').replace(/'/g, '')}', '${conn.bank_country || 'LT'}')" style="${_bk.btn1} margin-top:8px;">${escapeHtml(t('bank_reconfirm_now'))}</button>`);
         }
     } else if (planOk) {
         if (!owner) {
             html += bankCard('#cfc9b8', `<div style="font-size:13px; color:#6b675d;">${escapeHtml(t('bank_set_owner_only'))}</div>`);
         } else {
-            const psu = bankState.psu || 'personal';
-            const chip = (k, l) => `<button type="button" onclick="bankPickPsu('${k}')" style="flex:1; font-size:12px; border-radius:999px; padding:7px 10px; ${psu === k ? 'background:#7c9473; border:1px solid #7c9473; color:#fff; font-weight:700;' : 'background:#fff; border:1px solid #e3ddcc; color:#4f6349;'}">${escapeHtml(l)}</button>`;
-            html += bankCard('#cfc9b8', `<div style="display:flex; align-items:center; gap:8px;"><div style="width:10px; height:10px; border-radius:50%; background:#cfc9b8;"></div><div style="font-size:14px; font-weight:700; color:#3c3a34;">${escapeHtml(t('bank_set_not_connected'))}</div></div>
-                <div style="font-size:12px; color:#6b675d; margin-top:6px; line-height:1.5;">${escapeHtml(t('bank_set_intro'))}</div>
-                <div style="display:flex; gap:6px; margin-top:10px;">${chip('personal', t('bank_set_personal'))}${chip('business', t('bank_set_business'))}</div>
-                <button type="button" onclick="bankConnect('${psu}')" style="${_bk.btn1} margin-top:10px; width:100%; padding:10px;">${escapeHtml(t('bank_set_connect'))}</button>
-                <div style="font-size:11px; color:#a29c8c; margin-top:6px; line-height:1.4;">${escapeHtml(t('bank_set_connect_note'))}</div>`);
+            html += bankConnectCardHtml();
         }
     } else {
         html += bankCard('#cfc9b8', `<div style="display:flex; align-items:center; gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9a9488" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><div style="font-size:14px; font-weight:700; color:#3c3a34;">${escapeHtml(t('bank_set_locked'))}</div></div>
@@ -581,10 +588,75 @@ function bankOpenPlans() {
     if (typeof openPlanModal === 'function') openPlanModal();
 }
 
-async function bankConnect(psu) {
-    try { localStorage.setItem('bank_sync_pending', JSON.stringify({ psu })); } catch (e) { /* без памяти браузера тип счёта по умолчанию — личный */ }
+// Страны еврозоны (автоматические поступления работают только со счетами в евро)
+const BANK_EURO_COUNTRIES = ['AT', 'BE', 'BG', 'HR', 'CY', 'EE', 'FI', 'FR', 'DE', 'GR', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL', 'PT', 'SK', 'SI', 'ES'];
+function bankCountryName(code) {
+    try { return new Intl.DisplayNames([typeof currentLang === 'string' ? currentLang : 'en'], { type: 'region' }).of(code) || code; } catch (e) { return code; }
+}
+function bankCountryRowsHtml() {
+    const q = String(bankState.q || '').trim().toLowerCase();
+    const lang = typeof currentLang === 'string' ? currentLang : 'en';
+    const list = BANK_EURO_COUNTRIES.map((c) => ({ c, n: bankCountryName(c) }))
+        .filter((x) => !q || x.n.toLowerCase().includes(q))
+        .sort((a, b) => a.n.localeCompare(b.n, lang));
+    const chev = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a29c8c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>';
+    return list.map((x, i) => `<button type="button" onclick="bankPickCountry('${x.c}')" style="display:flex; width:100%; justify-content:space-between; align-items:center; padding:11px 0; border:0; background:transparent; text-align:left; ${i ? 'border-top:1px solid #f0ebde;' : ''} font-size:13px; color:#3c3a34;">${escapeHtml(x.n)}${chev}</button>`).join('');
+}
+function bankFilterCountries(v) {
+    bankState.q = v;
+    const box = document.getElementById('bankCountryList');
+    if (box) box.innerHTML = bankCountryRowsHtml();
+}
+function bankConnectCardHtml() {
+    const hdr = (title) => `<div style="display:flex; align-items:center; gap:8px;"><div style="width:10px; height:10px; border-radius:50%; background:#cfc9b8;"></div><div style="font-size:14px; font-weight:700; color:#3c3a34;">${escapeHtml(title)}</div></div>`;
+    const lbl = (txt) => `<div style="font-size:12px; font-weight:700; color:#6b675d; margin:6px 4px;">${escapeHtml(txt)}</div>`;
+    if (bankState.step !== 'bank' || !bankState.country) {
+        return bankCard('#cfc9b8', `${hdr(t('bank_set_not_connected'))}
+            <div style="font-size:12px; color:#6b675d; margin-top:6px; line-height:1.5;">${escapeHtml(t('bank_set_intro'))}</div>
+            <div style="font-size:12px; color:#6b675d; background:#f6f4ec; border-radius:10px; padding:7px 10px; margin-top:8px; line-height:1.45;">${escapeHtml(t('bank_set_euro_note'))}</div>`, 8)
+            + lbl(t('bank_set_step_country'))
+            + `<input type="search" autocomplete="off" value="${escapeHtml(bankState.q || '')}" oninput="bankFilterCountries(this.value)" placeholder="${escapeHtml(t('bank_set_search_country'))}" style="width:100%; box-sizing:border-box; background:#fff; border:1px solid #e3ddcc; border-radius:12px; padding:8px 10px; font-size:13px; margin-bottom:8px;">`
+            + bankCard('#7c9473', `<div id="bankCountryList">${bankCountryRowsHtml()}</div>`, 0);
+    }
+    const banks = bankState.banks || [];
+    const sel = banks.find((x) => x.name === bankState.bank) || null;
+    const psu = bankState.psu || 'personal';
+    const rows = banks.map((x, i) => {
+        const on = sel && sel.name === x.name;
+        return `<button type="button" onclick="bankPickBank(${i})" style="display:flex; width:100%; align-items:center; gap:10px; padding:11px 0; border:0; background:transparent; text-align:left; ${i ? 'border-top:1px solid #f0ebde;' : ''} font-size:13px; color:#3c3a34; ${on ? 'font-weight:700;' : ''}"><span style="width:18px; height:18px; border-radius:50%; border:2px solid ${on ? '#7c9473' : '#cfc9b8'}; box-sizing:border-box; display:flex; align-items:center; justify-content:center; flex:none;">${on ? '<span style="width:8px; height:8px; border-radius:50%; background:#7c9473;"></span>' : ''}</span>${escapeHtml(x.name)}</button>`;
+    }).join('');
+    const chip = (k, l) => {
+        const ok = !sel || sel[k];
+        return `<button type="button" ${ok ? '' : 'disabled'} onclick="bankPickPsu('${k}')" style="flex:1; font-size:12px; border-radius:999px; padding:7px 10px; ${psu === k && ok ? 'background:#7c9473; border:1px solid #7c9473; color:#fff; font-weight:700;' : 'background:#fff; border:1px solid #e3ddcc; color:#4f6349;'} ${ok ? '' : 'opacity:.45;'}">${escapeHtml(l)}</button>`;
+    };
+    return `<div style="font-size:12px; color:#a29c8c; margin:0 4px 4px;">${escapeHtml(t('bank_set_country_is').replace('{country}', bankCountryName(bankState.country)))} · <button type="button" onclick="bankChangeCountry()" style="border:0; background:transparent; color:#4f6349; font-size:12px; font-weight:700; padding:0;">${escapeHtml(t('bank_set_change'))}</button></div>`
+        + lbl(t('bank_set_step_bank'))
+        + bankCard('#7c9473', banks.length ? rows : `<div style="font-size:12px; color:#6b675d; line-height:1.5;">${escapeHtml(t('bank_set_no_banks'))}</div>`, 8)
+        + (banks.length ? lbl(t('bank_set_step_type'))
+            + `<div style="display:flex; gap:6px; margin-bottom:10px;">${chip('personal', t('bank_set_personal'))}${chip('business', t('bank_set_business'))}</div>`
+            + `<button type="button" ${sel ? '' : 'disabled'} onclick="bankConnect('${psu}', bankState.bank, bankState.country)" style="${_bk.btn1} width:100%; padding:10px; ${sel ? '' : 'opacity:.45;'}">${escapeHtml(t('bank_set_connect').replace('{bank}', sel ? sel.name : ''))}</button>`
+            + `<div style="font-size:11px; color:#a29c8c; margin-top:6px; line-height:1.4;">${escapeHtml(t('bank_set_connect_note'))}</div>` : '');
+}
+async function bankPickCountry(code) {
     showLoading();
-    const r = await bankCall({ action: 'connect_start', psu_type: psu });
+    const r = await bankCall({ action: 'banks', country: code });
+    hideLoading();
+    if (!r.ok) { await showInfo(bankErrText(r.error)); return; }
+    bankState.country = code; bankState.banks = r.banks || []; bankState.bank = null; bankState.step = 'bank';
+    bankSettingsRender();
+}
+function bankChangeCountry() { bankState.step = 'country'; bankSettingsRender(); }
+function bankPickBank(i) {
+    const x = (bankState.banks || [])[i];
+    if (!x) return;
+    bankState.bank = x.name;
+    if (!x[bankState.psu || 'personal']) bankState.psu = x.personal ? 'personal' : 'business';
+    bankSettingsRender();
+}
+async function bankConnect(psu, bank, country) {
+    try { localStorage.setItem('bank_sync_pending', JSON.stringify({ psu, bank, country })); } catch (e) { /* без памяти браузера тип счёта по умолчанию — личный */ }
+    showLoading();
+    const r = await bankCall({ action: 'connect_start', psu_type: psu, bank, country });
     hideLoading();
     if (!r.ok || !r.url) { await showInfo(bankErrText(r.error)); return; }
     location.href = r.url;

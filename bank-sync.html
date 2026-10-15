@@ -128,11 +128,16 @@ async function init() {
   const code = new URLSearchParams(location.search).get('code');
   if (code) {
     $('connMsg').textContent = 'Завершаю подключение…';
-    let psu = 'personal';
-    try { psu = JSON.parse(localStorage.getItem(LS) || '{}').psu || 'personal'; } catch {}
-    const r = await call({ action: 'connect_finish', code, psu_type: psu });
+    let psu = 'personal', bank, country;
+    try { const p = JSON.parse(localStorage.getItem(LS) || '{}'); psu = p.psu || 'personal'; bank = p.bank; country = p.country; } catch {}
+    const r = await call({ action: 'connect_finish', code, psu_type: psu, bank, country });
     history.replaceState(null, '', location.pathname);
-    if (!r.ok) showErr($('connMsg'), r); else { $('connMsg').innerHTML = '<div class="ok">Банк подключён. Счетов: ' + r.connections.length + '. Возвращаю в приложение…</div>'; setTimeout(() => { location.href = 'index.html'; }, 1800); }
+    if (!r.ok && r.error === 'NOT_EURO') {
+      // сообщение покажет приложение на языке пользователя
+      try { localStorage.setItem('bank_sync_result', 'NOT_EURO'); } catch {}
+      $('connMsg').innerHTML = '<div class="err">Счёт не в евро. Возвращаю в приложение…</div>';
+      setTimeout(() => { location.href = 'index.html'; }, 1200);
+    } else if (!r.ok) showErr($('connMsg'), r); else { $('connMsg').innerHTML = '<div class="ok">Банк подключён. Счетов: ' + r.connections.length + '. Возвращаю в приложение…</div>'; setTimeout(() => { location.href = 'index.html'; }, 1800); }
   }
   await loadConns();
   renderTabs();
