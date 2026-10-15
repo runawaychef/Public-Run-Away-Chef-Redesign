@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Bank test</title>
+<!-- Служебная страница для обкатки подключения банка (Enable Banking). Не входит в приложение, после теста удалить. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="supabaseClient.js?v=7"></script>
+<style>
+  body { font: 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 16px; background: #f7f5ef; color: #2d2d2d; }
+  h1 { font-size: 16px; margin: 0 0 12px; }
+  .box { background: #fff; border: 1px solid #e3ddcc; border-radius: 14px; padding: 12px; margin-bottom: 12px; }
+  .box h2 { font-size: 14px; margin: 0 0 8px; }
+  button { font: inherit; font-weight: 600; background: #7c9473; color: #fff; border: 0; border-radius: 10px; padding: 9px 12px; margin: 4px 6px 4px 0; }
+  button.sec { background: #fff; color: #4f6349; border: 1px solid #7c9473; }
+  button:disabled { opacity: .5; }
+  select, label { font: inherit; margin: 4px 6px 4px 0; }
+  select { padding: 6px; border: 1px solid #e3ddcc; border-radius: 8px; background: #fff; }
+  .muted { color: #777; font-size: 12px; }
+  .err { color: #b3261e; white-space: pre-wrap; word-break: break-word; }
+  .ok { color: #4f6349; }
+  .tx { border-top: 1px solid #eee; padding: 8px 0; }
+  .tx:first-child { border-top: 0; }
+  .tx .top { display: flex; justify-content: space-between; gap: 8px; }
+  .amt { font-weight: 700; white-space: nowrap; }
+  .amt.in { color: #4f6349; }
+  .amt.out { color: #b3261e; }
+  .rem { background: #f3f1ea; border-radius: 6px; padding: 4px 6px; margin-top: 4px; word-break: break-word; }
+  pre { font-size: 11px; white-space: pre-wrap; word-break: break-word; background: #f3f1ea; padding: 8px; border-radius: 8px; }
+</style>
+</head>
+<body>
+<h1>Проверка банка (Enable Banking · Swedbank LT)</h1>
+<div id="auth" class="box muted">Проверяю вход…</div>
+
+<div class="box">
+  <h2>1. Ключ и банк</h2>
+  <button id="btnInfo">Проверить ключ</button>
+  <div id="info"></div>
+</div>
+
+<div class="box">
+  <h2>2. Подключение</h2>
+  <label><input type="radio" name="psu" value="personal" checked> Личный счёт</label>
+  <label><input type="radio" name="psu" value="business"> Бизнес-счёт</label><br>
+  <button id="btnStart">Подключить Swedbank</button>
+  <button id="btnForget" class="sec">Забыть сессию</button>
+  <div id="session"></div>
+</div>
+
+<div class="box">
+  <h2>3. Операции</h2>
+  <select id="acc"></select>
+  <select id="days">
+    <option value="7">7 дней</option>
+    <option value="30" selected>30 дней</option>
+    <option value="90">90 дней</option>
+  </select>
+  <label><input type="checkbox" id="onlyIn" checked> Только поступления</label><br>
+  <button id="btnTx">Показать операции</button>
+  <div id="txInfo" class="muted"></div>
+  <div id="tx"></div>
+  <details id="rawBox" style="display:none"><summary class="muted">Сырые данные (2 записи)</summary><pre id="raw"></pre></details>
+</div>
+
+<script>
+const LS_KEY = 'eb_test_session';
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+function loadSess() { try { return JSON.parse(localStorage.getItem(LS_KEY) || 'null'); } catch { return null; } }
+function saveSess(s) { try { localStorage.setItem(LS_KEY, JSON.stringify(s)); } catch {} }
+
+async function call(body) {
+  const { data, error } = await db.functions.invoke('bank-test', { body });
+  if (error) {
+    let detail = error.message;
+    try { if (error.context) detail = JSON.stringify(await error.context.json(), null, 2); } catch {}
+    return { ok: false, error: detail };
+  }
+  return data;
+}
+function showErr(el, r) {
+  el.innerHTML = '<div class="err">Ошибка: ' + esc(typeof r.error === 'string' ? r.error : JSON.stringify(r.error)) +
+    (r.eb ? '\n' + esc(JSON.stringify(r.eb, null, 2)) : '') + '</div>';
+}
+
+function renderSess() {
+  const s = loadSess();
+  const sel = $('acc');
+  sel.innerHTML = '';
+  if (!s) { $('session').innerHTML = '<div class="muted">Сессии нет.</div>'; $('btnTx').disabled = true; return; }
+  $('session').innerHTML = '<div class="ok">Подключено. Доступ до: ' + esc(s.valid_until || '—') + '</div>' +
+    '<div class="muted">Счетов: ' + s.accounts.length + '</div>';
+  s.accounts.forEach((a) => {
+    const o = document.createElement('option');
+    o.value = a.uid;
+    o.textContent = (a.name || 'Счёт') + ' · ' + (a.iban ? '…' + a.iban.slice(-4) : '') + ' ' + (a.currency || '');
+    sel.appendChild(o);
+  });
+  $('btnTx').disabled = s.accounts.length === 0;
+}
+
+$('btnInfo').onclick = async () => {
+  $('info').textContent = 'Запрос…';
+  const r = await call({ action: 'info' });
+  if (!r.ok) return showErr($('info'), r);
+  const a = r.aspsp;
+  $('info').innerHTML = '<div class="ok">Ключ работает.</div>' +
+    '<div>Банк: ' + esc(a.name) + ' (' + esc(a.country) + ')</div>' +
+    '<div>Макс. срок согласия: <b>' + esc(a.maximum_consent_validity_days ?? '—') + ' дн.</b></div>' +
+    '<div class="muted">Типы: ' + esc(JSON.stringify(a.psu_types)) + '</div>' +
+    '<div class="muted">Вход: ' + esc(JSON.stringify(a.auth_methods)) + '</div>';
+};
+
+$('btnStart').onclick = async () => {
+  const psu = document.querySelector('input[name=psu]:checked').value;
+  $('session').textContent = 'Готовлю вход в банк…';
+  const r = await call({ action: 'start', psu_type: psu });
+  if (!r.ok) return showErr($('session'), r);
+  location.href = r.url;
+};
+
+$('btnForget').onclick = () => { try { localStorage.removeItem(LS_KEY); } catch {} renderSess(); $('tx').innerHTML = ''; };
+
+$('btnTx').onclick = async () => {
+  $('txInfo').textContent = 'Загружаю…';
+  $('tx').innerHTML = '';
+  const r = await call({ action: 'transactions', account_uid: $('acc').value, days: Number($('days').value) });
+  if (!r.ok) { $('txInfo').textContent = ''; return showErr($('tx'), r); }
+  let items = r.items;
+  if ($('onlyIn').checked) items = items.filter((t) => t.cd === 'CRDT');
+  $('txInfo').textContent = 'С ' + r.date_from + ': всего операций ' + r.count + ', показано ' + items.length;
+  $('tx').innerHTML = items.map((t) => {
+    const rem = Array.isArray(t.remittance) ? t.remittance.join(' | ') : (t.remittance || '');
+    return '<div class="tx"><div class="top"><span>' + esc(t.booking_date || t.value_date || '') + ' · ' +
+      esc(t.cd === 'CRDT' ? (t.debtor || '—') : (t.creditor || '—')) + '</span>' +
+      '<span class="amt ' + (t.cd === 'CRDT' ? 'in' : 'out') + '">' + (t.cd === 'CRDT' ? '+' : '−') + esc(t.amount) + ' ' + esc(t.currency) + '</span></div>' +
+      (rem ? '<div class="rem">' + esc(rem) + '</div>' : '<div class="muted">без назначения</div>') +
+      (t.note ? '<div class="muted">note: ' + esc(t.note) + '</div>' : '') +
+      '<div class="muted">ref: ' + esc(t.ref || '—') + (t.status ? ' · ' + esc(t.status) : '') + '</div></div>';
+  }).join('') || '<div class="muted">Нет операций.</div>';
+  $('raw').textContent = JSON.stringify(r.sample_raw, null, 2);
+  $('rawBox').style.display = r.sample_raw && r.sample_raw.length ? '' : 'none';
+};
+
+(async () => {
+  const { data } = await db.auth.getSession();
+  if (!data || !data.session) {
+    $('auth').innerHTML = '<span class="err">Нет входа. Откройте Simple Bake в этом браузере, войдите и вернитесь на эту страницу.</span>';
+    document.querySelectorAll('button').forEach((b) => b.disabled = true);
+    return;
+  }
+  $('auth').innerHTML = '<span class="ok">Вход: ' + esc(data.session.user.email || '') + '</span>';
+
+  const p = new URLSearchParams(location.search);
+  if (p.get('error')) {
+    $('session').innerHTML = '<div class="err">Банк вернул ошибку: ' + esc(p.get('error')) + ' ' + esc(p.get('error_description') || '') + '</div>';
+    history.replaceState(null, '', location.pathname);
+  } else if (p.get('code')) {
+    $('session').textContent = 'Завершаю подключение…';
+    const code = p.get('code');
+    history.replaceState(null, '', location.pathname);
+    const r = await call({ action: 'finish', code });
+    if (!r.ok) { showErr($('session'), r); return; }
+    saveSess({ session_id: r.session_id, valid_until: r.valid_until, accounts: r.accounts });
+  }
+  renderSess();
+})();
+</script>
+</body>
+</html>
