@@ -147,10 +147,10 @@ function bankTarget(x) {
 }
 
 const _bk = {
-    btn1: 'border:0; background:#7c9473; color:#fff; border-radius:10px; padding:7px 12px; font:700 11.5px Roboto,sans-serif; box-shadow:0 1px 2px rgba(0,0,0,.12); cursor:pointer;',
-    btn2: 'border:0; background:#e3e8df; color:#4f6349; border-radius:10px; padding:7px 12px; font:700 11.5px Roboto,sans-serif; cursor:pointer;',
-    btn3: 'border:0; background:transparent; color:#9a9488; padding:7px 8px; font:500 12px Roboto,sans-serif; cursor:pointer;',
-    danger: 'border:0; background:#f3ded9; color:#a3493d; border-radius:10px; padding:7px 12px; font:700 11.5px Roboto,sans-serif; cursor:pointer;',
+    btn1: 'border:0; background:#7c9473; color:#fff; border-radius:10px; padding:7px 12px; font-size:11.5px; font-weight:700; font-family:inherit; box-shadow:0 1px 2px rgba(0,0,0,.12); cursor:pointer;',
+    btn2: 'border:0; background:#e3e8df; color:#4f6349; border-radius:10px; padding:7px 12px; font-size:11.5px; font-weight:700; font-family:inherit; cursor:pointer;',
+    btn3: 'border:0; background:transparent; color:#9a9488; padding:7px 8px; font-size:12px; font-weight:500; font-family:inherit; cursor:pointer;',
+    danger: 'border:0; background:#c0685c; color:#fff; box-shadow:0 1px 2px rgba(0,0,0,.12); border-radius:10px; padding:7px 12px; font-size:11.5px; font-weight:700; font-family:inherit; cursor:pointer;',
 };
 
 // Карточка со цветной полосой слева (как карточки заказов)
@@ -426,7 +426,7 @@ function bankSheetRender(keepFocus) {
         </div>
         <div style="display:flex; gap:8px; margin-top:12px;">
             <button type="button" onclick="bankSheetClose()" style="${_bk.btn2} flex:1; padding:12px;">${escapeHtml(t('common_cancel'))}</button>
-            <button type="button" ${canApply ? '' : 'disabled'} onclick="bankSheetApply()" style="flex:2; border:0; background:${canApply ? '#7c9473' : '#cfc9b8'}; color:#fff; border-radius:10px; padding:12px; font:700 13px Roboto,sans-serif;">${escapeHtml(t('bank_sheet_apply').replace('{sum}', formatMoney(T.doneC / 100)))}</button>
+            <button type="button" ${canApply ? '' : 'disabled'} onclick="bankSheetApply()" style="flex:2; border:0; background:${canApply ? '#7c9473' : '#cfc9b8'}; color:#fff; border-radius:10px; padding:12px; font-size:13px; font-weight:700; font-family:inherit;">${escapeHtml(t('bank_sheet_apply').replace('{sum}', formatMoney(T.doneC / 100)))}</button>
         </div>`;
 }
 
