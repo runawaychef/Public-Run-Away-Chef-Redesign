@@ -174,9 +174,11 @@ $('btnTotals').onclick = async () => {
     if (!srv.ok) return showErr(box, srv);
 
     box.textContent = 'Считаю в приложении…';
-    const { data: mem, error: mErr } = await db.from('memberships')
-      .select('org_id, organizations(vat_rate)').single();
+    const { data: mems, error: mErr } = await db.from('memberships')
+      .select('org_id, role, organizations(vat_rate, is_protected)');
     if (mErr) throw mErr;
+    const mem = (mems || []).find((m) => m.role === 'owner' && m.organizations && m.organizations.is_protected);
+    if (!mem) throw new Error('Не найдена организация-владелец (is_protected)');
     const orgId = mem.org_id;
     const vat = mem.organizations && mem.organizations.vat_rate != null ? Number(mem.organizations.vat_rate) : 0;
     const [ords, items, pays] = await Promise.all([
