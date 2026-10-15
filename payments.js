@@ -12,12 +12,18 @@ async function loadOrderPayments(orderId) {
     const banner = document.getElementById('detailConsBanner');
     if (banner) banner.classList.add('hidden'); // не показываем плашку предыдущего заказа, пока грузится
     try {
-        const { data, error } = await db.from('order_payments')
-            .select('id, amount, method, paid_at, note, created_by, created_at, consolidated_invoice_id')
+        let res = await db.from('order_payments')
+            .select('id, amount, method, paid_at, note, created_by, created_at, consolidated_invoice_id, bank_transaction_id')
             .eq('order_id', orderId)
             .order('paid_at', { ascending: false });
-        if (error) throw error;
-        _orderPayments = data || [];
+        if (res.error) { // запасной вариант: без пометки «из банка» список оплат всё равно должен открыться
+            res = await db.from('order_payments')
+                .select('id, amount, method, paid_at, note, created_by, created_at, consolidated_invoice_id')
+                .eq('order_id', orderId)
+                .order('paid_at', { ascending: false });
+        }
+        if (res.error) throw res.error;
+        _orderPayments = res.data || [];
     } catch (e) {
         console.error('Ошибка загрузки платежей:', e);
         _orderPayments = [];
@@ -132,7 +138,9 @@ function renderPayments() {
         if (emp) parts.push(escapeHtml(emp.name));
         html += `<div class="flex justify-between items-center bg-[#f4f1ea] hover:bg-[#e3e8df] active:bg-[#e3e8df] rounded-lg px-3 py-2.5 cursor-pointer" ${dataAction('openEditPaymentModal', [p.id])}>
             <div class="min-w-0" style="font-size:13px;"><div class="font-medium text-gray-800 truncate">${parts.join(' · ')}${p.note ? ' · ' + escapeHtml(p.note) : ''}</div>${p.consolidated_invoice_id ? `<div style="font-size:12px; color:#4f6349;">${escapeHtml(t(_consInvCancelled[p.consolidated_invoice_id] ? 'pay_cons_tag_cancelled' : 'pay_cons_tag').replace('{number}', _payConsNumber(p.consolidated_invoice_id)))}</div>` : ''}</div>
-            <span class="action-icon icon-edit shrink-0 ml-2">${icon('edit', 'w-4 h-4')}</span>
+            ${p.bank_transaction_id
+                ? `<span class="shrink-0 ml-2" style="font-size:11px; background:#eef2ea; color:#4f6349; border-radius:6px; padding:2px 7px; white-space:nowrap;">${escapeHtml(t('bank_from_bank'))}</span>`
+                : `<span class="action-icon icon-edit shrink-0 ml-2">${icon('edit', 'w-4 h-4')}</span>`}
         </div>`;
     });
     html += '</div>';
@@ -184,6 +192,7 @@ function openAddPaymentModal(fillRemaining) {
 function openEditPaymentModal(paymentId) {
     const p = _orderPayments.find(pay => pay.id === paymentId);
     if (!p) { console.error('openEditPaymentModal: платёж не найден —', paymentId); return; }
+    if (p.bank_transaction_id) { _payBankLockedMessage(); return; } // оплата из банка правится только через «Поступления»
     document.getElementById('paymentEditId').value = p.id;
     document.getElementById('paymentModalTitle').textContent = t('pay_edit_title');
     document.getElementById('paymentDeleteBtn').classList.toggle('hidden', !hasPermission('can_delete'));
@@ -293,8 +302,20 @@ async function deletePayment() {
         await loadOrderPayments(currentOrderId);
     } catch (e) {
         console.error(e);
+        if (e && e.code === '42501') { hideLoading(); _payBankLockedMessage(); return; }
         showInfo(t('error_delete_generic'));
     } finally { hideLoading(); }
+}
+
+// Сообщение: оплату из банка нельзя менять здесь; предлагает открыть «Поступления»
+async function _payBankLockedMessage() {
+    const go = await showConfirm(t('bank_pay_locked_title') + '\n\n' + t('bank_pay_locked_text'), { ok: t('bank_pay_locked_open'), cancel: t('bank_pay_locked_ok') });
+    if (go && typeof openBankSection === 'function') {
+        const ord = document.getElementById('orderDetail');
+        if (ord && typeof closeOrderDetail === 'function') { try { closeOrderDetail(); } catch (e) { /* ничего */ } }
+        bankState.tab = 'closed';
+        openBankSection().then(() => bankSetTab('closed'));
+    }
 }
 
 // ==================== ОПЛАТА ПО СВОДНОМУ СЧЁТУ ====================
@@ -542,6 +563,7 @@ async function confirmPayBatchDelete(scope) {
         await loadOrderPayments(currentOrderId);
     } catch (e) {
         console.error(e);
+        if (e && e.code === '42501') { hideLoading(); _payBankLockedMessage(); return; }
         showInfo(t('error_delete_generic'));
     } finally { hideLoading(); }
 }
