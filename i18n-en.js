@@ -1016,6 +1016,7 @@ I18N.en = {
         docs_sent_share: '⤴ PDF',
         docs_not_sent: 'not sent',
         docs_empty: 'No documents found',
+        docs_old_fold: 'Older documents: {n}',
         docs_send: 'Send',
         docs_open_order: 'Open order',
         docs_all_of_customer: 'All customer documents',

@@ -11,6 +11,7 @@
 //             renderDocumentPreviewThumbnail (invoice.js), _formatDocNumber, openSendDocumentSheet,
 //             _formatSentDateTime (send-document.js), formatMoney, formatDateDMY, escapeHtml, t.
 
+let _docsOldOpen = false; // раскрыта ли строка «Старые документы»
 let _docsAll = [];      // все документы организации (после загрузки)
 // year: 'YYYY' или null (все годы); month: 'MM' или null (весь год)
 let _docsFilter = { type: 'all', custId: null, year: null, month: null, pay: '', q: '' };
@@ -120,6 +121,7 @@ async function _docsLoad() {
 async function openDocumentsSection(opts) {
     const custId = opts && opts.custId ? opts.custId : null;
     const today = getLocalDateStr(0);
+    _docsOldOpen = false;
     // Из карточки клиента — весь текущий год, иначе текущий месяц
     // По умолчанию — счета (обычные и сводные вместе)
     _docsFilter = { type: 'inv', custId, year: today.slice(0, 4), month: custId ? null : today.slice(5, 7), pay: '', q: '' };
@@ -149,6 +151,12 @@ function setDocsFilter(field, value) {
     if (field === 'custId') value = value ? Number(value) : null;
     if (field === 'month' || field === 'year') value = value || null;
     _docsFilter[field] = value;
+    _docsOldOpen = false;
+    renderDocumentsSection();
+}
+
+function toggleDocsOld() {
+    _docsOldOpen = !_docsOldOpen;
     renderDocumentsSection();
 }
 
@@ -241,9 +249,26 @@ function renderDocumentsSection() {
         <span>${escapeHtml(`${list.length} ${nWord(list.length, 'word_docs')} · ${t('docs_summary_inv')} ${invDocs.length}`)}</span>
         <span>${escapeHtml(t('docs_summary_sum'))} <b style="color:#3c3a34;">${formatMoney(invSumC / 100)}</b></span></div>`;
 
+    // «Старые документы» сворачиваем (только отображение): документы заказов с отметкой cons_excluded
+    // («выставлено вне программы») и решённые старше 14 дней — накладные, оплаченные/отменённые счета.
+    // Неоплаченные и частично оплаченные счета не сворачиваем никогда. При поиске ничего не сворачивается.
+    const lim = new Date(); lim.setDate(lim.getDate() - 14);
+    const limKey = `${lim.getFullYear()}-${String(lim.getMonth() + 1).padStart(2, '0')}-${String(lim.getDate()).padStart(2, '0')}`;
+    const isOldDoc = d => {
+        if (_docsNorm(f.q)) return false;
+        if (d.kind !== 'cons' && d.live && d.live.cons_excluded) return true;
+        if (String(d.date || '') >= limKey) return false;
+        if (d.kind === 'dn') return true;
+        if (d.cancelled || d.pay === 'paid') return true;
+        return d.kind === 'inv' && d.deleted && !d.pay;
+    };
+    const recentDocs = list.filter(d => !isOldDoc(d));
+    const oldDocs = list.filter(isOldDoc);
+
+    const buildRows = arr => {
     let rows = '';
     let lastMonth = null;
-    list.forEach((d, i) => {
+    arr.forEach((d, i) => {
         const ym = String(d.date).slice(0, 7);
         if (ym !== lastMonth) {
             rows += `<div style="font-size:12px; color:#9a9488; margin:12px 0 2px;">${escapeHtml(_docsMonthLabel(ym))}</div>`;
@@ -268,6 +293,18 @@ function renderDocumentsSection() {
             <div style="text-align:right; flex:none; min-width:74px;"><div style="font-size:13px; color:#3c3a34; ${d.cancelled ? 'text-decoration:line-through;' : (d.kind !== 'dn' ? 'font-weight:700;' : '')}">${sum}</div>${pay}</div>
         </div>`;
     });
+    return rows;
+    };
+
+    let rows = buildRows(recentDocs);
+    if (oldDocs.length) {
+        const open = !!_docsOldOpen;
+        rows += `<div style="margin-top:10px; background:#f6f4ec; border-radius:10px; padding:2px 12px;">
+            <div onclick="toggleDocsOld()" style="display:flex; align-items:center; gap:8px; font-size:13px; color:#6b675d; min-height:40px; cursor:pointer;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b675d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform:rotate(${open ? 90 : 0}deg);"><polyline points="9 6 15 12 9 18"/></svg>
+                <span style="flex:1;">${escapeHtml(t('docs_old_fold').replace('{n}', oldDocs.length))}</span></div></div>`;
+        if (open) rows += buildRows(oldDocs);
+    }
     if (!list.length) rows = `<p style="font-size:13px; color:#9a9488; margin:16px 0; text-align:center;">${escapeHtml(t('docs_empty'))}</p>`;
 
     box.innerHTML = `

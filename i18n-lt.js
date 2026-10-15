@@ -1010,6 +1010,7 @@ I18N.lt = {
         docs_sent_share: '⤴ PDF',
         docs_not_sent: 'neišsiųsta',
         docs_empty: 'Dokumentų nerasta',
+        docs_old_fold: 'Seni dokumentai: {n}',
         docs_send: 'Siųsti',
         docs_open_order: 'Atidaryti užsakymą',
         docs_all_of_customer: 'Visi kliento dokumentai',

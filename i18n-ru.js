@@ -1015,6 +1015,7 @@ I18N.ru = {
         docs_sent_share: '⤴ PDF',
         docs_not_sent: 'не отправлен',
         docs_empty: 'Документов не найдено',
+        docs_old_fold: 'Старые документы: {n}',
         docs_send: 'Отправить',
         docs_open_order: 'Открыть заказ',
         docs_all_of_customer: 'Все документы клиента',

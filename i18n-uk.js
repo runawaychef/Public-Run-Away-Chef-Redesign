@@ -1010,6 +1010,7 @@ I18N.uk = {
         docs_sent_share: '⤴ PDF',
         docs_not_sent: 'не надіслано',
         docs_empty: 'Документів не знайдено',
+        docs_old_fold: 'Старі документи: {n}',
         docs_send: 'Надіслати',
         docs_open_order: 'Відкрити замовлення',
         docs_all_of_customer: 'Усі документи клієнта',
