@@ -873,6 +873,7 @@ I18N.lt = {
         send_cons_empty: 'Šioje suvestinėje sąskaitoje neliko užsakymų – jos išsiųsti negalima.',
         docs_title: 'Dokumentai',
         docs_search_placeholder: 'Numeris arba klientas',
+        docs_search_all_months: 'Ieškoma visuose mėnesiuose',
         docs_type_all: 'Visi',
         docs_type_inv: 'Sąskaitos',
         docs_type_dn: 'Važtaraščiai',

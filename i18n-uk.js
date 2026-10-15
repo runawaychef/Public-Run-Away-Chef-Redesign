@@ -873,6 +873,7 @@ I18N.uk = {
         send_cons_empty: 'У цьому зведеному рахунку не залишилося замовлень — надіслати його не можна.',
         docs_title: 'Документи',
         docs_search_placeholder: 'Номер або клієнт',
+        docs_search_all_months: 'Пошук по всіх місяцях',
         docs_type_all: 'Усі',
         docs_type_inv: 'Рахунки',
         docs_type_dn: 'Накладні',

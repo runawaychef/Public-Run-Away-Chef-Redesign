@@ -155,17 +155,23 @@ function _docsMonthLabel(ym) {
     return name.charAt(0).toUpperCase() + name.slice(1) + ' ' + y;
 }
 
+// Для поиска: нижний регистр, без пробелов, дефисов и кавычек — «20260012» находит INV-2026-0012
+function _docsNorm(s) {
+    return String(s || '').toLowerCase().replace(/[\s\-–—_.«»"'№#]/g, '');
+}
+
 function _docsFiltered() {
     const f = _docsFilter;
-    const q = (f.q || '').trim().toLowerCase();
+    const q = _docsNorm(f.q);
     return _docsAll.filter(d => {
         if (f.type === 'inv' && d.kind !== 'inv') return false;
         if (f.type === 'dn' && d.kind !== 'dn') return false;
         if (f.type === 'cons' && d.kind !== 'cons') return false;
         if (f.custId && d.custId !== f.custId) return false;
-        if (f.month && String(d.date).slice(0, 7) !== f.month) return false;
+        // Пока идёт поиск — по всем месяцам, иначе документ другого месяца не найти
+        if (f.month && !q && String(d.date).slice(0, 7) !== f.month) return false;
         if (f.pay && d.pay !== f.pay) return false;
-        if (q && !(String(d.number || '').toLowerCase().includes(q) || String(d.custName || '').toLowerCase().includes(q))) return false;
+        if (q && !(_docsNorm(d.number).includes(q) || _docsNorm(d.custName).includes(q) || _docsNorm(d.orderNumber).includes(q))) return false;
         return true;
     });
 }
@@ -234,6 +240,7 @@ function renderDocumentsSection() {
             ${_docsSelect('month', f.month || '', monthOpts)}
             ${_docsSelect('pay', f.pay || '', payOpts)}
         </div>
+        ${_docsNorm(f.q) && f.month ? `<div style="font-size:11px; color:#9a9488; margin-top:6px;">${escapeHtml(t('docs_search_all_months'))}</div>` : ''}
         ${summary}
         <div>${rows}</div>`;
 }

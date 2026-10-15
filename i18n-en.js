@@ -879,6 +879,7 @@ I18N.en = {
         send_cons_empty: 'There are no orders left in this consolidated invoice, so it cannot be sent.',
         docs_title: 'Documents',
         docs_search_placeholder: 'Number or customer',
+        docs_search_all_months: 'Searching all months',
         docs_type_all: 'All',
         docs_type_inv: 'Invoices',
         docs_type_dn: 'Delivery notes',
