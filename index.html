@@ -421,9 +421,9 @@
         .view-toggle-btn svg { width: 16px; height: 16px; }
         #ordersCardCalendarBtn svg, #ordersDocsBtn svg, #ordersBankBtn svg, #ordersFilterPill .view-toggle-btn svg { width: 19px; height: 19px; }
         #documentsModal { z-index: 155; }
-        #bankModal { z-index: 155; }
+        #bankModal, #bankSettingsModal { z-index: 155; }
         #bankSheetModal { z-index: 165; }
-        #ordersBankBadge.hidden { display: none !important; }
+        #ordersBankBadge.hidden, #ordersBankWrap.hidden { display: none !important; }
         .view-toggle-btn.active { background: #7c9473; color: #fff; }
         #splashScreen {
             position: fixed; inset: 0; z-index: 90; background: #f4ede0;
@@ -998,11 +998,11 @@
         <button class="help-marker" id="ordersHelpBtn" onclick="openOrdersHelp()" data-i18n-title="help_marker_label" title="Подробнее об этом разделе" style="margin-left:0;">?</button>
     </div>
     <div class="orders-toggle-right">
-        <div class="view-toggle-pill hidden" id="ordersBankPill" style="position:relative; overflow:visible;">
-            <button type="button" class="view-toggle-btn" id="ordersBankBtn" onclick="openBankSection()" title="Поступления" data-i18n-title="bank_title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-6 9 6"/><path d="M5 10v8M9.7 10v8M14.3 10v8M19 10v8"/><path d="M3 20h18"/></svg></button>
-            <span id="ordersBankBadge" class="hidden" style="position:absolute; top:-6px; right:-6px; min-width:18px; height:18px; border-radius:9px; background:#c0654f; color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; padding:0 4px; pointer-events:none;"></span>
-        </div>
         <div class="view-toggle-pill">
+            <span id="ordersBankWrap" class="hidden" style="position:relative; display:inline-flex;">
+                <button type="button" class="view-toggle-btn" id="ordersBankBtn" onclick="openBankSection()" title="Поступления" data-i18n-title="bank_title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-6 9 6"/><path d="M5 10v8M9.7 10v8M14.3 10v8M19 10v8"/><path d="M3 20h18"/></svg></button>
+                <span id="ordersBankBadge" class="hidden" style="position:absolute; top:-8px; right:-8px; min-width:18px; height:18px; border-radius:9px; background:#c0654f; color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; padding:0 4px; pointer-events:none;"></span>
+            </span>
             <button type="button" class="view-toggle-btn" id="ordersDocsBtn" onclick="openDocumentsSection()" title="Документы" data-i18n-title="docs_title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H9a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V7l-4-4z"/><path d="M15 3v4h4"/><path d="M4 8v11a2 2 0 002 2h8"/></svg></button>
         </div>
     <div class="view-toggle-pill">
@@ -2238,6 +2238,7 @@
                 </button>
                 <div id="companyInfoBtnBlock" class="flex flex-col gap-1 mb-3 hidden">
                     <button onclick="openCompanyInfoModal()" class="settings-row-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21"/></svg><span data-i18n="settings_company_info">Информация о компании</span></button>
+                    <button id="settingsBankBtn" onclick="openBankSettings()" class="settings-row-btn perm-owner-only hidden"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10l9-6 9 6M5 10v8m4.7-8v8m4.6-8v8M19 10v8M3 20h18"/></svg><span data-i18n="bank_set_title">Банк</span></button>
                 </div>
 
                 <!-- Push-уведомления -->
@@ -2738,6 +2739,18 @@
                     <button onclick="bankRefreshNow()" class="pill-btn-secondary" style="padding:6px 10px;" data-i18n="bank_refresh">Обновить</button>
                 </div>
                 <div id="bankBody" style="flex:1; min-height:0;"></div>
+            </div>
+        </div>
+        <div id="bankSettingsModal" class="modal modal-fullscreen">
+            <div class="modal-content">
+                <div class="flex items-center gap-2 mb-2">
+                    <button onclick="closeBankSettings()" class="pill-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        <span data-i18n="common_back">Назад</span>
+                    </button>
+                    <h2 class="text-gray-800" style="font-size:16px; font-weight:600; margin:0;" data-i18n="bank_set_title">Банк</h2>
+                </div>
+                <div id="bankSettingsBody" style="flex:1; min-height:0; margin-top:8px;"></div>
             </div>
         </div>
         <div id="bankSheetModal" class="modal modal-bottom-sheet">

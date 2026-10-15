@@ -132,7 +132,7 @@ async function init() {
     try { psu = JSON.parse(localStorage.getItem(LS) || '{}').psu || 'personal'; } catch {}
     const r = await call({ action: 'connect_finish', code, psu_type: psu });
     history.replaceState(null, '', location.pathname);
-    if (!r.ok) showErr($('connMsg'), r); else $('connMsg').innerHTML = '<div class="ok">Банк подключён. Счетов: ' + r.connections.length + '</div>';
+    if (!r.ok) showErr($('connMsg'), r); else { $('connMsg').innerHTML = '<div class="ok">Банк подключён. Счетов: ' + r.connections.length + '. Возвращаю в приложение…</div>'; setTimeout(() => { location.href = 'index.html'; }, 1800); }
   }
   await loadConns();
   renderTabs();
