@@ -36,7 +36,7 @@ async function bankRefreshState() {
     try {
         const { data: au } = await db.auth.getUser();
         const uid = au && au.user ? au.user.id : null;
-        if (!uid || !currentOrgId) return bankApplyButton();
+        if (!uid || !currentOrgId) { bankState.fresh = true; return bankApplyButton(); }
         const [m, c] = await Promise.all([
             db.from('memberships').select('role').eq('org_id', currentOrgId).eq('user_id', uid).maybeSingle(),
             db.from('bank_connections').select('id, bank_name, account_iban, valid_until, status, last_sync_at, last_error, psu_type, auto_apply').eq('org_id', currentOrgId).order('created_at', { ascending: false }).limit(1),
@@ -48,6 +48,7 @@ async function bankRefreshState() {
                 .eq('org_id', currentOrgId).in('match_status', ['new', 'needs_review']);
             bankState.counts.review = count || 0;
         }
+        bankState.fresh = true;
     } catch (e) {
         console.error('Банк: не удалось обновить состояние', e);
     }
@@ -55,12 +56,19 @@ async function bankRefreshState() {
 }
 
 function bankApplyButton() {
-    const show = !!bankState.conn && bankState.conn.status !== 'revoked' && ['owner', 'manager'].includes(bankState.role);
+    // До первого ответа сервера берём запомненное состояние, чтобы кнопка появлялась сразу
+    let show, n;
+    if (bankState.fresh) {
+        show = !!bankState.conn && bankState.conn.status !== 'revoked' && ['owner', 'manager'].includes(bankState.role);
+        n = bankState.counts.review;
+        try { localStorage.setItem('bank_ui_cache', JSON.stringify({ show, n })); } catch (e) { /* без хранилища */ }
+    } else {
+        try { const c = JSON.parse(localStorage.getItem('bank_ui_cache') || 'null'); show = !!(c && c.show); n = (c && c.n) || 0; } catch (e) { show = false; n = 0; }
+    }
     const pill = document.getElementById('ordersBankWrap');
     if (pill) pill.classList.toggle('hidden', !show);
     const badge = document.getElementById('ordersBankBadge');
     if (badge) {
-        const n = bankState.counts.review;
         badge.textContent = n > 99 ? '99+' : String(n);
         badge.classList.toggle('hidden', !(show && n > 0));
     }
@@ -570,3 +578,6 @@ async function bankDisconnect() {
     bankApplyButton();
     bankSettingsRender();
 }
+
+// Сразу показать кнопку по запомненному состоянию (до ответа сервера)
+try { bankApplyButton(); } catch (e) { /* DOM ещё не готов */ }

@@ -368,6 +368,7 @@ async function signOutAccount() {
     if (!(await showConfirm(t('signout_confirm')))) return;
     closeModal();
     try { await db.auth.signOut(); } catch (e) { console.error(e); }
+    try { localStorage.removeItem('bank_ui_cache'); } catch (e) {}
     localStorage.removeItem('currentEmployee');
     clearAppSnapshot();
     _instantRestoreDone = false;
