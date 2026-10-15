@@ -340,6 +340,10 @@ function renderRegistryDocActions() {
         }).join('');
     }
     if (d.deleted) html += `<div style="font-size:12px; color:#9a9488; margin-top:8px;">${escapeHtml(t('docs_order_deleted_hint'))}</div>`;
+    if (d.kind === 'cons' && d.cancelled) html += `<div style="font-size:12px; color:#9a9488; margin-top:8px;">${escapeHtml(t('docs_cons_cancelled_hint'))}</div>`;
+    if (d.kind === 'cons' && !d.cancelled && typeof hasPermission === 'function' && hasPermission('can_delete')) {
+        html += `<div style="text-align:center; margin-top:12px;"><span onclick="registryCancelConsInvoice()" style="color:#a3493d; font-size:13px; text-decoration:underline; cursor:pointer;">${escapeHtml(t('docs_cons_cancel'))}</span></div>`;
+    }
     box.innerHTML = html;
     box.classList.remove('hidden');
 }
@@ -370,4 +374,46 @@ function closeRegistryDocPreview() {
     renderRegistryDocActions();
     renderDocumentsSection();
     document.getElementById('documentsModal').style.display = 'flex';
+}
+
+// ---- Отмена сводного счёта ----
+// Счёт не удаляется, а помечается отменённым (cancelled_at, cancelled_by): номер больше не
+// используется, нумерация без дыр. Заказы освобождаются (consolidated_invoice_id = null) и могут
+// войти в новый сводный счёт. Оплаты остаются у заказов (подпись «по счёту … (отменён)»).
+// Письмо клиенту не отправляется. Право — как на удаление (can_delete).
+async function registryCancelConsInvoice() {
+    const d = _docsOpenEntry;
+    if (!d || d.kind !== 'cons' || d.cancelled) return;
+    if (typeof hasPermission === 'function' && !hasPermission('can_delete')) { showInfo(t('ing_no_delete_permission')); return; }
+    const n = orders.filter(o => o.consolidated_invoice_id === d.consId).length;
+    const text = t('docs_cons_cancel_confirm').replace(/\{number\}/g, d.number).replace('{n}', n);
+    const ok = await showConfirm(text, { ok: t('docs_cons_cancel_ok'), cancel: t('docs_cons_cancel_keep') });
+    if (!ok) return;
+    showLoading();
+    try {
+        suppressRealtimeFor3s();
+        const by = (typeof currentEmployee !== 'undefined' && currentEmployee) ? currentEmployee.id : null;
+        await updateChecked(db.from('consolidated_invoices')
+            .update({ cancelled_at: new Date().toISOString(), cancelled_by: by })
+            .eq('id', d.consId).eq('org_id', currentOrgId));
+        // Освобождаем заказы, включая удалённые в корзину (их в загруженном списке нет)
+        await dbMust(db.from('orders').update({ consolidated_invoice_id: null })
+            .eq('consolidated_invoice_id', d.consId).eq('org_id', currentOrgId));
+        const freed = orders.filter(o => o.consolidated_invoice_id === d.consId);
+        freed.forEach(o => { o.consolidated_invoice_id = null; });
+        if (typeof _consInvCancelled !== 'undefined') _consInvCancelled[d.consId] = true;
+        const desc = `${t('log_cons_cancelled')} ${d.number}`;
+        if (freed.length) freed.forEach(o => logActivity('order', desc, o.id));
+        else logActivity('order', desc, null);
+        if (typeof saveAppSnapshot === 'function') saveAppSnapshot();
+        if (typeof displayOrders === 'function') displayOrders();
+        await _docsLoad();
+        hideLoading();
+        closeRegistryDocPreview();
+        showInfo(t('docs_cons_cancel_done').replace('{number}', d.number));
+    } catch (e) {
+        console.error(e);
+        hideLoading();
+        showInfo(t('error_save_check_connection'));
+    }
 }

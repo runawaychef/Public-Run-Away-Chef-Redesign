@@ -131,7 +131,7 @@ function renderPayments() {
         const parts = [formatDateDMY(p.paid_at), formatMoney(p.amount), escapeHtml(p.method || '—')];
         if (emp) parts.push(escapeHtml(emp.name));
         html += `<div class="flex justify-between items-center bg-[#f4f1ea] hover:bg-[#e3e8df] active:bg-[#e3e8df] rounded-lg px-3 py-2.5 cursor-pointer" ${dataAction('openEditPaymentModal', [p.id])}>
-            <div class="min-w-0" style="font-size:13px;"><div class="font-medium text-gray-800 truncate">${parts.join(' · ')}${p.note ? ' · ' + escapeHtml(p.note) : ''}</div>${p.consolidated_invoice_id ? `<div style="font-size:12px; color:#4f6349;">${escapeHtml(t('pay_cons_tag').replace('{number}', _payConsNumber(p.consolidated_invoice_id)))}</div>` : ''}</div>
+            <div class="min-w-0" style="font-size:13px;"><div class="font-medium text-gray-800 truncate">${parts.join(' · ')}${p.note ? ' · ' + escapeHtml(p.note) : ''}</div>${p.consolidated_invoice_id ? `<div style="font-size:12px; color:#4f6349;">${escapeHtml(t(_consInvCancelled[p.consolidated_invoice_id] ? 'pay_cons_tag_cancelled' : 'pay_cons_tag').replace('{number}', _payConsNumber(p.consolidated_invoice_id)))}</div>` : ''}</div>
             <span class="action-icon icon-edit shrink-0 ml-2">${icon('edit', 'w-4 h-4')}</span>
         </div>`;
     });
@@ -309,14 +309,15 @@ let _payModal = null;        // { cons, mode: 'cons' | 'order', fillRemaining }
 let _payBatchDelete = null;  // { payment, rows } — выбор при удалении оплаты из пачки
 const _consInvNumbers = {};  // { consolidatedInvoiceId: 'INV-…' }
 const _consInvDates = {};    // { consolidatedInvoiceId: 'YYYY-MM-DD' } — дата выставления
+const _consInvCancelled = {}; // { consolidatedInvoiceId: true } — счёт отменён
 
 async function _payLoadConsNumbers(ids) {
     const need = ids.filter(id => !_consInvNumbers[id]);
     if (!need.length) return;
     try {
-        const { data, error } = await db.from('consolidated_invoices').select('id, number, issue_date').in('id', need);
+        const { data, error } = await db.from('consolidated_invoices').select('id, number, issue_date, cancelled_at').in('id', need);
         if (error) throw error;
-        (data || []).forEach(r => { _consInvNumbers[r.id] = _formatDocNumber('invoice', r.number) || ('#' + r.id); _consInvDates[r.id] = r.issue_date || null; });
+        (data || []).forEach(r => { _consInvNumbers[r.id] = _formatDocNumber('invoice', r.number) || ('#' + r.id); _consInvDates[r.id] = r.issue_date || null; if (r.cancelled_at) _consInvCancelled[r.id] = true; });
     } catch (e) {
         console.error('Не удалось загрузить номера сводных счетов:', e);
     }

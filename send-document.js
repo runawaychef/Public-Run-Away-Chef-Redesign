@@ -227,9 +227,9 @@ function _consPeriod(list) {
 async function _sendLoadConsolidated(order) {
     if (!order.consolidated_invoice_id) return null;
     const { data, error } = await db.from('consolidated_invoices')
-        .select('id, number, issue_date, due_date, snapshot').eq('id', order.consolidated_invoice_id).single();
+        .select('id, number, issue_date, due_date, snapshot, cancelled_at').eq('id', order.consolidated_invoice_id).single();
     if (error) throw error;
-    if (!data || !data.snapshot) return null;
+    if (!data || !data.snapshot || data.cancelled_at) return null;
     const snap = data.snapshot;
     const memberIds = (snap.consolidated.orders || []).map(o => o.id);
     // Текущий состав — заказы, которые сейчас числятся в счёте (удалённые в корзину сюда не попадают)

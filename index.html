@@ -1757,18 +1757,6 @@
             </div>
         </div>
 
-        <!-- Выбор типа документа: счёт или накладная -->
-        <div id="documentTypeModal" class="modal">
-            <div class="modal-content" style="max-width:340px;">
-                <h2 class="text-sm font-semibold mb-3 text-gray-800" data-i18n="orders_which_doc">Какой документ сформировать?</h2>
-                <div class="flex flex-col gap-2">
-                    <button onclick="openOrderDocumentPreview('invoice')" class="pill-btn-secondary" data-i18n="orders_doc_invoice">Счёт</button>
-                    <button onclick="openOrderDocumentPreview('delivery_note')" class="pill-btn-secondary" data-i18n="orders_doc_delivery_note">Накладная</button>
-                    <button onclick="closeModal()" class="pill-btn justify-center" data-i18n="settings_close">Закрыть</button>
-                </div>
-            </div>
-        </div>
-
         <!-- Предпросмотр счёта / накладной -->
         <div id="orderDocumentModal" class="modal">
             <div class="modal-content" style="max-width:520px;">
@@ -1780,7 +1768,6 @@
                 <div id="orderDocumentPreviewBanner" class="hidden text-xs mb-2" style="color:#3f5a38; background:#e4eadf; border-radius:8px; padding:8px 10px;" data-i18n="send_preview_banner">Предпросмотр. Номер присвоится при отправке, ничего не сохранено.</div>
                 <div id="orderDocumentContent" style="background:white;"></div>
                 <div id="docRegistryActions" class="hidden" style="margin-top:10px;"></div>
-                <button id="generateDeliveryNoteBtn" onclick="openOrderDocumentPreview('delivery_note', _docPreview && _docPreview.lang)" class="pill-btn-secondary w-full mt-2 justify-center" style="display:none;" data-i18n="inv_generate_delivery_note">Сформировать Delivery Note</button>
                 <div class="flex gap-2 mt-3">
                     <button id="sendOrderDocumentBtn" onclick="shareOrderDocumentPdf()" class="pill-btn flex-1 justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"/></svg><span data-i18n="contact_send">Отправить</span></button>
                     <button id="emailOrderDocumentBtn" onclick="closeModal(); openSendDocumentSheet(currentOrderId, _docPreview && _docPreview.docType)" class="pill-btn-secondary flex-1 justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg><span data-i18n="send_email_btn">Отправить на почту</span></button>
@@ -3205,7 +3192,7 @@
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=51"></script>
+    <script src="i18n-core.js?v=52"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=14"></script>
     <script src="auth.js?v=20"></script>
@@ -3221,10 +3208,10 @@
 <script src="customers.js?v=43"></script>
 <script src="calendar.js?v=9"></script>
 <script src="orders.js?v=129"></script>
-<script src="invoice.js?v=46"></script>
-<script src="send-document.js?v=23"></script>
-<script src="payments.js?v=22"></script>
-<script src="documents.js?v=6"></script>
+<script src="invoice.js?v=47"></script>
+<script src="send-document.js?v=24"></script>
+<script src="payments.js?v=23"></script>
+<script src="documents.js?v=7"></script>
 <script src="stats.js?v=22"></script>
 <script src="history.js?v=9"></script>
 <script src="modals.js?v=17"></script>

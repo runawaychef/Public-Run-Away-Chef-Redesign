@@ -42,42 +42,9 @@ function snapshotField(docType) {
     return docType === 'invoice' ? 'invoice_snapshot' : 'delivery_note_snapshot';
 }
 
-function openDocumentTypeModal() {
-    document.getElementById('documentTypeModal').style.display = 'flex';
-}
-
-// Шаг 1: заказ → свежий снимок (тот же номер, если уже был выписан ранее) → предпросмотр.
-// Снимок пересобирается заново при КАЖДОМ открытии — документ всегда отражает
-// актуальные данные заказа на момент просмотра, а не то, что было в момент
-// самого первого формирования (см. reuseNumber: номер при этом не меняется).
-async function openOrderDocumentPreview(docType, langOverride) {
-    closeModal();
-    if (typeof _setPreviewReadOnlyUi === 'function') _setPreviewReadOnlyUi(false, false);
-    const order = orders.find(o => o.id === currentOrderId);
-    if (!order) return;
-
-    showLoading(t('inv_generating_document'));
-    try {
-        // Проверяем номер НАПРЯМУЮ в базе (а не в локальном массиве orders в
-        // памяти приложения) — чтобы полностью исключить любую возможную
-        // рассинхронизацию между тем, что реально сохранено на сервере, и
-        // тем, что видит клиент в данный момент (устаревший кэш и т.п.).
-        const field = snapshotField(docType);
-        const { data: freshRow, error: freshErr } = await db.from('orders').select(field).eq('id', order.id).single();
-        if (freshErr) throw freshErr;
-        const existing = freshRow ? freshRow[field] : null;
-        const snapshot = await freezeDocumentSnapshot(order, docType, existing);
-        _docPreview = { docType, snapshot, lang: langOverride || currentLang };
-        renderDocumentPreviewThumbnail();
-        updateDocumentLangSwitcherUI();
-        document.getElementById('orderDocumentModal').style.display = 'flex';
-    } catch (e) {
-        console.error(e);
-        showInfo(t('inv_doc_error_prefix') + (e && e.message ? e.message : t('inv_unknown_error')));
-    } finally {
-        hideLoading();
-    }
-}
+// Старое окно выбора документа и openOrderDocumentPreview удалены 14.10.2026: тот путь
+// присваивал номер документа уже при просмотре. Сейчас номер — только при отправке
+// (форма «Документ», send-document.js).
 
 // Переключает язык ТЕКУЩЕГО открытого документа независимо от языка
 // интерфейса приложения — просто перерисовывает превью на новом языке,
@@ -616,8 +583,8 @@ function buildDocumentHtml(docType, snapshot, lang) {
         <div style="margin-top:18px;font-size:13px;color:#4b5563;">
             ${tDoc('inv_amount_in_words', lang)}: ${escapeHtml(amountWords)}
         </div>
-        ${cons ? `<div style="margin-top:14px;font-size:14px;color:#374151;line-height:1.6;">
-            ${_consDnLine(cons, lang) ? `<div>${escapeHtml(_consDnLine(cons, lang))}</div>` : ''}
+        ${(cons || docType === 'invoice') ? `<div style="margin-top:14px;font-size:14px;color:#374151;line-height:1.6;">
+            ${cons && _consDnLine(cons, lang) ? `<div>${escapeHtml(_consDnLine(cons, lang))}</div>` : ''}
             <div>${escapeHtml(tDoc('inv_payment_ref', lang).replace('{ref}', 'INV-' + number))}</div>
         </div>` : ''}
 
@@ -761,11 +728,11 @@ async function buildDocumentPdf(docType, snapshot, lang) {
     pdf.text(amountWordsSplit, marginX, y);
     y += 4.5 * amountWordsSplit.length;
 
-    // ---- Сводный счёт: список накладных и назначение платежа ----
-    if (cons) {
+    // ---- Счёт: назначение платежа (у сводного — ещё и список накладных) ----
+    if (cons || docType === 'invoice') {
         pdf.setFontSize(9.5); pdf.setFont('Roboto', 'normal'); pdf.setTextColor(...PDF_COLORS.textGray);
         y += 3;
-        if (_consDnLine(cons, lang)) {
+        if (cons && _consDnLine(cons, lang)) {
             const dnSplit = pdf.splitTextToSize(_consDnLine(cons, lang), pageW - marginX * 2);
             pdf.text(dnSplit, marginX, y);
             y += 4.5 * dnSplit.length;
