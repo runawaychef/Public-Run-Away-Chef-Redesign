@@ -179,13 +179,13 @@ function bankRender(loading) {
         html += bankCard('#d9a441', `<div style="font-size:13px; font-weight:700; color:#7a5a00;">${escapeHtml(left > 0 ? t('bank_expiring').replace('{n}', left) : t('bank_expired'))}</div>
             <button type="button" onclick="bankOpenSettings()" style="${_bk.btn1} margin-top:8px;">${escapeHtml(t('bank_reconfirm_now'))}</button>`);
     }
-    html += `<div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">${tabs}</div>`;
+    html += `<div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-top:8px;">${tabs}</div>`;
 
     if (loading) { box.innerHTML = html + `<p style="font-size:13px; color:#a29c8c; padding:12px 4px;">${escapeHtml(t('common_loading'))}</p>`; return; }
 
     const tab = bankState.tab;
     const hintTxt = tab === 'other' ? t('bank_other_hint') : tab === 'hidden' ? t('bank_hidden_hint') : tab === 'review' ? t('bank_review_hint') : '';
-    if (hintTxt) html += `<div style="font-size:12px; color:#6b675d; background:#f6f4ec; border-radius:10px; padding:7px 10px; margin:10px 0; line-height:1.45;">${escapeHtml(hintTxt)}</div>`;
+    if (hintTxt) html += `<div style="font-size:12px; color:#6b675d; background:#fff; border-radius:16px; box-shadow:0 1px 3px rgba(0,0,0,.08); padding:10px 12px; margin:10px 0; line-height:1.45;">${escapeHtml(hintTxt)}</div>`;
     else html += '<div style="height:10px;"></div>';
     if (!bankState.rows.length) {
         html += `<p style="font-size:13px; color:#a29c8c; padding:8px 4px;">${escapeHtml(t('bank_empty_' + tab))}</p>`;
