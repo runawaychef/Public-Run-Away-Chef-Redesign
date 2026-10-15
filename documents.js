@@ -121,7 +121,8 @@ async function openDocumentsSection(opts) {
     const custId = opts && opts.custId ? opts.custId : null;
     const today = getLocalDateStr(0);
     // Из карточки клиента — весь текущий год, иначе текущий месяц
-    _docsFilter = { type: 'all', custId, year: today.slice(0, 4), month: custId ? null : today.slice(5, 7), pay: '', q: '' };
+    // По умолчанию — счета (обычные и сводные вместе)
+    _docsFilter = { type: 'inv', custId, year: today.slice(0, 4), month: custId ? null : today.slice(5, 7), pay: '', q: '' };
     const q = document.getElementById('docsSearch');
     if (q) q.value = '';
     showLoading();
@@ -173,9 +174,8 @@ function _docsFiltered() {
     const f = _docsFilter;
     const q = _docsNorm(f.q);
     return _docsAll.filter(d => {
-        if (f.type === 'inv' && d.kind !== 'inv') return false;
+        if (f.type === 'inv' && d.kind === 'dn') return false; // «Счета» — обычные и сводные
         if (f.type === 'dn' && d.kind !== 'dn') return false;
-        if (f.type === 'cons' && d.kind !== 'cons') return false;
         if (f.custId && d.custId !== f.custId) return false;
         const date = String(d.date);
         if (f.year && date.slice(0, 4) !== f.year) return false;
@@ -220,7 +220,7 @@ function renderDocumentsSection() {
     if (!box) return;
     const f = _docsFilter;
 
-    const typeChips = [['all', t('docs_type_all')], ['inv', t('docs_type_inv')], ['dn', t('docs_type_dn')], ['cons', t('docs_type_cons')]]
+    const typeChips = [['all', t('docs_type_all')], ['inv', t('docs_type_inv')], ['dn', t('docs_type_dn')]]
         .map(([v, l]) => `<button type="button" onclick="setDocsFilter('type','${v}')" style="font-size:12px; border-radius:999px; padding:5px 10px; white-space:nowrap; ${f.type === v ? 'background:#7c9473; border:1px solid #7c9473; color:#fff; font-weight:700;' : 'background:#fff; border:1px solid #e3ddcc; color:#4f6349;'}">${escapeHtml(l)}</button>`).join('');
 
     const custIds = [...new Set(_docsAll.map(d => d.custId).filter(Boolean))];
