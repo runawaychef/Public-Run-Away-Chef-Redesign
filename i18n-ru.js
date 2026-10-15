@@ -878,6 +878,7 @@ I18N.ru = {
         send_cons_empty: 'В этом сводном счёте не осталось заказов — отправить его нельзя.',
         docs_title: 'Документы',
         docs_search_placeholder: 'Номер или клиент',
+        docs_opening: 'Открываем документ…',
         docs_search_year: 'Поиск по всему {year} году',
         docs_years_all: 'Все годы',
         docs_month_all: 'Весь год',

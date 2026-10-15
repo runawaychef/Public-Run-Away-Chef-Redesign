@@ -290,7 +290,7 @@ let _docsOpenEntry = null;
 async function openRegistryDoc(key) {
     const d = _docsAll.find(x => x.key === key);
     if (!d) return;
-    showLoading(t('inv_generating_document'));
+    showLoading(t('docs_opening'));
     try {
         let snapshot, consolidatedId = null;
         if (d.kind === 'cons') {
