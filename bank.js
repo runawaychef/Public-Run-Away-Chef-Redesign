@@ -57,13 +57,15 @@ async function bankRefreshState() {
 
 function bankApplyButton() {
     // До первого ответа сервера берём запомненное состояние, чтобы кнопка появлялась сразу
-    let show, n;
+    let show, n, until = null, owner = false;
     if (bankState.fresh) {
         show = !!bankState.conn && bankState.conn.status !== 'revoked' && ['owner', 'manager'].includes(bankState.role);
         n = bankState.counts.review;
-        try { localStorage.setItem('bank_ui_cache', JSON.stringify({ show, n })); } catch (e) { /* без хранилища */ }
+        until = show && bankState.conn.valid_until ? bankState.conn.valid_until : null;
+        owner = bankState.role === 'owner';
+        try { localStorage.setItem('bank_ui_cache', JSON.stringify({ show, n, until, owner })); } catch (e) { /* без хранилища */ }
     } else {
-        try { const c = JSON.parse(localStorage.getItem('bank_ui_cache') || 'null'); show = !!(c && c.show); n = (c && c.n) || 0; } catch (e) { show = false; n = 0; }
+        try { const c = JSON.parse(localStorage.getItem('bank_ui_cache') || 'null'); show = !!(c && c.show); n = (c && c.n) || 0; until = c && c.until || null; owner = !!(c && c.owner); } catch (e) { show = false; n = 0; }
     }
     const pill = document.getElementById('ordersBankWrap');
     if (pill) pill.classList.toggle('hidden', !show);
@@ -72,6 +74,32 @@ function bankApplyButton() {
         badge.textContent = n > 99 ? '99+' : String(n);
         badge.classList.toggle('hidden', !(show && n > 0));
     }
+    // Срок доступа: точка на кнопке и плашка на экране «Заказы» за 7 дней и меньше
+    const left = show && until ? Math.ceil((new Date(until).getTime() - Date.now()) / 86400000) : null;
+    const warn = left != null && left <= 7 && (bankState.fresh ? bankPlanOk() : true);
+    const dot = document.getElementById('ordersBankDot');
+    if (dot) { dot.classList.toggle('hidden', !warn); dot.style.background = left != null && left <= 0 ? '#c0654f' : '#d9a441'; }
+    bankRenderNotice(warn && !!bankState.fresh, left, owner); // текст нужен переводам: только после ответа сервера
+}
+function bankTodayKey() { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; }
+function bankRenderNotice(warn, left, owner) {
+    const box = document.getElementById('ordersBankNotice');
+    if (!box) return;
+    let hidden = false;
+    try { hidden = localStorage.getItem('bank_notice_hidden') === bankTodayKey(); } catch (e) { /* без хранилища */ }
+    if (!warn || hidden) { box.innerHTML = ''; return; }
+    const expired = left <= 0;
+    const msg = expired ? t('bank_notice_expired') : t('bank_expiring').replace('{n}', left);
+    const stripe = expired ? '#c0654f' : '#d9a441';
+    const action = owner
+        ? `<button type="button" onclick="openBankSettings()" style="${_bk.btn1} margin-top:8px;">${escapeHtml(t('bank_notice_extend'))}</button>`
+        : `<div style="font-size:12px; color:#6b675d; margin-top:2px;">${escapeHtml(t('bank_notice_ask_owner'))}</div>`;
+    box.innerHTML = bankCard(stripe, `<div style="display:flex; gap:8px; justify-content:space-between;"><div style="font-size:13px; font-weight:700; color:#3c3a34; line-height:1.35;">${escapeHtml(msg)}</div><button type="button" aria-label="×" onclick="bankHideNotice()" style="border:0; background:transparent; color:#a29c8c; font-size:18px; line-height:1; padding:0 2px;">×</button></div>${action}`, 8);
+}
+function bankHideNotice() {
+    try { localStorage.setItem('bank_notice_hidden', bankTodayKey()); } catch (e) { /* без хранилища */ }
+    const box = document.getElementById('ordersBankNotice');
+    if (box) box.innerHTML = '';
 }
 
 // ---------- раздел ----------
