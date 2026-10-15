@@ -8,6 +8,7 @@
 <!-- Служебная страница для обкатки подключения банка (Enable Banking). Не входит в приложение, после теста удалить. -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="supabaseClient.js?v=7"></script>
+<script src="money.js?v=11"></script>
 <style>
   body { font: 13px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 16px; background: #f7f5ef; color: #2d2d2d; }
   h1 { font-size: 16px; margin: 0 0 12px; }
@@ -63,6 +64,13 @@
   <div id="txInfo" class="muted"></div>
   <div id="tx"></div>
   <details id="rawBox" style="display:none"><summary class="muted">Сырые данные (2 записи)</summary><pre id="raw"></pre></details>
+</div>
+
+<div class="box">
+  <h2>4. Сверка сумм заказов (сервер и приложение)</h2>
+  <div class="muted">Сервер и приложение считают итог и оплаты каждого заказа независимо. Должно совпасть для всех.</div>
+  <button id="btnTotals">Сверить суммы</button>
+  <div id="totals"></div>
 </div>
 
 <script>
@@ -144,6 +152,63 @@ $('btnTx').onclick = async () => {
   }).join('') || '<div class="muted">Нет операций.</div>';
   $('raw').textContent = JSON.stringify(r.sample_raw, null, 2);
   $('rawBox').style.display = r.sample_raw && r.sample_raw.length ? '' : 'none';
+};
+
+// ---- Сверка сумм: приложение (money.js) против сервера (Edge Function) ----
+async function fetchAllRows(build) {
+  const out = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await build().range(from, from + 999);
+    if (error) throw error;
+    out.push(...(data || []));
+    if (!data || data.length < 1000) break;
+  }
+  return out;
+}
+
+$('btnTotals').onclick = async () => {
+  const box = $('totals');
+  box.textContent = 'Считаю на сервере…';
+  try {
+    const srv = await call({ action: 'totals' });
+    if (!srv.ok) return showErr(box, srv);
+
+    box.textContent = 'Считаю в приложении…';
+    const { data: mem, error: mErr } = await db.from('memberships')
+      .select('org_id, organizations(vat_rate)').single();
+    if (mErr) throw mErr;
+    const orgId = mem.org_id;
+    const vat = mem.organizations && mem.organizations.vat_rate != null ? Number(mem.organizations.vat_rate) : 0;
+    const [ords, items, pays] = await Promise.all([
+      fetchAllRows(() => db.from('orders').select('id, order_number, discount, vat_exempt').eq('org_id', orgId).is('deleted_at', null).order('id')),
+      fetchAllRows(() => db.from('order_items').select('id, order_id, quantity, price').eq('org_id', orgId).order('id')),
+      fetchAllRows(() => db.from('order_payments').select('order_id, amount').eq('org_id', orgId).order('id')),
+    ]);
+    const itemsBy = {}; items.forEach((i) => { (itemsBy[i.order_id] = itemsBy[i.order_id] || []).push(i); });
+    const paidBy = {}; pays.forEach((p) => { paidBy[p.order_id] = (paidBy[p.order_id] || 0) + Number(p.amount); });
+    const cli = {};
+    ords.forEach((o) => {
+      const t = calcTotals(itemsBy[o.id] || [], Number(o.discount || 0), !!o.vat_exempt, vat);
+      cli[o.id] = { g: Math.round(t.grand * 100), p: Math.round((paidBy[o.id] || 0) * 100), n: o.order_number };
+    });
+
+    let same = 0; const bad = [];
+    srv.rows.forEach((r) => {
+      const c = cli[r.id];
+      if (!c) { bad.push('заказ ' + r.id + ': нет в приложении'); return; }
+      if (c.g === r.g && c.p === r.p) same++;
+      else bad.push('заказ ' + (r.n || r.id) + ': сумма сервер ' + (r.g / 100).toFixed(2) + ' / приложение ' + (c.g / 100).toFixed(2) +
+        '; оплачено сервер ' + (r.p / 100).toFixed(2) + ' / приложение ' + (c.p / 100).toFixed(2));
+    });
+    Object.keys(cli).forEach((id) => { if (!srv.rows.find((r) => String(r.id) === id)) bad.push('заказ ' + id + ': нет на сервере'); });
+
+    box.innerHTML = '<div class="' + (bad.length ? 'err' : 'ok') + '"><b>' + (bad.length ? 'Есть расхождения' : 'Все суммы совпали') + '</b></div>' +
+      '<div>Заказов: сервер ' + srv.count + ', приложение ' + ords.length + '. Совпало: ' + same + '. Расхождений: ' + bad.length + '.</div>' +
+      '<div class="muted">Позиций: ' + srv.items + ' · оплат: ' + srv.payments + ' · ставка НДС: ' + srv.vat_rate + '</div>' +
+      (bad.length ? '<pre>' + esc(bad.slice(0, 15).join('\n')) + '</pre>' : '');
+  } catch (e) {
+    box.innerHTML = '<div class="err">Ошибка: ' + esc(e && e.message ? e.message : String(e)) + '</div>';
+  }
 };
 
 (async () => {
