@@ -12,7 +12,8 @@
 //             _formatSentDateTime (send-document.js), formatMoney, formatDateDMY, escapeHtml, t.
 
 let _docsAll = [];      // все документы организации (после загрузки)
-let _docsFilter = { type: 'all', custId: null, month: null, pay: '', q: '' };
+// year: 'YYYY' или null (все годы); month: 'MM' или null (весь год)
+let _docsFilter = { type: 'all', custId: null, year: null, month: null, pay: '', q: '' };
 
 const _DOCS_TYPE_STYLE = {
     inv:  'background:#e9eee5; color:#4f6349;',
@@ -118,7 +119,9 @@ async function _docsLoad() {
 // opts: { custId } — открыть сразу с фильтром по клиенту (тогда период — за всё время)
 async function openDocumentsSection(opts) {
     const custId = opts && opts.custId ? opts.custId : null;
-    _docsFilter = { type: 'all', custId, month: custId ? null : getLocalDateStr(0).slice(0, 7), pay: '', q: '' };
+    const today = getLocalDateStr(0);
+    // Из карточки клиента — весь текущий год, иначе текущий месяц
+    _docsFilter = { type: 'all', custId, year: today.slice(0, 4), month: custId ? null : today.slice(5, 7), pay: '', q: '' };
     const q = document.getElementById('docsSearch');
     if (q) q.value = '';
     showLoading();
@@ -143,7 +146,7 @@ function closeDocumentsSection() {
 
 function setDocsFilter(field, value) {
     if (field === 'custId') value = value ? Number(value) : null;
-    if (field === 'month') value = value || null;
+    if (field === 'month' || field === 'year') value = value || null;
     _docsFilter[field] = value;
     renderDocumentsSection();
 }
@@ -160,6 +163,12 @@ function _docsNorm(s) {
     return String(s || '').toLowerCase().replace(/[\s\-–—_.«»"'№#]/g, '');
 }
 
+// Название месяца в именительном падеже: «Октябрь»
+function _docsMonthName(mm) {
+    const name = new Date(2000, Number(mm) - 1, 1).toLocaleDateString(typeof currentLang !== 'undefined' ? currentLang : 'en', { month: 'long' });
+    return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
 function _docsFiltered() {
     const f = _docsFilter;
     const q = _docsNorm(f.q);
@@ -168,8 +177,10 @@ function _docsFiltered() {
         if (f.type === 'dn' && d.kind !== 'dn') return false;
         if (f.type === 'cons' && d.kind !== 'cons') return false;
         if (f.custId && d.custId !== f.custId) return false;
-        // Пока идёт поиск — по всем месяцам, иначе документ другого месяца не найти
-        if (f.month && !q && String(d.date).slice(0, 7) !== f.month) return false;
+        const date = String(d.date);
+        if (f.year && date.slice(0, 4) !== f.year) return false;
+        // Пока идёт поиск — по всему выбранному году (месяц не учитывается)
+        if (f.month && !q && date.slice(5, 7) !== f.month) return false;
         if (f.pay && d.pay !== f.pay) return false;
         if (q && !(_docsNorm(d.number).includes(q) || _docsNorm(d.custName).includes(q) || _docsNorm(d.orderNumber).includes(q))) return false;
         return true;
@@ -192,9 +203,12 @@ function renderDocumentsSection() {
     const custIds = [...new Set(_docsAll.map(d => d.custId).filter(Boolean))];
     const custOpts = [{ v: '', l: t('docs_customer_all') }].concat(
         custIds.map(id => ({ v: id, l: _docsCustName(id) })).sort((a, b) => a.l.localeCompare(b.l)));
-    const months = [...new Set(_docsAll.map(d => String(d.date).slice(0, 7)).filter(Boolean))].sort().reverse();
-    if (f.month && !months.includes(f.month)) months.unshift(f.month);
-    const monthOpts = [{ v: '', l: t('docs_period_all') }].concat(months.map(m => ({ v: m, l: _docsMonthLabel(m) })));
+    const years = [...new Set(_docsAll.map(d => String(d.date).slice(0, 4)).filter(y => /^\d{4}$/.test(y)))];
+    if (f.year && !years.includes(f.year)) years.push(f.year);
+    years.sort().reverse();
+    const yearOpts = years.map(y => ({ v: y, l: y })).concat([{ v: '', l: t('docs_years_all') }]);
+    const monthOpts = [{ v: '', l: t('docs_month_all') }].concat(
+        ['01','02','03','04','05','06','07','08','09','10','11','12'].map(m => ({ v: m, l: _docsMonthName(m) })));
     const payOpts = [{ v: '', l: t('docs_pay_all') }, { v: 'unpaid', l: t('pay_status_unpaid') }, { v: 'partial', l: t('pay_status_partial') }, { v: 'paid', l: t('pay_status_paid') }];
 
     const list = _docsFiltered();
@@ -236,11 +250,12 @@ function renderDocumentsSection() {
     box.innerHTML = `
         <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">${typeChips}</div>
         <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
-            ${_docsSelect('custId', f.custId || '', custOpts)}
+            ${_docsSelect('year', f.year || '', yearOpts)}
             ${_docsSelect('month', f.month || '', monthOpts)}
+            ${_docsSelect('custId', f.custId || '', custOpts)}
             ${_docsSelect('pay', f.pay || '', payOpts)}
         </div>
-        ${_docsNorm(f.q) && f.month ? `<div style="font-size:11px; color:#9a9488; margin-top:6px;">${escapeHtml(t('docs_search_all_months'))}</div>` : ''}
+        ${_docsNorm(f.q) && f.month && f.year ? `<div style="font-size:11px; color:#9a9488; margin-top:6px;">${escapeHtml(t('docs_search_year').replace('{year}', f.year))}</div>` : ''}
         ${summary}
         <div>${rows}</div>`;
 }
