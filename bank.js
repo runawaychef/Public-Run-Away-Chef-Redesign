@@ -27,7 +27,7 @@ async function bankCall(body) {
 
 function bankErrText(code) {
     const map = { PLAN_REQUIRED: 'bank_err_plan', FORBIDDEN: 'bank_err_forbidden', NO_AUTH: 'bank_err_forbidden',
-        ALREADY_APPLIED: 'bank_err_already', NOT_APPLIED: 'bank_err_already', OVER_REMAINING: 'bank_err_over', OVER_TX_AMOUNT: 'bank_err_over' };
+        ALREADY_APPLIED: 'bank_err_already', NO_MANUAL_PAYMENT: 'bank_err_nomanual', AMBIGUOUS: 'bank_err_nomanual', LINK_FAILED: 'bank_err_nomanual', NOT_APPLIED: 'bank_err_already', OVER_REMAINING: 'bank_err_over', OVER_TX_AMOUNT: 'bank_err_over' };
     return t(map[code] || 'bank_err_generic');
 }
 
@@ -233,13 +233,14 @@ function bankTagHtml(text, green) {
 }
 
 function bankRowCompact(r) {
-    let tagLine = '', actions = '', stripe = '#cfc9b8';
+    let tagLine = '', actions = '', stripe = '#cfc9b8', confirmBtn = '';
     if (bankState.tab === 'other') {
         tagLine = bankTagHtml(bankTag(r));
+        if (r.can_confirm) confirmBtn = `<button type="button" onclick="bankConfirmManual('${r.id}')" style="${_bk.btn1}">${escapeHtml(t('bank_btn_confirm_bank'))}</button>`;
         actions = `<button type="button" onclick="bankOpenSheet('${r.id}')" style="${_bk.btn2} margin-left:auto;">${escapeHtml(t('bank_btn_apply'))}</button><button type="button" onclick="bankHide('${r.id}')" style="${_bk.btn3}">${escapeHtml(t('bank_btn_hide'))}</button>`;
     } else if (bankState.tab === 'closed') {
         stripe = '#7c9473';
-        tagLine = bankTagHtml(r.status === 'auto_matched' ? t('bank_closed_auto') : t('bank_closed_you'), true);
+        tagLine = bankTagHtml(r.status === 'auto_matched' ? t('bank_closed_auto') : r.reason === 'confirmed_manual_payment' ? t('bank_closed_confirmed') : t('bank_closed_you'), true);
         actions = `<button type="button" onclick="bankUndo('${r.id}')" style="${_bk.danger} margin-left:auto;">${escapeHtml(t('bank_btn_undo'))}</button>`;
     } else {
         actions = `<button type="button" onclick="bankUnhide('${r.id}')" style="${_bk.btn2} margin-left:auto;">${escapeHtml(t('bank_btn_unhide'))}</button>`;
@@ -249,7 +250,8 @@ function bankRowCompact(r) {
     const sub = `${escapeHtml(formatDateDMY(r.date))} · ${bankState.tab === 'closed' ? closedTo : escapeHtml(rem)}`;
     return bankCard(stripe, `<div style="display:flex; justify-content:space-between; gap:8px;"><div style="font-size:13px; font-weight:700; color:#3c3a34; min-width:0; overflow-wrap:anywhere;">${escapeHtml(r.payer || '—')}</div><div style="font-size:14px; font-weight:700; color:#3c3a34; white-space:nowrap;">${formatMoney(r.amount)}</div></div>
         <div style="font-size:12px; color:#a29c8c; margin-top:1px; overflow-wrap:anywhere;">${sub}</div>
-        <div style="display:flex; align-items:center; margin-top:6px; gap:8px;">${tagLine || '<span></span>'}${actions}</div>`, 8);
+        ${confirmBtn ? `<div style="margin-top:6px;">${tagLine}</div><div style="display:flex; align-items:center; margin-top:8px; gap:8px;">${confirmBtn}${actions}</div>`
+            : `<div style="display:flex; align-items:center; margin-top:6px; gap:8px;">${tagLine || '<span></span>'}${actions}</div>`}`, 8);
 }
 
 // ---------- действия ----------
@@ -283,10 +285,18 @@ async function bankUnhide(txId) {
     await bankAfterChange(false);
 }
 
+async function bankConfirmManual(txId) {
+    showLoading();
+    const r = await bankCall({ action: 'confirm_manual', tx_id: txId });
+    hideLoading();
+    if (!r.ok) { await showInfo(bankErrText(r.error)); await bankAfterChange(false); return; }
+    await bankAfterChange(true);
+}
 async function bankUndo(txId) {
     const row = bankState.rows.find((x) => x.id === txId);
     if (!row) return;
-    const text = `${t('bank_undo_title')}\n\n${t('bank_undo_text').replace('{sum}', formatMoney(row.amount)).replace('{payer}', row.payer || '—')}`;
+    const c = row.reason === 'confirmed_manual_payment';
+    const text = `${t(c ? 'bank_undo_title_c' : 'bank_undo_title')}\n\n${t(c ? 'bank_undo_text_c' : 'bank_undo_text').replace('{sum}', formatMoney(row.amount)).replace('{payer}', row.payer || '—')}`;
     if (!(await showConfirm(text))) return;
     showLoading();
     const r = await bankCall({ action: 'undo', tx_id: txId });
