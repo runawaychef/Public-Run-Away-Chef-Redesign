@@ -543,7 +543,7 @@ I18N.lt = {
         common_create: 'Sukurti',
 
         // Ингредиенты — экран, карточка, история
-        ing_semifinished_link: 'Pusgaminiai →',
+        ing_semifinished_link: 'Pusgaminiai',
         common_nothing_found: 'Nieko nerasta',
         ing_price_per_unit: 'Kaina už vnt.',
         ing_back_to_stock: 'Atgal į sandėlį',
@@ -631,7 +631,7 @@ I18N.lt = {
         ing_inventarization_note: 'Inventorizacija',
 
         // Полуфабрикаты
-        sf_back_to_ingredients: 'Atgal į ingredientus',
+        sf_back_to_ingredients: 'Ingredientai',
         sf_recipe_warning: 'Kai kurių pusgaminių receptas nepatvirtintas. Atidarykite ir patikrinkite.',
         sf_back_to_sf: 'Atgal į pusgaminius',
         sf_delete_btn: 'Ištrinti pusgaminį',

@@ -543,7 +543,7 @@ I18N.uk = {
         common_create: 'Створити',
 
         // Ингредиенты — экран, карточка, история
-        ing_semifinished_link: 'Напівфабрикати →',
+        ing_semifinished_link: 'Напівфабрикати',
         common_nothing_found: 'Нічого не знайдено',
         ing_price_per_unit: 'Ціна за од.',
         ing_back_to_stock: 'Назад до складу',
@@ -631,7 +631,7 @@ I18N.uk = {
         ing_inventarization_note: 'Інвентаризація',
 
         // Полуфабрикаты
-        sf_back_to_ingredients: 'Назад до інгредієнтів',
+        sf_back_to_ingredients: 'Інгредієнти',
         sf_recipe_warning: 'У деяких напівфабрикатів не підтверджено рецепт. Відкрийте їх і перевірте.',
         sf_back_to_sf: 'Назад до напівфабрикатів',
         sf_delete_btn: 'Видалити напівфабрикат',

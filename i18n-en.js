@@ -557,7 +557,7 @@ I18N.en = {
         common_create: 'Create',
 
         // Ingredients — screen, card, history
-        ing_semifinished_link: 'Semi-finished Products →',
+        ing_semifinished_link: 'Semi-finished Products',
         common_nothing_found: 'Nothing found',
         ing_price_per_unit: 'Price per unit',
         ing_back_to_stock: 'Back to inventory',
@@ -645,7 +645,7 @@ I18N.en = {
         ing_inventarization_note: 'Inventory Count',
 
         // Semi-finished goods
-        sf_back_to_ingredients: 'Back to Ingredients',
+        sf_back_to_ingredients: 'Ingredients',
         sf_recipe_warning: 'Some semi-finished items have unconfirmed recipes. Open them and review them.',
         sf_back_to_sf: 'Back to Semi-finished Items',
         sf_delete_btn: 'Delete Semi-finished Item',

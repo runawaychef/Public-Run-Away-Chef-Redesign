@@ -556,7 +556,7 @@ I18N.ru = {
         common_create: 'Создать',
 
         // Ингредиенты — экран, карточка, история
-        ing_semifinished_link: 'Полуфабрикаты →',
+        ing_semifinished_link: 'Полуфабрикаты',
         common_nothing_found: 'Ничего не найдено',
         ing_price_per_unit: 'Цена за ед.',
         ing_back_to_stock: 'Назад к складу',
@@ -644,7 +644,7 @@ I18N.ru = {
         ing_inventarization_note: 'Инвентаризация',
 
         // Полуфабрикаты
-        sf_back_to_ingredients: 'Назад к ингредиентам',
+        sf_back_to_ingredients: 'Ингредиенты',
         sf_recipe_warning: 'У некоторых полуфабрикатов не подтверждён рецепт. Откройте их и проверьте.',
         sf_back_to_sf: 'Назад к полуфабрикатам',
         sf_delete_btn: 'Удалить полуфабрикат',
