@@ -255,6 +255,36 @@ function _consCandidates(order) {
         .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')) || (a.id - b.id));
 }
 
+// Отдельные счета заказов клиента ({ orderId: номер }). Номер хранится в снимке счёта,
+// а снимки в общий список заказов не грузятся — поэтому лёгкий запрос только номеров
+// (как в разделе «Документы»). Защита сводного счёта от двойного выставления (вариант Б):
+// заказ с отдельным счётом не отмечается по умолчанию; если по нему уже есть оплата —
+// включить его в сводный нельзя.
+async function _consLoadOwnInvoices(custId) {
+    const res = await fetchAllRows(() => db.from('orders')
+        .select('id, inv:invoice_snapshot->>number')
+        .eq('org_id', currentOrgId).eq('customer_id', custId)
+        .is('consolidated_invoice_id', null).is('deleted_at', null)
+        .not('invoice_snapshot', 'is', null)
+        .order('id'));
+    if (res.error) throw res.error;
+    const map = {};
+    (res.data || []).forEach(r => { if (r.inv) map[r.id] = r.inv; });
+    return map;
+}
+
+function _consOwnInv(id) {
+    const st = _sendSheetState;
+    return (st && st.consOwnInv && st.consOwnInv[id]) || null;
+}
+
+// Отдельный счёт уже оплачивается (есть хоть одна оплата) — в сводный такой заказ не берём.
+function _consOwnInvLocked(o) {
+    if (!o || o.id === _sendSheetState.orderId || !_consOwnInv(o.id)) return false;
+    const info = typeof getOrderPaymentStatus === 'function' ? getOrderPaymentStatus(o) : null;
+    return !!(info && info.paidAmt > 0.005);
+}
+
 function setSendInvKind(kind) {
     const st = _sendSheetState;
     if (!st || st.consExisting) return;
@@ -266,6 +296,7 @@ function setSendInvKind(kind) {
 function toggleConsOrder(id, on) {
     const st = _sendSheetState;
     if (!st || st.consExisting) return;
+    if (on && _consOwnInvLocked(orders.find(o => o.id === id))) return;
     const set = new Set(st.consSel);
     if (on) set.add(id); else if (id !== st.orderId) set.delete(id);
     st.consSel = [...set];
@@ -300,9 +331,12 @@ function _consBlockHtml(order) {
     const rowHtml = o => {
         const on = st.consSel.includes(o.id);
         const dn = o.delivery_note_sent_at ? ' ✓' : '';
-        return `<label style="display:flex; align-items:center; gap:8px; font-size:13px; color:#3c3a34; padding:3px 0; cursor:pointer;">
-            <input type="checkbox" ${on ? 'checked' : ''} ${o.id === st.orderId ? 'disabled' : ''} onchange="toggleConsOrder(${o.id}, this.checked)" style="accent-color:#7c9473; width:16px; height:16px;">
-            <span style="flex:1;">${escapeHtml(o.order_number ? '№' + o.order_number : '#' + o.id)} · ${formatDateDMY(o.date)}${dn}</span><span>${formatMoney(orderGrandTotal(o))}</span></label>`;
+        const own = o.id !== st.orderId ? _consOwnInv(o.id) : null;
+        const locked = _consOwnInvLocked(o);
+        const ownLine = own ? `<div style="margin:-2px 0 3px 24px; font-size:12px; color:#96712a;">${t(locked ? 'send_cons_own_inv_paid' : 'send_cons_own_inv').replace('{n}', escapeHtml(own))}</div>` : '';
+        return `<label style="display:flex; align-items:center; gap:8px; font-size:13px; color:${locked ? '#a29c8c' : '#3c3a34'}; padding:3px 0; cursor:${locked ? 'default' : 'pointer'};">
+            <input type="checkbox" ${on ? 'checked' : ''} ${(o.id === st.orderId || locked) ? 'disabled' : ''} onchange="toggleConsOrder(${o.id}, this.checked)" style="accent-color:#7c9473; width:16px; height:16px;">
+            <span style="flex:1;">${escapeHtml(o.order_number ? '№' + o.order_number : '#' + o.id)} · ${formatDateDMY(o.date)}${dn}</span><span>${formatMoney(orderGrandTotal(o))}</span></label>${ownLine}`;
     };
     // Заказы, помеченные «выставлено вне программы» (cons_excluded), сворачиваются в отдельную строку
     const isOld = o => o.cons_excluded && o.id !== st.orderId;
@@ -317,8 +351,10 @@ function _consBlockHtml(order) {
                 <span style="flex:1;">${t('send_cons_old').replace('{n}', oldList.length)}</span></div>
             ${open ? `<div style="padding-bottom:4px; color:#6b675d;">${oldList.map(rowHtml).join('')}</div>` : ''}</div>`;
     }
+    const dupSel = st.consSel.filter(id => id !== st.orderId && _consOwnInv(id));
+    const dupWarn = dupSel.length ? `<div style="margin-top:6px; font-size:12px; background:#f8efd9; color:#8a6a1f; border-radius:8px; padding:6px 8px;">${t('send_cons_own_inv_warn')}</div>` : '';
     return seg + `<div style="${box}"><div style="font-size:12px; color:#6b675d; margin-bottom:4px;">${t('send_cons_pick_orders')}</div>${rows}${oldHtml}
-        <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700; color:#3c3a34; border-top:1px solid #e5e0d0; margin-top:4px; padding-top:5px;"><span>${t('send_cons_total')} (${st.consSel.length})</span><span>${formatMoney(_consSelectedTotal())}</span></div></div>`;
+        <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700; color:#3c3a34; border-top:1px solid #e5e0d0; margin-top:4px; padding-top:5px;"><span>${t('send_cons_total')} (${st.consSel.length})</span><span>${formatMoney(_consSelectedTotal())}</span></div>${dupWarn}</div>`;
 }
 
 function _isConsInvoice() {
@@ -531,13 +567,17 @@ async function openSendDocumentSheet(orderId, docType) {
         via: (cust && cust.email) ? 'email' : 'share', checked,
         docs: _sendBuildDocInfo(order, row), bodyText: null, bodyEdited: false, extraCc: '',
         dates: { invoice: {}, delivery_note: {} },
-        consExisting, consCand: [], consSel: [], invKind: 'order',
+        consExisting, consCand: [], consSel: [], invKind: 'order', consOwnInv: {},
     };
     const stNew = _sendSheetState;
     if (!consExisting) {
         stNew.consCand = _consCandidates(order);
-        // По умолчанию — все ещё не включённые в счёт заказы клиента до даты этого заказа включительно
-        stNew.consSel = stNew.consCand.filter(o => o.id === orderId || (!o.cons_excluded && String(o.date || '') <= String(order.date || ''))).map(o => o.id);
+        if (stNew.consCand.length > 1 && order.customer_id) {
+            try { stNew.consOwnInv = await _consLoadOwnInvoices(order.customer_id); } catch (e) { console.error(e); }
+        }
+        // По умолчанию — все ещё не включённые в счёт заказы клиента до даты этого заказа включительно,
+        // кроме заказов, у которых уже есть отдельный счёт
+        stNew.consSel = stNew.consCand.filter(o => o.id === orderId || (!o.cons_excluded && !stNew.consOwnInv[o.id] && String(o.date || '') <= String(order.date || ''))).map(o => o.id);
         if (!stNew.consSel.includes(orderId) && stNew.consCand.some(o => o.id === orderId)) stNew.consSel.push(orderId);
         if (_custUsesConsolidated(order) && stNew.consCand.length && !stNew.docs.invoice.issued) stNew.invKind = 'cons';
         if (!stNew.consCand.some(o => o.id === orderId)) stNew.consCand = []; // сам заказ не может быть в сводном (не подтверждён и т.п.)
