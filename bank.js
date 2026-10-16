@@ -48,6 +48,14 @@ async function bankRefreshState() {
             const { count } = await db.from('bank_transactions').select('id', { count: 'exact', head: true })
                 .eq('org_id', currentOrgId).in('match_status', ['new', 'needs_review']);
             bankState.counts.review = count || 0;
+            // Автозачтённые поступления — для значка «банк + молния» на плашках оплаты (16.10)
+            const autoRes = await fetchAllRows(() => db.from('bank_transactions').select('id')
+                .eq('org_id', currentOrgId).eq('match_status', 'auto_matched').order('id'));
+            if (!autoRes.error && typeof _bankAutoTxIds !== 'undefined') {
+                const before = _bankAutoTxIds.size;
+                _bankAutoTxIds = new Set((autoRes.data || []).map(r => r.id));
+                if ((before || _bankAutoTxIds.size) && typeof displayOrders === 'function') displayOrders();
+            }
         }
         bankState.fresh = true;
         try {

@@ -776,6 +776,8 @@
             transition: all 0.15s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.12);
         }
         .pay-pill:active { transform: scale(0.96); opacity: 0.88; }
+        .pp-auto { display: inline-flex; align-items: center; margin-right: 4px; }
+        .pp-auto svg + svg { margin-left: -2px; }
         .oc-chev { flex: 1; align-self: stretch; display: flex; align-items: center; justify-content: center; min-height: 34px; background: none; border: none; cursor: pointer; padding: 0; }
         .oc-chev svg { width: 16px; height: 16px; color: #a6a196; transition: transform 0.2s ease; }
         .order-card.expanded .oc-chev svg { transform: rotate(180deg); }
@@ -1971,6 +1973,7 @@
                         </div>
                     </div>
                     <div id="paymentConsLine" class="hidden" style="font-size:12px; color:#4f6349; margin-top:8px;"></div>
+                    <div id="paymentLastLine" class="hidden" style="font-size:12px; color:#6b675d; margin-top:8px; line-height:1.6;"></div>
                     <button onclick="openAddPaymentModal(true)" class="pill-btn w-full justify-center" style="margin-top:10px; padding:8px 12px;" data-i18n="pay_add_btn">+ Внести оплату</button>
                 </div>
 
@@ -3183,7 +3186,7 @@
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=68"></script>
+    <script src="i18n-core.js?v=69"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=14"></script>
     <script src="auth.js?v=21"></script>
@@ -3198,12 +3201,12 @@
 <script src="products.js?v=34"></script>
 <script src="customers.js?v=45"></script>
 <script src="calendar.js?v=9"></script>
-<script src="orders.js?v=129"></script>
+<script src="orders.js?v=130"></script>
 <script src="invoice.js?v=47"></script>
 <script src="send-document.js?v=27"></script>
-<script src="payments.js?v=24"></script>
+<script src="payments.js?v=25"></script>
 <script src="documents.js?v=8"></script>
-<script src="bank.js?v=9"></script>
+<script src="bank.js?v=10"></script>
 <script src="stats.js?v=22"></script>
 <script src="history.js?v=9"></script>
 <script src="modals.js?v=17"></script>
@@ -3309,7 +3312,7 @@ async function loadAllData(silent) {
             fetchAllRows(() => db.from('product_ingredients').select('id, product_id, ingredient_id, semi_finished_id, quantity').eq('org_id', currentOrgId).order('id')),
             fetchAllRows(() => db.from('semi_finished').select('id, name, batch_size, unit, other_costs, recipe_confirmed, track_stock').eq('org_id', currentOrgId).order('name').order('id')),
             fetchAllRows(() => db.from('semi_finished_ingredients').select('id, semi_finished_id, ingredient_id, quantity, is_primary').eq('org_id', currentOrgId).order('id')),
-            fetchAllRows(() => db.from('order_payments').select('order_id, amount').eq('org_id', currentOrgId).order('id'))
+            fetchAllRows(() => db.from('order_payments').select('order_id, amount, bank_transaction_id').eq('org_id', currentOrgId).order('id'))
         ]);
         if (pRes.error) throw pRes.error;
         if (cRes.error) throw cRes.error;
@@ -3324,8 +3327,10 @@ async function loadAllData(silent) {
 
         // Суммы платежей по каждому заказу — для отметки статуса оплаты в списке
         _orderPaidTotals = {};
+        _orderBankTx = {};
         (opRes.data || []).forEach(p => {
             _orderPaidTotals[p.order_id] = (_orderPaidTotals[p.order_id] || 0) + Number(p.amount);
+            if (p.bank_transaction_id) (_orderBankTx[p.order_id] = _orderBankTx[p.order_id] || []).push(p.bank_transaction_id);
         });
 
         ingredients = (ingRes.data || []).map(i => ({ id: i.id, name: i.name, package_price: Number(i.package_price), package_size: Number(i.package_size), unit: i.unit }));

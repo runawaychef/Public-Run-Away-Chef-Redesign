@@ -105,7 +105,7 @@ function displayOrders() {
             : payInfo.status === 'paid' ? t('pay_status_paid')
             : payInfo.status === 'partial' ? t('pay_status_partial')
             : t('pay_status_unpaid');
-        const payPillHtml = `<button type="button" class="pay-pill" data-pay="${payKey}" style="background:${getPaymentStripeColor(payInfo)};" onclick="event.stopPropagation(); quickPayPillTap(${order.id}, ${payInfo.status === 'paid' ? 'true' : 'false'})">${payLabel}</button>`;
+        const payPillHtml = `<button type="button" class="pay-pill" data-pay="${payKey}" style="background:${getPaymentStripeColor(payInfo)};" onclick="event.stopPropagation(); quickPayPillTap(${order.id}, ${payInfo.status === 'paid' ? 'true' : 'false'})">${orderHasAutoBankPay(order.id) ? payAutoBankIconHtml(11) : ''}${payLabel}</button>`;
         return `<div class="ot-row" onclick="openOrderDetail(${order.id})">
             <span class="ot-date">${formatDateDMY(order.date)}</span>
             <span class="ot-cust">${escapeHtml(order.customer || t('orders_no_customer'))}</span>
@@ -530,7 +530,7 @@ function renderDoneOrderCard(order) {
         : payInfo.status === 'paid' ? t('pay_status_paid')
         : payInfo.status === 'partial' ? t('pay_status_partial')
         : t('pay_status_unpaid');
-    const payPill = `<button type="button" class="pay-pill" data-pay="${payKey}" style="background:${stripeColor};" onclick="event.stopPropagation(); quickPayPillTap(${order.id}, ${payInfo.status === 'paid' ? 'true' : 'false'})">${payPillLabel}</button>`;
+    const payPill = `<button type="button" class="pay-pill" data-pay="${payKey}" style="background:${stripeColor};" onclick="event.stopPropagation(); quickPayPillTap(${order.id}, ${payInfo.status === 'paid' ? 'true' : 'false'})">${orderHasAutoBankPay(order.id) ? payAutoBankIconHtml(12) : ''}${payPillLabel}</button>`;
 
     // Свайп-действия — "Копировать" в правой панели (кроме "Удалить" — заказ
     // уже выполнен, удалять из свайпа этого экрана не даём, только из полной

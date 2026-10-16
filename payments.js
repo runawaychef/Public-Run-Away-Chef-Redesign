@@ -7,6 +7,26 @@
 
 let _orderPayments = [];
 let _orderPaidTotals = {}; // { orderId: сумма всех платежей } — для отметки статуса оплаты в списке заказов
+// Источник оплаты (16.10): значок «банк + молния» на плашке оплаты — только если оплату зачла
+// программа АВТОМАТИЧЕСКИ (bank_transactions.match_status = 'auto_matched').
+let _orderBankTx = {};          // { orderId: [bank_transaction_id, …] } — из загрузки всех оплат при запуске
+let _bankAutoTxIds = new Set(); // id автозачтённых поступлений (грузит bank.js, только менеджерам с подключённым банком)
+let _payTxStatus = {};          // { bank_transaction_id: match_status } — для оплат открытого заказа
+
+function orderHasAutoBankPay(orderId) {
+    const ids = _orderBankTx[orderId];
+    return !!(ids && ids.some(id => _bankAutoTxIds.has(id)));
+}
+// Значок «банк + молния» (автозачёт банком)
+function payAutoBankIconHtml(size) {
+    const s = size || 12;
+    return `<span class="pp-auto" title="${escapeHtml(t('bank_tag_auto'))}"><svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-6 9 6"/><path d="M5 10v8M9.7 10v8M14.3 10v8M19 10v8"/><path d="M3 20h18"/></svg><svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 3L5 14h6l-1 7 8-11h-6z"/></svg></span>`;
+}
+// Подпись источника банковской оплаты: «банк · авто» / «банк · вручную» (статус неизвестен — «из банка»)
+function payBankSourceLabel(p) {
+    const st = _payTxStatus[p.bank_transaction_id];
+    return t(st === 'auto_matched' ? 'bank_tag_auto' : st ? 'bank_tag_manual' : 'bank_from_bank');
+}
 
 async function loadOrderPayments(orderId) {
     const banner = document.getElementById('detailConsBanner');
@@ -24,6 +44,17 @@ async function loadOrderPayments(orderId) {
         }
         if (res.error) throw res.error;
         _orderPayments = res.data || [];
+        // Статусы поступлений банка для оплат этого заказа (авто / вручную). Читать их может
+        // только менеджер (RLS) — у остальных подпись останется «из банка».
+        const txIds = [...new Set(_orderPayments.map(p => p.bank_transaction_id).filter(Boolean))];
+        _orderBankTx[orderId] = txIds;
+        if (txIds.length) {
+            const { data: txs, error: txErr } = await db.from('bank_transactions').select('id, match_status').in('id', txIds);
+            if (!txErr) (txs || []).forEach(x => {
+                _payTxStatus[x.id] = x.match_status;
+                if (x.match_status === 'auto_matched') _bankAutoTxIds.add(x.id); else _bankAutoTxIds.delete(x.id);
+            });
+        }
     } catch (e) {
         console.error('Ошибка загрузки платежей:', e);
         _orderPayments = [];
@@ -76,6 +107,7 @@ function renderPayments() {
 
     _renderPaymentTiles(paidCents, totalCents);
     _renderPaymentConsLine();
+    _renderPaymentLastLine();
 
     const overpaidRow = document.getElementById('paymentOverpaidRow');
     if (overpaidRow) {
@@ -139,7 +171,7 @@ function renderPayments() {
         html += `<div class="flex justify-between items-center bg-[#f4f1ea] hover:bg-[#e3e8df] active:bg-[#e3e8df] rounded-lg px-3 py-2.5 cursor-pointer" ${dataAction('openEditPaymentModal', [p.id])}>
             <div class="min-w-0" style="font-size:13px;"><div class="font-medium text-gray-800 truncate">${parts.join(' · ')}${p.note ? ' · ' + escapeHtml(p.note) : ''}</div>${p.consolidated_invoice_id ? `<div style="font-size:12px; color:#4f6349;">${escapeHtml(t(_consInvCancelled[p.consolidated_invoice_id] ? 'pay_cons_tag_cancelled' : 'pay_cons_tag').replace('{number}', _payConsNumber(p.consolidated_invoice_id)))}</div>` : ''}</div>
             ${p.bank_transaction_id
-                ? `<span class="shrink-0 ml-2" style="font-size:11px; background:#eef2ea; color:#4f6349; border-radius:6px; padding:2px 7px; white-space:nowrap;">${escapeHtml(t('bank_from_bank'))}</span>`
+                ? `<span class="shrink-0 ml-2" style="font-size:11px; background:#eef2ea; color:#4f6349; border-radius:6px; padding:2px 7px; white-space:nowrap; display:inline-flex; align-items:center; gap:3px;">${_payTxStatus[p.bank_transaction_id] === 'auto_matched' ? payAutoBankIconHtml(11) : ''}${escapeHtml(payBankSourceLabel(p))}</span>`
                 : `<span class="action-icon icon-edit shrink-0 ml-2">${icon('edit', 'w-4 h-4')}</span>`}
         </div>`;
     });
@@ -399,6 +431,26 @@ function _renderPaymentTiles(paidCents, totalCents) {
     }
     const hist = document.getElementById('paymentHistoryLink');
     if (hist) hist.textContent = t('pay_history').replace('{n}', _orderPayments.length);
+}
+
+// Строка «Последняя оплата: дата · способ · источник» в блоке «Оплата» заказа (16.10)
+function _renderPaymentLastLine() {
+    const el = document.getElementById('paymentLastLine');
+    if (!el) return;
+    const p = _orderPayments[0]; // список отсортирован по дате оплаты, новые сверху
+    if (!p) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+    let src = '';
+    if (p.bank_transaction_id) {
+        const auto = _payTxStatus[p.bank_transaction_id] === 'auto_matched';
+        src = ` · <span style="display:inline-flex; align-items:center; gap:3px; background:#eef2ea; color:#4f6349; border-radius:6px; padding:1px 6px;">${auto ? payAutoBankIconHtml(11) : ''}${escapeHtml(payBankSourceLabel(p))}</span>`;
+    } else {
+        const emp = employees.find(e => e.id === p.created_by);
+        if (emp) src = ' · ' + escapeHtml(emp.name);
+    }
+    const d = String(p.paid_at || '').slice(0, 10);
+    const dateShort = d ? d.slice(8, 10) + '.' + d.slice(5, 7) : '';
+    el.innerHTML = escapeHtml(t('pay_last_line').replace('{date}', dateShort).replace('{method}', p.method || '—')) + src;
+    el.classList.remove('hidden');
 }
 
 // Строка «Входит в счёт INV-… · оплачено X из Y» в блоке заказа
