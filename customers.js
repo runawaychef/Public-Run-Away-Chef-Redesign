@@ -91,8 +91,9 @@ function renderCustomerCards() {
         const orderCnt = orders.filter(o => o.customer_id != null ? o.customer_id === c.id : o.customer === c.name).length;
         const tagList = [];
         if (c.entity_type === 'company' || c.entity_type === 'individual') tagList.push(`<span class="oc-tag">${t(c.entity_type === 'company' ? 'cust_tag_company' : 'cust_tag_individual')}</span>`);
-        if (Number(c.discount) > 0) tagList.push(`<span class="oc-tag">${t('cust_tag_discount').replace('{n}', Number(c.discount))}</span>`);
+        // Порядок меток (16.10): постоянные признаки (тип, НДС) → условия (скидка) → тревожные (красные) в конце
         if (c.vat_exempt) tagList.push(`<span class="oc-tag">${t('cust_tag_no_vat')}</span>`);
+        if (Number(c.discount) > 0) tagList.push(`<span class="oc-tag">${t('cust_tag_discount').replace('{n}', Number(c.discount))}</span>`);
         if (unpaidCnt > 0) tagList.push(`<button type="button" class="oc-tag oc-tag-red" onclick="event.stopPropagation(); openCustomerUnpaidModal(${c.id})">${unpaidOrdersLabel(unpaidCnt)}</button>`);
         html += `
         <div class="order-card" data-name="${escapeHtml((c.name || '').toLowerCase())}" style="cursor:pointer;" onclick="openCustomerDetail(${c.id})">
