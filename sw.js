@@ -1,4 +1,4 @@
-const CACHE_NAME = 'runwaychef-public-cache-v562';
+const CACHE_NAME = 'runwaychef-public-cache-v563';
 const ASSETS = [
   './index.html',
   './i18n-core.js',
@@ -53,8 +53,16 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
+  // Каждый файл кэшируем отдельно: если одного файла нет на сервере (404),
+  // установка новой версии НЕ срывается. Раньше cache.addAll падал целиком —
+  // с 15.10 (нет notification-badge-96.png) новая версия не устанавливалась,
+  // плашка «Обновить» не появлялась, а старый воркер отдавал старые файлы (16.10).
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then((cache) =>
+      Promise.allSettled(ASSETS.map((url) =>
+        cache.add(url).catch((err) => console.warn('[sw] не закэширован', url, err))
+      ))
+    )
   );
   // Больше не переключаемся на новую версию автоматически —
   // ждём явной команды от пользователя (кнопка "Обновить" в приложении)
