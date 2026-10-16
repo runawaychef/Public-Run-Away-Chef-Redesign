@@ -76,6 +76,23 @@ function stockForecastOn() {
     return typeof hasPlanFeature === 'function' && hasPlanFeature('cost_analytics');
 }
 
+// Разделители групп на Складе (16.10): «Требует внимания» (красные/жёлтые карточки,
+// у полуфабрикатов — и неподтверждённый рецепт) и «Всё в порядке». Показываются, только
+// когда есть обе группы; при поиске прячутся (filter*List). Стиль — как в «Заказах».
+function stockGroupsHtml(attn, ok) {
+    if (!attn.length || !ok.length) return attn.join('') + ok.join('');
+    const div = (label, svg) => `<div class="oc-section-divider stock-divider"><span class="label">${svg}${label}</span></div>`;
+    return div(t('stock_group_attention'), '<svg viewBox="0 0 24 24" fill="none" stroke="#c0685c" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>')
+        + attn.join('')
+        + div(t('stock_group_ok'), '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>')
+        + ok.join('');
+}
+
+// Скрыть/показать разделители групп (при поиске — скрыты)
+function toggleStockDividers(bodyId, hide) {
+    document.querySelectorAll('#' + bodyId + ' .stock-divider').forEach(d => { d.style.display = hide ? 'none' : ''; });
+}
+
 // Цена на карточке склада: 2 знака после запятой. Для г и мл пересчитываем
 // в цену за кг / л (цена за 1 г вроде 0.0040 € при 2 знаках стала бы 0.00).
 function stockPriceText(unitPrice, unit) {
@@ -121,7 +138,7 @@ function renderIngredientCards() {
 
     const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
 
-    let html = '';
+    const htmlAttn = [], htmlOk = [];
     ingredients.forEach((ing, realIdx) => {
         const unitPrice = ingredientUnitPrice(ing);
         const unitLabel = unitAbbrev(ing.unit);
@@ -145,7 +162,7 @@ function renderIngredientCards() {
         const priceText = stockPriceText(unitPrice, ing.unit);
         const stripe = accentColor ? `<div class="stripe" style="background:${accentColor};"></div>` : '';
 
-        html += `
+        (accentColor ? htmlAttn : htmlOk).push(`
         <div class="oc-swipe-wrap" data-name="${escapeHtml((ing.name || '').toLowerCase())}" data-critical="${accentColor ? '1' : '0'}" style="--oc-swipe-x:-72px;">
             ${refCopySwipeBtnHtml(`quickCopyIngredientFromSwipe(${realIdx})`)}
             <div class="order-card" style="cursor:pointer;" onclick="openIngredientDetail(${ing.id})">
@@ -158,9 +175,9 @@ function renderIngredientCards() {
                     ${stockCardCellsHtml({ beforeText, afterText, afterColor, thirdLabel: thirdLabel, thirdText: thirdText, thirdColor: afterColor })}
                 </div>
             </div>
-        </div>`;
+        </div>`);
     });
-    body.innerHTML = html;
+    body.innerHTML = stockGroupsHtml(htmlAttn, htmlOk);
     initCopySwipeDelegation('ingredientCardsBody');
 }
 
@@ -183,6 +200,7 @@ function filterIngredientsList() {
         if (match) visibleCards++;
     });
     document.getElementById('ingredientCardsEmpty')?.classList.toggle('hidden', visibleCards !== 0);
+    toggleStockDividers('ingredientCardsBody', !!q);
 
 }
 

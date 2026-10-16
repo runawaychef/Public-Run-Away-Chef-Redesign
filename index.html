@@ -693,6 +693,14 @@
         }
         .filter-dropdown.hidden { display: none; }
 
+        /* ── Склад: верхняя строка (16.10) — «?» слева, справа вкладки и круглая кнопка инвентаризации ── */
+        .stock-toprow { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin: 2px 0 10px; }
+        .stock-toprow-right { display: flex; align-items: center; gap: 6px; }
+        .stock-tab { padding: 0 12px; height: 30px; border-radius: 999px; font-size: 12.5px; color: #9a9488; border: none; background: none; cursor: pointer; white-space: nowrap; transition: all 0.15s ease; }
+        .stock-tab.active { background: #7c9473; color: #fff; font-weight: 600; }
+        .stock-inv-btn { color: #7c9473; }
+        .stock-inv-btn svg { width: 19px; height: 19px; }
+        #ingredientCardsBody .stock-divider:first-child, #semiFinishedCardsBody .stock-divider:first-child { margin-top: 4px; }
         /* ── Разделитель секций "Заказы в работе" / "Принятые" / "Выполненные" ── */
         .oc-section-divider {
             display: flex; align-items: center; gap: 10px; margin: 26px 2px 14px;
@@ -1265,22 +1273,25 @@
         <!-- ===== ИНГРЕДИЕНТЫ ===== -->
         <div id="ingredients" class="tab-content hidden">
             <div id="ingredientsList">
-                <div class="p-2 rounded-xl shadow-md" style="background:#f4f1ea;">
-                    <div class="flex items-center justify-between mb-2">
-                        <button type="button" onclick="showHelpModal('help_stock_cards_title','help_stock_cards_text')" class="help-marker" data-i18n-title="help_marker_label" title="Подробнее об этом разделе">?</button>
-                        <div class="flex gap-2">
-                            <button onclick="openInventarizationModal()" class="pill-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg><span data-i18n="inv_inventarization">Инвентаризация</span></button>
-                            <button onclick="showTab('semiFinished')" class="pill-btn-secondary" data-i18n="ing_semifinished_link">Полуфабрикаты</button>
+                <div class="stock-toprow">
+                    <button type="button" onclick="showHelpModal('help_stock_cards_title','help_stock_cards_text')" class="help-marker" data-i18n-title="help_marker_label" title="Подробнее об этом разделе" style="margin-left:0;">?</button>
+                    <div class="stock-toprow-right">
+                        <div class="view-toggle-pill">
+                            <button type="button" class="stock-tab active" onclick="showTab('ingredients')" data-i18n="sf_back_to_ingredients">Ингредиенты</button>
+                            <button type="button" class="stock-tab " onclick="showTab('semiFinished')" data-i18n="ing_semifinished_link">Полуфабрикаты</button>
+                        </div>
+                        <div class="view-toggle-pill">
+                            <button type="button" class="view-toggle-btn stock-inv-btn" onclick="openInventarizationModal()" title="Инвентаризация" data-i18n-title="inv_inventarization" aria-label="Инвентаризация"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5l1.5 1.5l2.5-2.5"/><path d="M3.5 11.5l1.5 1.5l2.5-2.5"/><path d="M3.5 17.5l1.5 1.5l2.5-2.5"/><path d="M11 6h9M11 12h9M11 18h9"/></svg></button>
                         </div>
                     </div>
-
-                    <!-- Карточный вид (по умолчанию) -->
-                    <div id="ingredientCardsWrap">
-                        <div id="ingredientCardsBody"></div>
-                        <p id="ingredientCardsEmpty" class="text-xs text-gray-400 text-center py-4 hidden" data-i18n="common_nothing_found">Ничего не найдено</p>
-                    </div>
-
                 </div>
+
+                <!-- Карточный вид (по умолчанию) -->
+                <div id="ingredientCardsWrap">
+                    <div id="ingredientCardsBody"></div>
+                    <p id="ingredientCardsEmpty" class="text-xs text-gray-400 text-center py-4 hidden" data-i18n="common_nothing_found">Ничего не найдено</p>
+                </div>
+
             </div>
 
             <!-- Карточка ингредиента -->
@@ -1401,23 +1412,25 @@
         <!-- ===== ПОЛУФАБРИКАТЫ ===== -->
         <div id="semiFinished" class="tab-content hidden">
             <div id="semiFinishedList">
-                <div class="p-2 rounded-xl shadow-md" style="background:#f4f1ea;">
-                    <div class="flex items-center justify-between mb-2">
-                        <button type="button" onclick="showHelpModal('help_stock_cards_title','help_stock_cards_text')" class="help-marker" data-i18n-title="help_marker_label" title="Подробнее об этом разделе">?</button>
-                        <div class="flex gap-2">
-                            <button onclick="openSfInventarizationModal()" class="pill-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg><span data-i18n="inv_inventarization">Инвентаризация</span></button>
-                            <button onclick="showTab('ingredients')" class="pill-btn-secondary" data-i18n="sf_back_to_ingredients">Ингредиенты</button>
+                <div class="stock-toprow">
+                    <button type="button" onclick="showHelpModal('help_stock_cards_title','help_stock_cards_text')" class="help-marker" data-i18n-title="help_marker_label" title="Подробнее об этом разделе" style="margin-left:0;">?</button>
+                    <div class="stock-toprow-right">
+                        <div class="view-toggle-pill">
+                            <button type="button" class="stock-tab " onclick="showTab('ingredients')" data-i18n="sf_back_to_ingredients">Ингредиенты</button>
+                            <button type="button" class="stock-tab active" onclick="showTab('semiFinished')" data-i18n="ing_semifinished_link">Полуфабрикаты</button>
+                        </div>
+                        <div class="view-toggle-pill">
+                            <button type="button" class="view-toggle-btn stock-inv-btn" onclick="openSfInventarizationModal()" title="Инвентаризация" data-i18n-title="inv_inventarization" aria-label="Инвентаризация"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5l1.5 1.5l2.5-2.5"/><path d="M3.5 11.5l1.5 1.5l2.5-2.5"/><path d="M3.5 17.5l1.5 1.5l2.5-2.5"/><path d="M11 6h9M11 12h9M11 18h9"/></svg></button>
                         </div>
                     </div>
-                    <p id="semiFinishedRecipeWarning" class="text-xs mb-2 hidden" style="color:#a3493d; background:#f3ded9; border:1px solid #e8c4bb; border-radius:12px; padding:6px;"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg><span data-i18n="sf_recipe_warning">У некоторых полуфабрикатов не подтверждён рецепт. Откройте их и проверьте.</span></p>
-
-                    <!-- Карточный вид (по умолчанию) -->
-                    <div id="semiFinishedCardsWrap">
-                        <div id="semiFinishedCardsBody"></div>
-                        <p id="semiFinishedCardsEmpty" class="text-xs text-gray-400 text-center py-4 hidden" data-i18n="common_nothing_found">Ничего не найдено</p>
-                    </div>
-
                 </div>
+
+                <!-- Карточный вид (по умолчанию) -->
+                <div id="semiFinishedCardsWrap">
+                    <div id="semiFinishedCardsBody"></div>
+                    <p id="semiFinishedCardsEmpty" class="text-xs text-gray-400 text-center py-4 hidden" data-i18n="common_nothing_found">Ничего не найдено</p>
+                </div>
+
             </div>
 
             <!-- ДЕТАЛЬНЫЙ ВИД ПОЛУФАБРИКАТА -->
@@ -3169,7 +3182,7 @@
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=67"></script>
+    <script src="i18n-core.js?v=68"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=14"></script>
     <script src="auth.js?v=21"></script>
@@ -3178,9 +3191,9 @@
     <script src="inventory.js?v=54"></script>
     <script src="billing.js?v=15"></script>
     <script src="push.js?v=8"></script>
-<script src="ingredients.js?v=42"></script>
+<script src="ingredients.js?v=43"></script>
 <script src="batches.js?v=10"></script>
-<script src="semifinished.js?v=41"></script>
+<script src="semifinished.js?v=42"></script>
 <script src="products.js?v=34"></script>
 <script src="customers.js?v=45"></script>
 <script src="calendar.js?v=9"></script>

@@ -41,7 +41,6 @@ function semiFinishedSeverity(sf, neededForOrders) {
 }
 
 function displaySemiFinished() {
-    let warningCount = 0;
 
     // Считаем нехватку для принятых заказов
     const today = typeof getLocalDateStr === 'function' ? getLocalDateStr(0) : new Date().toISOString().slice(0, 10);
@@ -66,9 +65,7 @@ function displaySemiFinished() {
         return sevDiff !== 0 ? sevDiff : (a.name||"").localeCompare(b.name||"");
     });
 
-    semiFinished.forEach(sf => { if (!sf.recipe_confirmed) warningCount++; });
-    const warningEl = document.getElementById('semiFinishedRecipeWarning');
-    if (warningEl) warningEl.classList.toggle('hidden', warningCount === 0);
+    // Красная плашка «не подтверждён рецепт» над списком убрана 16.10 — такие ПФ теперь в группе «Требует внимания».
     updateSemiFinishedSelects();
     renderSemiFinishedCards();
     filterSemiFinishedList();
@@ -96,7 +93,7 @@ function renderSemiFinishedCards() {
 
     const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
 
-    let html = '';
+    const htmlAttn = [], htmlOk = [];
     semiFinished.forEach((sf, realIdx) => {
         const unitLabel = unitAbbrev(sf.unit);
         const unitCost  = semiFinishedUnitCost(sf);
@@ -121,7 +118,7 @@ function renderSemiFinishedCards() {
         const priceText = stockPriceText(unitCost, sf.unit);
         const stripe = accentColor ? `<div class="stripe" style="background:${accentColor};"></div>` : '';
 
-        html += `
+        (accentColor ? htmlAttn : htmlOk).push(`
         <div class="oc-swipe-wrap" data-name="${escapeHtml((sf.name || '').toLowerCase())}" data-critical="${accentColor ? '1' : '0'}" style="--oc-swipe-x:-72px;">
             ${refCopySwipeBtnHtml(`quickCopySemiFinishedFromSwipe(${realIdx})`)}
             <div class="order-card" style="cursor:pointer;" onclick="openSemiFinishedDetail(${sf.id})">
@@ -134,9 +131,9 @@ function renderSemiFinishedCards() {
                     ${stockCardCellsHtml({ beforeText, afterText, afterColor, thirdLabel: thirdLabel, thirdText: thirdText, thirdColor: afterColor })}
                 </div>
             </div>
-        </div>`;
+        </div>`);
     });
-    body.innerHTML = html;
+    body.innerHTML = stockGroupsHtml(htmlAttn, htmlOk);
     initCopySwipeDelegation('semiFinishedCardsBody');
 }
 
@@ -159,6 +156,7 @@ function filterSemiFinishedList() {
         if (match) visibleCards++;
     });
     document.getElementById('semiFinishedCardsEmpty')?.classList.toggle('hidden', visibleCards !== 0);
+    toggleStockDividers('semiFinishedCardsBody', !!q);
 
 }
 
