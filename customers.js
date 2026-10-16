@@ -12,6 +12,27 @@
 // а не в список клиентов. Сбрасывается при открытии карточки клиента любым другим путём.
 let _customerOpenedFromOrderId = null;
 
+// Заказы клиента с неоплаченным остатком — та же логика сопоставления, что и в
+// customerDebt(); от неё же считается задолженность и счётчик на карточке.
+function customerUnpaidOrders(c) {
+    return orders.filter(o => {
+        const matches = o.customer_id != null ? o.customer_id === c.id : o.customer === c.name;
+        if (!matches) return false;
+        const info = getOrderPaymentStatus(o);
+        return (info.grandAmt - info.paidAmt) > 0.01;
+    });
+}
+
+// «3 неоплаченных заказа» с правильным склонением (ru/uk/lt/en)
+function unpaidOrdersLabel(n) {
+    const m10 = n % 10, m100 = n % 100;
+    let form;
+    if (currentLang === 'en') form = n === 1 ? 1 : 5;
+    else if (currentLang === 'lt') form = (m10 === 1 && m100 !== 11) ? 1 : (m10 >= 2 && m10 <= 9 && !(m100 >= 11 && m100 <= 19)) ? 2 : 5;
+    else form = (m10 === 1 && m100 !== 11) ? 1 : (m10 >= 2 && m10 <= 4 && !(m100 >= 12 && m100 <= 14)) ? 2 : 5;
+    return t('cust_unpaid_' + form).replace('{n}', n);
+}
+
 function customerDebt(c) {
     let debt = 0;
     orders.forEach(o => {
@@ -43,28 +64,8 @@ function displayCustomers() {
         const debtDiff = (customerDebt(b) > 0.01 ? 1 : 0) - (customerDebt(a) > 0.01 ? 1 : 0);
         return debtDiff !== 0 ? debtDiff : (a.name||"").localeCompare(b.name||"");
     });
-    const tbody = document.getElementById('customerTableBody');
-    tbody.innerHTML = '';
     let warningCount = 0;
-    customers.forEach((c, i) => {
-        const hasName = !!(c.name && c.name.trim());
-        if (!hasName) warningCount++;
-        const nameLabel = hasName ? escapeHtml(c.name) : icon('warning', 'w-3 h-3 inline-block align-[-1px] mr-0.5') + '(имя не указано)';
-        const debt = customerDebt(c);
-        const debtLabel = debt > 0.01
-            ? `<span style="color:#c0685c;">${formatMoney(debt)}</span>`
-            : `<span class="text-gray-400">—</span>`;
-        const row = document.createElement('tr');
-        row.className = 'order-row border-b';
-        row.style.background = hasName ? '' : '#f3ded9';
-        row.dataset.name = (c.name || '').toLowerCase();
-        row.innerHTML = `
-            <td class=" p-0.5 table-text" style="${hasName ? '' : 'color:#a3493d; font-weight:600;'}" onclick="openCustomerDetail(${c.id})">${nameLabel}</td>
-            <td class=" p-0.5 table-text" onclick="openCustomerDetail(${c.id})">${escapeHtml(c.contact)}</td>
-            <td class=" p-0.5 table-text" onclick="openCustomerDetail(${c.id})">${c.discount.toFixed(2)}</td>
-            <td class=" p-0.5 table-text" onclick="openCustomerDetail(${c.id})">${debtLabel}</td>`;
-        tbody.appendChild(row);
-    });
+    customers.forEach(c => { if (!(c.name && c.name.trim())) warningCount++; });
     const warningEl = document.getElementById('customersNameWarning');
     if (warningEl) warningEl.classList.toggle('hidden', warningCount === 0);
     updateCustomerSelects();
@@ -82,38 +83,85 @@ function renderCustomerCards() {
     customers.forEach(c => {
         const hasName = !!(c.name && c.name.trim());
         const debt = customerDebt(c);
-        const totalSpent = customerTotalSpent(c);
-        const stripe = !hasName ? `<div class="stripe" style="background:#c0685c;"></div>` : '';
+        const hasDebt = debt > 0.01;
+        const unpaidCnt = hasDebt ? customerUnpaidOrders(c).length : 0;
+        const stripe = !hasName || hasDebt ? `<div class="stripe" style="background:#c0685c;"></div>` : '';
         const nameText = hasName ? escapeHtml(c.name) : '(имя не указано)';
-        const debtHtml = debt > 0.01 ? `<span class="oc-sum" style="color:#c0685c;">${formatMoney(debt)}</span>` : '';
         const contactText = c.contact && c.contact.trim() ? escapeHtml(c.contact) : '—';
+        const orderCnt = orders.filter(o => o.customer_id != null ? o.customer_id === c.id : o.customer === c.name).length;
+        const tagList = [];
+        if (c.entity_type === 'company' || c.entity_type === 'individual') tagList.push(`<span class="oc-tag">${t(c.entity_type === 'company' ? 'cust_tag_company' : 'cust_tag_individual')}</span>`);
+        if (Number(c.discount) > 0) tagList.push(`<span class="oc-tag">${t('cust_tag_discount').replace('{n}', Number(c.discount))}</span>`);
+        if (c.vat_exempt) tagList.push(`<span class="oc-tag">${t('cust_tag_no_vat')}</span>`);
+        if (unpaidCnt > 0) tagList.push(`<button type="button" class="oc-tag oc-tag-red" onclick="event.stopPropagation(); openCustomerUnpaidModal(${c.id})">${unpaidOrdersLabel(unpaidCnt)}</button>`);
         html += `
         <div class="order-card" data-name="${escapeHtml((c.name || '').toLowerCase())}" style="cursor:pointer;" onclick="openCustomerDetail(${c.id})">
             ${stripe}
             <div class="order-card-body">
-                <div class="oc-row">
-                    <span class="oc-name" style="${hasName ? '' : 'color:#a3493d;'}">${nameText}</span>
-                    ${debtHtml}
-                </div>
-                <div class="oc-row" style="margin-top:2px;">
-                    <span class="oc-meta">${contactText}</span>
-                    <span class="oc-meta" style="flex-shrink:0;">${formatMoney(totalSpent)}</span>
-                </div>
+                <div class="oc-name" style="${hasName ? '' : 'color:#a3493d;'}">${nameText}</div>
+                <div class="oc-meta" style="margin-top:3px;">${contactText}</div>
+                ${stockCardCellsHtml3(
+                    [t('cust_cell_orders'), String(orderCnt), '#3c3a34'],
+                    [t('cust_cell_total'), formatMoney(customerTotalSpent(c)), '#3c3a34'],
+                    [t('cust_cell_debt'), hasDebt ? formatMoney(debt) : '—', hasDebt ? '#c0685c' : '#a29c8c'])}
+                ${tagList.length ? `<div class="oc-tags">${tagList.join('')}</div>` : ''}
             </div>
         </div>`;
     });
     body.innerHTML = html;
 }
 
-// ---- Переключатель Карточки / Таблица ----
-function setCustomersViewMode(mode) {
-    document.getElementById('customerCardsWrap')?.classList.toggle('hidden', mode !== 'cards');
-    document.getElementById('customerTableWrap')?.classList.toggle('hidden', mode !== 'table');
-    document.getElementById('customersViewBtnCards')?.classList.toggle('active', mode === 'cards');
-    document.getElementById('customersViewBtnTable')?.classList.toggle('active', mode === 'table');
+// Три ячейки в серой плашке (тот же вид, что на складе)
+function stockCardCellsHtml3(a, b, c) {
+    const cell = (x, first) => `<div class="oc-cell${first ? '' : ' oc-cell-sep'}"><div class="oc-cell-lbl">${x[0]}</div><div class="oc-cell-val" style="color:${x[2]};">${x[1]}</div></div>`;
+    return `<div class="oc-cells">${cell(a, true)}${cell(b, false)}${cell(c, false)}</div>`;
 }
 
-// ---- Поиск по имени — работает одинаково в обоих видах ----
+// Окно «Неоплаченные заказы клиента»: карточки заказов, по клику — сам заказ
+function openCustomerUnpaidModal(custId) {
+    const c = customers.find(x => x.id === custId);
+    if (!c) return;
+    const list = customerUnpaidOrders(c).sort((x, y) => (x.date || '').localeCompare(y.date || ''));
+    document.getElementById('customerUnpaidTitle').textContent = t('cust_unpaid_title');
+    document.getElementById('customerUnpaidSub').textContent = c.name || '';
+    document.getElementById('customerUnpaidBody').innerHTML = list.map(o => {
+        const info = getOrderPaymentStatus(o);
+        const left = Math.max(0, info.grandAmt - info.paidAmt);
+        const stripeColor = getPaymentStripeColor(info);
+        const badge = orderDateBadgeParts(o.date);
+        const paidLine = info.paidAmt > 0.01
+            ? `<span style="color:#4f6349">${formatMoney(info.paidAmt)} ${t('orders_paid_lower')}</span> · ` : '';
+        const overdue = info.overdue ? `<div class="oc-pay-line" style="color:#8b3a3a; font-weight:700;">${t('orders_payment_overdue')}</div>` : '';
+        return `
+        <div class="order-card" style="cursor:pointer; margin-bottom:8px;" onclick="goToOrderFromCustomerUnpaid(${o.id})">
+            <div class="stripe" style="background:${stripeColor}"></div>
+            <div class="order-card-body">
+                <div class="oc-header">
+                    <div class="oc-datebadge">
+                        <div class="oc-datebadge-month" style="background:${ORDER_STATUS_COLORS[o.status] || '#7c9473'};">${badge.month}</div>
+                        <div class="oc-datebadge-day">${badge.day}</div>
+                    </div>
+                    <div style="flex:1; min-width:0;">
+                        <div class="oc-row">
+                            <span class="oc-name">${escapeHtml(orderNumLabel(o))}</span>
+                            <span class="oc-sum">${formatMoney(info.grandAmt)}</span>
+                        </div>
+                        <div class="oc-pay-line" style="margin-top:3px;">${paidLine}<span style="color:#c0685c">${formatMoney(left)} ${t('orders_remaining_lower')}</span></div>
+                        ${overdue}
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+    document.getElementById('customerUnpaidModal').style.display = 'flex';
+}
+
+function goToOrderFromCustomerUnpaid(orderId) {
+    document.getElementById('customerUnpaidModal').style.display = 'none';
+    goToOrderFromCustomer(orderId);
+}
+
+// ---- Поиск по имени ----
 function filterCustomersList() {
     const input = document.getElementById('customerSearchInput');
     const q = input ? input.value.trim().toLowerCase() : '';
@@ -128,10 +176,6 @@ function filterCustomersList() {
     });
     document.getElementById('customerCardsEmpty')?.classList.toggle('hidden', visibleCards !== 0);
 
-    document.querySelectorAll('#customerTableBody tr').forEach(row => {
-        const match = !q || (row.dataset.name || '').includes(q);
-        row.style.display = match ? '' : 'none';
-    });
 }
 
 function clearCustomerSearch() {

@@ -60,7 +60,7 @@ function _loadLangScript(lang) {
     if (_langLoadPromises[lang]) return _langLoadPromises[lang];
     _langLoadPromises[lang] = new Promise((resolve) => {
         const script = document.createElement('script');
-        script.src = `i18n-${lang}.js?v=60`;
+        script.src = `i18n-${lang}.js?v=61`;
         script.onload = () => resolve();
         script.onerror = () => {
             console.error(`Не удалось загрузить язык: ${lang}`);
@@ -195,9 +195,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // разбора этого <script>, и гарантированно приостанавливает разбор
 // документа до полной загрузки дописанных тегов.
 (function bootLoadLanguages() {
-    let tags = `<script src="i18n-${BASE_LANG}.js?v=57"><\/script>`;
+    let tags = `<script src="i18n-${BASE_LANG}.js?v=58"><\/script>`;
     if (currentLang !== BASE_LANG) {
-        tags += `<script src="i18n-${currentLang}.js?v=57"><\/script>`;
+        tags += `<script src="i18n-${currentLang}.js?v=58"><\/script>`;
     }
     document.write(tags);
 })();

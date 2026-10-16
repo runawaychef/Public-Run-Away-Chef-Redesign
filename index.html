@@ -467,6 +467,9 @@
         .oc-sent-icon--alarm { color: #c0685c; }
         .oc-sent-badge { position: absolute; left: 65%; top: 10px; z-index: 2; }
         .order-card .oc-price { font-size: 15px; font-weight: 600; color: #111; white-space: nowrap; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+        .order-card .oc-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+        .order-card .oc-tag { font-size: 12px; background: #f6f4ec; color: #6b675d; border-radius: 999px; padding: 4px 10px; border: 0; font-family: inherit; }
+        .order-card .oc-tag-red { background: #f6e3df; color: #a3493d; font-weight: 700; cursor: pointer; }
         .order-card .oc-cells { display: flex; margin-top: 10px; background: #f6f4ec; border-radius: 12px; }
         .order-card .oc-cell { flex: 1; min-width: 0; padding: 8px 10px; }
         .order-card .oc-cell-sep { border-left: 1px solid #e5e0d0; }
@@ -1059,14 +1062,6 @@
             <svg id="customerSearchIcon" class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:#a29c8c; pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
             <svg id="customerSearchClear" onclick="clearCustomerSearch()" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:#9a9488; cursor:pointer;"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
         </div>
-        <div class="view-toggle-pill">
-            <button class="view-toggle-btn active" id="customersViewBtnCards" onclick="setCustomersViewMode('cards')" title="Карточки">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-            </button>
-            <button class="view-toggle-btn" id="customersViewBtnTable" onclick="setCustomersViewMode('table')" title="Таблица">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-            </button>
-        </div>
     </div>
 </div>
 
@@ -1588,18 +1583,6 @@
                         <p id="customerCardsEmpty" class="text-xs text-gray-400 text-center py-4 hidden">Ничего не найдено</p>
                     </div>
 
-                    <!-- Табличный вид -->
-                    <div id="customerTableWrap" class="hidden">
-                        <table class="w-full table-auto table-clean">
-                            <thead><tr style="background-color:#e3e8df;">
-                                <th class="p-1 text-xs w-[32%]">Имя</th>
-                                <th class="p-1 text-xs w-[30%]">Контакты</th>
-                                <th class="p-1 text-xs w-[14%]">Скидка (%)</th>
-                                <th class="p-1 text-xs w-[24%]">Задолженность</th>
-                            </tr></thead>
-                            <tbody id="customerTableBody"></tbody>
-                        </table>
-                    </div>
                 </div>
             </div>
 
@@ -2776,6 +2759,16 @@
             </div>
         </div>
 
+        <!-- Окно «Неоплаченные заказы клиента» (из карточки клиента в списке) -->
+        <div id="customerUnpaidModal" class="modal" onclick="if(event.target===this) this.style.display='none';">
+            <div class="modal-content" style="max-width:420px;">
+                <h2 id="customerUnpaidTitle" class="text-sm font-semibold text-gray-800"></h2>
+                <p id="customerUnpaidSub" class="text-xs text-gray-400 mb-2"></p>
+                <div id="customerUnpaidBody" style="max-height:58vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
+                <button onclick="document.getElementById('customerUnpaidModal').style.display='none';" class="pill-btn w-full justify-center mt-2" data-i18n="common_ok">OK</button>
+            </div>
+        </div>
+
         <!-- Окно «Изделия по фильтру» (итог выборки заказов: изделие, количество, сумма, НДС) -->
         <div id="ordersProductsModal" class="modal" onclick="if(event.target===this) closeModal();">
             <div class="modal-content" style="max-width:420px;">
@@ -3197,7 +3190,7 @@
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=62"></script>
+    <script src="i18n-core.js?v=63"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=14"></script>
     <script src="auth.js?v=21"></script>
@@ -3210,7 +3203,7 @@
 <script src="batches.js?v=10"></script>
 <script src="semifinished.js?v=40"></script>
 <script src="products.js?v=32"></script>
-<script src="customers.js?v=43"></script>
+<script src="customers.js?v=44"></script>
 <script src="calendar.js?v=9"></script>
 <script src="orders.js?v=129"></script>
 <script src="invoice.js?v=47"></script>
