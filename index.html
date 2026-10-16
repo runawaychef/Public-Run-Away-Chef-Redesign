@@ -1273,12 +1273,13 @@
         <!-- ===== ИНГРЕДИЕНТЫ ===== -->
         <div id="ingredients" class="tab-content hidden">
             <div id="ingredientsList">
+                <!-- onclick вкладок с «;» на конце — чтобы showTab() не принял их за кнопку нижнего меню (ищет точное onclick="showTab(...)") и не подсвечивал -->
                 <div class="stock-toprow">
                     <button type="button" onclick="showHelpModal('help_stock_cards_title','help_stock_cards_text')" class="help-marker" data-i18n-title="help_marker_label" title="Подробнее об этом разделе" style="margin-left:0;">?</button>
                     <div class="stock-toprow-right">
                         <div class="view-toggle-pill">
-                            <button type="button" class="stock-tab active" onclick="showTab('ingredients')" data-i18n="sf_back_to_ingredients">Ингредиенты</button>
-                            <button type="button" class="stock-tab " onclick="showTab('semiFinished')" data-i18n="ing_semifinished_link">Полуфабрикаты</button>
+                            <button type="button" class="stock-tab active" onclick="showTab('ingredients');" data-i18n="sf_back_to_ingredients">Ингредиенты</button>
+                            <button type="button" class="stock-tab" onclick="showTab('semiFinished');" data-i18n="ing_semifinished_link">Полуфабрикаты</button>
                         </div>
                         <div class="view-toggle-pill">
                             <button type="button" class="view-toggle-btn stock-inv-btn" onclick="openInventarizationModal()" title="Инвентаризация" data-i18n-title="inv_inventarization" aria-label="Инвентаризация"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5l1.5 1.5l2.5-2.5"/><path d="M3.5 11.5l1.5 1.5l2.5-2.5"/><path d="M3.5 17.5l1.5 1.5l2.5-2.5"/><path d="M11 6h9M11 12h9M11 18h9"/></svg></button>
@@ -1416,8 +1417,8 @@
                     <button type="button" onclick="showHelpModal('help_stock_cards_title','help_stock_cards_text')" class="help-marker" data-i18n-title="help_marker_label" title="Подробнее об этом разделе" style="margin-left:0;">?</button>
                     <div class="stock-toprow-right">
                         <div class="view-toggle-pill">
-                            <button type="button" class="stock-tab " onclick="showTab('ingredients')" data-i18n="sf_back_to_ingredients">Ингредиенты</button>
-                            <button type="button" class="stock-tab active" onclick="showTab('semiFinished')" data-i18n="ing_semifinished_link">Полуфабрикаты</button>
+                            <button type="button" class="stock-tab" onclick="showTab('ingredients');" data-i18n="sf_back_to_ingredients">Ингредиенты</button>
+                            <button type="button" class="stock-tab active" onclick="showTab('semiFinished');" data-i18n="ing_semifinished_link">Полуфабрикаты</button>
                         </div>
                         <div class="view-toggle-pill">
                             <button type="button" class="view-toggle-btn stock-inv-btn" onclick="openSfInventarizationModal()" title="Инвентаризация" data-i18n-title="inv_inventarization" aria-label="Инвентаризация"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5l1.5 1.5l2.5-2.5"/><path d="M3.5 11.5l1.5 1.5l2.5-2.5"/><path d="M3.5 17.5l1.5 1.5l2.5-2.5"/><path d="M11 6h9M11 12h9M11 18h9"/></svg></button>
@@ -3529,7 +3530,9 @@ function showTab(tabId) {
         if (fromEl) fromEl.classList.add('hidden');
         toEl.classList.remove('hidden');
     }
-    const tabBtn = document.querySelector(`button[onclick="showTab('${tabId}')"]`);
+    // Полуфабрикаты — часть «Склада»: в нижнем меню своей кнопки нет, подсвечиваем «Склад»
+    const navTabId = tabId === 'semiFinished' ? 'ingredients' : tabId;
+    const tabBtn = document.querySelector(`button[onclick="showTab('${navTabId}')"]`);
     if (tabBtn) tabBtn.classList.add('active');
 
     // Закрываем ВСЕ открытые карточки при переключении вкладки (не только
