@@ -68,6 +68,15 @@ function displayIngredients() {
     filterIngredientsList();
 }
 
+// Цена на карточке склада: 2 знака после запятой. Для г и мл пересчитываем
+// в цену за кг / л (цена за 1 г вроде 0.0040 € при 2 знаках стала бы 0.00).
+function stockPriceText(unitPrice, unit) {
+    let price = Number(unitPrice) || 0, u = unit;
+    if (unit === 'g')  { price *= 1000; u = 'kg'; }
+    if (unit === 'ml') { price *= 1000; u = 'l'; }
+    return `${formatMoney(price, 2)}/${unitAbbrev(u)}`;
+}
+
 // Общая разметка серой плашки с ячейками "Сейчас / После списания / Хватит на"
 // (используется и в ингредиентах, и в полуфабрикатах). Третья ячейка
 // показывается только если для неё есть текст (на бесплатном тарифе — только
@@ -125,7 +134,7 @@ function renderIngredientCards() {
             : daysLeft !== null ? `${daysLeft} ${t('inv_days_short')}` : shortfall ? t('inv_shortage') : '—';
         const beforeText = balanceBefore !== null ? `${Number(balanceBefore).toFixed(1)} ${unitLabel}` : '—';
         const afterText = balance !== null ? `${Number(balance).toFixed(1)} ${unitLabel}` : '—';
-        const priceText = `${formatMoney(unitPrice, 4)}/${unitLabel}`;
+        const priceText = stockPriceText(unitPrice, ing.unit);
         const stripe = accentColor ? `<div class="stripe" style="background:${accentColor};"></div>` : '';
 
         html += `
@@ -136,7 +145,7 @@ function renderIngredientCards() {
                 <div class="order-card-body">
                     <div class="oc-row">
                         <span class="oc-name">${escapeHtml(ing.name || t('semifinished_no_name_fallback'))}</span>
-                        <span class="oc-meta" style="flex-shrink:0;">${priceText}</span>
+                        <span class="oc-price">${priceText}</span>
                     </div>
                     ${stockCardCellsHtml({ beforeText, afterText, afterColor, thirdLabel: thirdLabel, thirdText: thirdText, thirdColor: afterColor })}
                 </div>

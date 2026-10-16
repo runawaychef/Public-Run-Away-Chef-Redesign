@@ -118,7 +118,7 @@ function renderSemiFinishedCards() {
             : daysLeft !== null ? `${daysLeft} ${t('inv_days_short')}` : shortage ? t('inv_shortage') : '—';
         const beforeText = balanceBefore !== null ? `${Number(balanceBefore).toFixed(1)} ${unitLabel}` : '—';
         const afterText = balance !== null ? `${Number(balance).toFixed(1)} ${unitLabel}` : '—';
-        const priceText = `${formatMoney(unitCost, 4)}/${unitLabel}`;
+        const priceText = stockPriceText(unitCost, sf.unit);
         const stripe = accentColor ? `<div class="stripe" style="background:${accentColor};"></div>` : '';
 
         html += `
@@ -129,7 +129,7 @@ function renderSemiFinishedCards() {
                 <div class="order-card-body">
                     <div class="oc-row">
                         <span class="oc-name">${escapeHtml(sf.name || t('semifinished_no_name_fallback'))}</span>
-                        <span class="oc-meta" style="flex-shrink:0;">${priceText}</span>
+                        <span class="oc-price">${priceText}</span>
                     </div>
                     ${stockCardCellsHtml({ beforeText, afterText, afterColor, thirdLabel: thirdLabel, thirdText: thirdText, thirdColor: afterColor })}
                 </div>
