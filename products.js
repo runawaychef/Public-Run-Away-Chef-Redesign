@@ -9,10 +9,6 @@
 
 function displayProducts() {
     products.sort((a, b) => (a.name||"").localeCompare(b.name||""));
-    let warningCount = 0;
-    products.forEach(p => { if (!p.unit || !p.recipe_confirmed) warningCount++; });
-    const warningEl = document.getElementById('productsUnitWarning');
-    if (warningEl) warningEl.classList.toggle('hidden', warningCount === 0);
     updateProductSelects();
     renderProductCards();
     filterProductsList();
