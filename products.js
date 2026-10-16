@@ -9,32 +9,8 @@
 
 function displayProducts() {
     products.sort((a, b) => (a.name||"").localeCompare(b.name||""));
-    const tbody = document.getElementById('productTableBody');
-    tbody.innerHTML = '';
     let warningCount = 0;
-    products.forEach((p, i) => {
-        const hasUnit = !!p.unit;
-        const recipeOk = !!p.recipe_confirmed;
-        const needsAttention = !hasUnit || !recipeOk;
-        if (needsAttention) warningCount++;
-        const unitLabel = hasUnit ? unitAbbrev(p.unit) : icon('warning', 'w-3.5 h-3.5 inline-block text-[#c0685c]');
-        const row = document.createElement('tr');
-        row.className = 'order-row border-b';
-        row.dataset.name = (p.name || '').toLowerCase();
-        const nameCellPad = needsAttention ? 'pl-2.5' : '';
-        const accentBar = needsAttention
-            ? `<span class="absolute left-0 top-1 bottom-1 w-0.5 rounded-full" style="background:#c0685c;"></span>`
-            : '';
-        row.innerHTML = `
-            <td class=" p-0.5 table-text relative ${nameCellPad}" onclick="openProductDetail(${p.id})">${accentBar}${escapeHtml(p.name)}</td>
-            <td class=" p-0.5 table-text text-center" style="${hasUnit ? '' : 'color:#c0685c; font-weight:600;'}" onclick="openProductDetail(${p.id})">${unitLabel}</td>
-            <td class=" p-0.5 table-text" onclick="openProductDetail(${p.id})">${formatMoney(p.price)}</td>
-            <td class=" p-0.5 text-center">
-                ${hasPermission('can_delete') ? svgDeleteSafe('openDeleteModal', [i, 'product', `${t('delete_label_product')} «${p.name}»`]) : ''}
-                ${svgCopy(`copyProduct(${i})`)}
-            </td>`;
-        tbody.appendChild(row);
-    });
+    products.forEach(p => { if (!p.unit || !p.recipe_confirmed) warningCount++; });
     const warningEl = document.getElementById('productsUnitWarning');
     if (warningEl) warningEl.classList.toggle('hidden', warningCount === 0);
     updateProductSelects();
@@ -50,28 +26,47 @@ function renderProductCards() {
     products.forEach((p, realIdx) => {
         const hasUnit = !!p.unit;
         const recipeOk = !!p.recipe_confirmed;
-        const needsAttention = !hasUnit || !recipeOk;
         const unitLabel = hasUnit ? unitAbbrev(p.unit) : '';
-        const unitCost = hasUnit ? productUnitCost(p) : null;
-        const costLine = unitCost !== null
-            ? `${t('prod_cost_price_colon')} ${formatMoney(unitCost)}/${unitLabel}`
-            : `${t('prod_cost_price_colon')} —`;
-        const stripe = needsAttention ? `<div class="stripe" style="background:#c0685c;"></div>` : '';
-        const photoHtml = p.photo_url
-            ? `<div class="oc-photo-wrap"><img class="oc-photo" src="${escapeHtml(p.photo_url)}" loading="lazy"></div>`
-            : `<div class="oc-photo-wrap"><img class="oc-photo" src="product-placeholder.png" loading="lazy"></div>`;
+        const subParts = [];
+        if (hasUnit) {
+            subParts.push(escapeHtml(unitLabel));
+            subParts.push(t('prod_batch_short').replace('{n}', Number(p.batch_size) || 1));
+        } else {
+            subParts.push(`<span style="color:#c0685c; font-weight:700;">${t('prod_unit_missing')}</span>`);
+        }
+        subParts.push(recipeOk
+            ? `<span style="color:#4f6349; font-weight:700;">${t('prod_recipe_ok')}</span>`
+            : `<span style="color:#c0685c; font-weight:700;">${t('prod_recipe_missing')}</span>`);
+        // Себестоимость/прибыль/маржа: без единицы изделия посчитать нельзя — прочерки
+        let costVal = '—', profitVal = '—', marginVal = '—', profitColor = '#a29c8c';
+        if (hasUnit) {
+            const unitCost = productUnitCost(p);
+            const profit = (p.price || 0) - unitCost;
+            costVal = formatMoney(unitCost);
+            profitVal = formatMoney(profit);
+            marginVal = (p.price ? productProfitPct(p).toFixed(0) : '0') + '%';
+            profitColor = profit >= 0 ? '#4f6349' : '#c0685c';
+        }
+        const photoSrc = p.photo_url ? escapeHtml(p.photo_url) : 'product-placeholder.png';
         html += `
         <div class="oc-swipe-wrap" data-name="${escapeHtml((p.name || '').toLowerCase())}" style="--oc-swipe-x:-72px;">
             ${refCopySwipeBtnHtml(`quickCopyProductFromSwipe(${realIdx})`)}
             <div class="order-card" style="cursor:pointer;" onclick="openProductDetail(${p.id})">
-                ${stripe}
-                ${photoHtml}
                 <div class="order-card-body">
-                    <div class="oc-row">
-                        <span class="oc-name">${escapeHtml(p.name || t('semifinished_no_name_fallback'))}</span>
-                        <span class="oc-sum">${formatMoney(p.price)}</span>
+                    <div style="display:flex; gap:12px; align-items:center;">
+                        <img class="oc-photo" src="${photoSrc}" loading="lazy">
+                        <div style="flex:1; min-width:0;">
+                            <div class="oc-row" style="align-items:baseline;">
+                                <span class="oc-name">${escapeHtml(p.name || t('semifinished_no_name_fallback'))}</span>
+                                <span class="oc-price">${formatMoney(p.price)}</span>
+                            </div>
+                            <div class="oc-meta" style="margin-top:2px; white-space:normal;">${subParts.join(' · ')}</div>
+                        </div>
                     </div>
-                    <div class="oc-meta">${costLine}</div>
+                    ${stockCardCellsHtml3(
+                        [t('prod_cell_cost'), costVal, hasUnit ? '#3c3a34' : '#a29c8c'],
+                        [t('prod_cell_profit'), profitVal, profitColor],
+                        [t('prod_cell_margin'), marginVal, profitColor])}
                 </div>
             </div>
         </div>`;
@@ -85,15 +80,7 @@ function quickCopyProductFromSwipe(realIdx) {
     copyProduct(realIdx);
 }
 
-// ---- Переключатель Карточки / Таблица ----
-function setProductsViewMode(mode) {
-    document.getElementById('productCardsWrap')?.classList.toggle('hidden', mode !== 'cards');
-    document.getElementById('productTableWrap')?.classList.toggle('hidden', mode !== 'table');
-    document.getElementById('productsViewBtnCards')?.classList.toggle('active', mode === 'cards');
-    document.getElementById('productsViewBtnTable')?.classList.toggle('active', mode === 'table');
-}
-
-// ---- Поиск по названию — работает одинаково в обоих видах разом ----
+// ---- Поиск по названию ----
 function filterProductsList() {
     const input = document.getElementById('productSearchInput');
     const q = input ? input.value.trim().toLowerCase() : '';
@@ -108,10 +95,6 @@ function filterProductsList() {
     });
     document.getElementById('productCardsEmpty')?.classList.toggle('hidden', visibleCards !== 0);
 
-    document.querySelectorAll('#productTableBody tr').forEach(row => {
-        const match = !q || (row.dataset.name || '').includes(q);
-        row.style.display = match ? '' : 'none';
-    });
 }
 
 function clearProductSearch() {

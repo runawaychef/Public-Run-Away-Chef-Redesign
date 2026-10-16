@@ -1,4 +1,4 @@
-const CACHE_NAME = 'runwaychef-public-cache-v554';
+const CACHE_NAME = 'runwaychef-public-cache-v556';
 const ASSETS = [
   './index.html',
   './i18n-core.js',
@@ -19,6 +19,7 @@ const ASSETS = [
   './icon-512.png',
   './notification-icon-192.png',
   './notification-icon-96.png',
+  './notification-badge-96.png',
   './product-placeholder.png',
   // demo-*.jpg в предзагрузке нет: нужны только демо-организации, закэшируются при первом показе
   './supabaseClient.js',
@@ -115,7 +116,7 @@ self.addEventListener('push', (event) => {
   const options = {
     body: data.body || '',
     icon: './notification-icon-192.png',
-    badge: './notification-icon-96.png',
+    badge: './notification-badge-96.png',
     tag: data.tag || undefined,
     data: { url: data.url || './' }
   };

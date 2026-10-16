@@ -485,7 +485,7 @@
 
         /* Фото товара — компактная карточка (круг слева) */
         .oc-photo-wrap { flex-shrink: 0; display: flex; align-items: center; padding-left: 12px; }
-        .oc-photo { width: 56px; height: 56px; object-fit: cover; border-radius: 50%; background: #e9e5d9; }
+        .oc-photo { width: 56px; height: 56px; flex-shrink: 0; object-fit: cover; border-radius: 12px; background: #e9e5d9; }
         .oc-photo-placeholder {
             width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
             background: #e9e5d9; color: #b7b1a3; flex-shrink: 0;
@@ -1043,14 +1043,6 @@
             <svg id="productSearchIcon" class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:#a29c8c; pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
             <svg id="productSearchClear" onclick="clearProductSearch()" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:#9a9488; cursor:pointer;"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
         </div>
-        <div class="view-toggle-pill">
-            <button class="view-toggle-btn active" id="productsViewBtnCards" onclick="setProductsViewMode('cards')" title="Карточки">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-            </button>
-            <button class="view-toggle-btn" id="productsViewBtnTable" onclick="setProductsViewMode('table')" title="Таблица">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-            </button>
-        </div>
     </div>
 </div>
 
@@ -1156,18 +1148,6 @@
                         <p id="productCardsEmpty" class="text-xs text-gray-400 text-center py-4 hidden" data-i18n="common_nothing_found">Ничего не найдено</p>
                     </div>
 
-                    <!-- Табличный вид -->
-                    <div id="productTableWrap" class="hidden">
-                        <table class="w-full table-auto table-clean">
-                            <thead><tr style="background-color:#e3e8df;">
-                                <th class="p-1 text-xs w-[57%]" data-i18n="inv_col_name">Название</th>
-                                <th class="p-1 text-xs w-[10%]" data-i18n="prod_unit_short">Ед.</th>
-                                <th class="p-1 text-xs w-[15%]" data-i18n="prod_price">Цена</th>
-                                <th class="p-1 text-xs w-[18%]" data-i18n="sf_col_actions">Действия</th>
-                            </tr></thead>
-                            <tbody id="productTableBody"></tbody>
-                        </table>
-                    </div>
                 </div>
             </div>
 
@@ -3190,7 +3170,7 @@
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=64"></script>
+    <script src="i18n-core.js?v=65"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=14"></script>
     <script src="auth.js?v=21"></script>
@@ -3202,7 +3182,7 @@
 <script src="ingredients.js?v=41"></script>
 <script src="batches.js?v=10"></script>
 <script src="semifinished.js?v=40"></script>
-<script src="products.js?v=32"></script>
+<script src="products.js?v=33"></script>
 <script src="customers.js?v=45"></script>
 <script src="calendar.js?v=9"></script>
 <script src="orders.js?v=129"></script>
