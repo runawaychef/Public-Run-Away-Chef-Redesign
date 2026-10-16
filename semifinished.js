@@ -41,9 +41,6 @@ function semiFinishedSeverity(sf, neededForOrders) {
 }
 
 function displaySemiFinished() {
-    const tbody = document.getElementById('semiFinishedTableBody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
     let warningCount = 0;
 
     // Считаем нехватку для принятых заказов
@@ -69,55 +66,7 @@ function displaySemiFinished() {
         return sevDiff !== 0 ? sevDiff : (a.name||"").localeCompare(b.name||"");
     });
 
-    semiFinished.forEach((sf, i) => {
-        const unitLabel = unitAbbrev(sf.unit);
-        const unitCost  = semiFinishedUnitCost(sf);
-        const balance   = typeof getSemiFinishedBalance === 'function' ? getSemiFinishedBalance(sf.id) : null;
-        const daily     = typeof avgDailySfUsage === 'function' ? avgDailySfUsage(sf.id) : 0;
-        const daysLeft  = (balance !== null && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
-        const needed    = neededForOrders[sf.id] || 0;
-        const shortage  = needed > 0 && (balance === null || balance < needed);
-
-        if (!sf.recipe_confirmed) warningCount++;
-
-        const balanceStr = balance !== null && balance > 0
-            ? `${Number(balance).toFixed(1)} ${unitLabel}`
-            : balance !== null && balance <= 0
-                ? `<span style="color:#c0685c;" class="font-semibold">${Number(balance).toFixed(1)} ${unitLabel}</span>`
-                : '<span class="text-gray-400">—</span>';
-
-        const colorStyle = shortage || (balance !== null && balance <= 0) || (daysLeft !== null && daysLeft < 3)
-            ? 'color:#c0685c;' : daysLeft !== null && daysLeft < 7 ? 'color:#96712a;' : 'color:#4b5563;';
-
-        // Точное число дней запаса — premium-фича (см. согласованный список
-        // фич-гейтинга). Предупреждение "нет в наличии" остаётся всегда.
-        const daysStr = !hasPlanFeature('cost_analytics')
-            ? (shortage ? `<span style="color:#c0685c;" class="font-semibold">${t('inv_shortage')}</span>` : '<span class="text-gray-400">—</span>')
-            : daysLeft !== null
-            ? `<span style="${colorStyle}" class="font-semibold">${daysLeft} ${t('inv_days_short')}</span>`
-            : shortage ? `<span style="color:#c0685c;" class="font-semibold">${t('inv_shortage')}</span>`
-            : '<span class="text-gray-400">—</span>';
-
-        const isCritical = shortage || (balance !== null && balance <= 0) || (daysLeft !== null && daysLeft < 3) || !sf.recipe_confirmed;
-        const isWarning  = !isCritical && daysLeft !== null && daysLeft < 7;
-        const accentColor = isCritical ? '#c0685c' : isWarning ? '#d9a441' : '';
-        const accentBar = accentColor
-            ? `<span class="absolute left-0 top-1 bottom-1 w-0.5 rounded-full" style="background:${accentColor};"></span>`
-            : '';
-        const nameCellPad = accentColor ? 'pl-2.5' : '';
-
-        const row = document.createElement('tr');
-        row.className = 'order-row border-b';
-        row.style.cursor = 'pointer';
-        row.dataset.name = (sf.name || '').toLowerCase();
-        row.dataset.critical = accentColor ? '1' : '0';
-        row.innerHTML = `
-            <td class=" p-0.5 table-text relative ${nameCellPad}" onclick="openSemiFinishedDetail(${sf.id})">${accentBar}${escapeHtml(sf.name)}</td>
-            <td class=" p-0.5 table-text text-center" onclick="openSemiFinishedDetail(${sf.id})">${formatMoney(unitCost, 4)}/${unitLabel}</td>
-            <td class=" p-0.5 table-text text-center" onclick="openSemiFinishedDetail(${sf.id})">${balanceStr}</td>
-            <td class=" p-0.5 table-text text-center" onclick="openSemiFinishedDetail(${sf.id})">${daysStr}</td>`;
-        tbody.appendChild(row);
-    });
+    semiFinished.forEach(sf => { if (!sf.recipe_confirmed) warningCount++; });
     const warningEl = document.getElementById('semiFinishedRecipeWarning');
     if (warningEl) warningEl.classList.toggle('hidden', warningCount === 0);
     updateSemiFinishedSelects();
@@ -163,10 +112,11 @@ function renderSemiFinishedCards() {
         const notConfirmed = !sf.recipe_confirmed;
         const accentColor = (isCritical || notConfirmed) ? '#c0685c' : isWarning ? '#d9a441' : '';
         const afterColor = isCritical ? '#c0685c' : isWarning ? '#96712a' : '#4f6349';
-        const daysText = !hasPlanFeature('cost_analytics')
-            ? (shortage ? `${t('ing_lasts_colon')} ${t('inv_shortage')}` : '')
-            : daysLeft !== null ? `${t('ing_lasts_colon')} ${daysLeft} ${t('inv_days_short')}` : shortage ? `${t('ing_lasts_colon')} ${t('inv_shortage')}` : '';
-        const beforeText = balanceBefore !== null ? `${t('ing_before_writeoff_colon')} ${Number(balanceBefore).toFixed(1)} ${unitLabel}` : `${t('ing_before_writeoff_colon')} —`;
+        const thirdLabel = t('ing_cell_lasts');
+        const thirdText = !hasPlanFeature('cost_analytics')
+            ? (shortage ? t('inv_shortage') : '')
+            : daysLeft !== null ? `${daysLeft} ${t('inv_days_short')}` : shortage ? t('inv_shortage') : '—';
+        const beforeText = balanceBefore !== null ? `${Number(balanceBefore).toFixed(1)} ${unitLabel}` : '—';
         const afterText = balance !== null ? `${Number(balance).toFixed(1)} ${unitLabel}` : '—';
         const priceText = `${formatMoney(unitCost, 4)}/${unitLabel}`;
         const stripe = accentColor ? `<div class="stripe" style="background:${accentColor};"></div>` : '';
@@ -179,13 +129,9 @@ function renderSemiFinishedCards() {
                 <div class="order-card-body">
                     <div class="oc-row">
                         <span class="oc-name">${escapeHtml(sf.name || t('semifinished_no_name_fallback'))}</span>
-                        <div style="text-align:right; flex-shrink:0;">
-                            <div class="oc-meta">${t('ing_after_writeoff_colon')}</div>
-                            <div class="oc-sum" style="color:${afterColor};">${afterText}</div>
-                        </div>
+                        <span class="oc-meta" style="flex-shrink:0;">${priceText}</span>
                     </div>
-                    <div class="oc-meta">${beforeText}</div>
-                    <div class="oc-meta">${priceText}</div>
+                    ${stockCardCellsHtml({ beforeText, afterText, afterColor, thirdLabel: thirdLabel, thirdText: thirdText, thirdColor: afterColor })}
                 </div>
             </div>
         </div>`;
@@ -197,14 +143,6 @@ function renderSemiFinishedCards() {
 function quickCopySemiFinishedFromSwipe(realIdx) {
     if (typeof closeAllCardSwipes === 'function') closeAllCardSwipes();
     copySemiFinished(realIdx);
-}
-
-// ---- Переключатель Карточки / Таблица ----
-function setSemiFinishedViewMode(mode) {
-    document.getElementById('semiFinishedCardsWrap')?.classList.toggle('hidden', mode !== 'cards');
-    document.getElementById('semiFinishedTableWrap')?.classList.toggle('hidden', mode !== 'table');
-    document.getElementById('semiFinishedViewBtnCards')?.classList.toggle('active', mode === 'cards');
-    document.getElementById('semiFinishedViewBtnTable')?.classList.toggle('active', mode === 'table');
 }
 
 // ---- Поиск по названию — работает одинаково в обоих видах ----
@@ -222,10 +160,6 @@ function filterSemiFinishedList() {
     });
     document.getElementById('semiFinishedCardsEmpty')?.classList.toggle('hidden', visibleCards !== 0);
 
-    document.querySelectorAll('#semiFinishedTableBody tr').forEach(row => {
-        const match = !q || (row.dataset.name || '').includes(q);
-        row.style.display = match ? '' : 'none';
-    });
 }
 
 function clearSemiFinishedSearch() {

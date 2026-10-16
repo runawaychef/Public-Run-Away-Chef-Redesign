@@ -466,6 +466,11 @@
         .oc-sent-icon--delivered { color: #5b7c99; }
         .oc-sent-icon--alarm { color: #c0685c; }
         .oc-sent-badge { position: absolute; left: 65%; top: 10px; z-index: 2; }
+        .order-card .oc-cells { display: flex; margin-top: 10px; background: #f6f4ec; border-radius: 12px; }
+        .order-card .oc-cell { flex: 1; min-width: 0; padding: 8px 10px; }
+        .order-card .oc-cell-sep { border-left: 1px solid #e5e0d0; }
+        .order-card .oc-cell-lbl { font-size: 11px; color: #a29c8c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .order-card .oc-cell-val { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
         .order-card .oc-sum { font-size: 15px; font-weight: 700; color: #322f28; font-variant-numeric: tabular-nums; white-space: nowrap; flex-shrink: 0; }
         .order-card .oc-pay-line { font-size: 11.5px; margin-top: 6px; }
         .order-card .oc-items { margin-top: 8px; padding-top: 8px; border-top: 1px solid #f1efe9; font-size: 11.5px; color: #7a7568; }
@@ -1072,14 +1077,6 @@
             <svg id="ingredientSearchIcon" class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:#a29c8c; pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
             <svg id="ingredientSearchClear" onclick="clearIngredientSearch()" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:#9a9488; cursor:pointer;"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
         </div>
-        <div class="view-toggle-pill">
-            <button class="view-toggle-btn active" id="ingredientsViewBtnCards" onclick="setIngredientsViewMode('cards')" title="Карточки">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-            </button>
-            <button class="view-toggle-btn" id="ingredientsViewBtnTable" onclick="setIngredientsViewMode('table')" title="Таблица">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-            </button>
-        </div>
     </div>
 </div>
 
@@ -1090,14 +1087,6 @@
             <input id="semiFinishedSearchInput" type="text" placeholder="Поиск по названию..." data-i18n-placeholder="search_by_title" oninput="filterSemiFinishedList()" class="border p-1.5 rounded-xl w-full table-text" style="padding-right:30px;">
             <svg id="semiFinishedSearchIcon" class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:14px; height:14px; color:#a29c8c; pointer-events:none;"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg>
             <svg id="semiFinishedSearchClear" onclick="clearSemiFinishedSearch()" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="position:absolute; right:9px; top:50%; transform:translateY(-50%); width:15px; height:15px; color:#9a9488; cursor:pointer;"><path stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
-        </div>
-        <div class="view-toggle-pill">
-            <button class="view-toggle-btn active" id="semiFinishedViewBtnCards" onclick="setSemiFinishedViewMode('cards')" title="Карточки">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
-            </button>
-            <button class="view-toggle-btn" id="semiFinishedViewBtnTable" onclick="setSemiFinishedViewMode('table')" title="Таблица">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
-            </button>
         </div>
     </div>
 </div>
@@ -1316,18 +1305,6 @@
                         <p id="ingredientCardsEmpty" class="text-xs text-gray-400 text-center py-4 hidden" data-i18n="common_nothing_found">Ничего не найдено</p>
                     </div>
 
-                    <!-- Табличный вид -->
-                    <div id="ingredientTableWrap" class="hidden">
-                        <table class="w-full table-auto table-clean">
-                            <thead><tr style="background-color:#e3e8df;">
-                                <th class="p-1 text-xs w-[35%]" data-i18n="inv_col_name">Название</th>
-                                <th class="p-1 text-xs w-[20%]" data-i18n="ing_price_per_unit">Цена за ед.</th>
-                                <th class="p-1 text-xs w-[25%]" data-i18n="inv_col_balance">Остаток</th>
-                                <th class="p-1 text-xs w-[20%]" data-i18n="inv_col_lasts">Хватит</th>
-                            </tr></thead>
-                            <tbody id="ingredientTableBody"></tbody>
-                        </table>
-                    </div>
                 </div>
             </div>
 
@@ -1468,18 +1445,6 @@
                         <p id="semiFinishedCardsEmpty" class="text-xs text-gray-400 text-center py-4 hidden" data-i18n="common_nothing_found">Ничего не найдено</p>
                     </div>
 
-                    <!-- Табличный вид -->
-                    <div id="semiFinishedTableWrap" class="hidden">
-                        <table class="w-full table-auto table-clean">
-                            <thead><tr style="background-color:#e3e8df;">
-                                <th class="p-1 text-xs w-[35%]" data-i18n="inv_col_name">Название</th>
-                                <th class="p-1 text-xs w-[20%]" data-i18n="ing_price_per_unit">Цена за ед.</th>
-                                <th class="p-1 text-xs w-[25%]" data-i18n="inv_col_balance">Остаток</th>
-                                <th class="p-1 text-xs w-[20%]" data-i18n="inv_col_lasts">Хватит</th>
-                            </tr></thead>
-                            <tbody id="semiFinishedTableBody"></tbody>
-                        </table>
-                    </div>
                 </div>
             </div>
 
@@ -3234,7 +3199,7 @@
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=60"></script>
+    <script src="i18n-core.js?v=61"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=14"></script>
     <script src="auth.js?v=21"></script>
@@ -3243,9 +3208,9 @@
     <script src="inventory.js?v=54"></script>
     <script src="billing.js?v=15"></script>
     <script src="push.js?v=8"></script>
-<script src="ingredients.js?v=39"></script>
+<script src="ingredients.js?v=40"></script>
 <script src="batches.js?v=10"></script>
-<script src="semifinished.js?v=38"></script>
+<script src="semifinished.js?v=39"></script>
 <script src="products.js?v=32"></script>
 <script src="customers.js?v=43"></script>
 <script src="calendar.js?v=9"></script>
