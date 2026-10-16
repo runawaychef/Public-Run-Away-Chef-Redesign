@@ -32,7 +32,7 @@ function semiFinishedUnitCost(sf) {
 function semiFinishedSeverity(sf, neededForOrders) {
     const balance  = typeof getSemiFinishedBalance === 'function' ? getSemiFinishedBalance(sf.id) : null;
     const daily    = typeof avgDailySfUsage === 'function' ? avgDailySfUsage(sf.id) : 0;
-    const daysLeft = (balance !== null && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
+    const daysLeft = (stockForecastOn() && balance !== null && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
     const needed   = neededForOrders[sf.id] || 0;
     const shortage = needed > 0 && (balance === null || balance < needed);
     const isCritical = shortage || (balance !== null && balance <= 0) || (daysLeft !== null && daysLeft < 3) || !sf.recipe_confirmed;
@@ -103,7 +103,7 @@ function renderSemiFinishedCards() {
         const balance   = typeof getSemiFinishedBalance === 'function' ? getSemiFinishedBalance(sf.id) : null;
         const balanceBefore = typeof getSemiFinishedBalanceBeforeWriteoff === 'function' ? getSemiFinishedBalanceBeforeWriteoff(sf.id, pendingMap) : balance;
         const daily     = typeof avgDailySfUsage === 'function' ? avgDailySfUsage(sf.id) : 0;
-        const daysLeft  = (balance !== null && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
+        const daysLeft  = (stockForecastOn() && balance !== null && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
         const needed    = neededForOrders[sf.id] || 0;
         const shortage  = needed > 0 && (balance === null || balance < needed);
 
@@ -581,7 +581,7 @@ async function renderSfStockBlock(sf) {
         // Показываем реальное число, включая отрицательное (реальная нехватка) —
         // раньше отрицательный баланс подменялся на "0", скрывая проблему.
         if (balance !== null) {
-            const days = (balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
+            const days = (stockForecastOn() && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
             balEl.textContent = Number(balance).toFixed(2);
             // Цвет: терракота < 3 дней или ≤0, охра < 7 дней, шалфей — норма
             if (balance <= 0 || (days !== null && days < 3)) { balEl.className = 'text-lg font-bold'; balEl.style.color = '#c0685c'; }

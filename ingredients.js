@@ -32,7 +32,7 @@ function stockColorClass(daysLeft, prefix) {
 function ingredientSeverity(ing, neededForOrders) {
     const balance  = typeof getIngredientBalance === 'function' ? getIngredientBalance(ing.id) : null;
     const daily    = typeof avgDailyUsage === 'function' ? avgDailyUsage(ing.id) : 0;
-    const daysLeft = (balance !== null && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
+    const daysLeft = (stockForecastOn() && balance !== null && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
     const needed   = neededForOrders[ing.id] || 0;
     const shortfall = needed > 0 && (balance === null || balance < needed);
     const isCritical = shortfall || (balance !== null && balance <= 0) || (daysLeft !== null && daysLeft < 3);
@@ -66,6 +66,14 @@ function displayIngredients() {
 
     renderIngredientCards();
     filterIngredientsList();
+}
+
+// Прогноз «хватит на N дней» — только на тарифе с аналитикой (Full).
+// На бесплатном тарифе прогноз не считается вовсе: не влияет ни на цвет
+// полосы и значения «После списания», ни на сортировку. Остаются только
+// факты: нехватка под заказы, нулевой/минусовой остаток (и рецепт у ПФ).
+function stockForecastOn() {
+    return typeof hasPlanFeature === 'function' && hasPlanFeature('cost_analytics');
 }
 
 // Цена на карточке склада: 2 знака после запятой. Для г и мл пересчитываем
@@ -120,7 +128,7 @@ function renderIngredientCards() {
         const balance  = typeof getIngredientBalance === 'function' ? getIngredientBalance(ing.id) : null;
         const balanceBefore = typeof getIngredientBalanceBeforeWriteoff === 'function' ? getIngredientBalanceBeforeWriteoff(ing.id, pendingMap) : balance;
         const daily    = typeof avgDailyUsage === 'function' ? avgDailyUsage(ing.id) : 0;
-        const daysLeft = (balance !== null && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
+        const daysLeft = (stockForecastOn() && balance !== null && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
         const needed   = neededForOrders[ing.id] || 0;
         const shortfall = needed > 0 && (balance === null || balance < needed);
 
@@ -705,7 +713,7 @@ async function renderIngredientStockBlock(ing) {
         // раньше отрицательный баланс подменялся на "0", скрывая проблему.
         if (balance !== null) {
             balEl.textContent = Number(balance).toFixed(2);
-            const days = (balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
+            const days = (stockForecastOn() && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
             const colorClass = balance <= 0 ? 'text-[#c0685c]' : stockColorClass(days, 'text-');
             balEl.className = colorClass + ' font-bold';
         } else {
