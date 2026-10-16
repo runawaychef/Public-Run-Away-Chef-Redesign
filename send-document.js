@@ -538,23 +538,54 @@ function _renderSendSheet() {
         ${st.custId && typeof openDocumentsSection === 'function' ? `<div style="text-align:center; margin-top:12px;"><span onclick="openDocumentsSection({ custId: ${st.custId} })" style="color:#4f6349; font-size:13px; font-weight:700; cursor:pointer;">${t('docs_all_of_customer')} ›</span></div>` : ''}`;
 }
 
+// «Разговорчивая» кнопка (16.10): раньше при сбое форма «Документ» молча не открывалась.
+// Теперь вместо тишины — сообщение с кодом: A — заказ не найден в памяти, B — ошибка
+// при построении формы, C — сервер не ответил за 15 с. Подробности — в консоли.
+const _SEND_OPEN_TIMEOUT_MS = 15000;
+let _sendOpenSeq = 0;
+function _sendOpenFail(code, detail) {
+    console.error('[openSendDocumentSheet] код ' + code, detail);
+    hideLoading();
+    showInfo(t('send_open_fail').replace('{code}', code));
+}
+function _sendWithTimeout(promise) {
+    let timer;
+    const timeout = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error('SEND_OPEN_TIMEOUT')), _SEND_OPEN_TIMEOUT_MS); });
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 async function openSendDocumentSheet(orderId, docType) {
+    const seq = ++_sendOpenSeq;
+    try {
+        await _openSendDocumentSheetImpl(orderId, docType, seq);
+    } catch (e) {
+        if (seq !== _sendOpenSeq) return; // уже открыта другая попытка
+        _sendOpenFail(e && e.message === 'SEND_OPEN_TIMEOUT' ? 'C' : 'B', e);
+    }
+}
+
+async function _openSendDocumentSheetImpl(orderId, docType, seq) {
     const order = orders.find(o => o.id === orderId);
-    if (!order) return;
+    if (!order) { _sendOpenFail('A', { orderId, type: typeof orderId, ordersLoaded: (orders || []).length }); return; }
     const cust = order.customer_id ? customers.find(c => c.id === order.customer_id) : null;
 
     showLoading();
     let row;
     try {
-        row = await _sendLoadRow(orderId);
+        row = await _sendWithTimeout(_sendLoadRow(orderId));
     } catch (e) {
+        if (e && e.message === 'SEND_OPEN_TIMEOUT') throw e;
         console.error(e);
         hideLoading();
         showInfo(t('error_save_check_connection'));
         return;
     }
     let consExisting = null;
-    try { consExisting = await _sendLoadConsolidated(order); } catch (e) { console.error(e); }
+    try { consExisting = await _sendWithTimeout(_sendLoadConsolidated(order)); } catch (e) {
+        if (e && e.message === 'SEND_OPEN_TIMEOUT') throw e;
+        console.error(e);
+    }
+    if (seq !== _sendOpenSeq) { hideLoading(); return; }
     hideLoading();
 
     const checked = { invoice: false, delivery_note: false };
@@ -573,7 +604,10 @@ async function openSendDocumentSheet(orderId, docType) {
     if (!consExisting) {
         stNew.consCand = _consCandidates(order);
         if (stNew.consCand.length > 1 && order.customer_id) {
-            try { stNew.consOwnInv = await _consLoadOwnInvoices(order.customer_id); } catch (e) { console.error(e); }
+            showLoading();
+            try { stNew.consOwnInv = await _sendWithTimeout(_consLoadOwnInvoices(order.customer_id)); } catch (e) { console.error(e); stNew.consOwnInv = {}; }
+            hideLoading();
+            if (seq !== _sendOpenSeq) return;
         }
         // По умолчанию — все ещё не включённые в счёт заказы клиента до даты этого заказа включительно,
         // кроме заказов, у которых уже есть отдельный счёт

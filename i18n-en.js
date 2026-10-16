@@ -903,6 +903,7 @@ I18N.en = {
         send_cons_own_inv: 'Has a separate invoice INV-{n}',
         send_cons_own_inv_paid: 'Separate invoice INV-{n} has payments — cannot be included',
         send_cons_own_inv_warn: 'Some selected orders already have a separate invoice. The customer may pay for them twice.',
+        send_open_fail: 'Could not open “Document” (code {code}). Take a screenshot and restart the app.',
         send_cons_total: 'Total',
         send_cons_member: 'Orders on this invoice:',
         send_cons_changed_warn: 'Issued for {old}, orders now total {new} — an updated invoice with the same number will be sent',

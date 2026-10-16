@@ -897,6 +897,7 @@ I18N.lt = {
         send_cons_own_inv: 'Turi atskirą sąskaitą INV-{n}',
         send_cons_own_inv_paid: 'Atskira sąskaita INV-{n} jau apmokama — įtraukti negalima',
         send_cons_own_inv_warn: 'Kai kurie pažymėti užsakymai jau turi atskirą sąskaitą. Klientas gali už juos sumokėti du kartus.',
+        send_open_fail: 'Nepavyko atidaryti „Dokumentas“ (kodas {code}). Padarykite ekrano nuotrauką ir paleiskite programą iš naujo.',
         send_cons_total: 'Iš viso',
         send_cons_member: 'Užsakymai šioje sąskaitoje:',
         send_cons_changed_warn: 'Išrašyta {old} sumai, dabar užsakymų suma {new} — bus išsiųsta atnaujinta sąskaita tuo pačiu numeriu',
