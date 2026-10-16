@@ -117,43 +117,135 @@ function stockCardCellsHtml3(a, b, c) {
     return `<div class="oc-cells">${cell(a, true)}${cell(b, false)}${cell(c, false)}</div>`;
 }
 
-// Окно «Неоплаченные заказы клиента»: карточки заказов, по клику — сам заказ
-function openCustomerUnpaidModal(custId) {
+// Окно «Неоплаченные заказы клиента»: заказы сгруппированы по счетам
+// (сводный счёт / счёт на один заказ / счёт не выставлен). Номера и даты счетов
+// берём из того же списка, что и раздел «Документы» (_docsLoad).
+function _unpaidOrderCardHtml(o, alsoInv) {
+    const info = getOrderPaymentStatus(o);
+    const left = Math.max(0, info.grandAmt - info.paidAmt);
+    const badge = orderDateBadgeParts(o.date);
+    const paidLine = info.paidAmt > 0.01
+        ? `<span style="color:#4f6349">${formatMoney(info.paidAmt)} ${t('orders_paid_lower')}</span> · ` : '';
+    const overdue = info.overdue ? `<div class="oc-pay-line" style="color:#8b3a3a; font-weight:700;">${t('orders_payment_overdue')}</div>` : '';
+    const also = alsoInv ? `<div class="oc-pay-line" style="color:#96712a; font-weight:700;">${t('cust_unpaid_also_inv').replace('{n}', escapeHtml(alsoInv))}</div>` : '';
+    return `
+    <div class="order-card" style="cursor:pointer; margin-bottom:6px;" onclick="goToOrderFromCustomerUnpaid(${o.id})">
+        <div class="stripe" style="background:${getPaymentStripeColor(info)}"></div>
+        <div class="order-card-body">
+            <div class="oc-header">
+                <div class="oc-datebadge">
+                    <div class="oc-datebadge-month" style="background:${ORDER_STATUS_COLORS[o.status] || '#7c9473'};">${badge.month}</div>
+                    <div class="oc-datebadge-day">${badge.day}</div>
+                </div>
+                <div style="flex:1; min-width:0;">
+                    <div class="oc-row">
+                        <span class="oc-name">${escapeHtml(orderNumLabel(o))}</span>
+                        <span class="oc-sum">${formatMoney(info.grandAmt)}</span>
+                    </div>
+                    <div class="oc-pay-line" style="margin-top:3px;">${paidLine}<span style="color:#c0685c">${formatMoney(left)} ${t('orders_remaining_lower')}</span></div>
+                    ${overdue}${also}
+                </div>
+            </div>
+        </div>
+    </div>`;
+}
+
+function _unpaidGroupHtml(opts) {
+    const btn = opts.btnLabel
+        ? `<button type="button" onclick="${opts.btnAction}" style="margin-top:4px; font-size:12px; font-weight:600; background:${opts.btnBg}; color:${opts.btnColor}; border:0; border-radius:999px; padding:4px 10px;">${opts.btnLabel}</button>` : '';
+    return `
+    <div style="${opts.boxStyle} border-radius:18px; padding:10px 10px 4px; margin-bottom:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:2px 4px 8px;">
+            <div style="min-width:0;">
+                <div style="font-size:14px; font-weight:700; color:${opts.titleColor};">${opts.title}</div>
+                <div style="font-size:11.5px; color:#6b675d; margin-top:2px;">${opts.sub}</div>
+            </div>
+            <div style="text-align:right; flex-shrink:0;">
+                <div style="font-size:14px; font-weight:700; color:#c0685c;">${formatMoney(opts.total)}</div>
+                ${btn}
+            </div>
+        </div>
+        ${opts.cards}
+    </div>`;
+}
+
+async function openCustomerUnpaidModal(custId) {
     const c = customers.find(x => x.id === custId);
     if (!c) return;
     const list = customerUnpaidOrders(c).sort((x, y) => (x.date || '').localeCompare(y.date || ''));
+    showLoading();
+    try {
+        await _docsLoad();
+    } catch (e) {
+        console.error(e);
+        hideLoading();
+        showInfo(t('error_save_check_connection'));
+        return;
+    }
+    hideLoading();
+    const docByKey = {};
+    _docsAll.forEach(d => { docByKey[d.key] = d; });
+    const leftOf = o => { const i = getOrderPaymentStatus(o); return Math.max(0, i.grandAmt - i.paidAmt); };
+
+    // Раскладываем заказы: сводный счёт → свой счёт → без счёта
+    const groups = [];            // { key, doc, orders }
+    const byKey = {};
+    const noInv = [];
+    list.forEach(o => {
+        const consKey = o.consolidated_invoice_id ? 'cons-' + o.consolidated_invoice_id : null;
+        const ownKey = 'inv-' + o.id;
+        const key = consKey && docByKey[consKey] ? consKey : (docByKey[ownKey] ? ownKey : null);
+        if (!key) { noInv.push(o); return; }
+        if (!byKey[key]) { byKey[key] = { key, doc: docByKey[key], orders: [] }; groups.push(byKey[key]); }
+        byKey[key].orders.push(o);
+    });
+    groups.sort((a, b) => String(a.doc.date).localeCompare(String(b.doc.date)));
+
+    let html = '';
+    groups.forEach(g => {
+        const isCons = g.doc.kind === 'cons';
+        html += _unpaidGroupHtml({
+            boxStyle: 'background:#eef1ea;', titleColor: '#3f5a38',
+            title: (isCons ? t('cust_unpaid_cons') + ' ' : t('cust_unpaid_inv') + ' ') + escapeHtml(g.doc.number || ''),
+            sub: t('cust_unpaid_from').replace('{d}', formatDateDMY(g.doc.date)),
+            total: g.orders.reduce((sum, o) => sum + leftOf(o), 0),
+            btnLabel: t('cust_unpaid_open'), btnBg: '#7c9473', btnColor: '#fff',
+            btnAction: `openCustomerUnpaidDoc(${custId}, '${g.key}')`,
+            cards: g.orders.map(o => {
+                const own = isCons ? docByKey['inv-' + o.id] : null;
+                return _unpaidOrderCardHtml(o, own ? own.number : '');
+            }).join(''),
+        });
+    });
+    if (noInv.length) {
+        html += _unpaidGroupHtml({
+            boxStyle: 'background:#f6f4ec; border:1px dashed #d9d3c0;', titleColor: '#6b675d',
+            title: t('cust_unpaid_none'), sub: t('cust_unpaid_none_sub'),
+            total: noInv.reduce((sum, o) => sum + leftOf(o), 0),
+            btnLabel: noInv.length === 1 ? t('cust_unpaid_issue') : '', btnBg: '#e3e8df', btnColor: '#4f6349',
+            btnAction: noInv.length === 1 ? `openCustomerUnpaidIssue(${noInv[0].id})` : '',
+            cards: noInv.map(o => _unpaidOrderCardHtml(o, '') + (noInv.length > 1
+                ? `<div style="text-align:right; margin:-2px 4px 8px;"><button type="button" onclick="openCustomerUnpaidIssue(${o.id})" style="font-size:12px; font-weight:600; background:#e3e8df; color:#4f6349; border:0; border-radius:999px; padding:4px 10px;">${t('cust_unpaid_issue')}</button></div>` : '')).join(''),
+        });
+    }
     document.getElementById('customerUnpaidTitle').textContent = t('cust_unpaid_title');
-    document.getElementById('customerUnpaidSub').textContent = c.name || '';
-    document.getElementById('customerUnpaidBody').innerHTML = list.map(o => {
-        const info = getOrderPaymentStatus(o);
-        const left = Math.max(0, info.grandAmt - info.paidAmt);
-        const stripeColor = getPaymentStripeColor(info);
-        const badge = orderDateBadgeParts(o.date);
-        const paidLine = info.paidAmt > 0.01
-            ? `<span style="color:#4f6349">${formatMoney(info.paidAmt)} ${t('orders_paid_lower')}</span> · ` : '';
-        const overdue = info.overdue ? `<div class="oc-pay-line" style="color:#8b3a3a; font-weight:700;">${t('orders_payment_overdue')}</div>` : '';
-        return `
-        <div class="order-card" style="cursor:pointer; margin-bottom:8px;" onclick="goToOrderFromCustomerUnpaid(${o.id})">
-            <div class="stripe" style="background:${stripeColor}"></div>
-            <div class="order-card-body">
-                <div class="oc-header">
-                    <div class="oc-datebadge">
-                        <div class="oc-datebadge-month" style="background:${ORDER_STATUS_COLORS[o.status] || '#7c9473'};">${badge.month}</div>
-                        <div class="oc-datebadge-day">${badge.day}</div>
-                    </div>
-                    <div style="flex:1; min-width:0;">
-                        <div class="oc-row">
-                            <span class="oc-name">${escapeHtml(orderNumLabel(o))}</span>
-                            <span class="oc-sum">${formatMoney(info.grandAmt)}</span>
-                        </div>
-                        <div class="oc-pay-line" style="margin-top:3px;">${paidLine}<span style="color:#c0685c">${formatMoney(left)} ${t('orders_remaining_lower')}</span></div>
-                        ${overdue}
-                    </div>
-                </div>
-            </div>
-        </div>`;
-    }).join('');
+    document.getElementById('customerUnpaidSub').textContent = (c.name || '') + ' · ' + formatMoney(list.reduce((sum, o) => sum + leftOf(o), 0));
+    document.getElementById('customerUnpaidBody').innerHTML = html;
     document.getElementById('customerUnpaidModal').style.display = 'flex';
+}
+
+// Открыть счёт из окна: предпросмотр документа в разделе «Документы»
+// (кнопка «Закрыть» вернёт в список документов этого клиента)
+async function openCustomerUnpaidDoc(custId, key) {
+    document.getElementById('customerUnpaidModal').style.display = 'none';
+    _docsFilter = { type: 'inv', custId, year: null, month: null, pay: '', q: '' };
+    _docsOldOpen = false;
+    await openRegistryDoc(key);
+}
+
+function openCustomerUnpaidIssue(orderId) {
+    document.getElementById('customerUnpaidModal').style.display = 'none';
+    openSendDocumentSheet(orderId, 'invoice');
 }
 
 function goToOrderFromCustomerUnpaid(orderId) {
