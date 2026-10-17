@@ -121,10 +121,40 @@ function stockCardCellsHtml3(a, b, c) {
 // Окно «Неоплаченные заказы клиента»: заказы сгруппированы по счетам
 // (сводный счёт / счёт на один заказ / счёт не выставлен). Номера и даты счетов
 // берём из того же списка, что и раздел «Документы» (_docsLoad).
-function _unpaidOrderCardHtml(o, alsoInv) {
-    // Та же свёрнутая карточка, что в «Заказах» (встроенный режим, 16.10)
-    const also = alsoInv ? `<div class="oc-pay-line" style="color:#96712a; font-weight:700;">${t('cust_unpaid_also_inv').replace('{n}', escapeHtml(alsoInv))}</div>` : '';
-    return renderDoneOrderCard(o, { embedded: true, onTap: 'goToOrderFromCustomerUnpaid', extraHtml: also });
+function _unpaidOrderCardHtml(o, alsoInv, issueCol) {
+    // Старое имя оставлено; теперь возвращает одну строку таблицы (см. _custOrdersTableHtml)
+    return _custOrderRowHtml(o, 'goToOrderFromCustomerUnpaid', { alsoInv, showLeft: true, issueCol });
+}
+
+// Строка таблицы заказов клиента: № · Дата · Сумма (точка = оплата) · Статус.
+// Та же вёрстка, что у таблицы «Заказы клиента» на странице клиента.
+function _custOrderRowHtml(o, onTap, opts) {
+    opts = opts || {};
+    const statusFlag = { 'принят': 'flag-red', 'в работе': 'flag-yellow', 'выполнен': 'flag-green' };
+    const oNum = o.order_number || `#${o.id}`;
+    const pay = getOrderPaymentStatus(o);
+    const amt = opts.showLeft ? Math.max(0, pay.grandAmt - pay.paidAmt) : pay.grandAmt;
+    const cols = opts.issueCol ? 5 : 4;
+    const issue = opts.issueCol
+        ? `<td class="p-0.5 text-right"><span class="cu-issue-btn" onclick="event.stopPropagation(); openCustomerUnpaidIssue(${o.id})" title="${t('cust_unpaid_issue')}" aria-label="${t('cust_unpaid_issue')}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 11v6M9 14h6"/></svg></span></td>` : '';
+    const also = opts.alsoInv
+        ? `<tr class="border-b"><td colspan="${cols}" class="p-0.5" style="color:#96712a;font-size:11px;font-weight:600;">${t('cust_unpaid_also_inv').replace('{n}', escapeHtml(opts.alsoInv))}</td></tr>` : '';
+    return `<tr class="border-b order-row" onclick="${onTap}(${o.id})">
+        <td class="p-0.5 whitespace-nowrap">${escapeHtml(oNum)}</td>
+        <td class="p-0.5">${formatDateDMY(o.date)}</td>
+        <td class="p-0.5 text-right font-semibold"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background-color:${getPaymentStripeColor(pay)};"></span>${amt.toFixed(2)}</td>
+        <td class="p-0.5 text-center"><span class="flag ${statusFlag[o.status] || ''}"></span> ${escapeHtml(orderStatusLabel(o.status))}</td>${issue}
+    </tr>${also}`;
+}
+function _custOrdersTableHtml(rowsHtml, issueCol) {
+    const w = issueCol ? [25, 19, 22, 24, 10] : [28, 20, 26, 26];
+    return '<table class="w-full table-text table-clean" style="table-layout:fixed;"><thead><tr class="text-xs" style="color:#8a8a82;">'
+        + '<th class="p-1 text-left" style="width:' + w[0] + '%;">' + t('customers_col_number') + '</th>'
+        + '<th class="p-1 text-left" style="width:' + w[1] + '%;">' + t('customers_col_date') + '</th>'
+        + '<th class="p-1 text-right" style="width:' + w[2] + '%;">' + t('customers_col_sum') + '</th>'
+        + '<th class="p-1 text-center" style="width:' + w[3] + '%;">' + t('customers_col_status') + '</th>'
+        + (issueCol ? '<th style="width:' + w[4] + '%;"></th>' : '')
+        + '</tr></thead><tbody>' + rowsHtml + '</tbody></table>';
 }
 
 function _unpaidGroupHtml(opts) {
@@ -188,10 +218,10 @@ async function openCustomerUnpaidModal(custId) {
             total: g.orders.reduce((sum, o) => sum + leftOf(o), 0),
             btnLabel: t('cust_unpaid_open'), btnBg: '#7c9473', btnColor: '#fff',
             btnAction: `openCustomerUnpaidDoc(${custId}, '${g.key}')`,
-            cards: g.orders.map(o => {
+            cards: _custOrdersTableHtml(g.orders.map(o => {
                 const own = isCons ? docByKey['inv-' + o.id] : null;
                 return _unpaidOrderCardHtml(o, own ? own.number : '');
-            }).join(''),
+            }).join('')),
         });
     });
     if (noInv.length) {
@@ -199,10 +229,8 @@ async function openCustomerUnpaidModal(custId) {
             boxStyle: 'background:#f6f4ec; border:1px dashed #d9d3c0;', titleColor: '#6b675d',
             title: t('cust_unpaid_none'), sub: t('cust_unpaid_none_sub'),
             total: noInv.reduce((sum, o) => sum + leftOf(o), 0),
-            btnLabel: noInv.length === 1 ? t('cust_unpaid_issue') : '', btnBg: '#e3e8df', btnColor: '#4f6349',
-            btnAction: noInv.length === 1 ? `openCustomerUnpaidIssue(${noInv[0].id})` : '',
-            cards: noInv.map(o => _unpaidOrderCardHtml(o, '') + (noInv.length > 1
-                ? `<div style="text-align:right; margin:-2px 4px 8px;"><button type="button" onclick="openCustomerUnpaidIssue(${o.id})" style="font-size:12px; font-weight:600; background:#e3e8df; color:#4f6349; border:0; border-radius:999px; padding:4px 10px;">${t('cust_unpaid_issue')}</button></div>` : '')).join(''),
+            btnLabel: '',
+            cards: _custOrdersTableHtml(noInv.map(o => _unpaidOrderCardHtml(o, '', true)).join(''), true),
         });
     }
     document.getElementById('customerUnpaidTitle').textContent = t('cust_unpaid_title');
@@ -660,12 +688,12 @@ function onCustomerCalDayPicked(iso) {
     const d = new Date(iso + 'T00:00:00');
     document.getElementById('customerDayTitle').textContent = formatDateDMY(iso) + ', ' + calWeekdays()[(d.getDay() + 6) % 7].toLowerCase();
     const body = document.getElementById('customerDayBody');
-    body.innerHTML = dayOrders.length ? dayOrders.map(_cdDayOrderHtml).join('')
+    body.innerHTML = dayOrders.length ? _custOrdersTableHtml(dayOrders.map(_cdDayOrderHtml).join(''))
         : `<p class="text-xs text-gray-400" style="margin:4px 0 8px;">${t('cust_day_no_orders')}</p>`;
     document.getElementById('customerDayModal').style.display = 'flex';
 }
 function _cdDayOrderHtml(o) {
-    return renderDoneOrderCard(o, { embedded: true, onTap: 'goToOrderFromCustomerDay' });
+    return _custOrderRowHtml(o, 'goToOrderFromCustomerDay');
 }
 function closeCustomerDay() { document.getElementById('customerDayModal').style.display = 'none'; }
 function goToOrderFromCustomerDay(orderId) { closeCustomerDay(); goToOrderFromCustomer(orderId); }
