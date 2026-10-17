@@ -743,11 +743,19 @@ async function saveCdHeader() {
 // Мини-итоги "за всё время" — не зависят от фильтра по дате под ними
 function renderCustomerStats(cust) {
     const custOrders = orders.filter(o => o.customer_id === cust.id);
-    const totalSum = custOrders.reduce((s, o) => s + orderGrandTotal(o), 0);
-    const lastDate = custOrders.reduce((latest, o) => (!latest || o.date > latest) ? o.date : latest, null);
-    document.getElementById('cdOrderCount').textContent = custOrders.length;
-    document.getElementById('cdTotalSum').textContent = formatMoney(totalSum);
-    document.getElementById('cdLastOrderDate').textContent = lastDate ? formatDateDMY(lastDate) : '—';
+    // Сводка (16.10, вариант А): те же ячейки, что в карточке клиента в списке — Заказов / Сумма заказов /
+    // Задолженность, под ними красная метка «N неоплаченных заказов» (открывает окно по счетам)
+    const debt = customerDebt(cust);
+    const hasDebt = debt > 0.01;
+    const unpaidCnt = hasDebt ? customerUnpaidOrders(cust).length : 0;
+    const cellsEl = document.getElementById('cdStatsCells');
+    if (cellsEl) cellsEl.innerHTML = stockCardCellsHtml3(
+        [t('cust_cell_orders'), String(custOrders.length), '#3c3a34'],
+        [t('cust_cell_total'), formatMoney(customerTotalSpent(cust)), '#3c3a34'],
+        [t('cust_cell_debt'), hasDebt ? formatMoney(debt) : '—', hasDebt ? '#c0685c' : '#a29c8c']);
+    const tagsEl = document.getElementById('cdStatsTags');
+    if (tagsEl) tagsEl.innerHTML = unpaidCnt > 0
+        ? `<div class="oc-tags"><button type="button" class="oc-tag oc-tag-red" onclick="openCustomerUnpaidModal(${cust.id})">${unpaidOrdersLabel(unpaidCnt)}</button></div>` : '';
     // У клиента без заказов сводка и список заказов пусты — не показываем их
     const hasOrders = custOrders.length > 0;
     document.getElementById('cdStatsBlock')?.classList.toggle('hidden', !hasOrders);
