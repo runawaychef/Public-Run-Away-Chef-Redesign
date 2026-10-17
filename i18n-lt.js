@@ -385,6 +385,7 @@ I18N.lt = {
         // Баннер обновления приложения
         update_banner_text: 'Pasiekiama nauja programėlės versija',
         update_banner_btn: 'Atnaujinti',
+        update_overlay_text: 'Atnaujiname Simple Bake…',
 
         // Общие сообщения сохранения/обновления (переиспользуются по всему проекту)
         common_done: 'Baigta',

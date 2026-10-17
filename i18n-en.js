@@ -380,6 +380,7 @@ I18N.en = {
         // App update banner
         update_banner_text: 'A new version of the app is available',
         update_banner_btn: 'Update',
+        update_overlay_text: 'Updating Simple Bake…',
 
         // Common save/update messages (reused across the whole project)
         common_done: 'Done',

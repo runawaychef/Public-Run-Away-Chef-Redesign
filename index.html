@@ -426,6 +426,13 @@
         #bankModal .modal-content, #bankSettingsModal .modal-content { background: #f4f1ea; }
         #ordersBankBadge.hidden, #ordersBankWrap.hidden, #ordersBankDot.hidden { display: none !important; }
         .view-toggle-btn.active { background: #7c9473; color: #fff; }
+        /* Заставка автоматического обновления (16.10): фото запуска + полоса загрузки */
+        #updateOverlay { position: fixed; inset: 0; z-index: 10000; background: #f4ede0; }
+        #updateOverlay img { width: 100%; height: 100%; object-fit: cover; }
+        #updateOverlay .uo-box { position: absolute; left: 16px; right: 16px; bottom: calc(32px + env(safe-area-inset-bottom)); max-width: 380px; margin: 0 auto; background: rgba(255,255,255,0.9); border-radius: 16px; padding: 14px 14px 13px; }
+        #updateOverlay .uo-text { font-size: 14px; color: #3c3a34; text-align: center; }
+        #updateOverlay .uo-track { height: 5px; background: #e3ddcc; border-radius: 3px; overflow: hidden; margin-top: 10px; }
+        #updateOverlay .uo-track i { display: block; height: 100%; width: 0; background: #7c9473; border-radius: 3px; transition: width 0.15s linear; }
         #splashScreen {
             position: fixed; inset: 0; z-index: 90; background: #f4ede0;
             display: flex; align-items: center; justify-content: center;
@@ -3186,7 +3193,7 @@
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=69"></script>
+    <script src="i18n-core.js?v=70"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=14"></script>
     <script src="auth.js?v=21"></script>
@@ -4004,12 +4011,82 @@ window.addEventListener('offline', showOfflineBanner);
 if (!navigator.onLine) showOfflineBanner();
 
 // Регистрация Service Worker для установки как приложение (PWA)
-// + автоматическое обнаружение новой версии, без ручной очистки кэша
+// + АВТОМАТИЧЕСКОЕ обновление (16.10): любое обновление обязательное, кнопки «Обновить»
+// больше нет. Новая версия включается сама в «безопасный момент», чтобы не потерять ввод:
+//  - при запуске, пока человек ещё ничего не нажимал;
+//  - при возврате в приложение из фона;
+//  - в работе: нет открытых окон и карточек, курсор не в поле ввода, 5 с без нажатий.
+// Перед перезапуском — заставка (фото запуска + полоса загрузки), затем обычный запуск.
+let _swUpdateReg = null;
+let _swUpdating = false;
+let _lastUserActionAt = 0;
+const _appLoadedAt = Date.now();
+['pointerdown', 'keydown', 'touchstart'].forEach(ev =>
+    document.addEventListener(ev, () => { _lastUserActionAt = Date.now(); }, { capture: true, passive: true }));
+
+function _swIsSafeMoment(requireIdle) {
+    if (document.visibilityState !== 'visible') return false;
+    // открытые окна (модалки показываются через style.display)
+    const openModal = [...document.querySelectorAll('.modal')].some(m => m.style.display && m.style.display !== 'none');
+    if (openModal) return false;
+    // открытая карточка записи
+    if (['orderDetail', 'customerDetail', 'productDetail', 'ingredientDetail', 'semiFinishedDetail']
+        .some(id => document.getElementById(id)?.classList.contains('active'))) return false;
+    // идёт сохранение / загрузка
+    const lo = document.getElementById('loadingOverlay');
+    if (lo && !lo.classList.contains('hidden')) return false;
+    // курсор в поле ввода
+    const a = document.activeElement;
+    if (a && (a.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(a.tagName))) return false;
+    if (requireIdle && Date.now() - _lastUserActionAt < 5000) return false;
+    return true;
+}
+
+function _swTryApplyUpdate(reason) {
+    if (_swUpdating || !_swUpdateReg || !_swUpdateReg.waiting) return;
+    // при запуске (первые секунды, человек ещё не нажимал) — сразу
+    const atStartup = Date.now() - _appLoadedAt < 6000 && !_lastUserActionAt;
+    if (!(atStartup || _swIsSafeMoment(reason !== 'resume'))) return;
+    _swApplyUpdate();
+}
+
+function _swApplyUpdate() {
+    _swUpdating = true;
+    const waiting = _swUpdateReg && _swUpdateReg.waiting;
+    const ov = document.createElement('div');
+    ov.id = 'updateOverlay';
+    ov.innerHTML = `<img src="splash.jpg" alt="">
+        <div class="uo-box"><div class="uo-text">${escapeHtml(t('update_overlay_text'))}</div><div class="uo-track"><i id="uoBar"></i></div></div>`;
+    document.body.appendChild(ov);
+    const bar = ov.querySelector('#uoBar');
+    // Имитация загрузки: быстро до ~70%, затем медленно до 90%; 100% — перед перезапуском
+    const t0 = performance.now();
+    (function step(now) {
+        if (!document.getElementById('updateOverlay')) return;
+        const sec = (now - t0) / 1000;
+        const v = sec < 0.6 ? sec / 0.6 * 70 : Math.min(90, 70 + (sec - 0.6) / 1.2 * 20);
+        if (bar && !bar.dataset.done) bar.style.width = v + '%';
+        requestAnimationFrame(step);
+    })(t0);
+    // Даём заставке показаться, затем включаем новую версию (перезапуск — по controllerchange)
+    setTimeout(() => {
+        if (waiting) waiting.postMessage({ type: 'SKIP_WAITING' });
+        else window.location.reload();
+    }, 700);
+    // Запасной путь: если смена версии почему-то не произошла — просто перезагружаемся
+    setTimeout(() => window.location.reload(), 8000);
+}
+
+function _swOnUpdateReady(reg) {
+    _swUpdateReg = reg;
+    _swTryApplyUpdate('ready');
+}
+
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').then(reg => {
-            // Проверяем, нет ли уже новой версии, ожидающей применения
-            if (reg.waiting) showUpdateBanner(reg);
+            // Новая версия уже скачана и ждёт (например, с прошлого раза)
+            if (reg.waiting && navigator.serviceWorker.controller) _swOnUpdateReady(reg);
 
             // Следим за появлением новой версии в фоне
             reg.addEventListener('updatefound', () => {
@@ -4017,13 +4094,21 @@ if ('serviceWorker' in navigator) {
                 if (!newWorker) return;
                 newWorker.addEventListener('statechange', () => {
                     if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                        showUpdateBanner(reg);
+                        _swOnUpdateReady(reg);
                     }
                 });
             });
 
             // Периодически спрашиваем сервер, нет ли новой версии (раз в 10 минут, пока открыто приложение)
             setInterval(() => reg.update(), 10 * 60 * 1000);
+            // Ждущая новая версия — проверяем безопасный момент каждые 2 с
+            setInterval(() => _swTryApplyUpdate('idle'), 2000);
+            // При возврате в приложение — сначала спросить сервер, затем попробовать обновиться
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState !== 'visible') return;
+                setTimeout(() => _swTryApplyUpdate('resume'), 400);
+                reg.update().catch(() => {});
+            });
         }).catch(err => console.error('SW registration failed:', err));
 
         // При смене активного воркера — перезагружаем страницу один раз
@@ -4031,24 +4116,11 @@ if ('serviceWorker' in navigator) {
         navigator.serviceWorker.addEventListener('controllerchange', () => {
             if (refreshedAfterUpdate) return;
             refreshedAfterUpdate = true;
-            window.location.reload();
+            const bar = document.getElementById('uoBar');
+            if (bar) { bar.dataset.done = '1'; bar.style.width = '100%'; }
+            setTimeout(() => window.location.reload(), bar ? 200 : 0);
         });
     });
-}
-
-function showUpdateBanner(reg) {
-    if (document.getElementById('updateBanner')) return; // уже показан
-    const banner = document.createElement('div');
-    banner.id = 'updateBanner';
-    banner.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:9999;background:#fff;color:#2b2a28;padding:12px 16px;padding-bottom:calc(12px + env(safe-area-inset-bottom));border-radius:16px 16px 0 0;display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:13px;box-shadow:0 -2px 12px rgba(0,0,0,0.12);';
-    banner.innerHTML = `<span>${t('update_banner_text')}</span>
-        <button style="background:#7c9473;color:#fff;border:none;padding:7px 14px;border-radius:999px;font-size:13px;font-weight:600;flex-shrink:0;">${t('update_banner_btn')}</button>`;
-    banner.querySelector('button').onclick = () => {
-        const waiting = reg.waiting;
-        if (waiting) waiting.postMessage({ type: 'SKIP_WAITING' });
-        banner.remove();
-    };
-    document.body.appendChild(banner);
 }
 
 // Показываем страницу только теперь: скрипт Tailwind CDN (в <head>, выполняется
