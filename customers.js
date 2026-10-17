@@ -821,6 +821,10 @@ function memoBannerOpenCustomer(custId) {
 // Перерисовать всё, что зависит от памятных дат и числа N
 function memoRefreshViews() {
     renderOrdersMemoBanner();
+    if (currentCustomerId != null && document.getElementById('customerDetail')?.classList.contains('active')) {
+        const cust = customers.find(c => c.id === currentCustomerId);
+        if (cust) renderCustomerStats(cust);
+    }
     if (document.getElementById('customerCardsBody') && Array.isArray(customers)) { renderCustomerCards(); filterCustomersList(); }
 }
 
@@ -925,7 +929,7 @@ function _memoItemHtml(m, opts) {
     </div>`;
 }
 function _memoWhenText(n) {
-    return n === 0 ? t('memo_today') : t('memo_in_days').replace('{n}', n);
+    return n === 0 ? t('memo_today') : n === 1 ? t('memo_tomorrow') : t('memo_in_days').replace('{n}', n);
 }
 
 // «Заказы»: памятные даты на день с учётом фильтра «Клиенты» (там выбор хранится по именам)
@@ -1209,12 +1213,28 @@ function renderCustomerStats(cust) {
         [t('cust_cell_orders'), String(custOrders.length), '#3c3a34'],
         [t('cust_cell_total'), formatMoney(customerTotalSpent(cust)), '#3c3a34'],
         [t('cust_cell_debt'), hasDebt ? formatMoney(debt) : '—', hasDebt ? '#c0685c' : '#a29c8c']);
-    const tagsEl = document.getElementById('cdStatsTags');
-    if (tagsEl) tagsEl.innerHTML = unpaidCnt > 0
-        ? `<div class="oc-tags"><button type="button" class="oc-tag oc-tag-red" onclick="openCustomerUnpaidModal(${cust.id})">${unpaidOrdersLabel(unpaidCnt)}</button></div>` : '';
-    // У клиента без заказов сводка и список заказов пусты — не показываем их
     const hasOrders = custOrders.length > 0;
-    document.getElementById('cdStatsBlock')?.classList.toggle('hidden', !hasOrders);
+    // Памятные даты в окне N дней (17.10): строка над ячейками (все даты) + золотая метка перед красной
+    const upcoming = memoUpcoming(cust.id);
+    const stripEl = document.getElementById('cdMemoStrip');
+    if (stripEl) stripEl.innerHTML = upcoming.length
+        ? `<div class="memo-day-box" style="margin-bottom:${hasOrders ? 20 : 2}px;">${upcoming.map(x =>
+            _memoItemHtml(x.m, { onTap: `openMemoEdit(${x.m.id}, 'detail')`, soon: true, whenHtml: escapeHtml(_memoWhenText(x.n)) })).join('')}</div>` : '';
+    const tags = [];
+    if (hasOrders && upcoming.length) {
+        const x = upcoming[0];
+        let txt = '♥ ' + memoShortWhen(x) + (x.n > 1 ? ' · ' + t('memo_in_days').replace('{n}', x.n) : '');
+        if (upcoming.length > 1) txt += ' +' + (upcoming.length - 1);
+        tags.push(`<button type="button" class="oc-tag oc-tag-memo" onclick="openMemoEdit(${x.m.id}, 'detail')">${escapeHtml(txt)}</button>`);
+    }
+    if (unpaidCnt > 0) tags.push(`<button type="button" class="oc-tag oc-tag-red" onclick="openCustomerUnpaidModal(${cust.id})">${unpaidOrdersLabel(unpaidCnt)}</button>`);
+    const tagsEl = document.getElementById('cdStatsTags');
+    if (tagsEl) tagsEl.innerHTML = tags.length ? `<div class="oc-tags">${tags.join('')}</div>` : '';
+    // У клиента без заказов ячейки и список заказов пусты — скрываем их; кнопки «Календарь» и «Памятные даты» остаются
+    if (cellsEl) cellsEl.classList.toggle('hidden', !hasOrders);
+    const btns = document.getElementById('cdStatsBtns');
+    if (btns) btns.style.marginTop = hasOrders ? '8px' : '0';
+    document.getElementById('cdStatsBlock')?.classList.remove('hidden');
     document.getElementById('cdOrdersBlock')?.classList.toggle('hidden', !hasOrders);
 }
 
