@@ -94,6 +94,7 @@ function renderCustomerCards() {
         // Порядок меток (16.10): постоянные признаки (тип, НДС) → условия (скидка) → тревожные (красные) в конце
         if (c.vat_exempt) tagList.push(`<span class="oc-tag">${t('cust_tag_no_vat')}</span>`);
         if (Number(c.discount) > 0) tagList.push(`<span class="oc-tag">${t('cust_tag_discount').replace('{n}', Number(c.discount))}</span>`);
+        { const memoTag = memoCustomerTagHtml(c.id); if (memoTag) tagList.push(memoTag); } // памятная дата скоро — перед тревожными
         if (unpaidCnt > 0) tagList.push(`<button type="button" class="oc-tag oc-tag-red" onclick="event.stopPropagation(); openCustomerUnpaidModal(${c.id})">${unpaidOrdersLabel(unpaidCnt)}</button>`);
         html += `
         <div class="order-card" data-name="${escapeHtml((c.name || '').toLowerCase())}" style="cursor:pointer;" onclick="openCustomerDetail(${c.id})">
@@ -726,7 +727,8 @@ function addMemoForCustomerDay() {
 // Значок в календаре — золотое сердечко; прошедшая разовая дата — серое (в списке скрыта).
 const MEMO_GOLD = '#c9973a';
 const MEMO_GREY = '#c4beb0';
-const MEMO_REMIND_DAYS = 7; // «скоро» в списке; позже — общая настройка напоминаний
+// «Скоро» = в пределах N дней; N — общее для пекарни (organizations.memo_remind_days, 1–30)
+function memoRemindDays() { return (typeof currentOrgMemoRemindDays !== 'undefined' && currentOrgMemoRemindDays) || 7; }
 let memoDates = [];
 let _memoLoaded = null;      // org_id, для которой загружены даты
 let _memoEditId = null;      // null — новая дата
@@ -739,6 +741,119 @@ async function loadMemoDates(force) {
     if (error) { console.error(error); return; }
     memoDates = data || [];
     _memoLoaded = currentOrgId;
+    memoRefreshViews();
+}
+
+// ===== Напоминания (шаг 3, 17.10): метка в карточке клиента и баннер в «Заказах» =====
+// Ближайшие даты в пределах N дней: [{ m, next, n }], по возрастанию
+function memoUpcoming(custId) {
+    const max = memoRemindDays();
+    return memoDates.filter(m => custId == null || m.customer_id === custId)
+        .map(m => { const next = memoNextDate(m); return { m, next, n: next ? memoDaysLeft(next) : -1 }; })
+        .filter(x => x.next && x.n >= 0 && x.n <= max)
+        .sort((a, b) => a.n - b.n || a.m.title.localeCompare(b.m.title));
+}
+function _memoCap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
+// «Сегодня» / «Завтра» / «22.10»
+function memoShortWhen(x) {
+    if (x.n === 0) return _memoCap(t('memo_today'));
+    if (x.n === 1) return _memoCap(t('memo_tomorrow'));
+    return formatDateDMY(_memoIso(x.next)).slice(0, 5);
+}
+// Метка для карточки клиента: «♥ Сегодня», «♥ Завтра», «♥ 22.10 · через 5 дн.», при нескольких — «+1»
+function memoCustomerTagHtml(custId) {
+    const list = memoUpcoming(custId);
+    if (!list.length) return '';
+    const x = list[0];
+    let txt = '♥ ' + memoShortWhen(x) + (x.n > 1 ? ' · ' + t('memo_in_days').replace('{n}', x.n) : '');
+    if (list.length > 1) txt += ' +' + (list.length - 1);
+    return `<span class="oc-tag oc-tag-memo">${escapeHtml(txt)}</span>`;
+}
+
+// Баннер: выключатель — на устройстве; крестик скрывает показанные даты (ключ «id:дата»)
+const MEMO_BANNER_OFF_KEY = 'memo_banner_off';
+const MEMO_BANNER_DISMISSED_KEY = 'memo_banner_dismissed';
+let _memoBannerExpanded = false;
+function memoBannerEnabled() {
+    try { return localStorage.getItem(MEMO_BANNER_OFF_KEY) !== '1'; } catch (e) { return true; }
+}
+function _memoBannerKey(x) { return x.m.id + ':' + _memoIso(x.next); }
+function _memoDismissedGet() {
+    try { const a = JSON.parse(localStorage.getItem(MEMO_BANNER_DISMISSED_KEY) || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; }
+}
+function renderOrdersMemoBanner() {
+    const box = document.getElementById('ordersMemoBanner');
+    if (!box) return;
+    if (!memoBannerEnabled() || !memoDates.length) { box.innerHTML = ''; return; }
+    const list = memoUpcoming(null);
+    const dismissed = _memoDismissedGet();
+    if (!list.length || list.every(x => dismissed.includes(_memoBannerKey(x)))) { box.innerHTML = ''; return; }
+    const shown = _memoBannerExpanded ? list : list.slice(0, 3);
+    const rows = shown.map(x => {
+        const c = customers.find(cc => cc.id === x.m.customer_id);
+        return `<div class="memo-bn-row" onclick="memoBannerOpenCustomer(${x.m.customer_id})">
+            <span class="memo-bn-when">${escapeHtml(memoShortWhen(x))}</span>
+            <span class="memo-bn-txt">${escapeHtml(x.m.title)}${c && c.name ? ` · <span class="memo-bn-cust">${escapeHtml(c.name)}</span>` : ''}</span>
+        </div>`;
+    }).join('');
+    const more = list.length > 3
+        ? `<div class="memo-bn-more" onclick="memoBannerToggleMore()">${escapeHtml(_memoBannerExpanded ? t('memo_banner_less') : t('memo_banner_more').replace('{n}', list.length - 3))}</div>` : '';
+    box.innerHTML = `<div class="memo-banner">
+        <button type="button" class="memo-bn-x" aria-label="×" onclick="memoBannerDismiss()">×</button>
+        <div class="memo-bn-title">♥ ${escapeHtml(t('memo_banner_title'))}</div>
+        ${rows}${more}
+    </div>`;
+}
+function memoBannerToggleMore() { _memoBannerExpanded = !_memoBannerExpanded; renderOrdersMemoBanner(); }
+function memoBannerDismiss() {
+    const today = _memoIso(_memoToday());
+    // старые ключи (прошедшие даты) выбрасываем, чтобы список не рос
+    const keep = _memoDismissedGet().filter(k => (k.split(':')[1] || '') >= today);
+    memoUpcoming(null).forEach(x => { const k = _memoBannerKey(x); if (!keep.includes(k)) keep.push(k); });
+    try { localStorage.setItem(MEMO_BANNER_DISMISSED_KEY, JSON.stringify(keep)); } catch (e) { /* без хранилища */ }
+    renderOrdersMemoBanner();
+}
+function memoBannerOpenCustomer(custId) {
+    if (!customers.find(c => c.id === custId)) return;
+    showTab('customers');
+    openCustomerDetail(custId);
+}
+// Перерисовать всё, что зависит от памятных дат и числа N
+function memoRefreshViews() {
+    renderOrdersMemoBanner();
+    if (document.getElementById('customerCardsBody') && Array.isArray(customers)) { renderCustomerCards(); filterCustomersList(); }
+}
+
+// Настройки → «Памятные даты»: N (владелец/менеджер) и баннер (это устройство)
+function refreshMemoSettingsUI() {
+    const sel = document.getElementById('memoRemindDaysSel');
+    if (!sel) return;
+    if (!sel.options.length) sel.innerHTML = Array.from({ length: 30 }, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('');
+    sel.value = String(memoRemindDays());
+    const canEdit = typeof hasPermission === 'function' && hasPermission('can_manage_team');
+    sel.disabled = !canEdit;
+    const hint = document.getElementById('memoRemindDaysHint');
+    if (hint) hint.textContent = t(canEdit ? 'memo_set_days_hint' : 'memo_set_days_ro');
+    const cb = document.getElementById('memoBannerToggle');
+    if (cb) cb.checked = memoBannerEnabled();
+}
+async function setMemoRemindDays(val) {
+    const n = Math.min(30, Math.max(1, parseInt(val, 10) || 7));
+    const prev = memoRemindDays();
+    if (n === prev) return;
+    try {
+        await updateChecked(db.from('organizations').update({ memo_remind_days: n }).eq('id', currentOrgId));
+        currentOrgMemoRemindDays = n;
+        memoRefreshViews();
+    } catch (e) {
+        console.error(e);
+        showInfo(e && e.code === '42501' ? t('memo_set_days_ro') : t('error_save_check_connection'));
+    }
+    refreshMemoSettingsUI();
+}
+function setMemoBannerEnabled(on) {
+    try { if (on) localStorage.removeItem(MEMO_BANNER_OFF_KEY); else localStorage.setItem(MEMO_BANNER_OFF_KEY, '1'); } catch (e) { /* без хранилища */ }
+    renderOrdersMemoBanner();
 }
 
 // Дата памятного дня в году y (29.02 в невисокосный год — 28.02)
@@ -861,7 +976,7 @@ function renderMemoList() {
     }
     body.innerHTML = list.map(x => {
         const n = memoDaysLeft(x.next);
-        const soon = n <= MEMO_REMIND_DAYS;
+        const soon = n <= memoRemindDays();
         const when = soon ? _memoWhenText(n) : formatDateDMY(_memoIso(x.next));
         return _memoItemHtml(x.m, { onTap: `openMemoEdit(${x.m.id}, 'list')`, soon, whenHtml: escapeHtml(when) });
     }).join('');
@@ -953,6 +1068,7 @@ async function saveMemoEdit() {
             if (error) throw error;
             memoDates.push(data);
         }
+        memoRefreshViews();
     } catch (e) {
         console.error(e);
         hideLoading();
@@ -972,6 +1088,7 @@ async function deleteMemoEdit() {
     hideLoading();
     if (error) { console.error(error); showInfo(t('error_save_check_connection')); return; }
     memoDates = memoDates.filter(x => x.id !== m.id);
+    memoRefreshViews();
     closeMemoEdit();
 }
 

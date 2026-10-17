@@ -677,6 +677,16 @@
         .memo-item-when { margin-left: auto; text-align: right; font-size: 12px; white-space: nowrap; color: #6b675d; padding-left: 6px; }
         .memo-item-when.soon { color: #96712a; font-weight: 700; }
         .memo-day-box { background: #fdf8ec; border-radius: 12px; padding: 2px 8px; margin-bottom: 8px; }
+        .order-card .oc-tag-memo, #cdStatsBlock .oc-tag-memo { background: #fbf3df; color: #96712a; font-weight: 700; }
+        .memo-banner { position: relative; background: #fff; border: 1px solid #e3ddcc; border-radius: 14px; padding: 9px 40px 8px 14px; margin: 3px 0 12px; }
+        .memo-bn-title { font-size: 13px; font-weight: 700; color: #96712a; margin-bottom: 2px; }
+        .memo-bn-x { position: absolute; right: 8px; top: 7px; width: 26px; height: 26px; border-radius: 50%; border: 0; background: #f6f4ec; color: #8a857a; font-size: 17px; line-height: 1; padding: 0; }
+        .memo-bn-row { display: flex; gap: 8px; align-items: baseline; padding: 6px 0; border-top: 1px solid #f0ede4; cursor: pointer; font-size: 13px; color: #3c3a34; }
+        .memo-bn-title + .memo-bn-row { border-top: 0; }
+        .memo-bn-when { color: #c9973a; font-weight: 700; min-width: 64px; flex-shrink: 0; }
+        .memo-bn-txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .memo-bn-cust { color: #6b675d; }
+        .memo-bn-more { color: #7c9473; font-weight: 700; font-size: 13px; padding: 4px 0 2px; cursor: pointer; }
         .cal-footer { display: flex; justify-content: center; margin-top: 7px; }
         .cal-today-btn { font-size: 14px; font-weight: 700; color: #7c9473; padding: 5px 13px; border-radius: 10px; cursor: pointer; }
         .cal-today-btn:active { background: #f4f1ea; }
@@ -1896,6 +1906,8 @@ function hideSplashScreen() {
             <!-- СПИСОК ЗАКАЗОВ -->
             <div id="ordersList">
                 <div id="ordersBankNotice" style="padding:0 2px;"></div>
+                <!-- Ближайшие памятные даты клиентов (customers.js, renderOrdersMemoBanner) -->
+                <div id="ordersMemoBanner"></div>
 
                 <!-- Итог по включённым фильтрам (виден только при активном фильтре) — тап открывает разбивку по изделиям -->
                 <div id="ordersFilterSummary" class="hidden" onclick="openOrdersProductsModal()"></div>
@@ -2290,6 +2302,19 @@ function hideSplashScreen() {
                         </label>
                     </div>
                     <p id="pushUnsupportedNote" class="text-xs text-gray-500 hidden" style="padding:4px 8px 0;" data-i18n="push_unsupported_note">Push-уведомления не поддерживаются в этом браузере/устройстве.</p>
+                </div>
+
+                <!-- Памятные даты клиентов: за сколько дней напоминать (для пекарни) и баннер в «Заказах» (это устройство) -->
+                <div id="memoSettingsBlock" class="flex flex-col gap-1 mb-3 rounded-xl p-2" style="background:#f4f1ea; border:1px solid #ece7d9;">
+                    <div class="flex items-center gap-2 text-xs font-semibold text-gray-700" style="padding:4px 8px 2px;"><svg width="15" height="15" viewBox="0 0 24 24" aria-hidden="true"><path fill="#c9973a" d="M12 21s-7.5-4.6-9.6-9.1C.9 8.6 3 5 6.5 5c2 0 3.5 1.1 5.5 3 2-1.9 3.5-3 5.5-3C21 5 23.1 8.6 21.6 11.9 19.5 16.4 12 21 12 21z"/></svg><span data-i18n="memo_list_title">Памятные даты</span></div>
+                    <label class="flex items-center justify-between gap-2 text-xs text-gray-600" style="padding:7px 8px;">
+                        <span><span data-i18n="memo_set_days">Напоминать за</span><span id="memoRemindDaysHint" class="block text-[11px] text-gray-400"></span></span>
+                        <span class="flex items-center gap-1.5 flex-shrink-0"><select id="memoRemindDaysSel" onchange="setMemoRemindDays(this.value)" style="width:58px;"></select><span data-i18n="memo_set_days_unit">дн.</span></span>
+                    </label>
+                    <label class="flex items-center justify-between gap-2 text-xs text-gray-600" style="padding:7px 8px;">
+                        <span><span data-i18n="memo_set_banner">Баннер в «Заказах»</span><span class="block text-[11px] text-gray-400" data-i18n="memo_set_banner_hint">Только на этом устройстве</span></span>
+                        <input type="checkbox" id="memoBannerToggle" onchange="setMemoBannerEnabled(this.checked)" style="accent-color:#7c9473;">
+                    </label>
                 </div>
 
                 <!-- Группа 2+3: управление данными (свёрнуто по умолчанию) -->
@@ -3337,22 +3362,22 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=73"></script>
+    <script src="i18n-core.js?v=74"></script>
     <script src="supabaseClient.js?v=7"></script>
-    <script src="cache.js?v=14"></script>
+    <script src="cache.js?v=15"></script>
     <script src="auth.js?v=21"></script>
-    <script src="employees.js?v=52"></script>
+    <script src="employees.js?v=53"></script>
     <script src="company.js?v=23"></script>
-    <script src="inventory.js?v=54"></script>
+    <script src="inventory.js?v=55"></script>
     <script src="billing.js?v=15"></script>
     <script src="push.js?v=8"></script>
 <script src="ingredients.js?v=43"></script>
 <script src="batches.js?v=10"></script>
 <script src="semifinished.js?v=42"></script>
 <script src="products.js?v=35"></script>
-<script src="customers.js?v=53"></script>
+<script src="customers.js?v=54"></script>
 <script src="calendar.js?v=13"></script>
-<script src="orders.js?v=132"></script>
+<script src="orders.js?v=133"></script>
 <script src="invoice.js?v=47"></script>
 <script src="send-document.js?v=27"></script>
 <script src="payments.js?v=25"></script>

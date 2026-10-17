@@ -40,6 +40,7 @@ function resetOrdersRenderLimits() {
 }
 
 function displayOrders() {
+    if (typeof renderOrdersMemoBanner === 'function') renderOrdersMemoBanner(); // памятные даты скоро (customers.js)
     _ordersMoreObserver.disconnect(); // старые sentinel'ы уйдут вместе с перерисованным DOM
     // Список карточек сейчас перерисуется целиком — если у какого-то заказа был
     // открыт статус-дропдаун (и портал увёл его из карточки наружу, см. helpers.js

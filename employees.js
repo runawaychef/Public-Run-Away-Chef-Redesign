@@ -12,7 +12,8 @@ let currentOrgCustomersUsed = 0;    // сколько клиентов созд�
 let currentOrgOrdersUsed = 0;       // сколько заказов создано за всё время (для лимита бесплатного тарифа)
 let currentOrgCurrency = 'EUR';     // код валюты расчёта организации (пригодится для formatMoney())
 let currentOrgVatRate = 0;          // ставка НДС организации (доля, не проценты — 0.21 = 21%); по умолчанию без НДС
-let currentOrgTimezone = null;       // IANA-пояс организации (напр. 'Europe/Vilnius'); null = по устройству
+let currentOrgTimezone = null;
+let currentOrgMemoRemindDays = 7;   // за сколько дней напоминать о памятных датах (organizations.memo_remind_days, общее для пекарни)       // IANA-пояс организации (напр. 'Europe/Vilnius'); null = по устройству
 let currentOrgBccSelf = false;      // глобальный тумблер "присылать копию себе" при email-отправке документов — дефолт для чекбокса в шите отправки
 
 // Глобальный рубильник монетизации (таблица platform_settings, key='monetization_live').
@@ -190,7 +191,7 @@ async function loadCurrentOrg() {
 
         const { data, error } = await db
             .from('memberships')
-            .select('org_id, role, organizations(id, name, plan, plan_override, created_at, customers_created_total, orders_created_total, currency_code, vat_rate, detected_country, detected_country_updated_at, bcc_self_on_send, timezone)')
+            .select('org_id, role, organizations(id, name, plan, plan_override, created_at, customers_created_total, orders_created_total, currency_code, vat_rate, detected_country, detected_country_updated_at, bcc_self_on_send, timezone, memo_remind_days)')
             .eq('user_id', uid)
             .single();
         if (error) throw error;
@@ -210,6 +211,7 @@ async function loadCurrentOrg() {
         currentOrgVatRate = (data.organizations && data.organizations.vat_rate != null) ? Number(data.organizations.vat_rate) : 0;
         currentOrgBccSelf = !!(data.organizations && data.organizations.bcc_self_on_send);
         currentOrgTimezone = (data.organizations && data.organizations.timezone) || null;
+        currentOrgMemoRemindDays = (data.organizations && Number(data.organizations.memo_remind_days)) || 7;
         const detectedCountryUpdatedAt = (data.organizations && data.organizations.detected_country_updated_at) || null;
         await loadMonetizationLiveFlag();
         // Критично для пути быстрого восстановления из кэша (cache.js): там
@@ -427,7 +429,7 @@ async function refreshCurrentEmployeePermissions() {
     try {
         const [empResult, orgResult, settingsResult] = await Promise.all([
             db.from('employees').select(EMPLOYEE_SELECT_FIELDS).eq('id', currentEmployee.id).single(),
-            currentOrgId ? db.from('organizations').select('plan, plan_override, timezone').eq('id', currentOrgId).single() : Promise.resolve({ data: null, error: null }),
+            currentOrgId ? db.from('organizations').select('plan, plan_override, timezone, memo_remind_days').eq('id', currentOrgId).single() : Promise.resolve({ data: null, error: null }),
             db.from('platform_settings').select('value').eq('key', 'monetization_live').maybeSingle(),
         ]);
 
@@ -443,6 +445,7 @@ async function refreshCurrentEmployeePermissions() {
         let planChanged = false;
         if (!orgResult.error && orgResult.data) {
             currentOrgTimezone = orgResult.data.timezone || null;
+            currentOrgMemoRemindDays = Number(orgResult.data.memo_remind_days) || 7;
             const newPlan = orgResult.data.plan_override || orgResult.data.plan || 'free';
             const newIsOverridden = !!orgResult.data.plan_override;
             if (newPlan !== currentOrgPlan || newIsOverridden !== currentOrgPlanIsOverridden) {

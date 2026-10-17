@@ -71,7 +71,7 @@ async function saveAppSnapshot() {
             _inventoryCache,
             currentOrgId, currentOrgName, currentOrgPlan, currentOrgPlanIsOverridden, currentOrgCreatedAt,
             currentOrgCustomersUsed, currentOrgOrdersUsed,
-            currentOrgCurrency, currentOrgVatRate, currentOrgBccSelf, currentOrgTimezone,
+            currentOrgCurrency, currentOrgVatRate, currentOrgBccSelf, currentOrgTimezone, currentOrgMemoRemindDays,
             currentEmployee,
             authUserId,
             savedAt: Date.now()
@@ -126,6 +126,7 @@ function restoreAppFromSnapshot(snapshot) {
     currentOrgVatRate = snapshot.currentOrgVatRate != null ? snapshot.currentOrgVatRate : 0.21;
     currentOrgBccSelf = !!snapshot.currentOrgBccSelf;
     currentOrgTimezone = snapshot.currentOrgTimezone || null;
+    currentOrgMemoRemindDays = Number(snapshot.currentOrgMemoRemindDays) || 7;
     currentEmployee = snapshot.currentEmployee;
     _snapshotAuthUserId = snapshot.authUserId || null;
 
