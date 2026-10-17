@@ -433,12 +433,27 @@
         #updateOverlay .uo-text { font-size: 14px; color: #3c3a34; text-align: center; }
         #updateOverlay .uo-track { height: 5px; background: #e3ddcc; border-radius: 3px; overflow: hidden; margin-top: 10px; }
         #updateOverlay .uo-track i { display: block; height: 100%; width: 0; background: #7c9473; border-radius: 3px; transition: width 0.15s linear; }
+        /* Экран запуска (16.10): фото-заставка — ТОЛЬКО при автообновлении (класс .updating,
+           продолжает заставку обновления с полосой). Обычный запуск без сохранённых данных —
+           бежевый экран с кружком; с сохранёнными данными экран скрывается сразу. */
+        html { background: #f4f1ea; }
         #splashScreen {
-            position: fixed; inset: 0; z-index: 90; background: #f4ede0;
+            position: fixed; inset: 0; z-index: 90; background: #f4f1ea;
             display: flex; align-items: center; justify-content: center;
-            transition: opacity 0.4s ease;
+            transition: opacity 0.3s ease;
         }
-        #splashScreen img { width: 100%; height: 100%; object-fit: cover; }
+        #splashScreen img { display: none; width: 100%; height: 100%; object-fit: cover; }
+        #splashScreen .sp-spin { width: 34px; height: 34px; border-radius: 50%; border: 3px solid #dfe5d8; border-top-color: #7c9473; animation: spSpin 0.8s linear infinite; }
+        @keyframes spSpin { to { transform: rotate(360deg); } }
+        #splashScreen .uo-box { display: none; }
+        #splashScreen.updating { background: #f4ede0; }
+        #splashScreen.updating img { display: block; }
+        #splashScreen.updating .sp-spin { display: none; }
+        #splashScreen.updating .uo-box { display: block; }
+        #splashScreen .uo-box { position: absolute; left: 16px; right: 16px; bottom: calc(32px + env(safe-area-inset-bottom)); max-width: 380px; margin: 0 auto; background: rgba(255,255,255,0.9); border-radius: 16px; padding: 14px 14px 13px; }
+        #splashScreen .uo-text { font-size: 14px; color: #3c3a34; text-align: center; }
+        #splashScreen .uo-track { height: 5px; background: #e3ddcc; border-radius: 3px; overflow: hidden; margin-top: 10px; }
+        #splashScreen .uo-track i { display: block; height: 100%; width: 90%; background: #7c9473; border-radius: 3px; transition: width 0.25s ease; }
         #splashScreen.hide { opacity: 0; pointer-events: none; }
 
         .order-card {
@@ -859,7 +874,35 @@
 <!-- Сплэш-экран при запуске приложения -->
 <div id="splashScreen">
     <img src="splash.jpg" alt="Simple Bake">
+    <div class="sp-spin"></div>
+    <div class="uo-box"><div class="uo-text" id="spUpdText"></div><div class="uo-track"><i id="spUpdBar"></i></div></div>
 </div>
+<script>
+// Перезапуск после автообновления? Тогда экран запуска = продолжение заставки обновления.
+(function () {
+    try {
+        var txt = sessionStorage.getItem('sbUpdating');
+        if (txt !== null) {
+            sessionStorage.removeItem('sbUpdating');
+            window._sbAfterUpdate = true;
+            document.getElementById('splashScreen').classList.add('updating');
+            document.getElementById('spUpdText').textContent = txt || 'Simple Bake…';
+        }
+    } catch (e) { /* без sessionStorage — обычный запуск */ }
+})();
+// Скрыть экран запуска. После обновления — держим заставку не меньше 0,7 с и доводим полосу до 100%.
+function hideSplashScreen() {
+    var sp = document.getElementById('splashScreen');
+    if (!sp || sp.classList.contains('hide')) return;
+    if (!window._sbAfterUpdate) { sp.classList.add('hide'); return; }
+    var wait = Math.max(0, 700 - (performance.now ? performance.now() : 0));
+    setTimeout(function () {
+        var bar = document.getElementById('spUpdBar');
+        if (bar) bar.style.width = '100%';
+        setTimeout(function () { sp.classList.add('hide'); }, 280);
+    }, wait);
+}
+</script>
 
 <!-- Экран входа / регистрации -->
 <div id="authScreen" class="hidden">
@@ -3823,7 +3866,7 @@ function closeHistoryScreen() {
         // показываться"). Держим его чуть дольше чисто визуально — короче,
         // чем на холодном старте без кэша (там 900мс), т.к. тут это не
         // реальное ожидание чего-либо, а сознательная задержка ради бренда.
-        setTimeout(() => { document.getElementById('splashScreen')?.classList.add('hide'); }, 500);
+        hideSplashScreen(); // интерфейс уже нарисован из сохранённых данных — без задержки
     } else {
         // Сплэш держим минимум 900мс (чтобы не мигал слишком быстро на мощных
         // устройствах), но не дольше реальной инициализации — обе задержки идут
@@ -3836,9 +3879,8 @@ function closeHistoryScreen() {
         // иногда успевал скрыться раньше времени и показать недорисованное
         // приложение (пойман на живом тестировании 16.07.2026).
         initAuth(); // намеренно не в Promise.all — готовность сигнализирует _appReadyPromise
-        const minSplashTime = new Promise(resolve => setTimeout(resolve, 900));
-        await Promise.all([_appReadyPromise, minSplashTime]);
-        document.getElementById('splashScreen')?.classList.add('hide');
+        await _appReadyPromise; // бежевый экран с кружком — только пока реально грузимся
+        hideSplashScreen();
     }
 
     // Открытие заказа по тапу на push-уведомление (см. sw.js/notificationclick).
@@ -4069,6 +4111,7 @@ function _swApplyUpdate() {
         requestAnimationFrame(step);
     })(t0);
     // Даём заставке показаться, затем включаем новую версию (перезапуск — по controllerchange)
+    try { sessionStorage.setItem('sbUpdating', t('update_overlay_text')); } catch (e) { /* без sessionStorage */ }
     setTimeout(() => {
         if (waiting) waiting.postMessage({ type: 'SKIP_WAITING' });
         else window.location.reload();
