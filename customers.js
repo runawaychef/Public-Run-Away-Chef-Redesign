@@ -765,7 +765,9 @@ function memoDaysLeft(dt) { return Math.round((dt - _memoToday()) / 86400000); }
 // Памятные даты клиента на день (y, month 1-12, d): [{ m, past }]
 function memoDatesForDay(custId, y, month, d) {
     const today = _memoToday();
-    return memoDates.filter(m => m.customer_id === custId).filter(m => {
+    const byCust = custId == null ? () => true
+        : Array.isArray(custId) ? m => custId.includes(m.customer_id) : m => m.customer_id === custId;
+    return memoDates.filter(byCust).filter(m => {
         if (!m.repeat_yearly && m.year !== y) return false;
         if (m.repeat_yearly && m.year && y < m.year) return false;
         const dt = _memoDateInYear(m, y);
@@ -811,6 +813,31 @@ function _memoWhenText(n) {
     return n === 0 ? t('memo_today') : t('memo_in_days').replace('{n}', n);
 }
 
+// «Заказы»: памятные даты на день с учётом фильтра «Клиенты» (там выбор хранится по именам)
+function ordersMemoDatesForDay(y, month, d) {
+    const sel = typeof selectedOrderCustomers !== 'undefined' ? selectedOrderCustomers : [];
+    const ids = sel.length ? customers.filter(c => sel.includes(c.name)).map(c => c.id) : null;
+    return memoDatesForDay(ids, y, month, d);
+}
+// Строка над заказами, когда в «Заказах» выбран один день: «♥ Название — Клиент»
+function ordersDayMemoStripHtml() {
+    const rangeEl = document.getElementById('orderDateRangeFilter');
+    const from = (document.getElementById('orderDateFrom') || {}).value;
+    const to = (document.getElementById('orderDateTo') || {}).value;
+    if (!rangeEl || rangeEl.value !== 'custom' || !from || from !== to) return '';
+    const dt = new Date(from + 'T00:00:00');
+    const list = ordersMemoDatesForDay(dt.getFullYear(), dt.getMonth() + 1, dt.getDate());
+    if (!list.length) return '';
+    return `<div class="memo-day-box" style="margin-bottom:10px;">${list.map(x => {
+        const c = customers.find(cc => cc.id === x.m.customer_id);
+        return `<div class="memo-item" onclick="openMemoEdit(${x.m.id}, 'orders')">
+            <div class="memo-item-ic${x.past ? ' past' : ''}">${_memoHeartSvg(x.past ? MEMO_GREY : MEMO_GOLD, 16)}</div>
+            <div style="min-width:0;"><div class="memo-item-t">${escapeHtml(x.m.title)}</div>
+            <div class="memo-item-s">${escapeHtml(c ? c.name : '')}</div></div>
+        </div>`;
+    }).join('')}</div>`;
+}
+
 // Список памятных дат клиента (кнопка на странице клиента)
 async function openCustomerMemoDates() {
     const cust = customers.find(c => c.id === currentCustomerId);
@@ -843,9 +870,10 @@ function closeMemoList() { document.getElementById('memoListModal').style.displa
 
 // Окно «Памятная дата»: preset — {day, month, year} для новой даты из календаря
 function openMemoEdit(id, ret, preset) {
-    const cust = customers.find(c => c.id === currentCustomerId);
-    if (!cust) return;
     const m = id != null ? memoDates.find(x => x.id === id) : null;
+    // Из «Заказов» дата открывается без страницы клиента — клиента берём из самой даты
+    const cust = customers.find(c => c.id === (m ? m.customer_id : currentCustomerId));
+    if (!cust) return;
     _memoEditId = m ? m.id : null;
     _memoReturn = ret || null;
     if (ret === 'list') closeMemoList();
@@ -905,6 +933,7 @@ function closeMemoEdit() {
     const ret = _memoReturn;
     _memoReturn = null;
     if (ret === 'list') { renderMemoList(); document.getElementById('memoListModal').style.display = 'flex'; }
+    else if (ret === 'orders' && typeof displayOrders === 'function') displayOrders();
     else if (ret === 'day' && _cdDayIso) onCustomerCalDayPicked(_cdDayIso); // окно дня уже с этой датой
 }
 async function saveMemoEdit() {

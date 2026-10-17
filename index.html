@@ -3350,9 +3350,9 @@ function hideSplashScreen() {
 <script src="batches.js?v=10"></script>
 <script src="semifinished.js?v=42"></script>
 <script src="products.js?v=35"></script>
-<script src="customers.js?v=52"></script>
-<script src="calendar.js?v=12"></script>
-<script src="orders.js?v=131"></script>
+<script src="customers.js?v=53"></script>
+<script src="calendar.js?v=13"></script>
+<script src="orders.js?v=132"></script>
 <script src="invoice.js?v=47"></script>
 <script src="send-document.js?v=27"></script>
 <script src="payments.js?v=25"></script>
@@ -3592,6 +3592,8 @@ async function loadAllData(silent) {
         renderAllScreens();
         if (typeof scheduleRefreshOrderQuota === 'function') scheduleRefreshOrderQuota();
         if (typeof bankRefreshState === 'function') bankRefreshState(); // кнопка «Поступления» и значок (bank.js)
+        // Памятные даты клиентов (17.10): грузим фоном — нужны календарю «Заказов» и напоминаниям
+        if (typeof loadMemoDates === 'function') loadMemoDates(true).then(() => { if (typeof ordersDayMemoStripHtml === 'function' && ordersDayMemoStripHtml()) displayOrders(); });
         await processPendingInventory();
     } catch (e) {
         console.error(e);

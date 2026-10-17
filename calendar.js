@@ -298,14 +298,17 @@ function orderSeverityColor(order) {
 function orderCountBadgeForDay(y, m, d) {
     const iso = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     const dayOrders = orders.filter(o => o.date === iso && (typeof isOrderVisible !== 'function' || isOrderVisible(o)));
-    if (!dayOrders.length) return null;
+    // Памятные даты клиентов (с учётом фильтра «Клиенты» в «Заказах»), 17.10
+    const memos = typeof ordersMemoDatesForDay === 'function' ? ordersMemoDatesForDay(y, m + 1, d) : [];
+    const memo = memos.length ? (memos.some(x => !x.past) ? MEMO_GOLD : MEMO_GREY) : null;
+    if (!dayOrders.length) return memo ? { memo } : null;
     if (dayOrders.length <= 3) {
-        return { dots: dayOrders.map(orderSeverityColor) };
+        return { dots: dayOrders.map(orderSeverityColor), memo };
     }
     const priority = ['#8b3a3a', '#c0685c', '#d9a441', '#7c9473']; // просрочен > принят > в работе > выполнен
     const colors = dayOrders.map(orderSeverityColor);
     const color = priority.find(p => colors.includes(p)) || '#7c9473';
-    return { count: dayOrders.length, color };
+    return { count: dayOrders.length, color, memo };
 }
 
 function onDetailDatePicked(iso) {
