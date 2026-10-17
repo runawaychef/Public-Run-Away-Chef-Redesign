@@ -632,8 +632,92 @@ function _cdRenderRequisitesSummary(cust) {
     parts.push(term > 0 ? t('cust_req_term').replace('{n}', term) : t('cust_req_no_term'));
     el.textContent = parts.join(' · ');
 }
-// Календарь клиента и памятные даты — окна будут в следующем обновлении
-function openCustomerCalendar() { showInfo(t('cust_soon')); }
+// ---- Календарь клиента (16.10, шаг 1): то же окно, что в «Заказах», только заказы этого клиента,
+// фильтр по мастеру (кто выполнил заказ), нажатие на день — окно дня. Памятные даты — шаг 2.
+let _cdCalMaster = 'all';
+function _cdCalOrders() {
+    return orders.filter(o => o.customer_id === currentCustomerId
+        && (typeof isOrderVisible !== 'function' || isOrderVisible(o))
+        && (_cdCalMaster === 'all' || String(o.employee_id) === String(_cdCalMaster)));
+}
+function customerOrderBadgeForDay(y, m, d) {
+    const iso = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    const dayOrders = _cdCalOrders().filter(o => o.date === iso);
+    if (!dayOrders.length) return null;
+    if (dayOrders.length <= 3) return { dots: dayOrders.map(orderSeverityColor) };
+    const priority = ['#8b3a3a', '#c0685c', '#d9a441', '#7c9473'];
+    const colors = dayOrders.map(orderSeverityColor);
+    return { count: dayOrders.length, color: priority.find(p => colors.includes(p)) || '#7c9473' };
+}
+// Строка «Все мастера / имена» — только если заказы клиента выполняли хотя бы два разных мастера
+function _cdCalMasterHtml() {
+    const ids = [...new Set(orders.filter(o => o.customer_id === currentCustomerId && o.employee_id != null).map(o => String(o.employee_id)))];
+    const list = ids.map(id => employees.find(e => String(e.id) === id)).filter(Boolean)
+        .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    if (list.length < 2) return '';
+    const pill = (id, label) => `<button type="button" class="cal-master-pill${String(_cdCalMaster) === String(id) ? ' on' : ''}" onclick="setCdCalMaster('${id}')">${escapeHtml(label)}</button>`;
+    return `<div class="cal-master-row">${pill('all', t('cust_cal_all_masters'))}${list.map(e => pill(e.id, e.name)).join('')}</div>`;
+}
+function setCdCalMaster(id) {
+    _cdCalMaster = id;
+    renderCalendarPopup('globalCalendarPopup');
+}
+function openCustomerCalendar(keepMonthIso) {
+    if (typeof event !== 'undefined' && event) event.stopPropagation();
+    const cust = customers.find(c => c.id === currentCustomerId);
+    if (!cust) return;
+    const tmp = document.getElementById('cdCalTempDate');
+    if (tmp) tmp.value = keepMonthIso || '';
+    toggleCustomCalendar('globalCalendarPopup', 'cdCalTempDate', 'cdCalTempLabel', {
+        onPick: onCustomerCalDayPicked,
+        badge: customerOrderBadgeForDay,
+        subtitle: cust.name || '',
+        extraHtml: _cdCalMasterHtml,
+    });
+}
+// Окно дня: заказы клиента на этот день (с учётом фильтра по мастеру) и «+ Заказ на этот день»
+let _cdDayIso = null;
+function onCustomerCalDayPicked(iso) {
+    if (!iso) return;
+    _cdDayIso = iso;
+    const dayOrders = _cdCalOrders().filter(o => o.date === iso);
+    const d = new Date(iso + 'T00:00:00');
+    document.getElementById('customerDayTitle').textContent = formatDateDMY(iso) + ', ' + calWeekdays()[(d.getDay() + 6) % 7].toLowerCase();
+    const body = document.getElementById('customerDayBody');
+    body.innerHTML = dayOrders.length ? dayOrders.map(_cdDayOrderHtml).join('')
+        : `<p class="text-xs text-gray-400" style="margin:4px 0 8px;">${t('cust_day_no_orders')}</p>`;
+    document.getElementById('customerDayModal').style.display = 'flex';
+}
+function _cdDayOrderHtml(o) {
+    const info = getOrderPaymentStatus(o);
+    const items = (o.items || []).map(it => {
+        const p = products.find(x => x.id === it.product_id);
+        return p ? `${p.name} ×${Number(it.quantity)}` : '';
+    }).filter(Boolean).join(', ');
+    const emp = employees.find(e => e.id === o.employee_id);
+    const meta = [items, emp ? emp.name : ''].filter(Boolean).map(escapeHtml).join(' · ');
+    return `
+    <div class="order-card" style="cursor:pointer; margin-bottom:6px;" onclick="goToOrderFromCustomerDay(${o.id})">
+        <div class="stripe" style="background:${getPaymentStripeColor(info)}"></div>
+        <div class="order-card-body">
+            <div class="oc-row"><span class="oc-name">${escapeHtml(orderNumLabel(o))}</span><span class="oc-sum">${formatMoney(info.grandAmt)}</span></div>
+            ${meta ? `<div class="oc-meta" style="margin-top:3px; white-space:normal;">${meta}</div>` : ''}
+        </div>
+    </div>`;
+}
+function closeCustomerDay() { document.getElementById('customerDayModal').style.display = 'none'; }
+function goToOrderFromCustomerDay(orderId) { closeCustomerDay(); goToOrderFromCustomer(orderId); }
+function backToCustomerCalendar() { closeCustomerDay(); openCustomerCalendar(_cdDayIso); }
+async function createOrderForCustomerDay() {
+    const cust = customers.find(c => c.id === currentCustomerId);
+    const iso = _cdDayIso;
+    if (!cust || !iso) return;
+    closeCustomerDay();
+    showTab('orders');
+    await createDraftOrderAndOpen();
+    if (typeof calSetFieldValue === 'function') calSetFieldValue('detailDate', 'detailDateBtnLabel', iso);
+    await attachCustomerToOrder(cust); // сохраняет шапку заказа вместе с датой
+}
 function openCustomerMemoDates() { showInfo(t('cust_soon')); }
 
 async function closeCustomerDetail() {

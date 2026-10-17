@@ -630,6 +630,10 @@
         .calendar-popup.open { display: block; }
         .calendar-popup .cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; }
         .calendar-popup .cal-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 16.5px; color: #4f6349; }
+        .calendar-popup .cal-subtitle { font-size: 12px; color: #8d887b; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
+        .calendar-popup .cal-master-row { display: flex; gap: 5px; overflow-x: auto; margin: 0 0 8px; padding-bottom: 2px; }
+        .calendar-popup .cal-master-pill { font-size: 12px; border-radius: 999px; padding: 5px 11px; border: 1px solid #e3ddcc; background: #fff; color: #6b675d; white-space: nowrap; cursor: pointer; }
+        .calendar-popup .cal-master-pill.on { background: #7c9473; border-color: #7c9473; color: #fff; }
         .calendar-popup .cal-nav-btn {
             width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;
             border-radius: 10px; color: #9a9488; cursor: pointer;
@@ -2826,6 +2830,20 @@ function hideSplashScreen() {
             </div>
         </div>
 
+        <!-- Окно дня календаря клиента (16.10) -->
+        <div id="customerDayModal" class="modal" onclick="if(event.target===this) closeCustomerDay();">
+            <div class="modal-content" style="max-width:420px;">
+                <h2 id="customerDayTitle" class="text-sm font-semibold text-gray-800 mb-2"></h2>
+                <div id="customerDayBody" style="max-height:52vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
+                <button onclick="createOrderForCustomerDay()" class="pill-btn w-full justify-center mt-2" data-i18n="cust_day_new_order">+ Заказ на этот день</button>
+                <div class="flex gap-2 mt-2">
+                    <button onclick="backToCustomerCalendar()" class="pill-btn-secondary flex-1 justify-center" data-i18n="cust_day_back_calendar">Календарь</button>
+                    <button onclick="closeCustomerDay()" class="pill-btn-secondary flex-1 justify-center" data-i18n="settings_close">Закрыть</button>
+                </div>
+            </div>
+        </div>
+        <input id="cdCalTempDate" type="hidden">
+
         <!-- Окно «Изделия по фильтру» (итог выборки заказов: изделие, количество, сумма, НДС) -->
         <div id="ordersProductsModal" class="modal" onclick="if(event.target===this) closeModal();">
             <div class="modal-content" style="max-width:420px;">
@@ -3247,7 +3265,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=71"></script>
+    <script src="i18n-core.js?v=72"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=14"></script>
     <script src="auth.js?v=21"></script>
@@ -3260,8 +3278,8 @@ function hideSplashScreen() {
 <script src="batches.js?v=10"></script>
 <script src="semifinished.js?v=42"></script>
 <script src="products.js?v=35"></script>
-<script src="customers.js?v=48"></script>
-<script src="calendar.js?v=9"></script>
+<script src="customers.js?v=49"></script>
+<script src="calendar.js?v=10"></script>
 <script src="orders.js?v=130"></script>
 <script src="invoice.js?v=47"></script>
 <script src="send-document.js?v=27"></script>

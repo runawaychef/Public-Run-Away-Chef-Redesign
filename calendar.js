@@ -50,6 +50,8 @@ function toggleCustomCalendar(popupId, hiddenInputId, labelId, opts) {
         onPick: opts && opts.onPick,
         badge: opts && opts.badge,
         allowClear: opts && opts.allowClear,
+        subtitle: opts && opts.subtitle,   // строка под месяцем (например, имя клиента)
+        extraHtml: opts && opts.extraHtml, // функция → HTML между шапкой и днями недели (фильтр по мастеру)
         viewYear: base.getFullYear(),
         viewMonth: base.getMonth()
     };
@@ -238,10 +240,11 @@ function renderCalendarPopup(popupId) {
     popup.innerHTML = `
         <div class="cal-header">
             <div class="cal-nav-btn" onclick="calNavMonth('${popupId}', -1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6"/></svg></div>
-            <div class="cal-title">${calMonthName(st.viewMonth)} ${st.viewYear}</div>
+            <div style="text-align:center; min-width:0;"><div class="cal-title">${calMonthName(st.viewMonth)} ${st.viewYear}</div>${st.subtitle ? `<div class="cal-subtitle">${escapeHtml(st.subtitle)}</div>` : ''}</div>
             <div class="cal-nav-btn" onclick="calNavMonth('${popupId}', 1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6"/></svg></div>
         </div>
         ${statusHtml}
+        ${typeof st.extraHtml === 'function' ? st.extraHtml() : ''}
         <div class="cal-weekdays">${calWeekdays().map(w => `<div class="cal-weekday">${w}</div>`).join('')}</div>
         <div class="cal-days">${cellsHtml}</div>
         ${footerHtml}
