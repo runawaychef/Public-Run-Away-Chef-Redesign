@@ -604,11 +604,37 @@ function openCustomerDetail(custId) {
     document.getElementById('cdPersonalCode').value = cust.personal_code || '';
     document.getElementById('cdPaymentTermDays').value = cust.payment_term_days != null ? cust.payment_term_days : '';
     setCustomerEntityType(cust.entity_type || 'company', /*skipSave*/ true);
+    // Реквизиты раскрыты, пока тип лица не выбран (новый клиент); дальше — свёрнуты в строку-итог
+    _cdSetRequisitesOpen(!cust.entity_type);
+    _cdRenderRequisitesSummary(cust);
 
     renderCustomerStats(cust);
     renderCustomerOrders();
     refreshFab();
 }
+
+// ---- Страница клиента (16.10): блок «Реквизиты и НДС», сводка, заказы ----
+function _cdSetRequisitesOpen(open) {
+    document.getElementById('cdReqBody')?.classList.toggle('hidden', !open);
+    document.getElementById('cdReqBlock')?.classList.toggle('open', !!open);
+}
+function toggleCdRequisites() {
+    const body = document.getElementById('cdReqBody');
+    if (body) _cdSetRequisitesOpen(body.classList.contains('hidden'));
+}
+function _cdRenderRequisitesSummary(cust) {
+    const el = document.getElementById('cdReqSummary');
+    if (!el || !cust) return;
+    const parts = [];
+    parts.push(cust.entity_type ? t(cust.entity_type === 'company' ? 'company_entity_company' : 'company_entity_individual') : t('cust_req_type_unset'));
+    parts.push(t(cust.vat_exempt ? 'cust_tag_no_vat' : 'cust_req_with_vat'));
+    const term = Number(cust.payment_term_days) || 0;
+    parts.push(term > 0 ? t('cust_req_term').replace('{n}', term) : t('cust_req_no_term'));
+    el.textContent = parts.join(' · ');
+}
+// Календарь клиента и памятные даты — окна будут в следующем обновлении
+function openCustomerCalendar() { showInfo(t('cust_soon')); }
+function openCustomerMemoDates() { showInfo(t('cust_soon')); }
 
 async function closeCustomerDetail() {
     const leavingId = currentCustomerId;
@@ -708,6 +734,7 @@ async function saveCdHeader() {
         logActivity('customer', `${t('log_customer_changed')} «${oldName}»${oldName !== name ? ` → «${name}»` : ''}`);
         renderCustomerStats(cust);
         renderCustomerOrders();
+        _cdRenderRequisitesSummary(cust);
         showAutosaveToast();
     } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
@@ -721,6 +748,10 @@ function renderCustomerStats(cust) {
     document.getElementById('cdOrderCount').textContent = custOrders.length;
     document.getElementById('cdTotalSum').textContent = formatMoney(totalSum);
     document.getElementById('cdLastOrderDate').textContent = lastDate ? formatDateDMY(lastDate) : '—';
+    // У клиента без заказов сводка и список заказов пусты — не показываем их
+    const hasOrders = custOrders.length > 0;
+    document.getElementById('cdStatsBlock')?.classList.toggle('hidden', !hasOrders);
+    document.getElementById('cdOrdersBlock')?.classList.toggle('hidden', !hasOrders);
 }
 
 // Список заказов клиента с фильтром по периоду (Весь период/Неделя/Месяц/Год)
@@ -796,4 +827,12 @@ function renderCustomerOrders() {
     });
     html += '</tbody></table>';
     container.innerHTML = html;
+    // Видно до 5 заказов, остальные — прокруткой внутри списка
+    container.style.maxHeight = 'none';
+    const rows = container.querySelectorAll('tbody tr');
+    if (rows.length > 5) {
+        const top = container.getBoundingClientRect().top;
+        const h = Math.ceil(rows[4].getBoundingClientRect().bottom - top);
+        if (h > 0) container.style.maxHeight = h + 'px';
+    }
 }
