@@ -647,11 +647,13 @@ function _cdCalOrders() {
 function customerOrderBadgeForDay(y, m, d) {
     const iso = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     const dayOrders = _cdCalOrders().filter(o => o.date === iso);
-    if (!dayOrders.length) return null;
-    if (dayOrders.length <= 3) return { dots: dayOrders.map(orderSeverityColor) };
+    const memos = memoDatesForDay(currentCustomerId, y, m + 1, d);
+    const memo = memos.length ? (memos.some(x => !x.past) ? MEMO_GOLD : MEMO_GREY) : null;
+    if (!dayOrders.length) return memo ? { memo } : null;
+    if (dayOrders.length <= 3) return { dots: dayOrders.map(orderSeverityColor), memo };
     const priority = ['#8b3a3a', '#c0685c', '#d9a441', '#7c9473'];
     const colors = dayOrders.map(orderSeverityColor);
-    return { count: dayOrders.length, color: priority.find(p => colors.includes(p)) || '#7c9473' };
+    return { count: dayOrders.length, color: priority.find(p => colors.includes(p)) || '#7c9473', memo };
 }
 // Строка «Все мастера / имена» — только если заказы клиента выполняли хотя бы два разных мастера
 function _cdCalMasterHtml() {
@@ -666,10 +668,11 @@ function setCdCalMaster(id) {
     _cdCalMaster = id;
     renderCalendarPopup('globalCalendarPopup');
 }
-function openCustomerCalendar(keepMonthIso) {
+async function openCustomerCalendar(keepMonthIso) {
     if (typeof event !== 'undefined' && event) event.stopPropagation();
     const cust = customers.find(c => c.id === currentCustomerId);
     if (!cust) return;
+    await loadMemoDates();
     const tmp = document.getElementById('cdCalTempDate');
     if (tmp) tmp.value = keepMonthIso || '';
     toggleCustomCalendar('globalCalendarPopup', 'cdCalTempDate', 'cdCalTempLabel', {
@@ -687,6 +690,10 @@ function onCustomerCalDayPicked(iso) {
     const dayOrders = _cdCalOrders().filter(o => o.date === iso);
     const d = new Date(iso + 'T00:00:00');
     document.getElementById('customerDayTitle').textContent = formatDateDMY(iso) + ', ' + calWeekdays()[(d.getDay() + 6) % 7].toLowerCase();
+    const memos = memoDatesForDay(currentCustomerId, d.getFullYear(), d.getMonth() + 1, d.getDate());
+    document.getElementById('customerDayMemo').innerHTML = memos.length
+        ? `<div class="memo-day-box">${memos.map(x => _memoItemHtml(x.m, { past: x.past, onTap: `openMemoEdit(${x.m.id}, 'day')`, whenHtml: `<span style="color:#4f6349;font-weight:600;">${t('memo_edit')}</span>` })).join('')}</div>` : '';
+    document.getElementById('customerDayAddMemoBtn').style.display = memos.length ? 'none' : '';
     const body = document.getElementById('customerDayBody');
     body.innerHTML = dayOrders.length ? _custOrdersTableHtml(dayOrders.map(_cdDayOrderHtml).join(''))
         : `<p class="text-xs text-gray-400" style="margin:4px 0 8px;">${t('cust_day_no_orders')}</p>`;
@@ -708,7 +715,236 @@ async function createOrderForCustomerDay() {
     if (typeof calSetFieldValue === 'function') calSetFieldValue('detailDate', 'detailDateBtnLabel', iso);
     await attachCustomerToOrder(cust); // сохраняет шапку заказа вместе с датой
 }
-function openCustomerMemoDates() { showInfo(t('cust_soon')); }
+function addMemoForCustomerDay() {
+    const d = new Date(_cdDayIso + 'T00:00:00');
+    closeCustomerDay();
+    openMemoEdit(null, 'day', { day: d.getDate(), month: d.getMonth() + 1, year: d.getFullYear() });
+}
+
+// ===== Памятные даты клиента (17.10) =====
+// Таблица customer_memo_dates: день+месяц, год по желанию, «каждый год / один раз», заметка.
+// Значок в календаре — золотое сердечко; прошедшая разовая дата — серое (в списке скрыта).
+const MEMO_GOLD = '#c9973a';
+const MEMO_GREY = '#c4beb0';
+const MEMO_REMIND_DAYS = 7; // «скоро» в списке; позже — общая настройка напоминаний
+let memoDates = [];
+let _memoLoaded = null;      // org_id, для которой загружены даты
+let _memoEditId = null;      // null — новая дата
+let _memoReturn = null;      // 'list' | 'day' — куда вернуться после сохранения
+let _memoYearly = true;
+
+async function loadMemoDates(force) {
+    if (_memoLoaded === currentOrgId && !force) return;
+    const { data, error } = await db.from('customer_memo_dates').select('*').eq('org_id', currentOrgId);
+    if (error) { console.error(error); return; }
+    memoDates = data || [];
+    _memoLoaded = currentOrgId;
+}
+
+// Дата памятного дня в году y (29.02 в невисокосный год — 28.02)
+function _memoDateInYear(m, y) {
+    let day = m.day;
+    if (m.month === 2 && day === 29 && !(y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0))) day = 28;
+    return new Date(y, m.month - 1, day);
+}
+function _memoToday() { return new Date(getLocalDateStr(0) + 'T00:00:00'); }
+// Ближайшее наступление (Date) или null, если разовая дата уже прошла
+function memoNextDate(m) {
+    const today = _memoToday();
+    if (!m.repeat_yearly) {
+        const dt = _memoDateInYear(m, m.year);
+        return dt < today ? null : dt;
+    }
+    let dt = _memoDateInYear(m, today.getFullYear());
+    if (dt < today) dt = _memoDateInYear(m, today.getFullYear() + 1);
+    return dt;
+}
+function _memoIso(dt) { return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`; }
+function memoDaysLeft(dt) { return Math.round((dt - _memoToday()) / 86400000); }
+
+// Памятные даты клиента на день (y, month 1-12, d): [{ m, past }]
+function memoDatesForDay(custId, y, month, d) {
+    const today = _memoToday();
+    return memoDates.filter(m => m.customer_id === custId).filter(m => {
+        if (!m.repeat_yearly && m.year !== y) return false;
+        if (m.repeat_yearly && m.year && y < m.year) return false;
+        const dt = _memoDateInYear(m, y);
+        return dt.getMonth() + 1 === month && dt.getDate() === d;
+    }).map(m => ({ m, past: !m.repeat_yearly && _memoDateInYear(m, m.year) < today }));
+}
+
+function _memoLocale() { return ({ ru: 'ru-RU', uk: 'uk-UA', lt: 'lt-LT', en: 'en-GB' })[currentLang] || 'en-GB'; }
+function _memoMonthName(month) { return new Date(2000, month - 1, 1).toLocaleString(_memoLocale(), { month: 'long' }); }
+function _memoDayMonth(m) { return new Date(2000, m.month - 1, m.day).toLocaleDateString(_memoLocale(), { day: 'numeric', month: 'long' }); }
+function memoYearsLabel(n) {
+    const m10 = n % 10, m100 = n % 100;
+    let form;
+    if (currentLang === 'en') form = n === 1 ? 1 : 5;
+    else if (currentLang === 'lt') form = (m10 === 1 && m100 !== 11) ? 1 : (m10 >= 2 && m10 <= 9 && !(m100 >= 11 && m100 <= 19)) ? 2 : 5;
+    else form = (m10 === 1 && m100 !== 11) ? 1 : (m10 >= 2 && m10 <= 4 && !(m100 >= 12 && m100 <= 14)) ? 2 : 5;
+    return t('memo_years_' + form).replace('{n}', n);
+}
+function _memoSubText(m) {
+    const parts = [_memoDayMonth(m) + (m.year ? ' ' + m.year : ''), m.repeat_yearly ? t('memo_yearly_short') : t('memo_once_short')];
+    if (m.repeat_yearly && m.year) {
+        const next = memoNextDate(m);
+        if (next && next.getFullYear() > m.year) parts.push(memoYearsLabel(next.getFullYear() - m.year));
+    }
+    return parts.join(' · ');
+}
+function _memoHeartSvg(color, size) {
+    return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true"><path fill="${color}" d="M12 21s-7.5-4.6-9.6-9.1C.9 8.6 3 5 6.5 5c2 0 3.5 1.1 5.5 3 2-1.9 3.5-3 5.5-3C21 5 23.1 8.6 21.6 11.9 19.5 16.4 12 21 12 21z"/></svg>`;
+}
+function _memoItemHtml(m, opts) {
+    const past = opts && opts.past;
+    return `<div class="memo-item" onclick="${opts.onTap}">
+        <div class="memo-item-ic${past ? ' past' : ''}">${_memoHeartSvg(past ? MEMO_GREY : MEMO_GOLD, 16)}</div>
+        <div style="min-width:0;">
+            <div class="memo-item-t">${escapeHtml(m.title)}</div>
+            <div class="memo-item-s">${escapeHtml(_memoSubText(m))}</div>
+            ${m.note ? `<div class="memo-item-s" style="font-style:italic;">${escapeHtml(m.note)}</div>` : ''}
+        </div>
+        <div class="memo-item-when${opts.soon ? ' soon' : ''}">${opts.whenHtml || ''}</div>
+    </div>`;
+}
+function _memoWhenText(n) {
+    return n === 0 ? t('memo_today') : t('memo_in_days').replace('{n}', n);
+}
+
+// Список памятных дат клиента (кнопка на странице клиента)
+async function openCustomerMemoDates() {
+    const cust = customers.find(c => c.id === currentCustomerId);
+    if (!cust) return;
+    showLoading();
+    await loadMemoDates();
+    hideLoading();
+    document.getElementById('memoListSub').textContent = cust.name || '';
+    renderMemoList();
+    document.getElementById('memoListModal').style.display = 'flex';
+}
+function renderMemoList() {
+    const list = memoDates.filter(m => m.customer_id === currentCustomerId)
+        .map(m => ({ m, next: memoNextDate(m) }))
+        .filter(x => x.next) // прошедшие разовые даты в списке скрыты
+        .sort((a, b) => a.next - b.next);
+    const body = document.getElementById('memoListBody');
+    if (!list.length) {
+        body.innerHTML = `<p class="text-xs text-gray-400" style="margin:6px 0 4px;text-align:center;">${t('memo_empty')}</p>`;
+        return;
+    }
+    body.innerHTML = list.map(x => {
+        const n = memoDaysLeft(x.next);
+        const soon = n <= MEMO_REMIND_DAYS;
+        const when = soon ? _memoWhenText(n) : formatDateDMY(_memoIso(x.next));
+        return _memoItemHtml(x.m, { onTap: `openMemoEdit(${x.m.id}, 'list')`, soon, whenHtml: escapeHtml(when) });
+    }).join('');
+}
+function closeMemoList() { document.getElementById('memoListModal').style.display = 'none'; }
+
+// Окно «Памятная дата»: preset — {day, month, year} для новой даты из календаря
+function openMemoEdit(id, ret, preset) {
+    const cust = customers.find(c => c.id === currentCustomerId);
+    if (!cust) return;
+    const m = id != null ? memoDates.find(x => x.id === id) : null;
+    _memoEditId = m ? m.id : null;
+    _memoReturn = ret || null;
+    if (ret === 'list') closeMemoList();
+    if (ret === 'day') closeCustomerDay();
+    const sel = document.getElementById('memoMonth');
+    sel.innerHTML = Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}">${escapeHtml(_memoMonthName(i + 1))}</option>`).join('');
+    const today = _memoToday();
+    document.getElementById('memoEditSub').textContent = cust.name || '';
+    document.getElementById('memoTitle').value = m ? m.title : '';
+    document.getElementById('memoDay').value = m ? m.day : (preset ? preset.day : today.getDate());
+    sel.value = String(m ? m.month : (preset ? preset.month : today.getMonth() + 1));
+    // Год из календаря подставляем только для разовой даты — по умолчанию «каждый год» без года
+    document.getElementById('memoYear').value = m && m.year ? m.year : '';
+    document.getElementById('memoNote').value = m && m.note ? m.note : '';
+    _memoPresetYear = preset ? preset.year : null;
+    memoSetYearly(m ? m.repeat_yearly : true);
+    document.getElementById('memoDeleteBtn').style.display = m ? '' : 'none';
+    document.getElementById('memoEditModal').style.display = 'flex';
+}
+let _memoPresetYear = null;
+function memoPickChip(key) { document.getElementById('memoTitle').value = t(key); }
+function memoSetYearly(on) {
+    _memoYearly = !!on;
+    document.getElementById('memoSegYearly').classList.toggle('on', _memoYearly);
+    document.getElementById('memoSegOnce').classList.toggle('on', !_memoYearly);
+    // Разовая дата требует год — подставим год дня из календаря или текущий
+    const yEl = document.getElementById('memoYear');
+    if (!_memoYearly && !yEl.value) yEl.value = _memoPresetYear || _memoToday().getFullYear();
+    memoUpdateHint();
+}
+// Значения формы → объект или текст ошибки
+function _memoReadForm() {
+    const title = document.getElementById('memoTitle').value.trim();
+    const day = parseInt(document.getElementById('memoDay').value, 10);
+    const month = parseInt(document.getElementById('memoMonth').value, 10);
+    const yRaw = document.getElementById('memoYear').value.trim();
+    const year = yRaw ? parseInt(yRaw, 10) : null;
+    const note = document.getElementById('memoNote').value.trim();
+    const maxDay = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
+    if (!(day >= 1 && day <= maxDay)) return { err: t('memo_err_date') };
+    if (yRaw && !(year >= 1900 && year <= 2100)) return { err: t('memo_err_date') };
+    if (year && month === 2 && day === 29 && !(year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0)) && !_memoYearly) return { err: t('memo_err_date') };
+    if (!_memoYearly && !year) return { err: t('memo_err_year') };
+    return { title, day, month, year, repeat_yearly: _memoYearly, note: note || null };
+}
+function memoUpdateHint() {
+    const el = document.getElementById('memoHint');
+    const f = _memoReadForm();
+    const next = f.err ? null : memoNextDate(f);
+    if (!next) { el.style.display = 'none'; return; }
+    const n = memoDaysLeft(next);
+    el.innerHTML = '♥ ' + escapeHtml(t('memo_next').replace('{d}', formatDateDMY(_memoIso(next))).replace('{w}', _memoWhenText(n)));
+    el.style.display = '';
+}
+function closeMemoEdit() {
+    document.getElementById('memoEditModal').style.display = 'none';
+    const ret = _memoReturn;
+    _memoReturn = null;
+    if (ret === 'list') { renderMemoList(); document.getElementById('memoListModal').style.display = 'flex'; }
+    else if (ret === 'day' && _cdDayIso) onCustomerCalDayPicked(_cdDayIso); // окно дня уже с этой датой
+}
+async function saveMemoEdit() {
+    const f = _memoReadForm();
+    if (!f.title) { showInfo(t('memo_err_title')); return; }
+    if (f.err) { showInfo(f.err); return; }
+    showLoading();
+    try {
+        if (_memoEditId != null) {
+            const { data, error } = await db.from('customer_memo_dates').update(f).eq('id', _memoEditId).select().single();
+            if (error) throw error;
+            const i = memoDates.findIndex(x => x.id === _memoEditId);
+            if (i >= 0) memoDates[i] = data;
+        } else {
+            const { data, error } = await db.from('customer_memo_dates')
+                .insert(Object.assign({ org_id: currentOrgId, customer_id: currentCustomerId }, f)).select().single();
+            if (error) throw error;
+            memoDates.push(data);
+        }
+    } catch (e) {
+        console.error(e);
+        hideLoading();
+        showInfo(t('error_save_check_connection'));
+        return;
+    }
+    hideLoading();
+    closeMemoEdit();
+}
+async function deleteMemoEdit() {
+    const m = memoDates.find(x => x.id === _memoEditId);
+    if (!m) return;
+    const ok = await showConfirm(t('memo_delete_confirm').replace('{t}', m.title));
+    if (!ok) return;
+    showLoading();
+    const { error } = await db.from('customer_memo_dates').delete().eq('id', m.id);
+    hideLoading();
+    if (error) { console.error(error); showInfo(t('error_save_check_connection')); return; }
+    memoDates = memoDates.filter(x => x.id !== m.id);
+    closeMemoEdit();
+}
 
 async function closeCustomerDetail() {
     const leavingId = currentCustomerId;

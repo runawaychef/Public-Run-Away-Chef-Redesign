@@ -205,10 +205,14 @@ function renderCalendarPopup(popupId) {
         let dotsHtml = '';
         if (typeof st.badge === 'function') {
             const b = st.badge(st.viewYear, st.viewMonth, d);
+            // b.memo — цвет сердечка памятной даты (верхний левый угол), 17.10
+            if (b && b.memo) {
+                badgeHtml += `<span class="cal-day-memo"><svg width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path fill="${b.memo}" d="M12 21s-7.5-4.6-9.6-9.1C.9 8.6 3 5 6.5 5c2 0 3.5 1.1 5.5 3 2-1.9 3.5-3 5.5-3C21 5 23.1 8.6 21.6 11.9 19.5 16.4 12 21 12 21z"/></svg></span>`;
+            }
             if (b && b.dots && b.dots.length) {
                 dotsHtml = `<div class="cal-day-dots">${b.dots.map(c => `<span class="cal-day-dot" style="background:${c}"></span>`).join('')}</div>`;
             } else if (b && b.count > 0) {
-                badgeHtml = `<span class="cal-day-badge" style="background:${b.color}">${b.count}</span>`;
+                badgeHtml += `<span class="cal-day-badge" style="background:${b.color}">${b.count}</span>`;
             }
         }
         const clickFn = isRange ? 'calPickRangeDay' : 'calPickDay';

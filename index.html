@@ -661,6 +661,22 @@
             display: flex; gap: 2px; pointer-events: none;
         }
         .cal-day-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .cal-day-memo { position: absolute; top: 3px; left: 4px; display: flex; pointer-events: none; }
+        .memo-chip { font-size: 12px; background: #eef2ea; color: #4f6349; border: 0; border-radius: 999px; padding: 4px 10px; cursor: pointer; font-family: inherit; }
+        .memo-chip:active { background: #dfe5d8; }
+        .memo-seg { display: flex; background: #f4f1ea; border-radius: 10px; padding: 3px; }
+        .memo-seg button { flex: 1; font-size: 13px; padding: 7px; border-radius: 8px; border: 0; background: transparent; color: #6b675d; font-family: inherit; cursor: pointer; }
+        .memo-seg button.on { background: #7c9473; color: #fff; font-weight: 600; }
+        .memo-hint { font-size: 12px; color: #96712a; background: #fbf3df; border-radius: 8px; padding: 6px 9px; margin-top: 10px; }
+        .memo-item { display: flex; align-items: center; gap: 10px; padding: 9px 2px; border-bottom: 1px solid #f0ede4; cursor: pointer; }
+        .memo-item:last-child { border-bottom: 0; }
+        .memo-item-ic { width: 32px; height: 32px; border-radius: 50%; background: #fbf3df; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .memo-item-ic.past { background: #f0ede4; }
+        .memo-item-t { font-size: 13.5px; font-weight: 500; color: #3c3a34; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .memo-item-s { font-size: 11.5px; color: #8a8a82; }
+        .memo-item-when { margin-left: auto; text-align: right; font-size: 12px; white-space: nowrap; color: #6b675d; padding-left: 6px; }
+        .memo-item-when.soon { color: #96712a; font-weight: 700; }
+        .memo-day-box { background: #fdf8ec; border-radius: 12px; padding: 2px 8px; margin-bottom: 8px; }
         .cal-footer { display: flex; justify-content: center; margin-top: 7px; }
         .cal-today-btn { font-size: 14px; font-weight: 700; color: #7c9473; padding: 5px 13px; border-radius: 10px; cursor: pointer; }
         .cal-today-btn:active { background: #f4f1ea; }
@@ -2840,8 +2856,10 @@ function hideSplashScreen() {
         <div id="customerDayModal" class="modal" onclick="if(event.target===this) closeCustomerDay();">
             <div class="modal-content" style="max-width:420px;">
                 <h2 id="customerDayTitle" class="text-sm font-semibold text-gray-800 mb-2"></h2>
+                <div id="customerDayMemo"></div>
                 <div id="customerDayBody" style="max-height:52vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
                 <button onclick="createOrderForCustomerDay()" class="pill-btn w-full justify-center mt-2" data-i18n="cust_day_new_order">+ Заказ на этот день</button>
+                <button id="customerDayAddMemoBtn" onclick="addMemoForCustomerDay()" class="pill-btn-secondary w-full justify-center mt-2" data-i18n="memo_add_day">+ Памятная дата</button>
                 <div class="flex gap-2 mt-2">
                     <button onclick="backToCustomerCalendar()" class="pill-btn-secondary flex-1 justify-center" data-i18n="cust_day_back_calendar">Календарь</button>
                     <button onclick="closeCustomerDay()" class="pill-btn-secondary flex-1 justify-center" data-i18n="settings_close">Закрыть</button>
@@ -2849,6 +2867,54 @@ function hideSplashScreen() {
             </div>
         </div>
         <input id="cdCalTempDate" type="hidden">
+
+        <!-- Памятные даты клиента: список (17.10) -->
+        <div id="memoListModal" class="modal" onclick="if(event.target===this) closeMemoList();">
+            <div class="modal-content" style="max-width:420px;">
+                <h2 class="text-sm font-semibold text-gray-800" data-i18n="memo_list_title">Памятные даты</h2>
+                <div id="memoListSub" class="text-xs text-gray-400 mb-2"></div>
+                <div id="memoListBody" style="max-height:55vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
+                <div class="flex gap-2 mt-3">
+                    <button onclick="closeMemoList()" class="pill-btn-secondary flex-1 justify-center" data-i18n="settings_close">Закрыть</button>
+                    <button onclick="openMemoEdit(null, 'list')" class="pill-btn flex-1 justify-center" data-i18n="sf_add_btn">+ Добавить</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Памятная дата: добавить / изменить (17.10) -->
+        <div id="memoEditModal" class="modal" onclick="if(event.target===this) closeMemoEdit();">
+            <div class="modal-content" style="max-width:420px;">
+                <h2 class="text-sm font-semibold text-gray-800" data-i18n="memo_title">Памятная дата</h2>
+                <div id="memoEditSub" class="text-xs text-gray-400 mb-2"></div>
+                <label class="block text-xs text-gray-500 mb-1" data-i18n="memo_name">Название</label>
+                <input id="memoTitle" type="text" maxlength="100" class="border p-0.5 rounded-xl w-full table-text">
+                <div class="flex flex-wrap gap-1.5 mt-1.5">
+                    <button type="button" class="memo-chip" onclick="memoPickChip('memo_chip_bday')" data-i18n="memo_chip_bday">День рождения</button>
+                    <button type="button" class="memo-chip" onclick="memoPickChip('memo_chip_anniv')" data-i18n="memo_chip_anniv">Годовщина</button>
+                    <button type="button" class="memo-chip" onclick="memoPickChip('memo_chip_opening')" data-i18n="memo_chip_opening">Открытие</button>
+                </div>
+                <label class="block text-xs text-gray-500 mb-1 mt-3" data-i18n="memo_date">Дата</label>
+                <div class="flex gap-2">
+                    <input id="memoDay" type="number" inputmode="numeric" min="1" max="31" oninput="memoUpdateHint()" class="border p-0.5 rounded-xl table-text text-center" style="width:64px;">
+                    <select id="memoMonth" onchange="memoUpdateHint()" class="border p-0.5 rounded-xl table-text" style="flex:1;min-width:0;"></select>
+                    <input id="memoYear" type="number" inputmode="numeric" min="1900" max="2100" oninput="memoUpdateHint()" class="border p-0.5 rounded-xl table-text text-center" style="width:82px;" placeholder="год" data-i18n-placeholder="memo_year_ph">
+                </div>
+                <div class="text-xs text-gray-400 mt-1" data-i18n="memo_year_hint">Год — по желанию</div>
+                <label class="block text-xs text-gray-500 mb-1 mt-3" data-i18n="memo_repeat">Повторять</label>
+                <div class="memo-seg">
+                    <button type="button" id="memoSegYearly" onclick="memoSetYearly(true)" data-i18n="memo_yearly">Каждый год</button>
+                    <button type="button" id="memoSegOnce" onclick="memoSetYearly(false)" data-i18n="memo_once">Один раз</button>
+                </div>
+                <label class="block text-xs text-gray-500 mb-1 mt-3" data-i18n="memo_note">Заметка</label>
+                <textarea id="memoNote" rows="2" maxlength="500" class="border p-0.5 rounded-xl table-text w-full resize-none" placeholder="Например: любит морковный торт" data-i18n-placeholder="memo_note_ph"></textarea>
+                <div id="memoHint" class="memo-hint" style="display:none;"></div>
+                <div class="flex gap-2 mt-3">
+                    <button onclick="closeMemoEdit()" class="pill-btn-secondary flex-1 justify-center" data-i18n="common_cancel">Отмена</button>
+                    <button onclick="saveMemoEdit()" class="pill-btn flex-1 justify-center" data-i18n="common_save">Сохранить</button>
+                </div>
+                <button id="memoDeleteBtn" onclick="deleteMemoEdit()" class="w-full text-center mt-3" style="font-size:13px;color:#c0685c;background:none;border:0;" data-i18n="memo_delete">Удалить дату</button>
+            </div>
+        </div>
 
         <!-- Окно «Изделия по фильтру» (итог выборки заказов: изделие, количество, сумма, НДС) -->
         <div id="ordersProductsModal" class="modal" onclick="if(event.target===this) closeModal();">
@@ -3271,7 +3337,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=72"></script>
+    <script src="i18n-core.js?v=73"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=14"></script>
     <script src="auth.js?v=21"></script>
@@ -3284,8 +3350,8 @@ function hideSplashScreen() {
 <script src="batches.js?v=10"></script>
 <script src="semifinished.js?v=42"></script>
 <script src="products.js?v=35"></script>
-<script src="customers.js?v=51"></script>
-<script src="calendar.js?v=11"></script>
+<script src="customers.js?v=52"></script>
+<script src="calendar.js?v=12"></script>
 <script src="orders.js?v=131"></script>
 <script src="invoice.js?v=47"></script>
 <script src="send-document.js?v=27"></script>
