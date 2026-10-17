@@ -230,11 +230,13 @@ function renderCalendarPopup(popupId) {
                <div style="display:flex; gap:6px;">
                    <div class="cal-today-btn" onclick="calClearRange('${popupId}')">${t('common_clear')}</div>
                    <div class="cal-apply-btn${(st.tempFrom && st.tempTo) ? '' : ' disabled'}" onclick="calApplyRange('${popupId}')">${t('cal_apply')}</div>
+                   <div class="cal-close-btn" onclick="closeAllCalendarPopups()" title="${t('settings_close')}" aria-label="${t('settings_close')}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></div>
                </div>
            </div>`
-        : `<div class="cal-footer">
+        : `<div class="cal-footer" style="position:relative;">
                <div class="cal-today-btn" onclick="calGoToday('${popupId}')">${t('cal_today')}</div>
                ${st.allowClear ? `<div class="cal-today-btn" onclick="calClearDay('${popupId}')">${t('common_clear')}</div>` : ''}
+               <div class="cal-close-btn cal-close-abs" onclick="closeAllCalendarPopups()" title="${t('settings_close')}" aria-label="${t('settings_close')}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></div>
            </div>`;
 
     popup.innerHTML = `

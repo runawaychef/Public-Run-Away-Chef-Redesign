@@ -664,6 +664,10 @@
         .cal-footer { display: flex; justify-content: center; margin-top: 7px; }
         .cal-today-btn { font-size: 14px; font-weight: 700; color: #7c9473; padding: 5px 13px; border-radius: 10px; cursor: pointer; }
         .cal-today-btn:active { background: #f4f1ea; }
+        /* Крестик закрытия календаря (16.10): высота как у кнопок «Сегодня»/«Применить» */
+        .cal-close-btn { width: 30px; height: 30px; border-radius: 50%; background: #eef2ea; color: #4f6349; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+        .cal-close-btn:active { background: #dfe5d8; }
+        .cal-close-btn.cal-close-abs { position: absolute; right: 0; top: 50%; transform: translateY(-50%); }
         .cal-range-status { font-size: 12px; font-weight: 600; color: #7c9473; text-align: center; margin-bottom: 6px; }
         .cal-day.in-range { background: #e3e8df; border-radius: 0; }
         .cal-day.range-start { border-radius: 10px 0 0 10px; }
@@ -3279,7 +3283,7 @@ function hideSplashScreen() {
 <script src="semifinished.js?v=42"></script>
 <script src="products.js?v=35"></script>
 <script src="customers.js?v=50"></script>
-<script src="calendar.js?v=10"></script>
+<script src="calendar.js?v=11"></script>
 <script src="orders.js?v=131"></script>
 <script src="invoice.js?v=47"></script>
 <script src="send-document.js?v=27"></script>
