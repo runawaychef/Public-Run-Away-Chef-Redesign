@@ -483,7 +483,11 @@ document.addEventListener('click', closeAllOrderStatusDropdowns);
 // по статусу исполнения; при разворачивании превращается в ту же кликабельную
 // кнопку смены статуса, что и в активных карточках — иногда нужно быстро
 // поменять/откатить статус, не открывая полную карточку заказа.
-function renderDoneOrderCard(order) {
+function renderDoneOrderCard(order, opts) {
+    // opts.embedded (16.10): «встроенная» копия свёрнутой карточки для окон (окно дня календаря клиента,
+    // «Неоплаченные заказы»): тот же вид, но без свайпов, раскрытия и id; плашка оплаты и статус только
+    // показывают состояние; нажатие на карточку — opts.onTap(id). opts.extraHtml — доп. строка под шапкой.
+    const emb = !!(opts && opts.embedded);
     const payInfo = getOrderPaymentStatus(order);
     const stripeColor = getPaymentStripeColor(payInfo);
     const statusColor = ORDER_STATUS_COLORS[order.status] || ORDER_STATUS_COLORS['принят'];
@@ -531,6 +535,44 @@ function renderDoneOrderCard(order) {
         : payInfo.status === 'partial' ? t('pay_status_partial')
         : t('pay_status_unpaid');
     const payPill = `<button type="button" class="pay-pill" data-pay="${payKey}" style="background:${stripeColor};" onclick="event.stopPropagation(); quickPayPillTap(${order.id}, ${payInfo.status === 'paid' ? 'true' : 'false'})">${orderHasAutoBankPay(order.id) ? payAutoBankIconHtml(12) : ''}${payPillLabel}</button>`;
+    if (emb) {
+        const onTap = (opts && opts.onTap) || 'openOrderDetail';
+        const extra = (opts && opts.extraHtml) || '';
+        return `
+        <div class="order-card${order.status === 'выполнен' ? ' done-card' : ''}" style="cursor:pointer; margin-bottom:8px;" onclick="${onTap}(${order.id})">
+            <div class="oc-card-top">
+                <div class="stripe" style="background:${stripeColor};" data-pay="${payKey}"></div>
+                ${_sentIconHtml(order) ? `<div class="oc-sent-badge">${_sentIconHtml(order)}</div>` : ''}
+                <div class="order-card-tap">
+                    <div class="order-card-body">
+                        <div class="oc-header">
+                            <div class="oc-datebadge">
+                                <div class="oc-datebadge-month" style="background:${statusColor};">${dateBadge.month}</div>
+                                <div class="oc-datebadge-day">${dateBadge.day}</div>
+                            </div>
+                            <div style="flex:1; min-width:0;">
+                                <div class="oc-row">
+                                    <span class="oc-name">${escapeHtml(order.customer || t('orders_no_customer'))}</span>
+                                    <span class="oc-sum">${total}</span>
+                                </div>
+                                <div class="oc-row" style="margin-top:3px;">
+                                    <span class="oc-meta">${escapeHtml(oNum)}</span>
+                                </div>
+                            </div>
+                        </div>
+                        ${payLine}
+                        ${overdueLine}
+                        ${extra}
+                        <div class="oc-bottom">
+                            <span class="pay-pill" data-pay="${payKey}" style="background:${stripeColor}; cursor:inherit;">${orderHasAutoBankPay(order.id) ? payAutoBankIconHtml(12) : ''}${payPillLabel}</span>
+                            <span style="flex:1;"></span>
+                            <span class="status-btn" style="background:${statusColor}; cursor:inherit;">${statusLabel}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
 
     // Свайп-действия — "Копировать" в правой панели (кроме "Удалить" — заказ
     // уже выполнен, удалять из свайпа этого экрана не даём, только из полной

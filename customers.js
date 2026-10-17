@@ -122,33 +122,9 @@ function stockCardCellsHtml3(a, b, c) {
 // (сводный счёт / счёт на один заказ / счёт не выставлен). Номера и даты счетов
 // берём из того же списка, что и раздел «Документы» (_docsLoad).
 function _unpaidOrderCardHtml(o, alsoInv) {
-    const info = getOrderPaymentStatus(o);
-    const left = Math.max(0, info.grandAmt - info.paidAmt);
-    const badge = orderDateBadgeParts(o.date);
-    const paidLine = info.paidAmt > 0.01
-        ? `<span style="color:#4f6349">${formatMoney(info.paidAmt)} ${t('orders_paid_lower')}</span> · ` : '';
-    const overdue = info.overdue ? `<div class="oc-pay-line" style="color:#8b3a3a; font-weight:700;">${t('orders_payment_overdue')}</div>` : '';
+    // Та же свёрнутая карточка, что в «Заказах» (встроенный режим, 16.10)
     const also = alsoInv ? `<div class="oc-pay-line" style="color:#96712a; font-weight:700;">${t('cust_unpaid_also_inv').replace('{n}', escapeHtml(alsoInv))}</div>` : '';
-    return `
-    <div class="order-card" style="cursor:pointer; margin-bottom:6px;" onclick="goToOrderFromCustomerUnpaid(${o.id})">
-        <div class="stripe" style="background:${getPaymentStripeColor(info)}"></div>
-        <div class="order-card-body">
-            <div class="oc-header">
-                <div class="oc-datebadge">
-                    <div class="oc-datebadge-month" style="background:${ORDER_STATUS_COLORS[o.status] || '#7c9473'};">${badge.month}</div>
-                    <div class="oc-datebadge-day">${badge.day}</div>
-                </div>
-                <div style="flex:1; min-width:0;">
-                    <div class="oc-row">
-                        <span class="oc-name">${escapeHtml(orderNumLabel(o))}</span>
-                        <span class="oc-sum">${formatMoney(info.grandAmt)}</span>
-                    </div>
-                    <div class="oc-pay-line" style="margin-top:3px;">${paidLine}<span style="color:#c0685c">${formatMoney(left)} ${t('orders_remaining_lower')}</span></div>
-                    ${overdue}${also}
-                </div>
-            </div>
-        </div>
-    </div>`;
+    return renderDoneOrderCard(o, { embedded: true, onTap: 'goToOrderFromCustomerUnpaid', extraHtml: also });
 }
 
 function _unpaidGroupHtml(opts) {
@@ -689,21 +665,7 @@ function onCustomerCalDayPicked(iso) {
     document.getElementById('customerDayModal').style.display = 'flex';
 }
 function _cdDayOrderHtml(o) {
-    const info = getOrderPaymentStatus(o);
-    const items = (o.items || []).map(it => {
-        const p = products.find(x => x.id === it.product_id);
-        return p ? `${p.name} ×${Number(it.quantity)}` : '';
-    }).filter(Boolean).join(', ');
-    const emp = employees.find(e => e.id === o.employee_id);
-    const meta = [items, emp ? emp.name : ''].filter(Boolean).map(escapeHtml).join(' · ');
-    return `
-    <div class="order-card" style="cursor:pointer; margin-bottom:6px;" onclick="goToOrderFromCustomerDay(${o.id})">
-        <div class="stripe" style="background:${getPaymentStripeColor(info)}"></div>
-        <div class="order-card-body">
-            <div class="oc-row"><span class="oc-name">${escapeHtml(orderNumLabel(o))}</span><span class="oc-sum">${formatMoney(info.grandAmt)}</span></div>
-            ${meta ? `<div class="oc-meta" style="margin-top:3px; white-space:normal;">${meta}</div>` : ''}
-        </div>
-    </div>`;
+    return renderDoneOrderCard(o, { embedded: true, onTap: 'goToOrderFromCustomerDay' });
 }
 function closeCustomerDay() { document.getElementById('customerDayModal').style.display = 'none'; }
 function goToOrderFromCustomerDay(orderId) { closeCustomerDay(); goToOrderFromCustomer(orderId); }
