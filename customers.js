@@ -1220,7 +1220,7 @@ function renderCustomerStats(cust) {
     const upcoming = memoUpcoming(cust.id);
     const stripEl = document.getElementById('cdMemoStrip');
     if (stripEl) stripEl.innerHTML = upcoming.length
-        ? `<div class="memo-day-box" style="margin-bottom:${hasOrders ? 20 : 2}px;">${upcoming.map(x =>
+        ? `<div class="memo-day-box" style="margin:10px 0 0;">${upcoming.map(x =>
             _memoItemHtml(x.m, { onTap: `openMemoEdit(${x.m.id}, 'detail')`, soon: true, whenHtml: escapeHtml(_memoWhenText(x.n)) })).join('')}</div>` : '';
     // Метка памятной даты здесь не нужна — дублировала строку выше (17.10); в списке клиентов метка остаётся
     const tags = [];
