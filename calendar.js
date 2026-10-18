@@ -96,6 +96,8 @@ function closeAllCalendarPopups() {
     document.querySelectorAll('.calendar-popup.open').forEach(p => {
         p.classList.remove('open');
     });
+    // Подсветка кнопки, открывшей календарь (17.10)
+    document.querySelectorAll('.view-toggle-btn.is-open[data-cal-trigger]').forEach(b => { b.classList.remove('is-open'); b.removeAttribute('data-cal-trigger'); });
 }
 document.addEventListener('click', closeAllCalendarPopups);
 

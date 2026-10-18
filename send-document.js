@@ -385,61 +385,69 @@ function consCalTap(iso) {
     _renderSendSheet();
 }
 function _consCalHtml() {
+    // Вид — как у всех календарей программы (calendar.js): те же шапка, дни недели, клетки и точки.
     const st = _sendSheetState;
     const open = _consCalOpen();
-    const head = `<div style="display:flex; justify-content:space-between; align-items:center; margin:2px 0 4px;">
+    const head = `<div style="display:flex; justify-content:space-between; align-items:center; margin:2px 0 6px;">
         <span style="font-size:13px; font-weight:700; color:#3c3a34;">${t('send_cons_cal')}</span>
         <button type="button" onclick="toggleConsCal()" style="border:0; background:transparent; color:#7c9473; font-size:12px; font-weight:700; padding:4px 0;">${t(open ? 'send_cons_cal_hide' : 'send_cons_cal_show')}</button></div>`;
     if (!open) return head;
-    const seg = `<div class="send-doctype-switch" style="margin:0 0 6px;">
+    const seg = `<div class="send-doctype-switch" style="margin:0 0 8px;">
         <button class="${st.consCalMode === 'day' ? 'active' : ''}" onclick="setConsCalMode('day')">${t('send_cons_cal_days')}</button>
         <button class="${st.consCalMode === 'range' ? 'active' : ''}" onclick="setConsCalMode('range')">${t('send_cons_cal_range')}</button></div>`;
     const [y, m] = st.consCalMonth.split('-').map(Number);
-    const loc = ({ ru: 'ru-RU', uk: 'uk-UA', lt: 'lt-LT', en: 'en-GB' })[currentLang] || 'en-GB';
-    let title = new Date(y, m - 1, 1).toLocaleDateString(loc, { month: 'long', year: 'numeric' });
-    title = title.charAt(0).toUpperCase() + title.slice(1);
-    const nav = `<div style="display:flex; justify-content:space-between; align-items:center; margin:0 0 4px;">
-        <button type="button" class="ccal-nav" onclick="consCalShift(-1)" aria-label="‹">‹</button>
-        <span style="font-size:13px; font-weight:700; color:#3c3a34;">${escapeHtml(title)}</span>
-        <button type="button" class="ccal-nav" onclick="consCalShift(1)" aria-label="›">›</button></div>`;
-    let wd = '';
-    for (let i = 0; i < 7; i++) {
-        const n = new Date(2024, 0, 1 + i).toLocaleDateString(loc, { weekday: 'short' }).replace('.', '');
-        wd += `<div class="ccal-wd">${escapeHtml(n.charAt(0).toUpperCase() + n.slice(1, 3))}</div>`;
-    }
     const map = _consCalDayMap();
-    const first = new Date(y, m - 1, 1);
-    const lead = (first.getDay() + 6) % 7;
+    const now = typeof orgNowDate === 'function' ? orgNowDate() : new Date();
+    const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    const C_CAN = '#7c9473', C_OWN = '#d9a441', C_OTHER = '#b9b3a5', C_OLD = '#ddd7c8';
+    let lead = new Date(y, m - 1, 1).getDay(); lead = lead === 0 ? 6 : lead - 1;
     const days = new Date(y, m, 0).getDate();
+    const prevDays = new Date(y, m - 1, 0).getDate();
     let cells = '';
-    for (let i = 0; i < lead; i++) cells += '<div></div>';
+    for (let i = 0; i < lead; i++) cells += `<div class="cal-day other-month">${prevDays - lead + i + 1}</div>`;
     for (let d = 1; d <= days; d++) {
         const iso = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         const day = map[iso];
-        const cls = ['ccal-d'];
-        let dot = '';
+        const cls = ['cal-day'];
+        if (iso === todayIso) cls.push('today');
+        let dots = [];
         if (day) {
             const pick = day.cand.filter(_consCalSelectable);
             const on = pick.filter(o => st.consSel.includes(o.id)).length;
-            if (day.cand.some(o => o.id === st.orderId)) cls.push('cur');
-            if (!day.cand.length || !pick.length) cls.push('oth');
-            else if (on && on === pick.length) cls.push('sel');
-            else if (on) cls.push('part');
-            else if (pick.every(o => o.cons_excluded && o.id !== st.orderId)) cls.push('old');
-            if (day.cand.length && pick.length && !cls.includes('old')) {
-                const own = day.cand.some(o => o.id !== st.orderId && _consOwnInv(o.id));
-                dot = `<i class="${own ? 'own' : ''}"></i>`;
-            }
-            if (day.cand.length > 1) dot += `<b>${day.cand.length}</b>`;
-            if (st.consRangeStart === iso) cls.push('start');
-        } else cls.push('none');
-        cells += `<div class="${cls.join(' ')}" onclick="consCalTap('${iso}')">${d}${dot}</div>`;
+            const full = pick.length && on === pick.length;
+            if (full) cls.push('selected');
+            else if (on) cls.push('cons-part');
+            if (!pick.length) cls.push('cons-none');
+            if (day.cand.some(o => o.id === st.orderId)) cls.push('cons-cur');
+            if (st.consRangeStart === iso) cls.push('cons-start');
+            // Точка на каждый заказ дня (до 3): зелёная — можно добавить, жёлтая — есть отдельный счёт,
+            // серая — уже в другом счёте или нельзя взять, бледная — старый заказ. На выбранном дне — белые.
+            day.cand.forEach(o => {
+                const own = o.id !== st.orderId && _consOwnInv(o.id);
+                const c = !_consCalSelectable(o) ? C_OTHER : own ? C_OWN : (o.cons_excluded && o.id !== st.orderId) ? C_OLD : C_CAN;
+                dots.push(full && c !== C_OWN ? '#fff' : c);
+            });
+            day.other.forEach(() => dots.push(full ? '#fff' : C_OTHER));
+        } else cls.push('cons-none');
+        dots = dots.slice(0, 3);
+        const dotsHtml = dots.length ? `<div class="cal-day-dots">${dots.map(c => `<span class="cal-day-dot" style="background:${c}"></span>`).join('')}</div>` : '';
+        cells += `<div class="${cls.join(' ')}" onclick="consCalTap('${iso}')">${d}${dotsHtml}</div>`;
     }
+    const tail = (7 - ((lead + days) % 7)) % 7;
+    for (let i = 1; i <= tail; i++) cells += `<div class="cal-day other-month">${i}</div>`;
+    const chev = dir => `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path stroke-linecap="round" stroke-linejoin="round" d="${dir < 0 ? 'M15 18l-6-6 6-6' : 'M9 18l6-6-6-6'}"/></svg>`;
     const hint = st.consCalMode === 'range'
-        ? `<div style="font-size:12px; color:#6b675d; margin-top:6px;">${t(st.consRangeStart ? 'send_cons_cal_pick_end' : 'send_cons_cal_pick_start')}</div>` : '';
-    const leg = `<div class="ccal-leg"><span><b style="background:#7c9473"></b>${t('send_cons_leg_in')}</span><span><b class="lg-can"></b>${t('send_cons_leg_can')}</span><span><b class="lg-own"></b>${t('send_cons_leg_own')}</span><span><b style="background:#e9e5da"></b>${t('send_cons_leg_other')}</span><span><b style="background:#f6f4ec"></b>${t('send_cons_leg_old')}</span></div>`;
-    return head + seg + nav + `<div class="ccal-g">${wd}${cells}</div>` + hint + leg
-        + `<div style="border-top:1px solid #e5e0d0; margin:10px 0 6px;"></div>`;
+        ? `<div class="cal-range-status" style="margin:6px 0 0;">${t(st.consRangeStart ? 'send_cons_cal_pick_end' : 'send_cons_cal_pick_start')}</div>` : '';
+    const leg = `<div class="cal-legend"><span><i class="sq"></i>${t('send_cons_leg_in')}</span><span><i style="background:${C_CAN}"></i>${t('send_cons_leg_can')}</span><span><i style="background:${C_OWN}"></i>${t('send_cons_leg_own')}</span><span><i style="background:${C_OTHER}"></i>${t('send_cons_leg_other')}</span><span><i style="background:${C_OLD}"></i>${t('send_cons_leg_old')}</span></div>`;
+    return head + seg + `<div class="cal-inline">
+        <div class="cal-header">
+            <div class="cal-nav-btn" onclick="consCalShift(-1)">${chev(-1)}</div>
+            <div class="cal-title">${calMonthName(m - 1)} ${y}</div>
+            <div class="cal-nav-btn" onclick="consCalShift(1)">${chev(1)}</div>
+        </div>
+        <div class="cal-weekdays">${calWeekdays().map(w => `<div class="cal-weekday">${w}</div>`).join('')}</div>
+        <div class="cal-days">${cells}</div>${hint}${leg}
+    </div><div style="border-top:1px solid #e5e0d0; margin:12px 0 6px;"></div>`;
 }
 
 function _consBlockHtml(order) {

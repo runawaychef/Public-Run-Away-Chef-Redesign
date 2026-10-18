@@ -1179,7 +1179,9 @@ function openOrdersCardFilterCalendar() {
         onPick: onOrdersCardDatePicked,
         badge: orderCountBadgeForDay,
         allowClear: true
-    });
+    });    const btn = document.getElementById('ordersCardCalendarBtn');
+    const open = document.getElementById('globalCalendarPopup')?.classList.contains('open');
+    if (btn) { btn.classList.toggle('is-open', !!open); if (open) btn.setAttribute('data-cal-trigger', '1'); }
 }
 
 function onOrdersCardDatePicked(iso) {

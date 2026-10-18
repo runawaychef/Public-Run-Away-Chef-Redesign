@@ -648,6 +648,10 @@ function openPortalDropdown(dd, triggerEl) {
         portal.appendChild(dd);
     }
     dd.classList.add('open');
+    // Кнопка, открывшая список, подсвечена, пока он открыт (17.10)
+    if (dd._portalTrigger && dd._portalTrigger !== triggerEl) dd._portalTrigger.classList.remove('is-open');
+    dd._portalTrigger = triggerEl;
+    if (triggerEl.classList.contains('view-toggle-btn')) triggerEl.classList.add('is-open');
     positionPortalDropdown(dd, triggerEl);
 }
 
@@ -684,6 +688,7 @@ function positionPortalDropdown(dd, triggerEl) {
 function closePortalDropdown(dd) {
     if (!dd) return;
     dd.classList.remove('open');
+    if (dd._portalTrigger) { dd._portalTrigger.classList.remove('is-open'); dd._portalTrigger = null; }
     dd.style.position = ''; dd.style.left = ''; dd.style.top = ''; dd.style.right = ''; dd.style.bottom = '';
     dd.style.visibility = '';
     if (dd.classList.contains('filter-dropdown')) dd.style.width = '';
