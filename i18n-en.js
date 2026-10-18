@@ -384,6 +384,7 @@ I18N.en = {
 
         // Common save/update messages (reused across the whole project)
         common_done: 'Done',
+        filter_done: 'Done',
         common_positions_word: 'line items',
         common_adjusted: 'Adjusted',
         common_error_generic: 'Error.',

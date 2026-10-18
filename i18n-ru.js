@@ -383,6 +383,7 @@ I18N.ru = {
 
         // Общие сообщения сохранения/обновления (переиспользуются по всему проекту)
         common_done: 'Готово',
+        filter_done: 'Готово',
         common_positions_word: 'позиций',
         common_adjusted: 'Скорректировано',
         common_error_generic: 'Ошибка.',

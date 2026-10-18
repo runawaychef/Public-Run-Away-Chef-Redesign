@@ -389,6 +389,7 @@ I18N.lt = {
 
         // Общие сообщения сохранения/обновления (переиспользуются по всему проекту)
         common_done: 'Baigta',
+        filter_done: 'Gerai',
         common_positions_word: 'pozicijų',
         common_adjusted: 'Pakoreguota',
         common_error_generic: 'Klaida.',

@@ -389,6 +389,7 @@ I18N.uk = {
 
         // Общие сообщения сохранения/обновления (переиспользуются по всему проекту)
         common_done: 'Готово',
+        filter_done: 'Готово',
         common_positions_word: 'позицій',
         common_adjusted: 'Скориговано',
         common_error_generic: 'Помилка.',
