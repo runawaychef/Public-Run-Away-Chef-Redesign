@@ -452,7 +452,7 @@ function _consCalHtml() {
 
 function _consBlockHtml(order) {
     const st = _sendSheetState;
-    const box = 'margin:8px 0 0 28px;';
+    const box = 'margin:10px 0 0;';
     if (st.consExisting) {
         const c = st.consExisting, co = c.snapshot.consolidated;
         const rows = co.orders.map(o => `<div style="display:flex; justify-content:space-between; font-size:12px; color:#555; padding:2px 0;"><span>${escapeHtml(o.number ? '№' + o.number : '#' + o.id)} · ${formatDateDMY(o.date)}${o.dn ? ' · ' + escapeHtml(o.dn) : ''}</span><span>${formatMoney(o.grossC / 100)}</span></div>`).join('');
@@ -463,7 +463,7 @@ function _consBlockHtml(order) {
         return `<div style="${box}"><div style="font-size:12px; color:#6b675d; margin-bottom:4px;">${t('send_cons_member')}</div>${rows}${paidLine}${warn}</div>`;
     }
     if (!st.consCand.length || st.docs.invoice.issued) return '';
-    const seg = `<div class="send-doctype-switch" style="margin:8px 0 0 28px;">
+    const seg = `<div class="send-doctype-switch" style="margin:10px 0 0;">
         <button class="${st.invKind === 'order' ? 'active' : ''}" onclick="setSendInvKind('order')">${t('send_inv_kind_order')}</button>
         <button class="${st.invKind === 'cons' ? 'active' : ''}" onclick="setSendInvKind('cons')">${t('send_inv_kind_cons')}</button></div>`;
     if (st.invKind !== 'cons') return seg;
