@@ -137,14 +137,13 @@ async function openDocumentsSection(opts) {
         return;
     }
     hideLoading();
-    closeModal();
+    openAppPage('docsPage'); // страница поверх раздела (helpers.js), «Назад» — на шаг назад
     renderDocumentsSection();
-    document.getElementById('documentsModal').style.display = 'flex';
-    if (typeof positionOrdersViewToggle === 'function') positionOrdersViewToggle();
 }
+(window._appPageOnShow = window._appPageOnShow || {}).docsPage = () => renderDocumentsSection();
 
 function closeDocumentsSection() {
-    document.getElementById('documentsModal').style.display = 'none';
+    if (typeof appPageTop === 'function' && appPageTop() === 'docsPage') closeAppPage();
 }
 
 function setDocsFilter(field, value) {
@@ -345,7 +344,6 @@ async function openRegistryDoc(key) {
         _docsOpenEntry = d;
         _docPreview = { docType: d.docType, snapshot, lang: currentLang, readOnly: true, persisted: true,
             orderId: d.orderId || d.liveMemberId || null, consolidatedId, fromRegistry: true };
-        document.getElementById('documentsModal').style.display = 'none';
         if (typeof _setPreviewReadOnlyUi === 'function') _setPreviewReadOnlyUi(true, false);
         renderDocumentPreviewThumbnail();
         document.getElementById('orderDocumentModal').style.display = 'flex';
@@ -409,8 +407,9 @@ function closeRegistryDocPreview() {
     _docsOpenEntry = null;
     if (typeof _setPreviewReadOnlyUi === 'function') _setPreviewReadOnlyUi(false, false);
     renderRegistryDocActions();
+    // Просмотр мог быть открыт не из списка (например, «Открыть счёт» у клиента) — тогда открываем список
+    if (!isAppPageOpen('docsPage')) openAppPage('docsPage');
     renderDocumentsSection();
-    document.getElementById('documentsModal').style.display = 'flex';
 }
 
 // ---- Отмена сводного счёта ----

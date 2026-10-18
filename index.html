@@ -151,15 +151,15 @@
         .order-row:active { background: #e3e8df; }
 
         /* Детальный вид заказа */
-        #sendDocPage { display: none; }
-        body.send-page-open #sendDocPage { display: block; }
-        body.send-page-open #appContent > .tab-content,
-        body.send-page-open #fabAddBtn,
-        body.send-page-open #ordersViewToggle,
-        body.send-page-open #productsSearchBar,
-        body.send-page-open #customersSearchBar,
-        body.send-page-open #ingredientsSearchBar,
-        body.send-page-open #semiFinishedSearchBar { display: none !important; }
+        .app-page { display: none; }
+        body.app-page-open .app-page.active { display: block; }
+        body.app-page-open #appContent > .tab-content,
+        body.app-page-open #fabAddBtn,
+        body.app-page-open #ordersViewToggle,
+        body.app-page-open #productsSearchBar,
+        body.app-page-open #customersSearchBar,
+        body.app-page-open #ingredientsSearchBar,
+        body.app-page-open #semiFinishedSearchBar { display: none !important; }
         #orderDetail { display: none; }
         #orderDetail.active { display: block; }
         #ordersList.hidden-list { display: none; }
@@ -429,7 +429,6 @@
         }
         .view-toggle-btn svg { width: 16px; height: 16px; }
         #ordersCardCalendarBtn svg, #ordersDocsBtn svg, #ordersBankBtn svg, #ordersFilterPill .view-toggle-btn svg { width: 19px; height: 19px; }
-        #documentsModal { z-index: 155; }
         #bankModal, #bankSettingsModal { z-index: 155; }
         #bankSheetModal { z-index: 165; }
         #bankModal .modal-content, #bankSettingsModal .modal-content { background: #f4f1ea; }
@@ -2781,20 +2780,6 @@ function hideSplashScreen() {
         </div>
 
         <!-- Раздел «Документы»: единый список счетов, накладных и сводных счетов (documents.js) -->
-        <div id="documentsModal" class="modal modal-fullscreen">
-            <div class="modal-content">
-                <div class="flex items-center gap-2 mb-2">
-                    <button onclick="closeDocumentsSection(); if (typeof positionOrdersViewToggle === 'function') positionOrdersViewToggle();" class="pill-btn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-                        <span data-i18n="common_back">Назад</span>
-                    </button>
-                    <h2 class="text-gray-800" style="font-size:16px; font-weight:600; margin:0;" data-i18n="docs_title">Документы</h2>
-                </div>
-                <input id="docsSearch" type="search" autocomplete="off" oninput="setDocsFilter('q', this.value)" placeholder="Номер или клиент" data-i18n-placeholder="docs_search_placeholder" class="border rounded-xl w-full" style="font-size:13px; padding:7px 9px; background:#fff;">
-                <div id="docsBody" style="flex:1; min-height:0;"></div>
-            </div>
-        </div>
-
         <!-- Раздел «Поступления» из банка (bank.js) -->
         <div id="bankModal" class="modal modal-fullscreen">
             <div class="modal-content">
@@ -3371,7 +3356,7 @@ function hideSplashScreen() {
 
         <!-- ===== СТРАНИЦА «Отправить документ» (17.10): вместо шторки — страница поверх текущего раздела,
              шапка и нижнее меню остаются; «Назад» возвращает туда, откуда открыли (send-document.js) ===== -->
-        <div id="sendDocPage">
+        <div id="sendDocPage" class="app-page">
             <div class="bg-white p-2 rounded-xl shadow-md mb-3">
                 <div class="flex items-center gap-2 mb-2">
                     <button onclick="closeSendDocPage()" class="pill-btn">
@@ -3381,6 +3366,20 @@ function hideSplashScreen() {
                     <h2 class="text-gray-800" style="font-size:15px; font-weight:600; margin:0 0 0 auto;" data-i18n="send_sheet_title">Отправить документ</h2>
                 </div>
                 <div id="sendSheetBody"></div>
+            </div>
+        </div>
+        <!-- ===== СТРАНИЦА «Документы» — архив счетов и накладных (17.10, documents.js); та же цепочка страниц ===== -->
+        <div id="docsPage" class="app-page">
+            <div class="bg-white p-2 rounded-xl shadow-md mb-3">
+                <div class="flex items-center gap-2 mb-2">
+                    <button onclick="closeAppPage()" class="pill-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        <span data-i18n="common_back">Назад</span>
+                    </button>
+                    <h2 class="text-gray-800" style="font-size:15px; font-weight:600; margin:0 0 0 auto;" data-i18n="docs_title">Документы</h2>
+                </div>
+                <input id="docsSearch" type="search" autocomplete="off" oninput="setDocsFilter('q', this.value)" placeholder="Номер или клиент" data-i18n-placeholder="docs_search_placeholder" class="border rounded-xl w-full" style="font-size:13px; padding:7px 9px; background:#fff;">
+                <div id="docsBody"></div>
             </div>
         </div>
     </div><!-- appContent -->
@@ -3407,15 +3406,15 @@ function hideSplashScreen() {
 <script src="calendar.js?v=14"></script>
 <script src="orders.js?v=134"></script>
 <script src="invoice.js?v=47"></script>
-<script src="send-document.js?v=31"></script>
+<script src="send-document.js?v=32"></script>
 <script src="payments.js?v=25"></script>
-<script src="documents.js?v=8"></script>
+<script src="documents.js?v=9"></script>
 <script src="bank.js?v=10"></script>
 <script src="stats.js?v=22"></script>
 <script src="history.js?v=9"></script>
 <script src="modals.js?v=17"></script>
 <script src="demoData.js?v=19"></script>
-<script src="helpers.js?v=45"></script>
+<script src="helpers.js?v=46"></script>
 <script>
 // SUPABASE_URL, SUPABASE_KEY, db перенесены в supabaseClient.js
 
@@ -3672,7 +3671,7 @@ function renderAllScreens() {
 // ==================== ТАБЫ ====================
 function showTab(tabId) {
     // Открыта страница «Отправить документ»: уход по меню/иконкам закрывает её (с вопросом, если текст письма изменён)
-    if (typeof sendDocPageLeaveGuard === 'function' && sendDocPageLeaveGuard(() => showTab(tabId))) return;
+    if (typeof appPagesLeaveGuard === 'function' && appPagesLeaveGuard(() => showTab(tabId))) return;
     if (tabId === 'stats' && typeof hasPermission === 'function' && !hasPermission('can_view_reports')) {
         showInfo('У вас нет доступа к статистике. Обратитесь к владельцу пекарни.');
         return;
@@ -4345,7 +4344,8 @@ document.body.classList.remove('style-loading');
 // закрывает то, что открыто, и только с "пустого" главного экрана закрывает
 // само приложение.
 const _backHandledDetailScreens = [
-    { id: 'sendDocPage',        close: () => { if (typeof closeSendDocPage === 'function') closeSendDocPage(); } },
+    { id: 'sendDocPage',        close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
+    { id: 'docsPage',           close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'orderDetail',        close: () => { if (typeof closeOrderDetail === 'function') closeOrderDetail(); } },
     { id: 'customerDetail',     close: () => { if (typeof closeCustomerDetail === 'function') closeCustomerDetail(); } },
     { id: 'ingredientDetail',   close: () => { if (typeof closeIngredientDetail === 'function') closeIngredientDetail(); } },

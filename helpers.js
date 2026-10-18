@@ -868,3 +868,65 @@ function refCopySwipeBtnHtml(onclickCall) {
         </button>
     </div>`;
 }
+
+// ==================== СТРАНИЦЫ ПОВЕРХ РАЗДЕЛА (17.10) ====================
+// «Отправить документ» и «Документы» — страницы поверх текущего раздела: шапка и нижнее
+// меню остаются, содержимое разделов скрыто классом на body. Страницы складываются в цепочку:
+// «Назад» — на шаг назад (с прежней прокруткой), переход по меню — закрывает всю цепочку.
+let _appPageStack = [];      // [{ id, scrollY }]
+let _appPageBaseScroll = 0;  // прокрутка раздела под страницами
+const _appPageOnShow = window._appPageOnShow = window._appPageOnShow || {};   // id → перерисовка при возврате на страницу (заполняют файлы страниц, они могут грузиться раньше)
+function appPageTop() { return _appPageStack.length ? _appPageStack[_appPageStack.length - 1].id : null; }
+function isAppPageOpen(id) { return id ? _appPageStack.some(p => p.id === id) : _appPageStack.length > 0; }
+function _appPageShowTop() {
+    document.querySelectorAll('.app-page').forEach(el => el.classList.toggle('active', el.id === appPageTop()));
+    document.body.classList.toggle('app-page-open', _appPageStack.length > 0);
+}
+function openAppPage(id) {
+    if (typeof closeModal === 'function') closeModal(); // окна поверх страница заменяет
+    if (!_appPageStack.length) _appPageBaseScroll = window.scrollY || 0;
+    else _appPageStack[_appPageStack.length - 1].scrollY = window.scrollY || 0;
+    // Та же страница уже есть в цепочке — возвращаемся к ней (без дублей)
+    const i = _appPageStack.findIndex(p => p.id === id);
+    if (i >= 0) _appPageStack = _appPageStack.slice(0, i);
+    _appPageStack.push({ id, scrollY: 0 });
+    _appPageShowTop();
+    window.scrollTo(0, 0);
+}
+function _appPageAfterAllClosed() {
+    if (typeof refreshFab === 'function') refreshFab();
+    if (typeof currentTabId !== 'undefined' && currentTabId === 'orders' && typeof positionOrdersViewToggle === 'function'
+        && !document.getElementById('orderDetail')?.classList.contains('active')) positionOrdersViewToggle();
+    const y = _appPageBaseScroll;
+    requestAnimationFrame(() => window.scrollTo(0, y));
+}
+// Закрыть верхнюю страницу. Перед уходом страница может спросить подтверждение (canLeave).
+const _appPageCanLeave = window._appPageCanLeave = window._appPageCanLeave || {}; // id → async () => bool
+async function closeAppPage(force) {
+    const top = appPageTop();
+    if (!top) return true;
+    if (!force && _appPageCanLeave[top] && !(await _appPageCanLeave[top]())) return false;
+    _appPageStack.pop();
+    _appPageShowTop();
+    if (_appPageStack.length) {
+        const next = _appPageStack[_appPageStack.length - 1];
+        if (_appPageOnShow[next.id]) _appPageOnShow[next.id]();
+        requestAnimationFrame(() => window.scrollTo(0, next.scrollY || 0));
+    } else _appPageAfterAllClosed();
+    return true;
+}
+function closeAllAppPages() {
+    if (!_appPageStack.length) return;
+    _appPageStack = [];
+    _appPageShowTop();
+    _appPageAfterAllClosed();
+}
+// Для showTab: закрыть все страницы и продолжить переход. Если какая-то страница
+// спрашивает подтверждение — переход откладывается до ответа (возвращает true).
+function appPagesLeaveGuard(cont) {
+    if (!_appPageStack.length) return false;
+    const asking = _appPageStack.map(p => p.id).filter(id => _appPageCanLeave[id] && _appPageCanLeave[id].needed && _appPageCanLeave[id].needed());
+    if (!asking.length) { closeAllAppPages(); return false; }
+    _appPageCanLeave[asking[0]]().then(ok => { if (ok) { closeAllAppPages(); cont(); } });
+    return true;
+}

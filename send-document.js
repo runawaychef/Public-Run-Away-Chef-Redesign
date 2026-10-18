@@ -760,45 +760,29 @@ async function _openSendDocumentSheetImpl(orderId, docType, seq) {
     _showSendDocPage();
 }
 
-// ---- Страница «Отправить документ» (17.10) ----
-// Показывается поверх текущего раздела (содержимое разделов скрыто классом на body),
-// шапка и нижнее меню остаются. «Назад» возвращает на прежнее место, с той же прокруткой.
-let _sendPageScrollY = 0;
-function isSendDocPageOpen() { return document.body.classList.contains('send-page-open'); }
-function _showSendDocPage() {
-    closeModal(); // окна поверх (просмотр, неоплаченные и т.п.) закрываем — страница их заменяет
-    if (!isSendDocPageOpen()) _sendPageScrollY = window.scrollY || 0;
-    document.body.classList.add('send-page-open');
-    window.scrollTo(0, 0);
-}
+// ---- Страница «Отправить документ» (17.10) — в общей цепочке страниц (helpers.js: openAppPage) ----
+function isSendDocPageOpen() { return typeof isAppPageOpen === 'function' && isAppPageOpen('sendDocPage'); }
+function _showSendDocPage() { openAppPage('sendDocPage'); }
 function _sendPageEdited() {
     const st = _sendSheetState;
-    if (!st) return false;
+    if (!st || !isSendDocPageOpen()) return false;
     const cc = document.getElementById('sendExtraCc');
     return !!(st.bodyEdited || (cc && cc.value.trim()) || (st.extraCc && st.extraCc.trim()));
 }
-async function closeSendDocPage(force) {
-    if (!isSendDocPageOpen()) return true;
-    if (!force && _sendPageEdited()) {
-        const ok = await showConfirm(t('send_leave_confirm'));
-        if (!ok) return false;
-    }
-    document.body.classList.remove('send-page-open');
-    _sendOpenSeq++; // недогруженная форма не откроется поверх
-    if (typeof refreshFab === 'function') refreshFab();
-    if (typeof currentTabId !== 'undefined' && currentTabId === 'orders' && typeof positionOrdersViewToggle === 'function'
-        && !document.getElementById('orderDetail')?.classList.contains('active')) positionOrdersViewToggle();
-    const y = _sendPageScrollY;
-    requestAnimationFrame(() => window.scrollTo(0, y));
-    return true;
+// Уход со страницы при изменённом тексте письма — с вопросом
+async function _sendPageCanLeave() {
+    if (!_sendPageEdited()) return true;
+    return await showConfirm(t('send_leave_confirm'));
 }
-// Для showTab: если страница открыта — закрыть её (с вопросом при изменённом тексте) и продолжить переход.
-// Возвращает true, если переход отложен до ответа на вопрос.
-function sendDocPageLeaveGuard(cont) {
-    if (!isSendDocPageOpen()) return false;
-    if (!_sendPageEdited()) { closeSendDocPage(true); return false; }
-    closeSendDocPage().then(ok => { if (ok) cont(); });
-    return true;
+_sendPageCanLeave.needed = _sendPageEdited;
+(window._appPageCanLeave = window._appPageCanLeave || {}).sendDocPage = _sendPageCanLeave;
+(window._appPageOnShow = window._appPageOnShow || {}).sendDocPage = () => _renderSendSheet();
+// force — после успешной отправки: закрыть без вопроса
+async function closeSendDocPage(force) {
+    if (appPageTop() !== 'sendDocPage') return true;
+    const ok = await closeAppPage(!!force);
+    if (ok) _sendOpenSeq++; // недогруженная форма не откроется поверх
+    return ok;
 }
 
 function toggleSendDoc(docType, on) {
