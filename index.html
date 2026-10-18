@@ -429,9 +429,7 @@
         }
         .view-toggle-btn svg { width: 16px; height: 16px; }
         #ordersCardCalendarBtn svg, #ordersDocsBtn svg, #ordersBankBtn svg, #ordersFilterPill .view-toggle-btn svg { width: 19px; height: 19px; }
-        #bankModal, #bankSettingsModal { z-index: 155; }
         #bankSheetModal { z-index: 165; }
-        #bankModal .modal-content, #bankSettingsModal .modal-content { background: #f4f1ea; }
         #ordersBankBadge.hidden, #ordersBankWrap.hidden, #ordersBankDot.hidden { display: none !important; }
         .view-toggle-btn.active, .view-toggle-btn.is-open { background: #7c9473; color: #fff; }
         /* Заставка автоматического обновления (16.10): фото запуска + полоса загрузки */
@@ -2779,34 +2777,6 @@ function hideSplashScreen() {
             </div>
         </div>
 
-        <!-- Раздел «Документы»: единый список счетов, накладных и сводных счетов (documents.js) -->
-        <!-- Раздел «Поступления» из банка (bank.js) -->
-        <div id="bankModal" class="modal modal-fullscreen">
-            <div class="modal-content">
-                <div class="flex items-center gap-2 mb-2" style="position:relative;">
-                    <button onclick="closeBankSection()" class="pill-btn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-                        <span data-i18n="common_back">Назад</span>
-                    </button>
-                    <h2 style="position:absolute; left:50%; transform:translateX(-50%); font-size:16px; font-weight:600; margin:0; color:#3c3a34; white-space:nowrap;" data-i18n="bank_title">Поступления</h2>
-                    <button onclick="bankRefreshNow()" class="pill-btn-secondary" style="margin-left:auto;" data-i18n="bank_refresh">Обновить</button>
-                </div>
-                <div id="bankSubtitle" style="font-size:12px; color:#a29c8c; text-align:center;"></div>
-                <div id="bankBody" style="flex:1; min-height:0;"></div>
-            </div>
-        </div>
-        <div id="bankSettingsModal" class="modal modal-fullscreen">
-            <div class="modal-content">
-                <div class="flex items-center gap-2 mb-2">
-                    <button onclick="closeBankSettings()" class="pill-btn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-                        <span data-i18n="common_back">Назад</span>
-                    </button>
-                    <h2 style="font-size:16px; font-weight:600; margin:0; color:#3c3a34;" data-i18n="bank_set_title">Банк</h2>
-                </div>
-                <div id="bankSettingsBody" style="flex:1; min-height:0; margin-top:8px;"></div>
-            </div>
-        </div>
         <div id="bankSheetModal" class="modal modal-bottom-sheet">
             <div class="modal-content" style="width:100%;"><div id="bankSheetBody"></div></div>
         </div>
@@ -3382,6 +3352,29 @@ function hideSplashScreen() {
                 <div id="docsBody"></div>
             </div>
         </div>
+        <!-- ===== СТРАНИЦЫ «Поступления» и «Банк» (17.10, bank.js) — в общей цепочке страниц ===== -->
+        <div id="bankPage" class="app-page">
+            <div class="flex items-center gap-2 mb-2" style="position:relative; padding:0 2px;">
+                <button onclick="closeBankSection()" class="pill-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                    <span data-i18n="common_back">Назад</span>
+                </button>
+                <h2 style="position:absolute; left:50%; transform:translateX(-50%); font-size:15px; font-weight:600; margin:0; color:#3c3a34; white-space:nowrap;" data-i18n="bank_title">Поступления</h2>
+                <button onclick="bankRefreshNow()" class="pill-btn-secondary" style="margin-left:auto;" data-i18n="bank_refresh">Обновить</button>
+            </div>
+            <div id="bankSubtitle" style="font-size:12px; color:#a29c8c; text-align:center;"></div>
+            <div id="bankBody"></div>
+        </div>
+        <div id="bankSettingsPage" class="app-page">
+            <div class="flex items-center gap-2 mb-2" style="padding:0 2px;">
+                <button onclick="closeBankSettings()" class="pill-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                    <span data-i18n="common_back">Назад</span>
+                </button>
+                <h2 style="font-size:15px; font-weight:600; margin:0 0 0 auto; color:#3c3a34;" data-i18n="bank_set_title">Банк</h2>
+            </div>
+            <div id="bankSettingsBody" style="margin-top:8px;"></div>
+        </div>
     </div><!-- appContent -->
     </div><!-- tabsWrapper -->
     </div><!-- p-2 -->
@@ -3409,7 +3402,7 @@ function hideSplashScreen() {
 <script src="send-document.js?v=32"></script>
 <script src="payments.js?v=25"></script>
 <script src="documents.js?v=9"></script>
-<script src="bank.js?v=10"></script>
+<script src="bank.js?v=11"></script>
 <script src="stats.js?v=22"></script>
 <script src="history.js?v=9"></script>
 <script src="modals.js?v=17"></script>
@@ -4346,6 +4339,8 @@ document.body.classList.remove('style-loading');
 const _backHandledDetailScreens = [
     { id: 'sendDocPage',        close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'docsPage',           close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
+    { id: 'bankPage',           close: () => { if (typeof closeBankSection === 'function') closeBankSection(); } },
+    { id: 'bankSettingsPage',   close: () => { if (typeof closeBankSettings === 'function') closeBankSettings(); } },
     { id: 'orderDetail',        close: () => { if (typeof closeOrderDetail === 'function') closeOrderDetail(); } },
     { id: 'customerDetail',     close: () => { if (typeof closeCustomerDetail === 'function') closeCustomerDetail(); } },
     { id: 'ingredientDetail',   close: () => { if (typeof closeIngredientDetail === 'function') closeIngredientDetail(); } },

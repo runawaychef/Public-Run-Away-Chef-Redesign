@@ -126,15 +126,12 @@ function bankHideNotice() {
 async function openBankSection() {
     if (!bankState.conn || bankState.conn.status === 'revoked') return;
     bankState.tab = bankState.counts.review > 0 ? 'review' : 'other';
-    closeModal();
-    document.getElementById('bankModal').style.display = 'flex';
-    if (typeof positionOrdersViewToggle === 'function') positionOrdersViewToggle();
+    openAppPage('bankPage'); // страница поверх раздела (helpers.js)
     await bankLoadTab();
 }
 
 function closeBankSection() {
-    document.getElementById('bankModal').style.display = 'none';
-    if (typeof positionOrdersViewToggle === 'function') positionOrdersViewToggle();
+    if (appPageTop() === 'bankPage') closeAppPage();
     bankRefreshState();
 }
 
@@ -549,18 +546,23 @@ async function bankLoadProtected() {
     } catch (e) { /* без права читать признак считаем обычной организацией */ }
 }
 
+// Открыли из «Настроек» — «Назад» вернёт в окно «Настройки» (как было раньше)
+let _bankSettingsFromSettings = false;
 async function openBankSettings() {
-    closeModal();
-    document.getElementById('bankSettingsModal').style.display = 'flex';
+    const sm = document.getElementById('settingsModal');
+    _bankSettingsFromSettings = !!(sm && sm.style.display === 'flex' && !isAppPageOpen());
+    openAppPage('bankSettingsPage');
     document.getElementById('bankSettingsBody').innerHTML = `<p style="font-size:13px; color:#a29c8c; padding:12px 4px;">${escapeHtml(t('common_loading'))}</p>`;
     await Promise.all([bankRefreshState(), bankLoadProtected()]);
     bankSettingsRender();
 }
 
 function closeBankSettings() {
-    document.getElementById('bankSettingsModal').style.display = 'none';
-    if (typeof openSettingsModal === 'function') openSettingsModal();
+    if (appPageTop() === 'bankSettingsPage') closeAppPage();
+    if (_bankSettingsFromSettings && !isAppPageOpen() && typeof openSettingsModal === 'function') openSettingsModal();
+    _bankSettingsFromSettings = false;
 }
+(window._appPageOnShow = window._appPageOnShow || {}).bankPage = () => { bankLoadTab(); };
 
 function bankSettingsRender() {
     const box = document.getElementById('bankSettingsBody');
@@ -611,7 +613,6 @@ function bankSettingsRender() {
 function bankPickPsu(k) { bankState.psu = k; bankSettingsRender(); }
 
 function bankOpenPlans() {
-    document.getElementById('bankSettingsModal').style.display = 'none';
     if (typeof openPlanModal === 'function') openPlanModal();
 }
 
