@@ -840,6 +840,8 @@ function refreshMemoSettingsUI() {
     if (hint) hint.textContent = t(canEdit ? 'memo_set_days_hint' : 'memo_set_days_ro');
     const cb = document.getElementById('memoBannerToggle');
     if (cb) cb.checked = memoBannerEnabled();
+    const short = document.getElementById('memoRemindDaysShort');
+    if (short) short.textContent = memoRemindDays() + ' ' + t('memo_set_days_unit');
 }
 async function setMemoRemindDays(val) {
     const n = Math.min(30, Math.max(1, parseInt(val, 10) || 7));
