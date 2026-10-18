@@ -1222,13 +1222,8 @@ function renderCustomerStats(cust) {
     if (stripEl) stripEl.innerHTML = upcoming.length
         ? `<div class="memo-day-box" style="margin-bottom:${hasOrders ? 20 : 2}px;">${upcoming.map(x =>
             _memoItemHtml(x.m, { onTap: `openMemoEdit(${x.m.id}, 'detail')`, soon: true, whenHtml: escapeHtml(_memoWhenText(x.n)) })).join('')}</div>` : '';
+    // Метка памятной даты здесь не нужна — дублировала строку выше (17.10); в списке клиентов метка остаётся
     const tags = [];
-    if (hasOrders && upcoming.length) {
-        const x = upcoming[0];
-        let txt = '♥ ' + memoShortWhen(x) + (x.n > 1 ? ' · ' + t('memo_in_days').replace('{n}', x.n) : '');
-        if (upcoming.length > 1) txt += ' +' + (upcoming.length - 1);
-        tags.push(`<button type="button" class="oc-tag oc-tag-memo" onclick="openMemoEdit(${x.m.id}, 'detail')">${escapeHtml(txt)}</button>`);
-    }
     if (unpaidCnt > 0) tags.push(`<button type="button" class="oc-tag oc-tag-red" onclick="openCustomerUnpaidModal(${cust.id})">${unpaidOrdersLabel(unpaidCnt)}</button>`);
     const tagsEl = document.getElementById('cdStatsTags');
     if (tagsEl) tagsEl.innerHTML = tags.length ? `<div class="oc-tags">${tags.join('')}</div>` : '';
