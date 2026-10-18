@@ -1777,7 +1777,7 @@ function hideSplashScreen() {
                     <div id="cdStatsTags"></div>
                     <div id="cdStatsBtns" class="flex gap-1.5" style="margin-top:8px;">
                         <button type="button" onclick="openCustomerCalendar()" class="pill-btn-secondary flex-1 justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span data-i18n="cust_calendar_btn">Календарь</span></button>
-                        <button type="button" onclick="openCustomerMemoDates()" class="pill-btn-secondary flex-1 justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z"/></svg><span data-i18n="cust_memo_btn">Памятные даты</span></button>
+                        <button type="button" onclick="openCustomerMemoDates()" class="pill-btn-secondary flex-1 justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z"/></svg><span data-i18n="cust_memo_btn">Особые даты</span></button>
                     </div>
                     <div id="cdMemoStrip"></div>
                 </div>
@@ -2317,7 +2317,7 @@ function hideSplashScreen() {
                 <!-- Памятные даты клиентов (свёрнуто): за сколько дней напоминать (для пекарни) и баннер в «Заказах» (это устройство) -->
                 <div class="mb-3">
                     <button type="button" id="settingsMemoGroupBtn" onclick="document.getElementById('settingsMemoGroup').classList.toggle('hidden'); document.getElementById('settingsMemoGroupChevron').classList.toggle('rotate-180'); document.getElementById('settingsMemoGroupBtn').classList.toggle('active')" class="settings-row-btn w-full justify-between">
-                        <span class="flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z"/></svg><span data-i18n="memo_list_title">Памятные даты</span></span>
+                        <span class="flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z"/></svg><span data-i18n="memo_set_title">Особые даты клиентов</span></span>
                         <span class="flex items-center gap-2"><span id="memoRemindDaysShort" class="text-xs text-gray-500"></span><svg id="settingsMemoGroupChevron" class="w-3.5 h-3.5 flex-shrink-0 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg></span>
                     </button>
                     <div id="settingsMemoGroup" class="hidden flex flex-col gap-0.5 mt-1">
@@ -2857,7 +2857,7 @@ function hideSplashScreen() {
                 <div id="customerDayMemo"></div>
                 <div id="customerDayBody" style="max-height:52vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
                 <button onclick="createOrderForCustomerDay()" class="pill-btn w-full justify-center mt-2" data-i18n="cust_day_new_order">+ Заказ на этот день</button>
-                <button id="customerDayAddMemoBtn" onclick="addMemoForCustomerDay()" class="pill-btn-secondary w-full justify-center mt-2" data-i18n="memo_add_day">+ Памятная дата</button>
+                <button id="customerDayAddMemoBtn" onclick="addMemoForCustomerDay()" class="pill-btn-secondary w-full justify-center mt-2" data-i18n="memo_add_day">+ Особая дата</button>
                 <div class="flex gap-2 mt-2">
                     <button onclick="backToCustomerCalendar()" class="pill-btn-secondary flex-1 justify-center" data-i18n="cust_day_back_calendar">Календарь</button>
                     <button onclick="closeCustomerDay()" class="pill-btn-secondary flex-1 justify-center" data-i18n="settings_close">Закрыть</button>
@@ -2869,7 +2869,7 @@ function hideSplashScreen() {
         <!-- Памятные даты клиента: список (17.10) -->
         <div id="memoListModal" class="modal" onclick="if(event.target===this) closeMemoList();">
             <div class="modal-content" style="max-width:420px;">
-                <h2 class="text-sm font-semibold text-gray-800" data-i18n="memo_list_title">Памятные даты</h2>
+                <h2 class="text-sm font-semibold text-gray-800" data-i18n="memo_list_title">Особые даты</h2>
                 <div id="memoListSub" class="text-xs text-gray-400 mb-2"></div>
                 <div id="memoListBody" style="max-height:55vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
                 <div class="flex gap-2 mt-3">
@@ -2882,7 +2882,7 @@ function hideSplashScreen() {
         <!-- Памятная дата: добавить / изменить (17.10) -->
         <div id="memoEditModal" class="modal" onclick="if(event.target===this) closeMemoEdit();">
             <div class="modal-content" style="max-width:420px;">
-                <h2 class="text-sm font-semibold text-gray-800" data-i18n="memo_title">Памятная дата</h2>
+                <h2 class="text-sm font-semibold text-gray-800" data-i18n="memo_title">Особая дата</h2>
                 <div id="memoEditSub" class="text-xs text-gray-400 mb-2"></div>
                 <label class="block text-xs text-gray-500 mb-1" data-i18n="memo_name">Название</label>
                 <input id="memoTitle" type="text" maxlength="100" class="border p-0.5 rounded-xl w-full table-text">
@@ -3386,7 +3386,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=78"></script>
+    <script src="i18n-core.js?v=79"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=15"></script>
     <script src="auth.js?v=21"></script>
