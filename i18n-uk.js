@@ -798,7 +798,7 @@ I18N.uk = {
         orders_col_total_novat: 'Разом',
         orders_customer_card: 'Картка клієнта',
         orders_share_order: 'Поділитися замовленням',
-        orders_invoice_doc: 'Документи та надсилання',
+        orders_invoice_doc: 'Надіслати документ',
         orders_delete_order: 'Видалити замовлення',
         order_status_accepted_cap: 'Прийнято',
         order_status_in_progress_cap: 'У роботі',

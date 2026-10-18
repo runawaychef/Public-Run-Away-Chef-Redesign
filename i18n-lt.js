@@ -798,7 +798,7 @@ I18N.lt = {
         orders_col_total_novat: 'Iš viso',
         orders_customer_card: 'Kliento kortelė',
         orders_share_order: 'Dalintis užsakymu',
-        orders_invoice_doc: 'Dokumentai ir siuntimas',
+        orders_invoice_doc: 'Siųsti dokumentą',
         orders_delete_order: 'Ištrinti užsakymą',
         order_status_accepted_cap: 'Priimtas',
         order_status_in_progress_cap: 'Vykdomas',
