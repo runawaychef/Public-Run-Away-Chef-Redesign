@@ -900,6 +900,7 @@ I18N.lt = {
         orders_send_btn: 'Siųsti',
         send_email_btn: 'Siųsti el. paštu',
         send_sheet_title: 'Siųsti dokumentą',
+        send_leave_confirm: "Išeiti neišsiuntus? Pakeistas laiško tekstas nebus išsaugotas.",
         send_no_email_title: 'Klientui nenurodytas el. paštas',
         send_no_email_body: 'Pridėkite jį kliento kortelėje, kad galėtumėte siųsti dokumentus tiesiogiai.',
         send_open_customer_card: 'Atidaryti kliento kortelę',

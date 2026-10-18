@@ -905,6 +905,7 @@ I18N.ru = {
         orders_send_btn: 'Отправить',
         send_email_btn: 'Отправить на почту',
         send_sheet_title: 'Отправить документ',
+        send_leave_confirm: "Выйти без отправки? Изменённый текст письма не сохранится.",
         send_no_email_title: 'У клиента не указан email',
         send_no_email_body: 'Добавьте его в карточку клиента, чтобы отправлять документы напрямую.',
         send_open_customer_card: 'Открыть карточку клиента',

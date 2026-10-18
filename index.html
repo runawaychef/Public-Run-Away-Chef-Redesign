@@ -151,6 +151,15 @@
         .order-row:active { background: #e3e8df; }
 
         /* Детальный вид заказа */
+        #sendDocPage { display: none; }
+        body.send-page-open #sendDocPage { display: block; }
+        body.send-page-open #appContent > .tab-content,
+        body.send-page-open #fabAddBtn,
+        body.send-page-open #ordersViewToggle,
+        body.send-page-open #productsSearchBar,
+        body.send-page-open #customersSearchBar,
+        body.send-page-open #ingredientsSearchBar,
+        body.send-page-open #semiFinishedSearchBar { display: none !important; }
         #orderDetail { display: none; }
         #orderDetail.active { display: block; }
         #ordersList.hidden-list { display: none; }
@@ -1844,17 +1853,6 @@ function hideSplashScreen() {
             </div>
         </div>
 
-        <!-- Bottom-sheet отправки документа клиенту на email -->
-        <div id="sendDocumentSheet" class="modal modal-bottom-sheet">
-            <div class="modal-content">
-                <div class="flex items-center justify-between mb-3">
-                    <h2 class="text-sm font-semibold text-gray-800" data-i18n="send_sheet_title">Отправить документ</h2>
-                    <button onclick="closeModal()" style="line-height:0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b675d" stroke-width="1.8"><path stroke-linecap="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
-                </div>
-                <div id="sendSheetBody"></div>
-            </div>
-        </div>
-
         <!-- Мини-редактор email клиента, открывается из bottom-sheet отправки -->
         <div id="emailQuickEditModal" class="modal">
             <div class="modal-content" style="max-width:340px;">
@@ -3381,6 +3379,20 @@ function hideSplashScreen() {
                 <p class="text-xs text-gray-400 mb-3" data-i18n="stats_synced_footer">Данные синхронизированы с облаком (Supabase)</p>
         </div>
 
+        <!-- ===== СТРАНИЦА «Отправить документ» (17.10): вместо шторки — страница поверх текущего раздела,
+             шапка и нижнее меню остаются; «Назад» возвращает туда, откуда открыли (send-document.js) ===== -->
+        <div id="sendDocPage">
+            <div class="bg-white p-2 rounded-xl shadow-md mb-3">
+                <div class="flex items-center gap-2 mb-2">
+                    <button onclick="closeSendDocPage()" class="pill-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        <span data-i18n="common_back">Назад</span>
+                    </button>
+                    <h2 class="text-gray-800" style="font-size:15px; font-weight:600; margin:0 0 0 auto;" data-i18n="send_sheet_title">Отправить документ</h2>
+                </div>
+                <div id="sendSheetBody"></div>
+            </div>
+        </div>
     </div><!-- appContent -->
     </div><!-- tabsWrapper -->
     </div><!-- p-2 -->
@@ -3388,7 +3400,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=76"></script>
+    <script src="i18n-core.js?v=77"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=15"></script>
     <script src="auth.js?v=21"></script>
@@ -3405,7 +3417,7 @@ function hideSplashScreen() {
 <script src="calendar.js?v=13"></script>
 <script src="orders.js?v=133"></script>
 <script src="invoice.js?v=47"></script>
-<script src="send-document.js?v=28"></script>
+<script src="send-document.js?v=29"></script>
 <script src="payments.js?v=25"></script>
 <script src="documents.js?v=8"></script>
 <script src="bank.js?v=10"></script>
@@ -3669,6 +3681,8 @@ function renderAllScreens() {
 
 // ==================== ТАБЫ ====================
 function showTab(tabId) {
+    // Открыта страница «Отправить документ»: уход по меню/иконкам закрывает её (с вопросом, если текст письма изменён)
+    if (typeof sendDocPageLeaveGuard === 'function' && sendDocPageLeaveGuard(() => showTab(tabId))) return;
     if (tabId === 'stats' && typeof hasPermission === 'function' && !hasPermission('can_view_reports')) {
         showInfo('У вас нет доступа к статистике. Обратитесь к владельцу пекарни.');
         return;
@@ -4341,6 +4355,7 @@ document.body.classList.remove('style-loading');
 // закрывает то, что открыто, и только с "пустого" главного экрана закрывает
 // само приложение.
 const _backHandledDetailScreens = [
+    { id: 'sendDocPage',        close: () => { if (typeof closeSendDocPage === 'function') closeSendDocPage(); } },
     { id: 'orderDetail',        close: () => { if (typeof closeOrderDetail === 'function') closeOrderDetail(); } },
     { id: 'customerDetail',     close: () => { if (typeof closeCustomerDetail === 'function') closeCustomerDetail(); } },
     { id: 'ingredientDetail',   close: () => { if (typeof closeIngredientDetail === 'function') closeIngredientDetail(); } },

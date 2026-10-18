@@ -900,6 +900,7 @@ I18N.uk = {
         orders_send_btn: 'Надіслати',
         send_email_btn: 'Надіслати на пошту',
         send_sheet_title: 'Надіслати документ',
+        send_leave_confirm: "Вийти без надсилання? Змінений текст листа не збережеться.",
         send_no_email_title: 'У клієнта не вказано email',
         send_no_email_body: 'Додайте його в картку клієнта, щоб надсилати документи напряму.',
         send_open_customer_card: 'Відкрити картку клієнта',

@@ -749,7 +749,48 @@ async function _openSendDocumentSheetImpl(orderId, docType, seq) {
         if (!stNew.consCand.some(o => o.id === orderId)) stNew.consCand = []; // сам заказ не может быть в сводном (не подтверждён и т.п.)
     }
     _renderSendSheet();
-    document.getElementById('sendDocumentSheet').style.display = 'flex';
+    _showSendDocPage();
+}
+
+// ---- Страница «Отправить документ» (17.10) ----
+// Показывается поверх текущего раздела (содержимое разделов скрыто классом на body),
+// шапка и нижнее меню остаются. «Назад» возвращает на прежнее место, с той же прокруткой.
+let _sendPageScrollY = 0;
+function isSendDocPageOpen() { return document.body.classList.contains('send-page-open'); }
+function _showSendDocPage() {
+    closeModal(); // окна поверх (просмотр, неоплаченные и т.п.) закрываем — страница их заменяет
+    if (!isSendDocPageOpen()) _sendPageScrollY = window.scrollY || 0;
+    document.body.classList.add('send-page-open');
+    window.scrollTo(0, 0);
+}
+function _sendPageEdited() {
+    const st = _sendSheetState;
+    if (!st) return false;
+    const cc = document.getElementById('sendExtraCc');
+    return !!(st.bodyEdited || (cc && cc.value.trim()) || (st.extraCc && st.extraCc.trim()));
+}
+async function closeSendDocPage(force) {
+    if (!isSendDocPageOpen()) return true;
+    if (!force && _sendPageEdited()) {
+        const ok = await showConfirm(t('send_leave_confirm'));
+        if (!ok) return false;
+    }
+    document.body.classList.remove('send-page-open');
+    _sendOpenSeq++; // недогруженная форма не откроется поверх
+    if (typeof refreshFab === 'function') refreshFab();
+    if (typeof currentTabId !== 'undefined' && currentTabId === 'orders' && typeof positionOrdersViewToggle === 'function'
+        && !document.getElementById('orderDetail')?.classList.contains('active')) positionOrdersViewToggle();
+    const y = _sendPageScrollY;
+    requestAnimationFrame(() => window.scrollTo(0, y));
+    return true;
+}
+// Для showTab: если страница открыта — закрыть её (с вопросом при изменённом тексте) и продолжить переход.
+// Возвращает true, если переход отложен до ответа на вопрос.
+function sendDocPageLeaveGuard(cont) {
+    if (!isSendDocPageOpen()) return false;
+    if (!_sendPageEdited()) { closeSendDocPage(true); return false; }
+    closeSendDocPage().then(ok => { if (ok) cont(); });
+    return true;
 }
 
 function toggleSendDoc(docType, on) {
@@ -824,7 +865,6 @@ async function openSendDocPreview(docType) {
         _docPreview = { docType, snapshot: snap, lang: st.emailLang, readOnly: true, persisted, orderId: st.orderId, consolidatedId };
         renderDocumentPreviewThumbnail();
         _setPreviewReadOnlyUi(true, !persisted);
-        document.getElementById('sendDocumentSheet').style.display = 'none';
         document.getElementById('orderDocumentModal').style.display = 'flex';
     } catch (e) {
         console.error(e);
@@ -855,7 +895,6 @@ async function closeOrderDocumentModal() {
             }
         } catch (e) { console.error(e); }
         _renderSendSheet();
-        document.getElementById('sendDocumentSheet').style.display = 'flex';
         return;
     }
     closeModal();
@@ -990,7 +1029,7 @@ async function submitSendDocument() {
             const docLabel = p.dt === 'invoice' ? t('orders_doc_invoice') : t('orders_doc_delivery_note');
             logActivity('order', `${docLabel} ${p.num} ${t('log_doc_email_sent')} (${cust.email})`, order.id);
         }
-        closeModal();
+        closeSendDocPage(true);
         showInfo(t('send_success'));
     } catch (e) {
         console.error(e);
@@ -1032,7 +1071,7 @@ async function _sendByShare(order, types) {
                 const docLabel = p.dt === 'invoice' ? t('orders_doc_invoice') : t('orders_doc_delivery_note');
                 logActivity('order', `${docLabel} ${p.num} ${t('log_doc_shared')}`, order.id);
             }
-            closeModal();
+            closeSendDocPage(true);
         } else {
             prepared.forEach(p => p.pdf.save(p.filename));
             await showInfo(`${t('common_done')}: ${t('send_share_saved')}`);

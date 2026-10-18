@@ -906,6 +906,7 @@ I18N.en = {
         orders_send_btn: 'Send',
         send_email_btn: 'Send by email',
         send_sheet_title: 'Send document',
+        send_leave_confirm: "Leave without sending? Your edits to the email text will be lost.",
         send_no_email_title: 'No email on file for this customer',
         send_no_email_body: 'Add one in the customer profile to send documents directly.',
         send_open_customer_card: 'Open customer profile',
