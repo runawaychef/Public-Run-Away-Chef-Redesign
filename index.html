@@ -678,6 +678,26 @@
         .memo-item-when.soon { color: #96712a; font-weight: 700; }
         .memo-day-box { background: #fdf8ec; border-radius: 12px; padding: 2px 8px; margin-bottom: 8px; }
         .order-card .oc-tag-memo, #cdStatsBlock .oc-tag-memo { background: #fbf3df; color: #96712a; font-weight: 700; }
+        .ccal-g { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; text-align: center; }
+        .ccal-wd { font-size: 11px; color: #a29c8c; padding: 2px 0; }
+        .ccal-d { position: relative; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 13px; background: #fff; color: #3c3a34; cursor: pointer; user-select: none; }
+        .ccal-d i { position: absolute; bottom: 4px; left: 50%; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: #7c9473; }
+        .ccal-d i.own { background: #d9a441; }
+        .ccal-d b { position: absolute; top: 2px; right: 4px; font-size: 9.5px; font-weight: 700; color: #8a857a; }
+        .ccal-d.none { background: transparent; color: #b9b3a5; cursor: default; }
+        .ccal-d.oth { background: #e9e5da; color: #a29c8c; cursor: default; }
+        .ccal-d.old { background: #f6f4ec; color: #b9b3a5; }
+        .ccal-d.sel { background: #7c9473; color: #fff; font-weight: 700; }
+        .ccal-d.sel i { background: #fff; }
+        .ccal-d.sel b { color: #eef2ea; }
+        .ccal-d.part { background: linear-gradient(135deg, #7c9473 0 50%, #fff 50% 100%); color: #3c3a34; font-weight: 700; }
+        .ccal-d.cur { box-shadow: inset 0 0 0 2px #4f6349; }
+        .ccal-d.start { box-shadow: inset 0 0 0 2px #d9a441; }
+        .ccal-nav { border: 0; background: #e3e8de; color: #4f6349; width: 30px; height: 30px; border-radius: 50%; font-size: 17px; line-height: 1; padding: 0; }
+        .ccal-leg { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11px; color: #6b675d; margin-top: 8px; }
+        .ccal-leg b { display: inline-block; width: 11px; height: 11px; border-radius: 3px; vertical-align: -1px; margin-right: 4px; }
+        .ccal-leg b.lg-can { background: #fff; border: 1px solid #d6d0c2; }
+        .ccal-leg b.lg-own { background: #fff; border: 1px solid #d6d0c2; box-shadow: inset 0 -3px 0 #d9a441; }
         .memo-banner { position: relative; background: #fff; border: 1px solid #e3ddcc; border-radius: 14px; padding: 9px 40px 8px 14px; margin: 3px 0 12px; }
         .memo-bn-title { font-size: 13px; font-weight: 700; color: #96712a; margin-bottom: 2px; }
         .memo-bn-x { position: absolute; right: 8px; top: 7px; width: 26px; height: 26px; border-radius: 50%; border: 0; background: #f6f4ec; color: #8a857a; font-size: 17px; line-height: 1; padding: 0; }
@@ -3368,7 +3388,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=74"></script>
+    <script src="i18n-core.js?v=75"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=15"></script>
     <script src="auth.js?v=21"></script>
@@ -3385,7 +3405,7 @@ function hideSplashScreen() {
 <script src="calendar.js?v=13"></script>
 <script src="orders.js?v=133"></script>
 <script src="invoice.js?v=47"></script>
-<script src="send-document.js?v=27"></script>
+<script src="send-document.js?v=28"></script>
 <script src="payments.js?v=25"></script>
 <script src="documents.js?v=8"></script>
 <script src="bank.js?v=10"></script>

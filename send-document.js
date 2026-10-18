@@ -311,6 +311,137 @@ function toggleConsOld() {
     _renderSendSheet();
 }
 
+// ---- Календарь выбора заказов сводного счёта (17.10) ----
+// Нажатие на день: «По дням» — включить/выключить заказы дня; «Период» — первый и последний день,
+// добавляются все доступные заказы между ними (без старых и без заказов с отдельным счётом).
+const CONS_CAL_OPEN_KEY = 'cons_cal_open';
+function _consCalOpen() { try { return localStorage.getItem(CONS_CAL_OPEN_KEY) !== '0'; } catch (e) { return true; } }
+function toggleConsCal() {
+    try { localStorage.setItem(CONS_CAL_OPEN_KEY, _consCalOpen() ? '0' : '1'); } catch (e) { /* без хранилища */ }
+    _renderSendSheet();
+}
+function setConsCalMode(mode) {
+    const st = _sendSheetState;
+    if (!st) return;
+    st.consCalMode = mode === 'range' ? 'range' : 'day';
+    st.consRangeStart = null;
+    _renderSendSheet();
+}
+function consCalShift(delta) {
+    const st = _sendSheetState;
+    if (!st) return;
+    const [y, m] = st.consCalMonth.split('-').map(Number);
+    const d = new Date(y, m - 1 + delta, 1);
+    st.consCalMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    _renderSendSheet();
+}
+// Заказы клиента по дням: кандидаты и заказы, уже вошедшие в другой сводный счёт
+function _consCalDayMap() {
+    const st = _sendSheetState;
+    const map = {};
+    const add = (iso, key, o) => { (map[iso] = map[iso] || { cand: [], other: [] })[key].push(o); };
+    st.consCand.forEach(o => { if (o.date) add(String(o.date).slice(0, 10), 'cand', o); });
+    if (st.custId) orders.forEach(o => {
+        if (o.customer_id === st.custId && o.is_confirmed && o.consolidated_invoice_id && o.date) add(String(o.date).slice(0, 10), 'other', o);
+    });
+    return map;
+}
+function _consCalSelectable(o) { return !_consOwnInvLocked(o); }
+function consCalTap(iso) {
+    const st = _sendSheetState;
+    if (!st || st.consExisting) return;
+    const map = _consCalDayMap();
+    if (st.consCalMode === 'range') {
+        if (!st.consRangeStart) {
+            if (!map[iso] || !map[iso].cand.length) return;
+            st.consRangeStart = iso;
+            _renderSendSheet();
+            return;
+        }
+        const a = st.consRangeStart < iso ? st.consRangeStart : iso;
+        const b = st.consRangeStart < iso ? iso : st.consRangeStart;
+        const set = new Set(st.consSel);
+        st.consCand.forEach(o => {
+            const d = String(o.date || '').slice(0, 10);
+            if (d < a || d > b || !_consCalSelectable(o)) return;
+            if (o.id !== st.orderId && (o.cons_excluded || _consOwnInv(o.id))) return;
+            set.add(o.id);
+        });
+        st.consSel = [...set];
+        st.consRangeStart = null;
+        st.bodyEdited = false;
+        _renderSendSheet();
+        return;
+    }
+    const day = map[iso];
+    if (!day) return;
+    const pick = day.cand.filter(_consCalSelectable);
+    if (!pick.length) return;
+    const allOn = pick.every(o => st.consSel.includes(o.id));
+    const set = new Set(st.consSel);
+    pick.forEach(o => { if (allOn) { if (o.id !== st.orderId) set.delete(o.id); } else set.add(o.id); });
+    st.consSel = [...set];
+    st.bodyEdited = false;
+    _renderSendSheet();
+}
+function _consCalHtml() {
+    const st = _sendSheetState;
+    const open = _consCalOpen();
+    const head = `<div style="display:flex; justify-content:space-between; align-items:center; margin:2px 0 4px;">
+        <span style="font-size:13px; font-weight:700; color:#3c3a34;">${t('send_cons_cal')}</span>
+        <button type="button" onclick="toggleConsCal()" style="border:0; background:transparent; color:#7c9473; font-size:12px; font-weight:700; padding:4px 0;">${t(open ? 'send_cons_cal_hide' : 'send_cons_cal_show')}</button></div>`;
+    if (!open) return head;
+    const seg = `<div class="send-doctype-switch" style="margin:0 0 6px;">
+        <button class="${st.consCalMode === 'day' ? 'active' : ''}" onclick="setConsCalMode('day')">${t('send_cons_cal_days')}</button>
+        <button class="${st.consCalMode === 'range' ? 'active' : ''}" onclick="setConsCalMode('range')">${t('send_cons_cal_range')}</button></div>`;
+    const [y, m] = st.consCalMonth.split('-').map(Number);
+    const loc = ({ ru: 'ru-RU', uk: 'uk-UA', lt: 'lt-LT', en: 'en-GB' })[currentLang] || 'en-GB';
+    let title = new Date(y, m - 1, 1).toLocaleDateString(loc, { month: 'long', year: 'numeric' });
+    title = title.charAt(0).toUpperCase() + title.slice(1);
+    const nav = `<div style="display:flex; justify-content:space-between; align-items:center; margin:0 0 4px;">
+        <button type="button" class="ccal-nav" onclick="consCalShift(-1)" aria-label="‹">‹</button>
+        <span style="font-size:13px; font-weight:700; color:#3c3a34;">${escapeHtml(title)}</span>
+        <button type="button" class="ccal-nav" onclick="consCalShift(1)" aria-label="›">›</button></div>`;
+    let wd = '';
+    for (let i = 0; i < 7; i++) {
+        const n = new Date(2024, 0, 1 + i).toLocaleDateString(loc, { weekday: 'short' }).replace('.', '');
+        wd += `<div class="ccal-wd">${escapeHtml(n.charAt(0).toUpperCase() + n.slice(1, 3))}</div>`;
+    }
+    const map = _consCalDayMap();
+    const first = new Date(y, m - 1, 1);
+    const lead = (first.getDay() + 6) % 7;
+    const days = new Date(y, m, 0).getDate();
+    let cells = '';
+    for (let i = 0; i < lead; i++) cells += '<div></div>';
+    for (let d = 1; d <= days; d++) {
+        const iso = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const day = map[iso];
+        const cls = ['ccal-d'];
+        let dot = '';
+        if (day) {
+            const pick = day.cand.filter(_consCalSelectable);
+            const on = pick.filter(o => st.consSel.includes(o.id)).length;
+            if (day.cand.some(o => o.id === st.orderId)) cls.push('cur');
+            if (!day.cand.length || !pick.length) cls.push('oth');
+            else if (on && on === pick.length) cls.push('sel');
+            else if (on) cls.push('part');
+            else if (pick.every(o => o.cons_excluded && o.id !== st.orderId)) cls.push('old');
+            if (day.cand.length && pick.length && !cls.includes('old')) {
+                const own = day.cand.some(o => o.id !== st.orderId && _consOwnInv(o.id));
+                dot = `<i class="${own ? 'own' : ''}"></i>`;
+            }
+            if (day.cand.length > 1) dot += `<b>${day.cand.length}</b>`;
+            if (st.consRangeStart === iso) cls.push('start');
+        } else cls.push('none');
+        cells += `<div class="${cls.join(' ')}" onclick="consCalTap('${iso}')">${d}${dot}</div>`;
+    }
+    const hint = st.consCalMode === 'range'
+        ? `<div style="font-size:12px; color:#6b675d; margin-top:6px;">${t(st.consRangeStart ? 'send_cons_cal_pick_end' : 'send_cons_cal_pick_start')}</div>` : '';
+    const leg = `<div class="ccal-leg"><span><b style="background:#7c9473"></b>${t('send_cons_leg_in')}</span><span><b class="lg-can"></b>${t('send_cons_leg_can')}</span><span><b class="lg-own"></b>${t('send_cons_leg_own')}</span><span><b style="background:#e9e5da"></b>${t('send_cons_leg_other')}</span><span><b style="background:#f6f4ec"></b>${t('send_cons_leg_old')}</span></div>`;
+    return head + seg + nav + `<div class="ccal-g">${wd}${cells}</div>` + hint + leg
+        + `<div style="border-top:1px solid #e5e0d0; margin:10px 0 6px;"></div>`;
+}
+
 function _consBlockHtml(order) {
     const st = _sendSheetState;
     const box = 'margin:8px 0 0 28px;';
@@ -353,7 +484,7 @@ function _consBlockHtml(order) {
     }
     const dupSel = st.consSel.filter(id => id !== st.orderId && _consOwnInv(id));
     const dupWarn = dupSel.length ? `<div style="margin-top:6px; font-size:12px; background:#f8efd9; color:#8a6a1f; border-radius:8px; padding:6px 8px;">${t('send_cons_own_inv_warn')}</div>` : '';
-    return seg + `<div style="${box}"><div style="font-size:12px; color:#6b675d; margin-bottom:4px;">${t('send_cons_pick_orders')}</div>${rows}${oldHtml}
+    return seg + `<div style="${box}">${_consCalHtml()}<div style="font-size:12px; color:#6b675d; margin-bottom:4px;">${t('send_cons_pick_orders')}</div>${rows}${oldHtml}
         <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700; color:#3c3a34; border-top:1px solid #e5e0d0; margin-top:4px; padding-top:5px;"><span>${t('send_cons_total')} (${st.consSel.length})</span><span>${formatMoney(_consSelectedTotal())}</span></div>${dupWarn}</div>`;
 }
 
@@ -599,6 +730,7 @@ async function _openSendDocumentSheetImpl(orderId, docType, seq) {
         docs: _sendBuildDocInfo(order, row), bodyText: null, bodyEdited: false, extraCc: '',
         dates: { invoice: {}, delivery_note: {} },
         consExisting, consCand: [], consSel: [], invKind: 'order', consOwnInv: {},
+        consCalMode: 'day', consCalMonth: String(order.date || getLocalDateStr(0)).slice(0, 7), consRangeStart: null,
     };
     const stNew = _sendSheetState;
     if (!consExisting) {
