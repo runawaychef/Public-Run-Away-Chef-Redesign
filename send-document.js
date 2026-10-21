@@ -516,7 +516,9 @@ function _sendBuildBody() {
         if (dt === 'invoice' && st.consExisting) {
             return tLang(`send_phr_${k}_${st.consExisting.changed ? 'upd' : 'num'}`, lang).replace('{doc_number}', st.consExisting.number);
         }
-        if (!d.issued) return tLang(`send_phr_${k}_new`, lang);
+        if (dt === 'invoice' && st.invKind === 'cons') return tLang(`send_phr_${k}_num`, lang).replace('{doc_number}', _formatDocNumber(dt, '…'));
+        // Номера ещё нет — заглушка «INV-…» / «DN-…», при отправке подставится настоящий номер (21.10)
+        if (!d.issued) return tLang(`send_phr_${k}_num`, lang).replace('{doc_number}', _formatDocNumber(dt, '…'));
         return tLang(`send_phr_${k}_${d.changed ? 'upd' : 'num'}`, lang).replace('{doc_number}', d.number);
     });
     if (_isConsInvoice()) {
@@ -693,7 +695,8 @@ function _renderSendSheet() {
                 <p style="font-size:11px; color:#9a9488; margin:0;">${t('send_letter_lang_label')}</p>
             </div>
             ${_renderSendEmailLangSwitch()}
-            <textarea id="sendEmailBody" rows="6" oninput="_sendSheetState.bodyEdited = true; _sendSheetState.bodyText = this.value;" class="border p-2 rounded-xl table-text w-full resize-none" style="margin-bottom:8px;">${escapeHtml(st.bodyText || '')}</textarea>
+            <textarea id="sendEmailBody" rows="6" oninput="_sendSheetState.bodyEdited = true; _sendSheetState.bodyText = this.value;" class="border p-2 rounded-xl table-text w-full resize-none" style="margin-bottom:2px;">${escapeHtml(st.bodyText || '')}</textarea>
+            ${/…/.test(st.bodyText || '') ? `<div style="font-size:11.5px; color:#8a857a; margin-bottom:8px;">${escapeHtml(t('send_body_numbers_hint'))}</div>` : '<div style="height:6px;"></div>'}
             <div style="margin-bottom:10px;">${chips}</div>
             <label class="flex items-center gap-1.5" style="margin-bottom:10px; cursor:pointer;">
                 <input type="checkbox" id="sendBccSelf" ${st.bccSelf ? 'checked' : ''} onchange="_sendSheetState.bccSelf = this.checked;" class="w-4 h-4" style="accent-color:#7c9473;">
@@ -1047,7 +1050,9 @@ async function submitSendDocument() {
 
         // Текст письма (bodyText) НЕ пересобираем — берём как есть из textarea,
         // чтобы не затереть возможные ручные правки пекаря.
-        const bodyText = document.getElementById('sendEmailBody').value;
+        // Заглушки «INV-…» / «DN-…» заменяем номерами, присвоенными при отправке (21.10)
+        let bodyText = document.getElementById('sendEmailBody').value;
+        prepared.forEach(p => { bodyText = bodyText.split(_formatDocNumber(p.dt, '…')).join(p.num); });
         const subject = _sendBuildSubject(prepared, lang, currentOrgName || '');
 
         const payload = {
