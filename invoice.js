@@ -318,7 +318,11 @@ async function applyEditIssueDate(newDate) {
     // и применится при отправке; в базу сейчас ничего не пишем.
     if (_docPreview.persisted === false) {
         _docPreview.snapshot.issueDate = newDate;
-        if (typeof _sendSheetState !== 'undefined' && _sendSheetState) _sendSheetState.dates[_docPreview.docType].issueDate = newDate;
+        // Та же дата — на плашке страницы «Отправить документ»; у счёта срок пересчитается (21.10)
+        if (typeof _sendSetDate === 'function' && typeof _sendSheetState !== 'undefined' && _sendSheetState) {
+            _sendSetDate(_docPreview.docType === 'invoice' ? 'inv_issue' : 'dn_issue', newDate);
+            if (_docPreview.docType === 'invoice') _docPreview.snapshot.dueDate = _sendSheetState.dates.invoice.dueDate;
+        }
         renderDocumentPreviewThumbnail();
         return;
     }
@@ -355,7 +359,7 @@ async function applyEditDueDate(newDate) {
     // и применится при отправке; в базу сейчас ничего не пишем.
     if (_docPreview.persisted === false) {
         _docPreview.snapshot.dueDate = newDate;
-        if (typeof _sendSheetState !== 'undefined' && _sendSheetState) _sendSheetState.dates[_docPreview.docType].dueDate = newDate;
+        if (typeof _sendSetDate === 'function' && typeof _sendSheetState !== 'undefined' && _sendSheetState) _sendSetDate('inv_due', newDate);
         renderDocumentPreviewThumbnail();
         return;
     }

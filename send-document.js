@@ -568,6 +568,59 @@ function _renderSendEmailLangSwitch() {
         `</div>`;
 }
 
+// ---- Даты документа на странице (21.10) ----
+function _isoAddDays(iso, n) {
+    const d = new Date(String(iso).slice(0, 10) + 'T00:00:00');
+    d.setDate(d.getDate() + (Number(n) || 0));
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+// Отсрочка клиента в днях (как при выставлении: нет значения — 7)
+function _sendTermDays(cust) {
+    return (cust && cust.payment_term_days != null) ? Number(cust.payment_term_days) : 7;
+}
+// key: 'inv_issue' | 'inv_due' | 'dn_issue'. Смена даты счёта пересчитывает срок, если его не правили вручную.
+function _sendSetDate(key, iso) {
+    const st = _sendSheetState;
+    if (!st || !iso) return;
+    if (key === 'dn_issue') st.dates.delivery_note.issueDate = iso;
+    else if (key === 'inv_due') { st.dates.invoice.dueDate = iso; st.dates.invoice.dueManual = true; }
+    else {
+        st.dates.invoice.issueDate = iso;
+        if (!st.dates.invoice.dueManual) {
+            const cust = st.custId ? customers.find(c => c.id === st.custId) : null;
+            st.dates.invoice.dueDate = _isoAddDays(iso, _sendTermDays(cust));
+        }
+    }
+    _renderSendSheet();
+}
+function pickSendDate(key) {
+    const st = _sendSheetState;
+    if (!st) return;
+    const cur = key === 'dn_issue' ? st.dates.delivery_note.issueDate : key === 'inv_due' ? st.dates.invoice.dueDate : st.dates.invoice.issueDate;
+    const inp = document.getElementById('sendDateInput');
+    if (inp) inp.value = cur || '';
+    toggleCustomCalendar('globalCalendarPopup', 'sendDateInput', 'sendDateLabel', { onPick: iso => _sendSetDate(key, iso) });
+}
+function _sendDateTileHtml(key, label, iso, half) {
+    return `<div class="send-date-tile" onclick="event.stopPropagation(); pickSendDate('${key}')" style="${half ? 'flex:0 0 calc(50% - 4px);' : 'flex:1;'}">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c9473" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="float:right; margin-top:2px;"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>
+        <div style="font-size:11px; color:#8a857a;">${escapeHtml(label)}</div>
+        <div style="font-size:14px; font-weight:600; color:#3c3a34;">${formatDateDMY(iso)}</div></div>`;
+}
+// Плашки — только у ещё не выставленного документа (у выставленного даты меняются в «Посмотреть»)
+function _sendDatesHtml(dt) {
+    const st = _sendSheetState, d = st.docs[dt];
+    if (d.issued || (dt === 'invoice' && st.consExisting)) return '';
+    if (dt === 'delivery_note') {
+        return `<div style="display:flex; gap:8px; margin-top:10px;">${_sendDateTileHtml('dn_issue', t('send_date_dn'), st.dates.delivery_note.issueDate, true)}</div>
+            <div style="font-size:11.5px; color:#8a857a; margin-top:4px;">${escapeHtml(t('send_date_dn_hint'))}</div>`;
+    }
+    const di = st.dates.invoice;
+    const cust = st.custId ? customers.find(c => c.id === st.custId) : null;
+    const hint = di.dueManual ? '' : `<div style="font-size:11.5px; color:#8a857a; margin-top:4px;">${escapeHtml(t('send_date_due_hint').replace('{n}', _sendTermDays(cust)))}</div>`;
+    return `<div style="display:flex; gap:8px; margin-top:10px;">${_sendDateTileHtml('inv_issue', t('send_date_inv'), di.issueDate)}${_sendDateTileHtml('inv_due', t('send_date_due'), di.dueDate)}</div>${hint}`;
+}
+
 function _sendDocRowHtml(dt, order) {
     const st = _sendSheetState, d = st.docs[dt], on = !!st.checked[dt];
     const isCons = dt === 'invoice' && (st.consExisting || (st.invKind === 'cons' && !d.issued));
@@ -595,7 +648,7 @@ function _sendDocRowHtml(dt, order) {
             <b style="font-size:14px; color:#3c3a34;">${label}</b>
             <span onclick="openSendDocPreview('${dt}')" style="margin-left:auto; color:#4f6349; font-weight:700; font-size:12px; text-decoration:underline; cursor:pointer;">${t('send_view')}</span>
         </div>
-        <div style="font-size:12px; color:#888; margin:4px 0 0 28px;">${status}</div>${warn}${(dt === 'invoice' && on) ? _consBlockHtml(order) : ''}</div>`;
+        <div style="font-size:12px; color:#888; margin:4px 0 0 28px;">${status}</div>${warn}${on ? _sendDatesHtml(dt) : ''}${(dt === 'invoice' && on) ? _consBlockHtml(order) : ''}</div>`;
 }
 
 function _renderSendSheet() {
@@ -662,6 +715,7 @@ function _renderSendSheet() {
         : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"/></svg>`;
 
     body.innerHTML = `
+        <input type="hidden" id="sendDateInput"><span id="sendDateLabel" hidden></span>
         <p style="font-size:13px; color:#888; margin:0 0 6px;">${escapeHtml(order.customer || t('orders_no_customer'))} · ${escapeHtml(orderNumLabel)} · ${formatMoney(orderGrandTotal(order))}</p>
         <p class="send-section-label">${t('send_what')}</p>
         ${_SEND_DOC_TYPES.map(dt => _sendDocRowHtml(dt, order)).join('')}
@@ -736,7 +790,13 @@ async function _openSendDocumentSheetImpl(orderId, docType, seq) {
         orderId, custId: cust ? cust.id : null, emailLang: currentLang, bccSelf: currentOrgBccSelf,
         via: (cust && cust.email) ? 'email' : 'share', checked,
         docs: _sendBuildDocInfo(order, row), bodyText: null, bodyEdited: false, extraCc: '',
-        dates: { invoice: {}, delivery_note: {} },
+        // Даты ещё не выставленных документов (21.10): счёт — сегодня, срок — + отсрочка клиента;
+        // накладная — дата заказа. Меняются плашками на странице и в «Посмотреть».
+        dates: (() => {
+            const today = getLocalDateStr(0);
+            return { invoice: { issueDate: today, dueDate: _isoAddDays(today, _sendTermDays(cust)), dueManual: false },
+                delivery_note: { issueDate: String(order.date || today).slice(0, 10) } };
+        })(),
         consExisting, consCand: [], consSel: [], invKind: 'order', consOwnInv: {},
         consCalMode: 'day', consCalMonth: String(order.date || getLocalDateStr(0)).slice(0, 7), consRangeStart: null,
     };
