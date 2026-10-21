@@ -46,7 +46,7 @@ async function refreshPushSettingsUI() {
     block.classList.remove('hidden');
 
     if (!_pushSupported()) {
-        document.getElementById('pushMasterToggleBtn').classList.add('hidden');
+        document.getElementById('pushMasterRow')?.classList.add('hidden');
         document.getElementById('pushTypesList').classList.add('hidden');
         document.getElementById('pushUnsupportedNote').classList.remove('hidden');
         return;
@@ -68,17 +68,14 @@ function _setPushMasterUI(isOn) {
     const stateEl = document.getElementById('pushMasterToggleState');
     const listEl = document.getElementById('pushTypesList');
     const btnEl = document.getElementById('pushMasterToggleBtn');
-    if (isOn) {
-        stateEl.textContent = t('push_state_on');
-        stateEl.style.color = '#4f6349';
-        btnEl.classList.add('active');
-        listEl.classList.remove('hidden');
-    } else {
-        stateEl.textContent = t('push_state_off');
-        stateEl.style.color = '#a6a196';
-        btnEl.classList.remove('active');
-        listEl.classList.add('hidden');
-    }
+    // 21.10: переключатель внутри группы; галочки видны всегда, при выключенных уведомлениях — серые
+    btnEl.checked = !!isOn;
+    btnEl.classList.toggle('active', !!isOn);
+    stateEl.textContent = t(isOn ? 'push_state_on' : 'push_state_off');
+    stateEl.style.color = isOn ? '#4f6349' : '#a6a196';
+    listEl.classList.remove('hidden');
+    listEl.style.opacity = isOn ? '' : '0.45';
+    listEl.querySelectorAll('input').forEach(cb => { cb.disabled = !isOn; });
 }
 
 async function _loadNotificationPreferencesIntoUI() {

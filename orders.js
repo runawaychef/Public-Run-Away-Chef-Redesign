@@ -107,8 +107,10 @@ function displayOrders() {
             : payInfo.status === 'partial' ? t('pay_status_partial')
             : t('pay_status_unpaid');
         const payPillHtml = `<button type="button" class="pay-pill" data-pay="${payKey}" style="background:${getPaymentStripeColor(payInfo)};" onclick="event.stopPropagation(); quickPayPillTap(${order.id}, ${payInfo.status === 'paid' ? 'true' : 'false'})">${orderHasAutoBankPay(order.id) ? payAutoBankIconHtml(11) : ''}${payLabel}</button>`;
-        return `<div class="ot-row" onclick="openOrderDetail(${order.id})">
-            <span class="ot-date">${formatDateDMY(order.date)}</span>
+        // Статус заказа (21.10): точка 5 px после даты (цвета — как в карточках), выполненные приглушены
+        const stColor = ORDER_STATUS_COLORS[order.status] || ORDER_STATUS_COLORS['принят'];
+        return `<div class="ot-row${order.status === 'выполнен' ? ' ot-done' : ''}" onclick="openOrderDetail(${order.id})">
+            <span class="ot-date">${formatDateDMY(order.date)}<span class="ot-dot" style="background:${stColor};" title="${escapeHtml(orderStatusLabelCap(order.status || 'принят'))}"></span></span>
             <span class="ot-cust">${escapeHtml(order.customer || t('orders_no_customer'))}</span>
             <span class="ot-pos">${itemsCount}</span>
             <span class="ot-sum">${formatMoney(orderGrandTotal(order))}</span>

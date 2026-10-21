@@ -813,7 +813,7 @@
         .done-card .stripe { position: absolute; top: 0; left: 0; bottom: 0; width: 5px; border-radius: 16px 0 0 16px; }
 
         /* ── Табличный вид списка заказов: недели-«острова» + итог недели отдельной строкой ── */
-        .ot-head, .ot-row { display: grid; grid-template-columns: 62px minmax(0, 1fr) 26px 62px 92px; align-items: center; }
+        .ot-head, .ot-row { display: grid; grid-template-columns: 72px minmax(0, 1fr) 26px 62px 92px; align-items: center; }
         .ot-head { margin: 24px 0 6px; padding: 9px 12px; background: #fff; border: 1px solid #e3ddcc; border-radius: 14px; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: #5f6b58; font-weight: 700; }
         .ot-h-pos { text-align: center; font-size: 9.5px; letter-spacing: 0.02em; }
         .ot-h-sum { text-align: right; padding-right: 6px; }
@@ -826,6 +826,8 @@
         .ot-date { color: #7a7568; white-space: nowrap; }
         .ot-cust { font-weight: 600; color: #322f28; min-width: 0; overflow-wrap: anywhere; padding: 0 6px; }
         .ot-pos { text-align: center; color: #7a7568; }
+        .ot-dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; margin-left: 4px; vertical-align: 2px; }
+        .ot-row.ot-done .ot-date, .ot-row.ot-done .ot-cust, .ot-row.ot-done .ot-pos, .ot-row.ot-done .ot-sum { color: #b1ab9d; }
         .ot-sum { text-align: right; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; padding-right: 6px; }
         .ot-pay { text-align: center; }
         .ot-pay .pay-pill { font-size: 10px; padding: 4px 7px; white-space: normal; line-height: 1.15; text-align: center; max-width: 100%; justify-content: center; }
@@ -2297,23 +2299,29 @@ function hideSplashScreen() {
                     <button id="settingsBankBtn" onclick="openBankSettings()" class="settings-row-btn perm-owner-only hidden" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10l9-6 9 6M5 10v8m4.7-8v8m4.6-8v8M19 10v8M3 20h18"/></svg><span data-i18n="bank_set_title">Банк</span></button>
                 </div>
 
-                <!-- Push-уведомления -->
-                <div id="pushSettingsBlock" class="flex flex-col gap-1 mb-3 rounded-xl p-2 hidden" style="background:#f4f1ea; border:1px solid #ece7d9;">
-                    <button type="button" id="pushMasterToggleBtn" onclick="togglePushMaster()" class="settings-row-btn w-full justify-between">
+                <!-- Push-уведомления — сворачиваемая группа (21.10): заголовок только раскрывает, вкл/выкл — переключатель внутри -->
+                <div id="pushSettingsBlock" class="mb-3 hidden">
+                    <button type="button" id="settingsPushGroupBtn" onclick="document.getElementById('settingsPushGroup').classList.toggle('hidden'); document.getElementById('settingsPushGroupChevron').classList.toggle('rotate-180'); document.getElementById('settingsPushGroupBtn').classList.toggle('active')" class="settings-row-btn w-full justify-between">
                         <span class="flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg><span data-i18n="settings_push_title">Push-уведомления</span></span>
-                        <span id="pushMasterToggleState" class="text-xs font-semibold" data-i18n="push_state_off">Выкл</span>
+                        <span class="flex items-center gap-2"><span id="pushMasterToggleState" class="text-xs font-semibold" data-i18n="push_state_off">Выкл</span><svg id="settingsPushGroupChevron" class="w-3.5 h-3.5 flex-shrink-0 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg></span>
                     </button>
-                    <div id="pushTypesList" class="hidden flex flex-col gap-0.5 mt-1">
-                        <label class="flex items-center justify-between text-xs text-gray-600" style="padding:7px 8px;">
-                            <span data-i18n="push_type_new_order">Новые заказы</span>
-                            <input type="checkbox" id="pushType_new_order" onchange="setNotificationPreference('new_order', this.checked)" style="accent-color:#7c9473;">
+                    <div id="settingsPushGroup" class="hidden flex flex-col gap-0.5 mt-1">
+                        <label id="pushMasterRow" class="flex items-center justify-between gap-2 text-xs text-gray-700" style="padding:7px 8px; font-weight:600;">
+                            <span data-i18n="push_master_label">Получать уведомления на этом устройстве</span>
+                            <input type="checkbox" id="pushMasterToggleBtn" onchange="togglePushMaster()" style="accent-color:#7c9473; width:18px; height:18px;">
                         </label>
-                        <label class="flex items-center justify-between text-xs text-gray-600" style="padding:7px 8px;">
-                            <span data-i18n="push_type_daily_summary">Ежедневные сводки (сегодня/завтра)</span>
-                            <input type="checkbox" id="pushType_daily_summary" onchange="setNotificationPreference('daily_summary', this.checked)" style="accent-color:#7c9473;">
-                        </label>
+                        <div id="pushTypesList" class="flex flex-col gap-0.5">
+                            <label class="flex items-center justify-between text-xs text-gray-600" style="padding:7px 8px;">
+                                <span data-i18n="push_type_new_order">Новые заказы</span>
+                                <input type="checkbox" id="pushType_new_order" onchange="setNotificationPreference('new_order', this.checked)" style="accent-color:#7c9473;">
+                            </label>
+                            <label class="flex items-center justify-between text-xs text-gray-600" style="padding:7px 8px;">
+                                <span data-i18n="push_type_daily_summary">Ежедневные сводки (сегодня/завтра)</span>
+                                <input type="checkbox" id="pushType_daily_summary" onchange="setNotificationPreference('daily_summary', this.checked)" style="accent-color:#7c9473;">
+                            </label>
+                        </div>
+                        <p id="pushUnsupportedNote" class="text-xs text-gray-500 hidden" style="padding:4px 8px 0;" data-i18n="push_unsupported_note">Push-уведомления не поддерживаются в этом браузере/устройстве.</p>
                     </div>
-                    <p id="pushUnsupportedNote" class="text-xs text-gray-500 hidden" style="padding:4px 8px 0;" data-i18n="push_unsupported_note">Push-уведомления не поддерживаются в этом браузере/устройстве.</p>
                 </div>
 
                 <!-- Памятные даты клиентов (свёрнуто): за сколько дней напоминать (для пекарни) и баннер в «Заказах» (это устройство) -->
@@ -3388,7 +3396,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=81"></script>
+    <script src="i18n-core.js?v=82"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=15"></script>
     <script src="auth.js?v=21"></script>
@@ -3396,16 +3404,16 @@ function hideSplashScreen() {
     <script src="company.js?v=23"></script>
     <script src="inventory.js?v=55"></script>
     <script src="billing.js?v=15"></script>
-    <script src="push.js?v=8"></script>
+    <script src="push.js?v=9"></script>
 <script src="ingredients.js?v=43"></script>
 <script src="batches.js?v=10"></script>
 <script src="semifinished.js?v=42"></script>
 <script src="products.js?v=35"></script>
 <script src="customers.js?v=58"></script>
 <script src="calendar.js?v=14"></script>
-<script src="orders.js?v=134"></script>
+<script src="orders.js?v=135"></script>
 <script src="invoice.js?v=48"></script>
-<script src="send-document.js?v=34"></script>
+<script src="send-document.js?v=35"></script>
 <script src="payments.js?v=25"></script>
 <script src="documents.js?v=9"></script>
 <script src="bank.js?v=11"></script>

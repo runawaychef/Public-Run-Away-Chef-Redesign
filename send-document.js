@@ -173,12 +173,23 @@ async function _reserveDocSnapshot(order, docType, dateOverride) {
     return await freezeDocumentSnapshot(order, docType, existing, dateOverride || undefined);
 }
 
+// 21.10: из копий документов берём только номер, даты и состав для сравнения сумм — без логотипа
+// (полная копия с логотипом весит сотни КБ; на слабой связи форма не успевала открыться, код C).
+// Полную копию по-прежнему грузит только «Посмотреть».
+const _SEND_SNAP_FIELDS = ['number', 'issueDate', 'dueDate'];
 async function _sendLoadRow(orderId) {
+    const part = (col, pre) => _SEND_SNAP_FIELDS.map(f => `${pre}_${f}:${col}->>${f}`).join(', ')
+        + `, ${pre}_calc:${col}->calc, ${pre}_vat:${col}->vat_rate, ${pre}_order:${col}->order`;
     const { data, error } = await db.from('orders')
-        .select('invoice_snapshot, delivery_note_snapshot, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via')
+        .select(`${part('invoice_snapshot', 'inv')}, ${part('delivery_note_snapshot', 'dn')}, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via`)
         .eq('id', orderId).single();
     if (error) throw error;
-    return data || {};
+    const r = data || {};
+    const snap = pre => r[pre + '_number'] ? { number: r[pre + '_number'], issueDate: r[pre + '_issueDate'], dueDate: r[pre + '_dueDate'],
+        calc: r[pre + '_calc'], vat_rate: r[pre + '_vat'], order: r[pre + '_order'] || { items: [] } } : null;
+    return { invoice_snapshot: snap('inv'), delivery_note_snapshot: snap('dn'),
+        invoice_sent_at: r.invoice_sent_at, invoice_sent_via: r.invoice_sent_via,
+        delivery_note_sent_at: r.delivery_note_sent_at, delivery_note_sent_via: r.delivery_note_sent_via };
 }
 
 function _sendBuildDocInfo(order, row) {
@@ -739,9 +750,15 @@ function _renderSendSheet() {
 // при построении формы, C — сервер не ответил за 15 с. Подробности — в консоли.
 const _SEND_OPEN_TIMEOUT_MS = 15000;
 let _sendOpenSeq = 0;
-function _sendOpenFail(code, detail) {
+function _sendOpenFail(code, detail, retry) {
     console.error('[openSendDocumentSheet] код ' + code, detail);
     hideLoading();
+    // 21.10: при сбое связи/сервера — «Повторить» вместо совета перезапустить приложение
+    if (retry) {
+        showConfirm(t('send_open_fail_retry').replace('{code}', code), { ok: t('common_retry'), cancel: t('settings_close') })
+            .then(ok => { if (ok) retry(); });
+        return;
+    }
     showInfo(t('send_open_fail').replace('{code}', code));
 }
 function _sendWithTimeout(promise) {
@@ -756,7 +773,7 @@ async function openSendDocumentSheet(orderId, docType) {
         await _openSendDocumentSheetImpl(orderId, docType, seq);
     } catch (e) {
         if (seq !== _sendOpenSeq) return; // уже открыта другая попытка
-        _sendOpenFail(e && e.message === 'SEND_OPEN_TIMEOUT' ? 'C' : 'B', e);
+        _sendOpenFail(e && e.message === 'SEND_OPEN_TIMEOUT' ? 'C' : 'B', e, () => openSendDocumentSheet(orderId, docType));
     }
 }
 
