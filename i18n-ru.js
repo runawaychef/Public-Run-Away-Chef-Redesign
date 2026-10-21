@@ -1099,6 +1099,8 @@ I18N.ru = {
         bank_sheet_open: 'Неоплаченные счета клиента: отметьте, что зачесть',
         bank_sheet_none: 'У клиента нет неоплаченных счетов.',
         bank_sheet_noinv: 'счёт не отправлялся',
+        bank_sheet_issue: 'Выставить счёт этому клиенту',
+        bank_sheet_issue_hint: 'Нужного счёта нет? Выставите его — и вернётесь сюда к этому платежу',
         bank_sheet_due: 'к оплате {sum}',
         bank_sheet_payment: 'Платёж',
         bank_sheet_applied: 'Зачтено',

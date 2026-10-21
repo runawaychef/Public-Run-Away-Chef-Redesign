@@ -767,17 +767,17 @@ function _sendWithTimeout(promise) {
     return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
-async function openSendDocumentSheet(orderId, docType) {
+async function openSendDocumentSheet(orderId, docType, opts) {
     const seq = ++_sendOpenSeq;
     try {
-        await _openSendDocumentSheetImpl(orderId, docType, seq);
+        await _openSendDocumentSheetImpl(orderId, docType, seq, opts);
     } catch (e) {
         if (seq !== _sendOpenSeq) return; // уже открыта другая попытка
-        _sendOpenFail(e && e.message === 'SEND_OPEN_TIMEOUT' ? 'C' : 'B', e, () => openSendDocumentSheet(orderId, docType));
+        _sendOpenFail(e && e.message === 'SEND_OPEN_TIMEOUT' ? 'C' : 'B', e, () => openSendDocumentSheet(orderId, docType, opts));
     }
 }
 
-async function _openSendDocumentSheetImpl(orderId, docType, seq) {
+async function _openSendDocumentSheetImpl(orderId, docType, seq, opts) {
     const order = orders.find(o => o.id === orderId);
     if (!order) { _sendOpenFail('A', { orderId, type: typeof orderId, ordersLoaded: (orders || []).length }); return; }
     const cust = order.customer_id ? customers.find(c => c.id === order.customer_id) : null;
@@ -834,6 +834,8 @@ async function _openSendDocumentSheetImpl(orderId, docType, seq) {
         stNew.consSel = stNew.consCand.filter(o => o.id === orderId || (!o.cons_excluded && !stNew.consOwnInv[o.id] && String(o.date || '') <= String(order.date || ''))).map(o => o.id);
         if (!stNew.consSel.includes(orderId) && stNew.consCand.some(o => o.id === orderId)) stNew.consSel.push(orderId);
         if (_custUsesConsolidated(order) && stNew.consCand.length && !stNew.docs.invoice.issued) stNew.invKind = 'cons';
+        // Из окна зачёта банка: у клиента несколько заказов без счёта — сразу сводный (21.10)
+        if (opts && opts.preferCons && stNew.consCand.length > 1 && !stNew.docs.invoice.issued) stNew.invKind = 'cons';
         if (!stNew.consCand.some(o => o.id === orderId)) stNew.consCand = []; // сам заказ не может быть в сводном (не подтверждён и т.п.)
     }
     _renderSendSheet();

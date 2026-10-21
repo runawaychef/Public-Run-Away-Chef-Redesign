@@ -1094,6 +1094,8 @@ I18N.lt = {
         bank_sheet_open: 'Kliento neapmokėtos sąskaitos: pažymėkite, ką įskaityti',
         bank_sheet_none: 'Klientas neturi neapmokėtų sąskaitų.',
         bank_sheet_noinv: 'sąskaita neišsiųsta',
+        bank_sheet_issue: 'Išrašyti sąskaitą šiam klientui',
+        bank_sheet_issue_hint: 'Nėra reikiamos sąskaitos? Išrašykite ją – grįšite čia prie šio mokėjimo',
         bank_sheet_due: 'mokėti {sum}',
         bank_sheet_payment: 'Mokėjimas',
         bank_sheet_applied: 'Įskaityta',

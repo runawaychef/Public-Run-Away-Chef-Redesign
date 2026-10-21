@@ -1100,6 +1100,8 @@ I18N.en = {
         bank_sheet_open: 'Customer’s unpaid invoices: tick what to apply',
         bank_sheet_none: 'The customer has no unpaid invoices.',
         bank_sheet_noinv: 'invoice not sent',
+        bank_sheet_issue: 'Issue an invoice to this customer',
+        bank_sheet_issue_hint: 'No matching invoice? Issue one — you will come back here to this payment',
         bank_sheet_due: 'due {sum}',
         bank_sheet_payment: 'Payment',
         bank_sheet_applied: 'Applied',

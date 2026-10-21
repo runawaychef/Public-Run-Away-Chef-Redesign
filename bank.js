@@ -126,6 +126,7 @@ function bankHideNotice() {
 async function openBankSection() {
     if (!bankState.conn || bankState.conn.status === 'revoked') return;
     bankState.tab = bankState.counts.review > 0 ? 'review' : 'other';
+    bankState.reopen = null;
     openAppPage('bankPage'); // страница поверх раздела (helpers.js)
     await bankLoadTab();
 }
@@ -417,7 +418,9 @@ async function bankSheetLoad() {
     if (!bankState.sheet) return;
     s.loading = false;
     if (!r.ok) { s.invoices = []; bankSheetRender(); await showInfo(bankErrText(r.error)); return; }
-    s.invoices = r.invoices || [];
+    // 21.10: зачёт только на счета (решение владельца); заказы без счёта — только для кнопки «Выставить счёт»
+    s.orderOnly = (r.invoices || []).filter((i) => i.kind === 'order_only');
+    s.invoices = (r.invoices || []).filter((i) => i.kind !== 'order_only');
     // Заранее отмечаем предложение сервера
     const prop = (s.row.invoices || []);
     for (const inv of s.invoices) {
@@ -500,6 +503,8 @@ function bankSheetRender(keepFocus) {
         <select onchange="bankSheetPickCustomer(this.value)" style="width:100%; height:40px; border:1px solid #e3ddcc; border-radius:10px; padding:0 10px; font-size:13px; background:#fff; margin-bottom:10px;">${custOpts}</select>
         ${s.customerId ? `<div style="font-size:12px; color:#6b675d; margin-bottom:6px;">${escapeHtml(t('bank_sheet_open'))}</div>` : ''}
         ${list}
+        ${s.customerId && !s.loading && (s.orderOnly || []).length ? `<button type="button" onclick="bankSheetIssueInvoice()" style="width:100%; border:1px dashed #9fae96; background:#fff; color:#4f6349; border-radius:12px; padding:10px; font-size:13px; font-weight:700; font-family:inherit; margin:2px 0 4px;">+ ${escapeHtml(t('bank_sheet_issue'))}</button>
+            <div style="font-size:11.5px; color:#8a857a; text-align:center; margin-bottom:6px;">${escapeHtml(t('bank_sheet_issue_hint'))}</div>` : ''}
         <div style="background:#f4f1ea; border-radius:12px; padding:10px 12px; font-size:13px; line-height:1.6; margin-top:6px;">
             <div style="display:flex; justify-content:space-between;"><span>${escapeHtml(t('bank_sheet_payment'))}</span><b>${formatMoney(T.payC / 100)}</b></div>
             <div style="display:flex; justify-content:space-between;"><span>${escapeHtml(t('bank_sheet_applied'))}</span><b>${formatMoney(T.doneC / 100)}</b></div>
@@ -510,6 +515,25 @@ function bankSheetRender(keepFocus) {
             <button type="button" onclick="bankSheetClose()" style="${_bk.btn2} flex:1; padding:12px;">${escapeHtml(t('common_cancel'))}</button>
             <button type="button" ${canApply ? '' : 'disabled'} onclick="bankSheetApply()" style="flex:2; border:0; background:${canApply ? '#7c9473' : '#cfc9b8'}; color:#fff; border-radius:10px; padding:12px; font-size:13px; font-weight:700; font-family:inherit;">${escapeHtml(t('bank_sheet_apply').replace('{sum}', formatMoney(T.doneC / 100)))}</button>
         </div>`;
+}
+
+// «Выставить счёт этому клиенту» (21.10): страница «Отправить документ» по последнему заказу клиента без счёта;
+// после отправки или «Назад» окно зачёта этого платежа откроется снова с тем же клиентом.
+function bankSheetIssueInvoice() {
+    const s = bankState.sheet;
+    if (!s || !(s.orderOnly || []).length) return;
+    const last = s.orderOnly.slice().sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')) || (b.ref_id - a.ref_id))[0];
+    bankState.reopen = { row: s.row, customerId: s.customerId };
+    bankSheetClose();
+    openSendDocumentSheet(last.ref_id, 'invoice', { preferCons: s.orderOnly.length > 1 });
+}
+async function _bankReopenSheet() {
+    const r = bankState.reopen;
+    bankState.reopen = null;
+    if (!r || !r.row) return;
+    bankState.sheet = { row: r.row, customerId: r.customerId, invoices: [], sel: {}, loading: false };
+    document.getElementById('bankSheetModal').style.display = 'flex';
+    await bankSheetLoad();
 }
 
 async function bankSheetApply() {
@@ -562,7 +586,7 @@ function closeBankSettings() {
     if (_bankSettingsFromSettings && !isAppPageOpen() && typeof openSettingsModal === 'function') openSettingsModal();
     _bankSettingsFromSettings = false;
 }
-(window._appPageOnShow = window._appPageOnShow || {}).bankPage = () => { bankLoadTab(); };
+(window._appPageOnShow = window._appPageOnShow || {}).bankPage = async () => { await bankLoadTab(); if (bankState.reopen) await _bankReopenSheet(); };
 
 function bankSettingsRender() {
     const box = document.getElementById('bankSettingsBody');
