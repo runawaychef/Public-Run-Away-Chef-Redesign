@@ -2343,6 +2343,21 @@ function hideSplashScreen() {
                     </div>
                 </div>
 
+                <!-- Оплата (21.10): режим «По заказу» / «По счёту»; меняет владелец; «наличные без счёта» — только защищённая орг. -->
+                <div class="mb-3">
+                    <button type="button" id="settingsPayGroupBtn" onclick="document.getElementById('settingsPayGroup').classList.toggle('hidden'); document.getElementById('settingsPayGroupChevron').classList.toggle('rotate-180'); document.getElementById('settingsPayGroupBtn').classList.toggle('active')" class="settings-row-btn w-full justify-between">
+                        <span class="flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg><span data-i18n="pay_set_title">Оплата</span></span>
+                        <span class="flex items-center gap-2"><span id="payModeShort" class="text-xs text-gray-500"></span><svg id="settingsPayGroupChevron" class="w-3.5 h-3.5 flex-shrink-0 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg></span>
+                    </button>
+                    <div id="settingsPayGroup" class="hidden flex flex-col gap-0.5 mt-1">
+                        <div class="text-xs font-semibold text-gray-700" style="padding:6px 8px 2px;" data-i18n="pay_set_question">Как принимаем оплату</div>
+                        <label class="flex items-start gap-2 text-xs text-gray-600" style="padding:6px 8px;"><input type="radio" name="payModeRadio" value="order" onchange="setPaymentMode('order')" class="mt-0.5" style="accent-color:#7c9473;"><span><b data-i18n="pay_mode_by_order">По заказу</b><span class="block text-[11px] text-gray-400" data-i18n="pay_mode_by_order_desc">Оплата вносится прямо в заказ, счёт — по желанию</span></span></label>
+                        <label class="flex items-start gap-2 text-xs text-gray-600" style="padding:6px 8px;"><input type="radio" name="payModeRadio" value="invoice" onchange="setPaymentMode('invoice')" class="mt-0.5" style="accent-color:#7c9473;"><span><b data-i18n="pay_mode_by_invoice">По счёту</b><span class="block text-[11px] text-gray-400" data-i18n="pay_mode_by_invoice_desc">Любая оплата — только по выставленному счёту</span></span></label>
+                        <label id="payCashNoInvRow" class="hidden flex items-center justify-between gap-2 text-xs text-gray-600" style="padding:6px 8px 6px 32px;"><span><span data-i18n="pay_cash_no_inv">Частные клиенты: наличные без счёта</span><span class="block text-[11px] text-gray-400" data-i18n="pay_cash_no_inv_desc">Безналичная оплата частников — по счёту</span></span><input type="checkbox" id="payCashNoInvToggle" onchange="setCashNoInvoice(this.checked)" style="accent-color:#7c9473;"></label>
+                        <p id="payModeOwnerHint" class="hidden text-[11px] text-gray-400" style="padding:2px 8px 4px;" data-i18n="pay_set_owner_only">Меняет владелец пекарни</p>
+                    </div>
+                </div>
+
                 <!-- Группа 2+3: управление данными (свёрнуто по умолчанию) -->
                 <div class="mb-3">
                     <button type="button" id="settingsDataGroupBtn" onclick="document.getElementById('settingsDataGroup').classList.toggle('hidden'); document.getElementById('settingsDataGroupChevron').classList.toggle('rotate-180'); document.getElementById('settingsDataGroupBtn').classList.toggle('active')" class="settings-row-btn w-full justify-between">
@@ -2694,6 +2709,11 @@ function hideSplashScreen() {
                     <input id="orgNameSetupDemoCheckbox" type="checkbox" checked class="mt-0.5" style="accent-color:#7c9473;">
                     <span data-i18n="orders_fill_demo_desc">Заполнить примером (6 клиентов, 6 изделий с рецептами, полуфабрикаты, склад с историей за несколько месяцев, около 50 заказов с разными статусами и оплатами) — чтобы сразу посмотреть, как всё выглядит и как считается склад. Позже можно удалить одной кнопкой в настройках.</span>
                 </label>
+                <!-- Режим оплаты (21.10): по умолчанию «По заказу» -->
+                <div class="text-xs font-semibold text-gray-700 mb-1" data-i18n="setup_pay_question">Как вы принимаете оплату?</div>
+                <label class="flex items-start gap-2 text-xs text-gray-600 mb-1.5"><input type="radio" name="orgSetupPayMode" value="order" checked class="mt-0.5" style="accent-color:#7c9473;"><span><b data-i18n="pay_mode_by_order">По заказу</b><span class="block text-[11px] text-gray-400" data-i18n="setup_pay_order_desc">Проще: подходит, если клиенты в основном частные</span></span></label>
+                <label class="flex items-start gap-2 text-xs text-gray-600 mb-1.5"><input type="radio" name="orgSetupPayMode" value="invoice" class="mt-0.5" style="accent-color:#7c9473;"><span><b data-i18n="pay_mode_by_invoice">По счёту</b><span class="block text-[11px] text-gray-400" data-i18n="setup_pay_invoice_desc">Для работы с компаниями: каждая оплата — по счёту</span></span></label>
+                <p class="text-[11px] text-gray-400 mb-3" data-i18n="setup_pay_later">Изменить можно позже в настройках</p>
                 <button onclick="saveOrgNameSetup()" class="pill-btn w-full justify-center" data-i18n="orders_start_working">Начать работу</button>
             </div>
         </div>
@@ -2760,7 +2780,12 @@ function hideSplashScreen() {
                     <button type="button" id="payModeOrderBtn" onclick="setPayMode('order')" data-i18n="pay_mode_order">Только этот заказ</button>
                 </div>
                 <div id="payConsRemaining" class="hidden" style="font-size:12px; color:#6b675d; margin-bottom:6px;"></div>
-
+                <!-- Режим «По счёту» (21.10): заказ без счёта — подсказка и «Выставить счёт» -->
+                <div id="payGateBox" class="hidden" style="margin-bottom:10px;">
+                    <div id="payGateNote" style="font-size:12px; background:#f8efd9; color:#8a6a1f; border-radius:10px; padding:8px 10px;"></div>
+                    <button type="button" onclick="payGateIssueInvoice()" class="pill-btn-secondary w-full justify-center" style="margin-top:8px;" data-i18n="pay_issue_invoice">Выставить счёт</button>
+                </div>
+                <div id="payFormFields">
                 <label class="text-xs text-gray-500" data-i18n="orders_amount">Сумма</label>
                 <input id="paymentAmount" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-1 rounded-xl text-xs w-full mb-2" style="background:#f4f1ea;" placeholder="0.00" oninput="renderPayConsDist()">
 
@@ -2783,10 +2808,11 @@ function hideSplashScreen() {
                 <label class="text-xs text-gray-500" data-i18n="orders_note_optional">Заметка (необязательно)</label>
                 <input id="paymentNote" type="text" class="border p-1 rounded-xl text-xs w-full mb-3" style="background:#f4f1ea;" placeholder="Например, депозит" data-i18n-placeholder="orders_note_deposit_placeholder">
                 <div id="payConsDist" class="hidden" style="margin:-4px 0 12px;"></div>
+                </div>
 
                 <div class="flex gap-2">
                     <button id="paymentDeleteBtn" onclick="deletePayment()" class="pill-btn-danger hidden" style="background:#f3ded9; color:#a3493d; box-shadow:none; width:80px;" data-i18n="common_delete">Удалить</button>
-                    <button onclick="savePayment()" class="pill-btn flex-1 justify-center" data-i18n="common_save">Сохранить</button>
+                    <button id="paymentSaveBtn" onclick="savePayment()" class="pill-btn flex-1 justify-center" data-i18n="common_save">Сохранить</button>
                     <button onclick="document.getElementById('addPaymentModal').style.display='none'" class="pill-btn-secondary" style="width:80px;" data-i18n="common_cancel">Отмена</button>
                 </div>
             </div>
@@ -3397,13 +3423,13 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=83"></script>
+    <script src="i18n-core.js?v=84"></script>
     <script src="supabaseClient.js?v=7"></script>
-    <script src="cache.js?v=15"></script>
+    <script src="cache.js?v=16"></script>
     <script src="auth.js?v=21"></script>
-    <script src="employees.js?v=53"></script>
+    <script src="employees.js?v=54"></script>
     <script src="company.js?v=23"></script>
-    <script src="inventory.js?v=55"></script>
+    <script src="inventory.js?v=56"></script>
     <script src="billing.js?v=15"></script>
     <script src="push.js?v=9"></script>
 <script src="ingredients.js?v=43"></script>
@@ -3415,7 +3441,7 @@ function hideSplashScreen() {
 <script src="orders.js?v=136"></script>
 <script src="invoice.js?v=48"></script>
 <script src="send-document.js?v=36"></script>
-<script src="payments.js?v=25"></script>
+<script src="payments.js?v=26"></script>
 <script src="documents.js?v=9"></script>
 <script src="bank.js?v=12"></script>
 <script src="stats.js?v=22"></script>

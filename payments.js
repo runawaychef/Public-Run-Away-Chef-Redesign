@@ -167,6 +167,9 @@ function renderPayments() {
     _orderPayments.forEach(p => {
         const emp = employees.find(e => e.id === p.created_by);
         const parts = [formatDateDMY(p.paid_at), formatMoney(p.amount), escapeHtml(p.method || '—')];
+        // Наличные без счёта в режиме «По счёту» — пометка (вычисляется, не хранится)
+        if (_payByInvoice() && p.method === 'наличные' && !p.consolidated_invoice_id && !p.bank_transaction_id
+            && !orderHasInvoice(orders.find(o => o.id === currentOrderId))) parts[2] += ' · ' + escapeHtml(t('pay_no_invoice'));
         if (emp) parts.push(escapeHtml(emp.name));
         html += `<div class="flex justify-between items-center bg-[#f4f1ea] hover:bg-[#e3e8df] active:bg-[#e3e8df] rounded-lg px-3 py-2.5 cursor-pointer" ${dataAction('openEditPaymentModal', [p.id])}>
             <div class="min-w-0" style="font-size:13px;"><div class="font-medium text-gray-800 truncate">${parts.join(' · ')}${p.note ? ' · ' + escapeHtml(p.note) : ''}</div>${p.consolidated_invoice_id ? `<div style="font-size:12px; color:#4f6349;">${escapeHtml(t(_consInvCancelled[p.consolidated_invoice_id] ? 'pay_cons_tag_cancelled' : 'pay_cons_tag').replace('{number}', _payConsNumber(p.consolidated_invoice_id)))}</div>` : ''}</div>
@@ -201,6 +204,67 @@ async function saveDueDate() {
 
 // ── Добавление / редактирование платежа ───────────────────────────────────────
 
+// ── Режим оплаты пекарни (21.10) ─────────────────────────────────────────────
+// «По счёту»: оплата вносится только по выставленному счёту (счёт отправлен или заказ в сводном).
+// Исключение (только защищённая орг. id1, настройка cash_without_invoice): частные клиенты — наличными без счёта.
+function orderHasInvoice(o) { return !!(o && (o.invoice_sent_at || o.consolidated_invoice_id)); }
+function _payByInvoice() { return typeof currentOrgPaymentMode !== 'undefined' && currentOrgPaymentMode === 'invoice'; }
+// 'ok' | 'cash_only' | 'need_invoice'
+function payGateFor(order) {
+    if (!_payByInvoice() || !order || orderHasInvoice(order)) return 'ok';
+    const cust = order.customer_id ? customers.find(c => c.id === order.customer_id) : null;
+    const isPrivate = !cust || cust.entity_type !== 'company';
+    return (currentOrgCashNoInv && isPrivate) ? 'cash_only' : 'need_invoice';
+}
+function _payApplyGate(gate) {
+    const box = document.getElementById('payGateBox');
+    const fields = document.getElementById('payFormFields');
+    const saveBtn = document.getElementById('paymentSaveBtn');
+    const sel = document.getElementById('paymentMethod');
+    if (sel) Array.from(sel.options).forEach(o => { o.disabled = gate === 'cash_only' && o.value !== 'наличные'; });
+    if (gate === 'cash_only' && sel) sel.value = 'наличные';
+    if (box) box.classList.toggle('hidden', gate === 'ok');
+    const note = document.getElementById('payGateNote');
+    if (note) note.textContent = gate === 'need_invoice' ? t('pay_gate_need_inv') : gate === 'cash_only' ? t('pay_gate_cash_only') : '';
+    if (fields) fields.classList.toggle('hidden', gate === 'need_invoice');
+    if (saveBtn) saveBtn.classList.toggle('hidden', gate === 'need_invoice');
+    if (_payModal) _payModal.gate = gate;
+}
+function payGateIssueInvoice() {
+    const id = currentOrderId;
+    document.getElementById('addPaymentModal').style.display = 'none';
+    if (id && typeof openSendDocumentSheet === 'function') openSendDocumentSheet(id, 'invoice');
+}
+
+// Настройки → «Оплата»
+function refreshPaymentModeUI() {
+    const mode = _payByInvoice() ? 'invoice' : 'order';
+    document.querySelectorAll('input[name="payModeRadio"]').forEach(r => { r.checked = r.value === mode; });
+    const isOwner = !!(currentEmployee && currentEmployee.is_owner);
+    document.querySelectorAll('input[name="payModeRadio"]').forEach(r => { r.disabled = !isOwner; });
+    const row = document.getElementById('payCashNoInvRow');
+    if (row) row.classList.toggle('hidden', !(currentOrgProtected && mode === 'invoice'));
+    const cb = document.getElementById('payCashNoInvToggle');
+    if (cb) { cb.checked = !!currentOrgCashNoInv; cb.disabled = !isOwner; }
+    const hint = document.getElementById('payModeOwnerHint');
+    if (hint) hint.classList.toggle('hidden', isOwner);
+    const short = document.getElementById('payModeShort');
+    if (short) short.textContent = t(mode === 'invoice' ? 'pay_mode_by_invoice' : 'pay_mode_by_order');
+}
+async function _saveOrgPayment(fields) {
+    try {
+        await updateChecked(db.from('organizations').update(fields).eq('id', currentOrgId));
+        if ('payment_mode' in fields) currentOrgPaymentMode = fields.payment_mode;
+        if ('cash_without_invoice' in fields) currentOrgCashNoInv = fields.cash_without_invoice;
+    } catch (e) {
+        console.error(e);
+        showInfo(e && e.code === '42501' ? t('pay_set_owner_only') : t('error_save_check_connection'));
+    }
+    refreshPaymentModeUI();
+}
+function setPaymentMode(mode) { _saveOrgPayment({ payment_mode: mode === 'invoice' ? 'invoice' : 'order' }); }
+function setCashNoInvoice(on) { _saveOrgPayment({ cash_without_invoice: !!on }); }
+
 function openAddPaymentModal(fillRemaining) {
     document.getElementById('paymentEditId').value = '';
     document.getElementById('paymentModalTitle').textContent = t('orders_add_payment_title');
@@ -218,6 +282,7 @@ function openAddPaymentModal(fillRemaining) {
     document.getElementById('paymentMethod').value = 'наличные';
     document.getElementById('paymentNote').value = '';
     _payApplyMode();
+    _payApplyGate(_payModal.mode === 'cons' ? 'ok' : payGateFor(order));
     document.getElementById('addPaymentModal').style.display = 'flex';
 }
 
@@ -232,6 +297,7 @@ function openEditPaymentModal(paymentId) {
     // Правка одной записи — без переключателя и распределения
     _payModal = { cons: null, mode: 'order', fillRemaining: false };
     _payApplyMode();
+    _payApplyGate('ok'); // правка уже внесённой оплаты — без ограничений режима
     const order = orders.find(o => o.id === currentOrderId);
     _payModalSub(order);
     if (p.consolidated_invoice_id) {
@@ -253,6 +319,9 @@ async function savePayment() {
     const method = document.getElementById('paymentMethod').value;
     const note = document.getElementById('paymentNote').value.trim();
 
+    // Режим «По счёту» (21.10): без счёта — нельзя; частным — только наличные
+    if (!id && _payModal && _payModal.gate === 'need_invoice') { showInfo(t('pay_gate_need_inv')); return; }
+    if (!id && _payModal && _payModal.gate === 'cash_only' && method !== 'наличные') { showInfo(t('pay_gate_cash_only')); return; }
     if (!amount || amount <= 0) { showInfo(t('pay_amount_required')); return; }
     if (!paidAt) { showInfo(t('pay_date_required')); return; }
     if (!currentOrderId) return;

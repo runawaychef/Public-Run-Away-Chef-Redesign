@@ -13,6 +13,9 @@ let currentOrgOrdersUsed = 0;       // сколько заказов созда�
 let currentOrgCurrency = 'EUR';     // код валюты расчёта организации (пригодится для formatMoney())
 let currentOrgVatRate = 0;          // ставка НДС организации (доля, не проценты — 0.21 = 21%); по умолчанию без НДС
 let currentOrgTimezone = null;
+let currentOrgPaymentMode = 'order'; // 'order' — оплата прямо в заказ; 'invoice' — только по счёту (organizations.payment_mode, 21.10)
+let currentOrgCashNoInv = false;     // частные клиенты: наличные без счёта (только защищённая орг. id1)
+let currentOrgProtected = false;     // organizations.is_protected
 let currentOrgMemoRemindDays = 7;   // за сколько дней напоминать о памятных датах (organizations.memo_remind_days, общее для пекарни)       // IANA-пояс организации (напр. 'Europe/Vilnius'); null = по устройству
 let currentOrgBccSelf = false;      // глобальный тумблер "присылать копию себе" при email-отправке документов — дефолт для чекбокса в шите отправки
 
@@ -191,7 +194,7 @@ async function loadCurrentOrg() {
 
         const { data, error } = await db
             .from('memberships')
-            .select('org_id, role, organizations(id, name, plan, plan_override, created_at, customers_created_total, orders_created_total, currency_code, vat_rate, detected_country, detected_country_updated_at, bcc_self_on_send, timezone, memo_remind_days)')
+            .select('org_id, role, organizations(id, name, plan, plan_override, created_at, customers_created_total, orders_created_total, currency_code, vat_rate, detected_country, detected_country_updated_at, bcc_self_on_send, timezone, memo_remind_days, payment_mode, cash_without_invoice, is_protected)')
             .eq('user_id', uid)
             .single();
         if (error) throw error;
@@ -212,6 +215,9 @@ async function loadCurrentOrg() {
         currentOrgBccSelf = !!(data.organizations && data.organizations.bcc_self_on_send);
         currentOrgTimezone = (data.organizations && data.organizations.timezone) || null;
         currentOrgMemoRemindDays = (data.organizations && Number(data.organizations.memo_remind_days)) || 7;
+        currentOrgPaymentMode = (data.organizations && data.organizations.payment_mode) || 'order';
+        currentOrgCashNoInv = !!(data.organizations && data.organizations.cash_without_invoice);
+        currentOrgProtected = !!(data.organizations && data.organizations.is_protected);
         const detectedCountryUpdatedAt = (data.organizations && data.organizations.detected_country_updated_at) || null;
         await loadMonetizationLiveFlag();
         // Критично для пути быстрого восстановления из кэша (cache.js): там
@@ -429,7 +435,7 @@ async function refreshCurrentEmployeePermissions() {
     try {
         const [empResult, orgResult, settingsResult] = await Promise.all([
             db.from('employees').select(EMPLOYEE_SELECT_FIELDS).eq('id', currentEmployee.id).single(),
-            currentOrgId ? db.from('organizations').select('plan, plan_override, timezone, memo_remind_days').eq('id', currentOrgId).single() : Promise.resolve({ data: null, error: null }),
+            currentOrgId ? db.from('organizations').select('plan, plan_override, timezone, memo_remind_days, payment_mode, cash_without_invoice, is_protected').eq('id', currentOrgId).single() : Promise.resolve({ data: null, error: null }),
             db.from('platform_settings').select('value').eq('key', 'monetization_live').maybeSingle(),
         ]);
 
@@ -446,6 +452,9 @@ async function refreshCurrentEmployeePermissions() {
         if (!orgResult.error && orgResult.data) {
             currentOrgTimezone = orgResult.data.timezone || null;
             currentOrgMemoRemindDays = Number(orgResult.data.memo_remind_days) || 7;
+            currentOrgPaymentMode = orgResult.data.payment_mode || 'order';
+            currentOrgCashNoInv = !!orgResult.data.cash_without_invoice;
+            currentOrgProtected = !!orgResult.data.is_protected;
             const newPlan = orgResult.data.plan_override || orgResult.data.plan || 'free';
             const newIsOverridden = !!orgResult.data.plan_override;
             if (newPlan !== currentOrgPlan || newIsOverridden !== currentOrgPlanIsOverridden) {
@@ -617,6 +626,14 @@ function openOrgNameSetupModal(owner) {
 async function saveOrgNameSetup() {
     const name = document.getElementById('orgNameSetupInput').value.trim();
     const wantsDemo = document.getElementById('orgNameSetupDemoCheckbox')?.checked;
+    // Режим оплаты, выбранный при регистрации (21.10); по умолчанию — «По заказу»
+    const payMode = document.querySelector('input[name="orgSetupPayMode"]:checked')?.value === 'invoice' ? 'invoice' : 'order';
+    if (payMode === 'invoice') {
+        try {
+            await updateChecked(db.from('organizations').update({ payment_mode: 'invoice' }).eq('id', currentOrgId));
+            currentOrgPaymentMode = 'invoice';
+        } catch (e) { console.error(e); }
+    }
     if (name) {
         try {
             const { error } = await db.from('organizations').update({ name }).eq('id', currentOrgId);

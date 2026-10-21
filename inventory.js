@@ -23,6 +23,7 @@ function openSettingsModal() {
     if (typeof refreshFillDemoDataVisibility === 'function') refreshFillDemoDataVisibility(); // ВРЕМЕННО, см. demoData.js
     if (typeof refreshPushSettingsUI === 'function') refreshPushSettingsUI();
     if (typeof refreshMemoSettingsUI === 'function') refreshMemoSettingsUI();
+    if (typeof refreshPaymentModeUI === 'function') refreshPaymentModeUI();
     document.getElementById('settingsModal').style.display = 'flex';
 }
 
