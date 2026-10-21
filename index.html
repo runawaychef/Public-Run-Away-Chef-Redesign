@@ -813,18 +813,19 @@
         .done-card .stripe { position: absolute; top: 0; left: 0; bottom: 0; width: 5px; border-radius: 16px 0 0 16px; }
 
         /* ── Табличный вид списка заказов: недели-«острова» + итог недели отдельной строкой ── */
-        .ot-head, .ot-row { display: grid; grid-template-columns: 72px minmax(0, 1fr) 26px 62px 92px; align-items: center; }
-        .ot-head { margin: 24px 0 6px; padding: 9px 12px; background: #fff; border: 1px solid #e3ddcc; border-radius: 14px; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: #5f6b58; font-weight: 700; }
+        .ot-head, .ot-row { display: grid; grid-template-columns: 46px minmax(0, 1fr) 20px 66px 70px; align-items: center; }
+        .ot-h-pos { text-align: center; white-space: nowrap; }
+        .ot-head { margin: 24px 0 6px; padding: 9px 10px; background: #fff; border: 1px solid #e3ddcc; border-radius: 14px; font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: #5f6b58; font-weight: 700; }
         .ot-h-pos { text-align: center; font-size: 9.5px; letter-spacing: 0.02em; }
         .ot-h-sum { text-align: right; padding-right: 6px; }
         .ot-h-cust { padding: 0 6px; text-align: center; }
         .ot-h-st { text-align: center; }
-        .ot-island { background: #fff; border-radius: 16px; padding: 4px 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.05); }
+        .ot-island { background: #fff; border-radius: 16px; padding: 4px 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.05); }
         .ot-row { padding: 11px 0; border-bottom: 1px solid #f1efe9; cursor: pointer; transition: background 0.12s; font-size: 12px; }
         .ot-row:last-child { border-bottom: none; }
         .ot-row:active { background: #f6f8f4; }
         .ot-date { color: #7a7568; white-space: nowrap; }
-        .ot-cust { font-weight: 600; color: #322f28; min-width: 0; overflow-wrap: anywhere; padding: 0 6px; }
+        .ot-cust { font-weight: 600; color: #322f28; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 4px; }
         .ot-pos { text-align: center; color: #7a7568; }
         .ot-dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; margin-left: 4px; vertical-align: 2px; }
         .ot-row.ot-done .ot-date, .ot-row.ot-done .ot-cust, .ot-row.ot-done .ot-pos, .ot-row.ot-done .ot-sum { color: #b1ab9d; }
@@ -3411,7 +3412,7 @@ function hideSplashScreen() {
 <script src="products.js?v=35"></script>
 <script src="customers.js?v=58"></script>
 <script src="calendar.js?v=14"></script>
-<script src="orders.js?v=135"></script>
+<script src="orders.js?v=136"></script>
 <script src="invoice.js?v=48"></script>
 <script src="send-document.js?v=35"></script>
 <script src="payments.js?v=25"></script>

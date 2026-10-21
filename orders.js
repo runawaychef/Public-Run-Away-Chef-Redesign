@@ -110,7 +110,7 @@ function displayOrders() {
         // Статус заказа (21.10): точка 5 px после даты (цвета — как в карточках), выполненные приглушены
         const stColor = ORDER_STATUS_COLORS[order.status] || ORDER_STATUS_COLORS['принят'];
         return `<div class="ot-row${order.status === 'выполнен' ? ' ot-done' : ''}" onclick="openOrderDetail(${order.id})">
-            <span class="ot-date">${formatDateDMY(order.date)}<span class="ot-dot" style="background:${stColor};" title="${escapeHtml(orderStatusLabelCap(order.status || 'принят'))}"></span></span>
+            <span class="ot-date">${formatDateDMY(order.date).slice(0, 5)}<span class="ot-dot" style="background:${stColor};" title="${escapeHtml(orderStatusLabelCap(order.status || 'принят'))}"></span></span>
             <span class="ot-cust">${escapeHtml(order.customer || t('orders_no_customer'))}</span>
             <span class="ot-pos">${itemsCount}</span>
             <span class="ot-sum">${formatMoney(orderGrandTotal(order))}</span>
