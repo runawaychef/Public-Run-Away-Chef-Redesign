@@ -573,9 +573,12 @@ function _sendBuildSubject(entries, lang, orgName) {
     return parts.join(', ') + (orgName ? ' — ' + orgName : '');
 }
 
+// Языки документа/письма (21.10): язык программы и английский; если программа на английском — переключателя нет
+function _sendLangs() { return currentLang === 'en' ? ['en'] : [currentLang, 'en']; }
 function _renderSendEmailLangSwitch() {
+    if (_sendLangs().length < 2) return '';
     return `<div class="lang-switch" id="sendEmailLangSwitch" style="margin-bottom:10px;">` +
-        AVAILABLE_LANGS.map(code =>
+        _sendLangs().map(code =>
             `<button type="button" class="${code === _sendSheetState.emailLang ? 'active' : ''}" onclick="selectSendEmailLang('${code}')">${code.toUpperCase()}</button>`
         ).join('') +
         `</div>`;
@@ -807,7 +810,7 @@ async function _openSendDocumentSheetImpl(orderId, docType, seq, opts) {
     else checked.invoice = true;
 
     _sendSheetState = {
-        orderId, custId: cust ? cust.id : null, emailLang: currentLang, bccSelf: currentOrgBccSelf,
+        orderId, custId: cust ? cust.id : null, emailLang: (typeof currentOrgProtected !== 'undefined' && currentOrgProtected) ? 'en' : currentLang, bccSelf: currentOrgBccSelf, // id1 (защищённая) — по умолчанию английский (21.10)
         via: (cust && cust.email) ? 'email' : 'share', checked,
         docs: _sendBuildDocInfo(order, row), bodyText: null, bodyEdited: false, extraCc: '',
         // Даты ещё не выставленных документов (21.10): счёт — сегодня, срок — + отсрочка клиента;
