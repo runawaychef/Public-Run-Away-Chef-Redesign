@@ -687,7 +687,7 @@ I18N.en = {
         cust_unpaid_none_sub: 'Orders without an invoice',
         cust_unpaid_issue: 'Issue',
         cust_unpaid_also_inv: 'Also has a separate invoice {n}',
-        ing_batches: 'Batches',
+        ing_batches: 'Stock by batch',
         ing_date_label: 'Date',
         ing_package_price: 'Package price',
         ing_package_size: 'Package size',

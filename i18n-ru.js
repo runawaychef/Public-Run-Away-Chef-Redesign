@@ -686,7 +686,7 @@ I18N.ru = {
         cust_unpaid_none_sub: 'Заказы без счёта',
         cust_unpaid_issue: 'Выставить',
         cust_unpaid_also_inv: 'Есть и отдельный счёт {n}',
-        ing_batches: 'Партии',
+        ing_batches: 'Остаток по партиям',
         ing_date_label: 'Дата',
         ing_package_price: 'Цена за упаковку',
         ing_package_size: 'Размер упаковки',

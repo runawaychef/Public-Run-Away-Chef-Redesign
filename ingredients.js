@@ -709,17 +709,23 @@ async function renderIngredientStockBlock(ing) {
     // Прогноз из «Склада» убран (21.10) — на Full вместо него блок «Умный склад»
     if (daysEl) { daysEl.textContent = ''; daysEl.className = 'table-text'; }
     if (typeof renderStockSmartInfo === 'function') renderStockSmartInfo('ing', ing, 'ingSmartInfo');
+    if (typeof updateBatchesBlockVisibility === 'function') updateBatchesBlockVisibility('ingredient', ing.id, 'ingBatchesBlock', balanceBefore);
 
     // История пополнений и списаний
     const histEl = document.getElementById('ingStockHistory');
     if (!histEl) return;
     try {
-        const { data } = await db.from('inventory')
-            .select('id, type, quantity, created_at, notes, order_id')
-            .eq('ingredient_id', ing.id)
-            .in('type', ['приход', 'расход', 'сторно'])
-            .order('created_at', { ascending: false })
-            .limit(200);
+        const [{ data }, { data: batchRows }] = await Promise.all([
+            db.from('inventory')
+                .select('id, type, quantity, created_at, notes, order_id, order_item_id, batch_breakdown')
+                .eq('ingredient_id', ing.id)
+                .in('type', ['приход', 'расход', 'сторно'])
+                .order('created_at', { ascending: false })
+                .limit(200),
+            db.from('stock_batches')
+                .select('id, unit_price, qty_original, created_at')
+                .eq('item_type', 'ingredient').eq('ingredient_id', ing.id)
+        ]);
         if (!data || !data.length) {
             histEl.innerHTML = `<p class="table-text text-gray-400 mt-1">${t('ing_no_movements_yet')}</p>`;
             return;
@@ -734,7 +740,7 @@ async function renderIngredientStockBlock(ing) {
             return 'personal';
         }
 
-        // Стоимость единицы на дату записи
+        // Стоимость единицы на дату записи — ЗАПАСНОЙ способ (≈), когда точных данных нет
         function unitCostAtDate(dateStr) {
             if (!ing.priceHistory || !ing.priceHistory.length) return ing.package_price / ing.package_size;
             const applicable = ing.priceHistory.filter(h => h.valid_from <= dateStr);
@@ -743,28 +749,40 @@ async function renderIngredientStockBlock(ing) {
             return last.package_size ? last.package_price / last.package_size : 0;
         }
 
+        // Реальные суммы (21.10): приход — по цене своей партии, расход — по фактическому
+        // списанию из партий (batch_breakdown), сторно — по исходному расходу той же позиции.
+        const costs = typeof realStockMovementCosts === 'function'
+            ? realStockMovementCosts(data, batchRows || [], r => {
+                const od = r.order_id ? (orders || []).find(o => o.id === r.order_id)?.date : null;
+                return Number(r.quantity) * unitCostAtDate(od || r.created_at.slice(0, 10));
+            })
+            : new Map();
+        const showMoney = typeof hasPermission !== 'function' || hasPermission('can_view_costs');
+
         // Итоги по категориям
         const totals = { in: { qty: 0, cost: 0 }, order: { qty: 0, cost: 0 }, personal: { qty: 0, cost: 0 } };
+        let anyApprox = false;
         data.forEach(r => {
             const cat = getCategory(r);
             const qty = Number(r.quantity);
-            const dateStr = r.created_at.slice(0, 10);
-            const cost = qty * unitCostAtDate(dateStr);
+            const c = costs.get(r.id) || { cost: qty * unitCostAtDate(r.created_at.slice(0, 10)), exact: false };
+            if (!c.exact) anyApprox = true;
             if (cat === 'storno') {
                 // Сторно уменьшает итог по заказам
                 totals.order.qty  -= qty;
-                totals.order.cost -= cost;
+                totals.order.cost -= c.cost;
             } else {
                 totals[cat].qty  += qty;
-                totals[cat].cost += cost;
+                totals[cat].cost += c.cost;
             }
         });
+        const money = (v) => showMoney ? ` · ${anyApprox ? '≈ ' : ''}${formatMoney(v)}` : '';
 
         // Итоговая строка
         let summary = `<div class="table-text text-gray-600 mt-2 mb-2 space-y-0.5">`;
-        summary += `<div><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#7c9473;"></span>${t('ing_bought_label')}: <span class="font-semibold" style="color:#4f6349;">${totals.in.qty.toFixed(2)} ${unitLabel}</span> · ${formatMoney(totals.in.cost)}</div>`;
-        if (totals.order.qty > 0) summary += `<div><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#d9a441;"></span>${t('ing_for_orders_label')}: <span class="font-semibold" style="color:#96712a;">${totals.order.qty.toFixed(2)} ${unitLabel}</span> · ${formatMoney(totals.order.cost)}</div>`;
-        if (totals.personal.qty > 0) summary += `<div><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#c0685c;"></span>${t('ing_personal_losses_label')}: <span class="font-semibold" style="color:#c0685c;">${totals.personal.qty.toFixed(2)} ${unitLabel}</span> · ${formatMoney(totals.personal.cost)}</div>`;
+        summary += `<div><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#7c9473;"></span>${t('ing_bought_label')}: <span class="font-semibold" style="color:#4f6349;">${totals.in.qty.toFixed(2)} ${unitLabel}</span>${money(totals.in.cost)}</div>`;
+        if (totals.order.qty > 0) summary += `<div><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#d9a441;"></span>${t('ing_for_orders_label')}: <span class="font-semibold" style="color:#96712a;">${totals.order.qty.toFixed(2)} ${unitLabel}</span>${money(totals.order.cost)}</div>`;
+        if (totals.personal.qty > 0) summary += `<div><span class="inline-block w-2 h-2 rounded-full mr-1" style="background:#c0685c;"></span>${t('ing_personal_losses_label')}: <span class="font-semibold" style="color:#c0685c;">${totals.personal.qty.toFixed(2)} ${unitLabel}</span>${money(totals.personal.cost)}</div>`;
         summary += `</div>`;
 
         // Фильтр-табы
@@ -784,8 +802,8 @@ async function renderIngredientStockBlock(ing) {
             const dateStr = orderDate || r.created_at.slice(0, 10);
             const date = formatDateDMY(dateStr);
             const qty = Number(r.quantity);
-            const unitCost = unitCostAtDate(dateStr);
-            const cost = (qty * unitCost).toFixed(2);
+            const c = costs.get(r.id) || { cost: qty * unitCostAtDate(dateStr), exact: false };
+            const costCell = `${c.exact ? '' : '≈ '}${formatMoney(c.cost.toFixed(2))}`;
             const isIn = r.type === 'приход';
             const isStorno = r.type === 'сторно';
             const sign = isIn || isStorno ? '+' : '−';
@@ -797,7 +815,7 @@ async function renderIngredientStockBlock(ing) {
             rows += `<tr class="border-b ing-hist-row" data-cat="${rowCat}">
                 <td class="p-1 whitespace-nowrap">${date}</td>
                 <td class="p-1 text-right font-semibold whitespace-nowrap" style="${color}">${sign}${qty.toFixed(2)} ${unitLabel}</td>
-                <td class="p-1 text-right text-gray-500 whitespace-nowrap">${formatMoney(cost)}</td>
+                ${showMoney ? `<td class="p-1 text-right text-gray-500 whitespace-nowrap">${costCell}</td>` : ''}
                 <td class="p-1 text-gray-400">${notes}</td>
             </tr>`;
         });
@@ -807,7 +825,7 @@ async function renderIngredientStockBlock(ing) {
                 <thead><tr style="background-color:#e3e8df;" class="sticky top-0 table-text">
                     <th class="p-1 text-left">${t('history_col_date')}</th>
                     <th class="p-1 text-right">${t('inv_col_quantity')}</th>
-                    <th class="p-1 text-right">${t('stats_col_sum')}</th>
+                    ${showMoney ? `<th class="p-1 text-right">${t('stats_col_sum')}</th>` : ''}
                     <th class="p-1 text-left">${t('ing_note_label')}</th>
                 </tr></thead>
                 <tbody id="ingHistTableBody">${rows}</tbody>

@@ -317,3 +317,68 @@ async function toggleSfBatches() {
         list.innerHTML = error ? `<div class="table-text text-gray-400">${t('batch_load_list_error')}</div>` : `<div style="max-height:210px;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;">${renderBatchesList(data, unitLabel, 'semi_finished')}</div>`;
     }
 }
+
+// ── Реальные суммы движений склада (21.10) ──────────────────────────────────
+// rows — строки inventory одной позиции (id, type, quantity, created_at, order_item_id,
+// order_id, batch_breakdown); batches — её партии (id, unit_price, qty_original, created_at).
+// Возвращает Map id → { cost, exact }: exact=false — точных данных нет, сумма примерная
+// (estimate(row) — прежний пересчёт по истории цен).
+//   приход — цена партии той же позиции, с тем же количеством, созданной в пределах 5 с;
+//   расход — сумма batch_breakdown (сколько из какой партии × её цена) = то, что ушло в себестоимость;
+//   сторно — доля исходного расхода той же позиции заказа (сторно возвращает ровно его).
+function realStockMovementCosts(rows, batches, estimate) {
+    const out = new Map();
+    const used = new Set();
+    const bdCost = bd => Array.isArray(bd) ? bd.reduce((s, x) => s + Number(x.quantity || 0) * Number(x.unit_price || 0), 0) : null;
+    (rows || []).forEach(r => {
+        const qty = Number(r.quantity) || 0;
+        if (r.type === 'приход') {
+            const ms = Date.parse(r.created_at);
+            let best = null, bestDt = Infinity;
+            (batches || []).forEach(b => {
+                if (used.has(b.id) || Math.abs(Number(b.qty_original) - qty) > 0.0001) return;
+                const dt = Math.abs(Date.parse(b.created_at) - ms);
+                if (dt < 5000 && dt < bestDt) { best = b; bestDt = dt; }
+            });
+            if (best) { used.add(best.id); out.set(r.id, { cost: qty * Number(best.unit_price), exact: true }); return; }
+        } else if (r.type === 'расход') {
+            const c = bdCost(r.batch_breakdown);
+            if (c !== null) { out.set(r.id, { cost: c, exact: true }); return; }
+        }
+        if (r.type !== 'сторно') out.set(r.id, { cost: estimate(r), exact: false });
+    });
+    // Сторно — после расходов: ищем исходный расход той же позиции заказа (или заказа целиком)
+    (rows || []).filter(r => r.type === 'сторно').forEach(r => {
+        const qty = Number(r.quantity) || 0;
+        const src = (rows || []).find(x => x.type === 'расход' && x.batch_breakdown &&
+            ((r.order_item_id != null && x.order_item_id === r.order_item_id) ||
+             (r.order_item_id == null && r.order_id != null && x.order_id === r.order_id)));
+        if (src) {
+            const srcQty = Number(src.quantity) || 0;
+            const srcCost = out.get(src.id)?.cost || 0;
+            out.set(r.id, { cost: srcQty > 0 ? srcCost * qty / srcQty : 0, exact: true });
+        } else out.set(r.id, { cost: estimate(r), exact: false });
+    });
+    return out;
+}
+
+// Блок «Остаток по партиям» (21.10): только Full и право «Видеть себестоимость» (класс
+// perm-view-costs в разметке). Не показываем, если партия одна и её остаток равен остатку
+// на складе — тогда блок ничего не добавляет к цифре «На складе на сегодня».
+async function updateBatchesBlockVisibility(itemType, itemId, blockId, nowQty) {
+    const block = document.getElementById(blockId);
+    if (!block) return;
+    if (typeof hasPermission === 'function' && typeof hasPlanFeature === 'function'
+        && !(hasPermission('can_view_costs') && hasPlanFeature('cost_analytics'))) return; // скрыт классом perm-view-costs
+    try {
+        const col = itemType === 'semi_finished' ? 'semi_finished_id' : 'ingredient_id';
+        const { data, error } = await db.from('stock_batches').select('id, qty_remaining')
+            .eq('item_type', itemType).eq(col, itemId);
+        if (error) throw error;
+        const list = data || [];
+        const single = list.length === 1 && Math.abs(Number(list[0].qty_remaining) - Number(nowQty || 0)) < 0.0001;
+        // Свой класс, а не 'hidden': 'hidden' у этого блока переключает applyCostVisibility (тариф/права)
+        block.classList.toggle('batches-not-needed', list.length === 0 || single);
+    } catch (e) { block.classList.remove('batches-not-needed'); }
+}
+

@@ -677,7 +677,7 @@ I18N.uk = {
         cust_unpaid_none_sub: 'Замовлення без рахунку',
         cust_unpaid_issue: 'Виставити',
         cust_unpaid_also_inv: 'Є й окремий рахунок {n}',
-        ing_batches: 'Партії',
+        ing_batches: 'Залишок за партіями',
         ing_date_label: 'Дата',
         ing_package_price: 'Ціна за упаковку',
         ing_package_size: 'Розмір упаковки',

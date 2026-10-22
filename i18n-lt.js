@@ -677,7 +677,7 @@ I18N.lt = {
         cust_unpaid_none_sub: 'Užsakymai be sąskaitos',
         cust_unpaid_issue: 'Išrašyti',
         cust_unpaid_also_inv: 'Yra ir atskira sąskaita {n}',
-        ing_batches: 'Partijos',
+        ing_batches: 'Likutis pagal partijas',
         ing_date_label: 'Data',
         ing_package_price: 'Pakuotės kaina',
         ing_package_size: 'Pakuotės dydis',

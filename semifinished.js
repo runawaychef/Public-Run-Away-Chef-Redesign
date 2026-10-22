@@ -560,6 +560,7 @@ async function renderSfStockBlock(sf) {
     // Прогноз из «Склада» убран (21.10) — на Full вместо него блок «Умный склад»
     if (daysEl) { daysEl.textContent = ''; daysEl.style.color = ''; }
     if (typeof renderStockSmartInfo === 'function') renderStockSmartInfo('sf', sf, 'sfSmartInfo');
+    if (typeof updateBatchesBlockVisibility === 'function') updateBatchesBlockVisibility('semi_finished', sf.id, 'sfBatchesBlock', balanceBefore);
 }
 
 // История движений п/ф — вынесена отдельно от renderSfStockBlock, т.к. теперь
