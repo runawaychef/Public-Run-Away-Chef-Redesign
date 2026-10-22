@@ -549,14 +549,14 @@ async function renderSfStockBlock(sf) {
     const balBeforeEl = document.getElementById('sfBalanceBeforeValue');
     const unitBeforeEl = document.getElementById('sfBalanceBeforeUnit');
 
-    if (balBeforeEl) balBeforeEl.textContent = balanceBefore !== null ? Number(balanceBefore).toFixed(2) : '—';
+    if (balBeforeEl) balBeforeEl.textContent = balanceBefore !== null ? Number(balanceBefore).toFixed(1) : '—';
     if (unitBeforeEl) unitBeforeEl.textContent = unitLabel;
 
     if (balEl) {
         // Показываем реальное число, включая отрицательное (реальная нехватка) —
         // раньше отрицательный баланс подменялся на "0", скрывая проблему.
         if (balance !== null) {
-            balEl.textContent = Number(balance).toFixed(2);
+            balEl.textContent = Number(balance).toFixed(1);
             // Цвет (21.10, без прогноза): терракота — минус/ноль, шалфей — есть запас
             balEl.className = 'text-lg font-bold';
             balEl.style.color = balance <= 0 ? '#c0685c' : '#4f6349';
