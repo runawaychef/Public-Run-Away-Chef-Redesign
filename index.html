@@ -1384,9 +1384,9 @@ function hideSplashScreen() {
                         <span data-i18n="sf_recipe_confirmed_label">Рецепт заполнен полностью</span>
                         <button type="button" onclick="event.preventDefault(); showHelpModal('help_prod_flags_title','help_prod_flags_text')" class="help-marker" data-i18n-title="help_marker_label" title="Подробнее об этом разделе">?</button>
                     </label>
-                    <label class="flex items-center gap-2 table-text text-gray-700 mb-1 cursor-pointer">
+                    <label class="flex items-center gap-2 table-text text-gray-700 mb-1 cursor-pointer plan-cost-only">
                         <input type="checkbox" id="pdTrackStock" onchange="toggleTrackStock()" style="accent-color:#7c9473;">
-                        <span data-i18n="sf_track_stock_label">Отслеживать остатки постоянно (включить в аналитику склада)</span>
+                        <span data-i18n="sf_track_stock_label">Отслеживать остатки постоянно (показывать в «Умном складе»)</span>
                     </label>
                     <div class="text-right table-text text-gray-600 space-y-0.5 border-t pt-1 perm-view-costs">
                         <div><span data-i18n="sf_batch_cost">Себестоимость партии</span>: <span id="pdBatchCost" class="font-medium text-gray-800">0.00</span></div>
@@ -1436,7 +1436,7 @@ function hideSplashScreen() {
                     <div class="flex items-center justify-between mb-2">
                         <button onclick="closeIngredientDetail()" class="pill-btn">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-                            <span data-i18n="ing_back_to_stock">Назад к складу</span>
+                            <span data-i18n="common_back">Назад</span>
                         </button>
                         <button onclick="deleteCurrentIngredient()" class="pill-btn-danger perm-delete" data-i18n="ing_delete_btn">Удалить ингредиент</button>
                     </div>
@@ -1522,7 +1522,7 @@ function hideSplashScreen() {
                     </div>
                     <button onclick="saveStockAndPrice()" class="pill-btn w-full justify-center" data-i18n="common_save">Сохранить</button>
                     <button onclick="openWriteOffModal()" class="pill-btn-danger w-full justify-center mt-1.5" style="background:#f3ded9; color:#a3493d; box-shadow:none;" data-i18n="ing_writeoff_btn">— Списать (корректировка)</button>
-                    <button onclick="openInventarizationModal(currentIngredientId); closeIngredientDetail();" class="pill-btn-secondary w-full justify-center mt-1.5"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg><span data-i18n="inv_inventarization">Инвентаризация</span></button>
+                    <button onclick="forgetSmartStockReturn(); openInventarizationModal(currentIngredientId); closeIngredientDetail();" class="pill-btn-secondary w-full justify-center mt-1.5"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg><span data-i18n="inv_inventarization">Инвентаризация</span></button>
 
                     <!-- История пополнений -->
                     <div id="ingStockHistory" class="mt-2"></div>
@@ -1574,7 +1574,7 @@ function hideSplashScreen() {
                     <div class="flex items-center justify-between mb-2">
                         <button onclick="closeSemiFinishedDetail()" class="pill-btn">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-                            <span data-i18n="sf_back_to_sf">Назад к полуфабрикатам</span>
+                            <span data-i18n="common_back">Назад</span>
                         </button>
                         <button onclick="deleteCurrentSemiFinished()" class="pill-btn-danger perm-delete" data-i18n="sf_delete_btn">Удалить полуфабрикат</button>
                     </div>
@@ -1667,14 +1667,14 @@ function hideSplashScreen() {
                     </div>
                     <button onclick="produceSfBatch()" class="pill-btn-secondary w-full justify-center mb-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"/></svg><span data-i18n="sf_produce_batch_btn">Произвести партию</span></button>
                     <button onclick="openSfWriteOffModal()" class="pill-btn-secondary w-full justify-center mb-2" data-i18n="ing_writeoff_btn">— Списать (корректировка)</button>
-                    <button onclick="openSfInventarizationModal(currentSemiFinishedId); closeSemiFinishedDetail();" class="pill-btn-secondary w-full justify-center mb-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg><span data-i18n="inv_inventarization">Инвентаризация</span></button>
+                    <button onclick="forgetSmartStockReturn(); openSfInventarizationModal(currentSemiFinishedId); closeSemiFinishedDetail();" class="pill-btn-secondary w-full justify-center mb-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg><span data-i18n="inv_inventarization">Инвентаризация</span></button>
                     <label class="flex items-center gap-2 table-text text-gray-700 border-t pt-2 mb-1 cursor-pointer">
                         <input type="checkbox" id="sfdRecipeConfirmed" onchange="toggleSfRecipeConfirmed()" style="accent-color:#7c9473;">
                         <span data-i18n="sf_recipe_confirmed_label">Рецепт заполнен полностью</span>
                     </label>
-                    <label class="flex items-center gap-2 table-text text-gray-700 mb-1 cursor-pointer">
+                    <label class="flex items-center gap-2 table-text text-gray-700 mb-1 cursor-pointer plan-cost-only">
                         <input type="checkbox" id="sfdTrackStock" onchange="toggleSfTrackStock()" style="accent-color:#7c9473;">
-                        <span data-i18n="sf_track_stock_label">Отслеживать остатки постоянно (включить в аналитику склада)</span>
+                        <span data-i18n="sf_track_stock_label">Отслеживать остатки постоянно (показывать в «Умном складе»)</span>
                     </label>
                     <div class="text-right table-text text-gray-600 space-y-0.5 border-t pt-1 perm-view-costs">
                         <div><span data-i18n="sf_batch_cost">Себестоимость партии</span>: <span id="sfdBatchCost" class="font-medium text-gray-800">0.00</span></div>
