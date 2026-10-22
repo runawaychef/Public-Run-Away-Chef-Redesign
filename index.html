@@ -785,6 +785,18 @@
         .inv-empty { font-size: 13px; color: #8d887b; text-align: center; padding: 24px 16px; line-height: 1.5; }
         #inventoryPageBody .stock-divider:first-child { margin-top: 4px; }
         #inventoryPageBody .order-card { margin-bottom: 10px; }
+        /* «Умный склад» — табличный вид (21.10), в стиле таблицы «Заказов» */
+        .st-head, .st-row { display: grid; grid-template-columns: minmax(0, 1fr) 62px 78px 60px; align-items: center; column-gap: 4px; }
+        .st-head { margin: 4px 0 6px; padding: 9px 10px; background: #fff; border: 1px solid #e3ddcc; border-radius: 14px; font-size: 10px; letter-spacing: 0.04em; text-transform: uppercase; color: #5f6b58; font-weight: 700; line-height: 1.2; }
+        .st-head span:not(:first-child), .st-row span:not(:first-child) { text-align: right; }
+        .st-row { padding: 11px 0; border-bottom: 1px solid #f1efe9; cursor: pointer; font-size: 12px; font-variant-numeric: tabular-nums; }
+        .st-row:last-child { border-bottom: none; }
+        .st-row:active { background: #f6f8f4; }
+        .st-name { font-weight: 600; color: #322f28; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .st-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+        .st-num { white-space: nowrap; color: #3c3a34; }
+        .st-days { white-space: nowrap; font-weight: 600; }
+        #inventoryPageBody .ot-island { margin-bottom: 4px; }
         /* Страница клиента (16.10): сворачиваемый блок «Реквизиты и НДС» */
         .cd-req-head { display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none; padding: 2px 0; cursor: pointer; }
         .cd-req-title { display: block; font-size: 14px; font-weight: 600; color: #3c3a34; }
@@ -3408,6 +3420,14 @@ function hideSplashScreen() {
                     <button type="button" id="invPageTabIng" class="stock-tab active" onclick="setInventoryPageTab('ing');" data-i18n="sf_back_to_ingredients">Ингредиенты</button>
                     <button type="button" id="invPageTabSf" class="stock-tab" onclick="setInventoryPageTab('sf');" data-i18n="ing_semifinished_link">Полуфабрикаты</button>
                 </div>
+                <div class="view-toggle-pill">
+                    <button type="button" class="view-toggle-btn active" id="invViewBtnCards" onclick="setInventoryPageView('cards');" title="Карточки" data-i18n-title="inv_view_cards" aria-label="Карточки">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+                    </button>
+                    <button type="button" class="view-toggle-btn" id="invViewBtnTable" onclick="setInventoryPageView('table');" title="Таблица" data-i18n-title="inv_view_table" aria-label="Таблица">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+                    </button>
+                </div>
             </div>
             <div class="inv-toolbar">
                 <span class="inv-period-lbl" data-i18n="inv_usage_period">Расход за</span>
@@ -3422,13 +3442,13 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=85"></script>
+    <script src="i18n-core.js?v=86"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=16"></script>
     <script src="auth.js?v=21"></script>
     <script src="employees.js?v=55"></script>
     <script src="company.js?v=23"></script>
-    <script src="inventory.js?v=58"></script>
+    <script src="inventory.js?v=59"></script>
     <script src="billing.js?v=15"></script>
     <script src="push.js?v=9"></script>
 <script src="ingredients.js?v=44"></script>

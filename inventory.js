@@ -331,6 +331,15 @@ function trackedStockIds() {
 // Считает тем же stockState, что и «Склад». Список покупок и «Плановые списания»
 // убраны (решение владельца 21.10). Только тариф Full и право can_manage_inventory.
 let _invPage = { tab: 'ing', period: 30 };
+// Вид «Умного склада» (карточки / таблица) запоминается на этом устройстве.
+function _invViewMode() { try { return localStorage.getItem('inv_view_mode') === 'table' ? 'table' : 'cards'; } catch (e) { return 'cards'; } }
+function setInventoryPageView(mode) {
+    try { localStorage.setItem('inv_view_mode', mode === 'table' ? 'table' : 'cards'); } catch (e) { /* без хранилища — только до перезапуска */ }
+    _invViewFallback = mode === 'table' ? 'table' : 'cards';
+    renderInventoryPage();
+}
+let _invViewFallback = null;
+function _invView() { return _invViewFallback || _invViewMode(); }
 
 // Старое имя — кнопка-тележка в шапке и прежние вызовы.
 async function openInventoryModal() { return openInventoryPage(); }
@@ -384,6 +393,11 @@ function renderInventoryPage() {
     const rows = list.map(item => ({ item, st: stockState(isSf ? 'sf' : 'ing', item.id, ctx) }))
         .sort((a, b) => (rank[a.st.zone] - rank[b.st.zone]) || (a.item.name || '').localeCompare(b.item.name || ''));
 
+    const view = _invView();
+    document.getElementById('invViewBtnCards')?.classList.toggle('active', view === 'cards');
+    document.getElementById('invViewBtnTable')?.classList.toggle('active', view === 'table');
+    if (view === 'table') { body.innerHTML = _invTableHtml(rows, isSf); return; }
+
     const attn = [], ok = [];
     rows.forEach(({ item, st }) => {
         const unit = unitAbbrev(item.unit);
@@ -414,6 +428,28 @@ function renderInventoryPage() {
         (accent ? attn : ok).push(html);
     });
     body.innerHTML = stockGroupsHtml(attn, ok);
+}
+
+// Табличный вид: Название | Сейчас | После списания | Хватит на; точка — зона;
+// острова «Требует внимания» / «Всё в порядке» с теми же разделителями, что в карточках.
+function _invTableHtml(rows, isSf) {
+    const dotColor = { critical: '#c0685c', warning: '#d9a441', ok: '#7c9473' };
+    const txtColor = { critical: '#c0685c', warning: '#96712a', ok: '#4f6349' };
+    const rowHtml = ({ item, st }) => {
+        const unit = unitAbbrev(item.unit);
+        const days = st.daysLeft !== null ? `~${st.daysLeft} ${t('inv_days_short')}` : st.shortage ? t('inv_shortage') : '—';
+        return `<div class="st-row" onclick="openStockItemFromSmart('${isSf ? 'sf' : 'ing'}', ${item.id})">
+            <span class="st-name"><span class="st-dot" style="background:${dotColor[st.zone]};"></span>${escapeHtml(item.name || t('semifinished_no_name_fallback'))}</span>
+            <span class="st-num">${st.now !== null ? `${_invFmt(st.now)} ${unit}` : '—'}</span>
+            <span class="st-num" style="color:${st.after !== null && st.after < 0 ? '#c0685c' : '#3c3a34'};">${st.after !== null ? `${_invFmt(st.after)} ${unit}` : '—'}</span>
+            <span class="st-days" style="color:${txtColor[st.zone]};">${days}</span>
+        </div>`;
+    };
+    const attn = rows.filter(r => r.st.zone !== 'ok').map(rowHtml);
+    const ok = rows.filter(r => r.st.zone === 'ok').map(rowHtml);
+    const island = arr => arr.length ? `<div class="ot-island">${arr.join('')}</div>` : '';
+    const head = `<div class="st-head"><span>${t('inv_col_name')}</span><span>${t('ing_cell_now')}</span><span>${t('ing_cell_after')}</span><span>${t('ing_cell_lasts')}</span></div>`;
+    return head + stockGroupsHtml(attn.length ? [island(attn)] : [], ok.length ? [island(ok)] : []);
 }
 
 // Нажатие на карточку «Умного склада» → карточка позиции (возврат — шаг 4).

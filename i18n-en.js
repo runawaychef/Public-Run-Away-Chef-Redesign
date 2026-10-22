@@ -445,6 +445,8 @@ I18N.en = {
 
         // Inventory analytics + Shopping list
         inv_title: 'Smart Stock',
+        inv_view_cards: 'Cards',
+        inv_view_table: 'Table',
         inv_usage_period: 'Usage over',
         inv_reserved_chip: 'For orders',
         inv_used_for_days: 'Last {n} days',

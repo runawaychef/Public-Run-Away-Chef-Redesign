@@ -444,6 +444,8 @@ I18N.ru = {
 
         // Аналитика склада + Список покупок
         inv_title: 'Умный склад',
+        inv_view_cards: 'Карточки',
+        inv_view_table: 'Таблица',
         inv_usage_period: 'Расход за',
         inv_reserved_chip: 'Под заказы',
         inv_used_for_days: 'За {n} дн.',

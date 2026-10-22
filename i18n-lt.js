@@ -433,6 +433,8 @@ I18N.lt = {
         help_inventory_text: 'Išmanusis sandėlis rodo stebimų pozicijų (gaminio arba pusgaminio žymė „Stebėti likučius“) atsargas ir sunaudojimo analizę.\n\n„Dabar“ — kas fiziškai yra sandėlyje. „Po nurašymo“ — kiek liks, kai bus įvykdyti visi priimti užsakymai; mažiau nei nulis — trūkumas. „Užteks“ — kiek dienų užteks likučio po nurašymo esant įprastam sunaudojimui.\n\nSunaudojimas skaičiuojamas pagal tai, kas iš tikrųjų išėjo iš sandėlio per pasirinktą laikotarpį (7, 30 arba 90 dienų): įvykdyti užsakymai, pusgaminių gamyba, rankiniai nurašymai ir inventorizacija. „Užsakymams“ — kiek reikia priimtiems užsakymams, „Per N d.“ — kiek sunaudota per laikotarpį.\n\nRaudona — trūkumas, nulinis likutis arba mažiau nei 3 dienoms; geltona — mažiau nei savaitei. Paspaudus kortelę atidaroma pozicija.',
         help_inventory_title: 'Kaip veikia Išmanusis sandėlis',
         inv_title: 'Išmanusis sandėlis',
+        inv_view_cards: 'Kortelės',
+        inv_view_table: 'Lentelė',
         inv_usage_period: 'Sunaudota per',
         inv_reserved_chip: 'Užsakymams',
         inv_used_for_days: 'Per {n} d.',
