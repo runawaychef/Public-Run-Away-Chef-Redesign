@@ -91,8 +91,10 @@ function stockPriceText(unitPrice, unit) {
 function stockCardCellsHtml(o) {
     const cell = (label, val, color, first) =>
         `<div class="oc-cell${first ? '' : ' oc-cell-sep'}"><div class="oc-cell-lbl">${label}</div><div class="oc-cell-val" style="color:${color};">${val}</div></div>`;
+    // o.priceText — ячейка цены первой (карточки «Склада», 22.10); в «Умном складе» не передаётся
     return `<div class="oc-cells">`
-        + cell(t('ing_cell_now'), o.beforeText, '#3c3a34', true)
+        + (o.priceText ? cell(o.priceLabel, o.priceText, '#3c3a34', true) : '')
+        + cell(t('ing_cell_now'), o.beforeText, '#3c3a34', !o.priceText)
         + cell(t('ing_cell_after'), o.afterText, o.afterColor, false)
         + (o.thirdText ? cell(o.thirdLabel, o.thirdText, o.thirdColor, false) : '')
         + `</div>`;
@@ -134,9 +136,8 @@ function renderIngredientCards() {
                 <div class="order-card-body">
                     <div class="oc-row">
                         <span class="oc-name">${escapeHtml(ing.name || t('semifinished_no_name_fallback'))}</span>
-                        <span class="oc-price">${priceText}</span>
                     </div>
-                    ${stockCardCellsHtml({ beforeText, afterText, afterColor, thirdLabel: thirdLabel, thirdText: thirdText, thirdColor: afterColor })}
+                    ${stockCardCellsHtml({ priceLabel: t('ing_price_per_unit'), priceText, beforeText, afterText, afterColor, thirdLabel: thirdLabel, thirdText: thirdText, thirdColor: afterColor })}
                 </div>
             </div>
         </div>`);
