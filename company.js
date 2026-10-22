@@ -347,13 +347,22 @@ async function openCompanyInfoModal() {
         updateProgressiveFieldsVisibility(!!data.country);
 
         setCompanyEntityType(data.entity_type || 'company', /*skipSave*/ true);
-        document.getElementById('companyInfoModal').style.display = 'flex';
+        openAppPage('companyInfoPage'); // страница вместо окна (22.10)
     } catch (e) {
         console.error(e);
         showInfo('Не удалось загрузить информацию о компании.');
     } finally {
         hideLoading();
     }
+}
+
+// «Назад» со страницы (кнопка и системная «назад» Android): поля сохраняются по onblur,
+// поэтому сначала снимаем фокус с активного поля — иначе набранное, но не покинутое поле
+// не успело бы сохраниться (22.10).
+function closeCompanyInfoPage() {
+    const el = document.activeElement;
+    if (el && el.closest && el.closest('#companyInfoPage') && typeof el.blur === 'function') el.blur();
+    if (appPageTop() === 'companyInfoPage') closeAppPage();
 }
 
 // Переключение Физ. лицо / Юр. лицо — показывает нужный блок полей

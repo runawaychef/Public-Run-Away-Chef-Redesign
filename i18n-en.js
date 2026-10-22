@@ -69,6 +69,9 @@ I18N.en = {
         plan_feat_push: 'Push notifications',
 
         company_title: 'Business Information',
+        company_block_bakery: 'Bakery',
+        company_block_contacts: 'Contacts',
+        company_block_requisites: 'Details for documents',
         company_autosave: 'Changes are saved automatically',
         company_logo_label: 'Document logo',
         company_logo_upload: 'Upload',

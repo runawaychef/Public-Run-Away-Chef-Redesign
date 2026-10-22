@@ -68,6 +68,9 @@ I18N.ru = {
         plan_feat_push: 'Push-уведомления',
 
         company_title: 'Информация о компании',
+        company_block_bakery: 'Пекарня',
+        company_block_contacts: 'Контакты',
+        company_block_requisites: 'Реквизиты для документов',
         company_autosave: 'Изменения сохраняются автоматически',
         company_logo_label: 'Логотип для документов',
         company_logo_upload: 'Загрузить',
