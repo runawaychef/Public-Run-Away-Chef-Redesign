@@ -178,6 +178,7 @@ I18N.ru = {
         settings_contact: 'Написать нам',
         settings_faq: 'Частые вопросы',
         settings_version_prefix: 'Simple Bake · версия',
+        settings_build_word: 'сборка',
         settings_close: 'Закрыть',
 
         // Окно "Написать нам"
@@ -285,6 +286,8 @@ I18N.ru = {
         employees_invite_cancel: 'Отменить',
         employees_edit_title: 'Редактирование сотрудника',
         employees_new_title: 'Новый сотрудник',
+        employees_leave_confirm: 'Сохранить изменения?',
+        employees_leave_discard: 'Не сохранять',
         employees_name_required: 'Введите имя сотрудника.',
         employees_invite_created_prefix: 'Приглашение создано. Сообщите сотруднику, что нужно зарегистрироваться в приложении на email:',
         employees_save_error: 'Ошибка сохранения сотрудника.',

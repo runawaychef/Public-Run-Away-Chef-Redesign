@@ -184,6 +184,7 @@ I18N.lt = {
         settings_contact: 'Susisiekite su mumis',
         settings_faq: 'Dažniausiai užduodami klausimai',
         settings_version_prefix: 'Simple Bake · versija',
+        settings_build_word: 'surinkimas',
         settings_close: 'Uždaryti',
 
         // Окно "Написать нам"
@@ -291,6 +292,8 @@ I18N.lt = {
         employees_invite_cancel: 'Atšaukti',
         employees_edit_title: 'Darbuotojo redagavimas',
         employees_new_title: 'Naujas darbuotojas',
+        employees_leave_confirm: 'Išsaugoti pakeitimus?',
+        employees_leave_discard: 'Neišsaugoti',
         employees_name_required: 'Įveskite darbuotojo vardą.',
         employees_invite_created_prefix: 'Kvietimas sukurtas. Praneškite darbuotojui, kad jis turi užsiregistruoti programėlėje naudodamas šį el. pašto adresą:',
         employees_save_error: 'Nepavyko išsaugoti darbuotojo.',

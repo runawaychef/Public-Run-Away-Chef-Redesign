@@ -184,6 +184,7 @@ I18N.uk = {
         settings_contact: 'Написати нам',
         settings_faq: 'Часті запитання',
         settings_version_prefix: 'Simple Bake · версія',
+        settings_build_word: 'збірка',
         settings_close: 'Закрити',
 
         // Окно "Написать нам"
@@ -291,6 +292,8 @@ I18N.uk = {
         employees_invite_cancel: 'Скасувати',
         employees_edit_title: 'Редагування співробітника',
         employees_new_title: 'Новий співробітник',
+        employees_leave_confirm: 'Зберегти зміни?',
+        employees_leave_discard: 'Не зберігати',
         employees_name_required: 'Введіть ім\'я співробітника.',
         employees_invite_created_prefix: 'Запрошення створено. Повідомте співробітнику, що потрібно зареєструватися в застосунку на email:',
         employees_save_error: 'Помилка збереження співробітника.',

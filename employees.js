@@ -748,7 +748,9 @@ async function openEmployeesModal() {
         content.appendChild(row);
     });
 
-    document.getElementById('employeesModal').style.display = 'flex';
+    // Страница вместо окна (22.10). Если сверху страница сотрудника — openAppPage вернёт к списку
+    // (после «Сохранить» / «Удалить» / отмены приглашения вопрос о несохранённом не нужен).
+    if (appPageTop() !== 'employeesPage') openAppPage('employeesPage');
 }
 
 function openEmployeeEditModal(emp) {
@@ -757,7 +759,7 @@ function openEmployeeEditModal(emp) {
     document.getElementById('employeeEditUserId').value = emp && emp.user_id ? emp.user_id : '';
     document.getElementById('employeeEditName').value = emp ? emp.name : '';
     document.getElementById('employeeEditEmail').value = '';
-    document.getElementById('employeeEditTitle').textContent = emp ? t('employees_edit_title') : t('employees_new_title');
+    document.getElementById('employeeEditTitle').textContent = emp ? (emp.name || t('employees_edit_title')) : t('employees_new_title');
 
     // Поле email для приглашения имеет смысл только при создании новой записи
     document.getElementById('employeeEditEmailBlock').classList.toggle('hidden', !!emp);
@@ -783,14 +785,40 @@ function openEmployeeEditModal(emp) {
     document.getElementById('employeePermissionsLockedNote')?.classList.toggle('hidden', !permissionsLocked);
     document.getElementById('employeeDeleteBtn').classList.toggle('hidden', !emp || isOwnerRow);
 
-    document.getElementById('employeeEditModal').style.display = 'flex';
+    openAppPage('employeePage'); // страница вместо окна (22.10)
+    _empFormSnapshot = _empFormState();
 }
 
-async function saveEmployee() {
+// ---- Несохранённые изменения на странице сотрудника (22.10) ----
+let _empFormSnapshot = null;
+function _empFormState() {
+    const st = { name: document.getElementById('employeeEditName').value.trim(), email: document.getElementById('employeeEditEmail').value.trim() };
+    PERMISSION_FIELDS.forEach(f => { st[f] = !!document.getElementById(PERMISSION_CHECKBOX_IDS[f]).checked; });
+    return JSON.stringify(st);
+}
+function _empFormDirty() {
+    return typeof isAppPageOpen === 'function' && isAppPageOpen('employeePage') && _empFormSnapshot !== null && _empFormState() !== _empFormSnapshot;
+}
+// «Назад» / уход по меню с изменениями: «Сохранить изменения?» — Сохранить / Не сохранять
+async function _empPageCanLeave() {
+    if (!_empFormDirty()) return true;
+    const save = await showConfirm(t('employees_leave_confirm'), { ok: t('common_save'), cancel: t('employees_leave_discard') });
+    if (!save) { _empFormSnapshot = null; return true; }
+    return await saveEmployee({ fromLeave: true });
+}
+_empPageCanLeave.needed = _empFormDirty;
+(window._appPageCanLeave = window._appPageCanLeave || {}).employeePage = _empPageCanLeave;
+// Вернулись к списку со страницы сотрудника (в т.ч. после «Сохранить» из вопроса) — перечитать список
+(window._appPageOnShow = window._appPageOnShow || {}).employeesPage = () => openEmployeesModal();
+
+// opts.fromLeave — вызвано из вопроса при уходе со страницы: переход сделает сам уход.
+// Возвращает true, если сохранено.
+async function saveEmployee(opts) {
+    const fromLeave = !!(opts && opts.fromLeave);
     const id = document.getElementById('employeeEditId').value;
     const name = document.getElementById('employeeEditName').value.trim();
     const email = document.getElementById('employeeEditEmail').value.trim();
-    if (!name) { showInfo(t('employees_name_required')); return; }
+    if (!name) { showInfo(t('employees_name_required')); return false; }
 
     const permissions = {};
     PERMISSION_FIELDS.forEach(field => {
@@ -810,21 +838,26 @@ async function saveEmployee() {
             const { error } = await db.from('invitations').insert({ org_id: currentOrgId, email, name, ...permissions });
             if (error) throw error;
             logActivity('system', `${t('log_invite_sent')}: ${name} (${email})`);
+            _empFormSnapshot = null;
             await reloadEmployeesList();
-            openEmployeesModal();
+            if (!fromLeave) openEmployeesModal();
+            hideLoading();
             await showInfo(`${t('employees_invite_created_prefix')} ${email}`);
-            return;
+            return true;
         } else {
             // Обычная запись для входа по имени на общем устройстве
             const { error } = await db.from('employees').insert({ org_id: currentOrgId, name, ...permissions });
             if (error) throw error;
             logActivity('system', `${t('log_employee_created')}: ${name}`);
         }
+        _empFormSnapshot = null;
         await reloadEmployeesList();
-        openEmployeesModal();
+        if (!fromLeave) openEmployeesModal();
+        return true;
     } catch (e) {
         console.error(e);
         showInfo(t('employees_save_error'));
+        return false;
     } finally { hideLoading(); }
 }
 
@@ -854,6 +887,7 @@ async function deleteEmployee() {
             }
         }
 
+        _empFormSnapshot = null;
         await reloadEmployeesList();
         openEmployeesModal();
     } catch (e) {

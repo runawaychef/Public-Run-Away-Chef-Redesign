@@ -27,6 +27,17 @@ function openSettingsModal() {
     if (typeof refreshPushSettingsUI === 'function') refreshPushSettingsUI();
     if (typeof refreshMemoSettingsUI === 'function') refreshMemoSettingsUI();
     if (typeof refreshPaymentModeUI === 'function') refreshPaymentModeUI();
+    _renderAppBuildNumber();
+}
+// «Simple Bake · версия 2.0 · сборка N» (вариант А, 22.10): N — номер кэша Service Worker
+// (runwaychef-public-cache-vN, поднимается при каждой заливке) — ничего вручную вести не нужно.
+function _renderAppBuildNumber() {
+    const el = document.getElementById('settingsAppBuild');
+    if (!el || typeof caches === 'undefined') return;
+    caches.keys().then(keys => {
+        const nums = keys.map(k => (k.match(/^runwaychef-public-cache-v(\d+)$/) || [])[1]).filter(Boolean).map(Number);
+        el.textContent = nums.length ? ` · ${t('settings_build_word')} ${Math.max(...nums)}` : '';
+    }).catch(() => {});
 }
 function closeSettingsPage() {
     if (appPageTop() === 'settingsPage') closeAppPage();

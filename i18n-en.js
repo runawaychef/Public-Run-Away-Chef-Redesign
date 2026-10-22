@@ -179,6 +179,7 @@ I18N.en = {
         settings_contact: 'Contact Us',
         settings_faq: 'FAQ',
         settings_version_prefix: 'Simple Bake · version',
+        settings_build_word: 'build',
         settings_close: 'Close',
 
         // "Contact us" window
@@ -286,6 +287,8 @@ I18N.en = {
         employees_invite_cancel: 'Cancel',
         employees_edit_title: 'Edit Employee',
         employees_new_title: 'New Employee',
+        employees_leave_confirm: 'Save changes?',
+        employees_leave_discard: 'Discard',
         employees_name_required: 'Enter the employee name.',
         employees_invite_created_prefix: 'Invitation created. Ask the employee to register in the app using this email:',
         employees_save_error: 'Failed to save the employee.',
