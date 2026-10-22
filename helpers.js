@@ -882,6 +882,8 @@ function isAppPageOpen(id) { return id ? _appPageStack.some(p => p.id === id) : 
 function _appPageShowTop() {
     document.querySelectorAll('.app-page').forEach(el => el.classList.toggle('active', el.id === appPageTop()));
     document.body.classList.toggle('app-page-open', _appPageStack.length > 0);
+    // Тележка в шапке подсвечена, пока «Умный склад» — верхняя страница (21.10)
+    document.getElementById('inventoryBtn')?.classList.toggle('active', appPageTop() === 'inventoryPage');
 }
 function openAppPage(id) {
     if (typeof closeModal === 'function') closeModal(); // окна поверх страница заменяет

@@ -412,8 +412,7 @@ function applyScreenAccessPermissions() {
     document.getElementById('statsBtn').classList.toggle('hidden', !canReports);
 
     if (!canInventory) {
-        const invModal = document.getElementById('inventoryModal');
-        if (invModal && invModal.style.display === 'flex') invModal.style.display = 'none';
+        if (typeof isAppPageOpen === 'function' && isAppPageOpen('inventoryPage') && typeof closeAllAppPages === 'function') closeAllAppPages();
     }
     if (!canReports && typeof currentTabId !== 'undefined' && currentTabId === 'stats') {
         showTab('orders');

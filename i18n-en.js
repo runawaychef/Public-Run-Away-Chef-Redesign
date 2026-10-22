@@ -424,8 +424,8 @@ I18N.en = {
         // plus text for each specific section's tooltip
         help_marker_label: 'More about this section',
         help_more: 'Show more',
-        help_inventory_title: 'How Inventory Analytics Works',
-        help_inventory_text: '"In Stock" shows the physical quantity currently available, regardless of any already-accepted orders. "Balance" is the same quantity minus everything already reserved for accepted but not-yet-completed orders. "Status" estimates how many days the stock will last, based on the average usage over the last 30 days.\n\nRed means the item is already out of stock or won\'t be enough for confirmed orders (for semi-finished items, a negative number means you need to prepare more). Yellow means it will run out soon. Everything else means stock is sufficient.\n\n"Not enough" means confirmed orders will use more than what\'s currently in stock — buy this first.\n\nThe "Planned write-offs" block at the top shows how many orders more than 5 days away are still pending and when the next write-off will happen — this keeps "Balance" from looking artificially low because of orders that are still far in the future. The write-off itself happens automatically 5 days before the order date.\n\nThe "+" button in the "List" column adds the ingredient to your shopping list.',
+        help_inventory_title: 'How Smart Stock works',
+        help_inventory_text: 'Smart Stock shows the stock of tracked items (the “Track stock” checkbox on a product or semi-finished item) and analyses usage.\n\n“Now” is what is physically in stock. “After write-off” is what will remain once all accepted orders are done; below zero means a shortage. “Lasts for” is how many days the remaining stock will last at the usual usage.\n\nUsage is based on what actually left the stock during the selected period (7, 30 or 90 days): completed orders, semi-finished production, manual write-offs and stocktaking. “For orders” is what accepted orders need, “Last N days” is what was used in the period.\n\nRed — shortage, zero stock or less than 3 days left; yellow — less than a week. Tap a card to open the item.',
         help_sf_primary_title: 'What the Primary Ingredient Is',
         help_sf_primary_text: 'The primary ingredient is the one that best represents the actual yield — usually the dough or base. Mark it with the ⭐ star in the recipe\'s ingredient list.\n\nWhy this matters: the real weight almost never matches the recipe exactly — the dough usually comes out a bit more or less each time. Instead of manually recalculating every other ingredient for each batch, you simply weigh the primary ingredient.\n\nHow it works: when producing a batch ("Produce batch"), enter the actual weight of the primary ingredient. The app calculates how much this differs from the recipe and scales the consumption of all other ingredients — and the final batch yield — by the same ratio.\n\nFor example: the recipe calls for 1000 g of dough, but you actually got 950 g (95%). The app writes off all other ingredients from stock and calculates the finished yield at 95% too — automatically, with no manual math.\n\nOn the last step, you can manually adjust the final quantity of semi-finished product if it doesn\'t match the calculated one.\n\nBefore production, the app also checks whether there\'s enough of each ingredient in stock and warns you if anything is missing.',
         help_orders_screen_title: 'How the orders screen works',
@@ -444,7 +444,12 @@ I18N.en = {
         help_stock_cards_text: 'The colored stripe on the left and the color of the large number indicate stock status: red = critical (less than 3 days remaining at the usual usage rate, the balance is at zero, or there isn\'t enough for already-accepted orders), amber = less than a week remaining, green = stock level is healthy.\n\n"In stock today" is the physical quantity available right now, regardless of any already-accepted orders for these ingredients. "After write-off" is the same quantity minus everything already reserved for accepted but not-yet-completed orders (the large number on the right).\n\nTap a card to open the full ingredient or semi-finished item card. Swipe left for the quick "Copy" button.',
 
         // Inventory analytics + Shopping list
-        inv_title: 'Inventory Analysis',
+        inv_title: 'Smart Stock',
+        inv_usage_period: 'Usage over',
+        inv_reserved_chip: 'For orders',
+        inv_used_for_days: 'Last {n} days',
+        inv_no_tracked: 'No tracked items yet. Turn on “Track stock” on a product or semi-finished card — it and its ingredients will appear here.',
+        inv_full_only: 'Smart Stock is available on the Full plan. Stock-in and write-offs are in the ingredient or semi-finished card.',
         inv_shopping_cart_title: 'Shopping List',
         inv_tab_stock: 'Inventory',
         inv_inventarization: 'Inventory count',
@@ -764,7 +769,7 @@ I18N.en = {
         sf_add_btn: '+ Add',
         sf_produce_batch_btn: 'Produce Batch',
         sf_recipe_confirmed_label: 'Recipe Complete',
-        sf_track_stock_label: 'Track Inventory Continuously (Include in Inventory Analytics)',
+        sf_track_stock_label: 'Track stock continuously (show in Smart Stock)',
         sf_batch_cost: 'Batch Cost',
         sf_unit_cost: 'Cost per Unit',
         sf_cost_dynamics: 'Batch Cost Trend',

@@ -777,6 +777,14 @@
         .stock-inv-btn { color: #7c9473; }
         .stock-inv-btn svg { width: 19px; height: 19px; }
         #ingredientCardsBody .stock-divider:first-child, #semiFinishedCardsBody .stock-divider:first-child { margin-top: 4px; }
+        /* ── «Умный склад» — страница (21.10) ── */
+        .inv-toolbar { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 4px 0 8px; }
+        .inv-period-lbl { font-size: 12px; color: #9a9488; white-space: nowrap; }
+        .inv-an { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .inv-an span { font-size: 11px; color: #6f6a5e; background: #f1ede3; border-radius: 10px; padding: 3px 8px; white-space: nowrap; }
+        .inv-empty { font-size: 13px; color: #8d887b; text-align: center; padding: 24px 16px; line-height: 1.5; }
+        #inventoryPageBody .stock-divider:first-child { margin-top: 4px; }
+        #inventoryPageBody .order-card { margin-bottom: 10px; }
         /* Страница клиента (16.10): сворачиваемый блок «Реквизиты и НДС» */
         .cd-req-head { display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none; padding: 2px 0; cursor: pointer; }
         .cd-req-title { display: block; font-size: 14px; font-weight: 600; color: #3c3a34; }
@@ -2834,37 +2842,6 @@ function hideSplashScreen() {
             </div>
         </div>
 
-        <!-- Модалка склада -->
-        <div id="inventoryModal" class="modal modal-fullscreen">
-            <div class="modal-content">
-                <h2 id="inventoryModalTitle" class="text-sm font-semibold mb-2 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 3h1.386c.51 0 .955.343 1.087.836l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.98-4.706 2.545-7.187.075-.323-.174-.63-.53-.63H5.106M7.5 14.25L5.106 5.653M7.5 14.25L5.25 20.25m9-6l2.25 6"/></svg><span data-i18n="inv_title">Аналитика склада</span><button onclick="showHelpModal('help_inventory_title','help_inventory_text')" class="help-marker" data-i18n-title="help_marker_label" title="Подробнее об этом разделе">?</button></h2>
-                <!-- Вкладки -->
-                <div class="flex gap-3 border-b mb-3">
-                    <button id="invTabStock" onclick="switchInventoryTab('stock')" class="tab active text-xs pb-1" data-i18n="inv_tab_stock">Склад</button>
-                    <button id="invTabShop" onclick="switchInventoryTab('shop')" class="tab text-xs pb-1"><span data-i18n="inv_tab_shopping_list">Список покупок</span> <span id="shopListBadge" class="hidden text-white rounded-full px-1.5 py-0.5 text-xs ml-1" style="background:#7c9473;"></span></button>
-                </div>
-                <!-- Склад -->
-                <div id="inventoryTabStock" style="flex:1; min-height:0; display:flex; flex-direction:column;">
-                    <div id="inventoryContent" style="flex:1; min-height:0; overflow-y:auto; touch-action:pan-y; overscroll-behavior:contain;"></div>
-                </div>
-                <!-- Список покупок -->
-                <div id="inventoryTabShop" class="hidden">
-                    <div class="flex gap-2 mb-2">
-                        <button onclick="addCriticalToShoppingList()" class="pill-btn-secondary flex-1" data-i18n="inv_add_critical">+ Добавить критичное</button>
-                        <button onclick="clearShoppingList()" class="pill-btn-danger" style="background:#f3ded9; color:#a3493d; box-shadow:none;" data-i18n="inv_clear_all">Очистить всё</button>
-                    </div>
-                    <div class="mb-2">
-                        <button onclick="shareShoppingList()" class="pill-btn w-full justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0-12l-4 4m4-4l4 4M5 13v6a2 2 0 002 2h10a2 2 0 002-2v-6"/></svg><span data-i18n="inv_share_list">Поделиться списком</span></button>
-                    </div>
-                    <div id="shopListContent" style="max-height:52vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;">
-                        <p class="text-xs text-gray-400 text-center py-4" data-i18n="inv_list_empty">Список пуст</p>
-                    </div>
-                </div>
-                <button onclick="closeModal()" class="pill-btn w-full justify-center mt-3" data-i18n="settings_close">Закрыть</button>
-            </div>
-        </div>
-
-
         <!-- Подсказка по маркеру "?" — универсальная модалка, переиспользуется для
              любого раздела: openHelpModal передаёт свои ключи заголовка/текста.
              Открывается поверх любой другой модалки (см. z-index в <style>). -->
@@ -3416,6 +3393,28 @@ function hideSplashScreen() {
             </div>
             <div id="bankSettingsBody" style="margin-top:8px;"></div>
         </div>
+        <!-- ===== СТРАНИЦА «Умный склад» (21.10, inventory.js) — вместо окна inventoryModal ===== -->
+        <div id="inventoryPage" class="app-page">
+            <div class="flex items-center gap-2 mb-2" style="position:relative; padding:0 2px;">
+                <button onclick="closeInventoryPage()" class="pill-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                    <span data-i18n="common_back">Назад</span>
+                </button>
+                <h2 style="position:absolute; left:50%; transform:translateX(-50%); font-size:15px; font-weight:600; margin:0; color:#3c3a34; white-space:nowrap;" data-i18n="inv_title">Умный склад</h2>
+                <button type="button" onclick="showHelpModal('help_inventory_title','help_inventory_text')" class="help-marker" data-i18n-title="help_marker_label" title="Подробнее об этом разделе" style="margin-left:auto;">?</button>
+            </div>
+            <div class="inv-toolbar">
+                <div class="view-toggle-pill">
+                    <button type="button" id="invPageTabIng" class="stock-tab active" onclick="setInventoryPageTab('ing');" data-i18n="sf_back_to_ingredients">Ингредиенты</button>
+                    <button type="button" id="invPageTabSf" class="stock-tab" onclick="setInventoryPageTab('sf');" data-i18n="ing_semifinished_link">Полуфабрикаты</button>
+                </div>
+            </div>
+            <div class="inv-toolbar">
+                <span class="inv-period-lbl" data-i18n="inv_usage_period">Расход за</span>
+                <div id="invPagePeriod" class="view-toggle-pill"></div>
+            </div>
+            <div id="inventoryPageBody"></div>
+        </div>
     </div><!-- appContent -->
     </div><!-- tabsWrapper -->
     </div><!-- p-2 -->
@@ -3423,13 +3422,13 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=84"></script>
+    <script src="i18n-core.js?v=85"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=16"></script>
     <script src="auth.js?v=21"></script>
-    <script src="employees.js?v=54"></script>
+    <script src="employees.js?v=55"></script>
     <script src="company.js?v=23"></script>
-    <script src="inventory.js?v=57"></script>
+    <script src="inventory.js?v=58"></script>
     <script src="billing.js?v=15"></script>
     <script src="push.js?v=9"></script>
 <script src="ingredients.js?v=44"></script>
@@ -3448,7 +3447,7 @@ function hideSplashScreen() {
 <script src="history.js?v=9"></script>
 <script src="modals.js?v=17"></script>
 <script src="demoData.js?v=19"></script>
-<script src="helpers.js?v=47"></script>
+<script src="helpers.js?v=48"></script>
 <script>
 // SUPABASE_URL, SUPABASE_KEY, db перенесены в supabaseClient.js
 
@@ -4382,6 +4381,7 @@ const _backHandledDetailScreens = [
     { id: 'docsPage',           close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'bankPage',           close: () => { if (typeof closeBankSection === 'function') closeBankSection(); } },
     { id: 'bankSettingsPage',   close: () => { if (typeof closeBankSettings === 'function') closeBankSettings(); } },
+    { id: 'inventoryPage',      close: () => { if (typeof closeInventoryPage === 'function') closeInventoryPage(); } },
     { id: 'orderDetail',        close: () => { if (typeof closeOrderDetail === 'function') closeOrderDetail(); } },
     { id: 'customerDetail',     close: () => { if (typeof closeCustomerDetail === 'function') closeCustomerDetail(); } },
     { id: 'ingredientDetail',   close: () => { if (typeof closeIngredientDetail === 'function') closeIngredientDetail(); } },
