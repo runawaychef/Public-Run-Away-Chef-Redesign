@@ -885,10 +885,13 @@ function _appPageShowTop() {
     // Тележка в шапке подсвечена, пока «Умный склад» — верхняя страница (21.10)
     const smartTop = appPageTop() === 'inventoryPage';
     document.getElementById('inventoryBtn')?.classList.toggle('active', smartTop);
+    // Шестерёнка подсвечена, пока «Настройки» — верхняя страница (22.10)
+    const settingsTop = appPageTop() === 'settingsPage';
+    document.getElementById('settingsBtn')?.classList.toggle('active', settingsTop);
     // «Умный склад» — отдельный раздел: в нижнем меню ничего не подсвечиваем (22.10);
     // после закрытия возвращаем подсветку разделу, который лежит под страницей
     const navBtns = document.querySelectorAll('.bottom-nav-item');
-    if (smartTop) navBtns.forEach(b => b.classList.remove('active'));
+    if (smartTop || settingsTop) navBtns.forEach(b => b.classList.remove('active'));
     else if (typeof currentTabId !== 'undefined' && currentTabId) {
         const navId = currentTabId === 'semiFinished' ? 'ingredients' : currentTabId;
         navBtns.forEach(b => b.classList.toggle('active', b.getAttribute('onclick') === `showTab('${navId}')`));

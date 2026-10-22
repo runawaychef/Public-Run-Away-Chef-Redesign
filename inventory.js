@@ -13,9 +13,12 @@ function unitAbbrev(code) {
 
 const STOCK_LOW_DAYS = 7; // порог «критически мало» — менее N дней запаса
 
+// Настройки — страница (22.10). Имя openSettingsModal оставлено: его вызывают кнопки
+// «Закрыть» вложенных окон (корзина, политика/FAQ и т.д.) — тогда просто закрываются окна,
+// а страница «Настройки» остаётся под ними (с тем же местом прокрутки и раскрытыми группами).
 function openSettingsModal() {
     closeModal();
-    document.getElementById('settingsBtn').classList.add('active');
+    if (appPageTop() !== 'settingsPage') openAppPage('settingsPage');
     document.getElementById('settingsCurrentEmployee').textContent = currentEmployee ? currentEmployee.name : '—';
     renderPlanInfo();
     if (typeof scheduleRefreshOrderQuota === 'function') scheduleRefreshOrderQuota();
@@ -24,7 +27,14 @@ function openSettingsModal() {
     if (typeof refreshPushSettingsUI === 'function') refreshPushSettingsUI();
     if (typeof refreshMemoSettingsUI === 'function') refreshMemoSettingsUI();
     if (typeof refreshPaymentModeUI === 'function') refreshPaymentModeUI();
-    document.getElementById('settingsModal').style.display = 'flex';
+}
+function closeSettingsPage() {
+    if (appPageTop() === 'settingsPage') closeAppPage();
+}
+// Шестерёнка в шапке: открыть Настройки или, если они уже сверху, закрыть
+function toggleSettingsPage() {
+    if (appPageTop() === 'settingsPage' && !document.querySelector('.modal[style*="flex"]')) closeSettingsPage();
+    else openSettingsModal();
 }
 
 // Показывает текущий тариф и, для бесплатного — сколько уже использовано из лимита.

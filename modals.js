@@ -180,6 +180,9 @@ async function confirmDelete() {
 function closeModal() {
     document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
     editIndex = null; editItemIdx = null; deleteId = null; deleteType = null;
-    document.getElementById('inventoryBtn')?.classList.remove('active');
-    document.getElementById('settingsBtn')?.classList.remove('active');
+    // Подсветку тележки/шестерёнки держит страница (helpers.js _appPageShowTop): окно поверх
+    // «Умного склада» или «Настроек» её не снимает (22.10)
+    const topPage = typeof appPageTop === 'function' ? appPageTop() : null;
+    if (topPage !== 'inventoryPage') document.getElementById('inventoryBtn')?.classList.remove('active');
+    if (topPage !== 'settingsPage') document.getElementById('settingsBtn')?.classList.remove('active');
 }

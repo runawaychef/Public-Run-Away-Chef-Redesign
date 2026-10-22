@@ -107,6 +107,7 @@ async function initAuth() {
 
 function showAuthScreen() {
     revealAppReady();
+    if (typeof closeAllAppPages === 'function') closeAllAppPages(); // открытые страницы (Настройки и др.) — закрыть (22.10)
     document.getElementById('authScreen').classList.remove('hidden');
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('appContent').classList.add('app-locked');

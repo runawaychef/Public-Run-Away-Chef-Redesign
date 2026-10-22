@@ -573,8 +573,8 @@ async function bankLoadProtected() {
 // Открыли из «Настроек» — «Назад» вернёт в окно «Настройки» (как было раньше)
 let _bankSettingsFromSettings = false;
 async function openBankSettings() {
-    const sm = document.getElementById('settingsModal');
-    _bankSettingsFromSettings = !!(sm && sm.style.display === 'flex' && !isAppPageOpen());
+    // Настройки — страница (22.10): «Назад» из «Банка» вернёт в них по цепочке страниц
+    _bankSettingsFromSettings = false;
     openAppPage('bankSettingsPage');
     document.getElementById('bankSettingsBody').innerHTML = `<p style="font-size:13px; color:#a29c8c; padding:12px 4px;">${escapeHtml(t('common_loading'))}</p>`;
     await Promise.all([bankRefreshState(), bankLoadProtected()]);

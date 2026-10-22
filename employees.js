@@ -591,6 +591,7 @@ function startPeriodicRefresh() {
 async function logoutEmployee() {
     if (!(await showConfirm(t('employees_switch_confirm')))) return;
     closeModal();
+    if (typeof closeAllAppPages === 'function') closeAllAppPages(); // «Настройки» — страница (22.10)
     logActivity('auth', `${t('log_signout')}: ${currentEmployee ? currentEmployee.name : ''}`);
     currentEmployee = null;
     localStorage.removeItem('currentEmployee');
