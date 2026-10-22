@@ -156,6 +156,7 @@ function stockStateContext(periodDays) {
     const pendingIds = _pendingOrderItemIds();
     const pending = {};
     const usage = {};
+    const byItem = {}; // order_item_id → { key: списанное количество } (невыполненные заказы)
     const cutoffMs = nowMs - periodDays * 86400000;
     let firstMs = null;
     _inventoryMovements.forEach(row => {
@@ -167,6 +168,8 @@ function stockStateContext(periodDays) {
         if (!sign) return;
         if (row.order_item_id != null && pendingIds.has(row.order_item_id)) {
             pending[key] = (pending[key] || 0) + sign * q; // резерв под невыполненный заказ
+            const bi = byItem[row.order_item_id] || (byItem[row.order_item_id] = {});
+            bi[key] = (bi[key] || 0) + sign * q;           // по позиции заказа — для «нехватка с даты»
             return;
         }
         if (!isNaN(ms) && ms >= cutoffMs) usage[key] = (usage[key] || 0) + sign * q;
@@ -175,7 +178,7 @@ function stockStateContext(periodDays) {
     // короче 30 дней — иначе расход в день вышел бы заниженным, а прогноз — завышенным).
     const histDays = firstMs === null ? 0 : Math.max(1, Math.ceil((nowMs - firstMs) / 86400000));
     const divisor = Math.max(1, Math.min(periodDays, histDays || periodDays));
-    const ctx = { periodDays, pending, deferred: _deferredNeedMap(), usage, divisor, forecast: stockForecastEnabled() };
+    const ctx = { periodDays, pending, deferred: _deferredNeedMap(), usage, divisor, byItem, forecast: stockForecastEnabled() };
     _stockCtxMemo = { periodDays, mov: _inventoryMovements, sig, at: nowMs, ctx };
     return ctx;
 }
@@ -206,6 +209,43 @@ function stockState(kind, id, ctx) {
     const warning = !critical && daysLeft !== null && daysLeft < 7;
     return { now, reserved, after, daily, usedInPeriod: _r4(used), daysLeft, shortage,
              zone: critical ? 'critical' : warning ? 'warning' : 'ok' };
+}
+
+// «Закончится к дате» (21.10): идём по невыполненным заказам по датам (просроченные —
+// первыми) и вычитаем из «Сейчас» то, что реально списано под каждый заказ. Первый заказ,
+// на котором остаток уходит в минус, — «Нехватка с …». Если на все заказы хватает —
+// прогноз по реальному расходу: «Запас до ≈ …» (сегодня + «Хватит на» дней).
+function stockRunout(kind, id, ctx) {
+    ctx = ctx || stockStateContext(30);
+    const key = (kind === 'sf' ? 'sf_' : 'ing_') + id;
+    const st = stockState(kind, id, ctx);
+    const list = [];
+    let running = st.now || 0;
+    (orders || []).filter(o => o.status !== 'выполнен')
+        .slice().sort((a, b) => (a.date || '9999').localeCompare(b.date || '9999') || (a.id - b.id))
+        .forEach(o => {
+            let need = 0;
+            (o.items || []).forEach(it => { const m = it && ctx.byItem[it.id]; if (m && m[key]) need += m[key]; });
+            if (need <= 1e-9) return;
+            running = _r4(running - need);
+            list.push({ order: o, need: _r4(need), short: running < -1e-9 });
+        });
+    const firstShort = list.find(x => x.short) || null;
+    const deficit = st.after !== null && st.after < 0 ? _r4(-st.after) : 0;
+    const forecastDate = st.daysLeft !== null && typeof getLocalDateStr === 'function' ? getLocalDateStr(st.daysLeft) : null;
+    return { st, orders: list, firstShort, deficit, forecastDate };
+}
+
+// 'YYYY-MM-DD' → 'DD.MM'
+function _invDM(d) { return d && d.length >= 10 ? `${d.slice(8, 10)}.${d.slice(5, 7)}` : '—'; }
+
+// Текст «Не хватит с 27.10 · клиент, №заказа · докупить 0,6 л»
+function stockShortLineHtml(r, unit) {
+    if (!r.firstShort) return '';
+    const o = r.firstShort.order;
+    const num = typeof orderNumLabel === 'function' ? orderNumLabel(o) : (o.order_number ? '№' + o.order_number : '#' + o.id);
+    const who = [o.customer ? escapeHtml(o.customer) : '', num].filter(Boolean).join(', ');
+    return `<div class="inv-batch-warn">${typeof INV_WARN_ICON !== 'undefined' ? INV_WARN_ICON : ''}<span><b>${t('inv_short_since')} ${_invDM(o.date)}</b> · ${who} · ${t('inv_buy_more')} <b>${_invFmt(r.deficit)} ${unit}</b></span></div>`;
 }
 
 // Считает, сколько уже списано по заказам, которые ФИЗИЧЕСКИ ещё не выполнены
@@ -386,13 +426,15 @@ function smartStockRows(ctx) {
     const ids = smartStockItemIds();
     const rows = [];
     (semiFinished || []).filter(x => ids.sf.has(x.id)).forEach(item => {
-        const st = stockState('sf', item.id, ctx);
+        const runout = stockRunout('sf', item.id, ctx);
+        const st = runout.st;
         const batchShort = sfBatchShortNames(item, ctx);
-        rows.push({ kind: 'sf', item, st, batchShort, attention: st.zone !== 'ok' || batchShort.length > 0 });
+        rows.push({ kind: 'sf', item, st, runout, batchShort, attention: st.zone !== 'ok' || batchShort.length > 0 });
     });
     (ingredients || []).filter(x => ids.ing.has(x.id)).forEach(item => {
-        const st = stockState('ing', item.id, ctx);
-        rows.push({ kind: 'ing', item, st, batchShort: [], attention: st.zone !== 'ok' });
+        const runout = stockRunout('ing', item.id, ctx);
+        const st = runout.st;
+        rows.push({ kind: 'ing', item, st, runout, batchShort: [], attention: st.zone !== 'ok' });
     });
     const rank = r => r.st.zone === 'critical' ? 0 : r.st.zone === 'warning' ? 1 : r.attention ? 2 : 3;
     return rows.sort((a, b) => (rank(a) - rank(b)) || (a.item.name || '').localeCompare(b.item.name || ''));
@@ -428,7 +470,9 @@ function renderInventoryPage() {
         const isCritical = st.zone === 'critical', isWarning = st.zone === 'warning';
         const accent = isCritical || (!isWarning && r.batchShort.length) ? '#c0685c' : isWarning ? '#d9a441' : '';
         const afterColor = isCritical ? '#c0685c' : isWarning ? '#96712a' : '#4f6349';
-        const thirdText = st.daysLeft !== null ? `${st.daysLeft} ${t('inv_days_short')}` : st.shortage ? t('inv_shortage') : '—';
+        const ro = r.runout;
+        const thirdLabel = ro.firstShort ? t('inv_short_since_cell') : t('inv_stock_until');
+        const thirdText = ro.firstShort ? _invDM(ro.firstShort.order.date) : ro.forecastDate ? `≈ ${_invDM(ro.forecastDate)}` : '—';
         const price = r.kind === 'sf' ? stockPriceText(semiFinishedUnitCost(item), item.unit) : stockPriceText(ingredientUnitPrice(item), item.unit);
         const warn = r.batchShort.length
             ? `<div class="inv-batch-warn">${INV_WARN_ICON}<span>${t('inv_sf_batch_short')} ${r.batchShort.map(escapeHtml).join(', ')}</span></div>` : '';
@@ -443,11 +487,12 @@ function renderInventoryPage() {
                 ${stockCardCellsHtml({
                     beforeText: st.now !== null ? `${_invFmt(st.now)} ${unit}` : '—',
                     afterText: st.after !== null ? `${_invFmt(st.after)} ${unit}` : '—',
-                    afterColor, thirdLabel: t('ing_cell_lasts'), thirdText, thirdColor: afterColor })}
+                    afterColor, thirdLabel, thirdText, thirdColor: afterColor })}
                 <div class="inv-an">
                     <span>${t('inv_reserved_chip')} ${_invFmt(st.reserved)} ${unit}</span>
                     <span>${usedLbl} ${_invFmt(st.usedInPeriod)} ${unit}</span>
                 </div>
+                ${stockShortLineHtml(ro, unit)}
                 ${warn}
             </div>
         </div>`;
@@ -464,7 +509,8 @@ function _invTableHtml(rows) {
     const rowHtml = r => {
         const { item, st } = r;
         const unit = unitAbbrev(item.unit);
-        const days = st.daysLeft !== null ? `~${st.daysLeft} ${t('inv_days_short')}` : st.shortage ? t('inv_shortage') : '—';
+        const ro = r.runout;
+        const days = ro.firstShort ? `${t('inv_since_prefix')} ${_invDM(ro.firstShort.order.date)}` : ro.forecastDate ? `≈${_invDM(ro.forecastDate)}` : '—';
         const dot = st.zone === 'ok' && r.batchShort.length ? '#c0685c' : dotColor[st.zone];
         return `<div class="st-row" onclick="openStockItemFromSmart('${r.kind}', ${item.id})">
             <span class="st-name inv-name"><span class="st-dot" style="background:${dot};"></span>${_invName(r)}${r.batchShort.length ? INV_WARN_ICON : ''}</span>
@@ -476,8 +522,43 @@ function _invTableHtml(rows) {
     const attn = rows.filter(r => r.attention).map(rowHtml);
     const ok = rows.filter(r => !r.attention).map(rowHtml);
     const island = arr => arr.length ? `<div class="ot-island">${arr.join('')}</div>` : '';
-    const head = `<div class="st-head"><span>${t('inv_col_name')}</span><span>${t('ing_cell_now')}</span><span>${t('ing_cell_after')}</span><span>${t('ing_cell_lasts')}</span></div>`;
+    const head = `<div class="st-head"><span>${t('inv_col_name')}</span><span>${t('ing_cell_now')}</span><span>${t('ing_cell_after')}</span><span>${t('inv_stock_until')}</span></div>`;
     return head + stockGroupsHtml(attn.length ? [island(attn)] : [], ok.length ? [island(ok)] : []);
+}
+
+// Блок «Умный склад» в карточке ингредиента / полуфабриката (только Full, 21.10):
+// статус (нехватка с даты или «Запас до ≈»), у ПФ — нехватка на новую партию, расход
+// за 30 дней, до 3 ближайших заказов с этой позицией (нажатие — открыть заказ).
+function renderStockSmartInfo(kind, item, elId) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    if (!item || !hasPlanFeature('cost_analytics')) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+    const ctx = stockStateContext(30);
+    const ro = stockRunout(kind, item.id, ctx);
+    const st = ro.st;
+    const unit = unitAbbrev(item.unit);
+    let html = `<div class="inv-info-title">${typeof icon === 'function' ? icon('cart') : ''}<span>${t('inv_title')}</span></div>`;
+    if (ro.firstShort) html += stockShortLineHtml(ro, unit);
+    else html += `<div class="inv-info-kv"><span>${t('inv_stock_until')}</span><span>${ro.forecastDate ? '≈ ' + _invDM(ro.forecastDate) : '—'}</span></div>`;
+    if (kind === 'sf') {
+        const bs = sfBatchShortNames(item, ctx);
+        if (bs.length) html += `<div class="inv-batch-warn">${INV_WARN_ICON}<span>${t('inv_sf_batch_short')} ${bs.map(escapeHtml).join(', ')}</span></div>`;
+    }
+    html += `<div class="inv-info-kv"><span>${t('inv_used_for_days').replace('{n}', 30)}</span><span>${_invFmt(st.usedInPeriod)} ${unit} · ${_invFmt(st.daily)} ${unit}${t('inv_per_day_suffix')}</span></div>`;
+    const next = ro.orders.slice(0, 3);
+    if (next.length) {
+        html += `<div class="inv-info-sub">${t('inv_next_orders')}</div>`;
+        html += next.map(x => `<div class="inv-info-ord${x.short ? ' short' : ''}" onclick="openOrderFromStockCard(${x.order.id})">
+            <span>${_invDM(x.order.date)}</span><span class="inv-info-cust">${escapeHtml(x.order.customer || (typeof orderNumLabel === 'function' ? orderNumLabel(x.order) : ''))}</span><span>${_invFmt(x.need)} ${unit}</span></div>`).join('');
+    }
+    el.innerHTML = html;
+    el.classList.remove('hidden');
+}
+
+// Заказ из блока «Умный склад» в карточке позиции
+function openOrderFromStockCard(orderId) {
+    showTab('orders');
+    if (typeof openOrderDetail === 'function') openOrderDetail(orderId);
 }
 
 // Нажатие на карточку/строку «Умного склада» → карточка позиции в разделе «Склад».

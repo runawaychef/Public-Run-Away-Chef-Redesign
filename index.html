@@ -807,6 +807,16 @@
         .inv-warn-icon { width: 13px; height: 13px; color: #c0685c; flex-shrink: 0; }
         .inv-batch-warn { display: flex; align-items: flex-start; gap: 6px; margin-top: 7px; padding: 5px 9px; border-radius: 10px; background: #f6e3df; color: #a3493d; font-size: 12px; line-height: 1.35; }
         .inv-batch-warn .inv-warn-icon { margin-top: 2px; }
+        .inv-batch-warn b { font-weight: 600; }
+        .inv-info-title { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: #4f6349; margin-bottom: 4px; }
+        .inv-info-title svg { width: 14px; height: 14px; }
+        .inv-info-kv { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; padding: 3px 0; color: #3c3a34; }
+        .inv-info-kv span:first-child { color: #8d887b; }
+        .inv-info-sub { font-size: 11px; color: #9a9488; margin: 6px 0 2px; }
+        .inv-info-ord { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; gap: 6px; font-size: 12px; padding: 6px 0; border-top: 1px solid #f1efe9; cursor: pointer; color: #3c3a34; }
+        .inv-info-ord:active { background: #f6f8f4; }
+        .inv-info-ord.short { color: #c0685c; }
+        .inv-info-cust { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         /* Страница клиента (16.10): сворачиваемый блок «Реквизиты и НДС» */
         .cd-req-head { display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none; padding: 2px 0; cursor: pointer; }
         .cd-req-title { display: block; font-size: 14px; font-weight: 600; color: #3c3a34; }
@@ -1494,6 +1504,8 @@ function hideSplashScreen() {
                             <div id="ingDaysLeft" class="table-text text-gray-500"></div>
                         </div>
                     </div>
+                    <!-- «Умный склад» — прогноз и ближайшие заказы (только Full, 21.10, inventory.js renderStockSmartInfo) -->
+                    <div id="ingSmartInfo" class="inv-info mb-3 border-b pb-2 hidden"></div>
 
                     <!-- Партии (FIFO) — разворачиваемый блок -->
                     <div class="mb-3 border-b pb-2">
@@ -1633,6 +1645,8 @@ function hideSplashScreen() {
                         </div>
                         <div id="sfDaysLeft" class="table-text text-gray-500"></div>
                     </div>
+                    <!-- «Умный склад» — прогноз и ближайшие заказы (только Full, 21.10, inventory.js renderStockSmartInfo) -->
+                    <div id="sfSmartInfo" class="inv-info mt-2 pt-2 border-t hidden"></div>
 
                     <!-- Партии (FIFO) — разворачиваемый блок -->
                     <div class="mt-2 pt-2 border-t">
@@ -3445,18 +3459,18 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=87"></script>
+    <script src="i18n-core.js?v=88"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=16"></script>
     <script src="auth.js?v=21"></script>
     <script src="employees.js?v=55"></script>
     <script src="company.js?v=23"></script>
-    <script src="inventory.js?v=62"></script>
+    <script src="inventory.js?v=63"></script>
     <script src="billing.js?v=15"></script>
     <script src="push.js?v=9"></script>
-<script src="ingredients.js?v=45"></script>
+<script src="ingredients.js?v=46"></script>
 <script src="batches.js?v=10"></script>
-<script src="semifinished.js?v=45"></script>
+<script src="semifinished.js?v=46"></script>
 <script src="products.js?v=35"></script>
 <script src="customers.js?v=58"></script>
 <script src="calendar.js?v=14"></script>

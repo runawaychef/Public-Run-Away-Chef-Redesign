@@ -441,10 +441,17 @@ I18N.en = {
         help_prod_stripe_title: 'What the colored stripe next to a name means',
         help_prod_stripe_text: 'The thin colored stripe next to an item\'s name is a warning: either the measurement unit (the "Unit" column) hasn\'t been set, or the "Recipe Complete" checkbox hasn\'t been checked in the item\'s card. Tap the row to open the card and fix it.',
         help_stock_cards_title: 'Ingredient & Semi-finished Item Cards',
-        help_stock_cards_text: 'The colored stripe on the left and the color of the large number indicate stock status: red = critical (less than 3 days remaining at the usual usage rate, the balance is at zero, or there isn\'t enough for already-accepted orders), amber = less than a week remaining, green = stock level is healthy.\n\n"In stock today" is the physical quantity available right now, regardless of any already-accepted orders for these ingredients. "After write-off" is the same quantity minus everything already reserved for accepted but not-yet-completed orders (the large number on the right).\n\nTap a card to open the full ingredient or semi-finished item card. Swipe left for the quick "Copy" button.',
+        help_stock_cards_text: '“Now” is what is physically in stock. “After write-off” is what will remain once all accepted orders are done. A red stripe and red number mean zero or negative stock (not enough for orders); such items are at the top, under “Needs attention”.\n\nThe forecast — how long the stock will last and which order it will not cover — is in Smart Stock (Full plan).\n\nTap a card to open the item. Swipe left for a quick “Copy” button.',
 
         // Inventory analytics + Shopping list
         inv_title: 'Smart Stock',
+        inv_short_since: 'Short from',
+        inv_short_since_cell: 'Short from',
+        inv_stock_until: 'Stock until',
+        inv_since_prefix: 'from',
+        inv_buy_more: 'buy',
+        inv_per_day_suffix: '/day',
+        inv_next_orders: 'Upcoming orders',
         inv_sf_batch_short: 'Not enough for a new batch:',
         inv_view_cards: 'Cards',
         inv_view_table: 'Table',

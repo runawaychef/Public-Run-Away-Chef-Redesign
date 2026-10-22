@@ -29,9 +29,10 @@ function stockColorClass(daysLeft, prefix) {
 // (охра), 2 — норма. Та же логика, что и раскраска полоски/цифры "Хватит" в
 // таблице/карточках — вынесена отдельно, чтобы сортировка списка (см. ниже)
 // использовала ровно те же условия, а не рисковала разойтись с окраской.
+// «Склад» — справочник (21.10): прогноза нет, наверх — только минус или ноль.
 function ingredientSeverity(ing, ctx) {
-    const zone = stockState('ing', ing.id, ctx).zone;
-    return zone === 'critical' ? 0 : zone === 'warning' ? 1 : 2;
+    const after = stockState('ing', ing.id, ctx).after;
+    return after !== null && after <= 0 ? 0 : 2;
 }
 
 function displayIngredients() {
@@ -114,14 +115,12 @@ function renderIngredientCards() {
         const daysLeft  = st.daysLeft;
         const shortfall = st.shortage;
 
-        const isCritical = st.zone === 'critical';
-        const isWarning  = st.zone === 'warning';
-        const accentColor = isCritical ? '#c0685c' : isWarning ? '#d9a441' : '';
-        const afterColor = isCritical ? '#c0685c' : isWarning ? '#96712a' : '#4f6349';
-        const thirdLabel = t('ing_cell_lasts');
-        const thirdText = !hasPlanFeature('cost_analytics')
-            ? (shortfall ? t('inv_shortage') : '')
-            : daysLeft !== null ? `${daysLeft} ${t('inv_days_short')}` : shortfall ? t('inv_shortage') : '—';
+        // «Склад» — справочник (21.10): без прогноза; наверх и красным — только минус или ноль.
+        const isCritical = balance !== null && balance <= 0;
+        const accentColor = isCritical ? '#c0685c' : '';
+        const afterColor = isCritical ? '#c0685c' : '#4f6349';
+        const thirdLabel = '';
+        const thirdText = '';
         const beforeText = balanceBefore !== null ? `${Number(balanceBefore).toFixed(1)} ${unitLabel}` : '—';
         const afterText = balance !== null ? `${Number(balance).toFixed(1)} ${unitLabel}` : '—';
         const priceText = stockPriceText(unitPrice, ing.unit);
@@ -699,8 +698,7 @@ async function renderIngredientStockBlock(ing) {
         // раньше отрицательный баланс подменялся на "0", скрывая проблему.
         if (balance !== null) {
             balEl.textContent = Number(balance).toFixed(2);
-            const days = (stockForecastOn() && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
-            const colorClass = balance <= 0 ? 'text-[#c0685c]' : stockColorClass(days, 'text-');
+            const colorClass = balance <= 0 ? 'text-[#c0685c]' : 'text-[#4f6349]';
             balEl.className = colorClass + ' font-bold';
         } else {
             balEl.textContent = '0';
@@ -708,19 +706,9 @@ async function renderIngredientStockBlock(ing) {
         }
     }
     if (unitEl) unitEl.textContent = unitLabel;
-    if (daysEl) {
-        // Прогноз дней запаса — premium-фича (см. согласованный список фич-гейтинга).
-        if (!hasPlanFeature('cost_analytics')) {
-            daysEl.textContent = '';
-        } else if (balance !== null && balance > 0 && daily > 0) {
-            const days = Math.floor(balance / daily);
-            daysEl.textContent = `~${days} ${t('ing_days_of_stock')}`;
-            daysEl.className = `table-text font-semibold ${stockColorClass(days, 'text-')}`;
-        } else {
-            daysEl.textContent = daily > 0 ? t('ing_no_stock_data') : t('ing_not_enough_history');
-            daysEl.className = 'table-text text-gray-400';
-        }
-    }
+    // Прогноз из «Склада» убран (21.10) — на Full вместо него блок «Умный склад»
+    if (daysEl) { daysEl.textContent = ''; daysEl.className = 'table-text'; }
+    if (typeof renderStockSmartInfo === 'function') renderStockSmartInfo('ing', ing, 'ingSmartInfo');
 
     // История пополнений и списаний
     const histEl = document.getElementById('ingStockHistory');

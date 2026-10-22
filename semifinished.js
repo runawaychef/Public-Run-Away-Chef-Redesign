@@ -29,10 +29,10 @@ function semiFinishedUnitCost(sf) {
 
 // Уровень критичности полуфабриката: 0 — критично (терракота, включая
 // неподтверждённый рецепт), 1 — заканчивается (охра), 2 — норма.
+// «Склад» — справочник (21.10): прогноза нет, наверх — минус/ноль или неподтверждённый рецепт.
 function semiFinishedSeverity(sf, ctx) {
-    const st = stockState('sf', sf.id, ctx);
-    const isCritical = st.zone === 'critical' || !sf.recipe_confirmed;
-    return isCritical ? 0 : st.zone === 'warning' ? 1 : 2;
+    const after = stockState('sf', sf.id, ctx).after;
+    return (after !== null && after <= 0) || !sf.recipe_confirmed ? 0 : 2;
 }
 
 function displaySemiFinished() {
@@ -70,15 +70,13 @@ function renderSemiFinishedCards() {
         const daysLeft  = st.daysLeft;
         const shortage  = st.shortage;
 
-        const isCritical = st.zone === 'critical';
-        const isWarning  = st.zone === 'warning';
+        // «Склад» — справочник (21.10): без прогноза; красным — минус/ноль, наверх — и неподтверждённый рецепт.
+        const isCritical = balance !== null && balance <= 0;
         const notConfirmed = !sf.recipe_confirmed;
-        const accentColor = (isCritical || notConfirmed) ? '#c0685c' : isWarning ? '#d9a441' : '';
-        const afterColor = isCritical ? '#c0685c' : isWarning ? '#96712a' : '#4f6349';
-        const thirdLabel = t('ing_cell_lasts');
-        const thirdText = !hasPlanFeature('cost_analytics')
-            ? (shortage ? t('inv_shortage') : '')
-            : daysLeft !== null ? `${daysLeft} ${t('inv_days_short')}` : shortage ? t('inv_shortage') : '—';
+        const accentColor = (isCritical || notConfirmed) ? '#c0685c' : '';
+        const afterColor = isCritical ? '#c0685c' : '#4f6349';
+        const thirdLabel = '';
+        const thirdText = '';
         const beforeText = balanceBefore !== null ? `${Number(balanceBefore).toFixed(1)} ${unitLabel}` : '—';
         const afterText = balance !== null ? `${Number(balance).toFixed(1)} ${unitLabel}` : '—';
         const priceText = stockPriceText(unitCost, sf.unit);
@@ -548,12 +546,10 @@ async function renderSfStockBlock(sf) {
         // Показываем реальное число, включая отрицательное (реальная нехватка) —
         // раньше отрицательный баланс подменялся на "0", скрывая проблему.
         if (balance !== null) {
-            const days = (stockForecastOn() && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
             balEl.textContent = Number(balance).toFixed(2);
-            // Цвет: терракота < 3 дней или ≤0, охра < 7 дней, шалфей — норма
-            if (balance <= 0 || (days !== null && days < 3)) { balEl.className = 'text-lg font-bold'; balEl.style.color = '#c0685c'; }
-            else if (days !== null && days < 7) { balEl.className = 'text-lg font-bold'; balEl.style.color = '#96712a'; }
-            else { balEl.className = 'text-lg font-bold'; balEl.style.color = '#4f6349'; }
+            // Цвет (21.10, без прогноза): терракота — минус/ноль, шалфей — есть запас
+            balEl.className = 'text-lg font-bold';
+            balEl.style.color = balance <= 0 ? '#c0685c' : '#4f6349';
         } else {
             balEl.textContent = '0';
             balEl.className = 'text-lg font-bold';
@@ -561,23 +557,9 @@ async function renderSfStockBlock(sf) {
         }
     }
     if (unitEl) unitEl.textContent = unitLabel;
-    if (daysEl) {
-        // Прогноз дней запаса — premium-фича (см. согласованный список фич-гейтинга).
-        if (!hasPlanFeature('cost_analytics')) {
-            daysEl.textContent = '';
-            daysEl.style.color = '';
-        } else if (balance !== null && balance > 0 && daily > 0) {
-            const days = Math.floor(balance / daily);
-            daysEl.textContent = `~${days} ${t('ing_days_of_stock')}`;
-            if (days < 3)      { daysEl.className = 'table-text font-semibold'; daysEl.style.color = '#c0685c'; }
-            else if (days < 7) { daysEl.className = 'table-text font-semibold'; daysEl.style.color = '#96712a'; }
-            else               { daysEl.className = 'table-text'; daysEl.style.color = '#4f6349'; }
-        } else {
-            daysEl.textContent = daily > 0 ? t('sf_no_stock') : t('ing_not_enough_history');
-            daysEl.className = 'table-text text-gray-400';
-            daysEl.style.color = '';
-        }
-    }
+    // Прогноз из «Склада» убран (21.10) — на Full вместо него блок «Умный склад»
+    if (daysEl) { daysEl.textContent = ''; daysEl.style.color = ''; }
+    if (typeof renderStockSmartInfo === 'function') renderStockSmartInfo('sf', sf, 'sfSmartInfo');
 }
 
 // История движений п/ф — вынесена отдельно от renderSfStockBlock, т.к. теперь
