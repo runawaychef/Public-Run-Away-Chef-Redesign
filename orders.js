@@ -1702,57 +1702,81 @@ async function closeOrderDetailSilent() {
 // подтверждения — openDeleteModal/confirmDelete, как и удаление из списка).
 // ==================== КОРЗИНА УДАЛЁННЫХ ЗАКАЗОВ ====================
 
+// Корзина удалённых заказов — страница (22.10; было окно). Открывается из Настроек,
+// «Назад» — обратно в Настройки по цепочке страниц. После «Восстановить» / «Удалить навсегда»
+// остаёмся в корзине: список перечитывается, сверху короткая заметка.
+const TRASH_KEEP_DAYS = 30;
 async function openOrdersTrash() {
     closeModal();
+    openAppPage('ordersTrashPage');
+    _trashNote('');
+    await loadOrdersTrash(true);
+}
+
+async function loadOrdersTrash(withCleanup) {
+    const content = document.getElementById('ordersTrashContent');
     showLoading(t('trash_loading'));
     try {
         // Автоочистка — физически удаляем заказы старше 30 дней
-        const cutoff = new Date();
-        cutoff.setDate(cutoff.getDate() - 30);
-        try {
-            await dbMust(db.from('orders')
-                .delete()
-                .not('deleted_at', 'is', null)
-                .lt('deleted_at', cutoff.toISOString()));
-        } catch (e) { console.error('Не удалось очистить старые заказы из корзины:', e); }
+        if (withCleanup) {
+            const cutoff = new Date();
+            cutoff.setDate(cutoff.getDate() - TRASH_KEEP_DAYS);
+            try {
+                await dbMust(db.from('orders')
+                    .delete()
+                    .not('deleted_at', 'is', null)
+                    .lt('deleted_at', cutoff.toISOString()));
+            } catch (e) { console.error('Не удалось очистить старые заказы из корзины:', e); }
+        }
 
         // Загружаем оставшиеся удалённые заказы
         const { data, error } = await db.from('orders')
             .select('id, customer_id, order_date, status, notes, deleted_at, order_number')
             .not('deleted_at', 'is', null)
             .order('deleted_at', { ascending: false });
-
-        hideLoading();
-
         if (error) throw error;
 
-        const content = document.getElementById('ordersTrashContent');
         if (!data || !data.length) {
             content.innerHTML = `<p class="text-xs text-gray-400 text-center py-4">${t('trash_empty')}</p>`;
-        } else {
-            let html = `<table class="w-full text-xs table-clean"><thead><tr style="background-color:#e3e8df;"><th class="p-1 text-left">${t('trash_col_order_date')}</th><th class="p-1 text-left">${t('trash_col_customer')}</th><th class="p-1 text-left">${t('trash_col_deleted')}</th></tr></thead><tbody>`;
-            data.forEach(o => {
-                const cust = customers.find(c => c.id === o.customer_id);
-                const custName = cust ? cust.name : t('trash_unknown_customer');
-                const deletedDate = new Date(o.deleted_at).toLocaleDateString('ru-LT');
-                const orderDate = formatDateDMY(o.order_date || o.date);
-                const orderNum = o.order_number || `#${o.id}`;
-                html += `<tr class="border-b order-row"
-                    ${dataAction('openTrashOrderActions', [o.id, custName, orderDate, orderNum])}>
-                    <td class="p-0.5">${orderDate}</td>
-                    <td class="p-0.5">${escapeHtml(custName)}</td>
-                    <td class="p-0.5 text-gray-400">${deletedDate}</td>
-                </tr>`;
-            });
-            html += '</tbody></table>';
-            content.innerHTML = html;
+            return;
         }
-        document.getElementById('ordersTrashModal').style.display = 'flex';
+        const thisYear = String(new Date().getFullYear());
+        const dayMs = 24 * 3600 * 1000;
+        let html = `<div class="st-head trash-grid"><span>${escapeHtml(t('trash_col_date'))}</span><span>${escapeHtml(t('trash_col_num'))}</span><span>${escapeHtml(t('trash_col_customer'))}</span><span>${escapeHtml(t('trash_col_left'))}</span></div><div class="ot-island">`;
+        data.forEach(o => {
+            const cust = customers.find(c => c.id === o.customer_id);
+            const custName = cust ? cust.name : t('trash_unknown_customer');
+            const d = String(o.order_date || '');
+            const dateShort = d.length >= 10 ? (d.slice(8, 10) + '.' + d.slice(5, 7) + (d.slice(0, 4) !== thisYear ? '.' + d.slice(2, 4) : '')) : '—';
+            const orderDate = formatDateDMY(o.order_date || o.date);
+            const orderNum = o.order_number || `#${o.id}`;
+            const left = Math.max(0, Math.ceil((new Date(o.deleted_at).getTime() + TRASH_KEEP_DAYS * dayMs - Date.now()) / dayMs));
+            html += `<div class="st-row trash-grid" ${dataAction('openTrashOrderActions', [o.id, custName, orderDate, orderNum])}>
+                <span class="st-num">${dateShort}</span>
+                <span class="st-num">${escapeHtml(orderNum)}</span>
+                <span class="st-name">${escapeHtml(custName)}</span>
+                <span class="st-num${left <= 3 ? ' trash-left-warn' : ''}">${escapeHtml(t('trash_days_left').replace('{n}', left))}</span>
+            </div>`;
+        });
+        html += '</div>';
+        content.innerHTML = html;
     } catch(e) {
-        hideLoading();
         console.error(e);
         showInfo(t('orders_trash_load_error'));
+    } finally {
+        hideLoading();
     }
+}
+
+// Короткая заметка над списком корзины (исчезает сама)
+let _trashNoteTimer = null;
+function _trashNote(text) {
+    const el = document.getElementById('ordersTrashNote');
+    if (!el) return;
+    clearTimeout(_trashNoteTimer);
+    el.textContent = text || '';
+    el.classList.toggle('hidden', !text);
+    if (text) _trashNoteTimer = setTimeout(() => el.classList.add('hidden'), 5000);
 }
 
 function openTrashOrderActions(orderId, custName, orderDate, orderNum) {
@@ -1767,18 +1791,20 @@ function openTrashOrderActions(orderId, custName, orderDate, orderNum) {
     // Переназначаем обработчики каждый раз (избегаем накопления listener-ов)
     restoreBtn.onclick = async () => {
         modal.style.display = 'none';
-        await restoreOrder(orderId);
+        await restoreOrder(orderId, orderNum);
     };
     deleteBtn.onclick = async () => {
         modal.style.display = 'none';
-        const ok = await showConfirm(`${t('trash_delete_confirm_prefix')}${t('order_number_symbol')}${orderId}${t('trash_delete_confirm_suffix')}`);
-        if (ok) await permanentDeleteOrder(orderId);
+        // В вопросе — номер заказа, а не внутренний id (22.10)
+        const ok = await showConfirm(`${t('trash_delete_confirm_prefix')}${orderNum}${t('trash_delete_confirm_suffix')}`);
+        if (ok) await permanentDeleteOrder(orderId, orderNum);
     };
 
     modal.style.display = 'flex';
 }
 
-async function restoreOrder(orderId) {
+async function restoreOrder(orderId, orderNum) {
+    const num = orderNum || `#${orderId}`;
     if (!hasPermission('can_delete')) {
         closeModal();
         showInfo(t('orders_no_permission_action'));
@@ -1790,14 +1816,17 @@ async function restoreOrder(orderId) {
         await updateChecked(db.from('orders').update({ deleted_at: null }).eq('id', orderId));
         closeModal();
         await loadAllData();
-        logActivity('order', `${t('trash_order_word')} №${orderId} ${t('log_restored_from_trash')}`);
+        logActivity('order', `${t('trash_order_word')} ${num} ${t('log_restored_from_trash')}`);
         if (typeof scheduleRefreshOrderQuota === 'function') scheduleRefreshOrderQuota();
-        await showInfo(`${t('trash_order_word')} ${t('order_number_symbol')}${orderId} ${t('orders_restored')}.`);
+        hideLoading();
+        if (isAppPageOpen('ordersTrashPage')) { await loadOrdersTrash(false); _trashNote(t('trash_restored_note').replace('{n}', num)); }
+        else await showInfo(`${t('trash_order_word')} ${num} ${t('orders_restored')}.`);
     } catch(e) { console.error(e); showDbError(e, t('orders_restore_error')); }
     finally { hideLoading(); }
 }
 
-async function permanentDeleteOrder(orderId) {
+async function permanentDeleteOrder(orderId, orderNum) {
+    const num = orderNum || `#${orderId}`;
     if (!hasPermission('can_delete')) {
         closeModal();
         showInfo(t('ing_no_delete_permission'));
@@ -1809,8 +1838,10 @@ async function permanentDeleteOrder(orderId) {
         const { error } = await db.from('orders').delete().eq('id', orderId);
         if (error) throw error;
         closeModal();
-        logActivity('order', `${t('trash_order_word')} №${orderId} ${t('orders_deleted_forever')}`);
-        await showInfo(`${t('trash_order_word')} ${t('order_number_symbol')}${orderId} ${t('orders_deleted_forever')}.`);
+        logActivity('order', `${t('trash_order_word')} ${num} ${t('orders_deleted_forever')}`);
+        hideLoading();
+        if (isAppPageOpen('ordersTrashPage')) { await loadOrdersTrash(false); _trashNote(t('trash_deleted_note').replace('{n}', num)); }
+        else await showInfo(`${t('trash_order_word')} ${num} ${t('orders_deleted_forever')}.`);
     } catch(e) { console.error(e); showInfo(t('error_delete_generic')); }
     finally { hideLoading(); }
 }

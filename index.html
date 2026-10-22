@@ -807,6 +807,12 @@
         .st-num { white-space: nowrap; color: #3c3a34; }
         .st-days { white-space: nowrap; font-weight: 600; }
         #inventoryPageBody .ot-island { margin-bottom: 4px; }
+        /* Корзина удалённых заказов — страница (22.10): Дата | № | Клиент | Осталось */
+        .st-head.trash-grid, .st-row.trash-grid { grid-template-columns: 44px 70px minmax(0, 1fr) 56px; }
+        .trash-grid span:nth-child(2), .trash-grid span:nth-child(3) { text-align: left !important; }
+        .trash-grid .st-name { font-weight: 500; }
+        .trash-left-warn { color: #a3493d; font-weight: 600; }
+        .trash-note { font-size: 12px; color: #4f6349; background: #e3e8df; border-radius: 10px; padding: 7px 10px; margin-bottom: 8px; }
         .inv-name { display: flex; align-items: center; gap: 6px; min-width: 0; }
         .inv-name-txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .inv-sf-icon { width: 16px; height: 16px; color: #7c9473; flex-shrink: 0; }
@@ -2998,15 +3004,6 @@ function hideSplashScreen() {
         </div>
 
         <!-- Корзина удалённых заказов -->
-        <div id="ordersTrashModal" class="modal">
-            <div class="modal-content" style="max-width:480px;">
-                <h2 class="text-sm font-semibold mb-1 text-gray-800 flex items-center"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg><span data-i18n="settings_orders_trash">Корзина удалённых заказов</span></h2>
-                <p class="text-xs text-gray-500 mb-3" data-i18n="trash_desc">Удалённые заказы хранятся 30 дней. Нажмите на заказ для восстановления или окончательного удаления.</p>
-                <div id="ordersTrashContent" style="max-height:65vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
-                <button onclick="openSettingsModal()" class="pill-btn w-full justify-center mt-3" data-i18n="settings_close">Закрыть</button>
-            </div>
-        </div>
-
         <!-- Модалка действий с заказом в корзине -->
         <div id="trashOrderActionsModal" class="modal" style="z-index:310;">
             <div class="modal-content" style="max-width:340px;">
@@ -3527,6 +3524,21 @@ function hideSplashScreen() {
             </div>
         </div>
 
+        <!-- ===== СТРАНИЦА «Корзина удалённых заказов» (22.10; бывшее окно ordersTrashModal, orders.js openOrdersTrash) ===== -->
+        <div id="ordersTrashPage" class="app-page">
+            <div class="bg-white rounded-xl shadow-md mb-3" style="padding:10px 12px 12px;">
+                <div class="flex items-center gap-2 mb-2">
+                    <button onclick="closeAppPage()" class="pill-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        <span data-i18n="common_back">Назад</span>
+                    </button>
+                    <h2 class="text-gray-800" style="font-size:15px; font-weight:600; margin:0 0 0 auto; text-align:right; line-height:1.25;" data-i18n="settings_orders_trash">Корзина удалённых заказов</h2>
+                </div>
+                <p class="text-xs text-gray-500 mb-2" style="line-height:1.5;" data-i18n="trash_desc">Удалённые заказы хранятся 30 дней. Нажмите на заказ для восстановления или окончательного удаления.</p>
+                <div id="ordersTrashNote" class="trash-note hidden"></div>
+                <div id="ordersTrashContent"></div>
+            </div>
+        </div>
         <div id="inventoryPage" class="app-page">
             <div class="flex items-center gap-2 mb-2" style="position:relative; padding:0 2px;">
                 <button onclick="closeInventoryPage()" class="pill-btn">
@@ -3556,7 +3568,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=93"></script>
+    <script src="i18n-core.js?v=94"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=16"></script>
     <script src="auth.js?v=22"></script>
@@ -3571,7 +3583,7 @@ function hideSplashScreen() {
 <script src="products.js?v=35"></script>
 <script src="customers.js?v=58"></script>
 <script src="calendar.js?v=14"></script>
-<script src="orders.js?v=139"></script>
+<script src="orders.js?v=140"></script>
 <script src="invoice.js?v=48"></script>
 <script src="send-document.js?v=38"></script>
 <script src="payments.js?v=28"></script>
@@ -4519,6 +4531,7 @@ const _backHandledDetailScreens = [
     { id: 'bankSettingsPage',   close: () => { if (typeof closeBankSettings === 'function') closeBankSettings(); } },
     { id: 'inventoryPage',      close: () => { if (typeof closeInventoryPage === 'function') closeInventoryPage(); } },
     { id: 'settingsPage',       close: () => { if (typeof closeSettingsPage === 'function') closeSettingsPage(); } },
+    { id: 'ordersTrashPage',    close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'orderDetail',        close: () => { if (typeof closeOrderDetail === 'function') closeOrderDetail(); } },
     { id: 'customerDetail',     close: () => { if (typeof closeCustomerDetail === 'function') closeCustomerDetail(); } },
     { id: 'ingredientDetail',   close: () => { if (typeof closeIngredientDetail === 'function') closeIngredientDetail(); } },
