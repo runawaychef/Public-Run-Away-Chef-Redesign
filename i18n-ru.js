@@ -444,6 +444,12 @@ I18N.ru = {
 
         // Аналитика склада + Список покупок
         inv_title: 'Умный склад',
+        sf_unit_cost_short: 'Себест. за ед.',
+        sf_action_produce: 'Произвести',
+        sf_produced_short: 'произведено',
+        word_ingredients_one: 'ингредиент',
+        word_ingredients_few: 'ингредиента',
+        word_ingredients_many: 'ингредиентов',
         ing_action_receive: 'Приход',
         ing_action_writeoff: 'Списать',
         ing_stock_history_title: 'История склада',

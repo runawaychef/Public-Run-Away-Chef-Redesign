@@ -537,7 +537,7 @@ function renderStockSmartInfo(kind, item, elId) {
     const ro = stockRunout(kind, item.id, ctx);
     const st = ro.st;
     const unit = unitAbbrev(item.unit);
-    let html = `<div class="inv-info-title">${typeof icon === 'function' ? icon('cart') : ''}<span>${t('inv_title')}</span></div>`;
+    let html = ''; // заголовок «Умный склад» с иконкой убран (владелец 21.10)
     if (ro.firstShort) html += stockShortLineHtml(ro, unit);
     else html += `<div class="inv-info-kv"><span>${t('inv_stock_until')}</span><span>${ro.forecastDate ? '≈ ' + _invDM(ro.forecastDate) : '—'}</span></div>`;
     if (kind === 'sf') {

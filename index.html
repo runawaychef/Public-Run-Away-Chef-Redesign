@@ -1605,28 +1605,31 @@ function hideSplashScreen() {
 
             </div>
 
-            <!-- ДЕТАЛЬНЫЙ ВИД ПОЛУФАБРИКАТА -->
+            <!-- ДЕТАЛЬНЫЙ ВИД ПОЛУФАБРИКАТА — новая раскладка (21.10): шапка → основное → сводка (+ Умный склад) →
+                 действия → «Рецепт» (открыт) и другие сворачиваемые разделы → «Удалить» внизу -->
             <div id="semiFinishedDetail">
-                <div class="bg-white p-2 rounded-xl shadow-md mb-3">
-                    <div class="flex items-center justify-between mb-2">
-                        <button onclick="closeSemiFinishedDetail()" class="pill-btn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-                            <span data-i18n="common_back">Назад</span>
-                        </button>
-                        <button onclick="deleteCurrentSemiFinished()" class="pill-btn-danger perm-delete" data-i18n="sf_delete_btn">Удалить полуфабрикат</button>
-                    </div>
-                    <p class="text-[11px] text-gray-400 mb-1" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
-                    <div class="grid grid-cols-2 gap-1 mb-2">
+                <div class="itm-top">
+                    <button onclick="closeSemiFinishedDetail()" class="pill-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        <span data-i18n="common_back">Назад</span>
+                    </button>
+                    <h2 class="itm-title"><svg class="inv-sf-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l-8 4l8 4l8-4l-8-4"/><path d="M4 12l8 4l8-4"/><path d="M4 16l8 4l8-4"/></svg><span id="sfdTitle"></span></h2>
+                </div>
+
+                <!-- Основное -->
+                <div class="itm-card">
+                    <p class="itm-autosave" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
+                    <div class="grid grid-cols-2 gap-2">
                         <div class="col-span-2">
-                            <label class="table-text text-gray-500" data-i18n="inv_col_name">Название</label>
-                            <input id="sfdName" type="text" onblur="saveSfdHeader()" class="border p-0.5 rounded-xl w-full table-text text-gray-900">
+                            <label class="itm-lbl" data-i18n="inv_col_name">Название</label>
+                            <input id="sfdName" type="text" onblur="saveSfdHeader()" oninput="document.getElementById('sfdTitle').textContent=this.value" class="border p-0.5 rounded-xl w-full table-text text-gray-900">
                         </div>
                         <div>
-                            <label class="table-text text-gray-500" data-i18n="sf_batch_size">Размер партии</label>
+                            <label class="itm-lbl" data-i18n="sf_batch_size">Размер партии</label>
                             <input id="sfdBatchSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" onchange="saveSfdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                         <div>
-                            <label class="table-text text-gray-500" data-i18n="ing_unit_label">Единица</label>
+                            <label class="itm-lbl" data-i18n="ing_unit_label">Единица</label>
                             <select id="sfdUnit" onchange="saveSfdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                                 <option value="g" data-i18n="unit_g_full">граммы (г)</option>
                                 <option value="kg" data-i18n="unit_kg_full">килограммы (кг)</option>
@@ -1639,60 +1642,49 @@ function hideSplashScreen() {
                             </select>
                         </div>
                         <div class="col-span-2">
-                            <label class="table-text text-gray-500" data-i18n="sf_other_costs">Прочие расходы на партию</label>
+                            <label class="itm-lbl" data-i18n="sf_other_costs">Прочие расходы на партию</label>
                             <input id="sfdOtherCosts" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" onchange="saveSfdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                     </div>
                 </div>
 
-                <!-- Блок склада полуфабриката — вверху карточки -->
-                <div class="bg-white p-2 rounded-xl shadow-md mb-3">
-                    <div class="table-text text-gray-500 mb-1">
-                        <span data-i18n="ing_before_writeoff_colon">На складе на сегодня:</span>
-                        <span id="sfBalanceBeforeValue" class="font-semibold text-gray-700 ml-1">—</span>
-                        <span id="sfBalanceBeforeUnit" class="text-gray-500 ml-1"></span>
+                <!-- Сводка: Сейчас | После списания | Себест. за ед. (третья — Full и право на себестоимость) + «Умный склад» -->
+                <div class="itm-card">
+                    <div class="oc-cells itm-cells">
+                        <div class="oc-cell"><div class="oc-cell-lbl" data-i18n="ing_cell_now">Сейчас</div><div class="oc-cell-val"><span id="sfBalanceBeforeValue">—</span> <span id="sfBalanceBeforeUnit"></span></div></div>
+                        <div class="oc-cell oc-cell-sep"><div class="oc-cell-lbl" data-i18n="ing_cell_after">После списания</div><div class="oc-cell-val"><span id="sfBalanceValue">—</span> <span id="sfBalanceUnit"></span></div></div>
+                        <div class="oc-cell oc-cell-sep perm-view-costs"><div class="oc-cell-lbl" data-i18n="sf_unit_cost_short">Себест. за ед.</div><div class="oc-cell-val" id="sfdUnitCostCell">—</div></div>
                     </div>
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <span class="table-text text-gray-500" data-i18n="ing_after_writeoff_colon">После списания:</span>
-                            <span id="sfBalanceValue" class="text-lg font-bold text-gray-800 ml-1">—</span>
-                            <span id="sfBalanceUnit" class="table-text text-gray-500 ml-1"></span>
-                        </div>
-                        <div id="sfDaysLeft" class="table-text text-gray-500"></div>
-                    </div>
-                    <!-- «Умный склад» — прогноз и ближайшие заказы (только Full, 21.10, inventory.js renderStockSmartInfo) -->
-                    <div id="sfSmartInfo" class="inv-info mt-2 pt-2 border-t hidden"></div>
-
-                    <!-- Остаток по партиям (FIFO) — разворачиваемый блок; только Full и право на себестоимость (21.10) -->
-                    <div id="sfBatchesBlock" class="mt-2 pt-2 border-t perm-view-costs">
-                        <div class="flex items-center justify-between cursor-pointer" onclick="toggleSfBatches()">
-                            <span id="sfBatchesToggleLabel" class="table-text text-gray-500" data-i18n="ing_batches">Остаток по партиям</span>
-                            <svg id="sfBatchesChevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform .15s;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                        </div>
-                        <div id="sfBatchesList" class="hidden mt-1.5"></div>
-                    </div>
-
+                    <div id="sfDaysLeft" class="hidden"></div>
+                    <!-- «Умный склад» — прогноз и ближайшие заказы (только Full, inventory.js renderStockSmartInfo) -->
+                    <div id="sfSmartInfo" class="inv-info itm-smart hidden"></div>
                 </div>
 
-                <div class="bg-white p-2 rounded-xl shadow-md mb-3">
-                    <h2 class="text-sm font-semibold text-gray-800 mb-2 flex items-center"><span data-i18n="sf_recipe_title">Рецептура (на партию)</span><button onclick="showHelpModal('help_sf_primary_title','help_sf_primary_text')" class="help-marker" data-i18n-title="help_marker_label" title="Подробнее об этом разделе">?</button></h2>
-                    <div class="rounded-xl p-2 mb-2" style="background:#f4f1ea; border:1px dashed #d8d2c4;">
-                        <label class="table-text text-gray-500" data-i18n="sf_copy_recipe_label">Скопировать рецепт из другого полуфабриката</label>
-                        <div class="search-input-wrap">
-                            <input id="copySfRecipeFromInput" placeholder="— выберите полуфабрикат —" autocomplete="off" class="border p-1 rounded-xl table-text w-full" data-i18n-placeholder="sf_choose_semifinished_placeholder">
-                            <div id="copySfRecipeFromDropdown" class="search-dropdown hidden"></div>
-                        </div>
+                <!-- Действия -->
+                <div class="itm-actions">
+                    <button type="button" onclick="produceSfBatch()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"/></svg><span data-i18n="sf_action_produce">Произвести</span></button>
+                    <button type="button" class="danger" onclick="openSfWriteOffModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg><span data-i18n="ing_action_writeoff">Списать</span></button>
+                    <button type="button" onclick="openSfInventarizationModal(currentSemiFinishedId);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg><span data-i18n="inv_inventarization">Инвентаризация</span></button>
+                </div>
+
+                <!-- Рецепт на партию — открыт по умолчанию -->
+                <div id="sfRecipeSection" class="itm-sec open">
+                    <div class="itm-sec-head" onclick="toggleItemSection('sfRecipeSection')">
+                        <span class="itm-sec-title"><span data-i18n="sf_recipe_title">Рецептура (на партию)</span><button onclick="event.stopPropagation(); showHelpModal('help_sf_primary_title','help_sf_primary_text')" class="help-marker" data-i18n-title="help_marker_label" title="Подробнее об этом разделе">?</button></span>
+                        <span id="sfRecipeShort" class="itm-sec-sum"></span>
+                        <svg class="itm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                     </div>
-                    <table class="w-full table-auto table-clean mb-2">
-                        <thead><tr style="background-color:#e3e8df;">
+                    <div class="itm-sec-body">
+                        <p class="table-text text-gray-400 mb-1" data-i18n="sf_star_hint">Нажмите на звёздочку, чтобы отметить основной ингредиент для расчёта производства.</p>
+                        <table class="w-full table-auto table-clean mb-2">
+                            <thead><tr style="background-color:#e3e8df;">
                             <th class="p-1 text-xs w-[40%]" data-i18n="inv_col_ingredient">Ингредиент</th>
                             <th class="p-1 text-xs w-[25%]" data-i18n="inv_col_quantity">Кол-во</th>
                             <th class="p-1 text-xs w-[20%]" data-i18n="sf_col_cost">Стоимость</th>
                             <th class="p-1 text-xs w-[15%]" data-i18n="sf_col_actions">Действия</th>
                         </tr></thead>
-                    <p class="table-text text-gray-400 mb-1" data-i18n="sf_star_hint">Нажмите на звёздочку, чтобы отметить основной ингредиент для расчёта производства.</p>
-                        <tbody id="sfRecipeItemsBody"></tbody>
-                    </table>
+                            <tbody id="sfRecipeItemsBody"></tbody>
+                        </table>
                     <div class="rounded-xl p-2 mb-2" style="background:#f4f1ea; border:1px solid #e2ddd0;">
                         <label class="table-text text-gray-500" data-i18n="sf_add_to_recipe_label">Добавить в рецепт</label>
                         <div class="search-input-wrap mb-1">
@@ -1704,9 +1696,13 @@ function hideSplashScreen() {
                             <button onclick="addIngredientToSfRecipe()" class="pill-btn whitespace-nowrap" data-i18n="sf_add_btn">+ Добавить</button>
                         </div>
                     </div>
-                    <button onclick="produceSfBatch()" class="pill-btn-secondary w-full justify-center mb-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48z"/></svg><span data-i18n="sf_produce_batch_btn">Произвести партию</span></button>
-                    <button onclick="openSfWriteOffModal()" class="pill-btn-secondary w-full justify-center mb-2" data-i18n="ing_writeoff_btn">— Списать (корректировка)</button>
-                    <button onclick="openSfInventarizationModal(currentSemiFinishedId);" class="pill-btn-secondary w-full justify-center mb-2"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg><span data-i18n="inv_inventarization">Инвентаризация</span></button>
+                    <div class="rounded-xl p-2 mb-2" style="background:#f4f1ea; border:1px dashed #d8d2c4;">
+                        <label class="table-text text-gray-500" data-i18n="sf_copy_recipe_label">Скопировать рецепт из другого полуфабриката</label>
+                        <div class="search-input-wrap">
+                            <input id="copySfRecipeFromInput" placeholder="— выберите полуфабрикат —" autocomplete="off" class="border p-1 rounded-xl table-text w-full" data-i18n-placeholder="sf_choose_semifinished_placeholder">
+                            <div id="copySfRecipeFromDropdown" class="search-dropdown hidden"></div>
+                        </div>
+                    </div>
                     <label class="flex items-center gap-2 table-text text-gray-700 border-t pt-2 mb-1 cursor-pointer">
                         <input type="checkbox" id="sfdRecipeConfirmed" onchange="toggleSfRecipeConfirmed()" style="accent-color:#7c9473;">
                         <span data-i18n="sf_recipe_confirmed_label">Рецепт заполнен полностью</span>
@@ -1719,21 +1715,46 @@ function hideSplashScreen() {
                         <div><span data-i18n="sf_batch_cost">Себестоимость партии</span>: <span id="sfdBatchCost" class="font-medium text-gray-800">0.00</span></div>
                         <div><span data-i18n="sf_unit_cost">Себестоимость за единицу</span>: <span id="sfdUnitCost" class="font-semibold text-gray-900">0.0000</span></div>
                     </div>
+                                    </div>
                 </div>
 
-                <!-- Динамика себестоимости и история производства — внизу карточки, свёрнуто по умолчанию -->
-                <div class="bg-white p-2 rounded-xl shadow-md mb-3 perm-view-costs">
-                    <div class="flex items-center justify-between cursor-pointer" onclick="toggleSfPriceBlock()">
-                        <span id="sfPriceToggleLabel" class="table-text text-gray-500" data-i18n="sf_cost_dynamics">Динамика себестоимости партии</span>
-                        <svg id="sfPriceChevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform .15s;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                <!-- История склада (производство и списания) — для всех тарифов -->
+                <div id="sfHistSection" class="itm-sec">
+                    <div class="itm-sec-head" onclick="toggleItemSection('sfHistSection')">
+                        <span class="itm-sec-title" data-i18n="ing_stock_history_title">История склада</span>
+                        <span id="sfHistShort" class="itm-sec-sum"></span>
+                        <svg class="itm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                     </div>
-                    <div id="sfPriceContent" class="hidden mt-2">
+                    <div class="itm-sec-body"><div id="sfStockHistory"></div></div>
+                </div>
+
+                <!-- Остаток по партиям (FIFO) — только Full и право на себестоимость -->
+                <div id="sfBatchesBlock" class="itm-sec perm-view-costs">
+                    <div class="itm-sec-head" onclick="toggleSfBatches()">
+                        <span id="sfBatchesToggleLabel" class="itm-sec-title" data-i18n="ing_batches">Остаток по партиям</span>
+                        <span class="itm-sec-sum"></span>
+                        <svg id="sfBatchesChevron" class="itm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform .15s;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                    <div id="sfBatchesList" class="hidden itm-sec-pad"></div>
+                </div>
+
+                <!-- Динамика себестоимости партии — только Full и право на себестоимость -->
+                <div class="itm-sec perm-view-costs">
+                    <div class="itm-sec-head" onclick="toggleSfPriceBlock()">
+                        <span id="sfPriceToggleLabel" class="itm-sec-title" data-i18n="sf_cost_dynamics">Динамика себестоимости партии</span>
+                        <span class="itm-sec-sum"></span>
+                        <svg id="sfPriceChevron" class="itm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform .15s;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                    </div>
+                    <div id="sfPriceContent" class="hidden itm-sec-pad">
                         <canvas id="sfCostChart" height="160" style="display:none;"></canvas>
                         <p id="sfCostChartEmpty" class="text-xs text-gray-400 hidden" data-i18n="sf_not_enough_batches">Недостаточно данных — нужно 2+ партии.</p>
-                        <div id="sfStockHistory" class="mt-2"></div>
                     </div>
                 </div>
 
+                <!-- Удалить — внизу, тихой кнопкой -->
+                <div class="itm-del">
+                    <button onclick="deleteCurrentSemiFinished()" class="perm-delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M9 7V4h6v3"/></svg><span data-i18n="sf_delete_btn">Удалить полуфабрикат</span></button>
+                </div>
             </div>
         </div>
 
@@ -3510,18 +3531,18 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=90"></script>
+    <script src="i18n-core.js?v=91"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=16"></script>
     <script src="auth.js?v=21"></script>
     <script src="employees.js?v=55"></script>
     <script src="company.js?v=23"></script>
-    <script src="inventory.js?v=63"></script>
+    <script src="inventory.js?v=64"></script>
     <script src="billing.js?v=15"></script>
     <script src="push.js?v=9"></script>
 <script src="ingredients.js?v=49"></script>
 <script src="batches.js?v=11"></script>
-<script src="semifinished.js?v=47"></script>
+<script src="semifinished.js?v=48"></script>
 <script src="products.js?v=35"></script>
 <script src="customers.js?v=58"></script>
 <script src="calendar.js?v=14"></script>

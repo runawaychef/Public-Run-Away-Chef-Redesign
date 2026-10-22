@@ -445,6 +445,12 @@ I18N.en = {
 
         // Inventory analytics + Shopping list
         inv_title: 'Smart Stock',
+        sf_unit_cost_short: 'Cost per unit',
+        sf_action_produce: 'Produce',
+        sf_produced_short: 'produced',
+        word_ingredients_one: 'ingredient',
+        word_ingredients_few: 'ingredients',
+        word_ingredients_many: 'ingredients',
         ing_action_receive: 'Stock in',
         ing_action_writeoff: 'Write off',
         ing_stock_history_title: 'Stock history',

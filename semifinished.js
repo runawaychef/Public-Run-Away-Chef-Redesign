@@ -240,6 +240,10 @@ function openSemiFinishedDetail(sfId) {
     if (sfPriceChevron) sfPriceChevron.style.transform = '';
 
     document.getElementById('sfdName').value = sf.name;
+    const sfTitle = document.getElementById('sfdTitle');
+    if (sfTitle) sfTitle.textContent = sf.name || '';
+    document.getElementById('sfRecipeSection')?.classList.add('open');   // рецепт — открыт (21.10)
+    document.getElementById('sfHistSection')?.classList.remove('open');  // история — свёрнута
     document.getElementById('sfdBatchSize').value = sf.batch_size;
     document.getElementById('sfdUnit').value = sf.unit;
     document.getElementById('sfdOtherCosts').value = (sf.other_costs || 0).toFixed(2);
@@ -250,6 +254,7 @@ function openSemiFinishedDetail(sfId) {
     fillNewSfRecipeIngredientSelect();
     setupCopySfRecipeControl(sf);
     renderSfStockBlock(sf);
+    loadSfPriceHistory(sf); // раздел «История склада» (итог в заголовке) — 21.10
     refreshFab();
 }
 
@@ -339,6 +344,11 @@ function renderSemiFinishedRecipe(sf) {
 
     document.getElementById('sfdBatchCost').textContent = formatMoney(batchCost);
     document.getElementById('sfdUnitCost').textContent  = formatMoney(unitCost, 4) + `/${unitLabel}`;
+    // Сводка карточки (21.10): «Себест. за ед.» как на карточке «Склада»; итог в заголовке «Рецепта»
+    const cell = document.getElementById('sfdUnitCostCell');
+    if (cell) cell.textContent = stockPriceText(unitCost, sf.unit);
+    const rs = document.getElementById('sfRecipeShort');
+    if (rs) rs.textContent = list.length ? `${list.length} ${typeof nWord === 'function' ? nWord(list.length, 'word_ingredients') : ''}` : '';
 }
 
 async function addIngredientToSfRecipe() {
@@ -579,9 +589,12 @@ async function loadSfPriceHistory(sf) {
             .limit(50);
         if (!data || !data.length) {
             histEl.innerHTML = `<p class="table-text text-gray-400 mt-1">${t('ing_no_movements_yet')}</p>`;
+            const hs0 = document.getElementById('sfHistShort'); if (hs0) hs0.textContent = '';
             return;
         }
         const totalIn = data.filter(r => r.type === 'приход').reduce((s, r) => s + Number(r.quantity), 0);
+        const hs = document.getElementById('sfHistShort');
+        if (hs) hs.textContent = `${t('sf_produced_short')} ${String(Math.round(totalIn * 10) / 10).replace('.', ',')} ${unitLabel}`;
         let html = `<p class="table-text text-gray-500 font-semibold mt-2 mb-1">${t('sf_history_produced_prefix')}: ${totalIn.toFixed(2)} ${unitLabel})</p>`;
         html += '<div style="max-height:224px;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;">';
         html += '<table class="w-full table-text table-clean"><thead><tr style="background-color:#e3e8df;" class="text-xs"><th class="p-1 text-left">' + t('history_col_date') + '</th><th class="p-1 text-right">' + t('inv_col_quantity') + '</th><th class="p-1 text-left">' + t('ing_note_label') + '</th></tr></thead><tbody>';
@@ -613,8 +626,7 @@ async function toggleSfPriceBlock() {
     if (willShow) {
         const sf = semiFinished.find(s => s.id === currentSemiFinishedId);
         if (!sf) return;
-        renderSfCostChart(sf);
-        loadSfPriceHistory(sf);
+        renderSfCostChart(sf); // история склада — в своём разделе (21.10)
     }
 }
 
