@@ -82,7 +82,7 @@ async function loadInventory() {
         // а остатки склада считаются суммой ВСЕХ движений — обрезка дала бы неверные остатки.
         const { data, error } = await fetchAllRows(() => db
             .from('inventory')
-            .select('ingredient_id, semi_finished_id, type, quantity, order_item_id')
+            .select('ingredient_id, semi_finished_id, type, quantity, order_item_id, created_at')
             .order('id'));
         if (error) throw error;
 
@@ -98,6 +98,113 @@ async function loadInventory() {
         _inventoryMovements = data || [];
         updateInventoryAlertDot();
     } catch (e) { console.error('Ошибка загрузки склада:', e); }
+}
+
+// ── Общий расчёт состояния позиции склада (21.10) ──────────────────────────
+// Один алгоритм для «Склада», «Умного склада» и красной точки на тележке.
+//   Сейчас          — физический остаток (остаток + уже списанное по невыполненным заказам).
+//   Под заказы      — всё, что нужно на невыполненные заказы: уже списанное + отложенное
+//                     (заказы далеко вперёд, inventory_pending).
+//   После списания  — Сейчас − Под заказы; < 0 — нехватка.
+//   Расход в день   — РЕАЛЬНО ушедшее со склада за период по движениям (расход − сторно:
+//                     выполненные заказы, изготовление п/ф, ручные списания, инвентаризация),
+//                     без резерва под ещё не выполненные заказы.
+//   Хватит на       — После списания / расход в день (только при прогнозе, тариф Full).
+function _pendingOrderItemIds() {
+    const ids = new Set();
+    (orders || []).forEach(o => {
+        if (o.status === 'выполнен') return;
+        (o.items || []).forEach(it => { if (it && it.id != null) ids.add(it.id); });
+    });
+    return ids;
+}
+
+// Отложенные списания: заказы с inventory_pending, ещё не выполненные. Состав — как при
+// реальном списании (writeOff… выше): прямые ингредиенты и п/ф как единица склада.
+function _deferredNeedMap() {
+    const map = {};
+    (orders || []).filter(o => o.inventory_pending && o.status !== 'выполнен').forEach(o => {
+        (o.items || []).forEach(item => {
+            const prod = (products || []).find(p => p.id === item.product_id);
+            if (!prod || !prod.ingredients) return;
+            const factor = 1 / Number(prod.batch_size || 1);
+            prod.ingredients.forEach(ri => {
+                const key = ri.semi_finished_id ? `sf_${ri.semi_finished_id}` : ri.ingredient_id ? `ing_${ri.ingredient_id}` : null;
+                if (!key) return;
+                map[key] = (map[key] || 0) + Number(ri.quantity) * Number(item.quantity) * factor;
+            });
+        });
+    });
+    return map;
+}
+
+// Контекст расчёта на один экран (считается один раз, потом stockState по каждой позиции).
+// Короткая память на 1 с — чтобы десятки вызовов подряд (сортировка, карточки, точка)
+// не пересчитывали всё заново.
+let _stockCtxMemo = null;
+function stockStateContext(periodDays) {
+    periodDays = Number(periodDays) || 30;
+    const nowMs = Date.now();
+    // Подпись заказов: какие не выполнены и какие с отложенным списанием (смена статуса
+    // или флага сразу сбрасывает память, не дожидаясь секунды).
+    let sig = (orders || []).length;
+    (orders || []).forEach(o => { if (o.status !== 'выполнен') sig += (Number(o.id) || 0) * (o.inventory_pending ? 3 : 1) % 1000003; });
+    if (_stockCtxMemo && _stockCtxMemo.periodDays === periodDays && _stockCtxMemo.mov === _inventoryMovements
+        && _stockCtxMemo.sig === sig && nowMs - _stockCtxMemo.at < 1000) return _stockCtxMemo.ctx;
+
+    const pendingIds = _pendingOrderItemIds();
+    const pending = {};
+    const usage = {};
+    const cutoffMs = nowMs - periodDays * 86400000;
+    let firstMs = null;
+    _inventoryMovements.forEach(row => {
+        const key = row.semi_finished_id ? `sf_${row.semi_finished_id}` : `ing_${row.ingredient_id}`;
+        const q = Number(row.quantity) || 0;
+        const sign = row.type === 'расход' ? 1 : row.type === 'сторно' ? -1 : 0;
+        const ms = row.created_at ? Date.parse(row.created_at) : NaN;
+        if (!isNaN(ms) && (firstMs === null || ms < firstMs)) firstMs = ms;
+        if (!sign) return;
+        if (row.order_item_id != null && pendingIds.has(row.order_item_id)) {
+            pending[key] = (pending[key] || 0) + sign * q; // резерв под невыполненный заказ
+            return;
+        }
+        if (!isNaN(ms) && ms >= cutoffMs) usage[key] = (usage[key] || 0) + sign * q;
+    });
+    // Делитель — дни периода, но не больше, чем ведётся склад (у новой пекарни история
+    // короче 30 дней — иначе расход в день вышел бы заниженным, а прогноз — завышенным).
+    const histDays = firstMs === null ? 0 : Math.max(1, Math.ceil((nowMs - firstMs) / 86400000));
+    const divisor = Math.max(1, Math.min(periodDays, histDays || periodDays));
+    const ctx = { periodDays, pending, deferred: _deferredNeedMap(), usage, divisor, forecast: stockForecastEnabled() };
+    _stockCtxMemo = { periodDays, mov: _inventoryMovements, sig, at: nowMs, ctx };
+    return ctx;
+}
+
+function stockForecastEnabled() {
+    return typeof hasPlanFeature === 'function' && hasPlanFeature('cost_analytics');
+}
+
+const _r4 = x => parseFloat(Number(x).toFixed(4));
+
+// kind: 'ing' | 'sf'. Возвращает цифры и зону ('critical' | 'warning' | 'ok').
+function stockState(kind, id, ctx) {
+    ctx = ctx || stockStateContext(30);
+    const key = (kind === 'sf' ? 'sf_' : 'ing_') + id;
+    const c = _inventoryCache[key];
+    const balance = c ? _r4(c.in - c.out) : null;          // после уже прошедших списаний
+    const written = ctx.pending[key] || 0;                  // уже списано под невыполненные заказы
+    const deferred = ctx.deferred[key] || 0;                // ещё не списано (отложенные заказы)
+    const known = balance !== null || written !== 0 || deferred !== 0;
+    const now = known ? _r4((balance || 0) + written) : null;
+    const reserved = _r4(written + deferred);
+    const after = known ? _r4((balance || 0) - deferred) : null;
+    const used = Math.max(0, ctx.usage[key] || 0);
+    const daily = used / ctx.divisor;
+    const daysLeft = (ctx.forecast && after !== null && after > 0 && daily > 0) ? Math.floor(after / daily) : null;
+    const shortage = after !== null && after < 0;
+    const critical = shortage || (after !== null && after <= 0) || (daysLeft !== null && daysLeft < 3);
+    const warning = !critical && daysLeft !== null && daysLeft < 7;
+    return { now, reserved, after, daily, usedInPeriod: _r4(used), daysLeft, shortage,
+             zone: critical ? 'critical' : warning ? 'warning' : 'ok' };
 }
 
 // Считает, сколько уже списано по заказам, которые ФИЗИЧЕСКИ ещё не выполнены
@@ -178,105 +285,44 @@ function getSfAlertZone(sf, neededSfForOrders) {
     return null;
 }
 
-// Средний расход ингредиента в день за последние 30 дней из выполненных заказов
-function avgDailyUsage(ingId) {
-    const cutoffStr = getLocalDateStr(-30);
-
-    let totalUsed = 0;
-    orders.forEach(o => {
-        if (o.date < cutoffStr) return;
-        (o.items || []).forEach(item => {
-            const prod = products.find(p => p.id === item.product_id);
-            if (!prod || !prod.ingredients) return;
-            prod.ingredients.forEach(ri => {
-                if (ri.ingredient_id === ingId && !ri.semi_finished_id) {
-                    totalUsed += (Number(ri.quantity) / Number(prod.batch_size || 1)) * Number(item.quantity);
-                }
-                // Полуфабрикаты
-                if (ri.semi_finished_id) {
-                    const sf = semiFinished.find(s => s.id === ri.semi_finished_id);
-                    if (!sf || !sf.ingredients) return;
-                    sf.ingredients.forEach(sfi => {
-                        if (sfi.ingredient_id === ingId) {
-                            const sfFactor = Number(ri.quantity) / Number(sf.batch_size || 1);
-                            totalUsed += (Number(sfi.quantity) * sfFactor / Number(prod.batch_size || 1)) * Number(item.quantity);
-                        }
-                    });
-                }
-            });
-        });
-    });
-
-    return totalUsed / 30; // в день
+// Средний расход ингредиента в день — по реальным движениям склада (21.10, см. stockState).
+function avgDailyUsage(ingId, periodDays) {
+    return stockState('ing', ingId, stockStateContext(periodDays || 30)).daily;
 }
 
 // Показывает/скрывает пульсирующую точку на иконке корзины
 function updateInventoryAlertDot() {
     const dot = document.getElementById('inventoryAlertDot');
     if (!dot) return;
+    // Тот же расчёт, что в «Складе» (stockState): точка горит, если отслеживаемая позиция
+    // в красной зоне или по любой позиции нехватка под заказы.
+    const ctx = stockStateContext(30);
+    const tracked = trackedStockIds();
+    const bad = (kind, id) => {
+        const st = stockState(kind, id, ctx);
+        if (st.shortage) return true;
+        const isTracked = kind === 'sf' ? tracked.sf.has(id) : tracked.ing.has(id);
+        return isTracked && st.zone === 'critical' && st.after !== null;
+    };
+    const on = (ingredients || []).some(i => bad('ing', i.id)) || (semiFinished || []).some(sf => bad('sf', sf.id));
+    dot.classList.toggle('hidden', !on);
+}
 
-    // 1. Проверяем изделия с галочкой track_stock
-    const trackedIngIds = new Set();
+// Отслеживаемые позиции (галочка «Отслеживать остатки» у изделий и п/ф, с каскадом):
+// изделие → его ингредиенты и п/ф; п/ф (отмеченный или из такого изделия) → его ингредиенты.
+function trackedStockIds() {
+    const sf = new Set(), ing = new Set();
+    (semiFinished || []).forEach(s => { if (s.track_stock) sf.add(s.id); });
     (products || []).filter(p => p.track_stock).forEach(prod => {
         (prod.ingredients || []).forEach(ri => {
-            if (ri.ingredient_id) trackedIngIds.add(ri.ingredient_id);
+            if (ri.semi_finished_id) sf.add(ri.semi_finished_id);
+            if (ri.ingredient_id) ing.add(ri.ingredient_id);
         });
     });
-    const hasLowTracked = [...trackedIngIds].some(ingId => {
-        // Если ингредиент только в п/ф — смотрим зону п/ф
-        const usedDirectly = isIngredientUsedDirectlyInProducts(ingId);
-        if (!usedDirectly) {
-            const parentSfs = getSfContainingIngredient(ingId);
-            if (parentSfs.length > 0) {
-                return parentSfs.some(sf => getSfAlertZone(sf, {}) !== null);
-            }
-        }
-        const balance = getIngredientBalance(ingId);
-        if (balance === null || balance <= 0) return false;
-        const daily = avgDailyUsage(ingId);
-        if (!daily) return false;
-        return (balance / daily) < STOCK_LOW_DAYS;
+    (semiFinished || []).filter(s => sf.has(s.id)).forEach(s => {
+        (s.ingredients || []).forEach(ri => { if (ri.ingredient_id) ing.add(ri.ingredient_id); });
     });
-
-    // 1б. Проверяем п/ф с галочкой track_stock
-    const hasLowTrackedSf = (semiFinished || []).filter(sf => sf.track_stock).some(sf => {
-        const balance = getSemiFinishedBalance(sf.id);
-        if (balance === null || balance <= 0) return true; // нет запаса — уже плохо
-        const daily = avgDailySfUsage(sf.id);
-        if (!daily) return false;
-        return (balance / daily) < STOCK_LOW_DAYS;
-    });
-
-    // 2. Проверяем принятые заказы — хватит ли ингредиентов и п/ф
-    const today = getLocalDateStr(0);
-    const pendingOrders = (orders || []).filter(o => o.status !== 'выполнен' && o.date >= today);
-    let hasShortage = false;
-    const needed = {};
-    const neededSf = {};
-    pendingOrders.forEach(o => {
-        (o.items || []).forEach(item => {
-            const prod = products.find(p => p.id === item.product_id);
-            if (!prod || !prod.ingredients) return;
-            const factor = 1 / Number(prod.batch_size || 1);
-            prod.ingredients.forEach(ri => {
-                const qty = Number(ri.quantity) * Number(item.quantity) * factor;
-                if (ri.ingredient_id) {
-                    needed[ri.ingredient_id] = (needed[ri.ingredient_id] || 0) + qty;
-                } else if (ri.semi_finished_id) {
-                    neededSf[ri.semi_finished_id] = (neededSf[ri.semi_finished_id] || 0) + qty;
-                }
-            });
-        });
-    });
-    hasShortage = Object.entries(needed).some(([ingId, qty]) => {
-        const balance = getIngredientBalance(Number(ingId));
-        return balance !== null && balance < qty;
-    }) || Object.entries(neededSf).some(([sfId, qty]) => {
-        const balance = getSemiFinishedBalance(Number(sfId));
-        return balance !== null && balance < qty;
-    });
-
-    dot.classList.toggle('hidden', !hasLowTracked && !hasLowTrackedSf && !hasShortage);
+    return { sf, ing, any: sf.size > 0 || ing.size > 0 };
 }
 
 // Сворачивает/разворачивает группу "Остальные" (ингредиенты — строки таблицы,

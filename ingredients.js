@@ -29,38 +29,19 @@ function stockColorClass(daysLeft, prefix) {
 // (охра), 2 — норма. Та же логика, что и раскраска полоски/цифры "Хватит" в
 // таблице/карточках — вынесена отдельно, чтобы сортировка списка (см. ниже)
 // использовала ровно те же условия, а не рисковала разойтись с окраской.
-function ingredientSeverity(ing, neededForOrders) {
-    const balance  = typeof getIngredientBalance === 'function' ? getIngredientBalance(ing.id) : null;
-    const daily    = typeof avgDailyUsage === 'function' ? avgDailyUsage(ing.id) : 0;
-    const daysLeft = (stockForecastOn() && balance !== null && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
-    const needed   = neededForOrders[ing.id] || 0;
-    const shortfall = needed > 0 && (balance === null || balance < needed);
-    const isCritical = shortfall || (balance !== null && balance <= 0) || (daysLeft !== null && daysLeft < 3);
-    const isWarning  = !isCritical && daysLeft !== null && daysLeft < 7;
-    return isCritical ? 0 : isWarning ? 1 : 2;
+function ingredientSeverity(ing, ctx) {
+    const zone = stockState('ing', ing.id, ctx).zone;
+    return zone === 'critical' ? 0 : zone === 'warning' ? 1 : 2;
 }
 
 function displayIngredients() {
-    // Считаем сколько нужно для принятых заказов
-    const today = typeof getLocalDateStr === 'function' ? getLocalDateStr(0) : getLocalDateStr(0);
-    const neededForOrders = {};
-    (orders || []).filter(o => o.status !== 'выполнен' && o.date >= today).forEach(o => {
-        (o.items || []).forEach(item => {
-            const prod = products.find(p => p.id === item.product_id);
-            if (!prod || !prod.ingredients) return;
-            const factor = 1 / Number(prod.batch_size || 1);
-            prod.ingredients.forEach(ri => {
-                if (!ri.ingredient_id) return;
-                const qty = Number(ri.quantity) * Number(item.quantity) * factor;
-                neededForOrders[ri.ingredient_id] = (neededForOrders[ri.ingredient_id] || 0) + qty;
-            });
-        });
-    });
+    // Общий расчёт склада (inventory.js stockState, 21.10)
+    const ctx = stockStateContext(30);
 
     // Сортировка: сначала критичные (терракота), потом заканчивающиеся (охра),
     // потом остальные — внутри каждой группы по алфавиту.
     ingredients.sort((a, b) => {
-        const sevDiff = ingredientSeverity(a, neededForOrders) - ingredientSeverity(b, neededForOrders);
+        const sevDiff = ingredientSeverity(a, ctx) - ingredientSeverity(b, ctx);
         return sevDiff !== 0 ? sevDiff : (a.name||"").localeCompare(b.name||"");
     });
 
@@ -121,36 +102,20 @@ function renderIngredientCards() {
     const body = document.getElementById('ingredientCardsBody');
     if (!body) return;
 
-    const today = typeof getLocalDateStr === 'function' ? getLocalDateStr(0) : getLocalDateStr(0);
-    const neededForOrders = {};
-    (orders || []).filter(o => o.status !== 'выполнен' && o.date >= today).forEach(o => {
-        (o.items || []).forEach(item => {
-            const prod = products.find(p => p.id === item.product_id);
-            if (!prod || !prod.ingredients) return;
-            const factor = 1 / Number(prod.batch_size || 1);
-            prod.ingredients.forEach(ri => {
-                if (!ri.ingredient_id) return;
-                const qty = Number(ri.quantity) * Number(item.quantity) * factor;
-                neededForOrders[ri.ingredient_id] = (neededForOrders[ri.ingredient_id] || 0) + qty;
-            });
-        });
-    });
-
-    const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
+    const ctx = stockStateContext(30); // общий расчёт склада (inventory.js stockState, 21.10)
 
     const htmlAttn = [], htmlOk = [];
     ingredients.forEach((ing, realIdx) => {
         const unitPrice = ingredientUnitPrice(ing);
         const unitLabel = unitAbbrev(ing.unit);
-        const balance  = typeof getIngredientBalance === 'function' ? getIngredientBalance(ing.id) : null;
-        const balanceBefore = typeof getIngredientBalanceBeforeWriteoff === 'function' ? getIngredientBalanceBeforeWriteoff(ing.id, pendingMap) : balance;
-        const daily    = typeof avgDailyUsage === 'function' ? avgDailyUsage(ing.id) : 0;
-        const daysLeft = (stockForecastOn() && balance !== null && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
-        const needed   = neededForOrders[ing.id] || 0;
-        const shortfall = needed > 0 && (balance === null || balance < needed);
+        const st        = stockState('ing', ing.id, ctx);
+        const balanceBefore = st.now;
+        const balance   = st.after;
+        const daysLeft  = st.daysLeft;
+        const shortfall = st.shortage;
 
-        const isCritical = shortfall || (balance !== null && balance <= 0) || (daysLeft !== null && daysLeft < 3);
-        const isWarning  = !isCritical && daysLeft !== null && daysLeft < 7;
+        const isCritical = st.zone === 'critical';
+        const isWarning  = st.zone === 'warning';
         const accentColor = isCritical ? '#c0685c' : isWarning ? '#d9a441' : '';
         const afterColor = isCritical ? '#c0685c' : isWarning ? '#96712a' : '#4f6349';
         const thirdLabel = t('ing_cell_lasts');
@@ -712,10 +677,11 @@ let _ingredientPriceChartInstance = null;
 // Обновляет блок «Остаток на складе» в карточке ингредиента
 async function renderIngredientStockBlock(ing) {
     const unitLabel = unitAbbrev(ing.unit);
-    const balance  = typeof getIngredientBalance === 'function' ? getIngredientBalance(ing.id) : null;
-    const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
-    const balanceBefore = typeof getIngredientBalanceBeforeWriteoff === 'function' ? getIngredientBalanceBeforeWriteoff(ing.id, pendingMap) : balance;
-    const daily   = typeof avgDailyUsage === 'function' ? avgDailyUsage(ing.id) : 0;
+    // Общий расчёт склада (inventory.js stockState, 21.10)
+    const st = stockState('ing', ing.id, stockStateContext(30));
+    const balance  = st.after;
+    const balanceBefore = st.now;
+    const daily   = st.daily;
 
     const balEl   = document.getElementById('ingBalanceValue');
     const unitEl  = document.getElementById('ingBalanceUnit');

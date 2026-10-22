@@ -29,39 +29,21 @@ function semiFinishedUnitCost(sf) {
 
 // Уровень критичности полуфабриката: 0 — критично (терракота, включая
 // неподтверждённый рецепт), 1 — заканчивается (охра), 2 — норма.
-function semiFinishedSeverity(sf, neededForOrders) {
-    const balance  = typeof getSemiFinishedBalance === 'function' ? getSemiFinishedBalance(sf.id) : null;
-    const daily    = typeof avgDailySfUsage === 'function' ? avgDailySfUsage(sf.id) : 0;
-    const daysLeft = (stockForecastOn() && balance !== null && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
-    const needed   = neededForOrders[sf.id] || 0;
-    const shortage = needed > 0 && (balance === null || balance < needed);
-    const isCritical = shortage || (balance !== null && balance <= 0) || (daysLeft !== null && daysLeft < 3) || !sf.recipe_confirmed;
-    const isWarning  = !isCritical && daysLeft !== null && daysLeft < 7;
-    return isCritical ? 0 : isWarning ? 1 : 2;
+function semiFinishedSeverity(sf, ctx) {
+    const st = stockState('sf', sf.id, ctx);
+    const isCritical = st.zone === 'critical' || !sf.recipe_confirmed;
+    return isCritical ? 0 : st.zone === 'warning' ? 1 : 2;
 }
 
 function displaySemiFinished() {
 
-    // Считаем нехватку для принятых заказов
-    const today = typeof getLocalDateStr === 'function' ? getLocalDateStr(0) : new Date().toISOString().slice(0, 10);
-    const neededForOrders = {};
-    (orders || []).filter(o => o.status !== 'выполнен' && o.date >= today).forEach(o => {
-        (o.items || []).forEach(item => {
-            const prod = products.find(p => p.id === item.product_id);
-            if (!prod || !prod.ingredients) return;
-            const factor = 1 / Number(prod.batch_size || 1);
-            prod.ingredients.forEach(ri => {
-                if (!ri.semi_finished_id) return;
-                neededForOrders[ri.semi_finished_id] = (neededForOrders[ri.semi_finished_id] || 0) +
-                    Number(ri.quantity) * Number(item.quantity) * factor;
-            });
-        });
-    });
+    // Общий расчёт склада (inventory.js stockState, 21.10)
+    const ctx = stockStateContext(30);
 
     // Сортировка: сначала критичные, потом заканчивающиеся, потом остальные —
     // внутри каждой группы по алфавиту.
     semiFinished.sort((a, b) => {
-        const sevDiff = semiFinishedSeverity(a, neededForOrders) - semiFinishedSeverity(b, neededForOrders);
+        const sevDiff = semiFinishedSeverity(a, ctx) - semiFinishedSeverity(b, ctx);
         return sevDiff !== 0 ? sevDiff : (a.name||"").localeCompare(b.name||"");
     });
 
@@ -76,36 +58,20 @@ function renderSemiFinishedCards() {
     const body = document.getElementById('semiFinishedCardsBody');
     if (!body) return;
 
-    const today = typeof getLocalDateStr === 'function' ? getLocalDateStr(0) : new Date().toISOString().slice(0, 10);
-    const neededForOrders = {};
-    (orders || []).filter(o => o.status !== 'выполнен' && o.date >= today).forEach(o => {
-        (o.items || []).forEach(item => {
-            const prod = products.find(p => p.id === item.product_id);
-            if (!prod || !prod.ingredients) return;
-            const factor = 1 / Number(prod.batch_size || 1);
-            prod.ingredients.forEach(ri => {
-                if (!ri.semi_finished_id) return;
-                neededForOrders[ri.semi_finished_id] = (neededForOrders[ri.semi_finished_id] || 0) +
-                    Number(ri.quantity) * Number(item.quantity) * factor;
-            });
-        });
-    });
-
-    const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
+    const ctx = stockStateContext(30); // общий расчёт склада (inventory.js stockState, 21.10)
 
     const htmlAttn = [], htmlOk = [];
     semiFinished.forEach((sf, realIdx) => {
         const unitLabel = unitAbbrev(sf.unit);
         const unitCost  = semiFinishedUnitCost(sf);
-        const balance   = typeof getSemiFinishedBalance === 'function' ? getSemiFinishedBalance(sf.id) : null;
-        const balanceBefore = typeof getSemiFinishedBalanceBeforeWriteoff === 'function' ? getSemiFinishedBalanceBeforeWriteoff(sf.id, pendingMap) : balance;
-        const daily     = typeof avgDailySfUsage === 'function' ? avgDailySfUsage(sf.id) : 0;
-        const daysLeft  = (stockForecastOn() && balance !== null && balance > 0 && daily > 0) ? Math.floor(balance / daily) : null;
-        const needed    = neededForOrders[sf.id] || 0;
-        const shortage  = needed > 0 && (balance === null || balance < needed);
+        const st        = stockState('sf', sf.id, ctx);
+        const balanceBefore = st.now;
+        const balance   = st.after;
+        const daysLeft  = st.daysLeft;
+        const shortage  = st.shortage;
 
-        const isCritical = shortage || (balance !== null && balance <= 0) || (daysLeft !== null && daysLeft < 3);
-        const isWarning  = !isCritical && daysLeft !== null && daysLeft < 7;
+        const isCritical = st.zone === 'critical';
+        const isWarning  = st.zone === 'warning';
         const notConfirmed = !sf.recipe_confirmed;
         const accentColor = (isCritical || notConfirmed) ? '#c0685c' : isWarning ? '#d9a441' : '';
         const afterColor = isCritical ? '#c0685c' : isWarning ? '#96712a' : '#4f6349';
@@ -561,10 +527,11 @@ function updateSemiFinishedSelects() {
 
 async function renderSfStockBlock(sf) {
     const unitLabel = unitAbbrev(sf.unit);
-    const balance = typeof getSemiFinishedBalance === 'function' ? getSemiFinishedBalance(sf.id) : null;
-    const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
-    const balanceBefore = typeof getSemiFinishedBalanceBeforeWriteoff === 'function' ? getSemiFinishedBalanceBeforeWriteoff(sf.id, pendingMap) : balance;
-    const daily   = avgDailySfUsage(sf.id);
+    // Общий расчёт склада (inventory.js stockState, 21.10)
+    const st = stockState('sf', sf.id, stockStateContext(30));
+    const balance = st.after;
+    const balanceBefore = st.now;
+    const daily   = st.daily;
 
     const balEl  = document.getElementById('sfBalanceValue');
     const unitEl = document.getElementById('sfBalanceUnit');
@@ -666,23 +633,9 @@ async function toggleSfPriceBlock() {
     }
 }
 
-// Средний расход п/ф в день за последние 30 дней
-function avgDailySfUsage(sfId) {
-    const cutoffStr = getLocalDateStr(-30);
-    let totalUsed = 0;
-    orders.forEach(o => {
-        if (o.date < cutoffStr) return;
-        (o.items || []).forEach(item => {
-            const prod = products.find(p => p.id === item.product_id);
-            if (!prod || !prod.ingredients) return;
-            prod.ingredients.forEach(ri => {
-                if (ri.semi_finished_id === sfId) {
-                    totalUsed += (Number(ri.quantity) / Number(prod.batch_size || 1)) * Number(item.quantity);
-                }
-            });
-        });
-    });
-    return totalUsed / 30;
+// Средний расход п/ф в день — по реальным движениям склада (21.10, inventory.js stockState).
+function avgDailySfUsage(sfId, periodDays) {
+    return stockState('sf', sfId, stockStateContext(periodDays || 30)).daily;
 }
 
 // Отметить основной ингредиент в рецепте п/ф

@@ -900,11 +900,21 @@ function getFilteredOrdersForList() {
     return filtered;
 }
 
-// Проверяет все заказы с отложенным списанием (inventory_pending = true) — если до
-// даты заказа осталось ≤ INVENTORY_PENDING_DAYS дней, списывает склад и снимает флаг.
+// Проверяет все заказы с отложенным списанием (inventory_pending = true), списывает
+// склад и снимает флаг. С 21.10 отложенное списание отключено (helpers.js
+// shouldWriteOffNow всегда true) — функция только дописывает заказы, отложенные раньше.
 // Вызывается при каждой загрузке данных (loadAllData), чтобы отложенные заказы
 // "дозревали" сами, без участия пользователя.
+// Не запускаем два прохода одновременно (загрузка данных + добавление позиции) —
+// иначе один заказ мог бы списаться дважды; второй вызов ждёт первый и проверяет заново.
+let _pendingInvRun = null;
 async function processPendingInventory() {
+    while (_pendingInvRun) { try { await _pendingInvRun; } catch (e) { /* ниже повторим */ } }
+    _pendingInvRun = _processPendingInventoryOnce();
+    try { await _pendingInvRun; } finally { _pendingInvRun = null; }
+}
+
+async function _processPendingInventoryOnce() {
     const pending = orders.filter(o => o.inventory_pending && shouldWriteOffNow(o.date));
     if (!pending.length) return;
     for (const order of pending) {
@@ -2089,7 +2099,13 @@ async function addItemToOrder() {
         // Снимок рецепта и списание склада независимы — выполняем одновременно
         const snapshotPromise = saveOrderItemIngredients(data.id, prod, Number(data.quantity));
 
-        if (shouldWriteOffNow(order.date)) {
+        if (order.inventory_pending) {
+            // Заказ, отложенный до 21.10 и ещё не списанный: новую позицию не списываем
+            // отдельно — processPendingInventory спишет весь заказ разом и снимет флаг
+            // (иначе эта позиция списалась бы дважды).
+            await snapshotPromise;
+            if (typeof processPendingInventory === 'function') await processPendingInventory();
+        } else if (shouldWriteOffNow(order.date)) {
             const [actualCost] = await Promise.all([
                 writeOffInventoryForItem(prod, Number(data.quantity), order.id, data.id),
                 snapshotPromise
