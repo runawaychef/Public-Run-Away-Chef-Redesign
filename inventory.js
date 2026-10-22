@@ -295,42 +295,18 @@ function avgDailyUsage(ingId, periodDays) {
 function updateInventoryAlertDot() {
     const dot = document.getElementById('inventoryAlertDot');
     if (!dot) return;
-    // Тот же расчёт, что в «Складе» (stockState): точка горит, если отслеживаемая позиция
-    // в красной зоне или по любой позиции нехватка под заказы.
-    const ctx = stockStateContext(30);
-    const tracked = trackedStockIds();
-    const bad = (kind, id) => {
-        const st = stockState(kind, id, ctx);
-        if (st.shortage) return true;
-        const isTracked = kind === 'sf' ? tracked.sf.has(id) : tracked.ing.has(id);
-        return isTracked && st.zone === 'critical' && st.after !== null;
-    };
-    const on = (ingredients || []).some(i => bad('ing', i.id)) || (semiFinished || []).some(sf => bad('sf', sf.id));
+    // Точка горит ровно тогда, когда в «Умном складе» есть что-то в «Требует внимания»
+    // (тот же список и те же правила, решение владельца 21.10).
+    const on = smartStockRows(stockStateContext(30)).some(r => r.attention);
     dot.classList.toggle('hidden', !on);
 }
 
-// Отслеживаемые позиции (галочка «Отслеживать остатки» у изделий и п/ф, с каскадом):
-// изделие → его ингредиенты и п/ф; п/ф (отмеченный или из такого изделия) → его ингредиенты.
-function trackedStockIds() {
-    const sf = new Set(), ing = new Set();
-    (semiFinished || []).forEach(s => { if (s.track_stock) sf.add(s.id); });
-    (products || []).filter(p => p.track_stock).forEach(prod => {
-        (prod.ingredients || []).forEach(ri => {
-            if (ri.semi_finished_id) sf.add(ri.semi_finished_id);
-            if (ri.ingredient_id) ing.add(ri.ingredient_id);
-        });
-    });
-    (semiFinished || []).filter(s => sf.has(s.id)).forEach(s => {
-        (s.ingredients || []).forEach(ri => { if (ri.ingredient_id) ing.add(ri.ingredient_id); });
-    });
-    return { sf, ing, any: sf.size > 0 || ing.size > 0 };
-}
 
 // ── «Умный склад» — страница (21.10) ─────────────────────────────────────────
 // Срез склада по ОТСЛЕЖИВАЕМЫМ позициям + анализ расхода за период 7/30/90 дней.
 // Считает тем же stockState, что и «Склад». Список покупок и «Плановые списания»
 // убраны (решение владельца 21.10). Только тариф Full и право can_manage_inventory.
-let _invPage = { tab: 'ing', period: 30 };
+let _invPage = { period: 30 };
 // Вид «Умного склада» (карточки / таблица) запоминается на этом устройстве.
 function _invViewMode() { try { return localStorage.getItem('inv_view_mode') === 'table' ? 'table' : 'cards'; } catch (e) { return 'cards'; } }
 function setInventoryPageView(mode) {
@@ -344,11 +320,11 @@ function _invView() { return _invViewFallback || _invViewMode(); }
 // Старое имя — кнопка-тележка в шапке и прежние вызовы.
 async function openInventoryModal() { return openInventoryPage(); }
 
-// opts (при возврате из карточки позиции): { tab, period, scrollY } — прежнее место.
+// opts (при возврате из карточки позиции): { period, scrollY } — прежнее место.
 async function openInventoryPage(opts) {
     if (!hasPermission('can_manage_inventory')) { showInfo(t('inv_no_access')); return; }
     if (!hasPlanFeature('cost_analytics')) { showInfo(t('inv_full_only')); return; }
-    _invPage = { tab: opts && opts.tab === 'sf' ? 'sf' : 'ing', period: opts && [7, 30, 90].includes(opts.period) ? opts.period : 30 };
+    _invPage = { period: opts && [7, 30, 90].includes(opts.period) ? opts.period : 30 };
     openAppPage('inventoryPage');
     renderInventoryPage();
     if (opts && opts.scrollY) requestAnimationFrame(() => window.scrollTo(0, opts.scrollY));
@@ -360,11 +336,6 @@ function closeInventoryPage() {
     if (appPageTop() === 'inventoryPage') closeAppPage();
 }
 
-function setInventoryPageTab(tab) {
-    _invPage.tab = tab === 'sf' ? 'sf' : 'ing';
-    renderInventoryPage();
-}
-
 function setInventoryPagePeriod(days) {
     _invPage.period = [7, 30, 90].includes(Number(days)) ? Number(days) : 30;
     renderInventoryPage();
@@ -372,49 +343,101 @@ function setInventoryPagePeriod(days) {
 
 function _invFmt(x) { return x === null || x === undefined ? '—' : String(Math.round(Number(x) * 10) / 10).replace('.', ','); }
 
+// Значок полуфабриката в общем списке — «слои» (выбор владельца 21.10)
+const INV_SF_ICON = '<svg class="inv-sf-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l-8 4l8 4l8-4l-8-4"/><path d="M4 12l8 4l8-4"/><path d="M4 16l8 4l8-4"/></svg>';
+const INV_WARN_ICON = '<svg class="inv-warn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>';
+
+// Состав общего списка «Умного склада» (решение владельца 21.10):
+//   — полуфабрикаты: отмеченные сами или входящие в рецепт отслеживаемого изделия;
+//   — ингредиенты: только стоящие НАПРЯМУЮ в рецепте отслеживаемого изделия
+//     (ингредиенты, которые есть лишь внутри полуфабрикатов, отдельно не показываем).
+function smartStockItemIds() {
+    const sf = new Set(), ing = new Set();
+    (semiFinished || []).forEach(x => { if (x.track_stock) sf.add(x.id); });
+    (products || []).filter(p => p.track_stock).forEach(prod => {
+        (prod.ingredients || []).forEach(ri => {
+            if (ri.semi_finished_id) sf.add(ri.semi_finished_id);
+            else if (ri.ingredient_id) ing.add(ri.ingredient_id);
+        });
+    });
+    return { sf, ing };
+}
+
+// Вариант В: каких ингредиентов полуфабриката не хватит на ОДНУ новую партию по рецепту
+// («После списания» ингредиента меньше, чем нужно на партию). Ингредиенты без учёта
+// на складе (ни одного движения) не считаем — по ним склад не ведётся.
+function sfBatchShortNames(sf, ctx) {
+    const need = {};
+    (sf.ingredients || []).forEach(ri => { if (ri.ingredient_id) need[ri.ingredient_id] = (need[ri.ingredient_id] || 0) + Number(ri.quantity || 0); });
+    const names = [];
+    Object.keys(need).forEach(id => {
+        const st = stockState('ing', Number(id), ctx);
+        if (st.after === null || !(need[id] > 0)) return;
+        if (st.after < need[id]) {
+            const ing = (ingredients || []).find(i => i.id === Number(id));
+            if (ing) names.push(ing.name || '');
+        }
+    });
+    return names.sort((x, y) => x.localeCompare(y));
+}
+
+// Строки общего списка с состоянием; attention — красная/жёлтая зона или нехватка на партию.
+function smartStockRows(ctx) {
+    const ids = smartStockItemIds();
+    const rows = [];
+    (semiFinished || []).filter(x => ids.sf.has(x.id)).forEach(item => {
+        const st = stockState('sf', item.id, ctx);
+        const batchShort = sfBatchShortNames(item, ctx);
+        rows.push({ kind: 'sf', item, st, batchShort, attention: st.zone !== 'ok' || batchShort.length > 0 });
+    });
+    (ingredients || []).filter(x => ids.ing.has(x.id)).forEach(item => {
+        const st = stockState('ing', item.id, ctx);
+        rows.push({ kind: 'ing', item, st, batchShort: [], attention: st.zone !== 'ok' });
+    });
+    const rank = r => r.st.zone === 'critical' ? 0 : r.st.zone === 'warning' ? 1 : r.attention ? 2 : 3;
+    return rows.sort((a, b) => (rank(a) - rank(b)) || (a.item.name || '').localeCompare(b.item.name || ''));
+}
+
+function _invName(r) {
+    return `${r.kind === 'sf' ? INV_SF_ICON : ''}<span class="inv-name-txt">${escapeHtml(r.item.name || t('semifinished_no_name_fallback'))}</span>`;
+}
+
 function renderInventoryPage() {
     const body = document.getElementById('inventoryPageBody');
     if (!body) return;
-    document.getElementById('invPageTabIng')?.classList.toggle('active', _invPage.tab === 'ing');
-    document.getElementById('invPageTabSf')?.classList.toggle('active', _invPage.tab === 'sf');
     const per = document.getElementById('invPagePeriod');
     if (per) per.innerHTML = [7, 30, 90].map(d =>
         `<button type="button" class="stock-tab${d === _invPage.period ? ' active' : ''}" onclick="setInventoryPagePeriod(${d});">${d} ${t('inv_days_short')}</button>`).join('');
 
     const ctx = stockStateContext(_invPage.period);
-    const tracked = trackedStockIds();
-    const isSf = _invPage.tab === 'sf';
-    const list = isSf
-        ? (semiFinished || []).filter(sf => tracked.sf.has(sf.id))
-        : (ingredients || []).filter(ing => tracked.ing.has(ing.id));
-    if (!list.length) {
+    const rows = smartStockRows(ctx);
+    if (!rows.length) {
         body.innerHTML = `<p class="inv-empty">${t('inv_no_tracked')}</p>`;
         return;
     }
-    const rank = { critical: 0, warning: 1, ok: 2 };
-    const rows = list.map(item => ({ item, st: stockState(isSf ? 'sf' : 'ing', item.id, ctx) }))
-        .sort((a, b) => (rank[a.st.zone] - rank[b.st.zone]) || (a.item.name || '').localeCompare(b.item.name || ''));
-
     const view = _invView();
     document.getElementById('invViewBtnCards')?.classList.toggle('active', view === 'cards');
     document.getElementById('invViewBtnTable')?.classList.toggle('active', view === 'table');
-    if (view === 'table') { body.innerHTML = _invTableHtml(rows, isSf); return; }
+    if (view === 'table') { body.innerHTML = _invTableHtml(rows); return; }
 
     const attn = [], ok = [];
-    rows.forEach(({ item, st }) => {
+    const usedLbl = t('inv_used_for_days').replace('{n}', _invPage.period);
+    rows.forEach(r => {
+        const { item, st } = r;
         const unit = unitAbbrev(item.unit);
         const isCritical = st.zone === 'critical', isWarning = st.zone === 'warning';
-        const accent = isCritical ? '#c0685c' : isWarning ? '#d9a441' : '';
+        const accent = isCritical || (!isWarning && r.batchShort.length) ? '#c0685c' : isWarning ? '#d9a441' : '';
         const afterColor = isCritical ? '#c0685c' : isWarning ? '#96712a' : '#4f6349';
         const thirdText = st.daysLeft !== null ? `${st.daysLeft} ${t('inv_days_short')}` : st.shortage ? t('inv_shortage') : '—';
-        const price = isSf ? stockPriceText(semiFinishedUnitCost(item), item.unit) : stockPriceText(ingredientUnitPrice(item), item.unit);
-        const usedLbl = t('inv_used_for_days').replace('{n}', _invPage.period);
+        const price = r.kind === 'sf' ? stockPriceText(semiFinishedUnitCost(item), item.unit) : stockPriceText(ingredientUnitPrice(item), item.unit);
+        const warn = r.batchShort.length
+            ? `<div class="inv-batch-warn">${INV_WARN_ICON}<span>${t('inv_sf_batch_short')} ${r.batchShort.map(escapeHtml).join(', ')}</span></div>` : '';
         const html = `
-        <div class="order-card" style="cursor:pointer;" onclick="openStockItemFromSmart('${isSf ? 'sf' : 'ing'}', ${item.id})">
+        <div class="order-card" style="cursor:pointer;" onclick="openStockItemFromSmart('${r.kind}', ${item.id})">
             ${accent ? `<div class="stripe" style="background:${accent};"></div>` : ''}
             <div class="order-card-body">
                 <div class="oc-row">
-                    <span class="oc-name">${escapeHtml(item.name || t('semifinished_no_name_fallback'))}</span>
+                    <span class="oc-name inv-name">${_invName(r)}</span>
                     <span class="oc-price">${price}</span>
                 </div>
                 ${stockCardCellsHtml({
@@ -425,30 +448,33 @@ function renderInventoryPage() {
                     <span>${t('inv_reserved_chip')} ${_invFmt(st.reserved)} ${unit}</span>
                     <span>${usedLbl} ${_invFmt(st.usedInPeriod)} ${unit}</span>
                 </div>
+                ${warn}
             </div>
         </div>`;
-        (accent ? attn : ok).push(html);
+        (r.attention ? attn : ok).push(html);
     });
     body.innerHTML = stockGroupsHtml(attn, ok);
 }
 
-// Табличный вид: Название | Сейчас | После списания | Хватит на; точка — зона;
-// острова «Требует внимания» / «Всё в порядке» с теми же разделителями, что в карточках.
-function _invTableHtml(rows, isSf) {
+// Табличный вид: Название | Сейчас | После списания | Хватит на; точка — зона; значок «слои»
+// у полуфабриката, треугольник — не хватит ингредиентов на новую партию.
+function _invTableHtml(rows) {
     const dotColor = { critical: '#c0685c', warning: '#d9a441', ok: '#7c9473' };
     const txtColor = { critical: '#c0685c', warning: '#96712a', ok: '#4f6349' };
-    const rowHtml = ({ item, st }) => {
+    const rowHtml = r => {
+        const { item, st } = r;
         const unit = unitAbbrev(item.unit);
         const days = st.daysLeft !== null ? `~${st.daysLeft} ${t('inv_days_short')}` : st.shortage ? t('inv_shortage') : '—';
-        return `<div class="st-row" onclick="openStockItemFromSmart('${isSf ? 'sf' : 'ing'}', ${item.id})">
-            <span class="st-name"><span class="st-dot" style="background:${dotColor[st.zone]};"></span>${escapeHtml(item.name || t('semifinished_no_name_fallback'))}</span>
+        const dot = st.zone === 'ok' && r.batchShort.length ? '#c0685c' : dotColor[st.zone];
+        return `<div class="st-row" onclick="openStockItemFromSmart('${r.kind}', ${item.id})">
+            <span class="st-name inv-name"><span class="st-dot" style="background:${dot};"></span>${_invName(r)}${r.batchShort.length ? INV_WARN_ICON : ''}</span>
             <span class="st-num">${st.now !== null ? `${_invFmt(st.now)} ${unit}` : '—'}</span>
             <span class="st-num" style="color:${st.after !== null && st.after < 0 ? '#c0685c' : '#3c3a34'};">${st.after !== null ? `${_invFmt(st.after)} ${unit}` : '—'}</span>
             <span class="st-days" style="color:${txtColor[st.zone]};">${days}</span>
         </div>`;
     };
-    const attn = rows.filter(r => r.st.zone !== 'ok').map(rowHtml);
-    const ok = rows.filter(r => r.st.zone === 'ok').map(rowHtml);
+    const attn = rows.filter(r => r.attention).map(rowHtml);
+    const ok = rows.filter(r => !r.attention).map(rowHtml);
     const island = arr => arr.length ? `<div class="ot-island">${arr.join('')}</div>` : '';
     const head = `<div class="st-head"><span>${t('inv_col_name')}</span><span>${t('ing_cell_now')}</span><span>${t('ing_cell_after')}</span><span>${t('ing_cell_lasts')}</span></div>`;
     return head + stockGroupsHtml(attn.length ? [island(attn)] : [], ok.length ? [island(ok)] : []);
@@ -458,11 +484,11 @@ function _invTableHtml(rows, isSf) {
 // Запоминаем, откуда пришли: «Назад» из карточки вернёт в «Умный склад» на то же место
 // (вкладка, период, прокрутка), а потом «Назад» из него — в раздел, где он был открыт.
 // Переход по нижнему меню/иконкам память сбрасывает (showTab → forgetSmartStockReturn).
-let _smartStockReturn = null;   // { prevTab, tab, period, scrollY }
+let _smartStockReturn = null;   // { prevTab, period, scrollY }
 let _smartNavInternal = false;  // наш собственный showTab — память не сбрасывать
 function openStockItemFromSmart(kind, id) {
     const ret = { prevTab: (typeof currentTabId !== 'undefined' && currentTabId) || 'orders',
-                  tab: _invPage.tab, period: _invPage.period, scrollY: window.scrollY || 0 };
+                  period: _invPage.period, scrollY: window.scrollY || 0 };
     _smartNavInternal = true;
     try { showTab(kind === 'sf' ? 'semiFinished' : 'ingredients'); } finally { _smartNavInternal = false; }
     _smartStockReturn = ret;
@@ -477,7 +503,7 @@ async function returnToSmartStock() {
     if (!r) return false;
     _smartNavInternal = true;
     try { if (r.prevTab !== currentTabId) showTab(r.prevTab); } finally { _smartNavInternal = false; }
-    await openInventoryPage({ tab: r.tab, period: r.period, scrollY: r.scrollY });
+    await openInventoryPage({ period: r.period, scrollY: r.scrollY });
     return true;
 }
 

@@ -778,7 +778,7 @@
         .stock-inv-btn svg { width: 19px; height: 19px; }
         #ingredientCardsBody .stock-divider:first-child, #semiFinishedCardsBody .stock-divider:first-child { margin-top: 4px; }
         /* ── «Умный склад» — страница (21.10) ── */
-        .inv-toolbar { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 4px 0 8px; }
+        .inv-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 4px 0 8px; }
         .inv-period-lbl { font-size: 12px; color: #9a9488; white-space: nowrap; }
         .inv-an { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
         .inv-an span { font-size: 11px; color: #6f6a5e; background: #f1ede3; border-radius: 10px; padding: 3px 8px; white-space: nowrap; }
@@ -797,6 +797,16 @@
         .st-num { white-space: nowrap; color: #3c3a34; }
         .st-days { white-space: nowrap; font-weight: 600; }
         #inventoryPageBody .ot-island { margin-bottom: 4px; }
+        .inv-name { display: flex; align-items: center; gap: 6px; min-width: 0; }
+        .inv-name-txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .inv-sf-icon { width: 16px; height: 16px; color: #7c9473; flex-shrink: 0; }
+        .order-card .inv-name { align-items: flex-start; }
+        .order-card .inv-name .inv-name-txt { white-space: normal; overflow-wrap: break-word; }
+        .order-card .inv-name .inv-sf-icon { margin-top: 2px; }
+        .st-row .inv-sf-icon { width: 14px; height: 14px; }
+        .inv-warn-icon { width: 13px; height: 13px; color: #c0685c; flex-shrink: 0; }
+        .inv-batch-warn { display: flex; align-items: flex-start; gap: 6px; margin-top: 7px; padding: 5px 9px; border-radius: 10px; background: #f6e3df; color: #a3493d; font-size: 12px; line-height: 1.35; }
+        .inv-batch-warn .inv-warn-icon { margin-top: 2px; }
         /* Страница клиента (16.10): сворачиваемый блок «Реквизиты и НДС» */
         .cd-req-head { display: flex; align-items: center; gap: 8px; width: 100%; background: none; border: none; padding: 2px 0; cursor: pointer; }
         .cd-req-title { display: block; font-size: 14px; font-weight: 600; color: #3c3a34; }
@@ -1120,7 +1130,7 @@ function hideSplashScreen() {
         <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
         <path d="M1 1h4l2.68 13.39a2 2 0 001.98 1.61h9.72a2 2 0 001.98-1.61L23 6H6"/>
     </svg>
-    <span id="inventoryAlertDot" class="hidden" style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;background:#c0685c;border-radius:50%;animation:pulse-dot 1.5s infinite;"></span>
+    <span id="inventoryAlertDot" class="hidden" style="position:absolute;top:-1px;right:-1px;width:7px;height:7px;background:#c0685c;border-radius:50%;animation:pulse-dot 1.5s infinite;"></span>
 </button>
 
 <!-- Статистика: значок графика, доступен из любого раздела -->
@@ -3416,10 +3426,7 @@ function hideSplashScreen() {
                 <button type="button" onclick="showHelpModal('help_inventory_title','help_inventory_text')" class="help-marker" data-i18n-title="help_marker_label" title="Подробнее об этом разделе" style="margin-left:auto;">?</button>
             </div>
             <div class="inv-toolbar">
-                <div class="view-toggle-pill">
-                    <button type="button" id="invPageTabIng" class="stock-tab active" onclick="setInventoryPageTab('ing');" data-i18n="sf_back_to_ingredients">Ингредиенты</button>
-                    <button type="button" id="invPageTabSf" class="stock-tab" onclick="setInventoryPageTab('sf');" data-i18n="ing_semifinished_link">Полуфабрикаты</button>
-                </div>
+                <div id="invPagePeriod" class="view-toggle-pill"></div>
                 <div class="view-toggle-pill">
                     <button type="button" class="view-toggle-btn active" id="invViewBtnCards" onclick="setInventoryPageView('cards');" title="Карточки" data-i18n-title="inv_view_cards" aria-label="Карточки">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
@@ -3428,10 +3435,6 @@ function hideSplashScreen() {
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
                     </button>
                 </div>
-            </div>
-            <div class="inv-toolbar">
-                <span class="inv-period-lbl" data-i18n="inv_usage_period">Расход за</span>
-                <div id="invPagePeriod" class="view-toggle-pill"></div>
             </div>
             <div id="inventoryPageBody"></div>
         </div>
@@ -3442,13 +3445,13 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=86"></script>
+    <script src="i18n-core.js?v=87"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=16"></script>
     <script src="auth.js?v=21"></script>
     <script src="employees.js?v=55"></script>
     <script src="company.js?v=23"></script>
-    <script src="inventory.js?v=61"></script>
+    <script src="inventory.js?v=62"></script>
     <script src="billing.js?v=15"></script>
     <script src="push.js?v=9"></script>
 <script src="ingredients.js?v=45"></script>
