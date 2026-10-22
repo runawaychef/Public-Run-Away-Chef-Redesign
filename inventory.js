@@ -352,7 +352,7 @@ async function openInventoryPage(opts) {
     openAppPage('inventoryPage');
     renderInventoryPage();
     if (opts && opts.scrollY) requestAnimationFrame(() => window.scrollTo(0, opts.scrollY));
-    showLoading(t('inv_loading_stock'));
+    showLoading(); // без подписи — только бегущие точки (владелец 21.10)
     try { await loadInventory(); } finally { hideLoading(); }
 }
 
@@ -571,6 +571,12 @@ async function saveInventarization() {
         await loadInventory();
         closeModal();
         displayIngredients();
+        // Инвентаризация из карточки ингредиента (21.10, вариант Б): остаёмся в карточке
+        // с новым остатком; «Назад» из неё ведёт туда, откуда карточку открыли.
+        if (currentIngredientId != null && document.getElementById('ingredientDetail')?.classList.contains('active')) {
+            const ingOpen = ingredients.find(i => i.id === currentIngredientId);
+            if (ingOpen && typeof renderIngredientStockBlock === 'function') renderIngredientStockBlock(ingOpen);
+        }
         logActivity('inventory', `${t('ing_inventarization_note')} ${today}: ${t('log_adjusted')} ${rows.length} ${t('common_positions_word')}`);
         await showInfo(`${t('inventory_saved_prefix')} ${t('common_adjusted')}: ${rows.length} ${t('common_positions_word')}.`);
     } catch(e) { console.error(e); showInfo(t('error_save_generic')); }

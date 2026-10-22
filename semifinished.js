@@ -918,6 +918,13 @@ async function saveSfInventarization() {
 
         await loadInventory();
         closeModal();
+        displaySemiFinished();
+        // Инвентаризация из карточки полуфабриката (21.10, вариант Б): остаёмся в карточке
+        // с новым остатком; «Назад» из неё ведёт туда, откуда карточку открыли.
+        if (currentSemiFinishedId != null && document.getElementById('semiFinishedDetail')?.classList.contains('active')) {
+            const sfOpen = semiFinished.find(x => x.id === currentSemiFinishedId);
+            if (sfOpen && typeof renderSfStockBlock === 'function') renderSfStockBlock(sfOpen);
+        }
         logActivity('inventory', `${t('sf_inventarization_title')} ${today}: ${rows.length} ${t('common_positions_word')}`);
         await showInfo(`${t('toast_saved')}: ${rows.length} ${t('common_positions_word')}.`);
     } catch(e) { console.error(e); showInfo(t('common_error_generic')); }
