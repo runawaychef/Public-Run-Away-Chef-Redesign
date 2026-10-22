@@ -413,6 +413,8 @@ async function _payBankLockedMessage() {
     const go = await showConfirm(t('bank_pay_locked_title') + '\n\n' + t('bank_pay_locked_text'), { ok: t('bank_pay_locked_open'), cancel: t('bank_pay_locked_ok') });
     if (go && typeof openBankSection === 'function') {
         const ord = document.getElementById('orderDetail');
+        // Уходим в «Поступления» — память «вернуться в карточку позиции» не нужна (22.10)
+        if (typeof forgetSmartStockReturn === 'function') forgetSmartStockReturn();
         if (ord && typeof closeOrderDetail === 'function') { try { closeOrderDetail(); } catch (e) { /* ничего */ } }
         bankState.tab = 'closed';
         openBankSection().then(() => bankSetTab('closed'));

@@ -560,10 +560,38 @@ function renderStockSmartInfo(kind, item, elId) {
     el.classList.remove('hidden');
 }
 
-// Заказ из блока «Умный склад» в карточке позиции
+// Заказ из блока «Умный склад» в карточке позиции (22.10): «Назад» из заказа возвращает
+// в ту же карточку (на то же место); если карточка была открыта из «Умного склада» —
+// эта память сохраняется, и следующий «Назад» из карточки ведёт в «Умный склад».
+// Переход по нижнему меню/иконкам сбрасывает обе памяти (showTab → forgetSmartStockReturn).
+let _stockCardReturn = null;    // { kind: 'ing'|'sf', id, scrollY, smart }
 function openOrderFromStockCard(orderId) {
-    showTab('orders');
+    const sfActive = !!document.getElementById('semiFinishedDetail')?.classList.contains('active');
+    const id = sfActive ? currentSemiFinishedId : currentIngredientId;
+    const ret = (id !== null && id !== undefined)
+        ? { kind: sfActive ? 'sf' : 'ing', id, scrollY: window.scrollY || 0, smart: _smartStockReturn }
+        : null;
+    _smartNavInternal = true;
+    try { showTab('orders'); } finally { _smartNavInternal = false; }
+    _smartStockReturn = null;       // хранится внутри ret, вернётся вместе с карточкой
+    _stockCardReturn = ret;
     if (typeof openOrderDetail === 'function') openOrderDetail(orderId);
+}
+function stockCardReturnPending() { return !!_stockCardReturn; }
+// Вызывается из closeOrderDetail (кнопка «Назад», системная «назад») и после удаления открытого заказа.
+async function returnToStockCard() {
+    const r = _stockCardReturn;
+    _stockCardReturn = null;
+    if (!r) return false;
+    const isSf = r.kind === 'sf';
+    _smartNavInternal = true;
+    try { showTab(isSf ? 'semiFinished' : 'ingredients'); } finally { _smartNavInternal = false; }
+    const exists = isSf ? semiFinished.some(s => s.id === r.id) : ingredients.some(i => i.id === r.id);
+    if (!exists) return true;       // позицию удалили — остаёмся в списке раздела
+    _smartStockReturn = r.smart || null;
+    if (isSf) openSemiFinishedDetail(r.id); else await openIngredientDetail(r.id);
+    requestAnimationFrame(() => window.scrollTo(0, r.scrollY || 0));
+    return true;
 }
 
 // Нажатие на карточку/строку «Умного склада» → карточка позиции в разделе «Склад».
@@ -581,7 +609,7 @@ function openStockItemFromSmart(kind, id) {
     if (kind === 'sf') openSemiFinishedDetail(id); else openIngredientDetail(id);
 }
 function smartStockReturnPending() { return !!_smartStockReturn; }
-function forgetSmartStockReturn() { if (!_smartNavInternal) _smartStockReturn = null; }
+function forgetSmartStockReturn() { if (!_smartNavInternal) { _smartStockReturn = null; _stockCardReturn = null; } }
 // Вызывается из closeIngredientDetail / closeSemiFinishedDetail (кнопка «Назад» и системная «назад»).
 async function returnToSmartStock() {
     const r = _smartStockReturn;
