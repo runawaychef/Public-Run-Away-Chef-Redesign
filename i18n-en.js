@@ -445,6 +445,7 @@ I18N.en = {
 
         // Inventory analytics + Shopping list
         inv_title: 'Smart Stock',
+        inv_per_day_word: 'per day',
         sf_unit_cost_short: 'Cost per unit',
         sf_action_produce: 'Produce',
         sf_produced_short: 'produced',

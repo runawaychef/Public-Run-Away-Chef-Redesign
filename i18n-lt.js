@@ -435,6 +435,7 @@ I18N.lt = {
         help_stock_cards_title: 'Ingredientų ir pusgaminių kortelės',
         help_stock_cards_text: '„Dabar“ — kas fiziškai yra sandėlyje. „Po nurašymo“ — kiek liks, kai bus įvykdyti visi priimti užsakymai. Raudona juosta ir raudonas skaičius — likutis nulinis arba neigiamas (neužtenka užsakymams); tokios pozicijos rodomos viršuje, skiltyje „Reikia dėmesio“.\n\nPrognozė — kiek ir iki kada užteks, kuriam užsakymui neužteks — Išmaniajame sandėlyje (planas Full).\n\nPaspaudus kortelę atidaroma pozicija. Braukite kairėn — greitas mygtukas „Kopijuoti“.',
         inv_title: 'Išmanusis sandėlis',
+        inv_per_day_word: 'per dieną',
         sf_unit_cost_short: 'Savikaina vnt.',
         sf_action_produce: 'Gaminti',
         sf_produced_short: 'pagaminta',

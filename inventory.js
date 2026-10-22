@@ -539,18 +539,23 @@ function renderStockSmartInfo(kind, item, elId) {
     const unit = unitAbbrev(item.unit);
     let html = ''; // заголовок «Умный склад» с иконкой убран (владелец 21.10)
     if (ro.firstShort) html += stockShortLineHtml(ro, unit);
-    else html += `<div class="inv-info-kv"><span>${t('inv_stock_until')}</span><span>${ro.forecastDate ? '≈ ' + _invDM(ro.forecastDate) : '—'}</span></div>`;
     if (kind === 'sf') {
         const bs = sfBatchShortNames(item, ctx);
         if (bs.length) html += `<div class="inv-batch-warn">${INV_WARN_ICON}<span>${t('inv_sf_batch_short')} ${bs.map(escapeHtml).join(', ')}</span></div>`;
     }
-    html += `<div class="inv-info-kv"><span>${t('inv_used_for_days').replace('{n}', 30)}</span><span>${_invFmt(st.usedInPeriod)} ${unit} · ${_invFmt(st.daily)} ${unit}${t('inv_per_day_suffix')}</span></div>`;
     const next = ro.orders.slice(0, 3);
     if (next.length) {
         html += `<div class="inv-info-sub">${t('inv_next_orders')}</div>`;
         html += next.map(x => `<div class="inv-info-ord${x.short ? ' short' : ''}" onclick="openOrderFromStockCard(${x.order.id})">
             <span>${_invDM(x.order.date)}</span><span class="inv-info-cust">${escapeHtml(x.order.customer || (typeof orderNumLabel === 'function' ? orderNumLabel(x.order) : ''))}</span><span>${_invFmt(x.need)} ${unit}</span></div>`).join('');
     }
+    // Метки внизу блока (вариант А, владелец 22.10) — как в карточках «Умного склада»:
+    // «Запас до ≈ …» (только если нехватки нет), «За 30 дн. X», «Y в день»
+    const chips = [];
+    if (!ro.firstShort && ro.forecastDate) chips.push(`${t('inv_stock_until')} ≈ ${_invDM(ro.forecastDate)}`);
+    chips.push(`${t('inv_used_for_days').replace('{n}', 30)} ${_invFmt(st.usedInPeriod)} ${unit}`);
+    chips.push(`${_invFmt(st.daily)} ${unit} ${t('inv_per_day_word')}`);
+    html += `<div class="inv-an inv-info-chips">${chips.map(c => `<span>${escapeHtml(c)}</span>`).join('')}</div>`;
     el.innerHTML = html;
     el.classList.remove('hidden');
 }

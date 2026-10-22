@@ -444,6 +444,7 @@ I18N.ru = {
 
         // Аналитика склада + Список покупок
         inv_title: 'Умный склад',
+        inv_per_day_word: 'в день',
         sf_unit_cost_short: 'Себест. за ед.',
         sf_action_produce: 'Произвести',
         sf_produced_short: 'произведено',
