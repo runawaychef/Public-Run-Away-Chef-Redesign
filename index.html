@@ -812,6 +812,16 @@
         .trash-grid span:nth-child(2), .trash-grid span:nth-child(3) { text-align: left !important; }
         .trash-grid .st-name { font-weight: 500; }
         .trash-left-warn { color: #a3493d; font-weight: 600; }
+        /* Инвентаризация полного списка — страница (22.10) */
+        .st-head.sc-grid, .st-row.sc-grid { grid-template-columns: minmax(0, 1fr) 64px 70px 54px; }
+        .st-row.sc-grid { cursor: default; padding: 7px 0; }
+        .sc-search { width: 100%; border: 1px solid #e2ddd0; border-radius: 999px; padding: 7px 12px; font-size: 13px; margin: 2px 0 6px; background: #fff; }
+        .sc-input { width: 100%; border: 1px solid #e2ddd0; border-radius: 8px; padding: 4px 6px; font-size: 13px; text-align: right; background: #fff; }
+        .sc-input.filled { border-color: #7c9473; }
+        .sc-diff-pos { color: #4f6349; font-weight: 600; }
+        .sc-diff-neg { color: #a3493d; font-weight: 600; }
+        .sc-bar { position: sticky; bottom: calc(80px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid #e3ddcc; border-radius: 14px; padding: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 10px; z-index: 5; }
+        .sc-changes { font-size: 12px; color: #6b675d; white-space: nowrap; }
         /* «Информация о компании» — страница, поля по блокам (22.10) */
         .cmp-card { background: #fff; border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); padding: 10px 12px 12px; margin-bottom: 10px; }
         .cmp-card-title { font-size: 12px; font-weight: 600; color: #4f6349; margin-bottom: 8px; }
@@ -3565,6 +3575,28 @@ function hideSplashScreen() {
                 <button id="employeeDeleteBtn" onclick="deleteEmployee()" class="pill-btn-danger hidden" data-i18n="common_delete">Удалить</button>
             </div>
         </div>
+        <!-- ===== СТРАНИЦА «Инвентаризация» полного списка (22.10, inventory.js openStockCountPage): ингредиенты или
+             полуфабрикаты; поиск, Учёт | Факт | Разница (сразу при вводе), закреплённая кнопка сохранения.
+             Одна позиция из карточки — по-прежнему окно (inventarizationModal / sfInventarizationModal). ===== -->
+        <div id="stockCountPage" class="app-page">
+            <div class="cmp-card">
+                <div class="flex items-center gap-2 mb-2">
+                    <button onclick="closeAppPage()" class="pill-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        <span data-i18n="common_back">Назад</span>
+                    </button>
+                    <h2 id="stockCountTitle" class="text-gray-800" style="font-size:15px; font-weight:600; margin:0 0 0 auto; text-align:right; line-height:1.25;"></h2>
+                </div>
+                <p class="text-xs text-gray-500 mb-2" style="line-height:1.5;" data-i18n="inv_enter_actual_qty">Введите фактическое количество.</p>
+                <input id="stockCountSearch" type="search" autocomplete="off" class="sc-search" oninput="filterStockCount(this.value)" placeholder="Поиск по названию" data-i18n-placeholder="inv_count_search">
+                <div class="st-head sc-grid"><span data-i18n="inv_col_name">Название</span><span data-i18n="inv_col_book">Учёт</span><span data-i18n="inv_col_actual">Факт</span><span data-i18n="inv_col_diff">Разница</span></div>
+                <div id="stockCountBody" class="ot-island"></div>
+            </div>
+            <div class="sc-bar">
+                <span id="stockCountChanges" class="sc-changes"></span>
+                <button onclick="saveStockCount()" class="pill-btn justify-center" style="flex:1; padding:10px 12px;" data-i18n="ing_save_inventarization">Сохранить инвентаризацию</button>
+            </div>
+        </div>
         <div id="inventoryPage" class="app-page">
             <div class="flex items-center gap-2 mb-2" style="position:relative; padding:0 2px;">
                 <button onclick="closeInventoryPage()" class="pill-btn">
@@ -3594,18 +3626,18 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=96"></script>
+    <script src="i18n-core.js?v=97"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=16"></script>
     <script src="auth.js?v=22"></script>
     <script src="employees.js?v=57"></script>
     <script src="company.js?v=24"></script>
-    <script src="inventory.js?v=68"></script>
+    <script src="inventory.js?v=69"></script>
     <script src="billing.js?v=15"></script>
     <script src="push.js?v=9"></script>
 <script src="ingredients.js?v=50"></script>
 <script src="batches.js?v=11"></script>
-<script src="semifinished.js?v=50"></script>
+<script src="semifinished.js?v=51"></script>
 <script src="products.js?v=35"></script>
 <script src="customers.js?v=58"></script>
 <script src="calendar.js?v=14"></script>
@@ -4560,6 +4592,7 @@ const _backHandledDetailScreens = [
     { id: 'ordersTrashPage',    close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'companyInfoPage',    close: () => { if (typeof closeCompanyInfoPage === 'function') closeCompanyInfoPage(); } },
     { id: 'employeePage',       close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
+    { id: 'stockCountPage',     close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'employeesPage',      close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'orderDetail',        close: () => { if (typeof closeOrderDetail === 'function') closeOrderDetail(); } },
     { id: 'customerDetail',     close: () => { if (typeof closeCustomerDetail === 'function') closeCustomerDetail(); } },

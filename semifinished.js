@@ -836,6 +836,8 @@ function editSfInventoryRecord(id, qty, notes) {
 
 // Инвентаризация полуфабрикатов
 function openSfInventarizationModal(singleSfId) {
+    // Весь список — страница (22.10, inventory.js openStockCountPage); одна позиция — окно
+    if (singleSfId == null && typeof openStockCountPage === 'function') { openStockCountPage('sf'); return; }
     const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
     let list = semiFinished.slice();
     if (singleSfId != null) list = list.filter(sf => sf.id === singleSfId);

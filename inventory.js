@@ -647,6 +647,8 @@ async function returnToSmartStock() {
 // ── Инвентаризация ───────────────────────────────────────────────────────────
 
 function openInventarizationModal(singleIngId) {
+    // Весь список — страница (22.10); одна позиция из карточки — окно, как раньше
+    if (singleIngId == null) { openStockCountPage('ing'); return; }
     const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
     let list = ingredients.slice();
     if (singleIngId != null) list = list.filter(ing => ing.id === singleIngId);
@@ -743,6 +745,119 @@ async function saveInventarization() {
     } catch(e) { console.error(e); showInfo(t('error_save_generic')); }
     finally { hideLoading(); }
 }
+
+// ── Инвентаризация полного списка — страница (22.10) ──────────────────────────
+// kind: 'ing' | 'sf'. Учёт — остаток до списания (как в окне), Факт — ввод, Разница — сразу.
+// Запись — тем же способом, что и в окне: излишек — rpc_receive_stock по текущей цене
+// (новая партия), недостача — rpc_write_off_stock. Уход с заполненными полями — вопрос.
+let _sc = null; // { kind, items: [{id, name, unit, balance}] }
+function _scFmt(x) { return String(Math.round(Number(x) * 100) / 100).replace('.', ','); }
+function openStockCountPage(kind) {
+    const isSf = kind === 'sf';
+    const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
+    const src = (isSf ? semiFinished : ingredients).slice().sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    _sc = { kind, items: src.map(x => ({
+        id: x.id, name: x.name || '', unit: unitAbbrev(x.unit),
+        balance: (isSf ? getSemiFinishedBalanceBeforeWriteoff(x.id, pendingMap) : getIngredientBalanceBeforeWriteoff(x.id, pendingMap)) || 0,
+    })) };
+    document.getElementById('stockCountTitle').textContent = t(isSf ? 'inv_count_title_sf' : 'inv_count_title_ing');
+    const search = document.getElementById('stockCountSearch');
+    if (search) search.value = '';
+    document.getElementById('stockCountBody').innerHTML = _sc.items.map(it => `
+        <div class="st-row sc-grid" data-sc-name="${escapeHtml(it.name.toLowerCase())}">
+            <span class="st-name">${escapeHtml(it.name)}</span>
+            <span class="st-num" style="color:#9a9488;">${_scFmt(it.balance)} ${escapeHtml(it.unit)}</span>
+            <span><input type="number" inputmode="decimal" step="0.01" min="0" class="sc-input" data-sc-id="${it.id}" placeholder="${escapeHtml(it.unit)}" oninput="onStockCountInput(this)"></span>
+            <span class="st-num" id="scDiff${it.id}"></span>
+        </div>`).join('') || `<p class="inv-empty">—</p>`;
+    _scUpdateChanges();
+    openAppPage('stockCountPage');
+}
+function _scRows() {
+    if (!_sc) return [];
+    const rows = [];
+    document.querySelectorAll('#stockCountBody .sc-input').forEach(inp => {
+        if (inp.value === '') return;
+        const val = parseFloat(inp.value);
+        if (isNaN(val)) return;
+        const it = _sc.items.find(x => x.id === Number(inp.dataset.scId));
+        if (!it) return;
+        const diff = parseFloat((val - it.balance).toFixed(4));
+        if (Math.abs(diff) < 0.0001) return;
+        rows.push({ id: it.id, type: diff > 0 ? 'приход' : 'расход', quantity: Math.abs(diff) });
+    });
+    return rows;
+}
+function onStockCountInput(inp) {
+    const it = _sc && _sc.items.find(x => x.id === Number(inp.dataset.scId));
+    const cell = document.getElementById('scDiff' + inp.dataset.scId);
+    inp.classList.toggle('filled', inp.value !== '');
+    if (it && cell) {
+        const val = parseFloat(inp.value);
+        if (inp.value === '' || isNaN(val)) { cell.textContent = ''; cell.className = 'st-num'; }
+        else {
+            const d = Math.round((val - it.balance) * 100) / 100;
+            cell.textContent = d === 0 ? '0' : (d > 0 ? '+' : '−') + _scFmt(Math.abs(d));
+            cell.className = 'st-num' + (d > 0 ? ' sc-diff-pos' : d < 0 ? ' sc-diff-neg' : '');
+        }
+    }
+    _scUpdateChanges();
+}
+function _scUpdateChanges() {
+    const el = document.getElementById('stockCountChanges');
+    if (el) el.textContent = t('inv_count_changes').replace('{n}', _scRows().length);
+}
+function filterStockCount(q) {
+    const s = String(q || '').trim().toLowerCase();
+    document.querySelectorAll('#stockCountBody .st-row').forEach(r => {
+        r.style.display = !s || (r.dataset.scName || '').includes(s) ? '' : 'none';
+    });
+}
+async function saveStockCount(opts) {
+    const fromLeave = !!(opts && opts.fromLeave);
+    if (!_sc) return true;
+    const isSf = _sc.kind === 'sf';
+    const rows = _scRows();
+    if (!rows.length) { await showInfo(t(isSf ? 'sf_no_changes' : 'inv_no_changes')); return false; }
+    if (!fromLeave && !(await showConfirm(`${t('sf_record_adjustments_confirm')} ${rows.length}?`))) return false;
+    const today = getLocalDateStr(0);
+    const notes = `${t('ing_inventarization_note')} ${today}`;
+    showLoading(t('inv_saving_inventarization'));
+    try {
+        for (const r of rows) {
+            const item = isSf ? semiFinished.find(s => s.id === r.id) : ingredients.find(i => i.id === r.id);
+            if (!item) continue;
+            const price = isSf ? semiFinishedUnitCost(item) : ingredientUnitPrice(item);
+            const itemType = isSf ? 'semi_finished' : 'ingredient';
+            const { error } = r.type === 'приход'
+                ? await db.rpc('rpc_receive_stock', { p_org_id: currentOrgId, p_item_type: itemType, p_item_id: r.id, p_unit_price: price, p_qty: r.quantity, p_source: 'инвентаризация', p_notes: notes })
+                : await db.rpc('rpc_write_off_stock', { p_org_id: currentOrgId, p_item_type: itemType, p_item_id: r.id, p_qty: r.quantity, p_shortage_price: price, p_notes: notes });
+            if (error) throw error;
+        }
+        await loadInventory();
+        _sc = null;
+        if (isSf) displaySemiFinished(); else displayIngredients();
+        logActivity('inventory', `${t(isSf ? 'sf_inventarization_title' : 'ing_inventarization_note')} ${today}: ${t('log_adjusted')} ${rows.length} ${t('common_positions_word')}`);
+        if (!fromLeave && appPageTop() === 'stockCountPage') closeAppPage(true);
+        hideLoading();
+        await showInfo(`${t('inventory_saved_prefix')} ${t('common_adjusted')}: ${rows.length} ${t('common_positions_word')}.`);
+        return true;
+    } catch (e) {
+        console.error(e);
+        showInfo(t('error_save_generic'));
+        return false;
+    } finally { hideLoading(); }
+}
+function _scDirty() { return !!_sc && isAppPageOpen('stockCountPage') && !!document.querySelector('#stockCountBody .sc-input.filled'); }
+async function _scCanLeave() {
+    if (!_scDirty()) { _sc = null; return true; }
+    if (!_scRows().length) { _sc = null; return true; } // заполнено, но без разницы — нечего записывать
+    const save = await showConfirm(t('employees_leave_confirm'), { ok: t('common_save'), cancel: t('employees_leave_discard') });
+    if (!save) { _sc = null; return true; }
+    return await saveStockCount({ fromLeave: true });
+}
+_scCanLeave.needed = _scDirty;
+(window._appPageCanLeave = window._appPageCanLeave || {}).stockCountPage = _scCanLeave;
 
 // ── Пополнение склада ────────────────────────────────────────────────────────
 
