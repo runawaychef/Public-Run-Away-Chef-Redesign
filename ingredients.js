@@ -720,14 +720,14 @@ async function renderIngredientStockBlock(ing) {
     const balBeforeEl = document.getElementById('ingBalanceBeforeValue');
     const unitBeforeEl = document.getElementById('ingBalanceBeforeUnit');
 
-    if (balBeforeEl) balBeforeEl.textContent = balanceBefore !== null ? Number(balanceBefore).toFixed(2) : '—';
+    if (balBeforeEl) balBeforeEl.textContent = balanceBefore !== null ? Number(balanceBefore).toFixed(1) : '—'; // 1 знак — как на карточке «Склада»
     if (unitBeforeEl) unitBeforeEl.textContent = unitLabel;
 
     if (balEl) {
         // Показываем реальное число, включая отрицательное (реальная нехватка) —
         // раньше отрицательный баланс подменялся на "0", скрывая проблему.
         if (balance !== null) {
-            balEl.textContent = Number(balance).toFixed(2);
+            balEl.textContent = Number(balance).toFixed(1);
             const colorClass = balance <= 0 ? 'text-[#c0685c]' : 'text-[#4f6349]';
             balEl.className = colorClass + ' font-bold';
         } else {
