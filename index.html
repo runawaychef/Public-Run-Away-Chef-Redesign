@@ -841,8 +841,6 @@
         .itm-sec.open > .itm-sec-body { display: block; }
         .itm-sec-pad { padding: 0 12px 12px; }
         .itm-del { text-align: center; margin: 4px 0 14px; }
-        .itm-del button { background: none; border: none; color: #c0685c; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; cursor: pointer; }
-        .itm-del button svg { width: 15px; height: 15px; }
         .inv-info-title { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: #4f6349; margin-bottom: 4px; }
         .inv-info-title svg { width: 14px; height: 14px; }
         .inv-info-kv { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; padding: 3px 0; color: #3c3a34; }
@@ -1580,9 +1578,9 @@ function hideSplashScreen() {
                     </div>
                 </div>
 
-                <!-- Удалить — внизу, тихой кнопкой -->
+                <!-- Удалить — внизу по центру, стандартная красная кнопка -->
                 <div class="itm-del">
-                    <button onclick="deleteCurrentIngredient()" class="perm-delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M9 7V4h6v3"/></svg><span data-i18n="ing_delete_btn">Удалить ингредиент</span></button>
+                    <button onclick="deleteCurrentIngredient()" class="pill-btn-danger perm-delete" data-i18n="ing_delete_btn">Удалить ингредиент</button>
                 </div>
             </div>
         </div>
@@ -1757,9 +1755,9 @@ function hideSplashScreen() {
                     </div>
                 </div>
 
-                <!-- Удалить — внизу, тихой кнопкой -->
+                <!-- Удалить — внизу по центру, стандартная красная кнопка -->
                 <div class="itm-del">
-                    <button onclick="deleteCurrentSemiFinished()" class="perm-delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M9 7V4h6v3"/></svg><span data-i18n="sf_delete_btn">Удалить полуфабрикат</span></button>
+                    <button onclick="deleteCurrentSemiFinished()" class="pill-btn-danger perm-delete" data-i18n="sf_delete_btn">Удалить полуфабрикат</button>
                 </div>
             </div>
         </div>
@@ -2096,7 +2094,7 @@ function hideSplashScreen() {
                             <button onclick="goToCustomerFromOrder()" class="pill-btn" data-i18n="orders_customer_card">Карточка клиента</button>
                         </div>
                         <div class="flex gap-1.5 items-center">
-                            <button onclick="deleteCurrentOrder()" title="Удалить заказ" class="icon-btn-detail perm-delete" style="color:#c0685c;" data-i18n-title="orders_delete_order"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg></button>
+                            <button onclick="deleteCurrentOrder()" class="pill-btn-danger perm-delete" data-i18n="common_delete">Удалить</button>
                         </div>
                     </div>
                     <p id="detailOrderId" class="text-sm font-semibold text-gray-600 mt-2 mb-1"></p>
