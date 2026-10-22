@@ -344,12 +344,14 @@ function _invView() { return _invViewFallback || _invViewMode(); }
 // Старое имя — кнопка-тележка в шапке и прежние вызовы.
 async function openInventoryModal() { return openInventoryPage(); }
 
-async function openInventoryPage() {
+// opts (при возврате из карточки позиции): { tab, period, scrollY } — прежнее место.
+async function openInventoryPage(opts) {
     if (!hasPermission('can_manage_inventory')) { showInfo(t('inv_no_access')); return; }
     if (!hasPlanFeature('cost_analytics')) { showInfo(t('inv_full_only')); return; }
-    _invPage = { tab: 'ing', period: 30 };
+    _invPage = { tab: opts && opts.tab === 'sf' ? 'sf' : 'ing', period: opts && [7, 30, 90].includes(opts.period) ? opts.period : 30 };
     openAppPage('inventoryPage');
     renderInventoryPage();
+    if (opts && opts.scrollY) requestAnimationFrame(() => window.scrollTo(0, opts.scrollY));
     showLoading(t('inv_loading_stock'));
     try { await loadInventory(); } finally { hideLoading(); }
 }
@@ -452,10 +454,31 @@ function _invTableHtml(rows, isSf) {
     return head + stockGroupsHtml(attn.length ? [island(attn)] : [], ok.length ? [island(ok)] : []);
 }
 
-// Нажатие на карточку «Умного склада» → карточка позиции (возврат — шаг 4).
+// Нажатие на карточку/строку «Умного склада» → карточка позиции в разделе «Склад».
+// Запоминаем, откуда пришли: «Назад» из карточки вернёт в «Умный склад» на то же место
+// (вкладка, период, прокрутка), а потом «Назад» из него — в раздел, где он был открыт.
+// Переход по нижнему меню/иконкам память сбрасывает (showTab → forgetSmartStockReturn).
+let _smartStockReturn = null;   // { prevTab, tab, period, scrollY }
+let _smartNavInternal = false;  // наш собственный showTab — память не сбрасывать
 function openStockItemFromSmart(kind, id) {
-    if (kind === 'sf') { showTab('semiFinished'); openSemiFinishedDetail(id); }
-    else { showTab('ingredients'); openIngredientDetail(id); }
+    const ret = { prevTab: (typeof currentTabId !== 'undefined' && currentTabId) || 'orders',
+                  tab: _invPage.tab, period: _invPage.period, scrollY: window.scrollY || 0 };
+    _smartNavInternal = true;
+    try { showTab(kind === 'sf' ? 'semiFinished' : 'ingredients'); } finally { _smartNavInternal = false; }
+    _smartStockReturn = ret;
+    if (kind === 'sf') openSemiFinishedDetail(id); else openIngredientDetail(id);
+}
+function smartStockReturnPending() { return !!_smartStockReturn; }
+function forgetSmartStockReturn() { if (!_smartNavInternal) _smartStockReturn = null; }
+// Вызывается из closeIngredientDetail / closeSemiFinishedDetail (кнопка «Назад» и системная «назад»).
+async function returnToSmartStock() {
+    const r = _smartStockReturn;
+    _smartStockReturn = null;
+    if (!r) return false;
+    _smartNavInternal = true;
+    try { if (r.prevTab !== currentTabId) showTab(r.prevTab); } finally { _smartNavInternal = false; }
+    await openInventoryPage({ tab: r.tab, period: r.period, scrollY: r.scrollY });
+    return true;
 }
 
 (window._appPageOnShow = window._appPageOnShow || {}).inventoryPage = () => renderInventoryPage();

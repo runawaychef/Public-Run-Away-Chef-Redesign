@@ -3448,12 +3448,12 @@ function hideSplashScreen() {
     <script src="auth.js?v=21"></script>
     <script src="employees.js?v=55"></script>
     <script src="company.js?v=23"></script>
-    <script src="inventory.js?v=59"></script>
+    <script src="inventory.js?v=60"></script>
     <script src="billing.js?v=15"></script>
     <script src="push.js?v=9"></script>
-<script src="ingredients.js?v=44"></script>
+<script src="ingredients.js?v=45"></script>
 <script src="batches.js?v=10"></script>
-<script src="semifinished.js?v=43"></script>
+<script src="semifinished.js?v=44"></script>
 <script src="products.js?v=35"></script>
 <script src="customers.js?v=58"></script>
 <script src="calendar.js?v=14"></script>
@@ -3725,6 +3725,8 @@ function renderAllScreens() {
 function showTab(tabId) {
     // Открыта страница «Отправить документ»: уход по меню/иконкам закрывает её (с вопросом, если текст письма изменён)
     if (typeof appPagesLeaveGuard === 'function' && appPagesLeaveGuard(() => showTab(tabId))) return;
+    // Переход по меню сбрасывает память «вернуться в Умный склад» (inventory.js, 21.10)
+    if (typeof forgetSmartStockReturn === 'function') forgetSmartStockReturn();
     if (tabId === 'stats' && typeof hasPermission === 'function' && !hasPermission('can_view_reports')) {
         showInfo('У вас нет доступа к статистике. Обратитесь к владельцу пекарни.');
         return;

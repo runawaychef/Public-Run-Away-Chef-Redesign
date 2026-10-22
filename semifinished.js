@@ -264,6 +264,8 @@ async function closeSemiFinishedDetail() {
     if (leavingId !== null) await cleanupSemiFinishedDraftIfEmpty(leavingId);
     displaySemiFinished();
     refreshFab();
+    // Карточку открыли из «Умного склада» — возвращаемся туда (inventory.js, 21.10)
+    if (typeof smartStockReturnPending === 'function' && smartStockReturnPending()) await returnToSmartStock();
 }
 
 // Удаление полуфабриката прямо из его карточки (то же окно подтверждения, что и из списка)

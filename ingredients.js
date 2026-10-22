@@ -598,6 +598,8 @@ async function closeIngredientDetail() {
     if (leavingId !== null) await cleanupIngredientDraftIfEmpty(leavingId);
     displayIngredients();
     refreshFab();
+    // Карточку открыли из «Умного склада» — возвращаемся туда (inventory.js, 21.10)
+    if (typeof smartStockReturnPending === 'function' && smartStockReturnPending()) await returnToSmartStock();
 }
 
 function renderIngredientUnitPrice(ing) {
