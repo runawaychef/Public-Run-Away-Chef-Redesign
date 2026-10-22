@@ -809,6 +809,33 @@
         .inv-batch-warn .inv-warn-icon { margin-top: 2px; }
         .inv-batch-warn b { font-weight: 600; }
         .batches-not-needed { display: none !important; }
+        /* ── Карточка ингредиента / полуфабриката — новая раскладка (21.10) ── */
+        .itm-top { display: flex; align-items: center; position: relative; min-height: 36px; margin: 0 2px 10px; }
+        .itm-title { position: absolute; left: 50%; transform: translateX(-50%); max-width: calc(100% - 210px); margin: 0; font-size: 15px; font-weight: 600; color: #3c3a34; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 5px; }
+        .itm-card { background: #fff; border-radius: 16px; padding: 11px 12px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.05); }
+        .itm-autosave { font-size: 11px; color: #a29c8c; text-align: right; margin: 0 0 6px; }
+        .itm-lbl { display: block; font-size: 12px; color: #8d887b; margin-bottom: 2px; }
+        .itm-cells { margin-top: 0; }
+        .itm-cells .oc-cell-val { font-size: 15px; }
+        .itm-smart { margin-top: 10px; }
+        .itm-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+        .itm-actions button { background: #fff; border: none; border-radius: 14px; padding: 9px 4px; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 12px; color: #4f6349; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.05); }
+        .itm-actions button svg { width: 19px; height: 19px; color: #7c9473; }
+        .itm-actions button.danger { color: #a3493d; }
+        .itm-actions button.danger svg { color: #c0685c; }
+        .itm-actions button:active { background: #f6f8f4; }
+        .itm-sec { background: #fff; border-radius: 16px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.05); overflow: hidden; }
+        .itm-sec-head { display: flex; align-items: center; gap: 8px; padding: 12px; cursor: pointer; }
+        .itm-sec-title { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; color: #3c3a34; }
+        .itm-sec-sum { font-size: 12px; color: #8d887b; white-space: nowrap; }
+        .itm-chev { width: 15px; height: 15px; color: #9a9488; flex-shrink: 0; transition: transform .15s; }
+        .itm-sec.open > .itm-sec-head .itm-chev { transform: rotate(180deg); }
+        .itm-sec-body { display: none; padding: 0 12px 12px; }
+        .itm-sec.open > .itm-sec-body { display: block; }
+        .itm-sec-pad { padding: 0 12px 12px; }
+        .itm-del { text-align: center; margin: 4px 0 14px; }
+        .itm-del button { background: none; border: none; color: #c0685c; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; cursor: pointer; }
+        .itm-del button svg { width: 15px; height: 15px; }
         .inv-info-title { display: flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; color: #4f6349; margin-bottom: 4px; }
         .inv-info-title svg { width: 14px; height: 14px; }
         .inv-info-kv { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; padding: 3px 0; color: #3c3a34; }
@@ -1452,23 +1479,26 @@ function hideSplashScreen() {
 
             <!-- Карточка ингредиента -->
             <div id="ingredientDetail">
-                <!-- Блок 1: Навигация + название + единица измерения -->
-                <div class="bg-white p-2 rounded-xl shadow-md mb-3">
-                    <div class="flex items-center justify-between mb-2">
-                        <button onclick="closeIngredientDetail()" class="pill-btn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-                            <span data-i18n="common_back">Назад</span>
-                        </button>
-                        <button onclick="deleteCurrentIngredient()" class="pill-btn-danger perm-delete" data-i18n="ing_delete_btn">Удалить ингредиент</button>
-                    </div>
-                    <p class="text-[11px] text-gray-400 mb-1" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
-                    <div class="grid grid-cols-2 gap-1 mt-1">
+                <!-- Карточка ингредиента — новая раскладка (21.10): шапка → основное → сводка (+ Умный склад) →
+                     действия → сворачиваемые разделы → «Удалить» внизу -->
+                <div class="itm-top">
+                    <button onclick="closeIngredientDetail()" class="pill-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        <span data-i18n="common_back">Назад</span>
+                    </button>
+                    <h2 id="idTitle" class="itm-title"></h2>
+                </div>
+
+                <!-- Основное: название и единица -->
+                <div class="itm-card">
+                    <p class="itm-autosave" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
+                    <div class="grid grid-cols-2 gap-2">
                         <div>
-                            <label class="table-text text-gray-500" data-i18n="inv_col_name">Название</label>
-                            <input id="idNameInput" type="text" onblur="saveIngredientHeader()" class="border p-0.5 rounded-xl w-full table-text" placeholder="Например: Мука пшеничная" data-i18n-placeholder="ing_name_placeholder">
+                            <label class="itm-lbl" data-i18n="inv_col_name">Название</label>
+                            <input id="idNameInput" type="text" onblur="saveIngredientHeader()" oninput="document.getElementById('idTitle').textContent=this.value" class="border p-0.5 rounded-xl w-full table-text" placeholder="Например: Мука пшеничная" data-i18n-placeholder="ing_name_placeholder">
                         </div>
                         <div>
-                            <label class="table-text text-gray-500" data-i18n="ing_unit_label">Единица</label>
+                            <label class="itm-lbl" data-i18n="ing_unit_label">Единица</label>
                             <select id="idUnitInput" onchange="saveIngredientHeader()" class="border p-0.5 rounded-xl w-full table-text">
                                 <option value="g" data-i18n="unit_g">г</option>
                                 <option value="kg" data-i18n="unit_kg">кг</option>
@@ -1485,84 +1515,66 @@ function hideSplashScreen() {
                     <button id="idSaveNewBtn" onclick="saveNewIngredient()" class="hidden pill-btn w-full justify-center mt-2" data-i18n="common_save">Сохранить</button>
                 </div>
 
-                <!-- Блок 2: Пополнить склад (остаток + новая цена) -->
-                <div id="ingStockBlock" class="bg-white p-2 rounded-xl shadow-md mb-3">
-                    <h3 class="text-xs font-semibold text-gray-700 mb-2" data-i18n="inv_tab_stock">Склад</h3>
-
-                    <!-- Текущий остаток -->
-                    <div class="mb-3 border-b pb-2">
-                        <div class="table-text text-gray-500 mb-1">
-                            <span data-i18n="ing_before_writeoff_colon">На складе на сегодня:</span>
-                            <span id="ingBalanceBeforeValue" class="font-semibold text-gray-700 ml-1">—</span>
-                            <span id="ingBalanceBeforeUnit" class="text-gray-500 ml-1"></span>
+                <!-- Всё ниже скрыто у нового (ещё не сохранённого) ингредиента -->
+                <div id="ingStockBlock">
+                    <!-- Сводка: Сейчас | После списания | Цена за ед. + «Умный склад» (Full) -->
+                    <div class="itm-card">
+                        <div class="oc-cells itm-cells">
+                            <div class="oc-cell"><div class="oc-cell-lbl" data-i18n="ing_cell_now">Сейчас</div><div class="oc-cell-val"><span id="ingBalanceBeforeValue">—</span> <span id="ingBalanceBeforeUnit"></span></div></div>
+                            <div class="oc-cell oc-cell-sep"><div class="oc-cell-lbl" data-i18n="ing_cell_after">После списания</div><div class="oc-cell-val"><span id="ingBalanceValue">—</span> <span id="ingBalanceUnit"></span></div></div>
+                            <div class="oc-cell oc-cell-sep"><div class="oc-cell-lbl" data-i18n="ing_price_per_unit">Цена за ед.</div><div class="oc-cell-val" id="idUnitPrice">—</div></div>
                         </div>
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <span class="table-text text-gray-500" data-i18n="ing_after_writeoff_colon">После списания:</span>
-                                <span id="ingBalanceValue" class="table-text font-bold text-gray-800 ml-1">—</span>
-                                <span id="ingBalanceUnit" class="table-text text-gray-500 ml-1"></span>
-                            </div>
-                            <div id="ingDaysLeft" class="table-text text-gray-500"></div>
-                        </div>
-                    </div>
-                    <!-- «Умный склад» — прогноз и ближайшие заказы (только Full, 21.10, inventory.js renderStockSmartInfo) -->
-                    <div id="ingSmartInfo" class="inv-info mb-3 border-b pb-2 hidden"></div>
-
-                    <!-- Остаток по партиям (FIFO) — разворачиваемый блок; только Full и право на себестоимость (21.10) -->
-                    <div id="ingBatchesBlock" class="mb-3 border-b pb-2 perm-view-costs">
-                        <div class="flex items-center justify-between cursor-pointer" onclick="toggleIngredientBatches()">
-                            <span id="ingBatchesToggleLabel" class="table-text text-gray-500" data-i18n="ing_batches">Остаток по партиям</span>
-                            <svg id="ingBatchesChevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform .15s;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                        </div>
-                        <div id="ingBatchesList" class="hidden mt-1.5"></div>
+                        <div id="ingDaysLeft" class="hidden"></div>
+                        <!-- «Умный склад» — прогноз и ближайшие заказы (только Full, inventory.js renderStockSmartInfo) -->
+                        <div id="ingSmartInfo" class="inv-info itm-smart hidden"></div>
                     </div>
 
-                    <!-- Форма пополнения (количество + цена) -->
-                    <div class="grid grid-cols-2 gap-1 mb-2">
-                        <div style="position:relative;" onclick="event.stopPropagation();">
-                            <label class="table-text text-gray-500" data-i18n="ing_date_label">Дата</label>
-                            <input id="idNewPriceDate" type="hidden">
-                            <button type="button" class="field-select-btn" id="idNewPriceDateBtn" onclick="toggleCustomCalendar('globalCalendarPopup','idNewPriceDate','idNewPriceDateBtnLabel',{onPick:function(){}})">
-                                <span id="idNewPriceDateBtnLabel">—</span>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/></svg>
-                            </button>
-                        </div>
-                        <div>
-                            <label class="table-text text-gray-500"><span data-i18n="inv_col_quantity">Количество</span> (<span id="ingQtyUnit"></span>)</label>
-                            <input id="idStockQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-0.5 rounded-xl table-text w-full" placeholder="0">
-                        </div>
-                        <div>
-                            <label class="table-text text-gray-500" data-i18n="ing_package_price">Цена за упаковку</label>
-                            <input id="idPackagePrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" onchange="renderIngredientUnitPricePreview()" class="border p-0.5 rounded-xl w-full table-text">
-                        </div>
-                        <div>
-                            <label class="table-text text-gray-500" data-i18n="ing_package_size">Размер упаковки</label>
-                            <input id="idPackageSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" onchange="renderIngredientUnitPricePreview()" class="border p-0.5 rounded-xl w-full table-text">
-                        </div>
-                        <div class="col-span-2">
-                            <span class="table-text text-gray-500"><span data-i18n="ing_price_per_unit">Цена за ед.</span>: <span id="idUnitPrice" class="font-semibold text-gray-900">0.0000</span></span>
-                        </div>
+                    <!-- Действия -->
+                    <div class="itm-actions">
+                        <button type="button" onclick="openIngredientReceiveModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span data-i18n="ing_action_receive">Приход</span></button>
+                        <button type="button" class="danger" onclick="openWriteOffModal()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg><span data-i18n="ing_action_writeoff">Списать</span></button>
+                        <button type="button" onclick="openInventarizationModal(currentIngredientId);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg><span data-i18n="inv_inventarization">Инвентаризация</span></button>
                     </div>
-                    <button onclick="saveStockAndPrice()" class="pill-btn w-full justify-center" data-i18n="common_save">Сохранить</button>
-                    <button onclick="openWriteOffModal()" class="pill-btn-danger w-full justify-center mt-1.5" style="background:#f3ded9; color:#a3493d; box-shadow:none;" data-i18n="ing_writeoff_btn">— Списать (корректировка)</button>
-                    <button onclick="openInventarizationModal(currentIngredientId);" class="pill-btn-secondary w-full justify-center mt-1.5"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/></svg><span data-i18n="inv_inventarization">Инвентаризация</span></button>
 
-                    <!-- История пополнений -->
-                    <div id="ingStockHistory" class="mt-2"></div>
+                    <!-- История склада (свёрнута; итог в заголовке) -->
+                    <div id="ingHistSection" class="itm-sec">
+                        <div class="itm-sec-head" onclick="toggleItemSection('ingHistSection')">
+                            <span class="itm-sec-title" data-i18n="ing_stock_history_title">История склада</span>
+                            <span id="ingHistShort" class="itm-sec-sum"></span>
+                            <svg class="itm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                        <div class="itm-sec-body"><div id="ingStockHistory"></div></div>
+                    </div>
+
+                    <!-- Остаток по партиям (FIFO) — только Full и право на себестоимость -->
+                    <div id="ingBatchesBlock" class="itm-sec perm-view-costs">
+                        <div class="itm-sec-head" onclick="toggleIngredientBatches()">
+                            <span id="ingBatchesToggleLabel" class="itm-sec-title" data-i18n="ing_batches">Остаток по партиям</span>
+                            <span class="itm-sec-sum"></span>
+                            <svg id="ingBatchesChevron" class="itm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform .15s;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                        </div>
+                        <div id="ingBatchesList" class="hidden itm-sec-pad"></div>
+                    </div>
                 </div>
 
-                <!-- Блок 3+4: Динамика и история цены — объединены, свёрнуты по умолчанию -->
-                <div id="ingPriceChartBlock" class="bg-white p-2 rounded-xl shadow-md mb-3 plan-cost-only">
-                    <div class="flex items-center justify-between cursor-pointer" onclick="toggleIngredientPriceBlock()">
-                        <span id="ingPriceToggleLabel" class="table-text text-gray-500" data-i18n="ing_price_dynamics">Динамика цены</span>
-                        <svg id="ingPriceChevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform .15s;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                <!-- Динамика цены и история цен — только Full -->
+                <div id="ingPriceChartBlock" class="itm-sec plan-cost-only">
+                    <div class="itm-sec-head" onclick="toggleIngredientPriceBlock()">
+                        <span id="ingPriceToggleLabel" class="itm-sec-title" data-i18n="ing_price_dynamics">Динамика цены</span>
+                        <span class="itm-sec-sum"></span>
+                        <svg id="ingPriceChevron" class="itm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform .15s;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                     </div>
-                    <div id="ingPriceContent" class="hidden mt-2">
+                    <div id="ingPriceContent" class="hidden itm-sec-pad">
                         <canvas id="ingredientPriceChart" style="max-height:180px;"></canvas>
                         <p id="ingredientPriceChartEmpty" class="text-xs text-gray-400 hidden" data-i18n="ing_not_enough_data_2">Недостаточно данных — нужно минимум 2 записи</p>
                         <h3 class="text-xs font-semibold text-gray-700 mt-3 mb-2" data-i18n="ing_price_history">История цен</h3>
                         <div id="idPriceHistory"><p class="text-xs text-gray-400" data-i18n="common_loading">Загрузка...</p></div>
                     </div>
+                </div>
+
+                <!-- Удалить — внизу, тихой кнопкой -->
+                <div class="itm-del">
+                    <button onclick="deleteCurrentIngredient()" class="perm-delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12M9 7V4h6v3"/></svg><span data-i18n="ing_delete_btn">Удалить ингредиент</span></button>
                 </div>
             </div>
         </div>
@@ -2879,6 +2891,42 @@ function hideSplashScreen() {
             </div>
         </div>
 
+        <!-- Окно «Приход» ингредиента (21.10; бывшая форма в карточке). Без количества — только новая цена. -->
+        <div id="ingReceiveModal" class="modal" onclick="if(event.target===this) closeModal();">
+            <div class="modal-content" style="max-width:420px;">
+                <h2 class="text-sm font-semibold text-gray-800 mb-1" data-i18n="ing_receive_title">Приход</h2>
+                <p id="ingReceiveName" class="text-xs text-gray-500 mb-2"></p>
+                <div class="grid grid-cols-2 gap-2 mb-2">
+                        <div style="position:relative;" onclick="event.stopPropagation();">
+                            <label class="itm-lbl" data-i18n="ing_date_label">Дата</label>
+                            <input id="idNewPriceDate" type="hidden">
+                            <button type="button" class="field-select-btn" id="idNewPriceDateBtn" onclick="toggleCustomCalendar('globalCalendarPopup','idNewPriceDate','idNewPriceDateBtnLabel',{onPick:function(){}})">
+                                <span id="idNewPriceDateBtnLabel">—</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/></svg>
+                            </button>
+                        </div>
+                    <div>
+                        <label class="itm-lbl"><span data-i18n="inv_col_quantity">Количество</span> (<span id="ingQtyUnit"></span>)</label>
+                        <input id="idStockQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-0.5 rounded-xl table-text w-full" placeholder="0">
+                    </div>
+                    <div>
+                        <label class="itm-lbl" data-i18n="ing_package_price">Цена за упаковку</label>
+                        <input id="idPackagePrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" oninput="renderIngredientUnitPricePreview()" onchange="renderIngredientUnitPricePreview()" class="border p-0.5 rounded-xl table-text w-full">
+                    </div>
+                    <div>
+                        <label class="itm-lbl" data-i18n="ing_package_size">Размер упаковки</label>
+                        <input id="idPackageSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" oninput="renderIngredientUnitPricePreview()" onchange="renderIngredientUnitPricePreview()" class="border p-0.5 rounded-xl table-text w-full">
+                    </div>
+                </div>
+                <p class="table-text text-gray-500 mb-1"><span data-i18n="ing_price_per_unit">Цена за ед.</span>: <span id="idUnitPricePreview" class="font-semibold text-gray-800"></span></p>
+                <p class="text-[11px] text-gray-400 mb-3" data-i18n="ing_receive_hint">Без количества сохранится только новая цена.</p>
+                <div class="flex gap-2">
+                    <button onclick="closeModal()" class="pill-btn-secondary flex-1 justify-center" data-i18n="common_cancel">Отмена</button>
+                    <button onclick="saveStockAndPrice()" class="pill-btn flex-1 justify-center" data-i18n="common_save">Сохранить</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Подсказка по маркеру "?" — универсальная модалка, переиспользуется для
              любого раздела: openHelpModal передаёт свои ключи заголовка/текста.
              Открывается поверх любой другой модалки (см. z-index в <style>). -->
@@ -3460,7 +3508,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=89"></script>
+    <script src="i18n-core.js?v=90"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=16"></script>
     <script src="auth.js?v=21"></script>
@@ -3469,7 +3517,7 @@ function hideSplashScreen() {
     <script src="inventory.js?v=63"></script>
     <script src="billing.js?v=15"></script>
     <script src="push.js?v=9"></script>
-<script src="ingredients.js?v=47"></script>
+<script src="ingredients.js?v=48"></script>
 <script src="batches.js?v=11"></script>
 <script src="semifinished.js?v=47"></script>
 <script src="products.js?v=35"></script>

@@ -445,6 +445,12 @@ I18N.en = {
 
         // Inventory analytics + Shopping list
         inv_title: 'Smart Stock',
+        ing_action_receive: 'Stock in',
+        ing_action_writeoff: 'Write off',
+        ing_stock_history_title: 'Stock history',
+        ing_receive_title: 'Stock in',
+        ing_receive_hint: 'Without a quantity, only the new price is saved.',
+        ing_new_title: 'New ingredient',
         inv_short_since: 'Short from',
         inv_short_since_cell: 'Short from',
         inv_stock_until: 'Stock until',

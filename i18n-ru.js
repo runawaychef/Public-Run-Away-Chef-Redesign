@@ -444,6 +444,12 @@ I18N.ru = {
 
         // Аналитика склада + Список покупок
         inv_title: 'Умный склад',
+        ing_action_receive: 'Приход',
+        ing_action_writeoff: 'Списать',
+        ing_stock_history_title: 'История склада',
+        ing_receive_title: 'Приход',
+        ing_receive_hint: 'Без количества сохранится только новая цена.',
+        ing_new_title: 'Новый ингредиент',
         inv_short_since: 'Не хватит с',
         inv_short_since_cell: 'Нехватка с',
         inv_stock_until: 'Запас до',

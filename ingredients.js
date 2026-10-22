@@ -200,6 +200,8 @@ async function createDraftIngredientAndOpen() {
     const unitInput = document.getElementById('idUnitInput');
     if (nameInput) nameInput.value = '';
     if (unitInput) unitInput.value = 'g';
+    const titleEl = document.getElementById('idTitle');
+    if (titleEl) titleEl.textContent = t('ing_new_title');
 
     // Сбрасываем поля склада
     calSetFieldValue('idNewPriceDate', 'idNewPriceDateBtnLabel', getLocalDateStr(0));
@@ -333,6 +335,9 @@ async function openIngredientDetail(ingId) {
     const unitInput = document.getElementById('idUnitInput');
     if (nameInput) { nameInput.value = ing.name; }
     if (unitInput) { unitInput.value = ing.unit || 'g'; }
+    const titleEl = document.getElementById('idTitle');
+    if (titleEl) titleEl.textContent = ing.name || '';
+    document.getElementById('ingHistSection')?.classList.remove('open'); // история свёрнута
     // Фокус на поле названия если это новый черновик
     calSetFieldValue('idNewPriceDate', 'idNewPriceDateBtnLabel', getLocalDateStr(0));
     document.getElementById('idPackagePrice').value = ing.package_price.toFixed(2);
@@ -359,7 +364,7 @@ function renderIngredientUnitPricePreview() {
     const unit = ing ? ing.unit : 'g';
     const unitLabel = unitAbbrev(unit);
     const unitPrice = size > 0 ? (price / size).toFixed(4) : '0.0000';
-    const el = document.getElementById('idUnitPrice');
+    const el = document.getElementById('idUnitPricePreview');
     if (el) el.textContent = `${formatMoney(unitPrice, 4)}/${unitLabel}`;
 }
 
@@ -431,6 +436,7 @@ async function saveStockAndPrice() {
         displayIngredients();
         logActivity('ingredient', `${t('log_stock_price_updated')}: «${ing.name}»${stockQty > 0 ? ` +${stockQty}` : ''}`);
         document.getElementById('idStockQty').value = '';
+        closeModal(); // окно «Приход» (21.10); карточка остаётся открытой
     } catch (e) { console.error(e); showInfo(t('error_save_generic')); }
     finally { hideLoading(); }
 }
@@ -602,8 +608,32 @@ async function closeIngredientDetail() {
 }
 
 function renderIngredientUnitPrice(ing) {
-    const unitLabel = unitAbbrev(ing.unit);
-    document.getElementById('idUnitPrice').textContent = `${formatMoney(ingredientUnitPrice(ing), 4)}/${unitLabel}`;
+    // Ячейка «Цена за ед.» в сводке карточки (21.10): как на карточке «Склада» — г→кг, мл→л, 2 знака
+    const el = document.getElementById('idUnitPrice');
+    if (el) el.textContent = stockPriceText(ingredientUnitPrice(ing), ing.unit);
+}
+
+function _invFmtSafe(x) { return typeof _invFmt === 'function' ? _invFmt(x) : String(Math.round(Number(x) * 100) / 100); }
+
+// Окно «Приход» (21.10; бывшая постоянная форма в карточке). Без количества — только новая цена.
+function openIngredientReceiveModal() {
+    const ing = ingredients.find(i => i.id === currentIngredientId);
+    if (!ing) return;
+    calSetFieldValue('idNewPriceDate', 'idNewPriceDateBtnLabel', getLocalDateStr(0));
+    document.getElementById('idPackagePrice').value = Number(ing.package_price || 0).toFixed(2);
+    document.getElementById('idPackageSize').value = ing.package_size;
+    document.getElementById('idStockQty').value = '';
+    const qtyUnitEl = document.getElementById('ingQtyUnit');
+    if (qtyUnitEl) qtyUnitEl.textContent = unitAbbrev(ing.unit);
+    const nameEl = document.getElementById('ingReceiveName');
+    if (nameEl) nameEl.textContent = ing.name || '';
+    renderIngredientUnitPricePreview();
+    document.getElementById('ingReceiveModal').style.display = 'flex';
+}
+
+// Сворачиваемый раздел карточки позиции (класс .itm-sec, открытие — класс open)
+function toggleItemSection(id) {
+    document.getElementById(id)?.classList.toggle('open');
 }
 
 async function saveIdHeader() {
@@ -728,6 +758,7 @@ async function renderIngredientStockBlock(ing) {
         ]);
         if (!data || !data.length) {
             histEl.innerHTML = `<p class="table-text text-gray-400 mt-1">${t('ing_no_movements_yet')}</p>`;
+            const se = document.getElementById('ingHistShort'); if (se) se.textContent = '';
             return;
         }
 
@@ -833,6 +864,9 @@ async function renderIngredientStockBlock(ing) {
         </div>`;
 
         histEl.innerHTML = summary + tabs + table;
+        // Итог в заголовке свёрнутого раздела «История склада» (21.10)
+        const shortEl = document.getElementById('ingHistShort');
+        if (shortEl) shortEl.textContent = `${t('ing_bought_label').toLowerCase()} ${_invFmtSafe(totals.in.qty)} ${unitLabel}${showMoney ? ` · ${anyApprox ? '≈ ' : ''}${formatMoney(totals.in.cost)}` : ''}`;
     } catch(e) { console.error(e); }
 }
 
