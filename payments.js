@@ -542,6 +542,8 @@ function _renderPaymentConsLine() {
 function _renderDetailConsBanner(order) {
     const el = document.getElementById('detailConsBanner');
     if (!el) return;
+    // Номер сводного мог только что загрузиться — обновляем и сводку под кнопкой документа (22.10)
+    if (order && order.id === currentOrderId && typeof renderDetailDocSummary === 'function') renderDetailDocSummary(order);
     if (!order || order.id !== currentOrderId || !order.consolidated_invoice_id) { el.classList.add('hidden'); return; }
     const cid = order.consolidated_invoice_id;
     el.textContent = t('order_cons_banner')

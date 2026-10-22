@@ -600,6 +600,17 @@
             transition: all 0.15s ease;
         }
         .pill-btn-secondary:active { transform: scale(0.96); opacity: 0.85; }
+        /* Сводка отправленных документов под кнопкой в заказе (22.10) */
+        #detailSendDocBtn.has-sum { border-radius: 10px 10px 0 0; }
+        .doc-sum { background: #fff; border: 1px solid #e3e8df; border-top: 0; border-radius: 0 0 10px 10px; padding: 6px 10px; }
+        .doc-sum-row { display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 1.5; color: #6b675d; padding: 4px 0; cursor: pointer; }
+        .doc-sum-row + .doc-sum-row { border-top: 1px solid #f1eee6; }
+        .doc-sum-row b { font-weight: 600; color: #3d3a33; white-space: nowrap; }
+        .doc-sum-row .ds-text { flex: 1; min-width: 0; }
+        .doc-sum-row .ds-ok { color: #4f6349; }
+        .doc-sum-row .ds-bad { color: #a3493d; }
+        .doc-sum-row .ds-go { color: #9a9488; font-size: 14px; }
+        .doc-sum.ds-alarm { border-color: #f0d6d2; }
         .pill-btn-secondary svg { width: 12px; height: 12px; }
         .pill-btn-danger {
             border: none; cursor: pointer; border-radius: 10px; padding: 7px 12px;
@@ -2175,10 +2186,15 @@ function hideSplashScreen() {
                     <button onclick="openAddPaymentModal(true)" class="pill-btn w-full justify-center" style="margin-top:10px; padding:8px 12px;" data-i18n="pay_add_btn">+ Внести оплату</button>
                 </div>
 
-                <button onclick="openSendDocumentSheet(currentOrderId)" class="pill-btn-secondary w-full justify-center mb-3" style="padding:10px 12px;">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h6m-6 4h6m-8 5h10a2 2 0 002-2V7.828a2 2 0 00-.586-1.414l-3.828-3.828A2 2 0 0012.172 2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                    <span data-i18n="orders_invoice_doc">Отправить документ</span>
-                </button>
+                <!-- Кнопка «Подготовить и отправить документ» + сводка отправленного (22.10, send-document.js renderDetailDocSummary):
+                     плотная — ничего не отправлено или есть недоставленное; бледная — отправлено -->
+                <div class="mb-3">
+                    <button id="detailSendDocBtn" onclick="openSendDocumentSheet(currentOrderId)" class="pill-btn-secondary w-full justify-center" style="padding:10px 12px;">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h6m-6 4h6m-8 5h10a2 2 0 002-2V7.828a2 2 0 00-.586-1.414l-3.828-3.828A2 2 0 0012.172 2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                        <span data-i18n="orders_invoice_doc">Подготовить и отправить документ</span>
+                    </button>
+                    <div id="detailDocSummary" class="doc-sum hidden"></div>
+                </div>
 
                 <div class="bg-white p-2 rounded-xl shadow-md">
                     <div class="flex justify-between items-center mb-2">
@@ -3463,7 +3479,7 @@ function hideSplashScreen() {
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
                         <span data-i18n="common_back">Назад</span>
                     </button>
-                    <h2 class="text-gray-800" style="font-size:15px; font-weight:600; margin:0 0 0 auto;" data-i18n="send_sheet_title">Отправить документ</h2>
+                    <h2 class="text-gray-800" style="font-size:15px; font-weight:600; margin:0 0 0 auto; text-align:right; line-height:1.25;" data-i18n="send_sheet_title">Подготовка и отправка документов</h2>
                 </div>
                 <div id="sendSheetBody"></div>
             </div>
@@ -3535,7 +3551,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=92"></script>
+    <script src="i18n-core.js?v=93"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=16"></script>
     <script src="auth.js?v=21"></script>
@@ -3550,10 +3566,10 @@ function hideSplashScreen() {
 <script src="products.js?v=35"></script>
 <script src="customers.js?v=58"></script>
 <script src="calendar.js?v=14"></script>
-<script src="orders.js?v=138"></script>
+<script src="orders.js?v=139"></script>
 <script src="invoice.js?v=48"></script>
-<script src="send-document.js?v=37"></script>
-<script src="payments.js?v=27"></script>
+<script src="send-document.js?v=38"></script>
+<script src="payments.js?v=28"></script>
 <script src="documents.js?v=9"></script>
 <script src="bank.js?v=12"></script>
 <script src="stats.js?v=22"></script>

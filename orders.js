@@ -1441,6 +1441,7 @@ function openOrderDetail(orderId) {
     updateProductSelects();
     refreshFab();
     loadOrderPayments(orderId);
+    if (typeof refreshDetailDocSummary === 'function') refreshDetailDocSummary(order);
 }
 
 function fillDetailEmployeeSelect(selectedId) {

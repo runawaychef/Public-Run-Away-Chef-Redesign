@@ -77,6 +77,120 @@ function showDocumentSentInfo(orderId) {
     showInfo(lines.join('\n'));
 }
 
+// ==================== СВОДКА ОТПРАВЛЕННЫХ ДОКУМЕНТОВ В ЗАКАЗЕ (22.10) ====================
+// Под кнопкой «Подготовить и отправить документ»: строка на документ (вариант А):
+// «INV-… · Email · 22.10 14:05 · доставлено ›». Нажатие открывает документ на просмотр.
+// Кнопка плотная (pill-btn), если ничего не отправлено или есть недоставленное письмо;
+// бледная (pill-btn-secondary), если отправлено. Номера своих счёта/накладной — лёгким
+// запросом (без снимков в списке заказов), номер сводного — из payments.js (_payConsNumber).
+const _docSumNumbers = {};   // { orderId: { inv, dn } } — сырые номера из снимков
+let _docSumSeq = 0;
+
+function _docSumShortDT(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    const pad = n => String(n).padStart(2, '0');
+    return `${pad(d.getDate())}.${pad(d.getMonth() + 1)} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function _docSumStatusHtml(via, status) {
+    if (via !== 'email' || !status) return '';
+    const cls = status === 'delivered' ? 'ds-ok' : (status === 'bounced' || status === 'complained') ? 'ds-bad' : '';
+    return ` · <span class="${cls}">${escapeHtml(_deliveryStatusLabel(status))}</span>`;
+}
+
+function _docSumIsBad(status) { return status === 'bounced' || status === 'complained'; }
+
+function renderDetailDocSummary(order) {
+    const btn = document.getElementById('detailSendDocBtn');
+    const box = document.getElementById('detailDocSummary');
+    if (!btn || !box) return;
+    if (!order || order.id !== currentOrderId) return;
+    const invSent = !!order.invoice_sent_at, dnSent = !!order.delivery_note_sent_at;
+    const bad = (invSent && order.invoice_sent_via === 'email' && _docSumIsBad(order.invoice_delivery_status))
+             || (dnSent && order.delivery_note_sent_via === 'email' && _docSumIsBad(order.delivery_note_delivery_status));
+    const solid = (!invSent && !dnSent) || bad;
+    btn.classList.toggle('pill-btn', solid);
+    btn.classList.toggle('pill-btn-secondary', !solid);
+
+    const nums = _docSumNumbers[order.id] || {};
+    const rows = [];
+    const consId = order.consolidated_invoice_id || null;
+    const go = '<span class="ds-go">›</span>';
+    if (consId) {
+        const num = typeof _payConsNumber === 'function' ? _payConsNumber(consId) : t('orders_doc_invoice');
+        const tail = invSent
+            ? ` · ${escapeHtml(_sentViaLabel(order.invoice_sent_via))} · ${_docSumShortDT(order.invoice_sent_at)}${_docSumStatusHtml(order.invoice_sent_via, order.invoice_delivery_status)}`
+            : ` · ${escapeHtml(t('doc_sum_not_sent'))}`;
+        rows.push(`<div class="doc-sum-row" onclick="openDocFromOrderSummary('cons')"><span class="ds-text"><b>${escapeHtml(num)}</b> (${escapeHtml(t('bank_cons_word'))})${tail}</span>${go}</div>`);
+    } else if (invSent) {
+        const num = _formatDocNumber('invoice', nums.inv) || t('orders_doc_invoice');
+        rows.push(`<div class="doc-sum-row" onclick="openDocFromOrderSummary('inv')"><span class="ds-text"><b>${escapeHtml(num)}</b> · ${escapeHtml(_sentViaLabel(order.invoice_sent_via))} · ${_docSumShortDT(order.invoice_sent_at)}${_docSumStatusHtml(order.invoice_sent_via, order.invoice_delivery_status)}</span>${go}</div>`);
+    }
+    if (dnSent) {
+        const num = _formatDocNumber('delivery_note', nums.dn) || t('orders_doc_delivery_note');
+        rows.push(`<div class="doc-sum-row" onclick="openDocFromOrderSummary('dn')"><span class="ds-text"><b>${escapeHtml(num)}</b> · ${escapeHtml(_sentViaLabel(order.delivery_note_sent_via))} · ${_docSumShortDT(order.delivery_note_sent_at)}${_docSumStatusHtml(order.delivery_note_sent_via, order.delivery_note_delivery_status)}</span>${go}</div>`);
+    }
+    box.innerHTML = rows.join('');
+    box.classList.toggle('hidden', !rows.length);
+    box.classList.toggle('ds-alarm', bad);
+    btn.classList.toggle('has-sum', rows.length > 0);
+}
+
+// Вызывается из openOrderDetail: сразу рисуем по данным заказа, затем дотягиваем номера.
+async function refreshDetailDocSummary(order, force) {
+    if (!order) return;
+    renderDetailDocSummary(order);
+    const needInv = order.invoice_sent_at && !order.consolidated_invoice_id;
+    const needDn = !!order.delivery_note_sent_at;
+    if (!needInv && !needDn) return;
+    const have = _docSumNumbers[order.id];
+    if (have && !force && (!needInv || have.inv) && (!needDn || have.dn)) return;
+    const seq = ++_docSumSeq;
+    try {
+        const { data, error } = await db.from('orders')
+            .select('inv:invoice_snapshot->>number, dn:delivery_note_snapshot->>number')
+            .eq('id', order.id).single();
+        if (error) throw error;
+        _docSumNumbers[order.id] = { inv: data ? data.inv : null, dn: data ? data.dn : null };
+    } catch (e) { console.error('Сводка документов: номера не загрузились', e); return; }
+    if (seq !== _docSumSeq) return;
+    renderDetailDocSummary(orders.find(o => o.id === order.id));
+}
+
+// Нажатие на строку сводки: просмотр документа (как в разделе «Документы», без кнопок)
+async function openDocFromOrderSummary(kind) {
+    const order = orders.find(o => o.id === currentOrderId);
+    if (!order) return;
+    const docType = kind === 'dn' ? 'delivery_note' : 'invoice';
+    showLoading(t('docs_opening'));
+    try {
+        let snapshot, consolidatedId = null;
+        if (kind === 'cons') {
+            consolidatedId = order.consolidated_invoice_id;
+            const { data, error } = await db.from('consolidated_invoices').select('snapshot').eq('id', consolidatedId).single();
+            if (error) throw error;
+            snapshot = data && data.snapshot;
+        } else {
+            const field = snapshotField(docType);
+            const { data, error } = await db.from('orders').select(field).eq('id', order.id).single();
+            if (error) throw error;
+            snapshot = data && data[field];
+        }
+        if (!snapshot) throw new Error(t('inv_unknown_error'));
+        _docPreview = { docType, snapshot, lang: currentLang, readOnly: true, persisted: true,
+            orderId: order.id, consolidatedId, fromOrderSummary: true };
+        _setPreviewReadOnlyUi(true, false);
+        renderDocumentPreviewThumbnail();
+        document.getElementById('orderDocumentModal').style.display = 'flex';
+    } catch (e) {
+        console.error(e);
+        showInfo(t('inv_doc_error_prefix') + (e && e.message ? e.message : t('inv_unknown_error')));
+    } finally {
+        hideLoading();
+    }
+}
+
 // Фиксирует факт отправки (docType: 'invoice'|'delivery_note', via: 'share'|'email',
 // messageId — ID письма от Resend, только для via==='email', нужен вебхуку, чтобы
 // потом найти этот заказ по событию доставки). Оптимистичное обновление, как и
@@ -99,6 +213,7 @@ async function recordDocumentSent(orderId, docType, via, messageId) {
     order[msgIdField] = newMsgId;
     order[statusField] = newStatus;
     displayOrders();
+    if (orderId === currentOrderId && typeof refreshDetailDocSummary === 'function') refreshDetailDocSummary(order, true);
 
     try {
         await updateChecked(db.from('orders').update({
@@ -111,6 +226,7 @@ async function recordDocumentSent(orderId, docType, via, messageId) {
         order[msgIdField] = prev.msgId;
         order[statusField] = prev.status;
         displayOrders();
+        if (orderId === currentOrderId) renderDetailDocSummary(order);
         showInfo(t('send_status_save_error') + (e && e.message ? e.message : ''));
     }
 }
@@ -954,6 +1070,13 @@ async function openSendDocPreview(docType) {
 // Кнопка «Закрыть» в предпросмотре: из формы — возвращаемся в форму (с перечитыванием
 // статусов, т.к. в предпросмотре выставленного документа можно было поправить даты).
 async function closeOrderDocumentModal() {
+    // Просмотр из сводки в заказе (22.10) — просто закрываем, заказ остаётся открытым
+    if (_docPreview && _docPreview.fromOrderSummary) {
+        document.getElementById('orderDocumentModal').style.display = 'none';
+        _docPreview = null;
+        _setPreviewReadOnlyUi(false, false);
+        return;
+    }
     if (_docPreview && _docPreview.fromRegistry && typeof closeRegistryDocPreview === 'function') {
         closeRegistryDocPreview();
         return;
