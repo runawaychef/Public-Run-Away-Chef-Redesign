@@ -29,14 +29,37 @@ function setupPlayBadge() {
 // Обычный скрипт (без модулей) — функции доступны глобально.
 // Зависит от: db (supabaseClient.js), initLogin/selectEmployee (employees.js).
 
-// Текущий режим экрана: 'login' | 'register' | 'reset'
+// Текущий режим экрана: 'login' | 'register' | 'reset' | 'newpass'
 let _authMode = 'login';
+
+// ===== Ссылка из письма «Сброс пароля» (23.10) =====
+// Supabase (implicit flow) возвращает на сайт с #access_token=…&type=recovery
+// и сам выполняет вход. Раньше программа просто пускала внутрь — задать новый
+// пароль было негде. Запоминаем признак СРАЗУ при загрузке скрипта, пока SDK
+// не убрал хэш из адреса; страховка — событие PASSWORD_RECOVERY.
+// Просроченная / уже использованная ссылка: #error=…&error_code=otp_expired.
+// Признак дублируем в sessionStorage: при первом заходе с вкладки браузера
+// service worker может перезагрузить страницу (controllerchange) — хэша уже
+// не будет, а экран «Новый пароль» должен остаться.
+const _authUrlTail = (location.hash || '') + '&' + (location.search || '');
+function _ssGet(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
+function _ssSet(k, v) { try { if (v === null) sessionStorage.removeItem(k); else sessionStorage.setItem(k, v); } catch (e) {} }
+if (/type=recovery/.test(_authUrlTail)) _ssSet('sb_pw_recovery', '1');
+if (/error_code=otp_expired|error=access_denied/.test(_authUrlTail)) _ssSet('sb_pw_link_error', '1');
+let _pwRecoveryPending = _ssGet('sb_pw_recovery') === '1';
+const _pwRecoveryLinkError = _ssGet('sb_pw_link_error') === '1';
 
 async function initAuth() {
     // Обработка возврата после Google OAuth —
     // Supabase сам восстанавливает сессию из URL-хэша
     db.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'PASSWORD_RECOVERY' && session) {
+            _pwRecoveryPending = true;
+            showNewPasswordScreen(session);
+            return;
+        }
         if (event === 'SIGNED_IN' && session) {
+            if (_pwRecoveryPending) return; // идёт смена пароля — приложение откроется после неё
             // Флаг ставится непосредственно перед уходом на Google (handleGoogleSignIn) —
             // отличает "вернулись из Google OAuth" от обычного восстановления сессии
             // (например, простого перезапуска приложения с уже активным входом).
@@ -67,6 +90,7 @@ async function initAuth() {
     document.getElementById('toggleAuthMode').addEventListener('click', toggleAuthMode);
     document.getElementById('forgotPasswordLink').addEventListener('click', showResetMode);
     document.getElementById('backToLoginLink').addEventListener('click', showLoginMode);
+    document.getElementById('newPasswordLaterLink').addEventListener('click', skipNewPassword);
 
     let session = null;
     let networkError = false;
@@ -89,6 +113,7 @@ async function initAuth() {
             await handleInstantRestoreWrongAccount();
             return;
         }
+        if (_pwRecoveryPending) { showNewPasswordScreen(session); return; }
         await showAuthedApp();
     } else if (_instantRestoreDone) {
         if (networkError) {
@@ -102,7 +127,19 @@ async function initAuth() {
         await handleInstantRestoreSessionExpired();
     } else {
         showAuthScreen();
+        if (_pwRecoveryLinkError) {
+            // Ссылка устарела или по ней уже переходили — сразу режим сброса с пояснением
+            showResetMode();
+            const errEl = document.getElementById('authError');
+            errEl.textContent = t('auth_reset_link_expired');
+            errEl.classList.remove('hidden');
+            _clearAuthUrlTail(); // флаг ошибки снимается при «Назад к входу» / отправке ссылки
+        }
     }
+}
+
+function _clearAuthUrlTail() {
+    try { history.replaceState(null, '', location.pathname); } catch (e) {}
 }
 
 function showAuthScreen() {
@@ -196,11 +233,111 @@ async function _doShowAuthedApp() {
 
 // ===== Переключение режимов =====
 
+// Текст + data-i18n вместе: иначе перевод, применённый позже (загрузка языка),
+// возвращает заголовок/кнопку к исходному «Вход» из разметки. 23.10
+function _setI18nText(id, key) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = t(key);
+    el.setAttribute('data-i18n', key);
+}
+
+// Элементы, которые в режиме «Новый пароль» скрыты (вход через Google,
+// разделитель «или», поле e-mail, ссылки входа/регистрации). 23.10
+function _setNewPasswordChrome(on) {
+    const tog = (id, hide) => { const el = document.getElementById(id); if (el) el.classList.toggle('hidden', hide); };
+    tog('googleSignInBtn', on);
+    tog('googleAuthNote', on);
+    tog('authOrDivider', on);
+    tog('authEmail', on);
+    tog('authPassword2', !on);
+    tog('authPasswordHint', !on);
+    tog('authSubtitle', !on);
+    tog('newPasswordLaterLink', !on);
+    tog('toggleAuthMode', on);
+    const email = document.getElementById('authEmail');
+    if (email) email.required = !on;
+    const pw = document.getElementById('authPassword');
+    if (pw) {
+        const phKey = on ? 'auth_new_password_placeholder' : 'auth_password_placeholder';
+        pw.placeholder = t(phKey);
+        pw.setAttribute('data-i18n-placeholder', phKey);
+        pw.autocomplete = on ? 'new-password' : 'current-password';
+    }
+}
+
+function showNewPasswordScreen(session) {
+    _pwRecoveryPending = true;
+    _ssSet('sb_pw_recovery', '1');
+    showAuthScreen();
+    _authMode = 'newpass';
+    _setNewPasswordChrome(true);
+    _setI18nText('authTitle', 'auth_title_new_password');
+    const sub = document.getElementById('authSubtitle');
+    const em = session && session.user && session.user.email ? session.user.email : '';
+    sub.textContent = em ? t('auth_new_password_for').replace('{email}', em) : '';
+    sub.classList.toggle('hidden', !em);
+    _setI18nText('authSubmitBtn', 'auth_submit_new_password');
+    document.getElementById('forgotPasswordLink').classList.add('hidden');
+    document.getElementById('backToLoginLink').classList.add('hidden');
+    document.getElementById('authPassword').value = '';
+    document.getElementById('authPassword2').value = '';
+    _clearAuthUrlTail();
+}
+
+async function handleNewPasswordSubmit() {
+    const p1 = document.getElementById('authPassword').value;
+    const p2 = document.getElementById('authPassword2').value;
+    const errEl = document.getElementById('authError');
+    const okEl = document.getElementById('authSuccess');
+    const btn = document.getElementById('authSubmitBtn');
+    errEl.classList.add('hidden');
+    okEl.classList.add('hidden');
+    const fail = (key) => { errEl.textContent = t(key); errEl.classList.remove('hidden'); };
+    if (!p1 || p1.length < 6) return fail('auth_error_password_too_short');
+    if (p1 !== p2) return fail('auth_error_passwords_mismatch');
+    btn.disabled = true;
+    btn.textContent = t('auth_saving_password');
+    try {
+        const { error } = await db.auth.updateUser({ password: p1 });
+        if (error) throw error;
+        document.getElementById('authPassword').value = '';
+        document.getElementById('authPassword2').value = '';
+        okEl.textContent = t('auth_password_changed');
+        okEl.classList.remove('hidden');
+        await new Promise(r => setTimeout(r, 1200));
+        await _finishNewPassword();
+    } catch (err) {
+        console.error(err);
+        const m = (err && err.message) || '';
+        if (/different from the old|same as the old|should be different/i.test(m)) fail('auth_error_same_password');
+        else if (/Password should be|at least/i.test(m)) fail('auth_error_password_too_short');
+        else fail('auth_error_generic');
+    } finally {
+        btn.disabled = false;
+        if (_authMode === 'newpass') btn.textContent = t('auth_submit_new_password');
+    }
+}
+
+async function _finishNewPassword() {
+    _pwRecoveryPending = false;
+    _ssSet('sb_pw_recovery', null);
+    _setNewPasswordChrome(false);
+    showLoginMode();
+    await showAuthedApp();
+}
+
+function skipNewPassword() {
+    _finishNewPassword();
+}
+
 function showLoginMode() {
+    if (_authMode === 'newpass') _setNewPasswordChrome(false);
+    if (_authMode === 'reset') _ssSet('sb_pw_link_error', null);
     _authMode = 'login';
-    document.getElementById('authTitle').textContent = t('auth_title_login');
-    document.getElementById('authSubmitBtn').textContent = t('auth_submit_login');
-    document.getElementById('toggleAuthMode').textContent = t('auth_toggle_to_register');
+    _setI18nText('authTitle', 'auth_title_login');
+    _setI18nText('authSubmitBtn', 'auth_submit_login');
+    _setI18nText('toggleAuthMode', 'auth_toggle_to_register');
     document.getElementById('forgotPasswordLink').classList.remove('hidden');
     document.getElementById('backToLoginLink').classList.add('hidden');
     document.getElementById('authError').classList.add('hidden');
@@ -209,9 +346,9 @@ function showLoginMode() {
 
 function showRegisterMode() {
     _authMode = 'register';
-    document.getElementById('authTitle').textContent = t('auth_title_register');
-    document.getElementById('authSubmitBtn').textContent = t('auth_submit_register');
-    document.getElementById('toggleAuthMode').textContent = t('auth_toggle_to_login');
+    _setI18nText('authTitle', 'auth_title_register');
+    _setI18nText('authSubmitBtn', 'auth_submit_register');
+    _setI18nText('toggleAuthMode', 'auth_toggle_to_login');
     document.getElementById('forgotPasswordLink').classList.add('hidden');
     document.getElementById('backToLoginLink').classList.add('hidden');
     document.getElementById('authError').classList.add('hidden');
@@ -220,9 +357,10 @@ function showRegisterMode() {
 
 function showResetMode() {
     _authMode = 'reset';
-    document.getElementById('authTitle').textContent = t('auth_title_reset');
-    document.getElementById('authSubmitBtn').textContent = t('auth_submit_reset');
+    _setI18nText('authTitle', 'auth_title_reset');
+    _setI18nText('authSubmitBtn', 'auth_submit_reset');
     document.getElementById('toggleAuthMode').textContent = '';
+    document.getElementById('toggleAuthMode').removeAttribute('data-i18n');
     document.getElementById('forgotPasswordLink').classList.add('hidden');
     document.getElementById('backToLoginLink').classList.remove('hidden');
     document.getElementById('authError').classList.add('hidden');
@@ -241,6 +379,10 @@ function toggleAuthMode() {
 
 async function handleAuthSubmit(e) {
     e.preventDefault();
+    if (_authMode === 'newpass') {
+        await handleNewPasswordSubmit();
+        return;
+    }
     if (_authMode === 'reset') {
         await handlePasswordReset();
         return;
@@ -316,6 +458,7 @@ async function handlePasswordReset() {
             redirectTo: 'https://simple-bake.com/Public-Run-Away-Chef-Redesign/'
         });
         if (error) throw error;
+        _ssSet('sb_pw_link_error', null);
         document.getElementById('authSuccess').textContent = t('auth_reset_email_sent');
         document.getElementById('authSuccess').classList.remove('hidden');
     } catch (err) {

@@ -1085,6 +1085,8 @@ function hideSplashScreen() {
 
         <!-- Заголовок режима (Вход / Регистрация / Сброс пароля) -->
         <p id="authTitle" style="font-family:'Fraunces',serif;font-weight:600;font-size:17px;margin:0 0 18px;color:#3c3a34;" data-i18n="auth_title_login">Вход</p>
+        <!-- Подзаголовок режима «Новый пароль» (для какого e-mail), 23.10 -->
+        <p id="authSubtitle" class="hidden" style="font-size:12px;color:#8a857a;margin:-12px 0 16px;word-break:break-all;"></p>
 
         <!-- Кнопка Google -->
         <button id="googleSignInBtn" class="btn w-full flex items-center justify-center gap-2" style="background:#fbfaf6;border:1.5px solid #e3ded0;border-radius:14px;padding:12px;font-size:13.5px;font-weight:500;color:#3c3a34;margin-bottom:16px;">
@@ -1098,7 +1100,7 @@ function hideSplashScreen() {
         </button>
         <p id="googleAuthNote" style="font-size:11px;line-height:1.45;color:#a6a196;margin:8px 4px 14px;"><span data-i18n="ga_intro_point1">Мы получаем только email — для входа в аккаунт</span>. <span data-i18n="ga_intro_point2">Мы не читаем почту и не видим другие данные Google</span></p>
 
-        <div class="flex items-center gap-2" style="margin-bottom:16px;">
+        <div id="authOrDivider" class="flex items-center gap-2" style="margin-bottom:16px;">
             <div class="flex-1 h-px" style="background:#e3ded0;"></div>
             <span style="font-size:11.5px;color:#a6a196;" data-i18n="auth_or">или</span>
             <div class="flex-1 h-px" style="background:#e3ded0;"></div>
@@ -1110,6 +1112,10 @@ function hideSplashScreen() {
                 style="background:#fbfaf6;border:1.5px solid #e3ded0;border-radius:14px;padding:12px 14px;font-size:13.5px;color:#3c3a34;" class="focus:outline-none">
             <input id="authPassword" type="password" placeholder="Пароль" autocomplete="current-password" data-i18n-placeholder="auth_password_placeholder"
                 style="background:#fbfaf6;border:1.5px solid #e3ded0;border-radius:14px;padding:12px 14px;font-size:13.5px;color:#3c3a34;" class="focus:outline-none">
+            <!-- Режим «Новый пароль» (после ссылки из письма сброса), 23.10 -->
+            <p id="authPasswordHint" class="hidden" style="font-size:11px;color:#a6a196;margin:-2px 0 2px 4px;" data-i18n="auth_password_min_hint">Не менее 6 символов</p>
+            <input id="authPassword2" type="password" placeholder="Повторите пароль" autocomplete="new-password" data-i18n-placeholder="auth_repeat_password_placeholder"
+                style="background:#fbfaf6;border:1.5px solid #e3ded0;border-radius:14px;padding:12px 14px;font-size:13.5px;color:#3c3a34;" class="focus:outline-none hidden">
             <button id="authSubmitBtn" type="submit"
                 style="background:#4f6349;color:#f4f1ea;border-radius:14px;padding:13px;font-size:14px;font-weight:600;margin-top:4px;" class="btn" data-i18n="auth_submit_login">
                 Войти
@@ -1128,6 +1134,11 @@ function hideSplashScreen() {
         <!-- Назад к входу (показывается только в режиме сброса пароля) -->
         <p id="backToLoginLink" style="font-size:12px;color:#4f6349;font-weight:500;margin-top:14px;" class="cursor-pointer hover:underline hidden" data-i18n="auth_back_to_login">
             ← Назад к входу
+        </p>
+
+        <!-- «Позже» — в режиме «Новый пароль»: войти без смены (ссылка уже выполнила вход), 23.10 -->
+        <p id="newPasswordLaterLink" style="font-size:12px;color:#4f6349;font-weight:500;margin-top:14px;" class="cursor-pointer hover:underline hidden" data-i18n="auth_new_password_later">
+            Позже — войти без смены
         </p>
 
         <!-- Переключение между входом и регистрацией -->
@@ -3632,10 +3643,10 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=97"></script>
+    <script src="i18n-core.js?v=98"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=16"></script>
-    <script src="auth.js?v=22"></script>
+    <script src="auth.js?v=23"></script>
     <script src="employees.js?v=57"></script>
     <script src="company.js?v=24"></script>
     <script src="inventory.js?v=69"></script>
