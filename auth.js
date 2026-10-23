@@ -242,27 +242,32 @@ function _setI18nText(id, key) {
     el.setAttribute('data-i18n', key);
 }
 
-// Элементы, которые в режиме «Новый пароль» скрыты (вход через Google,
-// разделитель «или», поле e-mail, ссылки входа/регистрации). 23.10
-function _setNewPasswordChrome(on) {
-    const tog = (id, hide) => { const el = document.getElementById(id); if (el) el.classList.toggle('hidden', hide); };
-    tog('googleSignInBtn', on);
-    tog('googleAuthNote', on);
-    tog('authOrDivider', on);
-    tog('authEmail', on);
-    tog('authPassword2', !on);
-    tog('authPasswordHint', !on);
-    tog('authSubtitle', !on);
-    tog('newPasswordLaterLink', !on);
-    tog('toggleAuthMode', on);
+// Какие элементы экрана входа видны в каждом режиме (23.10):
+// - вход через Google и «или» — только во входе и регистрации;
+// - поле пароля скрыто в «Сброс пароля» (там нужен только e-mail);
+// - поле e-mail скрыто в «Новый пароль» (вход по ссылке уже выполнен).
+function _applyAuthChrome(mode) {
+    const tog = (id, show) => { const el = document.getElementById(id); if (el) el.classList.toggle('hidden', !show); };
+    const social = mode === 'login' || mode === 'register';
+    const np = mode === 'newpass';
+    tog('googleSignInBtn', social);
+    tog('googleAuthNote', social);
+    tog('authOrDivider', social);
+    tog('authEmail', !np);
+    tog('authPassword', mode !== 'reset');
+    tog('authPassword2', np);
+    tog('authPasswordHint', np);
+    tog('authSubtitle', np && !!document.getElementById('authSubtitle').textContent);
+    tog('newPasswordLaterLink', np);
+    tog('toggleAuthMode', social);
     const email = document.getElementById('authEmail');
-    if (email) email.required = !on;
+    if (email) email.required = !np;
     const pw = document.getElementById('authPassword');
     if (pw) {
-        const phKey = on ? 'auth_new_password_placeholder' : 'auth_password_placeholder';
+        const phKey = np ? 'auth_new_password_placeholder' : 'auth_password_placeholder';
         pw.placeholder = t(phKey);
         pw.setAttribute('data-i18n-placeholder', phKey);
-        pw.autocomplete = on ? 'new-password' : 'current-password';
+        pw.autocomplete = np ? 'new-password' : (mode === 'register' ? 'new-password' : 'current-password');
     }
 }
 
@@ -271,12 +276,11 @@ function showNewPasswordScreen(session) {
     _ssSet('sb_pw_recovery', '1');
     showAuthScreen();
     _authMode = 'newpass';
-    _setNewPasswordChrome(true);
     _setI18nText('authTitle', 'auth_title_new_password');
     const sub = document.getElementById('authSubtitle');
     const em = session && session.user && session.user.email ? session.user.email : '';
     sub.textContent = em ? t('auth_new_password_for').replace('{email}', em) : '';
-    sub.classList.toggle('hidden', !em);
+    _applyAuthChrome('newpass');
     _setI18nText('authSubmitBtn', 'auth_submit_new_password');
     document.getElementById('forgotPasswordLink').classList.add('hidden');
     document.getElementById('backToLoginLink').classList.add('hidden');
@@ -322,7 +326,6 @@ async function handleNewPasswordSubmit() {
 async function _finishNewPassword() {
     _pwRecoveryPending = false;
     _ssSet('sb_pw_recovery', null);
-    _setNewPasswordChrome(false);
     showLoginMode();
     await showAuthedApp();
 }
@@ -332,9 +335,9 @@ function skipNewPassword() {
 }
 
 function showLoginMode() {
-    if (_authMode === 'newpass') _setNewPasswordChrome(false);
     if (_authMode === 'reset') _ssSet('sb_pw_link_error', null);
     _authMode = 'login';
+    _applyAuthChrome('login');
     _setI18nText('authTitle', 'auth_title_login');
     _setI18nText('authSubmitBtn', 'auth_submit_login');
     _setI18nText('toggleAuthMode', 'auth_toggle_to_register');
@@ -346,6 +349,7 @@ function showLoginMode() {
 
 function showRegisterMode() {
     _authMode = 'register';
+    _applyAuthChrome('register');
     _setI18nText('authTitle', 'auth_title_register');
     _setI18nText('authSubmitBtn', 'auth_submit_register');
     _setI18nText('toggleAuthMode', 'auth_toggle_to_login');
@@ -357,6 +361,7 @@ function showRegisterMode() {
 
 function showResetMode() {
     _authMode = 'reset';
+    _applyAuthChrome('reset');
     _setI18nText('authTitle', 'auth_title_reset');
     _setI18nText('authSubmitBtn', 'auth_submit_reset');
     document.getElementById('toggleAuthMode').textContent = '';
