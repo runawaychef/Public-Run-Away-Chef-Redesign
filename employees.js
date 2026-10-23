@@ -291,12 +291,14 @@ async function initLogin() {
             // Пекарня новая (или ещё нет ни одной записи) — создаём настоящую запись владельца с полными правами
             const { data: owner, error: ownerErr } = await db
                 .from('employees')
-                .insert({ org_id: currentOrgId, name: 'Владелец', is_owner: true, user_id: myUserId })
+                // Имя по умолчанию — на языке интерфейса в момент создания (раньше всегда
+                // «Владелец» по-русски, даже у англоязычных пекарен), 23.10
+                .insert({ org_id: currentOrgId, name: t('employees_role_owner'), is_owner: true, user_id: myUserId })
                 .select(EMPLOYEE_SELECT_FIELDS)
                 .single();
             if (ownerErr || !owner) {
                 console.error('Ошибка создания владельца:', ownerErr);
-                await selectEmployee({ id: null, name: 'Владелец', is_owner: true });
+                await selectEmployee({ id: null, name: t('employees_role_owner'), is_owner: true });
             } else {
                 openOrgNameSetupModal(owner);
             }
