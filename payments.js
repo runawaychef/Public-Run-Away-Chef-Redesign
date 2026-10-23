@@ -415,6 +415,7 @@ async function _payBankLockedMessage() {
         const ord = document.getElementById('orderDetail');
         // Уходим в «Поступления» — память «вернуться в карточку позиции» не нужна (22.10)
         if (typeof forgetSmartStockReturn === 'function') forgetSmartStockReturn();
+        if (typeof forgetDocsReturn === 'function') forgetDocsReturn();
         if (ord && typeof closeOrderDetail === 'function') { try { closeOrderDetail(); } catch (e) { /* ничего */ } }
         bankState.tab = 'closed';
         openBankSection().then(() => bankSetTab('closed'));

@@ -392,12 +392,37 @@ function registrySendDoc() {
     openSendDocumentSheet(orderId, d.docType);
 }
 
+// Заказ из просмотра документа (22.10): «Назад» из заказа возвращает в тот же просмотр
+// (через список «Документов» с теми же фильтрами); переход по нижнему меню память сбрасывает.
+let _docsReturn = null; // { key, filter, q }
 function registryOpenOrder(orderId) {
+    const entry = _docsOpenEntry;
+    const ret = entry ? { key: entry.key, filter: Object.assign({}, _docsFilter), q: (document.getElementById('docsSearch') || {}).value || '' } : null;
     _docPreview = null;
     _docsOpenEntry = null;
     closeModal();
+    if (typeof _setPreviewReadOnlyUi === 'function') _setPreviewReadOnlyUi(false, false);
     if (typeof showTab === 'function') showTab('orders');
+    _docsReturn = ret; // после showTab — он сбрасывает память
     openOrderDetail(orderId);
+}
+function docsReturnPending() { return !!_docsReturn; }
+function forgetDocsReturn() { _docsReturn = null; }
+async function returnToDocsPreview() {
+    const r = _docsReturn;
+    _docsReturn = null;
+    if (!r) return false;
+    showLoading();
+    try { await _docsLoad(); }
+    catch (e) { console.error('Документы: ошибка загрузки', e); hideLoading(); showInfo(t('error_save_check_connection')); return true; }
+    hideLoading();
+    _docsFilter = r.filter;
+    const q = document.getElementById('docsSearch');
+    if (q) q.value = r.q;
+    openAppPage('docsPage');
+    renderDocumentsSection();
+    if (_docsAll.some(x => x.key === r.key)) await openRegistryDoc(r.key);
+    return true;
 }
 
 // «Закрыть» в предпросмотре документа из списка — возвращаемся в список

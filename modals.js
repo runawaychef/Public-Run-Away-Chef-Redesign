@@ -98,6 +98,7 @@ async function confirmDelete() {
             if (typeof scheduleRefreshOrderQuota === 'function') scheduleRefreshOrderQuota();
             // Удалили заказ, открытый из карточки позиции, — возвращаемся в карточку (inventory.js, 22.10)
             if (wasOpenInDetail && typeof stockCardReturnPending === 'function' && stockCardReturnPending()) await returnToStockCard();
+            else if (wasOpenInDetail && typeof docsReturnPending === 'function' && docsReturnPending()) await returnToDocsPreview();
         } else if (deleteType === 'item') {
             const order = orders.find(o => o.id === currentOrderId);
             if (order) {

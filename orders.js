@@ -1682,6 +1682,8 @@ async function closeOrderDetail() {
     refreshFab();
     // Заказ открыли из блока «Умный склад» карточки позиции — возвращаемся в карточку (inventory.js, 22.10)
     if (typeof stockCardReturnPending === 'function' && stockCardReturnPending()) await returnToStockCard();
+    // Заказ открыли из просмотра документа — возвращаемся в этот просмотр (documents.js, 22.10)
+    else if (typeof docsReturnPending === 'function' && docsReturnPending()) await returnToDocsPreview();
 }
 
 // Сброс детального вида заказа без повторной перерисовки списка
