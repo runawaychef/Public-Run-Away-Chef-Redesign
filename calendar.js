@@ -51,6 +51,7 @@ function toggleCustomCalendar(popupId, hiddenInputId, labelId, opts) {
         badge: opts && opts.badge,
         allowClear: opts && opts.allowClear,
         subtitle: opts && opts.subtitle,   // строка под месяцем (например, имя клиента)
+        subtitleHtml: opts && opts.subtitleHtml, // то же, но готовый HTML (экранирует вызывающий), 23.10
         extraHtml: opts && opts.extraHtml, // функция → HTML между шапкой и днями недели (фильтр по мастеру)
         viewYear: base.getFullYear(),
         viewMonth: base.getMonth()
@@ -248,7 +249,7 @@ function renderCalendarPopup(popupId) {
     popup.innerHTML = `
         <div class="cal-header">
             <div class="cal-nav-btn" onclick="calNavMonth('${popupId}', -1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6"/></svg></div>
-            <div style="text-align:center; min-width:0;"><div class="cal-title">${calMonthName(st.viewMonth)} ${st.viewYear}</div>${st.subtitle ? `<div class="cal-subtitle">${escapeHtml(st.subtitle)}</div>` : ''}</div>
+            <div style="text-align:center; min-width:0;"><div class="cal-title">${calMonthName(st.viewMonth)} ${st.viewYear}</div>${st.subtitleHtml ? `<div class="cal-subtitle">${st.subtitleHtml}</div>` : (st.subtitle ? `<div class="cal-subtitle">${escapeHtml(st.subtitle)}</div>` : '')}</div>
             <div class="cal-nav-btn" onclick="calNavMonth('${popupId}', 1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6"/></svg></div>
         </div>
         ${statusHtml}
@@ -297,9 +298,13 @@ function orderSeverityColor(order) {
 // До 3 заказов — точки под числом дня, цвет каждой точки = статус конкретного
 // заказа. Больше 3 — точки не помещаются, возвращаемся к числу в углу клетки;
 // его цвет — по самому критичному заказу дня (просрочен > принят > в работе > выполнен).
-function orderCountBadgeForDay(y, m, d) {
+// list — необязательно: уже отфильтрованный список (календарь-фильтр «Заказов»
+// с учётом Клиенты / Мастер / Оплата), 23.10; без него — все видимые заказы.
+function orderCountBadgeForDay(y, m, d, list) {
     const iso = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    const dayOrders = orders.filter(o => o.date === iso && (typeof isOrderVisible !== 'function' || isOrderVisible(o)));
+    const dayOrders = Array.isArray(list)
+        ? list.filter(o => o.date === iso)
+        : orders.filter(o => o.date === iso && (typeof isOrderVisible !== 'function' || isOrderVisible(o)));
     // Памятные даты клиентов (с учётом фильтра «Клиенты» в «Заказах»), 17.10
     const memos = typeof ordersMemoDatesForDay === 'function' ? ordersMemoDatesForDay(y, m + 1, d) : [];
     const memo = memos.length ? (memos.some(x => !x.past) ? MEMO_GOLD : MEMO_GREY) : null;

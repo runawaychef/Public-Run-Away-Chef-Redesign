@@ -860,8 +860,9 @@ function getOrderPaymentStatus(order) {
 
 let selectedOrderCustomers = []; // пусто = все клиенты
 
-function getFilteredOrdersForList() {
-    const dateRange = document.getElementById('orderDateRangeFilter') ? document.getElementById('orderDateRangeFilter').value : 'all';
+// opts.ignoreDate — без фильтра «Период» (для календаря-фильтра: он сам выбирает день), 23.10
+function getFilteredOrdersForList(opts) {
+    const dateRange = (opts && opts.ignoreDate) ? 'all' : (document.getElementById('orderDateRangeFilter') ? document.getElementById('orderDateRangeFilter').value : 'all');
     const dateFrom  = document.getElementById('orderDateFrom') ? document.getElementById('orderDateFrom').value : '';
     const dateTo    = document.getElementById('orderDateTo')   ? document.getElementById('orderDateTo').value   : '';
     const employeeFilter = document.getElementById('orderEmployeeFilter') ? document.getElementById('orderEmployeeFilter').value : '';
@@ -1187,13 +1188,33 @@ function openOrdersCardFilterCalendar() {
     // document и глобальный closeAllCalendarPopups закрыл бы только что открытый
     // попап в рамках того же клика.
     if (typeof event !== 'undefined' && event) event.stopPropagation();
+    // Точки на днях — по заказам, прошедшим фильтры Клиенты / Мастер / Оплата
+    // (без «Периода»); под месяцем — строка с включёнными фильтрами. 23.10
+    const calList = getFilteredOrdersForList({ ignoreDate: true });
     toggleCustomCalendar('globalCalendarPopup', 'ordersCardFilterTempDate', 'ordersCardFilterTempLabel', {
         onPick: onOrdersCardDatePicked,
-        badge: orderCountBadgeForDay,
+        badge: function (y, m, d) { return orderCountBadgeForDay(y, m, d, calList); },
+        subtitleHtml: ordersCalendarFilterSubtitleHtml(),
         allowClear: true
     });    const btn = document.getElementById('ordersCardCalendarBtn');
     const open = document.getElementById('globalCalendarPopup')?.classList.contains('open');
     if (btn) { btn.classList.toggle('is-open', !!open); if (open) btn.setAttribute('data-cal-trigger', '1'); }
+}
+
+// Строка под месяцем в календаре-фильтре: «Клиент: X · Мастер: Y · Оплата: Z».
+// Пусто, если фильтры Клиенты / Мастер / Оплата не включены. 23.10
+function ordersCalendarFilterSubtitleHtml() {
+    const parts = [];
+    if (selectedOrderCustomers.length === 1) parts.push(t('stats_col_customer') + ': <b>' + escapeHtml(selectedOrderCustomers[0]) + '</b>');
+    else if (selectedOrderCustomers.length > 1) parts.push(t('stats_all_customers_short') + ': <b>' + selectedOrderCustomers.length + '</b>');
+    const empId = document.getElementById('orderEmployeeFilter')?.value || '';
+    if (empId) {
+        const emp = (typeof employees !== 'undefined' ? employees : []).find(e => String(e.id) === empId);
+        parts.push(t('orders_master') + ': <b>' + escapeHtml(emp ? emp.name : '?') + '</b>');
+    }
+    const pay = document.getElementById('orderPaymentFilter')?.value || '';
+    if (pay) parts.push(t('orders_payment') + ': <b>' + escapeHtml(t('pay_status_' + pay)) + '</b>');
+    return parts.join(' · ');
 }
 
 function onOrdersCardDatePicked(iso) {
