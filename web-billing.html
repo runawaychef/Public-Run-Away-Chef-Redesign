@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simple Bake — Payment on the website</title>
+<style>
+  body{
+    font-family:'Segoe UI',Arial,sans-serif;
+    background:#f4f1ea;
+    color:#3c3a34;
+    max-width:720px;
+    margin:0 auto;
+    padding:24px 16px 60px;
+    line-height:1.6;
+    font-size:12.5px;
+  }
+  h1{color:#4f6349; font-size:18px; margin-bottom:4px;}
+  .updated{color:#6b675d; font-size:11px; margin-bottom:24px;}
+  h2{color:#4f6349; font-size:14px; margin-top:24px;}
+  p, li{color:#6b675d; font-size:12.5px;}
+  a{color:#7c9473;}
+  li{margin-bottom:6px;}
+  .contact{
+    background:#e3e8df; border-radius:12px; padding:14px 16px; margin-top:28px;
+    font-size:12.5px;
+  }
+  .top-row{
+    display:flex; justify-content:space-between; align-items:center;
+    margin-bottom:20px;
+  }
+  .back-link{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:12px; font-weight:600; color:#4f6349;
+    text-decoration:none;
+  }
+  .lang-switch{ display:flex; background:#e3e8df; border-radius:999px; padding:2px; gap:2px; flex-shrink:0; }
+  .lang-switch button{ border:none; background:transparent; font-size:10.5px; font-weight:700; letter-spacing:.02em; color:#6b675d; padding:4px 10px; border-radius:999px; }
+  .lang-switch button.active{ background:#7c9473; color:#fff; }
+  .plans{display:flex;gap:8px;margin:8px 0;}
+  .plan{flex:1;background:#fff;border:1px solid #d9d5c9;border-radius:12px;padding:10px;}
+  .plan b{color:#4f6349;font-size:13px;}
+  .plan .pr{font-size:17px;color:#3c3a34;font-weight:700;margin:2px 0;}
+  .plan small{color:#6b675d;font-size:11px;display:block;}
+  .tag{display:inline-block;background:#fbf3df;color:#96712a;border-radius:6px;font-size:10px;padding:1px 6px;margin-left:6px;font-weight:700;}
+  ol{margin:0 0 6px 18px;padding:0;}
+</style>
+</head>
+<body>
+
+<div class="top-row">
+  <a href="index.html" class="back-link" onclick="if (window.history.length > 1) { history.back(); return false; }" id="backLink">← Назад в Simple Bake</a>
+  <div class="lang-switch">
+    <button type="button" id="langBtnRu" onclick="setDocLang('ru')">RU</button>
+    <button type="button" id="langBtnEn" onclick="setDocLang('en')">EN</button>
+  </div>
+</div>
+
+<!-- ==================== RU ==================== -->
+<div id="content-ru">
+
+<h1>Оплата на сайте</h1>
+<p class="updated">Дата вступления в силу: 24.10.2026</p>
+
+<p>Эта страница — для тех, кто оформляет подписку Simple Bake на сайте (в браузере или на iPhone). Если подписка оформлена через Google Play, действуют правила Google Play. Общие правила сервиса — в <a href="terms.html">Условиях использования</a> и <a href="privacy.html">Политике конфиденциальности</a>.</p>
+
+<h2>1. Тарифы и цены</h2>
+<div class="plans">
+  <div class="plan"><b>Light</b><div class="pr">2,99 €</div><small>в месяц, с НДС</small><small>Заказы без ограничений. Без статистики и отчётов.</small></div>
+  <div class="plan"><b>Full</b><div class="pr">5,99 €</div><small>в месяц, с НДС</small><small>Всё: сотрудники, отчёты, статистика, push-уведомления, умный склад.</small></div>
+</div>
+<p>Цены окончательные — НДС уже включён. Бесплатно: первые 7 дней доступно всё, затем тариф Free.</p>
+
+<h2>2. Кто принимает оплату</h2>
+<p>Оплату принимает Stripe (сервис Link): он указывается в чеке и в выписке по карте как «LINK.COM* …». Данные карты мы не получаем и не храним. Чек и счёт приходят на ваш e-mail.</p>
+
+<h2>3. Продление</h2>
+<p>Подписка продлевается автоматически каждый месяц, пока вы её не отмените. Перед годовщиной подписки Stripe может прислать напоминание.</p>
+
+<h2>4. Как отменить или изменить подписку</h2>
+<ol>
+  <li>В Simple Bake откройте «Тариф» → «Управление подпиской».</li>
+  <li>В кабинете Stripe можно отменить подписку, сменить тариф (Light ↔ Full), сменить карту и посмотреть счета.</li>
+</ol>
+<p>После отмены тариф действует до конца оплаченного месяца, затем — Free. Ваши данные сохраняются.</p>
+
+<h2>5. Право отказаться от подписки (14 дней) <span class="tag">ЕС</span></h2>
+<p>Если вы потребитель в Европейском союзе, вы вправе отказаться от подписки в течение 14 дней со дня оплаты. Поскольку услуга начинается сразу после оплаты, при оформлении вы отдельной галочкой подтверждаете согласие на немедленное начало; при отказе в течение 14 дней оплата возвращается за вычетом стоимости уже использованной части услуги. Чтобы отказаться, напишите нам или в поддержку Stripe.</p>
+
+<h2>6. Возврат денег</h2>
+<p>Напишите в поддержку Stripe (ссылка есть в чеке) или нам — <a href="mailto:simplebake.support@gmail.com">simplebake.support@gmail.com</a>. Возврат производится на ту же карту, которой вы платили. Обязательные права потребителей, предусмотренные законом, не затрагиваются.</p>
+
+<h2>7. Если платёж не прошёл</h2>
+<p>Тариф не отключается сразу: Stripe повторяет попытки списания, а в кабинете можно обновить карту. Если оплата так и не проходит, подписка заканчивается и организация переходит на тариф Free; данные сохраняются.</p>
+
+<div class="contact">
+  <b>Поддержка</b><br>
+  Simple Bake · Runaway Chef Lab<br>
+  Email: <a href="mailto:simplebake.support@gmail.com">simplebake.support@gmail.com</a>
+</div>
+
+</div>
+
+<!-- ==================== EN ==================== -->
+<div id="content-en" style="display:none;">
+
+<h1>Payment on the website</h1>
+<p class="updated">Effective date: 24.10.2026</p>
+
+<p>This page is for those who subscribe to Simple Bake on the website (in a browser or on iPhone). If your subscription was purchased through Google Play, Google Play's rules apply. General rules of the service are in the <a href="terms.html">Terms of Use</a> and the <a href="privacy.html">Privacy Policy</a>.</p>
+
+<h2>1. Plans and prices</h2>
+<div class="plans">
+  <div class="plan"><b>Light</b><div class="pr">€2.99</div><small>per month, VAT included</small><small>Unlimited orders. No statistics or reports.</small></div>
+  <div class="plan"><b>Full</b><div class="pr">€5.99</div><small>per month, VAT included</small><small>Everything: staff, reports, statistics, push notifications, smart inventory.</small></div>
+</div>
+<p>Prices are final — VAT is already included. Free: the first 7 days include everything, then the Free plan applies.</p>
+
+<h2>2. Who processes the payment</h2>
+<p>Payments are processed by Stripe (the Link service); it appears on your receipt and card statement as "LINK.COM* …". We do not receive or store your card details. Your receipt and invoice are sent to your email.</p>
+
+<h2>3. Renewal</h2>
+<p>The subscription renews automatically every month until you cancel it. Stripe may send you a reminder before the subscription anniversary.</p>
+
+<h2>4. How to cancel or change your subscription</h2>
+<ol>
+  <li>In Simple Bake, open "Plan" → "Manage subscription".</li>
+  <li>In the Stripe portal you can cancel, switch plan (Light ↔ Full), change your card and view invoices.</li>
+</ol>
+<p>After cancellation your plan stays active until the end of the paid month, then the Free plan applies. Your data is kept.</p>
+
+<h2>5. Right of withdrawal (14 days) <span class="tag">EU</span></h2>
+<p>If you are a consumer in the European Union, you have the right to withdraw from the subscription within 14 days of payment. Because the service starts immediately after payment, you confirm your consent to immediate start with a separate checkbox when subscribing; if you withdraw within 14 days, the payment is refunded minus the value of the part of the service already used. To withdraw, write to us or to Stripe support.</p>
+
+<h2>6. Refunds</h2>
+<p>Contact Stripe support (a link is in your receipt) or us at <a href="mailto:simplebake.support@gmail.com">simplebake.support@gmail.com</a>. Refunds go back to the card you paid with. Mandatory consumer rights under the law are not affected.</p>
+
+<h2>7. If a payment fails</h2>
+<p>Your plan is not switched off immediately: Stripe retries the charge, and you can update your card in the portal. If payment still fails, the subscription ends and the organization moves to the Free plan; your data is kept.</p>
+
+<div class="contact">
+  <b>Support</b><br>
+  Simple Bake · Runaway Chef Lab<br>
+  Email: <a href="mailto:simplebake.support@gmail.com">simplebake.support@gmail.com</a>
+</div>
+
+</div>
+
+<script>
+function setDocLang(lang) {
+    const isEn = lang === 'en';
+    document.getElementById('content-ru').style.display = isEn ? 'none' : 'block';
+    document.getElementById('content-en').style.display = isEn ? 'block' : 'none';
+    document.getElementById('langBtnRu').classList.toggle('active', !isEn);
+    document.getElementById('langBtnEn').classList.toggle('active', isEn);
+    document.getElementById('backLink').textContent = isEn ? '← Back to Simple Bake' : '← Назад в Simple Bake';
+    document.documentElement.lang = lang;
+    try { localStorage.setItem('appLang', lang); } catch (e) {}
+}
+(function () {
+    let lang = 'ru';
+    try {
+        lang = localStorage.getItem('appLang')
+            || (navigator.language && navigator.language.toLowerCase().startsWith('ru') ? 'ru' : 'en');
+    } catch (e) {}
+    setDocLang(lang);
+
+    // Переключатель языка нужен только когда страница открыта самостоятельно
+    // (например, по прямой ссылке из карточки Google Play, ещё до установки
+    // приложения) — там нет общего переключателя языка приложения рядом.
+    // Внутри самого приложения (окно Условий открывается через iframe в
+    // настройках) язык и так синхронизирован автоматически через тот же
+    // localStorage, а собственный переключатель здесь только запутывал бы:
+    // можно было случайно переключить язык всего приложения, находясь
+    // внутри документа, и не сразу это заметить.
+    try {
+        if (window.self !== window.top) {
+            document.querySelector('.lang-switch').style.display = 'none';
+        }
+    } catch (e) {
+        // Если чтение window.top заблокировано политикой браузера — считаем,
+        // что мы внутри iframe, и на всякий случай тоже прячем переключатель.
+        document.querySelector('.lang-switch').style.display = 'none';
+    }
+})();
+</script>
+
+</body>
+</html>
