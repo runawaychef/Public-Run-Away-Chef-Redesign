@@ -116,7 +116,7 @@ I18N.ru = {
         company_bcc_self_label: 'Присылать копию себе при отправке документов',
         company_address_label: 'Адрес',
         company_legal_name_label: 'Юридическое название',
-        company_legal_name_placeholder: 'Например, MB Runaway Chef',
+        company_legal_name_placeholder: 'Например, MB Sweet Bakery',
         company_legal_name_individual_label: 'ФИО для документов',
         company_legal_name_individual_placeholder: 'Например, Siarhei Sharah',
         company_reg_number_label: 'Рег. номер',

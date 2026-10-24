@@ -122,7 +122,7 @@ I18N.lt = {
         company_bcc_self_label: 'Siųsti sau kopiją siunčiant dokumentus',
         company_address_label: 'Adresas',
         company_legal_name_label: 'Juridinis pavadinimas',
-        company_legal_name_placeholder: 'Pavyzdžiui, MB Runaway Chef',
+        company_legal_name_placeholder: 'Pavyzdžiui, MB Sweet Bakery',
         company_legal_name_individual_label: 'Vardas pavardė dokumentams',
         company_legal_name_individual_placeholder: 'Pvz., Siarhei Sharah',
         company_reg_number_label: 'Registracijos numeris',

@@ -47,6 +47,20 @@ function _ssSet(k, v) { try { if (v === null) sessionStorage.removeItem(k); else
 if (/type=recovery/.test(_authUrlTail)) _ssSet('sb_pw_recovery', '1');
 if (/error_code=otp_expired|error=access_denied/.test(_authUrlTail)) _ssSet('sb_pw_link_error', '1');
 let _pwRecoveryPending = _ssGet('sb_pw_recovery') === '1';
+
+// ===== Ссылка-приглашение (24.10): ?signup=1&email=... =====
+// Открывает сразу форму регистрации с подставленным e-mail (только при первом показе
+// экрана входа в этой загрузке; после выхода из аккаунта — обычный вход).
+let _inviteSignup = false;
+let _inviteEmail = '';
+try {
+    const _qp = new URLSearchParams(location.search || '');
+    if (_qp.get('signup') === '1') {
+        _inviteSignup = true;
+        const _e = (_qp.get('email') || '').trim();
+        if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(_e) && _e.length <= 254) _inviteEmail = _e;
+    }
+} catch (e) {}
 const _pwRecoveryLinkError = _ssGet('sb_pw_link_error') === '1';
 
 async function initAuth() {
@@ -152,6 +166,14 @@ function showAuthScreen() {
     document.getElementById('statsBtn').classList.add('hidden');
     document.getElementById('inventoryBtn').classList.add('hidden');
     showLoginMode();
+    if (_inviteSignup) {
+        _inviteSignup = false; // только один раз за загрузку
+        showRegisterMode();
+        if (_inviteEmail) {
+            const em = document.getElementById('authEmail');
+            if (em) em.value = _inviteEmail;
+        }
+    }
 }
 
 // Supabase может вызвать onAuthStateChange('SIGNED_IN') сразу при восстановлении

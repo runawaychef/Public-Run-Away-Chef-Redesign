@@ -117,7 +117,7 @@ I18N.en = {
         company_bcc_self_label: 'Send myself a copy when sending documents',
         company_address_label: 'Address',
         company_legal_name_label: 'Legal name',
-        company_legal_name_placeholder: 'e.g. MB Runaway Chef',
+        company_legal_name_placeholder: 'e.g. MB Sweet Bakery',
         company_legal_name_individual_label: 'Legal name for documents',
         company_legal_name_individual_placeholder: 'e.g. Siarhei Sharah',
         company_reg_number_label: 'Registration number',
