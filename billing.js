@@ -8,6 +8,11 @@
 // кнопка покупки автоматически показывается как неактивная ("Скоро будет доступно"),
 // а не ломается и не кидает ошибку.
 //
+// Оплата НА САЙТЕ (Stripe, 24.10.2026): для пользователей, которые пришли НЕ из
+// приложения Google Play (браузер, установленное с сайта приложение, iPhone).
+// В приложении из Google Play (TWA) о сайте и внешней оплате НЕ упоминаем ни
+// словом — только Google Play Billing (правила Google). См. isPlayApp() ниже.
+//
 // Серверная проверка покупки (Google Play Developer API, RTDN) — ОТДЕЛЬНЫЙ,
 // ещё не реализованный шаг. Сейчас purchasePlan() только доводит пользователя
 // до системного экрана оплаты Google и подтверждает получение purchaseToken —
@@ -81,10 +86,177 @@ async function getBillingService() {
 // Открывает модалку тарифов — сначала рисует карточки со статичными ценами
 // (мгновенно, не ждёт сети), затем, если Digital Goods API доступен, тихо
 // обновляет цены на реальные из Google Play (могут отличаться по стране).
-function openPlanModal() {
+async function openPlanModal() {
     renderPlanModalCards();
     document.getElementById('planModal').style.display = 'flex';
     refreshPlanModalPrices();
+    // Данные о подписке (источник оплаты, дата, отмена) — отдельным запросом;
+    // после ответа перерисовываем карточки уже с кнопками и пояснениями.
+    await loadBillingInfo();
+    const modal = document.getElementById('planModal');
+    if (modal && modal.style.display !== 'none') {
+        renderPlanModalCards();
+        refreshPlanModalPrices();
+    }
+}
+
+// ==================== ОПЛАТА НА САЙТЕ (Stripe) ====================
+
+// Данные о подписке организации (RPC get_billing_info): plan_source
+// ('google_play' | 'stripe' | null), web_status, period_end, cancel_at_period_end.
+let _billingInfo = null;
+
+// Это приложение, установленное из Google Play (TWA)? Тогда никаких кнопок и текстов
+// про оплату на сайте. Признаки: запуск из нашего пакета (referrer) либо наличие
+// Digital Goods API. Результат запоминаем на время сеанса (sessionStorage), потому
+// что referrer есть только у первой загрузки. Если ни один признак не сработал —
+// считаем веб-пользователем (браузер / PWA / iPhone).
+function isPlayApp() {
+    try { if (sessionStorage.getItem('sb_play_app') === '1') return true; } catch (e) { /* без хранилища — по признакам ниже */ }
+    const fromPlay = (document.referrer || '').startsWith('android-app://' + BILLING_PACKAGE_NAME);
+    const hasDigitalGoods = ('getDigitalGoodsService' in window);
+    const yes = fromPlay || hasDigitalGoods;
+    if (yes) { try { sessionStorage.setItem('sb_play_app', '1'); } catch (e) { /* не страшно */ } }
+    return yes;
+}
+
+// Менять тариф может владелец и сотрудник с правом управлять командой.
+function canManagePlan() {
+    return typeof hasPermission === 'function' && hasPermission('can_manage_team');
+}
+
+async function loadBillingInfo() {
+    _billingInfo = null;
+    if (typeof currentOrgId === 'undefined' || !currentOrgId) return;
+    try {
+        const { data, error } = await db.rpc('get_billing_info', { p_org_id: currentOrgId });
+        if (!error && data) _billingInfo = data;
+    } catch (e) { /* без данных — экран покажется в упрощённом виде */ }
+}
+
+function _billingDateLabel(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    const locale = { ru: 'ru-RU', uk: 'uk-UA', lt: 'lt-LT', en: 'en-GB' }[currentLang] || 'en-GB';
+    return d.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+// Код ошибки из ответа Edge Function (supabase-js отдаёт Response в error.context).
+async function _billingFnErrorCode(error) {
+    try {
+        if (error && error.context && typeof error.context.json === 'function') {
+            const body = await error.context.json();
+            return (body && (body.code || body.error)) || null;
+        }
+    } catch (e) { /* тело не прочиталось */ }
+    return null;
+}
+
+// Кнопка «Оплатить на сайте»: просим сервер создать страницу оплаты Stripe
+// и переходим на неё. Тариф включится только после реальной оплаты (вебхук).
+async function startWebCheckout(planKey) {
+    if (isPlayApp()) return; // страховка: в приложении Google Play этой кнопки быть не должно
+    const btn = document.getElementById(`planWebBtn_${planKey}`);
+    const originalLabel = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = t('plan_processing'); }
+    const restore = () => { if (btn) { btn.disabled = false; btn.textContent = originalLabel; } };
+
+    try {
+        const { data, error } = await db.functions.invoke('create-checkout', {
+            body: { orgId: currentOrgId, plan: planKey, returnUrl: location.origin + location.pathname }
+        });
+        if (error || !data || !data.url) {
+            const code = await _billingFnErrorCode(error);
+            if (code === 'ALREADY_GOOGLE_PLAY') {
+                showInfo(t('plan_note_google_play'));
+            } else if (code === 'ALREADY_SUBSCRIBED_WEB') {
+                showInfo(t('plan_manage_note'));
+            } else {
+                showInfo(t('plan_purchase_error'));
+            }
+            await loadBillingInfo();
+            renderPlanModalCards();
+            return;
+        }
+        window.location.href = data.url;
+    } catch (e) {
+        showInfo(t('plan_purchase_error'));
+        restore();
+    }
+}
+
+// «Управление подпиской» / «Возобновить» / «Обновить способ оплаты» —
+// портал Stripe (отмена, карта, смена тарифа).
+async function openBillingPortal() {
+    if (isPlayApp()) return;
+    const btn = document.getElementById('planPortalBtn');
+    const originalLabel = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = t('plan_processing'); }
+    try {
+        const { data, error } = await db.functions.invoke('create-portal', {
+            body: { orgId: currentOrgId, returnUrl: location.origin + location.pathname }
+        });
+        if (error || !data || !data.url) {
+            showInfo(t('plan_purchase_error'));
+            if (btn) { btn.disabled = false; btn.textContent = originalLabel; }
+            return;
+        }
+        window.location.href = data.url;
+    } catch (e) {
+        showInfo(t('plan_purchase_error'));
+        if (btn) { btn.disabled = false; btn.textContent = originalLabel; }
+    }
+}
+
+// Возврат со страницы оплаты Stripe: в адресе ?pay=success или ?pay=cancel.
+// Убираем параметр из адреса сразу, а сообщение показываем, когда организация
+// уже загружена. При success несколько секунд проверяем, включился ли тариф
+// (вебхук приходит с небольшой задержкой).
+(function initPayReturn() {
+    let flag = null;
+    try {
+        const u = new URL(location.href);
+        flag = u.searchParams.get('pay');
+        if (flag) {
+            u.searchParams.delete('pay');
+            history.replaceState(null, '', u.pathname + (u.search || '') + (u.hash || ''));
+        }
+    } catch (e) { /* адрес не разобрался — пропускаем */ }
+    if (flag !== 'success' && flag !== 'cancel') return;
+
+    let waited = 0;
+    const waitTimer = setInterval(() => {
+        waited++;
+        if (typeof currentOrgId === 'undefined' || !currentOrgId) {
+            if (waited > 120) clearInterval(waitTimer);
+            return;
+        }
+        clearInterval(waitTimer);
+        handlePayReturn(flag);
+    }, 1000);
+})();
+
+async function handlePayReturn(flag) {
+    if (flag === 'cancel') { showInfo(t('plan_pay_cancelled')); return; }
+    showInfo(t('plan_pay_pending'));
+    for (let i = 0; i < 30; i++) {
+        try {
+            const { data } = await db.from('organizations').select('plan, plan_override').eq('id', currentOrgId).single();
+            if (data) {
+                const newPlan = data.plan_override || data.plan || 'free';
+                if (newPlan !== 'free') {
+                    currentOrgPlan = newPlan;
+                    currentOrgPlanIsOverridden = !!data.plan_override;
+                    if (typeof applyPlanGating === 'function') applyPlanGating();
+                    if (typeof renderPlanInfo === 'function') renderPlanInfo();
+                    showInfo(t('plan_pay_success'));
+                    return;
+                }
+            }
+        } catch (e) { /* повторим */ }
+        await new Promise(r => setTimeout(r, 2000));
+    }
 }
 
 // Чек-лист фич по тарифам. included: true/false — используется для отрисовки
@@ -142,18 +314,53 @@ function renderPlanModalCards() {
     if (!wrap) return;
     const current = currentOrgPlan || 'free';
 
-    wrap.innerHTML = planCardConfig().map(card => {
+    const info = _billingInfo || {};
+    const source = info.plan_source || null;            // 'google_play' | 'stripe' | null
+    const playApp = isPlayApp();
+    const canManage = canManagePlan();
+    const overridden = (typeof currentOrgPlanIsOverridden !== 'undefined') && currentOrgPlanIsOverridden;
+    const status = info.web_status || '';
+    const payProblem = (status === 'past_due' || status === 'unpaid');
+    const periodEnd = _billingDateLabel(info.period_end);
+
+    // Пояснения над карточками
+    let topHtml = '';
+    if (!canManage) {
+        topHtml = `<div style="background:#eef2ea;border:1px solid #d5ddcf;border-radius:10px;padding:8px 10px;font-size:12px;color:#4f6349;line-height:1.35;">${escapeHtml(t('plan_note_owner_only'))}</div>`;
+    } else if (source === 'google_play' && !playApp) {
+        topHtml = `<div style="background:#eef2ea;border:1px solid #d5ddcf;border-radius:10px;padding:8px 10px;font-size:12px;color:#4f6349;line-height:1.35;">${escapeHtml(t('plan_note_google_play'))}</div>`;
+    } else if (source === 'stripe' && payProblem && !playApp) {
+        topHtml = `<div style="background:#fdf0e3;border:1px solid #f0cfa5;border-radius:10px;padding:8px 10px;font-size:12px;color:#8a4b0f;line-height:1.35;">${escapeHtml(t('plan_past_due_warn'))}</div>`;
+    }
+
+    const cardsHtml = planCardConfig().map(card => {
         const isCurrent = card.key === current;
         const border = isCurrent ? '2px solid #7c9473' : '1px solid #e2ddd0';
         const bg = '#f4f1ea';
 
-        let actionHtml;
+        let actionHtml = '';
         if (isCurrent) {
             actionHtml = `<span class="text-xs font-semibold px-3 py-1.5 rounded-full" style="background:#e3e8df; color:#5a6b52;">${escapeHtml(t('plan_current_badge'))}</span>`;
-        } else if (card.sku) {
-            actionHtml = `<button type="button" id="planBuyBtn_${card.key}" onclick="event.stopPropagation(); purchasePlan('${card.key}')" class="pill-btn text-xs px-3 py-1.5" disabled style="opacity:0.5;">${escapeHtml(t('plan_coming_soon'))}</button>`;
-        } else {
-            actionHtml = '';
+        } else if (card.sku && canManage && !overridden) {
+            if (playApp) {
+                // Приложение из Google Play: только Google Play Billing (как раньше).
+                if (source !== 'stripe') {
+                    actionHtml = `<button type="button" id="planBuyBtn_${card.key}" onclick="event.stopPropagation(); purchasePlan('${card.key}')" class="pill-btn text-xs px-3 py-1.5" disabled style="opacity:0.5;">${escapeHtml(t('plan_coming_soon'))}</button>`;
+                }
+            } else if (!source) {
+                // Веб: оплата на сайте, только если подписки ещё нет.
+                actionHtml = `<button type="button" id="planWebBtn_${card.key}" onclick="event.stopPropagation(); startWebCheckout('${card.key}')" class="pill-btn text-xs px-3 py-1.5">${escapeHtml(t('plan_pay_web_btn'))}</button>`;
+            }
+        }
+
+        // Строка про срок — у текущей карточки, если тариф оплачен на сайте
+        let untilHtml = '';
+        if (isCurrent && source === 'stripe' && periodEnd && !payProblem) {
+            if (info.cancel_at_period_end) {
+                untilHtml = `<div class="text-xs mt-1" style="margin-left:19px; color:#8a4b0f;">${escapeHtml(t('plan_cancelled_until').replace('{date}', periodEnd))}</div>`;
+            } else {
+                untilHtml = `<div class="text-xs mt-1" style="margin-left:19px; color:#4f6349;">${escapeHtml(t('plan_renews_on').replace('{date}', periodEnd))}</div>`;
+            }
         }
 
         return `
@@ -167,9 +374,29 @@ function renderPlanModalCards() {
                 </div>
                 <div class="text-xs font-medium mb-1" id="planPriceLabel_${card.key}" style="color:#7c9473; margin-left:19px;">${escapeHtml(card.price)}</div>
                 <div class="text-xs text-gray-500" style="margin-left:19px;">${escapeHtml(card.desc)}</div>
+                ${untilHtml}
                 <div id="planFeatureRows_${card.key}" style="display:none; margin-left:19px; margin-top:8px; padding-top:8px; border-top:1px solid #ece7d9;">${planFeatureRowsHtml(card.key)}</div>
             </div>`;
     }).join('');
+
+    // Блок под карточками (только веб, только у тех, кто может менять тариф)
+    let bottomHtml = '';
+    if (!playApp && canManage && !overridden) {
+        if (source === 'stripe') {
+            const btnLabel = info.cancel_at_period_end ? t('plan_resume_btn')
+                : (payProblem ? t('plan_fix_payment_btn') : t('plan_manage_btn'));
+            const note = (info.cancel_at_period_end && periodEnd)
+                ? t('plan_after_cancel_note').replace('{date}', periodEnd)
+                : t('plan_manage_note');
+            bottomHtml = `
+                <button type="button" id="planPortalBtn" onclick="openBillingPortal()" class="pill-btn w-full justify-center" style="padding:9px 12px; font-size:12px;">${escapeHtml(btnLabel)}</button>
+                <div class="text-xs text-gray-500" style="margin-top:-4px;">${escapeHtml(note)}</div>`;
+        } else if (!source) {
+            bottomHtml = `<div class="text-xs text-gray-500">${escapeHtml(t('plan_web_price_note'))}</div>`;
+        }
+    }
+
+    wrap.innerHTML = topHtml + cardsHtml + bottomHtml;
 }
 
 // Пытается заменить статичные цены на реальные из Google Play (если доступно).
