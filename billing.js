@@ -86,7 +86,17 @@ async function getBillingService() {
 // Открывает модалку тарифов — сначала рисует карточки со статичными ценами
 // (мгновенно, не ждёт сети), затем, если Digital Goods API доступен, тихо
 // обновляет цены на реальные из Google Play (могут отличаться по стране).
+// Настоящая проверка Play-приложения: сервис Digital Goods реально создаётся
+// только внутри TWA из Google Play. Если создался — запоминаем флаг.
+async function probePlayApp() {
+    try {
+        const svc = await getBillingService();
+        if (svc) { try { sessionStorage.setItem('sb_play_app', '1'); } catch (e) { /* не страшно */ } }
+    } catch (e) { /* не Play-приложение */ }
+}
+
 async function openPlanModal() {
+    await probePlayApp();
     renderPlanModalCards();
     document.getElementById('planModal').style.display = 'flex';
     refreshPlanModalPrices();
@@ -114,8 +124,9 @@ let _billingInfo = null;
 function isPlayApp() {
     try { if (sessionStorage.getItem('sb_play_app') === '1') return true; } catch (e) { /* без хранилища — по признакам ниже */ }
     const fromPlay = (document.referrer || '').startsWith('android-app://' + BILLING_PACKAGE_NAME);
-    const hasDigitalGoods = ('getDigitalGoodsService' in window);
-    const yes = fromPlay || hasDigitalGoods;
+    // Одного наличия window.getDigitalGoodsService мало (в обычном Chrome на Android
+    // он тоже может быть) — настоящий сервис проверяет probePlayApp() ниже.
+    const yes = fromPlay;
     if (yes) { try { sessionStorage.setItem('sb_play_app', '1'); } catch (e) { /* не страшно */ } }
     return yes;
 }
