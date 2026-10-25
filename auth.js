@@ -528,20 +528,28 @@ async function handleGoogleSignIn() {
         // возврат из Google OAuth и покажет экран "Возвращаемся в Simple Bake"
         // (см. initAuth). sessionStorage переживает сам редирект на google.com и обратно.
         sessionStorage.setItem('sb_google_oauth_pending', '1');
-        const { error } = await db.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-                redirectTo: 'https://simple-bake.com/Public-Run-Away-Chef-Redesign/'
-            }
-        });
-        if (error) throw error;
+        // Адрес входа получаем сами (skipBrowserRedirect) и переходим на него вручную:
+        // так видно, на каком шаге произошёл сбой, а зависание ограничено 10 секундами.
+        const res = await Promise.race([
+            db.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: 'https://simple-bake.com/Public-Run-Away-Chef-Redesign/',
+                    skipBrowserRedirect: true
+                }
+            }),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('oauth-timeout')), 10000))
+        ]);
+        if (res.error) throw res.error;
+        if (!res.data || !res.data.url) throw new Error('oauth-no-url');
+        window.location.assign(res.data.url);
         // Google перенаправит пользователя — дальнейший код не выполняется
     } catch (err) {
         console.error(err);
         sessionStorage.removeItem('sb_google_oauth_pending');
         gBtn.disabled = false;
         if (gLabel) gLabel.textContent = gLabelText;
-        errEl.textContent = t('auth_error_google_failed');
+        errEl.textContent = t('auth_error_google_failed') + ' [' + String((err && err.message) || err).slice(0, 70) + ']';
         errEl.classList.remove('hidden');
     }
 }
