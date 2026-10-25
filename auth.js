@@ -76,6 +76,24 @@ function detectSignupChannel() {
 }
 const _pwRecoveryLinkError = _ssGet('sb_pw_link_error') === '1';
 
+// Канал для регистрации через Google. Признаки (переход из Google Play, ссылка-приглашение)
+// теряются после ухода на страницу Google, поэтому канал запоминается ДО ухода
+// (handleGoogleSignIn), а записывается после возврата — только если аккаунт создан
+// только что и канал у него ещё не записан. Ошибка записи вход не ломает.
+const GOOGLE_CHANNEL_KEY = 'sb_google_signup_channel';
+async function saveGoogleSignupChannel(user) {
+    let ch = null;
+    try { ch = sessionStorage.getItem(GOOGLE_CHANNEL_KEY); sessionStorage.removeItem(GOOGLE_CHANNEL_KEY); } catch (e) {}
+    try {
+        if (!ch || !user) return;
+        if (user.user_metadata && user.user_metadata.signup_channel) return;
+        const created = new Date(user.created_at).getTime();
+        if (!created || Date.now() - created > 15 * 60 * 1000) return; // старый аккаунт — не трогаем
+        const { error } = await db.auth.updateUser({ data: { signup_channel: ch } });
+        if (error) console.warn('signup_channel (Google):', error.message);
+    } catch (e) { console.warn('signup_channel (Google):', e); }
+}
+
 async function initAuth() {
     // Обработка возврата после Google OAuth —
     // Supabase сам восстанавливает сессию из URL-хэша
@@ -91,7 +109,12 @@ async function initAuth() {
             // отличает "вернулись из Google OAuth" от обычного восстановления сессии
             // (например, простого перезапуска приложения с уже активным входом).
             const isGoogleReturn = sessionStorage.getItem('sb_google_oauth_pending') === '1';
-            if (isGoogleReturn) sessionStorage.removeItem('sb_google_oauth_pending');
+            if (isGoogleReturn) {
+                sessionStorage.removeItem('sb_google_oauth_pending');
+                // В фоне и вне обработчика: вызов Supabase прямо внутри onAuthStateChange может зависнуть.
+                const _u = session.user;
+                setTimeout(() => saveGoogleSignupChannel(_u), 0);
+            }
 
             if (_instantRestoreDone && session.user?.id && _snapshotAuthUserId !== session.user.id) {
                 await handleInstantRestoreWrongAccount();
@@ -528,6 +551,7 @@ async function handleGoogleSignIn() {
         // возврат из Google OAuth и покажет экран "Возвращаемся в Simple Bake"
         // (см. initAuth). sessionStorage переживает сам редирект на google.com и обратно.
         sessionStorage.setItem('sb_google_oauth_pending', '1');
+        try { sessionStorage.setItem(GOOGLE_CHANNEL_KEY, detectSignupChannel()); } catch (e) {}
         // Адрес входа получаем сами (skipBrowserRedirect) и переходим на него вручную:
         // так видно, на каком шаге произошёл сбой, а зависание ограничено 10 секундами.
         const res = await Promise.race([
@@ -547,6 +571,7 @@ async function handleGoogleSignIn() {
     } catch (err) {
         console.error(err);
         sessionStorage.removeItem('sb_google_oauth_pending');
+        try { sessionStorage.removeItem(GOOGLE_CHANNEL_KEY); } catch (e) {}
         gBtn.disabled = false;
         if (gLabel) gLabel.textContent = gLabelText;
         errEl.textContent = t('auth_error_google_failed') + ' [' + String((err && err.message) || err).slice(0, 70) + ']';
