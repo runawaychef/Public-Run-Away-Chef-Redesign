@@ -52,15 +52,28 @@ let _pwRecoveryPending = _ssGet('sb_pw_recovery') === '1';
 // Открывает сразу форму регистрации с подставленным e-mail (только при первом показе
 // экрана входа в этой загрузке; после выхода из аккаунта — обычный вход).
 let _inviteSignup = false;
+let _inviteLink = false; // пришли по ссылке-приглашению (не сбрасывается, нужен для учёта канала)
 let _inviteEmail = '';
 try {
     const _qp = new URLSearchParams(location.search || '');
     if (_qp.get('signup') === '1') {
         _inviteSignup = true;
+        _inviteLink = true;
         const _e = (_qp.get('email') || '').trim();
         if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(_e) && _e.length <= 254) _inviteEmail = _e;
     }
 } catch (e) {}
+// Откуда пришла новая пекарня — записываем в метаданные пользователя при регистрации
+// (Simple Hub показывает это владельцу и позволяет фильтровать). Только учёт, на права не влияет.
+function detectSignupChannel() {
+    try {
+        if ((document.referrer || '').startsWith('android-app://')) return 'google_play';
+        if (_inviteLink) return 'invite';
+        const standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+            || window.navigator.standalone === true;
+        return standalone ? 'pwa' : 'web';
+    } catch (e) { return 'web'; }
+}
 const _pwRecoveryLinkError = _ssGet('sb_pw_link_error') === '1';
 
 async function initAuth() {
@@ -430,7 +443,7 @@ async function handleAuthSubmit(e) {
             await showAuthedApp();
         } else {
             btn.textContent = t('auth_registering');
-            const { data, error } = await db.auth.signUp({ email, password });
+            const { data, error } = await db.auth.signUp({ email, password, options: { data: { signup_channel: detectSignupChannel() } } });
             if (error) throw error;
             document.getElementById('authPassword').value = '';
             if (data && data.session) {
