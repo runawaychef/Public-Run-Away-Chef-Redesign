@@ -11,7 +11,12 @@ function setupPlayBadge() {
     const standalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
         || window.navigator.standalone === true
         || (document.referrer || '').startsWith('android-app://');
-    if (standalone) { el.classList.add('hidden'); return; }
+    if (standalone) {
+        el.classList.add('hidden');
+        const back = document.getElementById('backToSiteLink');
+        if (back) back.classList.add('hidden');
+        return;
+    }
     const txt = document.getElementById('playBadgeText');
     if (PLAY_STORE_URL) {
         el.href = PLAY_STORE_URL;

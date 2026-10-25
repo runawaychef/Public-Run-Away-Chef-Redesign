@@ -329,6 +329,7 @@ I18N.ru = {
         auth_google_signin: 'Войти через Google',
         auth_google_opening: 'Открываем Google…',
         auth_play_soon: 'Скоро в Google Play',
+        auth_back_to_site: '← Вернуться на сайт',
         auth_play_get: 'Скачать в Google Play',
         auth_or: 'или',
         auth_password_placeholder: 'Пароль',

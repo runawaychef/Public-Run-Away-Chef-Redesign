@@ -335,6 +335,7 @@ I18N.uk = {
         auth_google_signin: 'Увійти за допомогою Google',
         auth_google_opening: 'Відкриваємо Google…',
         auth_play_soon: 'Незабаром у Google Play',
+        auth_back_to_site: '← Повернутися на сайт',
         auth_play_get: 'Завантажити з Google Play',
         auth_or: 'або',
         auth_password_placeholder: 'Пароль',

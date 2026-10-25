@@ -335,6 +335,7 @@ I18N.lt = {
         auth_google_signin: 'Prisijungti naudojant Google',
         auth_google_opening: 'Atidarome Google…',
         auth_play_soon: 'Netrukus „Google Play“',
+        auth_back_to_site: '← Grįžti į svetainę',
         auth_play_get: 'Atsisiųsti iš „Google Play“',
         auth_or: 'arba',
         auth_password_placeholder: 'Slaptažodis',

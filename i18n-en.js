@@ -330,6 +330,7 @@ I18N.en = {
         auth_google_signin: 'Sign in with Google',
         auth_google_opening: 'Opening Google…',
         auth_play_soon: 'Coming soon to Google Play',
+        auth_back_to_site: '← Back to website',
         auth_play_get: 'Get it on Google Play',
         auth_or: 'or',
         auth_password_placeholder: 'Password',
