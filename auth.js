@@ -611,3 +611,38 @@ window.addEventListener('pageshow', (e) => {
     if (gLabel) gLabel.textContent = t('auth_google_signin');
     sessionStorage.removeItem('sb_google_oauth_pending');
 });
+
+// ===== ВРЕМЕННАЯ ДИАГНОСТИКА ссылки «Вернуться на сайт» (24.10) — удалить после выяснения =====
+// Включается ТОЛЬКО адресом с ?debugback=1. Остальным пользователям ничего не показывается.
+(function () {
+    let on = false;
+    try { on = new URLSearchParams(location.search).get('debugback') === '1'; } catch (e) {}
+    if (!on) return;
+    const box = document.createElement('div');
+    box.style.cssText = 'position:fixed;left:4px;right:4px;top:4px;z-index:99999;background:rgba(20,20,20,.88);color:#fff;font:11px/1.35 monospace;padding:6px 8px;border-radius:8px;max-height:46vh;overflow:auto;pointer-events:none;white-space:pre-wrap';
+    const lines = [];
+    function log(s) { lines.unshift(new Date().toTimeString().slice(0, 8) + ' ' + s); lines.length = Math.min(lines.length, 40); box.textContent = head() + '\n' + lines.join('\n'); }
+    function head() {
+        const l = document.getElementById('backToSiteLink');
+        const r = l ? l.getBoundingClientRect() : null;
+        const vv = window.visualViewport;
+        return 'ЭКРАН ' + innerWidth + 'x' + innerHeight + (vv ? ' видимо ' + Math.round(vv.width) + 'x' + Math.round(vv.height) : '')
+            + '\nССЫЛКА ' + (r ? 'верх ' + Math.round(r.top) + ' низ ' + Math.round(r.bottom) + ' (видна: ' + (r.bottom <= innerHeight ? 'да' : 'НЕТ, ниже края') + ')' : 'нет');
+    }
+    function who(el) { if (!el) return 'ничего'; return el.id ? '#' + el.id : (el.tagName + (el.className && typeof el.className === 'string' ? '.' + el.className.split(' ')[0] : '')); }
+    function onLink(el) { return !!(el && el.closest && el.closest('#backToSiteLink')); }
+    ['touchstart', 'touchend', 'touchcancel', 'pointerdown', 'pointerup', 'pointercancel', 'click'].forEach(ev =>
+        document.addEventListener(ev, e => {
+            const p = (e.changedTouches && e.changedTouches[0]) || e;
+            const x = Math.round(p.clientX || 0), y = Math.round(p.clientY || 0);
+            const hit = document.elementFromPoint(x, y);
+            log(ev + ' ' + x + ',' + y + ' → ' + who(e.target) + (onLink(e.target) ? ' [ССЫЛКА]' : '') + (hit !== e.target ? ' (под пальцем: ' + who(hit) + ')' : '') + (e.defaultPrevented ? ' ОТМЕНЕНО' : ''));
+        }, { capture: true, passive: true }));
+    document.addEventListener('click', e => { if (onLink(e.target)) log('click по ссылке дошёл; отменён: ' + (e.defaultPrevented ? 'ДА' : 'нет')); }, false);
+    window.addEventListener('pagehide', () => log('pagehide — уход со страницы'));
+    window.addEventListener('beforeunload', () => log('beforeunload — уход начался'));
+    document.addEventListener('visibilitychange', () => log('visibility ' + document.visibilityState));
+    window.addEventListener('resize', () => log('resize ' + innerWidth + 'x' + innerHeight));
+    function mount() { document.body.appendChild(box); log('диагностика включена'); }
+    if (document.body) mount(); else document.addEventListener('DOMContentLoaded', mount);
+})();
