@@ -187,16 +187,22 @@ function _dashSet(id, html, cls) {
 }
 
 // ---------- полоска: напоминание или приветствие ----------
+function _dashLineIcon(path) {
+    return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`;
+}
+const _DASH_ICON_SUN = '<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/>';
+const _DASH_ICON_SUNSET = '<path d="M7 17a5 5 0 0 1 10 0"/><path d="M12 5v3M4.5 10.5l1.8 1.8M19.5 10.5l-1.8 1.8M3 17h18M6 20.5h12"/>';
+const _DASH_ICON_MOON = '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>';
 function _dashGreeting() {
     let h = 12;
     try { h = orgNowDate().getHours(); } catch (e) { h = new Date().getHours(); }
     let key, icon;
-    if (h >= 5 && h < 12)       { key = 'dash_greet_morning'; icon = '☀️'; }
-    else if (h >= 12 && h < 18) { key = 'dash_greet_day';     icon = '🌤️'; }
-    else if (h >= 18 && h < 23) { key = 'dash_greet_evening'; icon = '🌆'; }
-    else                        { key = 'dash_greet_night';   icon = '🌙'; }
+    if (h >= 5 && h < 12)       { key = 'dash_greet_morning'; icon = _DASH_ICON_SUN; }
+    else if (h >= 12 && h < 18) { key = 'dash_greet_day';     icon = _DASH_ICON_SUN; }
+    else if (h >= 18 && h < 23) { key = 'dash_greet_evening'; icon = _DASH_ICON_SUNSET; }
+    else                        { key = 'dash_greet_night';   icon = _DASH_ICON_MOON; }
     const name = (typeof currentEmployee !== 'undefined' && currentEmployee && currentEmployee.name ? String(currentEmployee.name) : '').trim();
-    return { icon, text: t(key) + (name ? ', ' + name : '') + '!' };
+    return { icon: _dashLineIcon(icon), text: t(key) + (name ? ', ' + name : '') + '!' };
 }
 
 function _dashRenderStrip() {
@@ -213,7 +219,7 @@ function _dashRenderStrip() {
         const gold = typeof MEMO_GOLD !== 'undefined' ? MEMO_GOLD : '#c9973a';
         const more = list.length > 1 ? `<span class="dashboard-strip__more">+${list.length - 1}</span>` : '';
         el.className = 'dashboard-strip';
-        el.innerHTML = `<span class="dashboard-strip__ic">${_memoHeartSvg(gold, 18)}</span>`
+        el.innerHTML = `<span class="dashboard-strip__ic">${_memoHeartSvg(gold, 22)}</span>`
             + `<span class="dashboard-strip__t">${escapeHtml(memoShortWhen(x))} · ${escapeHtml(x.m.title)}${c && c.name ? ' — ' + escapeHtml(c.name) : ''}</span>${more}`;
     } else {
         const g = _dashGreeting();
@@ -265,6 +271,11 @@ function renderDashboard() {
         _dashSet('dashToday', String(td.count));     _dashSet('dashTodaySub', td.sub || '&nbsp;');
         _dashSet('dashTomorrow', String(tm.count));  _dashSet('dashTomorrowSub', tm.sub || '&nbsp;');
         const r = _dashRevenue(saved);
+        { // длинная сумма (6+ цифр) уменьшается, чтобы не вылезать из плашки
+            const digits = String(Math.round(Math.abs(r.revenue))).length;
+            const rv = _dashEl('dashRevenue');
+            if (rv) rv.style.fontSize = digits >= 7 ? '17px' : digits >= 6 ? '21px' : '';
+        }
         _dashSet('dashRevenue', `${Math.round(r.revenue).toLocaleString(typeof currentLang !== 'undefined' ? currentLang : undefined)}&nbsp;<small>${_dashMoney(0).split(' ')[1]}</small>`);
         const showProfit = hasPermission('can_view_costs') && hasPlanFeature('cost_analytics');
         _dashSet('dashRevenueSub', showProfit ? escapeHtml(t('dash_profit').replace('{sum}', _dashMoney(r.profit))) : '&nbsp;');

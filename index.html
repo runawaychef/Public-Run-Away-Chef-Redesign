@@ -1044,9 +1044,10 @@
         /* ===== DASHBOARD — стартовый экран (26.10.2026) ===== */
         .dashboard { box-sizing: border-box; container-type: inline-size; padding: 4px 0 4px; display: flex; flex-direction: column; }
         /* Полоска над плашками: напоминание о памятной дате или приветствие (высота постоянная) */
-        .dashboard-strip { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px; margin-bottom: 16px; border-radius: 16px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.035); font-size: 13.5px; font-weight: 600; color: #322f28; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .dashboard-strip { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px; margin-bottom: 16px; border-radius: 16px; background: #fff; box-shadow: 0 12px 24px -10px rgba(70,58,30,0.32), 0 3px 6px -2px rgba(70,58,30,0.12), inset 0 1px 0 #fff; border: 1px solid rgba(255,255,255,0.9); font-size: 13.5px; font-weight: 600; color: #322f28; cursor: pointer; -webkit-tap-highlight-color: transparent; }
         .dashboard-strip--hi { cursor: default; } /* приветствие: стиль тот же, что у напоминания и карточек */
-        .dashboard-strip__ic { flex-shrink: 0; font-size: 18px; line-height: 1; display: inline-flex; }
+        .dashboard-strip__ic { flex-shrink: 0; line-height: 1; display: inline-flex; color: #d9a441; }
+        .dashboard-strip__ic svg { width: 24px; height: 24px; }
         .dashboard-strip__t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
         .dashboard-strip__more { flex-shrink: 0; background: #f4f1ea; border: 1px solid #e3ddcc; border-radius: 999px; padding: 3px 9px; font-size: 12px; color: #4f4b42; }
         /* Сетка 2×3: плашки растягиваются на высоту экрана (min-height у .dashboard ставит dashFit в dashboard.js) */
@@ -1054,15 +1055,18 @@
         .dashboard-card {
             background: #fff; border-radius: 16px; padding: 12px; min-width: 0;
             display: flex; flex-direction: column; gap: 7px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.035); /* как у .order-card (26.10); размеры ×0.9. Предыдущий вид «E»: без тени, контур 1px #eadfc4 */
+            box-shadow: 0 12px 24px -10px rgba(70,58,30,0.32), 0 3px 6px -2px rgba(70,58,30,0.12), inset 0 1px 0 #fff; border: 1px solid rgba(255,255,255,0.9); /* вид «A. Парящие» (27.10); предыдущий — как у .order-card: тень 0 1px 2px rgba(0,0,0,.04), 0 2px 8px rgba(0,0,0,.05), рамка rgba(0,0,0,.035) */
             cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform .12s ease;
         }
         .dashboard-card:active { transform: scale(0.98); }
         .dashboard-card--stock, .dashboard-card--static { cursor: default; }
         .dashboard-card--stock:active, .dashboard-card--static:active { transform: none; }
-        .dashboard-card__label { font-size: 14.5px; font-weight: 700; color: #322f28; line-height: 1.25; text-align: center; }
+        .dashboard-card__hd { display: flex; align-items: center; gap: 8px; color: var(--dc, #5f7857); }
+        .dashboard-card__ic { width: 30px; height: 30px; flex-shrink: 0; }
+        .dash-c-acc, .dash-c-rev { --dc: #5f7857; } .dash-c-day { --dc: #c9973a; } .dash-c-tom { --dc: #4f7a88; } .dash-c-stock { --dc: #9a6a38; } .dash-c-pay { --dc: #b5574a; }
+        .dashboard-card__label { font-size: 14px; font-weight: 600; color: #322f28; line-height: 1.2; text-align: left; min-width: 0; }
         .dashboard-card__mid { flex: 1; display: flex; align-items: center; justify-content: center; }
-        .dashboard-card__value { font-weight: 600; font-size: 21.5px; line-height: 1; color: #322f28; white-space: nowrap; font-variant-numeric: tabular-nums; }
+        .dashboard-card__value { font-weight: 800; font-size: 28px; letter-spacing: -0.02em; line-height: 1; color: #322f28; white-space: nowrap; font-variant-numeric: tabular-nums; }
         .dashboard-card__value small { font-size: 0.6em; }
         .dashboard-card__value.dashboard-bad, .dashboard-bad { color: #a3493d; }
         .dashboard-card__value.dashboard-muted { color: #a29c8c; }
@@ -1072,7 +1076,7 @@
         .dashboard-stock-row--plain { cursor: default; }
         .dashboard-stock-row:active { background: #f6f8f4; }
         .dashboard-stock-row--plain:active { background: none; }
-        .dashboard-stock-row .dashboard-card__value { font-size: 16px; }
+        .dashboard-stock-row .dashboard-card__value { font-size: 16px; letter-spacing: 0; }
         .dashboard-stock-row .dashboard-chev { color: #a29c8c; margin-left: 5px; font-size: 14px; }
         .dashboard-stub { font-size: 10.4px; color: #a29c8c; font-weight: 600; }
         /* Кнопка «Новый заказ»: размеры стандартной .pill-btn приложения, только на всю ширину */
@@ -1087,8 +1091,9 @@
         @container (min-width: 560px) {
             .dashboard-grid { gap: 20px; grid-template-rows: repeat(3, minmax(140px, 1fr)); }
             .dashboard-card { padding: 18px; }
-            .dashboard-card__label { font-size: 19px; }
-            .dashboard-card__value { font-size: 34px; }
+            .dashboard-card__label { font-size: 17px; }
+            .dashboard-card__ic { width: 38px; height: 38px; }
+            .dashboard-card__value { font-size: 40px; }
             .dashboard-card__sub { font-size: 15px; }
             .dashboard-stock-row { font-size: 15px; padding: 9px 0; }
             .dashboard-stock-row .dashboard-card__value { font-size: 24px; }
@@ -1449,17 +1454,17 @@ function hideSplashScreen() {
                 <div class="dashboard-strip dashboard-strip--hi" id="dashStrip" role="button" tabindex="0" onclick="dashStripTap()"></div>
                 <div class="dashboard-grid">
                     <div class="dashboard-card" role="button" tabindex="0" onclick="dashOpenAccepted()">
-                        <div class="dashboard-card__label" data-i18n="dash_accepted">Принятые заказы</div>
+                        <div class="dashboard-card__hd dash-c-acc"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6v3H9z"/><path d="M15 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/><path d="M9 14l2 2 4-4"/></svg><div class="dashboard-card__label" data-i18n="dash_accepted">Принятые заказы</div></div>
                         <div class="dashboard-card__mid"><div class="dashboard-card__value" id="dashAccepted"><span class="dash-sk"></span></div></div>
                         <div class="dashboard-card__sub" id="dashAcceptedSub">&nbsp;</div>
                     </div>
                     <div class="dashboard-card" role="button" tabindex="0" onclick="dashOpenToday()">
-                        <div class="dashboard-card__label" data-i18n="dash_today">Заказы на сегодня</div>
+                        <div class="dashboard-card__hd dash-c-day"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/><circle cx="12" cy="15.5" r="1.3" fill="currentColor"/></svg><div class="dashboard-card__label" data-i18n="dash_today">Заказы на сегодня</div></div>
                         <div class="dashboard-card__mid"><div class="dashboard-card__value" id="dashToday"><span class="dash-sk"></span></div></div>
                         <div class="dashboard-card__sub" id="dashTodaySub">&nbsp;</div>
                     </div>
                     <div class="dashboard-card dashboard-card--stock">
-                        <div class="dashboard-card__label" data-i18n="nav_ingredients">Склад</div>
+                        <div class="dashboard-card__hd dash-c-stock"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5L12 12l8-4.5M12 12v9"/></svg><div class="dashboard-card__label" data-i18n="nav_ingredients">Склад</div></div>
                         <div class="dashboard-stock-rows">
                             <div class="dashboard-stock-row dashboard-stock-row--plain">
                                 <span data-i18n="dash_expiry">Срок годности</span>
@@ -1476,17 +1481,17 @@ function hideSplashScreen() {
                         </div>
                     </div>
                     <div class="dashboard-card" role="button" tabindex="0" onclick="dashOpenTomorrow()">
-                        <div class="dashboard-card__label" data-i18n="dash_tomorrow">Заказы на завтра</div>
+                        <div class="dashboard-card__hd dash-c-tom"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/><path d="M9.5 15.5h5M12.5 13l2.5 2.5-2.5 2.5"/></svg><div class="dashboard-card__label" data-i18n="dash_tomorrow">Заказы на завтра</div></div>
                         <div class="dashboard-card__mid"><div class="dashboard-card__value" id="dashTomorrow"><span class="dash-sk"></span></div></div>
                         <div class="dashboard-card__sub" id="dashTomorrowSub">&nbsp;</div>
                     </div>
                     <div class="dashboard-card" role="button" tabindex="0" onclick="dashOpenUnpaid()">
-                        <div class="dashboard-card__label" data-i18n="dash_unpaid">Ждут оплаты</div>
+                        <div class="dashboard-card__hd dash-c-pay"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7a2 2 0 0 1 2-2h10v3"/><rect x="4" y="8" width="16" height="12" rx="2.5"/><circle cx="16" cy="14" r="1.3" fill="currentColor"/></svg><div class="dashboard-card__label" data-i18n="dash_unpaid">Ждут оплаты</div></div>
                         <div class="dashboard-card__mid"><div class="dashboard-card__value" id="dashUnpaid"><span class="dash-sk"></span></div></div>
                         <div class="dashboard-card__sub" id="dashUnpaidSub">&nbsp;</div>
                     </div>
                     <div class="dashboard-card dashboard-card--static" id="dashCardRevenue">
-                        <div class="dashboard-card__label" data-i18n="dash_revenue">Выручка за месяц</div>
+                        <div class="dashboard-card__hd dash-c-rev"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20v-6M10 20V9M15 20v-5M20 20V5"/></svg><div class="dashboard-card__label" data-i18n="dash_revenue">Выручка за месяц</div></div>
                         <div class="dashboard-card__mid"><div class="dashboard-card__value" id="dashRevenue"><span class="dash-sk"></span></div></div>
                         <div class="dashboard-card__sub" id="dashRevenueSub">&nbsp;</div>
                     </div>
@@ -3792,7 +3797,7 @@ function hideSplashScreen() {
 <script src="customers.js?v=59"></script>
 <script src="calendar.js?v=15"></script>
 <script src="orders.js?v=144"></script>
-<script src="dashboard.js?v=2"></script>
+<script src="dashboard.js?v=3"></script>
 <script src="invoice.js?v=48"></script>
 <script src="send-document.js?v=38"></script>
 <script src="payments.js?v=29"></script>
