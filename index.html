@@ -116,6 +116,8 @@
         .tab-content {
             will-change: transform;
         }
+        /* Dashboard: тень плашек не должна обрезаться контейнером вкладок (иначе внизу и по бокам видна прямая граница). На время анимации свайпа обрезка возвращается. */
+        #tabsWrapper:has(#dashboard:not(.hidden)):not(.animating) { overflow: visible; }
         /* Во время анимации обе вкладки абсолютны — чтобы не растягивали страницу */
         #tabsWrapper.animating {
             min-height: var(--tabs-height, 200px);
@@ -3841,7 +3843,7 @@ function hideSplashScreen() {
 <script src="customers.js?v=59"></script>
 <script src="calendar.js?v=15"></script>
 <script src="orders.js?v=144"></script>
-<script src="dashboard.js?v=5"></script>
+<script src="dashboard.js?v=6"></script>
 <script src="invoice.js?v=48"></script>
 <script src="send-document.js?v=38"></script>
 <script src="payments.js?v=29"></script>

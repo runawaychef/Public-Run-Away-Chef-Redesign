@@ -252,7 +252,7 @@ function dashFit() {
     root.classList.remove('dash-compact', 'dash-compact2');
     const top = root.getBoundingClientRect().top + window.scrollY;
     const bodyPad = parseFloat(getComputedStyle(document.body).paddingBottom) || 80;
-    const avail = Math.floor(window.innerHeight - top - bodyPad - 12);
+    const avail = Math.floor(window.innerHeight - top - bodyPad - 20);
     // Прокрутки на Dashboard быть не должно: не помещается — сначала компактнее, потом ещё компактнее
     if (root.offsetHeight > avail) root.classList.add('dash-compact');
     if (root.offsetHeight > avail) root.classList.add('dash-compact2');
