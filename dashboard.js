@@ -293,14 +293,16 @@ function renderDashboard() {
         ['dashAccepted', 'dashToday', 'dashTomorrow', 'dashRevenue', 'dashUnpaid'].forEach(id => _dashSet(id, '—'));
     }
     try {
-        if (_dashStockFull()) {
+        const full = _dashStockFull();
+        // Full: «Не хватает» + два счётчика; Light/Free: вместо них строка «Доступно на тарифе Full»
+        ['dashRowIng', 'dashRowSemi'].forEach(id => { const el = _dashEl(id); if (el) el.style.display = full ? '' : 'none'; });
+        const lock = _dashEl('dashStockLock'); if (lock) lock.style.display = full ? 'none' : '';
+        if (full) {
             const s = _dashStock();
             _dashSet('dashIngredients', String(s.ing), s.ing > 0 ? 'bad' : '');
             _dashSet('dashSemi', String(s.sf), s.sf > 0 ? 'bad' : '');
         } else {
-            // Light/Free: здесь будет срок годности (пока заглушка)
-            _dashSet('dashIngredients', '—', 'muted');
-            _dashSet('dashSemi', '—', 'muted');
+            // Light/Free: счётчики скрыты; позже здесь появятся данные о сроке годности
         }
     } catch (e) {
         console.error('dashboard: stock', e);
