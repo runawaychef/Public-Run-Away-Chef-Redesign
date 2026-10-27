@@ -758,7 +758,7 @@ function positionOrdersViewToggle() {
     const list = document.getElementById('ordersList');
     if (!headerCard || !list) return;
 
-    const GAP = 40; // желаемое расстояние между шапкой и первой карточкой
+    const GAP = 52; // желаемое расстояние между шапкой и первой карточкой
     list.style.paddingTop = GAP + 'px';
 
     const headerBottom = headerCard.getBoundingClientRect().bottom;

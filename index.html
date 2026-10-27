@@ -1164,6 +1164,18 @@
         #ordersList .order-card .stripe { width: 16px; margin-right: -11px; border-radius: 15px 0 0 15px; clip-path: inset(0 11px 0 0); }
         #ordersList .oc-swipe-actions { bottom: 22px; right: 12px; border-radius: 0 16px 16px 0; overflow: hidden; }
         #ordersList .oc-swipe-actions-left { bottom: 22px; left: 12px; border-radius: 16px 0 0 16px; overflow: hidden; }
+        /* ===== THEME-UNIFIED-TOOLBAR (27.10.2026): панель над списком заказов (3 капсулы) в стиле шапки/плашек =====
+           Только #ordersViewToggle. Кнопки крупнее (34px; на узких экранах 31px), тень и контур как у значков шапки,
+           активный вид — светло-зелёный фон как в нижнем меню. ОТКАТ: удалить этот блок (и вернуть GAP 40 в positionOrdersViewToggle, orders.js). */
+        #ordersViewToggle { --tb: 34px; gap: 5px; }
+        @media (max-width: 389px) { #ordersViewToggle { --tb: 31px; } }
+        #ordersViewToggle .view-toggle-pill { padding: 3px; gap: 1px; border: 1px solid rgba(90,75,40,0.06); box-shadow: 0 6px 12px -6px rgba(70,58,30,0.35), 0 1px 2px rgba(70,58,30,0.1); }
+        #ordersViewToggle .orders-toggle-right { gap: 5px; }
+        #ordersViewToggle .view-toggle-btn { width: var(--tb); height: var(--tb); }
+        #ordersViewToggle .view-toggle-btn svg { width: 20px; height: 20px; }
+        #ordersViewToggle #ordersCardCalendarBtn svg, #ordersViewToggle #ordersDocsBtn svg, #ordersViewToggle #ordersBankBtn svg, #ordersViewToggle #ordersFilterPill .view-toggle-btn svg { width: 20px; height: 20px; }
+        #ordersViewToggle .view-toggle-btn.active, #ordersViewToggle .view-toggle-btn.is-open { background: #e3ebdf; color: #4f6349; }
+        #ordersViewToggle .help-marker { margin-left: 2px; }
         /* ===== /THEME-UNIFIED ===== */
         /* Крестик «сбросить фильтр по статусу» в полосе итога заказов (фильтр из Dashboard) */
         .ofs-x { flex-shrink: 0; padding: 0 6px; color: #8d887b; font-size: 12px; cursor: pointer; }
@@ -3854,7 +3866,7 @@ function hideSplashScreen() {
 <script src="products.js?v=35"></script>
 <script src="customers.js?v=59"></script>
 <script src="calendar.js?v=15"></script>
-<script src="orders.js?v=144"></script>
+<script src="orders.js?v=145"></script>
 <script src="dashboard.js?v=6"></script>
 <script src="invoice.js?v=48"></script>
 <script src="send-document.js?v=38"></script>
