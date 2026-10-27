@@ -1152,6 +1152,15 @@
         .bottom-nav-item.active { background: #e3ebdf; color: #4f6349; }
         .bottom-nav-item.active::before { display: none; }
         .bottom-nav-item.active svg { stroke: #4f6349; }
+        /* ===== THEME-UNIFIED-ORDERS (27.10.2026): карточки списка заказов в стиле плашек Dashboard =====
+           Только #ordersList. Свайп-обёртка имеет overflow:hidden (прячет кнопки действий) — поэтому у неё запас 12px по бокам и 22px внизу
+           под тень карточки (компенсирован отрицательным margin), а скругление кнопок действий задано у них самих.
+           ОТКАТ: удалить этот блок целиком. */
+        #ordersList .order-card { box-shadow: var(--sb-shadow); border: var(--sb-edge); }
+        #ordersList .order-card.muted { box-shadow: 0 8px 14px -8px rgba(70,58,30,0.26), 0 2px 4px -2px rgba(70,58,30,0.08), inset 0 1px 0 #fff; }
+        #ordersList .oc-swipe-wrap { box-sizing: border-box; border-radius: 0; padding: 0 12px 22px; margin: 0 -12px -8px; width: calc(100% + 24px); }
+        #ordersList .oc-swipe-actions { bottom: 22px; right: 12px; border-radius: 0 16px 16px 0; overflow: hidden; }
+        #ordersList .oc-swipe-actions-left { bottom: 22px; left: 12px; border-radius: 16px 0 0 16px; overflow: hidden; }
         /* ===== /THEME-UNIFIED ===== */
         /* Крестик «сбросить фильтр по статусу» в полосе итога заказов (фильтр из Dashboard) */
         .ofs-x { flex-shrink: 0; padding: 0 6px; color: #8d887b; font-size: 12px; cursor: pointer; }
