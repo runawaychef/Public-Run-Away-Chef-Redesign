@@ -1040,47 +1040,6 @@
         .modal:not(.modal-fullscreen) .modal-content .pill-btn,
         .modal:not(.modal-fullscreen) .modal-content .pill-btn-secondary,
         .modal:not(.modal-fullscreen) .modal-content .pill-btn-danger { font-size: 13px; padding: 9px 12px; }
-    
-        /* ═══════════ THEME-WARM · этап 1 (26.10.2026) ═══════════
-           Цветовая схема «В — тёплый белый»: страница #FBFAF6, карточки бежевые #F4F1EA с рамкой вместо тени.
-           ОТКАТ: удалить этот блок целиком (до «КОНЕЦ THEME-WARM») и вернуть theme-color/manifest, если их меняли.
-           Этап 1: страница, шапка, нижняя панель, строки поиска, карточки/таблица заказов, списки Меню/Склад/Клиенты.
-           Внутренние страницы, окна и таблицы в блоках .bg-white — следующие этапы. */
-        :root {
-            --wm-page: #fbfaf6;
-            --wm-card: #f4f1ea;
-            --wm-card-border: #ebe5d9;
-            --wm-inner: #fbfaf6;
-            --wm-inner-line: #e8e2d8;
-            --wm-line: #e3ddcf;
-            --wm-press: #ece7dc;
-        }
-        html, body { background: var(--wm-page); }
-        body::after { background: var(--wm-page); }
-        /* Липкая шапка и строки поиска — цвета страницы; сама шапка — карточка */
-        #appStickyHeader { background: var(--wm-page) !important; }
-        #appStickyHeader > .bg-white { background: var(--wm-card); box-shadow: none; border: 1px solid var(--wm-card-border); }
-        #productsSearchBar > div, #customersSearchBar > div, #ingredientsSearchBar > div, #semiFinishedSearchBar > div { background: var(--wm-page) !important; }
-        /* Нижняя панель */
-        #bottomNav { background: var(--wm-card); box-shadow: none; border: 1px solid var(--wm-card-border); }
-        .bottom-nav-item.active::before { background: #fff; }
-        /* Карточки заказов (карточный вид) */
-        .order-card { background: var(--wm-card); box-shadow: none; border: 1px solid var(--wm-card-border); }
-        .order-card .oc-tag, .order-card .oc-cells { background: var(--wm-inner); }
-        .order-card .oc-tag-red { background: #f6e3df; }
-        .order-card .oc-cell-sep { border-left-color: var(--wm-inner-line); }
-        .order-card .oc-items { border-top-color: var(--wm-line); }
-        /* Табличный вид заказов */
-        .ot-head, #ordersFilterSummary { background: var(--wm-card); border-color: var(--wm-card-border); }
-        .ot-island { background: var(--wm-card); box-shadow: none; border: 1px solid var(--wm-card-border); }
-        .ot-row { border-bottom-color: var(--wm-line); }
-        .ot-row:active { background: var(--wm-press); }
-        /* Списки Меню / Склад / Клиенты */
-        .itm-card, .itm-sec, .cmp-card { background: var(--wm-card); box-shadow: none; border: 1px solid var(--wm-card-border); }
-        .itm-card .oc-cells, .itm-cells { background: var(--wm-inner); }
-        .itm-actions button { background: var(--wm-card); border: 1px solid var(--wm-card-border); }
-        .itm-actions button:active { background: var(--wm-press); }
-        /* ═══════════ КОНЕЦ THEME-WARM ═══════════ */
     </style>
 </head>
 <body class="font-sans style-loading">
