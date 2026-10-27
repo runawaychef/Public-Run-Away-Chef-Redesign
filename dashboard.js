@@ -248,10 +248,15 @@ function dashMemoPick(custId) { dashMemoClose(); memoBannerOpenCustomer(custId);
 function dashFit() {
     const root = _dashEl('dashboardRoot'), tab = _dashEl('dashboard');
     if (!root || !tab || tab.classList.contains('hidden')) return;
+    root.style.minHeight = '0';
+    root.classList.remove('dash-compact', 'dash-compact2');
     const top = root.getBoundingClientRect().top + window.scrollY;
     const bodyPad = parseFloat(getComputedStyle(document.body).paddingBottom) || 80;
-    const h = window.innerHeight - top - bodyPad - 12;
-    root.style.minHeight = Math.max(440, Math.floor(h)) + 'px';
+    const avail = Math.floor(window.innerHeight - top - bodyPad - 12);
+    // Прокрутки на Dashboard быть не должно: не помещается — сначала компактнее, потом ещё компактнее
+    if (root.offsetHeight > avail) root.classList.add('dash-compact');
+    if (root.offsetHeight > avail) root.classList.add('dash-compact2');
+    root.style.minHeight = Math.max(0, avail) + 'px';
 }
 window.addEventListener('resize', dashFit);
 window.addEventListener('orientationchange', () => setTimeout(dashFit, 200));
