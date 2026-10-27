@@ -40,7 +40,6 @@ function resetOrdersRenderLimits() {
 }
 
 function displayOrders() {
-    if (typeof renderOrdersMemoBanner === 'function') renderOrdersMemoBanner(); // памятные даты скоро (customers.js)
     _ordersMoreObserver.disconnect(); // старые sentinel'ы уйдут вместе с перерисованным DOM
     // Список карточек сейчас перерисуется целиком — если у какого-то заказа был
     // открыт статус-дропдаун (и портал увёл его из карточки наружу, см. helpers.js
@@ -864,6 +863,8 @@ let selectedOrderCustomers = []; // пусто = все клиенты
 // чтобы число на плашке совпадало со списком.
 let ordersStatusFilter = '';
 let _dashSavedOnly = false;
+// _dashUnpaidOnly — плашка «Ждут оплаты»: заказы, оплаченные не полностью (getOrderPaymentStatus)
+let _dashUnpaidOnly = false;
 
 // opts.ignoreDate — без фильтра «Период» (для календаря-фильтра: он сам выбирает день), 23.10
 function getFilteredOrdersForList(opts) {
@@ -875,7 +876,8 @@ function getFilteredOrdersForList(opts) {
     // Черновики (заказ без номера) видит только автор; чужие черновики и пустые брошенные
     // черновики ожидающие удаления в списке не показываем
     let filtered = orders.filter(isOrderVisible);
-    if (ordersStatusFilter || _dashSavedOnly) filtered = filtered.filter(isOrderSaved);
+    if (ordersStatusFilter || _dashSavedOnly || _dashUnpaidOnly) filtered = filtered.filter(isOrderSaved);
+    if (_dashUnpaidOnly) filtered = filtered.filter(o => getOrderPaymentStatus(o).status !== 'paid');
     if (ordersStatusFilter) filtered = filtered.filter(o => o.status === ordersStatusFilter);
     if (selectedOrderCustomers.length > 0) filtered = filtered.filter(o => selectedOrderCustomers.includes(o.customer));
     if (employeeFilter) filtered = filtered.filter(o => String(o.employee_id) === employeeFilter);
@@ -1099,13 +1101,14 @@ function toggleOrderDateRange() {
 // Сбросить фильтр по статусу, поставленный Dashboard (крестик в полосе итога)
 function clearOrdersStatusFilter() {
     ordersStatusFilter = '';
+    _dashUnpaidOnly = false;
     _dashSavedOnly = false;
     applyOrderFilter();
 }
 
 function applyOrderFilter() {
     // Любое ручное изменение фильтров делает дату «обычной»: Dashboard её больше не сбрасывает
-    if (typeof _dashDayFilter !== 'undefined') { _dashDayFilter = false; if (!ordersStatusFilter) _dashSavedOnly = false; }
+    if (typeof _dashDayFilter !== 'undefined') { _dashDayFilter = false; if (!ordersStatusFilter && !_dashUnpaidOnly) _dashSavedOnly = false; }
     resetOrdersRenderLimits();
     updateOrderFilterButtonsState();
     displayOrders();
@@ -1137,6 +1140,7 @@ function ordersFilterDescription() {
     const pay = document.getElementById('orderPaymentFilter')?.value || '';
     if (pay) parts.push(t('orders_payment') + ': ' + t('pay_status_' + pay));
     if (ordersStatusFilter) parts.push(t('dash_status_label') + ': ' + orderStatusLabelCap(ordersStatusFilter));
+    if (_dashUnpaidOnly) parts.push(t('dash_unpaid'));
     return parts.join(' · ');
 }
 
@@ -1152,7 +1156,7 @@ function updateOrdersFilterSummary(filtered) {
     const sums = hasVat
         ? `${formatMoney(wt.net)} ${t('orders_sum_novat_short')} · <b>${formatMoney(wt.sum)}</b> ${t('orders_sum_withvat_short')}`
         : `<b>${formatMoney(wt.sum)}</b>`;
-    const clearX = ordersStatusFilter ? `<span class="ofs-x" role="button" aria-label="${escapeHtml(t('dash_clear_filter'))}" onclick="event.stopPropagation(); clearOrdersStatusFilter()">✕</span>` : '';
+    const clearX = (ordersStatusFilter || _dashUnpaidOnly) ? `<span class="ofs-x" role="button" aria-label="${escapeHtml(t('dash_clear_filter'))}" onclick="event.stopPropagation(); clearOrdersStatusFilter()">✕</span>` : '';
     el.innerHTML = `<div class="ofs-row1"><span class="ofs-filters">${escapeHtml(desc)}</span>${clearX}<span class="ofs-link">${t('orders_summary_products')} ›</span></div>
         <div class="ofs-row2"><span class="ofs-counts">${counts}</span><span class="ofs-sums">${sums}</span></div>`;
     el.classList.remove('hidden');

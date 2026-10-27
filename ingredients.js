@@ -129,7 +129,7 @@ function renderIngredientCards() {
         const stripe = accentColor ? `<div class="stripe" style="background:${accentColor};"></div>` : '';
 
         (accentColor ? htmlAttn : htmlOk).push(`
-        <div class="oc-swipe-wrap" data-name="${escapeHtml((ing.name || '').toLowerCase())}" data-critical="${accentColor ? '1' : '0'}" style="--oc-swipe-x:-72px;">
+        <div class="oc-swipe-wrap" data-name="${escapeHtml((ing.name || '').toLowerCase())}" data-critical="${accentColor ? '1' : '0'}" data-low="${isCritical ? '1' : '0'}" style="--oc-swipe-x:-72px;">
             ${refCopySwipeBtnHtml(`quickCopyIngredientFromSwipe(${realIdx})`)}
             <div class="order-card" style="cursor:pointer;" onclick="openIngredientDetail(${ing.id})">
                 ${stripe}
@@ -152,6 +152,9 @@ function quickCopyIngredientFromSwipe(realIdx) {
 }
 
 // ---- Поиск по названию — работает одинаково в обоих видах ----
+// Фильтр «критичный остаток» ставит только Dashboard (dashboard.js); сбрасывается крестиком или обычным заходом на вкладку
+let stockLowOnlyIng = false;
+function clearIngredientsDashFilter() { stockLowOnlyIng = false; filterIngredientsList(); }
 function filterIngredientsList() {
     const input = document.getElementById('ingredientSearchInput');
     const q = input ? input.value.trim().toLowerCase() : '';
@@ -160,12 +163,13 @@ function filterIngredientsList() {
 
     let visibleCards = 0;
     document.querySelectorAll('#ingredientCardsBody .oc-swipe-wrap').forEach(wrap => {
-        const match = !q || wrap.dataset.name.includes(q);
+        const match = (!q || wrap.dataset.name.includes(q)) && (!stockLowOnlyIng || wrap.dataset.low === '1');
         wrap.style.display = match ? 'block' : 'none';
         if (match) visibleCards++;
     });
     document.getElementById('ingredientCardsEmpty')?.classList.toggle('hidden', visibleCards !== 0);
-    toggleStockDividers('ingredientCardsBody', !!q);
+    document.getElementById('ingredientsDashFilter')?.classList.toggle('hidden', !stockLowOnlyIng);
+    toggleStockDividers('ingredientCardsBody', !!q || stockLowOnlyIng);
 
 }
 

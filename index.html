@@ -1042,47 +1042,65 @@
         .modal:not(.modal-fullscreen) .modal-content .pill-btn-danger { font-size: 13px; padding: 9px 12px; }
     
         /* ===== DASHBOARD — стартовый экран (26.10.2026) ===== */
-        .dashboard { container-type: inline-size; padding: 4px 0 24px; }
-        .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .dashboard { box-sizing: border-box; container-type: inline-size; padding: 4px 0 4px; display: flex; flex-direction: column; }
+        /* Полоска над плашками: напоминание о памятной дате или приветствие (высота постоянная) */
+        .dashboard-strip { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 14px; margin-bottom: 10px; border-radius: 14px; background: #eef2ea; border: 1px solid #dfe6d9; font-size: 13.5px; font-weight: 600; color: #3f4b3a; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .dashboard-strip--hi { background: #f7f1e3; border-color: #eadfc4; color: #5a4d2c; cursor: default; }
+        .dashboard-strip__ic { flex-shrink: 0; font-size: 18px; line-height: 1; display: inline-flex; }
+        .dashboard-strip__t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3; }
+        .dashboard-strip__more { flex-shrink: 0; background: #fff; border: 1px solid #dfe6d9; border-radius: 999px; padding: 3px 9px; font-size: 12px; color: #4f4b42; }
+        /* Сетка 2×3: плашки растягиваются на высоту экрана (min-height у .dashboard ставит dashFit в dashboard.js) */
+        .dashboard-grid { flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, minmax(108px, 1fr)); gap: 10px; }
         .dashboard-card {
-            background: #fff; border-radius: 16px; padding: 14px; min-height: 128px; min-width: 0;
-            display: flex; flex-direction: column; justify-content: space-between; gap: 10px;
+            background: #fff; border-radius: 16px; padding: 14px; min-width: 0;
+            display: flex; flex-direction: column; gap: 8px;
             box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.035);
             cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform .12s ease;
         }
         .dashboard-card:active { transform: scale(0.98); }
         .dashboard-card--stock, .dashboard-card--static { cursor: default; }
         .dashboard-card--stock:active, .dashboard-card--static:active { transform: none; }
-        .dashboard-card__label { font-size: 16px; font-weight: 700; color: #4f4b42; line-height: 1.25; }
-        .dashboard-card__value { font-family: 'Fraunces', serif; font-weight: 600; font-size: 32px; line-height: 1; color: #322f28; white-space: nowrap; }
+        .dashboard-card__label { font-size: 16px; font-weight: 700; color: #4f4b42; line-height: 1.25; text-align: center; }
+        .dashboard-card__mid { flex: 1; display: flex; align-items: center; justify-content: center; }
+        .dashboard-card__value { font-family: 'Fraunces', serif; font-weight: 600; font-size: 24px; line-height: 1; color: #322f28; white-space: nowrap; }
         .dashboard-card__value small { font-size: 0.6em; }
-        .dashboard-card__value.dashboard-bad { color: #a3493d; }
-        .dashboard-stock-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 9px 0; border-top: 1px solid #f1efe9; font-size: 14px; font-weight: 600; color: #4f4b42; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .dashboard-card__value.dashboard-bad, .dashboard-bad { color: #a3493d; }
+        .dashboard-card__value.dashboard-muted { color: #a29c8c; }
+        .dashboard-card__sub { font-size: 13px; font-weight: 600; color: #6b6759; line-height: 1.35; text-align: left; min-height: 1.35em; }
+        .dashboard-stock-rows { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; }
+        .dashboard-stock-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid #f1efe9; font-size: 13px; font-weight: 600; color: #4f4b42; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .dashboard-stock-row--plain { cursor: default; }
         .dashboard-stock-row:active { background: #f6f8f4; }
-        .dashboard-stock-row .dashboard-card__value { font-size: 22px; }
+        .dashboard-stock-row--plain:active { background: none; }
+        .dashboard-stock-row .dashboard-card__value { font-size: 18px; }
         .dashboard-stock-row .dashboard-chev { color: #a29c8c; margin-left: 6px; font-size: 16px; }
+        .dashboard-stub { font-size: 11.5px; color: #a29c8c; font-weight: 600; }
         .dashboard-new-order {
-            display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 14px; height: 52px;
-            border: 0; border-radius: 14px; color: #fff; font-size: 15px; font-weight: 700; cursor: pointer;
-            background: linear-gradient(135deg, #8fa885, #7c9473);
-            box-shadow: 0 8px 14px -6px rgba(124,148,115,0.55); /* без бокового размытия: контейнер вкладок обрезает тень по краям */
+            display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 10px; height: 44px;
+            border: 0; border-radius: 10px; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer;
+            background: #7c9473; box-shadow: 0 1px 2px rgba(0,0,0,0.12);
         }
-        .dashboard-new-order:active { transform: scale(0.98); }
-        .dashboard-new-order svg { width: 20px; height: 20px; }
-        .dash-sk { display: inline-block; height: 28px; width: 56px; border-radius: 8px; background: linear-gradient(90deg, #e9e5d9, #f6f4ec, #e9e5d9); background-size: 200% 100%; animation: dashSh 1.2s infinite; }
-        .dashboard-stock-row .dash-sk { height: 20px; width: 30px; }
+        .dashboard-new-order:active { transform: scale(0.98); opacity: 0.88; }
+        .dashboard-new-order svg { width: 18px; height: 18px; }
+        .dash-sk { display: inline-block; height: 24px; width: 48px; border-radius: 8px; background: linear-gradient(90deg, #e9e5d9, #f6f4ec, #e9e5d9); background-size: 200% 100%; animation: dashSh 1.2s infinite; }
+        .dashboard-stock-row .dash-sk { height: 18px; width: 28px; }
         @keyframes dashSh { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-        /* Шире — крупнее; на очень широком — четыре плашки в ряд (пригодится, когда приложение перестанет быть узкой колонкой) */
+        /* Строка-фильтр над списками «Склад» (ставит Dashboard) */
+        .dash-filter-chip { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: #fff; border: 1px solid #e3ddcc; border-radius: 14px; padding: 9px 14px; margin: 3px 0 10px; color: #5f6b58; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .dash-filter-chip.hidden { display: none; }
+        /* Шире — крупнее; на широком — три плашки в ряд (пригодится, когда приложение перестанет быть узкой колонкой) */
         @container (min-width: 560px) {
-            .dashboard-grid { gap: 14px; }
-            .dashboard-card { padding: 18px; min-height: 168px; }
+            .dashboard-grid { gap: 14px; grid-template-rows: repeat(3, minmax(150px, 1fr)); }
+            .dashboard-card { padding: 18px; }
             .dashboard-card__label { font-size: 19px; }
-            .dashboard-card__value { font-size: 44px; }
-            .dashboard-stock-row { font-size: 17px; padding: 12px 0; }
-            .dashboard-stock-row .dashboard-card__value { font-size: 30px; }
-            .dashboard-new-order { max-width: 420px; margin-left: auto; margin-right: auto; height: 58px; font-size: 17px; }
+            .dashboard-card__value { font-size: 34px; }
+            .dashboard-card__sub { font-size: 15px; }
+            .dashboard-stock-row { font-size: 15px; padding: 9px 0; }
+            .dashboard-stock-row .dashboard-card__value { font-size: 24px; }
+            .dashboard-new-order { max-width: 420px; margin-left: auto; margin-right: auto; height: 48px; font-size: 15px; }
+            .dashboard-strip { font-size: 15px; min-height: 54px; }
         }
-        @container (min-width: 900px) { .dashboard-grid { grid-template-columns: repeat(4, 1fr); gap: 16px; } }
+        @container (min-width: 900px) { .dashboard-grid { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, minmax(150px, 1fr)); gap: 16px; } }
         /* Крестик «сбросить фильтр по статусу» в полосе итога заказов (фильтр из Dashboard) */
         .ofs-x { flex-shrink: 0; padding: 0 6px; color: #8d887b; font-size: 12px; cursor: pointer; }
     </style>
@@ -1431,19 +1449,27 @@ function hideSplashScreen() {
 
         <!-- ===== DASHBOARD (стартовый экран; открывается и по нажатию на шапку) ===== -->
         <div id="dashboard" class="tab-content">
-            <div class="dashboard">
+            <div class="dashboard" id="dashboardRoot">
+                <!-- Полоска: напоминание о памятной дате ИЛИ приветствие (рисует dashboard.js) -->
+                <div class="dashboard-strip dashboard-strip--hi" id="dashStrip" role="button" tabindex="0" onclick="dashStripTap()"></div>
                 <div class="dashboard-grid">
                     <div class="dashboard-card" role="button" tabindex="0" onclick="dashOpenAccepted()">
                         <div class="dashboard-card__label" data-i18n="dash_accepted">Принятые заказы</div>
-                        <div class="dashboard-card__value" id="dashAccepted"><span class="dash-sk"></span></div>
+                        <div class="dashboard-card__mid"><div class="dashboard-card__value" id="dashAccepted"><span class="dash-sk"></span></div></div>
+                        <div class="dashboard-card__sub" id="dashAcceptedSub">&nbsp;</div>
                     </div>
                     <div class="dashboard-card" role="button" tabindex="0" onclick="dashOpenToday()">
                         <div class="dashboard-card__label" data-i18n="dash_today">Заказы на сегодня</div>
-                        <div class="dashboard-card__value" id="dashToday"><span class="dash-sk"></span></div>
+                        <div class="dashboard-card__mid"><div class="dashboard-card__value" id="dashToday"><span class="dash-sk"></span></div></div>
+                        <div class="dashboard-card__sub" id="dashTodaySub">&nbsp;</div>
                     </div>
                     <div class="dashboard-card dashboard-card--stock">
                         <div class="dashboard-card__label" data-i18n="nav_ingredients">Склад</div>
-                        <div>
+                        <div class="dashboard-stock-rows">
+                            <div class="dashboard-stock-row dashboard-stock-row--plain">
+                                <span data-i18n="dash_expiry">Срок годности</span>
+                                <span class="dashboard-stub" data-i18n="dash_soon">скоро</span>
+                            </div>
                             <div class="dashboard-stock-row" role="button" tabindex="0" onclick="dashOpenIngredients()">
                                 <span data-i18n="dash_ingredients">Ингредиенты</span>
                                 <span><span class="dashboard-card__value" id="dashIngredients"><span class="dash-sk"></span></span><span class="dashboard-chev">›</span></span>
@@ -1454,9 +1480,20 @@ function hideSplashScreen() {
                             </div>
                         </div>
                     </div>
-                    <div class="dashboard-card" id="dashCardRevenue" role="button" tabindex="0" onclick="dashOpenRevenue()">
+                    <div class="dashboard-card" role="button" tabindex="0" onclick="dashOpenTomorrow()">
+                        <div class="dashboard-card__label" data-i18n="dash_tomorrow">Заказы на завтра</div>
+                        <div class="dashboard-card__mid"><div class="dashboard-card__value" id="dashTomorrow"><span class="dash-sk"></span></div></div>
+                        <div class="dashboard-card__sub" id="dashTomorrowSub">&nbsp;</div>
+                    </div>
+                    <div class="dashboard-card" role="button" tabindex="0" onclick="dashOpenUnpaid()">
+                        <div class="dashboard-card__label" data-i18n="dash_unpaid">Ждут оплаты</div>
+                        <div class="dashboard-card__mid"><div class="dashboard-card__value" id="dashUnpaid"><span class="dash-sk"></span></div></div>
+                        <div class="dashboard-card__sub" id="dashUnpaidSub">&nbsp;</div>
+                    </div>
+                    <div class="dashboard-card dashboard-card--static" id="dashCardRevenue">
                         <div class="dashboard-card__label" data-i18n="dash_revenue">Выручка за месяц</div>
-                        <div class="dashboard-card__value" id="dashRevenue"><span class="dash-sk"></span></div>
+                        <div class="dashboard-card__mid"><div class="dashboard-card__value" id="dashRevenue"><span class="dash-sk"></span></div></div>
+                        <div class="dashboard-card__sub" id="dashRevenueSub">&nbsp;</div>
                     </div>
                 </div>
                 <button type="button" class="dashboard-new-order" onclick="dashNewOrder()">
@@ -1611,6 +1648,7 @@ function hideSplashScreen() {
 
                 <!-- Карточный вид (по умолчанию) -->
                 <div id="ingredientCardsWrap">
+                    <div id="ingredientsDashFilter" class="dash-filter-chip hidden" role="button" onclick="clearIngredientsDashFilter()"><span data-i18n="dash_stock_low">Критичный остаток</span><span class="ofs-x">✕</span></div>
                     <div id="ingredientCardsBody"></div>
                     <p id="ingredientCardsEmpty" class="text-xs text-gray-400 text-center py-4 hidden" data-i18n="common_nothing_found">Ничего не найдено</p>
                 </div>
@@ -1737,6 +1775,7 @@ function hideSplashScreen() {
 
                 <!-- Карточный вид (по умолчанию) -->
                 <div id="semiFinishedCardsWrap">
+                    <div id="semiFinishedDashFilter" class="dash-filter-chip hidden" role="button" onclick="clearSemiFinishedDashFilter()"><span data-i18n="dash_stock_low">Критичный остаток</span><span class="ofs-x">✕</span></div>
                     <div id="semiFinishedCardsBody"></div>
                     <p id="semiFinishedCardsEmpty" class="text-xs text-gray-400 text-center py-4 hidden" data-i18n="common_nothing_found">Ничего не найдено</p>
                 </div>
@@ -2137,8 +2176,6 @@ function hideSplashScreen() {
             <!-- СПИСОК ЗАКАЗОВ -->
             <div id="ordersList">
                 <div id="ordersBankNotice" style="padding:0 2px;"></div>
-                <!-- Ближайшие памятные даты клиентов (customers.js, renderOrdersMemoBanner) -->
-                <div id="ordersMemoBanner"></div>
 
                 <!-- Итог по включённым фильтрам (виден только при активном фильтре) — тап открывает разбивку по изделиям -->
                 <div id="ordersFilterSummary" class="hidden" onclick="openOrdersProductsModal()"></div>
@@ -2783,6 +2820,17 @@ function hideSplashScreen() {
                 <div class="flex gap-2 mt-3">
                     <button onclick="closeMemoList()" class="pill-btn-secondary flex-1 justify-center" data-i18n="settings_close">Закрыть</button>
                     <button onclick="openMemoEdit(null, 'list')" class="pill-btn flex-1 justify-center" data-i18n="sf_add_btn">+ Добавить</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ближайшие памятные даты (с Dashboard, когда их несколько) -->
+        <div id="dashMemoModal" class="modal" onclick="if(event.target===this) dashMemoClose();">
+            <div class="modal-content" style="max-width:420px;">
+                <h2 class="text-sm font-semibold text-gray-800" data-i18n="memo_banner_title">Ближайшие особые даты клиентов</h2>
+                <div id="dashMemoBody" class="mt-2" style="max-height:55vh;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;"></div>
+                <div class="flex gap-2 mt-3">
+                    <button onclick="dashMemoClose()" class="pill-btn-secondary flex-1 justify-center" data-i18n="settings_close">Закрыть</button>
                 </div>
             </div>
         </div>
@@ -3733,7 +3781,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=101"></script>
+    <script src="i18n-core.js?v=102"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=16"></script>
     <script src="auth.js?v=30"></script>
@@ -3742,14 +3790,14 @@ function hideSplashScreen() {
     <script src="inventory.js?v=70"></script>
     <script src="billing.js?v=17"></script>
     <script src="push.js?v=9"></script>
-<script src="ingredients.js?v=50"></script>
+<script src="ingredients.js?v=51"></script>
 <script src="batches.js?v=11"></script>
-<script src="semifinished.js?v=51"></script>
+<script src="semifinished.js?v=52"></script>
 <script src="products.js?v=35"></script>
-<script src="customers.js?v=58"></script>
+<script src="customers.js?v=59"></script>
 <script src="calendar.js?v=15"></script>
-<script src="orders.js?v=143"></script>
-<script src="dashboard.js?v=1"></script>
+<script src="orders.js?v=144"></script>
+<script src="dashboard.js?v=2"></script>
 <script src="invoice.js?v=48"></script>
 <script src="send-document.js?v=38"></script>
 <script src="payments.js?v=29"></script>
@@ -4110,8 +4158,8 @@ function showTab(tabId) {
     if (tabId === 'orders')    { if (typeof dashOnEnterOrders === 'function') dashOnEnterOrders(); closeOrderDetail(); displayOrders(); }
     if (tabId === 'products')  { closeProductDetailSilent(); displayProducts(); positionStickySearchBar('productsSearchBar', 'productsList', 'productDetail'); }
     if (tabId === 'customers') { closeCustomerDetailSilent(); displayCustomers(); positionStickySearchBar('customersSearchBar', 'customersList', 'customerDetail'); }
-    if (tabId === 'ingredients') { closeIngredientDetailSilent(); displayIngredients(); positionStickySearchBar('ingredientsSearchBar', 'ingredientsList', 'ingredientDetail'); }
-    if (tabId === 'semiFinished') { closeSemiFinishedDetailSilent(); displaySemiFinished(); positionStickySearchBar('semiFinishedSearchBar', 'semiFinishedList', 'semiFinishedDetail'); }
+    if (tabId === 'ingredients') { if (typeof dashOnEnterStock === 'function') dashOnEnterStock('ing'); closeIngredientDetailSilent(); displayIngredients(); positionStickySearchBar('ingredientsSearchBar', 'ingredientsList', 'ingredientDetail'); }
+    if (tabId === 'semiFinished') { if (typeof dashOnEnterStock === 'function') dashOnEnterStock('sf'); closeSemiFinishedDetailSilent(); displaySemiFinished(); positionStickySearchBar('semiFinishedSearchBar', 'semiFinishedList', 'semiFinishedDetail'); }
     if (tabId === 'history')   { updateHistoryEmployeeFilter(); loadHistory(); }
     if (tabId === 'stats')     { updateStatsCustomerFilter(); toggleDateRange(); applyFilter(); updateInfoCounts(); initDailyRevenueChart(); }
     refreshFab();

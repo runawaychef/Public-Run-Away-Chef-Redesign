@@ -770,48 +770,14 @@ function memoCustomerTagHtml(custId) {
     return `<span class="oc-tag oc-tag-memo">${escapeHtml(txt)}</span>`;
 }
 
-// Баннер: выключатель — на устройстве; крестик скрывает показанные даты (ключ «id:дата»)
+// Напоминания о памятных датах с 26.10 показывает Dashboard (dashboard.js, полоска над плашками).
+// Выключатель — на устройстве. Имя функции оставлено: её вызывают места, где данные дат меняются.
 const MEMO_BANNER_OFF_KEY = 'memo_banner_off';
-const MEMO_BANNER_DISMISSED_KEY = 'memo_banner_dismissed';
-let _memoBannerExpanded = false;
 function memoBannerEnabled() {
     try { return localStorage.getItem(MEMO_BANNER_OFF_KEY) !== '1'; } catch (e) { return true; }
 }
-function _memoBannerKey(x) { return x.m.id + ':' + _memoIso(x.next); }
-function _memoDismissedGet() {
-    try { const a = JSON.parse(localStorage.getItem(MEMO_BANNER_DISMISSED_KEY) || '[]'); return Array.isArray(a) ? a : []; } catch (e) { return []; }
-}
 function renderOrdersMemoBanner() {
-    const box = document.getElementById('ordersMemoBanner');
-    if (!box) return;
-    if (!memoBannerEnabled() || !memoDates.length) { box.innerHTML = ''; return; }
-    const list = memoUpcoming(null);
-    const dismissed = _memoDismissedGet();
-    if (!list.length || list.every(x => dismissed.includes(_memoBannerKey(x)))) { box.innerHTML = ''; return; }
-    const shown = _memoBannerExpanded ? list : list.slice(0, 3);
-    const rows = shown.map(x => {
-        const c = customers.find(cc => cc.id === x.m.customer_id);
-        return `<div class="memo-bn-row" onclick="memoBannerOpenCustomer(${x.m.customer_id})">
-            <span class="memo-bn-when">${escapeHtml(memoShortWhen(x))}</span>
-            <span class="memo-bn-txt">${escapeHtml(x.m.title)}${c && c.name ? ` · <span class="memo-bn-cust">${escapeHtml(c.name)}</span>` : ''}</span>
-        </div>`;
-    }).join('');
-    const more = list.length > 3
-        ? `<div class="memo-bn-more" onclick="memoBannerToggleMore()">${escapeHtml(_memoBannerExpanded ? t('memo_banner_less') : t('memo_banner_more').replace('{n}', list.length - 3))}</div>` : '';
-    box.innerHTML = `<div class="memo-banner">
-        <button type="button" class="memo-bn-x" aria-label="×" onclick="memoBannerDismiss()">×</button>
-        <div class="memo-bn-title">♥ ${escapeHtml(t('memo_banner_title'))}</div>
-        ${rows}${more}
-    </div>`;
-}
-function memoBannerToggleMore() { _memoBannerExpanded = !_memoBannerExpanded; renderOrdersMemoBanner(); }
-function memoBannerDismiss() {
-    const today = _memoIso(_memoToday());
-    // старые ключи (прошедшие даты) выбрасываем, чтобы список не рос
-    const keep = _memoDismissedGet().filter(k => (k.split(':')[1] || '') >= today);
-    memoUpcoming(null).forEach(x => { const k = _memoBannerKey(x); if (!keep.includes(k)) keep.push(k); });
-    try { localStorage.setItem(MEMO_BANNER_DISMISSED_KEY, JSON.stringify(keep)); } catch (e) { /* без хранилища */ }
-    renderOrdersMemoBanner();
+    if (typeof renderDashboardIfVisible === 'function') renderDashboardIfVisible();
 }
 function memoBannerOpenCustomer(custId) {
     if (!customers.find(c => c.id === custId)) return;

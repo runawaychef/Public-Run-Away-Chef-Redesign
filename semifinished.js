@@ -83,7 +83,7 @@ function renderSemiFinishedCards() {
         const stripe = accentColor ? `<div class="stripe" style="background:${accentColor};"></div>` : '';
 
         (accentColor ? htmlAttn : htmlOk).push(`
-        <div class="oc-swipe-wrap" data-name="${escapeHtml((sf.name || '').toLowerCase())}" data-critical="${accentColor ? '1' : '0'}" style="--oc-swipe-x:-72px;">
+        <div class="oc-swipe-wrap" data-name="${escapeHtml((sf.name || '').toLowerCase())}" data-critical="${accentColor ? '1' : '0'}" data-low="${isCritical ? '1' : '0'}" style="--oc-swipe-x:-72px;">
             ${refCopySwipeBtnHtml(`quickCopySemiFinishedFromSwipe(${realIdx})`)}
             <div class="order-card" style="cursor:pointer;" onclick="openSemiFinishedDetail(${sf.id})">
                 ${stripe}
@@ -106,6 +106,9 @@ function quickCopySemiFinishedFromSwipe(realIdx) {
 }
 
 // ---- Поиск по названию — работает одинаково в обоих видах ----
+// Фильтр «критичный остаток» ставит только Dashboard (dashboard.js)
+let stockLowOnlySf = false;
+function clearSemiFinishedDashFilter() { stockLowOnlySf = false; filterSemiFinishedList(); }
 function filterSemiFinishedList() {
     const input = document.getElementById('semiFinishedSearchInput');
     const q = input ? input.value.trim().toLowerCase() : '';
@@ -114,12 +117,13 @@ function filterSemiFinishedList() {
 
     let visibleCards = 0;
     document.querySelectorAll('#semiFinishedCardsBody .oc-swipe-wrap').forEach(wrap => {
-        const match = !q || wrap.dataset.name.includes(q);
+        const match = (!q || wrap.dataset.name.includes(q)) && (!stockLowOnlySf || wrap.dataset.low === '1');
         wrap.style.display = match ? 'block' : 'none';
         if (match) visibleCards++;
     });
     document.getElementById('semiFinishedCardsEmpty')?.classList.toggle('hidden', visibleCards !== 0);
-    toggleStockDividers('semiFinishedCardsBody', !!q);
+    document.getElementById('semiFinishedDashFilter')?.classList.toggle('hidden', !stockLowOnlySf);
+    toggleStockDividers('semiFinishedCardsBody', !!q || stockLowOnlySf);
 
 }
 
