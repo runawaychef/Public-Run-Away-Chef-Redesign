@@ -1079,8 +1079,16 @@
         .dashboard-stock-row .dashboard-card__value { font-size: 16px; letter-spacing: 0; }
         .dashboard-stock-row .dashboard-chev { color: #a29c8c; margin-left: 5px; font-size: 14px; }
         .dashboard-stub { font-size: 10.4px; color: #a29c8c; font-weight: 600; }
-        /* Кнопка «Новый заказ»: размеры стандартной .pill-btn приложения, только на всю ширину */
-        .dashboard-new-order { width: 100%; justify-content: center; margin-top: 16px; }
+        /* Кнопка «Новый заказ» (27.10): чуть крупнее стандартной — единый стиль приложения */
+        .dashboard-new-order {
+            display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 16px; height: 42px;
+            border: 0; border-radius: 13px; color: #fff; font-size: 13.5px; font-weight: 700; cursor: pointer;
+            background: linear-gradient(180deg, #8aa380, #7c9473);
+            box-shadow: 0 8px 14px -6px rgba(95,120,87,0.65), inset 0 1px 0 rgba(255,255,255,0.35); /* без бокового размытия: контейнер вкладок обрезает тень по краям */
+            -webkit-tap-highlight-color: transparent;
+        }
+        .dashboard-new-order:active { transform: scale(0.98); opacity: 0.9; }
+        .dashboard-new-order svg { width: 16px; height: 16px; }
         .dash-sk { display: inline-block; height: 22px; width: 44px; border-radius: 8px; background: linear-gradient(90deg, #e9e5d9, #f6f4ec, #e9e5d9); background-size: 200% 100%; animation: dashSh 1.2s infinite; }
         .dashboard-stock-row .dash-sk { height: 16px; width: 26px; }
         @keyframes dashSh { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
@@ -1097,10 +1105,29 @@
             .dashboard-card__sub { font-size: 15px; }
             .dashboard-stock-row { font-size: 15px; padding: 9px 0; }
             .dashboard-stock-row .dashboard-card__value { font-size: 24px; }
-            .dashboard-new-order { max-width: 420px; margin-left: auto; margin-right: auto; }
+            .dashboard-new-order { max-width: 420px; margin-left: auto; margin-right: auto; height: 46px; font-size: 15px; }
             .dashboard-strip { font-size: 15px; min-height: 54px; }
         }
         @container (min-width: 900px) { .dashboard-grid { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, minmax(150px, 1fr)); gap: 16px; } }
+        /* ===== THEME-UNIFIED (27.10.2026): единый стиль — шапка, значки справа, нижнее меню =====
+           Оформление как у плашек Dashboard («парящие» карточки). Логику не трогает.
+           ОТКАТ: удалить этот блок целиком. */
+        :root { --sb-shadow: 0 12px 24px -10px rgba(70,58,30,0.32), 0 3px 6px -2px rgba(70,58,30,0.12), inset 0 1px 0 #fff; --sb-edge: 1px solid rgba(255,255,255,0.9); }
+        #appStickyHeader > .bg-white { border-radius: 16px; box-shadow: var(--sb-shadow); border: var(--sb-edge); }
+        #settingsBtn, #statsBtn, #inventoryBtn {
+            width: 38px; height: 38px; top: calc(max(8px, env(safe-area-inset-top)) + 6px);
+            border: 1px solid rgba(90,75,40,0.06); box-shadow: 0 6px 12px -6px rgba(70,58,30,0.35), 0 1px 2px rgba(70,58,30,0.1);
+        }
+        #statsBtn { right: calc(var(--hdr-icons-right) + 46px); }
+        #inventoryBtn { right: calc(var(--hdr-icons-right) + 92px); }
+        #settingsBtn.active, #statsBtn.active, #inventoryBtn.active { border-color: #7c9473; }
+        #bottomNav { border-radius: 20px; box-shadow: var(--sb-shadow); border: var(--sb-edge); padding: 4px; }
+        .bottom-nav-item { padding: 5px 2px 4px; gap: 2px; border-radius: 15px; }
+        .bottom-nav-item svg { width: 24px; height: 24px; }
+        .bottom-nav-item.active { background: #e3ebdf; color: #4f6349; }
+        .bottom-nav-item.active::before { display: none; }
+        .bottom-nav-item.active svg { stroke: #4f6349; }
+        /* ===== /THEME-UNIFIED ===== */
         /* Крестик «сбросить фильтр по статусу» в полосе итога заказов (фильтр из Dashboard) */
         .ofs-x { flex-shrink: 0; padding: 0 6px; color: #8d887b; font-size: 12px; cursor: pointer; }
     </style>
@@ -1496,7 +1523,7 @@ function hideSplashScreen() {
                         <div class="dashboard-card__sub" id="dashRevenueSub">&nbsp;</div>
                     </div>
                 </div>
-                <button type="button" class="pill-btn dashboard-new-order" onclick="dashNewOrder()">
+                <button type="button" class="dashboard-new-order" onclick="dashNewOrder()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
                     <span data-i18n="dash_new_order">Новый заказ</span>
                 </button>
