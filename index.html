@@ -1052,37 +1052,32 @@
         /* Сетка 2×3: плашки растягиваются на высоту экрана (min-height у .dashboard ставит dashFit в dashboard.js) */
         .dashboard-grid { flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, minmax(108px, 1fr)); gap: 10px; }
         .dashboard-card {
-            background: #fff; border-radius: 16px; padding: 14px; min-width: 0;
+            background: #5f7857; border-radius: 16px; padding: 14px; min-width: 0;
             display: flex; flex-direction: column; gap: 8px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.035);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.12); border: 1px solid #526a4b; /* вид «F» (26.10): тёмно-зелёные плашки со светлым текстом; откат — белый фон #fff и мягкая тень */
             cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform .12s ease;
         }
         .dashboard-card:active { transform: scale(0.98); }
         .dashboard-card--stock, .dashboard-card--static { cursor: default; }
         .dashboard-card--stock:active, .dashboard-card--static:active { transform: none; }
-        .dashboard-card__label { font-size: 16px; font-weight: 700; color: #4f4b42; line-height: 1.25; text-align: center; }
+        .dashboard-card__label { font-size: 16px; font-weight: 700; color: #fff; line-height: 1.25; text-align: center; }
         .dashboard-card__mid { flex: 1; display: flex; align-items: center; justify-content: center; }
-        .dashboard-card__value { font-family: 'Fraunces', serif; font-weight: 600; font-size: 24px; line-height: 1; color: #322f28; white-space: nowrap; }
+        .dashboard-card__value { font-family: 'Fraunces', serif; font-weight: 600; font-size: 24px; line-height: 1; color: #fff; white-space: nowrap; }
         .dashboard-card__value small { font-size: 0.6em; }
-        .dashboard-card__value.dashboard-bad, .dashboard-bad { color: #a3493d; }
-        .dashboard-card__value.dashboard-muted { color: #a29c8c; }
-        .dashboard-card__sub { font-size: 13px; font-weight: 600; color: #6b6759; line-height: 1.35; text-align: left; min-height: 1.35em; }
+        .dashboard-card__value.dashboard-bad, .dashboard-bad { color: #ffd9d2; }
+        .dashboard-card__value.dashboard-muted { color: rgba(255,255,255,0.55); }
+        .dashboard-card__sub { font-size: 13px; font-weight: 600; color: #e3ebdf; line-height: 1.35; text-align: left; min-height: 1.35em; }
         .dashboard-stock-rows { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; }
-        .dashboard-stock-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid #f1efe9; font-size: 13px; font-weight: 600; color: #4f4b42; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .dashboard-stock-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid rgba(255,255,255,0.2); font-size: 13px; font-weight: 600; color: #e3ebdf; cursor: pointer; -webkit-tap-highlight-color: transparent; }
         .dashboard-stock-row--plain { cursor: default; }
-        .dashboard-stock-row:active { background: #f6f8f4; }
+        .dashboard-stock-row:active { background: rgba(255,255,255,0.08); }
         .dashboard-stock-row--plain:active { background: none; }
         .dashboard-stock-row .dashboard-card__value { font-size: 18px; }
-        .dashboard-stock-row .dashboard-chev { color: #a29c8c; margin-left: 6px; font-size: 16px; }
-        .dashboard-stub { font-size: 11.5px; color: #a29c8c; font-weight: 600; }
-        .dashboard-new-order {
-            display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin-top: 10px; height: 44px;
-            border: 0; border-radius: 10px; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer;
-            background: #7c9473; box-shadow: 0 1px 2px rgba(0,0,0,0.12);
-        }
-        .dashboard-new-order:active { transform: scale(0.98); opacity: 0.88; }
-        .dashboard-new-order svg { width: 18px; height: 18px; }
-        .dash-sk { display: inline-block; height: 24px; width: 48px; border-radius: 8px; background: linear-gradient(90deg, #e9e5d9, #f6f4ec, #e9e5d9); background-size: 200% 100%; animation: dashSh 1.2s infinite; }
+        .dashboard-stock-row .dashboard-chev { color: rgba(255,255,255,0.55); margin-left: 6px; font-size: 16px; }
+        .dashboard-stub { font-size: 11.5px; color: rgba(255,255,255,0.65); font-weight: 600; }
+        /* Кнопка «Новый заказ»: размеры стандартной .pill-btn приложения, только на всю ширину */
+        .dashboard-new-order { width: 100%; justify-content: center; margin-top: 10px; }
+        .dash-sk { display: inline-block; height: 24px; width: 48px; border-radius: 8px; background: linear-gradient(90deg, rgba(255,255,255,0.18), rgba(255,255,255,0.32), rgba(255,255,255,0.18)); background-size: 200% 100%; animation: dashSh 1.2s infinite; }
         .dashboard-stock-row .dash-sk { height: 18px; width: 28px; }
         @keyframes dashSh { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
         /* Строка-фильтр над списками «Склад» (ставит Dashboard) */
@@ -1097,7 +1092,7 @@
             .dashboard-card__sub { font-size: 15px; }
             .dashboard-stock-row { font-size: 15px; padding: 9px 0; }
             .dashboard-stock-row .dashboard-card__value { font-size: 24px; }
-            .dashboard-new-order { max-width: 420px; margin-left: auto; margin-right: auto; height: 48px; font-size: 15px; }
+            .dashboard-new-order { max-width: 420px; margin-left: auto; margin-right: auto; }
             .dashboard-strip { font-size: 15px; min-height: 54px; }
         }
         @container (min-width: 900px) { .dashboard-grid { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, minmax(150px, 1fr)); gap: 16px; } }
@@ -1496,7 +1491,7 @@ function hideSplashScreen() {
                         <div class="dashboard-card__sub" id="dashRevenueSub">&nbsp;</div>
                     </div>
                 </div>
-                <button type="button" class="dashboard-new-order" onclick="dashNewOrder()">
+                <button type="button" class="pill-btn dashboard-new-order" onclick="dashNewOrder()">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
                     <span data-i18n="dash_new_order">Новый заказ</span>
                 </button>
