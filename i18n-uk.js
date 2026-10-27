@@ -1472,4 +1472,13 @@ I18N.uk = {
         prod_optgroup_semifinished: 'Напівфабрикати',
         prod_no_recipe_to_copy: 'У обраного виробу немає рецепта.',
         prod_all_positions_already_in_recipe: 'Усі позиції з рецепта «{name}» вже є в цьому рецепті.',
+        // Dashboard (26.10.2026)
+        dash_accepted: 'Прийняті замовлення',
+        dash_today: 'Замовлення на сьогодні',
+        dash_ingredients: 'Інгредієнти',
+        dash_semi: 'Напівфабрикати',
+        dash_revenue: 'Виручка за місяць',
+        dash_new_order: 'Нове замовлення',
+        dash_status_label: 'Статус',
+        dash_clear_filter: 'Скинути фільтр',
 };

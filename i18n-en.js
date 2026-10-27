@@ -1475,4 +1475,13 @@ I18N.en = {
         prod_optgroup_semifinished: 'Semi-finished goods',
         prod_no_recipe_to_copy: 'The selected menu item has no recipe.',
         prod_all_positions_already_in_recipe: 'All items from the "{name}" recipe are already in this recipe.',
+        // Dashboard (26.10.2026)
+        dash_accepted: 'Accepted orders',
+        dash_today: 'Orders for today',
+        dash_ingredients: 'Ingredients',
+        dash_semi: 'Semi-finished goods',
+        dash_revenue: 'Revenue this month',
+        dash_new_order: 'New order',
+        dash_status_label: 'Status',
+        dash_clear_filter: 'Clear filter',
 };

@@ -1040,6 +1040,51 @@
         .modal:not(.modal-fullscreen) .modal-content .pill-btn,
         .modal:not(.modal-fullscreen) .modal-content .pill-btn-secondary,
         .modal:not(.modal-fullscreen) .modal-content .pill-btn-danger { font-size: 13px; padding: 9px 12px; }
+    
+        /* ===== DASHBOARD — стартовый экран (26.10.2026) ===== */
+        .dashboard { container-type: inline-size; padding: 4px 0 24px; }
+        .dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .dashboard-card {
+            background: #fff; border-radius: 16px; padding: 14px; min-height: 128px; min-width: 0;
+            display: flex; flex-direction: column; justify-content: space-between; gap: 10px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.035);
+            cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform .12s ease;
+        }
+        .dashboard-card:active { transform: scale(0.98); }
+        .dashboard-card--stock, .dashboard-card--static { cursor: default; }
+        .dashboard-card--stock:active, .dashboard-card--static:active { transform: none; }
+        .dashboard-card__label { font-size: 16px; font-weight: 700; color: #4f4b42; line-height: 1.25; }
+        .dashboard-card__value { font-family: 'Fraunces', serif; font-weight: 600; font-size: 32px; line-height: 1; color: #322f28; white-space: nowrap; }
+        .dashboard-card__value small { font-size: 0.6em; }
+        .dashboard-card__value.dashboard-bad { color: #a3493d; }
+        .dashboard-stock-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 9px 0; border-top: 1px solid #f1efe9; font-size: 14px; font-weight: 600; color: #4f4b42; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .dashboard-stock-row:active { background: #f6f8f4; }
+        .dashboard-stock-row .dashboard-card__value { font-size: 22px; }
+        .dashboard-stock-row .dashboard-chev { color: #a29c8c; margin-left: 6px; font-size: 16px; }
+        .dashboard-new-order {
+            display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin-top: 14px; height: 52px;
+            border: 0; border-radius: 14px; color: #fff; font-size: 15px; font-weight: 700; cursor: pointer;
+            background: linear-gradient(135deg, #8fa885, #7c9473);
+            box-shadow: 0 8px 14px -6px rgba(124,148,115,0.55); /* без бокового размытия: контейнер вкладок обрезает тень по краям */
+        }
+        .dashboard-new-order:active { transform: scale(0.98); }
+        .dashboard-new-order svg { width: 20px; height: 20px; }
+        .dash-sk { display: inline-block; height: 28px; width: 56px; border-radius: 8px; background: linear-gradient(90deg, #e9e5d9, #f6f4ec, #e9e5d9); background-size: 200% 100%; animation: dashSh 1.2s infinite; }
+        .dashboard-stock-row .dash-sk { height: 20px; width: 30px; }
+        @keyframes dashSh { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        /* Шире — крупнее; на очень широком — четыре плашки в ряд (пригодится, когда приложение перестанет быть узкой колонкой) */
+        @container (min-width: 560px) {
+            .dashboard-grid { gap: 14px; }
+            .dashboard-card { padding: 18px; min-height: 168px; }
+            .dashboard-card__label { font-size: 19px; }
+            .dashboard-card__value { font-size: 44px; }
+            .dashboard-stock-row { font-size: 17px; padding: 12px 0; }
+            .dashboard-stock-row .dashboard-card__value { font-size: 30px; }
+            .dashboard-new-order { max-width: 420px; margin-left: auto; margin-right: auto; height: 58px; font-size: 17px; }
+        }
+        @container (min-width: 900px) { .dashboard-grid { grid-template-columns: repeat(4, 1fr); gap: 16px; } }
+        /* Крестик «сбросить фильтр по статусу» в полосе итога заказов (фильтр из Dashboard) */
+        .ofs-x { flex-shrink: 0; padding: 0 6px; color: #8d887b; font-size: 12px; cursor: pointer; }
     </style>
 </head>
 <body class="font-sans style-loading">
@@ -1335,7 +1380,7 @@ function hideSplashScreen() {
      а не через положение кнопок на экране, так что оба механизма продолжают
      работать без единой правки в JS. -->
 <div id="bottomNav">
-    <button onclick="showTab('orders')" class="tab bottom-nav-item active">
+    <button onclick="showTab('orders')" class="tab bottom-nav-item">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6a1 1 0 011 1v1h1a1 1 0 011 1v14a1 1 0 01-1 1H7a1 1 0 01-1-1V6a1 1 0 011-1h1V4a1 1 0 011-1z"/><path d="M9 3v2h6V3M8.5 11h7M8.5 14.5h7M8.5 18h4.5"/></svg>
         <span data-i18n="nav_orders">Заказы</span>
     </button>
@@ -1357,7 +1402,7 @@ function hideSplashScreen() {
     <!-- Sticky шапка: логотип + меню вкладок -->
     <div id="appStickyHeader" style="position:sticky; top:0; z-index:40; background:#f4f1ea; padding: 8px 8px 0; padding-top: max(8px, env(safe-area-inset-top));">
         <div class="bg-white rounded-xl shadow-md p-3 flex items-center gap-3 mb-2">
-            <div style="display:flex; flex-direction:column; align-items:flex-end; flex-shrink:0; line-height:1.15;">
+            <div onclick="showTab('dashboard')" role="button" aria-label="Dashboard" style="display:flex; flex-direction:column; align-items:flex-end; flex-shrink:0; line-height:1.15; cursor:pointer; -webkit-tap-highlight-color:transparent;">
                 <div style="font-family:'Fraunces',serif; font-weight:600; font-size:18px; color:#7c9473;">Simple bake</div>
                 <div style="font-size:9px; color:#a29c8c; letter-spacing:0.04em; margin-top:2px;">by Runaway Chef Lab</div>
             </div>
@@ -1383,6 +1428,43 @@ function hideSplashScreen() {
     <div class="p-2">
     <div id="tabsWrapper">
     <div id="appContent" class="app-locked">
+
+        <!-- ===== DASHBOARD (стартовый экран; открывается и по нажатию на шапку) ===== -->
+        <div id="dashboard" class="tab-content">
+            <div class="dashboard">
+                <div class="dashboard-grid">
+                    <div class="dashboard-card" role="button" tabindex="0" onclick="dashOpenAccepted()">
+                        <div class="dashboard-card__label" data-i18n="dash_accepted">Принятые заказы</div>
+                        <div class="dashboard-card__value" id="dashAccepted"><span class="dash-sk"></span></div>
+                    </div>
+                    <div class="dashboard-card" role="button" tabindex="0" onclick="dashOpenToday()">
+                        <div class="dashboard-card__label" data-i18n="dash_today">Заказы на сегодня</div>
+                        <div class="dashboard-card__value" id="dashToday"><span class="dash-sk"></span></div>
+                    </div>
+                    <div class="dashboard-card dashboard-card--stock">
+                        <div class="dashboard-card__label" data-i18n="nav_ingredients">Склад</div>
+                        <div>
+                            <div class="dashboard-stock-row" role="button" tabindex="0" onclick="dashOpenIngredients()">
+                                <span data-i18n="dash_ingredients">Ингредиенты</span>
+                                <span><span class="dashboard-card__value" id="dashIngredients"><span class="dash-sk"></span></span><span class="dashboard-chev">›</span></span>
+                            </div>
+                            <div class="dashboard-stock-row" role="button" tabindex="0" onclick="dashOpenSemiFinished()">
+                                <span data-i18n="dash_semi">Полуфабрикаты</span>
+                                <span><span class="dashboard-card__value" id="dashSemi"><span class="dash-sk"></span></span><span class="dashboard-chev">›</span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dashboard-card" id="dashCardRevenue" role="button" tabindex="0" onclick="dashOpenRevenue()">
+                        <div class="dashboard-card__label" data-i18n="dash_revenue">Выручка за месяц</div>
+                        <div class="dashboard-card__value" id="dashRevenue"><span class="dash-sk"></span></div>
+                    </div>
+                </div>
+                <button type="button" class="dashboard-new-order" onclick="dashNewOrder()">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                    <span data-i18n="dash_new_order">Новый заказ</span>
+                </button>
+            </div>
+        </div>
 
         <!-- ===== ИЗДЕЛИЯ ===== -->
         <div id="products" class="tab-content hidden">
@@ -2050,7 +2132,7 @@ function hideSplashScreen() {
                 </div>
             </div>
         </div>
-        <div id="orders" class="tab-content">
+        <div id="orders" class="tab-content hidden">
 
             <!-- СПИСОК ЗАКАЗОВ -->
             <div id="ordersList">
@@ -3651,13 +3733,13 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=100"></script>
+    <script src="i18n-core.js?v=101"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=16"></script>
     <script src="auth.js?v=30"></script>
     <script src="employees.js?v=58"></script>
     <script src="company.js?v=24"></script>
-    <script src="inventory.js?v=69"></script>
+    <script src="inventory.js?v=70"></script>
     <script src="billing.js?v=17"></script>
     <script src="push.js?v=9"></script>
 <script src="ingredients.js?v=50"></script>
@@ -3666,7 +3748,8 @@ function hideSplashScreen() {
 <script src="products.js?v=35"></script>
 <script src="customers.js?v=58"></script>
 <script src="calendar.js?v=15"></script>
-<script src="orders.js?v=142"></script>
+<script src="orders.js?v=143"></script>
+<script src="dashboard.js?v=1"></script>
 <script src="invoice.js?v=48"></script>
 <script src="send-document.js?v=38"></script>
 <script src="payments.js?v=29"></script>
@@ -3698,7 +3781,7 @@ let editItemIdx    = null; // индекс редактируемой позиц
 let deleteId       = null; // id/индекс записи для удаления
 let deleteType     = null; // тип записи для удаления ('product','customer','order','item','ingredient','recipeItem')
 let currentOrderId   = null; // id заказа, открытого в детальном виде (orders.js)
-let currentTabId = 'orders'; // текущая активная вкладка (по умолчанию совпадает с HTML-разметкой)
+let currentTabId = 'dashboard'; // текущая активная вкладка (по умолчанию совпадает с HTML-разметкой; с 26.10 стартовый экран — Dashboard)
 let currentProductId = null; // id изделия, открытого в детальном виде (products.js)
 let currentSemiFinishedId = null; // id полуфабриката, открытого в детальном виде (semifinished.js)
 let currentCustomerId = null; // id клиента, открытого в детальном виде (customers.js)
@@ -3928,6 +4011,7 @@ function renderAllScreens() {
     displaySemiFinished();
     updateOrderEmployeeFilter();
     displayOrders();
+    if (typeof renderDashboard === 'function') renderDashboard();
 }
 
 // ==================== ТАБЫ ====================
@@ -4022,7 +4106,8 @@ function showTab(tabId) {
     if (tabId !== 'ingredients') closeIngredientDetailSilent();
     if (tabId !== 'semiFinished') closeSemiFinishedDetailSilent();
 
-    if (tabId === 'orders')    { closeOrderDetail(); displayOrders(); }
+    if (tabId === 'dashboard') { renderDashboard(); }
+    if (tabId === 'orders')    { if (typeof dashOnEnterOrders === 'function') dashOnEnterOrders(); closeOrderDetail(); displayOrders(); }
     if (tabId === 'products')  { closeProductDetailSilent(); displayProducts(); positionStickySearchBar('productsSearchBar', 'productsList', 'productDetail'); }
     if (tabId === 'customers') { closeCustomerDetailSilent(); displayCustomers(); positionStickySearchBar('customersSearchBar', 'customersList', 'customerDetail'); }
     if (tabId === 'ingredients') { closeIngredientDetailSilent(); displayIngredients(); positionStickySearchBar('ingredientsSearchBar', 'ingredientsList', 'ingredientDetail'); }
@@ -4680,14 +4765,8 @@ window.addEventListener('popstate', function () {
         _closeTopOverlay();
         return;
     }
-    // Ничего не открыто, но пользователь не на главной вкладке "Заказы" —
-    // возвращаем туда (заказы считаем "домашним" экраном приложения).
-    if (typeof currentTabId !== 'undefined' && currentTabId !== 'orders' && typeof showTab === 'function') {
-        showTab('orders');
-        return;
-    }
-    // На вкладке "Заказы", но включён табличный вид, а не карточный —
-    // "домашним" считаем именно карточный вид (тот, что открывается по умолчанию).
+    // Домашний экран приложения — Dashboard (с 26.10): из любого другого раздела «назад» ведёт на него.
+    // На вкладке "Заказы" сначала табличный вид возвращается к карточному, и только затем — на Dashboard.
     if (typeof currentTabId !== 'undefined' && currentTabId === 'orders') {
         const tableWrap = document.getElementById('orderTableWrap');
         const isTableView = tableWrap && !tableWrap.classList.contains('hidden');
@@ -4695,6 +4774,10 @@ window.addEventListener('popstate', function () {
             setOrdersViewMode('cards');
             return;
         }
+    }
+    if (typeof currentTabId !== 'undefined' && currentTabId !== 'dashboard' && typeof showTab === 'function') {
+        showTab('dashboard');
+        return;
     }
     // иначе (уже на карточном виде вкладки заказов, ничего не открыто) — просто
     // ничего не делаем; запас записей в истории огромный, так что Android

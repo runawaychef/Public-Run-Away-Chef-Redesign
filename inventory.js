@@ -360,6 +360,7 @@ function updateInventoryAlertDot() {
     // (тот же список и те же правила, решение владельца 21.10).
     const on = smartStockRows(stockStateContext(30)).some(r => r.attention);
     dot.classList.toggle('hidden', !on);
+    if (typeof renderDashboardIfVisible === 'function') renderDashboardIfVisible(); // плашка «Склад» на Dashboard
 }
 
 

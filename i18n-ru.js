@@ -1474,4 +1474,13 @@ I18N.ru = {
         prod_optgroup_semifinished: 'Полуфабрикаты',
         prod_no_recipe_to_copy: 'У выбранного изделия нет рецепта.',
         prod_all_positions_already_in_recipe: 'Все позиции из рецепта «{name}» уже есть в этом рецепте.',
+        // Dashboard (26.10.2026)
+        dash_accepted: 'Принятые заказы',
+        dash_today: 'Заказы на сегодня',
+        dash_ingredients: 'Ингредиенты',
+        dash_semi: 'Полуфабрикаты',
+        dash_revenue: 'Выручка за месяц',
+        dash_new_order: 'Новый заказ',
+        dash_status_label: 'Статус',
+        dash_clear_filter: 'Сбросить фильтр',
 };

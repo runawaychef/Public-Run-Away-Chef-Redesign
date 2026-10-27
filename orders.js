@@ -859,6 +859,11 @@ function getOrderPaymentStatus(order) {
 // ---- Фильтры списка заказов ----
 
 let selectedOrderCustomers = []; // пусто = все клиенты
+// Фильтр по статусу ставит ТОЛЬКО Dashboard (dashboard.js): '' = нет; иначе 'принят' / 'в работе' / 'выполнен'.
+// _dashSavedOnly — при фильтре из Dashboard в список входят только сохранённые заказы (без черновиков),
+// чтобы число на плашке совпадало со списком.
+let ordersStatusFilter = '';
+let _dashSavedOnly = false;
 
 // opts.ignoreDate — без фильтра «Период» (для календаря-фильтра: он сам выбирает день), 23.10
 function getFilteredOrdersForList(opts) {
@@ -870,6 +875,8 @@ function getFilteredOrdersForList(opts) {
     // Черновики (заказ без номера) видит только автор; чужие черновики и пустые брошенные
     // черновики ожидающие удаления в списке не показываем
     let filtered = orders.filter(isOrderVisible);
+    if (ordersStatusFilter || _dashSavedOnly) filtered = filtered.filter(isOrderSaved);
+    if (ordersStatusFilter) filtered = filtered.filter(o => o.status === ordersStatusFilter);
     if (selectedOrderCustomers.length > 0) filtered = filtered.filter(o => selectedOrderCustomers.includes(o.customer));
     if (employeeFilter) filtered = filtered.filter(o => String(o.employee_id) === employeeFilter);
     if (paymentFilter) {
@@ -1089,7 +1096,16 @@ function toggleOrderDateRange() {
     document.getElementById('orderCustomDateRange').classList.toggle('hidden', range !== 'custom');
 }
 
+// Сбросить фильтр по статусу, поставленный Dashboard (крестик в полосе итога)
+function clearOrdersStatusFilter() {
+    ordersStatusFilter = '';
+    _dashSavedOnly = false;
+    applyOrderFilter();
+}
+
 function applyOrderFilter() {
+    // Любое ручное изменение фильтров делает дату «обычной»: Dashboard её больше не сбрасывает
+    if (typeof _dashDayFilter !== 'undefined') { _dashDayFilter = false; if (!ordersStatusFilter) _dashSavedOnly = false; }
     resetOrdersRenderLimits();
     updateOrderFilterButtonsState();
     displayOrders();
@@ -1120,6 +1136,7 @@ function ordersFilterDescription() {
     }
     const pay = document.getElementById('orderPaymentFilter')?.value || '';
     if (pay) parts.push(t('orders_payment') + ': ' + t('pay_status_' + pay));
+    if (ordersStatusFilter) parts.push(t('dash_status_label') + ': ' + orderStatusLabelCap(ordersStatusFilter));
     return parts.join(' · ');
 }
 
@@ -1135,7 +1152,8 @@ function updateOrdersFilterSummary(filtered) {
     const sums = hasVat
         ? `${formatMoney(wt.net)} ${t('orders_sum_novat_short')} · <b>${formatMoney(wt.sum)}</b> ${t('orders_sum_withvat_short')}`
         : `<b>${formatMoney(wt.sum)}</b>`;
-    el.innerHTML = `<div class="ofs-row1"><span class="ofs-filters">${escapeHtml(desc)}</span><span class="ofs-link">${t('orders_summary_products')} ›</span></div>
+    const clearX = ordersStatusFilter ? `<span class="ofs-x" role="button" aria-label="${escapeHtml(t('dash_clear_filter'))}" onclick="event.stopPropagation(); clearOrdersStatusFilter()">✕</span>` : '';
+    el.innerHTML = `<div class="ofs-row1"><span class="ofs-filters">${escapeHtml(desc)}</span>${clearX}<span class="ofs-link">${t('orders_summary_products')} ›</span></div>
         <div class="ofs-row2"><span class="ofs-counts">${counts}</span><span class="ofs-sums">${sums}</span></div>`;
     el.classList.remove('hidden');
 }

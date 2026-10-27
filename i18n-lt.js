@@ -1472,4 +1472,13 @@ I18N.lt = {
         prod_optgroup_semifinished: 'Pusgaminiai',
         prod_no_recipe_to_copy: 'Pasirinktas gaminys neturi recepto.',
         prod_all_positions_already_in_recipe: 'Visos pozicijos iš recepto „{name}“ jau yra šiame recepte.',
+        // Dashboard (26.10.2026)
+        dash_accepted: 'Priimti užsakymai',
+        dash_today: 'Užsakymai šiandien',
+        dash_ingredients: 'Ingredientai',
+        dash_semi: 'Pusgaminiai',
+        dash_revenue: 'Mėnesio pajamos',
+        dash_new_order: 'Naujas užsakymas',
+        dash_status_label: 'Statusas',
+        dash_clear_filter: 'Išvalyti filtrą',
 };
