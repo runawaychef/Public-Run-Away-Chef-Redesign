@@ -1176,6 +1176,11 @@
         #ordersViewToggle #ordersCardCalendarBtn svg, #ordersViewToggle #ordersDocsBtn svg, #ordersViewToggle #ordersBankBtn svg, #ordersViewToggle #ordersFilterPill .view-toggle-btn svg { width: 20px; height: 20px; }
         #ordersViewToggle .view-toggle-btn.active, #ordersViewToggle .view-toggle-btn.is-open { background: #e3ebdf; color: #4f6349; }
         #ordersViewToggle .help-marker { margin-left: 2px; }
+        /* ===== THEME-UNIFIED-TABLE (27.10.2026): табличный вид заказов в новом стиле =====
+           Только #orderTableWrap (на странице «Склад» .ot-island не затронут). Шапка таблицы и недельные «острова» — тень и контур как у плашек;
+           заголовки колонок — тёплый серый (вариант B, как подписи разделителей). ОТКАТ: удалить этот блок. */
+        #orderTableWrap .ot-head { margin-bottom: 10px; border: var(--sb-edge); border-radius: 16px; box-shadow: var(--sb-shadow); color: #9a9488; }
+        #orderTableWrap .ot-island { border: var(--sb-edge); box-shadow: var(--sb-shadow); }
         /* ===== /THEME-UNIFIED ===== */
         /* Крестик «сбросить фильтр по статусу» в полосе итога заказов (фильтр из Dashboard) */
         .ofs-x { flex-shrink: 0; padding: 0 6px; color: #8d887b; font-size: 12px; cursor: pointer; }
