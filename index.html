@@ -1311,6 +1311,30 @@
         .dashboard-card.dc-alldone .dashboard-card__hd { --dc: #7c9473; }
         .dashboard-card.dc-alldone .dc-prog i { background: #7c9473; }
         /* ===== /THEME-UNIFIED-DASH3 ===== */
+        /* ===== THEME-UNIFIED-STOCK (28.10.2026): раздел «Склад» (ингредиенты и полуфабрикаты) в стиле плашек Dashboard =====
+           Только #ingredientsList / #semiFinishedList и их панели поиска. Карточки как у заказов (парящие, красная полоска у критичных),
+           капсулы вкладок как у переключателя заказов (активная — светло-зелёная), плашка «Критичный остаток» — парящая.
+           Отступы шапка → поиск и поиск → верхняя строка равны (≈14,5px, как в Меню). Расчётов и разметки не меняет.
+           ОТКАТ: удалить этот блок (файл index-before-stock.html). */
+        #ingredientsList, #semiFinishedList { padding-top: 56px !important; }
+        #ingredientsSearchBar > div, #semiFinishedSearchBar > div { padding: 23px 0 6px !important; }
+        #ingredientsSearchBar .search-input-wrap input, #semiFinishedSearchBar .search-input-wrap input { height: 40px; background: #fff; border: var(--sb-edge); border-radius: 14px; box-shadow: 0 6px 12px -6px rgba(70,58,30,0.35), 0 1px 2px rgba(70,58,30,0.1); font-size: 13px; padding-left: 14px; }
+        #ingredientsList .stock-toprow, #semiFinishedList .stock-toprow { margin: 0 0 8px; }
+        #ingredientsList .stock-toprow .view-toggle-pill, #semiFinishedList .stock-toprow .view-toggle-pill { padding: 3px; gap: 1px; border: 1px solid rgba(90,75,40,0.06); box-shadow: 0 6px 12px -6px rgba(70,58,30,0.35), 0 1px 2px rgba(70,58,30,0.1); }
+        #ingredientsList .stock-toprow-right, #semiFinishedList .stock-toprow-right { gap: 5px; }
+        #ingredientsList .stock-tab, #semiFinishedList .stock-tab { height: 32px; font-size: 12.5px; }
+        #ingredientsList .stock-tab.active, #semiFinishedList .stock-tab.active { background: #e3ebdf; color: #4f6349; font-weight: 700; }
+        #ingredientsList .stock-toprow .view-toggle-btn, #semiFinishedList .stock-toprow .view-toggle-btn { width: 32px; height: 32px; }
+        #ingredientsList .dash-filter-chip, #semiFinishedList .dash-filter-chip { background: #fff; border: var(--sb-edge); border-radius: 14px; box-shadow: 0 6px 12px -6px rgba(70,58,30,0.35), 0 1px 2px rgba(70,58,30,0.1); margin: 3px 0 12px; }
+        #ingredientsList .order-card, #semiFinishedList .order-card { box-shadow: var(--sb-shadow); border: var(--sb-edge); }
+        #ingredientsList .oc-swipe-wrap, #semiFinishedList .oc-swipe-wrap { box-sizing: border-box; border-radius: 0; padding: 0 12px 22px; margin: 0 -12px -8px; width: calc(100% + 24px); }
+        #ingredientsList .order-card .stripe, #semiFinishedList .order-card .stripe { width: 16px; margin-right: -11px; border-radius: 15px 0 0 15px; clip-path: inset(0 11px 0 0); }
+        #ingredientsList .oc-swipe-actions, #semiFinishedList .oc-swipe-actions { bottom: 22px; right: 12px; border-radius: 0 16px 16px 0; overflow: hidden; }
+        #ingredientsList .oc-swipe-actions-left, #semiFinishedList .oc-swipe-actions-left { bottom: 22px; left: 12px; border-radius: 16px 0 0 16px; overflow: hidden; }
+        #ingredientsList .oc-cells, #semiFinishedList .oc-cells { background: #f6f4ec; border-radius: 13px; box-shadow: inset 0 1px 3px rgba(70,58,30,0.10); margin-top: 11px; }
+        #ingredientsList .oc-cell, #semiFinishedList .oc-cell { padding: 9px 10px; }
+        #ingredientsList .oc-cell-val, #semiFinishedList .oc-cell-val { font-size: 16px; font-weight: 700; }
+        /* ===== /THEME-UNIFIED-STOCK ===== */
         /* ===== /THEME-UNIFIED ===== */
         /* Крестик «сбросить фильтр по статусу» в полосе итога заказов (фильтр из Dashboard) */
         .ofs-x { flex-shrink: 0; padding: 0 6px; color: #8d887b; font-size: 12px; cursor: pointer; }
