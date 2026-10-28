@@ -1335,6 +1335,20 @@
         #ingredientsList .oc-cell, #semiFinishedList .oc-cell { padding: 9px 10px; }
         #ingredientsList .oc-cell-val, #semiFinishedList .oc-cell-val { font-size: 16px; font-weight: 700; }
         /* ===== /THEME-UNIFIED-STOCK ===== */
+        /* ===== THEME-UNIFIED-CUSTOMERS (28.10.2026): раздел «Клиенты» (список) в стиле плашек Dashboard — вариант А (без кружка) =====
+           Только #customersList и #customersSearchBar. Ширина карточек — как в Заказах (см. THEME-UNIFIED-WIDTH). Свайпа у клиентов нет.
+           ОТКАТ: удалить этот блок (файл index-before-customers.html). */
+        #customersList { padding-top: 56px !important; }
+        #customersSearchBar > div { padding: 23px 0 6px !important; }
+        #customersSearchBar .search-input-wrap input { height: 40px; background: #fff; border: var(--sb-edge); border-radius: 14px; box-shadow: 0 6px 12px -6px rgba(70,58,30,0.35), 0 1px 2px rgba(70,58,30,0.1); font-size: 13px; padding-left: 14px; }
+        #customersList .order-card { box-shadow: var(--sb-shadow); border: var(--sb-edge); margin-bottom: 14px; }
+        #customersList .order-card .stripe { width: 16px; margin-right: -11px; border-radius: 15px 0 0 15px; clip-path: inset(0 11px 0 0); }
+        #customersList .oc-cells { background: #f6f4ec; border-radius: 13px; box-shadow: inset 0 1px 3px rgba(70,58,30,0.10); margin-top: 11px; }
+        #customersList .oc-cell { padding: 9px 10px; }
+        #customersList .oc-cell-val { font-size: 16px; font-weight: 700; }
+        #customersList .oc-tags { margin-top: 9px; }
+        #customersList .oc-tag { font-size: 11.5px; padding: 3px 9px; }
+        /* ===== /THEME-UNIFIED-CUSTOMERS ===== */
         /* ===== /THEME-UNIFIED ===== */
         /* Крестик «сбросить фильтр по статусу» в полосе итога заказов (фильтр из Dashboard) */
         .ofs-x { flex-shrink: 0; padding: 0 6px; color: #8d887b; font-size: 12px; cursor: pointer; }
