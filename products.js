@@ -27,16 +27,16 @@ function renderProductCards() {
         const hasUnit = !!p.unit;
         const recipeOk = !!p.recipe_confirmed;
         const unitLabel = hasUnit ? unitAbbrev(p.unit) : '';
+        // Таблетки (единый стиль): единица · партия, рецепт
         const subParts = [];
         if (hasUnit) {
-            subParts.push(escapeHtml(unitLabel));
-            subParts.push(t('prod_batch_short').replace('{n}', Number(p.batch_size) || 1));
+            subParts.push(`<span class="pc-tag">${escapeHtml(unitLabel)} · ${t('prod_batch_short').replace('{n}', Number(p.batch_size) || 1)}</span>`);
         } else {
-            subParts.push(`<span style="color:#c0685c; font-weight:700;">${t('prod_unit_missing')}</span>`);
+            subParts.push(`<span class="pc-tag pc-tag-bad">${t('prod_unit_missing')}</span>`);
         }
         subParts.push(recipeOk
-            ? `<span style="color:#4f6349; font-weight:700;">${t('prod_recipe_ok')}</span>`
-            : `<span style="color:#c0685c; font-weight:700;">${t('prod_recipe_missing')}</span>`);
+            ? `<span class="pc-tag pc-tag-ok">${t('prod_recipe_ok')}</span>`
+            : `<span class="pc-tag pc-tag-bad">${t('prod_recipe_missing')}</span>`);
         // Себестоимость/прибыль/маржа: без единицы изделия посчитать нельзя — прочерки
         let costVal = '—', profitVal = '—', marginVal = '—', profitColor = '#a29c8c';
         if (hasUnit) {
@@ -60,7 +60,7 @@ function renderProductCards() {
                                 <span class="oc-name">${escapeHtml(p.name || t('semifinished_no_name_fallback'))}</span>
                                 <span class="oc-price">${formatMoney(p.price)}</span>
                             </div>
-                            <div class="oc-meta" style="margin-top:2px; white-space:normal;">${subParts.join(' · ')}</div>
+                            <div class="pc-tags">${subParts.join('')}</div>
                         </div>
                     </div>
                     ${stockCardCellsHtml3(

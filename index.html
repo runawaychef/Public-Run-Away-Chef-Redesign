@@ -1273,6 +1273,25 @@
         .dashboard .dc-row .dashboard-card__value { font-size: 13px; }
         .dc-val .dashboard-card__value small { font-size: 0.45em; letter-spacing: 0; font-weight: 700; color: #8d887b; }
         /* ===== /THEME-UNIFIED-DASH2 ===== */
+        /* ===== THEME-UNIFIED-MENU (27.10.2026): раздел «Меню» (изделия) в стиле плашек Dashboard =====
+           Только #productsList и #productsSearchBar. Фото 64px, подписи единицы/рецепта — таблетки (.pc-tag), поиск выше и с тенью.
+           ОТКАТ: удалить этот блок + вернуть products.js (products-before-menu.js), index.html (index-before-menu.html), sw.js. */
+        #productsList { padding-top: 56px !important; }
+        #productsList > div { box-shadow: none; }
+        #productsList .order-card { box-shadow: var(--sb-shadow); border: var(--sb-edge); }
+        #productsList .oc-swipe-wrap { box-sizing: border-box; border-radius: 0; padding: 0 12px 22px; margin: 0 -12px -8px; width: calc(100% + 24px); }
+        #productsList .oc-swipe-actions { bottom: 22px; right: 12px; border-radius: 0 16px 16px 0; overflow: hidden; }
+        #productsList .oc-swipe-actions-left { bottom: 22px; left: 12px; border-radius: 16px 0 0 16px; overflow: hidden; }
+        #productsList .oc-photo { width: 64px; height: 64px; border-radius: 14px; box-shadow: 0 4px 8px -4px rgba(70,58,30,0.35); }
+        #productsList .oc-cells { background: #f6f4ec; border-radius: 13px; box-shadow: inset 0 1px 3px rgba(70,58,30,0.10); margin-top: 11px; }
+        #productsList .oc-cell { padding: 9px 10px; }
+        #productsList .oc-cell-val { font-size: 16px; font-weight: 700; }
+        .pc-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 5px; }
+        .pc-tag { font-size: 11.5px; background: #f6f4ec; color: #6b675d; border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+        .pc-tag-ok { background: #e3ebdf; color: #4f6349; font-weight: 700; }
+        .pc-tag-bad { background: #f6e3df; color: #a3493d; font-weight: 700; }
+        #productsSearchBar .search-input-wrap input { height: 40px; background: #fff; border: var(--sb-edge); border-radius: 14px; box-shadow: 0 6px 12px -6px rgba(70,58,30,0.35), 0 1px 2px rgba(70,58,30,0.1); font-size: 13px; padding-left: 14px; }
+        /* ===== /THEME-UNIFIED-MENU ===== */
         /* ===== /THEME-UNIFIED ===== */
         /* Крестик «сбросить фильтр по статусу» в полосе итога заказов (фильтр из Dashboard) */
         .ofs-x { flex-shrink: 0; padding: 0 6px; color: #8d887b; font-size: 12px; cursor: pointer; }
@@ -3956,7 +3975,7 @@ function hideSplashScreen() {
 <script src="ingredients.js?v=51"></script>
 <script src="batches.js?v=11"></script>
 <script src="semifinished.js?v=52"></script>
-<script src="products.js?v=35"></script>
+<script src="products.js?v=36"></script>
 <script src="customers.js?v=59"></script>
 <script src="calendar.js?v=16"></script>
 <script src="orders.js?v=146"></script>
