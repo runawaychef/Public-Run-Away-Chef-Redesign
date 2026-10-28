@@ -1290,6 +1290,9 @@
         .pc-tag { font-size: 11.5px; background: #f6f4ec; color: #6b675d; border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
         .pc-tag-ok { background: #e3ebdf; color: #4f6349; font-weight: 700; }
         .pc-tag-bad { background: #f6e3df; color: #a3493d; font-weight: 700; }
+        /* Равные отступы: шапка → поиск и поиск → первая карточка (по ~14,5px). Положение панели считает positionStickySearchBar:
+           top = низ шапки + 3 − padding-top/2, поэтому при padding-top 23 поле поиска начинается ровно на 14,5px ниже шапки (панель на 8,5px заходит под шапку — она выше по z-index). */
+        #productsSearchBar > div { padding: 23px 0 6px !important; }
         #productsSearchBar .search-input-wrap input { height: 40px; background: #fff; border: var(--sb-edge); border-radius: 14px; box-shadow: 0 6px 12px -6px rgba(70,58,30,0.35), 0 1px 2px rgba(70,58,30,0.1); font-size: 13px; padding-left: 14px; }
         /* ===== /THEME-UNIFIED-MENU ===== */
         /* ===== THEME-UNIFIED-WIDTH (27.10.2026): одинаковая ширина карточек в Заказах / Меню / Складе / Клиентах =====
