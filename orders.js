@@ -1218,7 +1218,20 @@ function openOrdersCardFilterCalendar() {
         badge: function (y, m, d) { return orderCountBadgeForDay(y, m, d, calList); },
         subtitleHtml: ordersCalendarFilterSubtitleHtml(),
         allowClear: true
-    });    const btn = document.getElementById('ordersCardCalendarBtn');
+    });    // 27.10: календарь ставим на «чистое поле» под панелью капсул (и под карточкой итога по фильтрам, если она показана),
+    // чтобы он не перекрывал их и не прижимался к ним. Над разделителем «Заказы в работе» остаётся зазор ~10px.
+    (function () {
+        const pop = document.getElementById('globalCalendarPopup');
+        if (!pop || !pop.classList.contains('open')) return;
+        let anchor = document.getElementById('ordersViewToggle')?.getBoundingClientRect().bottom || 0;
+        const sum = document.getElementById('ordersFilterSummary');
+        if (sum && !sum.classList.contains('hidden')) {
+            const sb = sum.getBoundingClientRect().bottom;
+            if (sb > anchor && sb < window.innerHeight * 0.6) anchor = sb;
+        }
+        if (anchor > 0) pop.style.top = Math.round(anchor + 10) + 'px';
+    })();
+    const btn = document.getElementById('ordersCardCalendarBtn');
     const open = document.getElementById('globalCalendarPopup')?.classList.contains('open');
     if (btn) { btn.classList.toggle('is-open', !!open); if (open) btn.setAttribute('data-cal-trigger', '1'); }
 }

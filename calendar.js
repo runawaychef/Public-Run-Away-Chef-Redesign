@@ -57,6 +57,7 @@ function toggleCustomCalendar(popupId, hiddenInputId, labelId, opts) {
         viewMonth: base.getMonth()
     };
     renderCalendarPopup(popupId);
+    popup.style.top = ''; // сброс привязки к экрану заказов (см. openOrdersCardFilterCalendar)
     popup.classList.add('open');
 }
 
@@ -90,6 +91,7 @@ function toggleCustomCalendarRange(popupId, fromInputId, toInputId, fromLabelId,
         viewMonth: base.getMonth()
     };
     renderCalendarPopup(popupId);
+    popup.style.top = ''; // сброс привязки к экрану заказов (см. openOrdersCardFilterCalendar)
     popup.classList.add('open');
 }
 
