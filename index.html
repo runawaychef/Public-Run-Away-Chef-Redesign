@@ -1248,19 +1248,26 @@
         .dc-lock { font-size: 10.5px; font-weight: 700; color: #4f6349; background: #eef2ea; border-radius: 9px; padding: 5px 6px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; -webkit-tap-highlight-color: transparent; }
         .dc-delta { font-size: 11.7px; font-weight: 600; color: #8d887b; white-space: nowrap; }
         .dc-delta b { color: #4f6349; font-weight: 700; } .dc-delta b.neg { color: #a3493d; }
-        .dc-spark svg { width: 100%; height: 20px; display: block; margin-top: 2px; }
+        .dc-chart { position: relative; margin-top: 2px; }
+        .dc-chart svg { width: 100%; height: 28px; display: block; }
+        .dc-dot { position: absolute; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; background: #fff; border: 2.5px solid #5f7857; box-sizing: border-box; }
+        .dc-lg { display: flex; gap: 9px; font-size: 9.5px; line-height: 1.1; color: #8d887b; margin-top: 1px; }
+        .dc-lg u { text-decoration: none; display: flex; align-items: center; gap: 3px; }
+        .dc-lg u:before { content: ""; width: 10px; height: 3px; border-radius: 2px; background: currentColor; }
+        .dc-delta { overflow: hidden; text-overflow: ellipsis; }
         .dashboard.dash-compact .dashboard-card.dc2 { padding: 9px 11px 8px; }
         .dashboard.dash-compact .dc2 .dashboard-card__ic { width: 20px; height: 20px; }
         .dashboard.dash-compact .dc2 .dashboard-card__hd { height: 22px; }
         .dashboard.dash-compact .dc-val { margin-top: 3px; min-height: 28px; }
         .dashboard.dash-compact .dc-val .dashboard-card__value { font-size: 26px; }
         .dashboard.dash-compact .dc-bars { height: 22px; }
-        .dashboard.dash-compact .dc-spark svg { height: 14px; }
+        .dashboard.dash-compact .dc-chart svg { height: 26px; }
+        .dashboard.dash-compact .dc-lg { display: none; }
         .dashboard.dash-compact .dc-foot { font-size: 11.5px; margin-top: 2px; }
         .dashboard.dash-compact2 .dashboard-card.dc2 { padding: 7px 10px 6px; }
         .dashboard.dash-compact2 .dc-val { margin-top: 2px; min-height: 24px; }
         .dashboard.dash-compact2 .dc-val .dashboard-card__value { font-size: 22px; }
-        .dashboard.dash-compact2 .dc-bl, .dashboard.dash-compact2 .dc-spark, .dashboard.dash-compact2 .dc-small, .dashboard.dash-compact2 .dc-foot--stub { display: none; }
+        .dashboard.dash-compact2 .dc-bl, .dashboard.dash-compact2 .dc-spark, .dashboard.dash-compact2 .dc-chart, .dashboard.dash-compact2 .dc-small, .dashboard.dash-compact2 .dc-foot--stub { display: none; }
         .dashboard.dash-compact2 .dc-bars { height: 16px; }
         .dashboard.dash-compact2 .dc-row { padding: 1px 0; font-size: 11px; }
         .dashboard .dc-row .dashboard-card__value { font-size: 13px; }
@@ -3953,7 +3960,7 @@ function hideSplashScreen() {
 <script src="customers.js?v=59"></script>
 <script src="calendar.js?v=16"></script>
 <script src="orders.js?v=146"></script>
-<script src="dashboard.js?v=7"></script>
+<script src="dashboard.js?v=8"></script>
 <script src="invoice.js?v=48"></script>
 <script src="send-document.js?v=38"></script>
 <script src="payments.js?v=29"></script>

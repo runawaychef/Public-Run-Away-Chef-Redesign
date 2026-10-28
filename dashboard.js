@@ -303,34 +303,56 @@ function _dashTopDebtor(saved) {
     Object.values(map).forEach(x => { if (!best || x.rem > best.rem) best = x; });
     return best ? { name: best.name, rem: best.rem / 100 } : null;
 }
-// Выручка: этот месяц (по сегодня), тот же период прошлого месяца, прибыль, число заказов и точки по неделям
+// Выручка: этот месяц (по сегодня), тот же период прошлого месяца, прибыль, число заказов
+// и накопительные суммы по дням (для графика: прошлый месяц целиком + этот до сегодня)
 function _dashRevenue(saved) {
     const today = getLocalDateStr(0);
     const y = +today.slice(0, 4), m = +today.slice(5, 7), dayN = +today.slice(8, 10);
     const cur = today.slice(0, 7);
     const pm = m === 1 ? 12 : m - 1, py = m === 1 ? y - 1 : y;
     const prev = `${py}-${String(pm).padStart(2, '0')}`;
+    const dimPrev = new Date(py, pm, 0).getDate(), dimCur = new Date(y, m, 0).getDate();
     let revenue = 0, profit = 0, count = 0, prevRev = 0;
-    const weeks = [0, 0, 0, 0];
+    const dayCur = new Array(dayN).fill(0), dayPrev = new Array(dimPrev).fill(0);
     saved.forEach(o => {
         if (!o.date) return;
         const p = o.date.slice(0, 7), d = +o.date.slice(8, 10);
         if (p === cur) {
             const g = orderGrandTotal(o);
             revenue += g; profit += orderProfit(o); count++;
-            weeks[Math.min(3, Math.floor((d - 1) / 7))] += g;
-        } else if (p === prev && d <= dayN) {
-            prevRev += orderGrandTotal(o);
+            if (d >= 1 && d <= dayN) dayCur[d - 1] += g;
+        } else if (p === prev) {
+            const g = orderGrandTotal(o);
+            if (d >= 1 && d <= dimPrev) dayPrev[d - 1] += g;
+            if (d <= dayN) prevRev += g;
         }
     });
-    const nWeeks = Math.min(4, Math.floor((dayN - 1) / 7) + 1);
-    return { revenue, profit, count, prevRev, weeks: weeks.slice(0, nWeeks) };
+    const cum = arr => { let s = 0; return arr.map(v => (s += v)); };
+    return { revenue, profit, count, prevRev, cumCur: cum(dayCur), cumPrev: cum(dayPrev), dimMax: Math.max(dimPrev, dimCur), curMonth: m, prevMonth: pm, y, py };
 }
-function _dashSpark(weeks) {
-    if (!weeks || weeks.length < 2) return '';
-    const max = Math.max(...weeks, 1);
-    const pts = weeks.map((v, i) => `${(2 + i * 96 / (weeks.length - 1)).toFixed(1)},${(18 - v / max * 16).toFixed(1)}`).join(' ');
-    return `<svg viewBox="0 0 100 20" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="#7c9473" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" points="${pts}"/></svg>`;
+// График «Выручка»: две накопительные линии (прошлый месяц — бледная, этот — яркая с заливкой и точкой «мы здесь»)
+function _dashMonthShort(year, month) {
+    try {
+        const w = new Date(year, month - 1, 15).toLocaleDateString(typeof currentLang !== 'undefined' ? currentLang : undefined, { month: 'short' }).replace('.', '');
+        return w.charAt(0).toUpperCase() + w.slice(1);
+    } catch (e) { return ''; }
+}
+function _dashSpark(r) {
+    const cc = r.cumCur;
+    if (!cc || cc.length < 2) return '';
+    const total = cc[cc.length - 1], prevTotal = r.cumPrev.length ? r.cumPrev[r.cumPrev.length - 1] : 0;
+    const maxV = Math.max(total, prevTotal, 1), W = 100, H = 50, pad = 3, n = r.dimMax;
+    const X = i => (1 + (W - 6) * i / (n - 1));
+    const Y = v => (H - pad - (H - 2 * pad) * v / maxV);
+    const pts = (arr) => arr.map((v, i) => `${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
+    let svg = `<line x1="1" x2="${W - 5}" y1="${H - pad}" y2="${H - pad}" stroke="#e6e1d3" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
+    if (prevTotal > 0) svg += `<polyline fill="none" stroke="#d3cdbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" points="${pts(r.cumPrev)}"/>`;
+    const lastI = cc.length - 1;
+    svg += `<polygon fill="#7c9473" opacity=".14" points="${X(0).toFixed(1)},${H - pad} ${pts(cc)} ${X(lastI).toFixed(1)},${H - pad}"/>`;
+    svg += `<polyline fill="none" stroke="#7c9473" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" points="${pts(cc)}"/>`;
+    const dx = X(lastI) / W * 100, dy = Y(total) / H * 100;
+    const legend = `<div class="dc-lg"><u style="color:#7c9473">${escapeHtml(_dashMonthShort(r.y, r.curMonth))}</u>` + (prevTotal > 0 ? `<u style="color:#d3cdbb">${escapeHtml(_dashMonthShort(r.py, r.prevMonth))}</u>` : '') + '</div>';
+    return `<div class="dc-chart"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${svg}</svg><i class="dc-dot" style="left:${dx.toFixed(1)}%;top:${dy.toFixed(1)}%"></i></div>${legend}`;
 }
 
 // Безопасна при любом состоянии данных: при ошибке в блоке — «—», страница не ломается.
@@ -371,7 +393,7 @@ function renderDashboard() {
             delta = `<b class="${pct < 0 ? 'neg' : ''}">${pct < 0 ? '▼' : '▲'} ${pct > 0 ? '+' : ''}${pct}%</b> ${escapeHtml(t('dash_vs_prev'))}`;
         }
         _dashSet('dashRevDelta', delta || '&nbsp;');
-        _dashSet('dashRevSpark', _dashSpark(r.weeks));
+        _dashSet('dashRevSpark', _dashSpark(r));
         const showProfit = hasPermission('can_view_costs') && hasPlanFeature('cost_analytics');
         _dashSet('dashRevenueSub', showProfit
             ? `${escapeHtml(t('dash_profit_s'))}<span> · ${_dashMoney(r.profit)}</span>`
