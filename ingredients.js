@@ -59,15 +59,14 @@ function stockForecastOn() {
 }
 
 // Разделители групп на Складе (16.10): «Требует внимания» (красные/жёлтые карточки,
-// у полуфабрикатов — и неподтверждённый рецепт) и «Всё в порядке». Показываются, только
-// когда есть обе группы; при поиске прячутся (filter*List). Стиль — как в «Заказах».
+// у полуфабрикатов — и неподтверждённый рецепт) и «Всё в порядке». Показываются для каждой непустой группы (даже если группа одна);
+// при поиске прячутся (filter*List). Стиль — как в «Заказах».
 function stockGroupsHtml(attn, ok) {
-    if (!attn.length || !ok.length) return attn.join('') + ok.join('');
+    // Заголовок группы показываем всегда, когда в ней есть карточки (28.10: даже если группа одна); пустую группу — нет.
+    if (!attn.length && !ok.length) return '';
     const div = (label, svg) => `<div class="oc-section-divider stock-divider"><span class="label">${svg}${label}</span></div>`;
-    return div(t('stock_group_attention'), '<svg viewBox="0 0 24 24" fill="none" stroke="#c0685c" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>')
-        + attn.join('')
-        + div(t('stock_group_ok'), '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>')
-        + ok.join('');
+    return (attn.length ? div(t('stock_group_attention'), '<svg viewBox="0 0 24 24" fill="none" stroke="#c0685c" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>') + attn.join('') : '')
+        + (ok.length ? div(t('stock_group_ok'), '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>') + ok.join('') : '');
 }
 
 // Скрыть/показать разделители групп (при поиске — скрыты)
