@@ -1297,6 +1297,17 @@
            ОТКАТ: удалить этот блок. */
         #customersList > div { box-shadow: none; padding: 0; }
         /* ===== /THEME-UNIFIED-WIDTH ===== */
+        /* ===== THEME-UNIFIED-DASH3 (28.10.2026): «Принятые» — столбик «Позже»; «Сегодня» — зелёная полоска и иконка, когда всё выполнено =====
+           ОТКАТ: удалить этот блок + dashboard-before-dash3.js, i18n-core-before-dash3.js, sw.js. */
+        .dc-bars i.later { flex: 1.5; margin-left: 3px; position: relative; background: #dfe6da; }
+        .dc-bars i.later.z { background: #e6e1d3; }
+        .dc-bars i.later:before { content: ""; position: absolute; left: -5px; top: -2px; bottom: 0; border-left: 1px dashed #cfc9b8; }
+        .dc-bl span.later { flex: 1.5; margin-left: 3px; color: #7c9473; font-weight: 700; }
+        .dc-bl span.later.z { color: #a29c8c; font-weight: 400; }
+        .dc-prog i { transition: background .3s ease; }
+        .dashboard-card.dc-alldone .dashboard-card__hd { --dc: #7c9473; }
+        .dashboard-card.dc-alldone .dc-prog i { background: #7c9473; }
+        /* ===== /THEME-UNIFIED-DASH3 ===== */
         /* ===== /THEME-UNIFIED ===== */
         /* Крестик «сбросить фильтр по статусу» в полосе итога заказов (фильтр из Dashboard) */
         .ofs-x { flex-shrink: 0; padding: 0 6px; color: #8d887b; font-size: 12px; cursor: pointer; }
@@ -3968,7 +3979,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=104"></script>
+    <script src="i18n-core.js?v=105"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=16"></script>
     <script src="auth.js?v=30"></script>
@@ -3984,7 +3995,7 @@ function hideSplashScreen() {
 <script src="customers.js?v=59"></script>
 <script src="calendar.js?v=16"></script>
 <script src="orders.js?v=146"></script>
-<script src="dashboard.js?v=8"></script>
+<script src="dashboard.js?v=9"></script>
 <script src="invoice.js?v=48"></script>
 <script src="send-document.js?v=38"></script>
 <script src="payments.js?v=29"></script>

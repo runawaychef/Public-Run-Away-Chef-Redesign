@@ -273,7 +273,8 @@ function _dashWeekday(dateStr) {
         return w.charAt(0).toUpperCase() + w.slice(1);
     } catch (e) { return ''; }
 }
-// Столбики «Принятые» на 7 дней вперёд (сегодня + 6): число принятых заказов на каждый день
+// Столбики «Принятые» на 7 дней вперёд (сегодня + 6) + восьмой столбик «Позже» (всё дальше шестого дня):
+// число принятых заказов на каждый день. Пик (тёмный) выбирается только среди 7 дней.
 function _dashBars(saved) {
     const days = [], cnt = [];
     for (let i = 0; i < 7; i++) {
@@ -281,10 +282,16 @@ function _dashBars(saved) {
         days.push(d);
         cnt.push(saved.filter(o => o.status === 'принят' && o.date === d).length);
     }
-    const max = Math.max(...cnt);
-    const peak = max > 0 ? cnt.indexOf(max) : -1;
-    const bars = cnt.map((c, i) => `<i class="${i === peak ? 't' : (c ? '' : 'z')}" style="height:${c ? Math.max(14, Math.round(c / max * 100)) : 8}%" title="${escapeHtml(_dashWeekday(days[i]))}: ${c}"></i>`).join('');
-    const lbl = days.map(d => `<span>${escapeHtml(_dashWeekday(d))}</span>`).join('');
+    const lastDay = days[6];
+    const later = saved.filter(o => o.status === 'принят' && o.date > lastDay).length;
+    const max7 = Math.max(...cnt);
+    const peak = max7 > 0 ? cnt.indexOf(max7) : -1;
+    const max = Math.max(max7, later);
+    const h = c => c ? Math.max(14, Math.round(c / max * 100)) : 8;
+    let bars = cnt.map((c, i) => `<i class="${i === peak ? 't' : (c ? '' : 'z')}" style="height:${h(c)}%" title="${escapeHtml(_dashWeekday(days[i]))}: ${c}"></i>`).join('');
+    bars += `<i class="later${later ? '' : ' z'}" style="height:${h(later)}%" title="${escapeHtml(t('dash_later'))}: ${later}"></i>`;
+    const lbl = days.map(d => `<span>${escapeHtml(_dashWeekday(d))}</span>`).join('')
+        + `<span class="later${later ? '' : ' z'}">${escapeHtml(t('dash_later'))}</span>`;
     return { bars, lbl };
 }
 // Главный должник: у кого больше всего неоплаченного остатка (по всем неоплаченным заказам)
@@ -374,6 +381,7 @@ function renderDashboard() {
         _dashSet('dashToday', String(done));
         _dashSet('dashTodayCap', td.count ? escapeHtml(t('dash_of_done').replace('{n}', td.count)) : '');
         const bar = _dashEl('dashTodayBar'); if (bar) bar.style.width = (td.count ? Math.round(done / td.count * 100) : 0) + '%';
+        { const tc = bar && bar.closest('.dashboard-card'); if (tc) tc.classList.toggle('dc-alldone', td.count > 0 && done === td.count); } // всё выполнено → полоска и иконка фисташковые
         _dashSet('dashTodaySub', _dashFoot(td));
         // Завтра
         const tm = calcGroupTotals(saved, o => o.date === tomorrow);

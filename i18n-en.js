@@ -1496,6 +1496,7 @@ I18N.en = {
         dash_short: 'Running low',
         dash_full_only: 'Available on the Full plan',
         dash_acc_s: 'Accepted',
+        dash_later: 'Later',
         dash_today_s: 'Today',
         dash_tom_s: 'Tomorrow',
         dash_rev_s: 'Revenue',

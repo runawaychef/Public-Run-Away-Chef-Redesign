@@ -1495,6 +1495,7 @@ I18N.ru = {
         dash_short: 'Не хватает',
         dash_full_only: 'Доступно на тарифе Full',
         dash_acc_s: 'Принятые',
+        dash_later: 'Позже',
         dash_today_s: 'Сегодня',
         dash_tom_s: 'Завтра',
         dash_rev_s: 'Выручка',
