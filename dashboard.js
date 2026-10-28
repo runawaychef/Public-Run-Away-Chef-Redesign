@@ -139,15 +139,6 @@ function _dashGroup(saved, pred) {
     return { count: g.count, sub };
 }
 
-function _dashRevenue(saved) {
-    const monthPrefix = getLocalDateStr(0).slice(0, 7); // ГГГГ-ММ в часовом поясе пекарни
-    let revenue = 0, profit = 0;
-    saved.forEach(o => {
-        if (o.date && o.date.slice(0, 7) === monthPrefix) { revenue += orderGrandTotal(o); profit += orderProfit(o); }
-    });
-    return { revenue, profit };
-}
-
 // Все неоплаченные (полностью) заказы. Режим «По счёту»: отдельно считаем заказы, по которым счёт ещё не выставлен.
 function _dashUnpaid(saved) {
     const byInvoice = typeof currentOrgPaymentMode !== 'undefined' && currentOrgPaymentMode === 'invoice';
@@ -262,6 +253,86 @@ window.addEventListener('resize', dashFit);
 window.addEventListener('orientationchange', () => setTimeout(dashFit, 200));
 
 // ---------- отрисовка ----------
+// Слово «заказ» по числу (ru/uk/lt/en) — ключи dash_ord_1 / dash_ord_2 / dash_ord_5
+function _dashOrdWord(n) {
+    const lang = typeof currentLang !== 'undefined' ? currentLang : 'ru';
+    const a = Math.abs(n), m10 = a % 10, m100 = a % 100;
+    let k;
+    if (lang === 'en') k = a === 1 ? 'dash_ord_1' : 'dash_ord_5';
+    else if (lang === 'lt') k = (m10 === 1 && m100 !== 11) ? 'dash_ord_1' : (m10 === 0 || (m100 >= 11 && m100 <= 19)) ? 'dash_ord_5' : 'dash_ord_2';
+    else k = (m10 === 1 && m100 !== 11) ? 'dash_ord_1' : (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) ? 'dash_ord_2' : 'dash_ord_5';
+    return t(k);
+}
+// Нижняя строка плашки: «6 заказов · 312 €» (сумма — только если заказы есть)
+function _dashFoot(g) {
+    return `${g.count} ${escapeHtml(_dashOrdWord(g.count))}` + (g.count ? `<span> · ${_dashMoney(g.sum)}</span>` : '');
+}
+function _dashWeekday(dateStr) {
+    try {
+        const w = new Date(dateStr + 'T12:00:00').toLocaleDateString(typeof currentLang !== 'undefined' ? currentLang : undefined, { weekday: 'short' }).replace('.', '');
+        return w.charAt(0).toUpperCase() + w.slice(1);
+    } catch (e) { return ''; }
+}
+// Столбики «Принятые» на 7 дней вперёд (сегодня + 6): число принятых заказов на каждый день
+function _dashBars(saved) {
+    const days = [], cnt = [];
+    for (let i = 0; i < 7; i++) {
+        const d = getLocalDateStr(i);
+        days.push(d);
+        cnt.push(saved.filter(o => o.status === 'принят' && o.date === d).length);
+    }
+    const max = Math.max(...cnt);
+    const peak = max > 0 ? cnt.indexOf(max) : -1;
+    const bars = cnt.map((c, i) => `<i class="${i === peak ? 't' : (c ? '' : 'z')}" style="height:${c ? Math.max(14, Math.round(c / max * 100)) : 8}%" title="${escapeHtml(_dashWeekday(days[i]))}: ${c}"></i>`).join('');
+    const lbl = days.map(d => `<span>${escapeHtml(_dashWeekday(d))}</span>`).join('');
+    return { bars, lbl };
+}
+// Главный должник: у кого больше всего неоплаченного остатка (по всем неоплаченным заказам)
+function _dashTopDebtor(saved) {
+    const map = {};
+    saved.forEach(o => {
+        const st = getOrderPaymentStatus(o);
+        if (st.status === 'paid') return;
+        const rem = Math.max(0, Math.round(st.grandAmt * 100) - Math.round(st.paidAmt * 100));
+        if (!rem) return;
+        const key = o.customer_id != null ? 'id' + o.customer_id : 'n' + (o.customer || '');
+        if (!map[key]) map[key] = { name: o.customer || '—', rem: 0 };
+        map[key].rem += rem;
+    });
+    let best = null;
+    Object.values(map).forEach(x => { if (!best || x.rem > best.rem) best = x; });
+    return best ? { name: best.name, rem: best.rem / 100 } : null;
+}
+// Выручка: этот месяц (по сегодня), тот же период прошлого месяца, прибыль, число заказов и точки по неделям
+function _dashRevenue(saved) {
+    const today = getLocalDateStr(0);
+    const y = +today.slice(0, 4), m = +today.slice(5, 7), dayN = +today.slice(8, 10);
+    const cur = today.slice(0, 7);
+    const pm = m === 1 ? 12 : m - 1, py = m === 1 ? y - 1 : y;
+    const prev = `${py}-${String(pm).padStart(2, '0')}`;
+    let revenue = 0, profit = 0, count = 0, prevRev = 0;
+    const weeks = [0, 0, 0, 0];
+    saved.forEach(o => {
+        if (!o.date) return;
+        const p = o.date.slice(0, 7), d = +o.date.slice(8, 10);
+        if (p === cur) {
+            const g = orderGrandTotal(o);
+            revenue += g; profit += orderProfit(o); count++;
+            weeks[Math.min(3, Math.floor((d - 1) / 7))] += g;
+        } else if (p === prev && d <= dayN) {
+            prevRev += orderGrandTotal(o);
+        }
+    });
+    const nWeeks = Math.min(4, Math.floor((dayN - 1) / 7) + 1);
+    return { revenue, profit, count, prevRev, weeks: weeks.slice(0, nWeeks) };
+}
+function _dashSpark(weeks) {
+    if (!weeks || weeks.length < 2) return '';
+    const max = Math.max(...weeks, 1);
+    const pts = weeks.map((v, i) => `${(2 + i * 96 / (weeks.length - 1)).toFixed(1)},${(18 - v / max * 16).toFixed(1)}`).join(' ');
+    return `<svg viewBox="0 0 100 20" preserveAspectRatio="none" aria-hidden="true"><polyline fill="none" stroke="#7c9473" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" points="${pts}"/></svg>`;
+}
+
 // Безопасна при любом состоянии данных: при ошибке в блоке — «—», страница не ломается.
 function renderDashboard() {
     if (!_dashEl('dashboard')) return;
@@ -269,49 +340,74 @@ function renderDashboard() {
     try {
         const saved = _dashSavedOrders();
         const today = getLocalDateStr(0), tomorrow = getLocalDateStr(1);
-        const acc = _dashGroup(saved, o => o.status === 'принят');
-        const td = _dashGroup(saved, o => o.date === today);
-        const tm = _dashGroup(saved, o => o.date === tomorrow);
-        _dashSet('dashAccepted', String(acc.count)); _dashSet('dashAcceptedSub', acc.sub || '&nbsp;');
-        _dashSet('dashToday', String(td.count));     _dashSet('dashTodaySub', td.sub || '&nbsp;');
-        _dashSet('dashTomorrow', String(tm.count));  _dashSet('dashTomorrowSub', tm.sub || '&nbsp;');
+        // Принятые: число + столбики на 7 дней + «N заказов · сумма»
+        const acc = calcGroupTotals(saved, o => o.status === 'принят');
+        _dashSet('dashAccepted', String(acc.count));
+        _dashSet('dashAcceptedSub', _dashFoot(acc));
+        const br = _dashBars(saved);
+        _dashSet('dashBars', br.bars); _dashSet('dashBarsLbl', br.lbl);
+        // Сегодня: «выполнено из всех» + полоска + «N заказов · сумма»
+        const td = calcGroupTotals(saved, o => o.date === today);
+        const done = saved.filter(o => o.date === today && o.status === 'выполнен').length;
+        _dashSet('dashToday', String(done));
+        _dashSet('dashTodayCap', td.count ? escapeHtml(t('dash_of_done').replace('{n}', td.count)) : '');
+        const bar = _dashEl('dashTodayBar'); if (bar) bar.style.width = (td.count ? Math.round(done / td.count * 100) : 0) + '%';
+        _dashSet('dashTodaySub', _dashFoot(td));
+        // Завтра
+        const tm = calcGroupTotals(saved, o => o.date === tomorrow);
+        _dashSet('dashTomorrow', String(tm.count));
+        _dashSet('dashTomorrowSub', _dashFoot(tm));
+        // Выручка
         const r = _dashRevenue(saved);
         { // длинная сумма (6+ цифр) уменьшается, чтобы не вылезать из плашки
             const digits = String(Math.round(Math.abs(r.revenue))).length;
             const rv = _dashEl('dashRevenue');
-            if (rv) rv.style.fontSize = digits >= 7 ? '17px' : digits >= 6 ? '21px' : '';
+            if (rv) rv.style.fontSize = digits >= 7 ? '19px' : digits >= 6 ? '23px' : '';
         }
-        _dashSet('dashRevenue', `${Math.round(r.revenue).toLocaleString(typeof currentLang !== 'undefined' ? currentLang : undefined)}&nbsp;<small>${_dashMoney(0).split(' ')[1]}</small>`);
+        _dashSet('dashRevenue', `${Math.round(r.revenue).toLocaleString(typeof currentLang !== 'undefined' ? currentLang : undefined)}&nbsp;<small>${_dashMoney(0).replace(/^[\d\s.,\u00a0\u202f]+/, '')}</small>`);
+        let delta = '';
+        if (r.prevRev > 0) {
+            const pct = Math.round((r.revenue / r.prevRev - 1) * 100);
+            delta = `<b class="${pct < 0 ? 'neg' : ''}">${pct < 0 ? '▼' : '▲'} ${pct > 0 ? '+' : ''}${pct}%</b> ${escapeHtml(t('dash_vs_prev'))}`;
+        }
+        _dashSet('dashRevDelta', delta || '&nbsp;');
+        _dashSet('dashRevSpark', _dashSpark(r.weeks));
         const showProfit = hasPermission('can_view_costs') && hasPlanFeature('cost_analytics');
-        _dashSet('dashRevenueSub', showProfit ? escapeHtml(t('dash_profit').replace('{sum}', _dashMoney(r.profit))) : '&nbsp;');
+        _dashSet('dashRevenueSub', showProfit
+            ? `${escapeHtml(t('dash_profit_s'))}<span> · ${_dashMoney(r.profit)}</span>`
+            : `${escapeHtml(t('dash_orders_month'))}<span> · ${r.count}</span>`);
+        // Ждут оплаты
         const u = _dashUnpaid(saved);
         _dashSet('dashUnpaid', String(u.n));
-        const lines = [];
-        if (u.n) lines.push(escapeHtml(t('dash_to_pay').replace('{sum}', _dashMoney(u.rem))));
-        const second = [];
-        if (u.byInvoice && u.noInvoice) second.push(escapeHtml(t('dash_no_invoice').replace('{n}', u.noInvoice)));
-        if (u.overdue) second.push(`<span class="dashboard-bad">${escapeHtml(t('dash_overdue').replace('{n}', u.overdue))}</span>`);
-        lines.push(...second); // по строкам: на узком экране длинные подписи не рвутся посреди фразы
-        _dashSet('dashUnpaidSub', lines.join('<br>') || '&nbsp;');
+        _dashSet('dashUnpaidSub', u.n ? `${escapeHtml(t('dash_to_pay_s'))}<span> · ${_dashMoney(u.rem)}</span>` : '&nbsp;');
+        const debtor = u.n ? _dashTopDebtor(saved) : null;
+        _dashSet('dashDebtLbl', debtor ? escapeHtml(t('dash_biggest')) : '&nbsp;');
+        _dashSet('dashDebtName', debtor ? escapeHtml(debtor.name) : '&nbsp;');
+        _dashSet('dashDebtSum', debtor ? _dashMoney(debtor.rem) : '');
     } catch (e) {
         console.error('dashboard: orders', e);
         ['dashAccepted', 'dashToday', 'dashTomorrow', 'dashRevenue', 'dashUnpaid'].forEach(id => _dashSet(id, '—'));
     }
     try {
         const full = _dashStockFull();
-        // Full: «Не хватает» + два счётчика; Light/Free: вместо них строка «Доступно на тарифе Full»
+        // Full: большая цифра «не хватает» + два счётчика; Light/Free: «—» и строка «Доступно на тарифе Full»
         ['dashRowIng', 'dashRowSemi'].forEach(id => { const el = _dashEl(id); if (el) el.style.display = full ? '' : 'none'; });
         const lock = _dashEl('dashStockLock'); if (lock) lock.style.display = full ? 'none' : '';
         if (full) {
             const s = _dashStock();
+            const tot = s.ing + s.sf;
+            _dashSet('dashStockTotal', String(tot), tot > 0 ? 'bad' : '');
+            _dashSet('dashStockCap', escapeHtml(t('dash_short').toLowerCase()));
             _dashSet('dashIngredients', String(s.ing), s.ing > 0 ? 'bad' : '');
             _dashSet('dashSemi', String(s.sf), s.sf > 0 ? 'bad' : '');
         } else {
-            // Light/Free: счётчики скрыты; позже здесь появятся данные о сроке годности
+            // Light/Free: счётчиков нет; позже здесь появятся данные о сроке годности
+            _dashSet('dashStockTotal', '—', 'muted');
+            _dashSet('dashStockCap', '');
         }
     } catch (e) {
         console.error('dashboard: stock', e);
-        ['dashIngredients', 'dashSemi'].forEach(id => _dashSet(id, '—'));
+        ['dashStockTotal', 'dashIngredients', 'dashSemi'].forEach(id => _dashSet(id, '—'));
     }
     dashFit();
     if (typeof requestAnimationFrame === 'function') requestAnimationFrame(dashFit);

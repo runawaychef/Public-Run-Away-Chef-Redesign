@@ -1218,6 +1218,54 @@
         #orderDetail .new-item-row input { border: 1px solid rgba(90,75,40,0.1); border-radius: 10px; min-height: 30px; background: #fff; }
         #orderDetail .new-item-row .btn { border-radius: 11px; min-height: 30px; box-shadow: 0 5px 9px -6px rgba(70,58,30,0.4); }
         /* ===== /THEME-UNIFIED-DETAIL ===== */
+        /* ===== THEME-UNIFIED-DASH2 (27.10.2026): информативные плашки Dashboard (шапка / крупное число / середина / низ) =====
+           Крупное число во всех плашках на одной высоте. ОТКАТ: index-before-dash2.html + dashboard-before-dash2.js (+ языковые ключи dash_*_s не мешают). */
+        .dashboard-card.dc2 { gap: 0; padding: 11px 12px 10px; }
+        .dc2 .dashboard-card__hd { height: 24px; gap: 6px; }
+        .dc2 .dashboard-card__ic { width: 22px; height: 22px; }
+        .dc2 .dashboard-card__label { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .dc-val { display: flex; align-items: baseline; gap: 6px; margin-top: 6px; min-height: 32px; white-space: nowrap; }
+        .dc-val .dashboard-card__value { font-size: 30px; }
+        .dc-cap { font-size: 12px; font-weight: 600; color: #8d887b; overflow: hidden; text-overflow: ellipsis; }
+        .dc-mid { flex: 1; display: flex; flex-direction: column; justify-content: center; min-height: 0; margin-top: 4px; }
+        .dc-foot { font-size: 12px; font-weight: 700; color: #322f28; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 4px; min-height: 1.3em; }
+        .dc-foot span { color: #8d887b; font-weight: 500; }
+        .dc-foot--stub, .dc-foot--stub span { font-weight: 500; color: #8d887b; font-size: 11.5px; }
+        .dc-bars { display: flex; align-items: flex-end; gap: 4px; height: 30px; }
+        .dc-bars i { flex: 1; background: #cfdcc8; border-radius: 4px 4px 2px 2px; display: block; }
+        .dc-bars i.t { background: #7c9473; }
+        .dc-bars i.z { background: #e6e1d3; }
+        .dc-bl { display: flex; gap: 4px; font-size: 9px; color: #a29c8c; margin-top: 2px; }
+        .dc-bl span { flex: 1; text-align: center; }
+        .dc-prog { height: 7px; border-radius: 4px; background: #ece8dc; overflow: hidden; }
+        .dc-prog i { display: block; height: 100%; background: #c9973a; border-radius: 4px; }
+        .dc-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 11.7px; font-weight: 600; color: #4f4b42; padding: 2px 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .dc-row--plain { cursor: default; }
+        .dc-row .dashboard-card__value { font-size: 13px; letter-spacing: 0; }
+        .dc-row .dash-sk { height: 14px; width: 22px; }
+        .dc-row span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .dc-small { font-size: 11px; color: #8d887b; font-weight: 600; }
+        .dc-lock { font-size: 10.5px; font-weight: 700; color: #4f6349; background: #eef2ea; border-radius: 9px; padding: 5px 6px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; -webkit-tap-highlight-color: transparent; }
+        .dc-delta { font-size: 11.7px; font-weight: 600; color: #8d887b; white-space: nowrap; }
+        .dc-delta b { color: #4f6349; font-weight: 700; } .dc-delta b.neg { color: #a3493d; }
+        .dc-spark svg { width: 100%; height: 20px; display: block; margin-top: 2px; }
+        .dashboard.dash-compact .dashboard-card.dc2 { padding: 9px 11px 8px; }
+        .dashboard.dash-compact .dc2 .dashboard-card__ic { width: 20px; height: 20px; }
+        .dashboard.dash-compact .dc2 .dashboard-card__hd { height: 22px; }
+        .dashboard.dash-compact .dc-val { margin-top: 3px; min-height: 28px; }
+        .dashboard.dash-compact .dc-val .dashboard-card__value { font-size: 26px; }
+        .dashboard.dash-compact .dc-bars { height: 22px; }
+        .dashboard.dash-compact .dc-spark svg { height: 14px; }
+        .dashboard.dash-compact .dc-foot { font-size: 11.5px; margin-top: 2px; }
+        .dashboard.dash-compact2 .dashboard-card.dc2 { padding: 7px 10px 6px; }
+        .dashboard.dash-compact2 .dc-val { margin-top: 2px; min-height: 24px; }
+        .dashboard.dash-compact2 .dc-val .dashboard-card__value { font-size: 22px; }
+        .dashboard.dash-compact2 .dc-bl, .dashboard.dash-compact2 .dc-spark, .dashboard.dash-compact2 .dc-small, .dashboard.dash-compact2 .dc-foot--stub { display: none; }
+        .dashboard.dash-compact2 .dc-bars { height: 16px; }
+        .dashboard.dash-compact2 .dc-row { padding: 1px 0; font-size: 11px; }
+        .dashboard .dc-row .dashboard-card__value { font-size: 13px; }
+        .dc-val .dashboard-card__value small { font-size: 0.45em; letter-spacing: 0; font-weight: 700; color: #8d887b; }
+        /* ===== /THEME-UNIFIED-DASH2 ===== */
         /* ===== /THEME-UNIFIED ===== */
         /* Крестик «сбросить фильтр по статусу» в полосе итога заказов (фильтр из Dashboard) */
         .ofs-x { flex-shrink: 0; padding: 0 6px; color: #8d887b; font-size: 12px; cursor: pointer; }
@@ -1567,49 +1615,45 @@ function hideSplashScreen() {
                 <!-- Полоска: напоминание о памятной дате ИЛИ приветствие (рисует dashboard.js) -->
                 <div class="dashboard-strip dashboard-strip--hi" id="dashStrip" role="button" tabindex="0" onclick="dashStripTap()"></div>
                 <div class="dashboard-grid">
-                    <div class="dashboard-card" role="button" tabindex="0" onclick="dashOpenAccepted()">
-                        <div class="dashboard-card__hd dash-c-acc"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6v3H9z"/><path d="M15 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/><path d="M9 14l2 2 4-4"/></svg><div class="dashboard-card__label" data-i18n="dash_accepted">Принятые заказы</div></div>
-                        <div class="dashboard-card__mid"><div class="dashboard-card__value" id="dashAccepted"><span class="dash-sk"></span></div></div>
-                        <div class="dashboard-card__sub" id="dashAcceptedSub">&nbsp;</div>
+                    <div class="dashboard-card dc2 " role="button" tabindex="0" onclick="dashOpenAccepted()">
+                        <div class="dashboard-card__hd dash-c-acc"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 4h6v3H9z"/><path d="M15 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/><path d="M9 14l2 2 4-4"/></svg><div class="dashboard-card__label" data-i18n="dash_acc_s"></div></div>
+                        <div class="dc-val"><span class="dashboard-card__value" id="dashAccepted"><span class="dash-sk"></span></span><span class="dc-cap" id="dashAcceptedCap"></span></div>
+                        <div class="dc-mid"><div class="dc-bars" id="dashBars"></div><div class="dc-bl" id="dashBarsLbl"></div></div>
+                        <div class="dc-foot" id="dashAcceptedSub">&nbsp;</div>
                     </div>
-                    <div class="dashboard-card" role="button" tabindex="0" onclick="dashOpenToday()">
-                        <div class="dashboard-card__hd dash-c-day"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/><circle cx="12" cy="15.5" r="1.3" fill="currentColor"/></svg><div class="dashboard-card__label" data-i18n="dash_today">Заказы на сегодня</div></div>
-                        <div class="dashboard-card__mid"><div class="dashboard-card__value" id="dashToday"><span class="dash-sk"></span></div></div>
-                        <div class="dashboard-card__sub" id="dashTodaySub">&nbsp;</div>
+                    <div class="dashboard-card dc2 " role="button" tabindex="0" onclick="dashOpenToday()">
+                        <div class="dashboard-card__hd dash-c-day"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/><circle cx="12" cy="15.5" r="1.3" fill="currentColor"/></svg><div class="dashboard-card__label" data-i18n="dash_today_s"></div></div>
+                        <div class="dc-val"><span class="dashboard-card__value" id="dashToday"><span class="dash-sk"></span></span><span class="dc-cap" id="dashTodayCap"></span></div>
+                        <div class="dc-mid"><div class="dc-prog"><i id="dashTodayBar" style="width:0"></i></div></div>
+                        <div class="dc-foot" id="dashTodaySub">&nbsp;</div>
                     </div>
-                    <div class="dashboard-card dashboard-card--stock">
+                    <div class="dashboard-card dc2 dashboard-card--stock">
                         <div class="dashboard-card__hd dash-c-stock"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5L12 12l8-4.5M12 12v9"/></svg><div class="dashboard-card__label" data-i18n="dash_stock_title">Склад: внимание</div></div>
-                        <div class="dashboard-stock-rows">
-                            <div class="dashboard-stock-row dashboard-stock-row--plain">
-                                <span data-i18n="dash_expiry">Срок годности</span>
-                                <span class="dashboard-stub" data-i18n="dash_soon">скоро</span>
-                            </div>
-                            <div class="dashboard-stock-cap" id="dashStockCap" data-i18n="dash_short">Не хватает</div>
-                            <div class="dashboard-stock-lock" id="dashStockLock" role="button" tabindex="0" onclick="dashOpenIngredients()" style="display:none" data-i18n="dash_full_only">Доступно на тарифе Full</div>
-                            <div class="dashboard-stock-row" id="dashRowIng" role="button" tabindex="0" onclick="dashOpenIngredients()">
-                                <span data-i18n="dash_ingredients">Ингредиенты</span>
-                                <span><span class="dashboard-card__value" id="dashIngredients"><span class="dash-sk"></span></span><span class="dashboard-chev">›</span></span>
-                            </div>
-                            <div class="dashboard-stock-row" id="dashRowSemi" role="button" tabindex="0" onclick="dashOpenSemiFinished()">
-                                <span data-i18n="dash_semi">Полуфабрикаты</span>
-                                <span><span class="dashboard-card__value" id="dashSemi"><span class="dash-sk"></span></span><span class="dashboard-chev">›</span></span>
-                            </div>
+                        <div class="dc-val"><span class="dashboard-card__value" id="dashStockTotal"><span class="dash-sk"></span></span><span class="dc-cap" id="dashStockCap"></span></div>
+                        <div class="dc-mid">
+                            <div class="dc-row" id="dashRowIng" role="button" tabindex="0" onclick="dashOpenIngredients()"><span data-i18n="dash_ingredients">Ингредиенты</span><span class="dashboard-card__value" id="dashIngredients"><span class="dash-sk"></span></span></div>
+                            <div class="dc-row" id="dashRowSemi" role="button" tabindex="0" onclick="dashOpenSemiFinished()"><span data-i18n="dash_semi">Полуфабрикаты</span><span class="dashboard-card__value" id="dashSemi"><span class="dash-sk"></span></span></div>
+                            <div class="dc-lock" id="dashStockLock" role="button" tabindex="0" onclick="dashOpenIngredients()" style="display:none" data-i18n="dash_full_only">Доступно на тарифе Full</div>
                         </div>
+                        <div class="dc-foot dc-foot--stub"><span data-i18n="dash_expiry">Срок годности</span>: <span data-i18n="dash_soon">скоро</span></div>
                     </div>
-                    <div class="dashboard-card" role="button" tabindex="0" onclick="dashOpenTomorrow()">
-                        <div class="dashboard-card__hd dash-c-tom"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/><path d="M9.5 15.5h5M12.5 13l2.5 2.5-2.5 2.5"/></svg><div class="dashboard-card__label" data-i18n="dash_tomorrow">Заказы на завтра</div></div>
-                        <div class="dashboard-card__mid"><div class="dashboard-card__value" id="dashTomorrow"><span class="dash-sk"></span></div></div>
-                        <div class="dashboard-card__sub" id="dashTomorrowSub">&nbsp;</div>
+                    <div class="dashboard-card dc2 " role="button" tabindex="0" onclick="dashOpenTomorrow()">
+                        <div class="dashboard-card__hd dash-c-tom"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/><path d="M9.5 15.5h5M12.5 13l2.5 2.5-2.5 2.5"/></svg><div class="dashboard-card__label" data-i18n="dash_tom_s"></div></div>
+                        <div class="dc-val"><span class="dashboard-card__value" id="dashTomorrow"><span class="dash-sk"></span></span><span class="dc-cap" id="dashTomorrowCap"></span></div>
+                        <div class="dc-mid"></div>
+                        <div class="dc-foot" id="dashTomorrowSub">&nbsp;</div>
                     </div>
-                    <div class="dashboard-card" role="button" tabindex="0" onclick="dashOpenUnpaid()">
-                        <div class="dashboard-card__hd dash-c-pay"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7a2 2 0 0 1 2-2h10v3"/><rect x="4" y="8" width="16" height="12" rx="2.5"/><circle cx="16" cy="14" r="1.3" fill="currentColor"/></svg><div class="dashboard-card__label" data-i18n="dash_unpaid">Ждут оплаты</div></div>
-                        <div class="dashboard-card__mid"><div class="dashboard-card__value" id="dashUnpaid"><span class="dash-sk"></span></div></div>
-                        <div class="dashboard-card__sub" id="dashUnpaidSub">&nbsp;</div>
+                    <div class="dashboard-card dc2 " role="button" tabindex="0" onclick="dashOpenUnpaid()">
+                        <div class="dashboard-card__hd dash-c-pay"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7a2 2 0 0 1 2-2h10v3"/><rect x="4" y="8" width="16" height="12" rx="2.5"/><circle cx="16" cy="14" r="1.3" fill="currentColor"/></svg><div class="dashboard-card__label" data-i18n="dash_unpaid"></div></div>
+                        <div class="dc-val"><span class="dashboard-card__value" id="dashUnpaid"><span class="dash-sk"></span></span><span class="dc-cap" id="dashUnpaidCap"></span></div>
+                        <div class="dc-mid"><div class="dc-small" id="dashDebtLbl"></div><div class="dc-row dc-row--plain"><span id="dashDebtName"></span><span class="dashboard-bad" id="dashDebtSum"></span></div></div>
+                        <div class="dc-foot" id="dashUnpaidSub">&nbsp;</div>
                     </div>
-                    <div class="dashboard-card dashboard-card--static" id="dashCardRevenue">
-                        <div class="dashboard-card__hd dash-c-rev"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20v-6M10 20V9M15 20v-5M20 20V5"/></svg><div class="dashboard-card__label" data-i18n="dash_revenue">Выручка за месяц</div></div>
-                        <div class="dashboard-card__mid"><div class="dashboard-card__value" id="dashRevenue"><span class="dash-sk"></span></div></div>
-                        <div class="dashboard-card__sub" id="dashRevenueSub">&nbsp;</div>
+                    <div class="dashboard-card dc2 dashboard-card--static" id="dashCardRevenue" >
+                        <div class="dashboard-card__hd dash-c-rev"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20v-6M10 20V9M15 20v-5M20 20V5"/></svg><div class="dashboard-card__label" data-i18n="dash_rev_s"></div></div>
+                        <div class="dc-val"><span class="dashboard-card__value" id="dashRevenue"><span class="dash-sk"></span></span><span class="dc-cap" id="dashRevenueCap"></span></div>
+                        <div class="dc-mid"><div class="dc-delta" id="dashRevDelta"></div><div class="dc-spark" id="dashRevSpark"></div></div>
+                        <div class="dc-foot" id="dashRevenueSub">&nbsp;</div>
                     </div>
                 </div>
             </div>
@@ -3893,7 +3937,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=103"></script>
+    <script src="i18n-core.js?v=104"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=16"></script>
     <script src="auth.js?v=30"></script>
@@ -3909,7 +3953,7 @@ function hideSplashScreen() {
 <script src="customers.js?v=59"></script>
 <script src="calendar.js?v=16"></script>
 <script src="orders.js?v=146"></script>
-<script src="dashboard.js?v=6"></script>
+<script src="dashboard.js?v=7"></script>
 <script src="invoice.js?v=48"></script>
 <script src="send-document.js?v=38"></script>
 <script src="payments.js?v=29"></script>
