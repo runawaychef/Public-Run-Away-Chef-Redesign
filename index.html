@@ -1181,6 +1181,43 @@
            заголовки колонок — тёплый серый (вариант B, как подписи разделителей). ОТКАТ: удалить этот блок. */
         #orderTableWrap .ot-head { margin-top: 4px; margin-bottom: 10px; border: var(--sb-edge); border-radius: 16px; box-shadow: var(--sb-shadow); color: #9a9488; }
         #orderTableWrap .ot-island { border: var(--sb-edge); box-shadow: var(--sb-shadow); }
+        /* ===== THEME-UNIFIED-DETAIL (27.10.2026): карточка заказа в новом стиле =====
+           Только #orderDetail; цвета верхних кнопок прежние. ОТКАТ: удалить этот блок. */
+        #orderDetail > .bg-white, #orderDetail > .mb-3.bg-white { border-radius: 16px; box-shadow: var(--sb-shadow); border: var(--sb-edge); }
+        #orderDetail > .bg-white:first-child { padding: 12px; }
+        #orderDetail .pill-btn, #orderDetail .pill-btn-danger { border-radius: 13px; min-height: 36px; padding: 0 13px; font-size: 12.5px; box-shadow: 0 6px 10px -6px rgba(70,58,30,0.35); }
+        #orderDetail .pill-btn svg { width: 13px; height: 13px; }
+        #orderDetail input.border, #orderDetail textarea.border, #orderDetail .field-select-btn {
+            border: 1px solid rgba(90,75,40,0.08); border-radius: 12px; background: #f4f1ea;
+            box-shadow: inset 0 1px 2px rgba(70,58,30,0.06); min-height: 34px; padding: 0 9px; font-size: 12.5px;
+        }
+        #orderDetail textarea.border { padding: 6px 9px; min-height: 58px; }
+        #orderDetail .field-select-btn.active { background: #7c9473; color: #fff; }
+        #orderDetail label.table-text.text-gray-500 { font-size: 11.5px; font-weight: 600; color: #8d887b; }
+        #orderDetail #paymentTilePaid { font-size: 20px; font-weight: 800; }
+        #orderDetail #paymentTileRestValue { font-size: 20px; font-weight: 800; }
+        #orderDetail #paymentTileRestLabel, #orderDetail [data-i18n="orders_paid"] { font-size: 12px; }
+        #orderDetail [style*="grid-template-columns:minmax(0,1fr) minmax(0,1fr)"] > div:first-child { background: #fff !important; border-radius: 14px !important; padding: 10px 12px !important; box-shadow: 0 6px 12px -8px rgba(70,58,30,0.3), 0 1px 2px rgba(70,58,30,0.08); border: 1px solid rgba(90,75,40,0.05); }
+        #orderDetail [style*="grid-template-columns:minmax(0,1fr) minmax(0,1fr)"] > div:last-child { border-radius: 14px !important; padding: 10px 12px !important; box-shadow: 0 6px 12px -8px rgba(70,58,30,0.3), 0 1px 2px rgba(70,58,30,0.08); }
+        #orderDetail button.pill-btn.w-full, #orderDetail #detailSendDocBtn {
+            min-height: 42px; border-radius: 13px; font-size: 13px; padding: 0 14px !important;
+            box-shadow: 0 8px 14px -8px rgba(70,58,30,0.4), inset 0 1px 0 rgba(255,255,255,0.35);
+        }
+        #orderDetail button.pill-btn.w-full { background: linear-gradient(180deg,#8aa380,#7c9473); }
+        #orderDetail #detailSendDocBtn.has-sum { border-radius: 13px 13px 0 0; }
+        #orderDetail .doc-sum { border-radius: 0 0 13px 13px; }
+        #orderDetail table.table-clean thead tr { background: #eef2ea !important; }
+        #orderDetail table.table-clean thead th { color: #6b7a63; font-size: 10.5px !important; letter-spacing: .03em; }
+        #orderDetail table.table-clean thead tr:first-child th:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+        #orderDetail table.table-clean thead tr:first-child th:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+        #orderDetail #detailItemsBody tr { border-bottom: 1px solid #f1efe9 !important; }
+        #orderDetail #detailItemsBody td { padding-top: 7px; padding-bottom: 7px; }
+        #orderDetail .new-item-row { background: #f8f6f0 !important; }
+        #orderDetail .new-item-row td:first-child { border-radius: 12px 0 0 12px; }
+        #orderDetail .new-item-row td:last-child { border-radius: 0 12px 12px 0; }
+        #orderDetail .new-item-row input { border: 1px solid rgba(90,75,40,0.1); border-radius: 10px; min-height: 30px; background: #fff; }
+        #orderDetail .new-item-row .btn { border-radius: 11px; min-height: 30px; box-shadow: 0 5px 9px -6px rgba(70,58,30,0.4); }
+        /* ===== /THEME-UNIFIED-DETAIL ===== */
         /* ===== /THEME-UNIFIED ===== */
         /* Крестик «сбросить фильтр по статусу» в полосе итога заказов (фильтр из Dashboard) */
         .ofs-x { flex-shrink: 0; padding: 0 6px; color: #8d887b; font-size: 12px; cursor: pointer; }
