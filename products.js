@@ -19,9 +19,43 @@ function displayProducts() {
 }
 
 // ---- Карточный вид (по тому же принципу, что и карточки заказов) ----
+// ---- Вид списка: карточки / плитки (запоминается на устройстве) ----
+let productsViewMode = 'cards';
+try { if (localStorage.getItem('sb_products_view') === 'tiles') productsViewMode = 'tiles'; } catch (e) {}
+
+function setProductsViewMode(mode) {
+    productsViewMode = mode === 'tiles' ? 'tiles' : 'cards';
+    try { localStorage.setItem('sb_products_view', productsViewMode); } catch (e) {}
+    renderProductCards();
+    filterProductsList();
+}
+
+function productsViewToggleSync() {
+    document.getElementById('productsViewBtnCards')?.classList.toggle('active', productsViewMode === 'cards');
+    document.getElementById('productsViewBtnTiles')?.classList.toggle('active', productsViewMode === 'tiles');
+}
+
+function renderProductTiles() {
+    const body = document.getElementById('productCardsBody');
+    body.classList.add('pc-grid');
+    body.innerHTML = products.map(p => {
+        const photoSrc = p.photo_url ? escapeHtml(p.photo_url) : PRODUCT_PLACEHOLDER_SRC;
+        const warn = p.recipe_confirmed ? '' : '<span class="pt-warn"><b>!</b></span>';
+        return `<div class="pt-tile" data-name="${escapeHtml((p.name || '').toLowerCase())}" onclick="openProductDetail(${p.id})">
+            <img class="pt-photo" src="${photoSrc}" loading="lazy">
+            <div class="pt-name">${escapeHtml(p.name || t('semifinished_no_name_fallback'))}</div>
+            <div class="pt-price">${formatMoney(p.price)}</div>
+            ${warn}
+        </div>`;
+    }).join('');
+}
+
 function renderProductCards() {
     const body = document.getElementById('productCardsBody');
     if (!body) return;
+    productsViewToggleSync();
+    if (productsViewMode === 'tiles') { renderProductTiles(); return; }
+    body.classList.remove('pc-grid');
     let html = '';
     products.forEach((p, realIdx) => {
         const hasUnit = !!p.unit;
@@ -88,9 +122,9 @@ function filterProductsList() {
     document.getElementById('productSearchIcon')?.classList.toggle('hidden', !!q);
 
     let visibleCards = 0;
-    document.querySelectorAll('#productCardsBody .oc-swipe-wrap').forEach(wrap => {
+    document.querySelectorAll('#productCardsBody .oc-swipe-wrap, #productCardsBody .pt-tile').forEach(wrap => {
         const match = !q || wrap.dataset.name.includes(q);
-        wrap.style.display = match ? 'block' : 'none';
+        wrap.style.display = match ? '' : 'none';
         if (match) visibleCards++;
     });
     document.getElementById('productCardsEmpty')?.classList.toggle('hidden', visibleCards !== 0);
