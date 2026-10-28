@@ -99,12 +99,51 @@ function stockCardCellsHtml(o) {
         + `</div>`;
 }
 
+// ---- Вид списка Склада: карточки / плитки (запоминается на устройстве, отдельно для ингредиентов и полуфабрикатов) ----
+function stockViewMode(kind) {
+    try { return localStorage.getItem('sb_' + kind + '_view') === 'tiles' ? 'tiles' : 'cards'; } catch (e) { return 'cards'; }
+}
+function setStockViewMode(kind, mode) {
+    try { localStorage.setItem('sb_' + kind + '_view', mode === 'tiles' ? 'tiles' : 'cards'); } catch (e) {}
+    if (kind === 'ing') { renderIngredientCards(); filterIngredientsList(); }
+    else { renderSemiFinishedCards(); filterSemiFinishedList(); }
+}
+function stockViewSync(kind) {
+    const m = stockViewMode(kind);
+    const pre = kind === 'ing' ? 'ingredientsViewBtn' : 'semiFinishedViewBtn';
+    document.getElementById(pre + 'Cards')?.classList.toggle('active', m === 'cards');
+    document.getElementById(pre + 'Tiles')?.classList.toggle('active', m === 'tiles');
+}
+// Плитка: остаток «после списания» крупно, название, цена мелко внизу; красный уголок «!» — требует внимания
+// Full: «хватит на N дн.» меткой в углу плитки (цвет — зона «Умного склада»); без прогноза или на Light — метки нет
+function stockDaysChip(st) {
+    if (typeof hasPlanFeature === 'function' && !hasPlanFeature('cost_analytics')) return null;
+    if (!st || st.daysLeft === null || st.daysLeft === undefined) return null;
+    return { cls: st.zone === 'critical' ? 'bad' : st.zone === 'warning' ? 'warn' : 'ok', text: `${st.daysLeft} ${t('inv_days_short')}` };
+}
+function stockTileHtml(o) {
+    const num = o.numText;
+    const cls = 'pt-tile stt-tile' + (num.length > 6 ? ' stt-sm' : '');
+    return `<div class="${cls}" data-name="${escapeHtml((o.name || '').toLowerCase())}" data-critical="${o.attn ? '1' : '0'}" data-low="${o.red ? '1' : '0'}" onclick="${o.openCall}">
+        ${o.chip ? `<div class="stt-chip ${o.chip.cls}">${o.chip.text}</div>` : ''}
+        <div class="stt-sp"></div>
+        <div class="stt-big" style="color:${o.red ? '#c0685c' : '#322f28'};">${num}${o.unit ? `<small>${escapeHtml(o.unit)}</small>` : ''}</div>
+        <div class="stt-name">${escapeHtml(o.name || t('semifinished_no_name_fallback'))}</div>
+        <div class="stt-sp"></div>
+        ${o.priceText ? `<div class="stt-price">${o.priceText}</div>` : ''}
+        ${o.attn ? '<span class="pt-warn"><b>!</b></span>' : ''}
+    </div>`;
+}
+
 // ---- Карточный вид (тот же принцип, что у изделий/клиентов) ----
 function renderIngredientCards() {
     const body = document.getElementById('ingredientCardsBody');
     if (!body) return;
 
     const ctx = stockStateContext(30); // общий расчёт склада (inventory.js stockState, 21.10)
+    const tiles = stockViewMode('ing') === 'tiles';
+    stockViewSync('ing');
+    body.classList.toggle('stock-grid', tiles);
 
     const htmlAttn = [], htmlOk = [];
     ingredients.forEach((ing, realIdx) => {
@@ -127,6 +166,10 @@ function renderIngredientCards() {
         const priceText = stockPriceText(unitPrice, ing.unit);
         const stripe = accentColor ? `<div class="stripe" style="background:${accentColor};"></div>` : '';
 
+        if (tiles) {
+            (accentColor ? htmlAttn : htmlOk).push(stockTileHtml({ name: ing.name, attn: !!accentColor, red: isCritical, numText: balance !== null ? Number(balance).toFixed(1) : '—', unit: balance !== null ? unitLabel : '', priceText, chip: stockDaysChip(st), openCall: `openIngredientDetail(${ing.id})` }));
+            return;
+        }
         (accentColor ? htmlAttn : htmlOk).push(`
         <div class="oc-swipe-wrap" data-name="${escapeHtml((ing.name || '').toLowerCase())}" data-critical="${accentColor ? '1' : '0'}" data-low="${isCritical ? '1' : '0'}" style="--oc-swipe-x:-72px;">
             ${refCopySwipeBtnHtml(`quickCopyIngredientFromSwipe(${realIdx})`)}
@@ -161,9 +204,9 @@ function filterIngredientsList() {
     document.getElementById('ingredientSearchIcon')?.classList.toggle('hidden', !!q);
 
     let visibleCards = 0;
-    document.querySelectorAll('#ingredientCardsBody .oc-swipe-wrap').forEach(wrap => {
+    document.querySelectorAll('#ingredientCardsBody .oc-swipe-wrap, #ingredientCardsBody .stt-tile').forEach(wrap => {
         const match = (!q || wrap.dataset.name.includes(q)) && (!stockLowOnlyIng || wrap.dataset.low === '1');
-        wrap.style.display = match ? 'block' : 'none';
+        wrap.style.display = match ? '' : 'none';
         if (match) visibleCards++;
     });
     document.getElementById('ingredientCardsEmpty')?.classList.toggle('hidden', visibleCards !== 0);

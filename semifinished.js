@@ -59,6 +59,9 @@ function renderSemiFinishedCards() {
     if (!body) return;
 
     const ctx = stockStateContext(30); // общий расчёт склада (inventory.js stockState, 21.10)
+    const tiles = stockViewMode('sf') === 'tiles';
+    stockViewSync('sf');
+    body.classList.toggle('stock-grid', tiles);
 
     const htmlAttn = [], htmlOk = [];
     semiFinished.forEach((sf, realIdx) => {
@@ -82,6 +85,11 @@ function renderSemiFinishedCards() {
         const priceText = stockPriceText(unitCost, sf.unit);
         const stripe = accentColor ? `<div class="stripe" style="background:${accentColor};"></div>` : '';
 
+        if (tiles) {
+            const showPrice = (typeof hasPermission !== 'function' || hasPermission('can_view_costs'));
+            (accentColor ? htmlAttn : htmlOk).push(stockTileHtml({ name: sf.name, attn: !!accentColor, red: isCritical, numText: balance !== null ? Number(balance).toFixed(1) : '—', unit: balance !== null ? unitLabel : '', priceText: showPrice ? priceText : '', chip: stockDaysChip(st), openCall: `openSemiFinishedDetail(${sf.id})` }));
+            return;
+        }
         (accentColor ? htmlAttn : htmlOk).push(`
         <div class="oc-swipe-wrap" data-name="${escapeHtml((sf.name || '').toLowerCase())}" data-critical="${accentColor ? '1' : '0'}" data-low="${isCritical ? '1' : '0'}" style="--oc-swipe-x:-72px;">
             ${refCopySwipeBtnHtml(`quickCopySemiFinishedFromSwipe(${realIdx})`)}
@@ -116,9 +124,9 @@ function filterSemiFinishedList() {
     document.getElementById('semiFinishedSearchIcon')?.classList.toggle('hidden', !!q);
 
     let visibleCards = 0;
-    document.querySelectorAll('#semiFinishedCardsBody .oc-swipe-wrap').forEach(wrap => {
+    document.querySelectorAll('#semiFinishedCardsBody .oc-swipe-wrap, #semiFinishedCardsBody .stt-tile').forEach(wrap => {
         const match = (!q || wrap.dataset.name.includes(q)) && (!stockLowOnlySf || wrap.dataset.low === '1');
-        wrap.style.display = match ? 'block' : 'none';
+        wrap.style.display = match ? '' : 'none';
         if (match) visibleCards++;
     });
     document.getElementById('semiFinishedCardsEmpty')?.classList.toggle('hidden', visibleCards !== 0);
