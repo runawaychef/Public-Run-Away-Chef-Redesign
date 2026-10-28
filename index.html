@@ -1277,7 +1277,7 @@
            Только #productsList и #productsSearchBar. Фото 64px, подписи единицы/рецепта — таблетки (.pc-tag), поиск выше и с тенью.
            ОТКАТ: удалить этот блок + вернуть products.js (products-before-menu.js), index.html (index-before-menu.html), sw.js. */
         #productsList { padding-top: 56px !important; }
-        #productsList > div { box-shadow: none; }
+        #productsList > div { box-shadow: none; padding: 0; }
         #productsList .order-card { box-shadow: var(--sb-shadow); border: var(--sb-edge); }
         #productsList .oc-swipe-wrap { box-sizing: border-box; border-radius: 0; padding: 0 12px 22px; margin: 0 -12px -8px; width: calc(100% + 24px); }
         #productsList .oc-swipe-actions { bottom: 22px; right: 12px; border-radius: 0 16px 16px 0; overflow: hidden; }
@@ -1292,6 +1292,11 @@
         .pc-tag-bad { background: #f6e3df; color: #a3493d; font-weight: 700; }
         #productsSearchBar .search-input-wrap input { height: 40px; background: #fff; border: var(--sb-edge); border-radius: 14px; box-shadow: 0 6px 12px -6px rgba(70,58,30,0.35), 0 1px 2px rgba(70,58,30,0.1); font-size: 13px; padding-left: 14px; }
         /* ===== /THEME-UNIFIED-MENU ===== */
+        /* ===== THEME-UNIFIED-WIDTH (27.10.2026): одинаковая ширина карточек в Заказах / Меню / Складе / Клиентах =====
+           У Клиентов список обёрнут в блок p-2 (отступ 8px с каждой стороны) — карточки были уже на 16px. Убираем отступ и рамку-тень обёртки.
+           ОТКАТ: удалить этот блок. */
+        #customersList > div { box-shadow: none; padding: 0; }
+        /* ===== /THEME-UNIFIED-WIDTH ===== */
         /* ===== /THEME-UNIFIED ===== */
         /* Крестик «сбросить фильтр по статусу» в полосе итога заказов (фильтр из Dashboard) */
         .ofs-x { flex-shrink: 0; padding: 0 6px; color: #8d887b; font-size: 12px; cursor: pointer; }
