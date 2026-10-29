@@ -942,6 +942,9 @@ async function saveSfInventarization() {
 
 // ==================== ГРАФИК СЕБЕСТОИМОСТИ П/Ф ====================
 let _sfCostChartInstance = null;
+let _sfCostPts = [];
+let _sfCostPeriod = 'all';
+function setSfCostPeriod(period) { _sfCostPeriod = period; drawSfCostChart(); }
 
 async function renderSfCostChart(sf) {
     const canvas  = document.getElementById('sfCostChart');
@@ -999,6 +1002,7 @@ async function renderSfCostChart(sf) {
     // Для каждой партии считаем себестоимость на дату её производства
     const labels = [];
     const costs  = [];
+    _sfCostPts = [];
 
     for (const prod of productions) {
         const dateStr = prod.created_at.slice(0, 10); // YYYY-MM-DD
@@ -1016,6 +1020,7 @@ async function renderSfCostChart(sf) {
         if (!hasAllPrices) continue;
         labels.push(formatDateDMY(dateStr));
         costs.push(parseFloat(cost.toFixed(4)));
+        _sfCostPts.push({ date: dateStr, cost: parseFloat(cost.toFixed(4)) });
     }
 
     if (costs.length < 2) {
@@ -1023,6 +1028,25 @@ async function renderSfCostChart(sf) {
         emptyEl.classList.remove('hidden');
         return;
     }
+    _sfCostPeriod = 'all';
+    await drawSfCostChart();
+}
+
+async function drawSfCostChart() {
+    const canvas  = document.getElementById('sfCostChart');
+    const emptyEl = document.getElementById('sfCostChartEmpty');
+    if (!canvas || !emptyEl) return;
+    sbSetPeriodButtons('sf', _sfCostPeriod);
+    const points = sbPeriodPoints(_sfCostPts, _sfCostPeriod);
+    if (points.length < 2) {
+        if (_sfCostChartInstance) { _sfCostChartInstance.destroy(); _sfCostChartInstance = null; }
+        canvas.style.display = 'none';
+        emptyEl.textContent = t('prod_cost_no_changes_period');
+        emptyEl.classList.remove('hidden');
+        return;
+    }
+    const labels = points.map(p => formatDateDMY(p.date));
+    const costs  = points.map(p => p.cost);
 
     try { await ensureChartJs(); } catch (e) { console.error(e); return; }
     if (!canvas.isConnected) return;

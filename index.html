@@ -2203,6 +2203,11 @@ function hideSplashScreen() {
                         <svg id="ingPriceChevron" class="itm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform .15s;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                     </div>
                     <div id="ingPriceContent" class="hidden itm-sec-pad">
+                        <div class="pd-periods">
+                            <button type="button" class="pd-per" id="ingPer30" onclick="setIngPricePeriod('30')" data-i18n="prod_period_30">30 дн.</button>
+                            <button type="button" class="pd-per" id="ingPer90" onclick="setIngPricePeriod('90')" data-i18n="prod_period_90">90 дн.</button>
+                            <button type="button" class="pd-per active" id="ingPerAll" onclick="setIngPricePeriod('all')" data-i18n="prod_period_all">Всё время</button>
+                        </div>
                         <canvas id="ingredientPriceChart" style="max-height:180px;"></canvas>
                         <p id="ingredientPriceChartEmpty" class="text-xs text-gray-400 hidden" data-i18n="ing_not_enough_data_2">Недостаточно данных — нужно минимум 2 записи</p>
                         <h3 class="text-xs font-semibold text-gray-700 mt-3 mb-2" data-i18n="ing_price_history">История цен</h3>
@@ -2378,6 +2383,11 @@ function hideSplashScreen() {
                         <svg id="sfPriceChevron" class="itm-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform .15s;"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                     </div>
                     <div id="sfPriceContent" class="hidden itm-sec-pad">
+                        <div class="pd-periods">
+                            <button type="button" class="pd-per" id="sfPer30" onclick="setSfCostPeriod('30')" data-i18n="prod_period_30">30 дн.</button>
+                            <button type="button" class="pd-per" id="sfPer90" onclick="setSfCostPeriod('90')" data-i18n="prod_period_90">90 дн.</button>
+                            <button type="button" class="pd-per active" id="sfPerAll" onclick="setSfCostPeriod('all')" data-i18n="prod_period_all">Всё время</button>
+                        </div>
                         <canvas id="sfCostChart" height="160" style="display:none;"></canvas>
                         <p id="sfCostChartEmpty" class="text-xs text-gray-400 hidden" data-i18n="sf_not_enough_batches">Недостаточно данных — нужно 2+ партии.</p>
                     </div>
@@ -4254,9 +4264,9 @@ function hideSplashScreen() {
     <script src="inventory.js?v=70"></script>
     <script src="billing.js?v=17"></script>
     <script src="push.js?v=9"></script>
-<script src="ingredients.js?v=62"></script>
+<script src="ingredients.js?v=63"></script>
 <script src="batches.js?v=12"></script>
-<script src="semifinished.js?v=58"></script>
+<script src="semifinished.js?v=59"></script>
 <script src="products.js?v=48"></script>
 <script src="customers.js?v=62"></script>
 <script src="calendar.js?v=16"></script>

@@ -968,17 +968,45 @@ async function deleteInventoryRecord(id) {
     finally { hideLoading(); }
 }
 
+let _ingPricePts = [];
+let _ingPricePeriod = 'all';
+// Общий помощник выбора периода (используется и в карточке полуфабриката): точки {date, cost}
+function sbPeriodPoints(pts, period) {
+    if (!pts || period === 'all') return pts || [];
+    const d = new Date(); d.setDate(d.getDate() - parseInt(period, 10));
+    const cutoff = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const inWin = pts.filter(p => p.date >= cutoff);
+    const before = pts.filter(p => p.date < cutoff);
+    return before.length ? [before[before.length - 1], ...inWin] : inWin; // последняя цена до периода — точка отсчёта
+}
+function sbSetPeriodButtons(prefix, period) {
+    [['30','30'],['90','90'],['all','All']].forEach(([k, suf]) => {
+        const b = document.getElementById(prefix + 'Per' + suf);
+        if (b) b.classList.toggle('active', k === period);
+    });
+}
+function setIngPricePeriod(period) { _ingPricePeriod = period; drawIngredientPriceChart(); }
+
 async function renderIngredientPriceChart(ingredientId) {
+    const history = (_ingredientPriceHistory[ingredientId] || []).slice().reverse(); // от старых к новым
+    _ingPricePts = history.map(h => ({ date: h.valid_from, cost: h.package_size ? h.package_price / h.package_size : 0 }));
+    _ingPricePeriod = 'all';
+    await drawIngredientPriceChart();
+}
+
+async function drawIngredientPriceChart() {
     const canvas = document.getElementById('ingredientPriceChart');
     const emptyEl = document.getElementById('ingredientPriceChartEmpty');
     if (!canvas || !emptyEl) return;
-
-    const history = (_ingredientPriceHistory[ingredientId] || []).slice().reverse(); // от старых к новым
-    const ing = ingredients.find(i => i.id === ingredientId);
+    sbSetPeriodButtons('ing', _ingPricePeriod);
+    const ing = ingredients.find(i => i.id === currentIngredientId);
     const unitLabel = ing ? (unitAbbrev(ing.unit)) : '';
+    const points = sbPeriodPoints(_ingPricePts, _ingPricePeriod);
 
-    if (history.length < 2) {
+    if (points.length < 2) {
+        if (_ingredientPriceChartInstance) { _ingredientPriceChartInstance.destroy(); _ingredientPriceChartInstance = null; }
         canvas.style.display = 'none';
+        emptyEl.textContent = (_ingPricePeriod === 'all' || _ingPricePts.length < 2) ? t('ing_not_enough_data_2') : t('prod_cost_no_changes_period');
         emptyEl.classList.remove('hidden');
         return;
     }
@@ -986,8 +1014,8 @@ async function renderIngredientPriceChart(ingredientId) {
     canvas.style.display = 'block';
     emptyEl.classList.add('hidden');
 
-    const labels = history.map(h => formatDateDMY(h.valid_from));
-    const data   = history.map(h => parseFloat((h.package_price / h.package_size).toFixed(6)));
+    const labels = points.map(p => formatDateDMY(p.date));
+    const data   = points.map(p => parseFloat(p.cost.toFixed(6)));
 
     try { await ensureChartJs(); } catch (e) { console.error(e); return; }
     if (!canvas.isConnected) return;
