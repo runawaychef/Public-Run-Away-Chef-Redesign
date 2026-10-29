@@ -541,16 +541,40 @@
         .pd-photo-edit-btn { position: absolute; right: 4px; bottom: 4px; border: none; cursor: pointer; background: rgba(50,47,40,0.72); color: #fff; border-radius: 8px; padding: 4px; display: flex; align-items: center; justify-content: center; }
         .pd-photo-edit-btn span { display: none; }
         .pd-photo-edit-btn svg { width: 12px; height: 12px; }
-        .pd-sec-title { font-size: 14px; font-weight: 600; color: #3c3a34; margin: 0 0 10px; }
-        .pd-link { display: block; background: none; border: none; padding: 2px 0; margin: 0 0 10px; font-size: 13px; color: #4f6349; cursor: pointer; text-align: left; }
-        .pd-cells { margin-top: 0; }
+        .pd-link { display: block; background: none; border: none; padding: 2px 0; margin: 0 0 10px; font-size: 12.5px; color: #4f6349; cursor: pointer; text-align: left; }
+        .pd-sum { font-size: 12px; color: #8d887b; white-space: nowrap; }
+        #productDetail .oc-cells { display: flex; background: #f6f4ec; border-radius: 12px; margin-top: 0; }
+        #productDetail .oc-cell { flex: 1; min-width: 0; padding: 8px 10px; }
+        #productDetail .oc-cell-sep { border-left: 1px solid #e5e0d0; }
+        #productDetail .oc-cell-lbl { font-size: 11px; color: #a29c8c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #productDetail .oc-cell-val { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
         .pd-batchline { font-size: 12px; color: #8d887b; text-align: right; margin-top: 6px; }
         .pd-batchline span:last-child { color: #3c3a34; font-weight: 600; }
-        .itm-card .pd-cells { margin-top: 0; }
         .pd-chart-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
         .pd-periods { display: flex; gap: 6px; margin-bottom: 8px; }
         .pd-per { border: none; background: none; font-size: 11.5px; font-weight: 600; color: #8d887b; padding: 3px 10px; border-radius: 999px; cursor: pointer; }
         .pd-per.active { background: #e3ebdf; color: #4f6349; }
+        /* Оформление — как в карточке заказа (THEME-UNIFIED-DETAIL), только для #productDetail */
+        #productDetail > .bg-white { border-radius: 16px; box-shadow: var(--sb-shadow); border: var(--sb-edge); padding: 12px 14px; }
+        #productDetail > .bg-white:first-child { padding: 12px; }
+        #productDetail .pill-btn, #productDetail .pill-btn-danger { border-radius: 13px; min-height: 36px; padding: 0 13px; font-size: 12.5px; box-shadow: 0 6px 10px -6px rgba(70,58,30,0.35); }
+        #productDetail .pill-btn svg { width: 13px; height: 13px; }
+        #productDetail input.border, #productDetail textarea.border, #productDetail select.border {
+            border: 1px solid rgba(90,75,40,0.08); border-radius: 12px; background: #f4f1ea;
+            box-shadow: inset 0 1px 2px rgba(70,58,30,0.06); min-height: 34px; padding: 0 9px; font-size: 12.5px;
+        }
+        #productDetail select.border { padding-right: 4px; }
+        #productDetail textarea.border { padding: 6px 9px; min-height: 58px; }
+        #productDetail label.table-text.text-gray-500 { font-size: 11.5px; font-weight: 600; color: #8d887b; }
+        #productDetail button.pill-btn.w-full { min-height: 42px; font-size: 13px; background: linear-gradient(180deg,#8aa380,#7c9473); box-shadow: 0 8px 14px -8px rgba(70,58,30,0.4), inset 0 1px 0 rgba(255,255,255,0.35); }
+        #productDetail table.table-clean thead tr { background: #eef2ea !important; }
+        #productDetail table.table-clean thead th { color: #6b7a63; font-size: 10.5px !important; letter-spacing: .03em; }
+        #productDetail table.table-clean thead tr:first-child th:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+        #productDetail table.table-clean thead tr:first-child th:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+        #productDetail #recipeItemsBody tr { border-bottom: 1px solid #f1efe9 !important; }
+        #productDetail #recipeItemsBody td { padding-top: 7px; padding-bottom: 7px; }
+        #productDetail #pdRecipeBlock .pill-btn { min-height: 30px; }
+        #productDetail #newRecipeQty { min-width: 0; }
         /* ===== /THEME-UNIFIED-PRODUCT-CARD ===== */
 
         /* ── Бейдж даты (месяц+число) в карточке заказа — заменяет текстовую дату ── */
@@ -1838,15 +1862,15 @@ function hideSplashScreen() {
 
             <!-- ДЕТАЛЬНЫЙ ВИД ИЗДЕЛИЯ / РЕЦЕПТУРА -->
             <div id="productDetail">
-                <div class="itm-card pd-main">
-                    <div class="flex items-center justify-between mb-2">
+                <div class="bg-white p-2 rounded-xl shadow-md mb-3 pd-main">
+                    <div class="flex items-center justify-between gap-1.5 mb-2">
                         <button onclick="closeProductDetail()" class="pill-btn">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
                             <span data-i18n="prod_back_to_products">Назад к изделиям</span>
                         </button>
                         <button onclick="deleteCurrentProduct()" class="pill-btn-danger perm-delete" data-i18n="prod_delete_btn">Удалить изделие</button>
                     </div>
-                    <p class="itm-autosave" style="text-align:left;" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
+                    <p class="text-[11px] text-gray-400 mb-1" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
                     <div id="pdTitle" class="pd-title"></div>
                     <div class="pd-main-row">
                         <div id="pdPhotoWrap" class="pd-photo-wrap">
@@ -1863,11 +1887,11 @@ function hideSplashScreen() {
                         </div>
                         <div class="pd-fields">
                             <div>
-                                <label class="itm-lbl" data-i18n="inv_col_name">Название</label>
+                                <label class="table-text text-gray-500" data-i18n="inv_col_name">Название</label>
                                 <textarea id="pdName" rows="2" oninput="pdTitleSync()" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}" onblur="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text text-gray-900" style="resize:none;display:block;"></textarea>
                             </div>
                             <div>
-                                <label class="itm-lbl" data-i18n="prod_sold_as">Продаётся</label>
+                                <label class="table-text text-gray-500" data-i18n="prod_sold_as">Продаётся</label>
                                 <select id="pdUnit" onchange="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                                     <option value="" data-i18n="prod_choose_placeholder">— выберите —</option>
                                     <option value="pcs" data-i18n="prod_unit_pcs_option">за штуку (шт)</option>
@@ -1875,7 +1899,7 @@ function hideSplashScreen() {
                                 </select>
                             </div>
                             <div>
-                                <label class="itm-lbl"><span data-i18n="prod_sale_price">Продажная цена</span> <span id="pdPriceUnitHint" class="text-gray-400"></span></label>
+                                <label class="table-text text-gray-500"><span data-i18n="prod_sale_price">Продажная цена</span> <span id="pdPriceUnitHint" class="text-gray-400"></span></label>
                                 <input id="pdPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" onchange="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                             </div>
                         </div>
@@ -1886,15 +1910,15 @@ function hideSplashScreen() {
                     <button id="pdSaveNewBtn" onclick="saveNewProduct()" class="hidden pill-btn w-full justify-center mt-2" data-i18n="common_save">Сохранить</button>
                 </div>
 
-                <div id="pdRecipeBlock" class="itm-card">
-                    <h2 class="pd-sec-title" data-i18n="sf_recipe_title">Рецептура (на партию)</h2>
-                    <div class="grid grid-cols-2 gap-2 mb-2">
+                <div id="pdRecipeBlock" class="bg-white p-2 rounded-xl shadow-md mb-3">
+                    <h2 class="text-sm font-semibold text-gray-800 mb-2" data-i18n="sf_recipe_title">Рецептура (на партию)</h2>
+                    <div class="grid grid-cols-2 gap-1 mb-2">
                         <div>
-                            <label class="itm-lbl" data-i18n="sf_batch_size">Размер партии</label>
+                            <label class="table-text text-gray-500" data-i18n="sf_batch_size">Размер партии</label>
                             <input id="pdBatchSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" onchange="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                         <div>
-                            <label class="itm-lbl" data-i18n="prod_other_costs_short">Прочие расходы</label>
+                            <label class="table-text text-gray-500" data-i18n="prod_other_costs_short">Прочие расходы</label>
                             <input id="pdOtherCosts" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" onchange="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                     </div>
@@ -1945,10 +1969,10 @@ function hideSplashScreen() {
                 </div>
 
                 <!-- График динамики себестоимости изделия -->
-                <div id="pdCostChartBlock" class="itm-card perm-view-costs">
+                <div id="pdCostChartBlock" class="bg-white p-2 rounded-xl shadow-md mb-3 perm-view-costs">
                     <div class="pd-chart-head">
-                        <h3 class="pd-sec-title" style="margin:0;" data-i18n="prod_cost_dynamics">Динамика себестоимости</h3>
-                        <span id="pdCostSum" class="itm-sec-sum"></span>
+                        <h3 class="text-sm font-semibold text-gray-800" data-i18n="prod_cost_dynamics">Динамика себестоимости</h3>
+                        <span id="pdCostSum" class="pd-sum"></span>
                     </div>
                     <div class="pd-periods">
                         <button type="button" class="pd-per" id="pdPer30" onclick="setPdCostPeriod('30')" data-i18n="prod_period_30">30 дн.</button>
