@@ -175,6 +175,7 @@ async function createDraftProductAndOpen() {
     if (costChartBlock) costChartBlock.classList.add('hidden');
 
     updatePdUnitUI('pcs');
+    pdTitleSync();
     refreshFab();
 }
 
@@ -286,6 +287,8 @@ let _productCostChartInstance = null;
 // для каждой даты находит актуальную цену каждого ингредиента (последняя запись
 // в истории с valid_from <= этой дате) и считает полную себестоимость.
 async function renderProductCostChart(prod) {
+    _pdCostPoints = [];
+    const sumReset = document.getElementById('pdCostSum'); if (sumReset) sumReset.textContent = '';
     const canvas  = document.getElementById('productCostChart');
     const emptyEl = document.getElementById('productCostChartEmpty');
     if (!canvas || !emptyEl) return;
@@ -350,12 +353,53 @@ async function renderProductCostChart(prod) {
         if (cost !== null) points.push({ date: d, cost });
     });
 
+    _pdCostPoints = points;
+    drawProductCostChart();
+}
+
+// Период графика: '30' | '90' | 'all'
+let _pdCostPoints = [];
+let _pdCostPeriod = 'all';
+function setPdCostPeriod(period) {
+    _pdCostPeriod = period;
+    drawProductCostChart();
+}
+function _pdPeriodPoints() {
+    const pts = _pdCostPoints || [];
+    if (_pdCostPeriod === 'all') return pts;
+    const days = parseInt(_pdCostPeriod, 10);
+    const d = new Date(); d.setDate(d.getDate() - days);
+    const cutoff = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    const inWin = pts.filter(p => p.date >= cutoff);
+    const before = pts.filter(p => p.date < cutoff);
+    // Последняя цена до начала периода — как точка отсчёта
+    return before.length ? [before[before.length - 1], ...inWin] : inWin;
+}
+async function drawProductCostChart() {
+    const canvas  = document.getElementById('productCostChart');
+    const emptyEl = document.getElementById('productCostChartEmpty');
+    if (!canvas || !emptyEl) return;
+    ['30', '90', 'all'].forEach(k => {
+        const b = document.getElementById('pdPer' + (k === 'all' ? 'All' : k));
+        if (b) b.classList.toggle('active', k === _pdCostPeriod);
+    });
+    const sumEl = document.getElementById('pdCostSum');
+    const points = _pdPeriodPoints();
+    if (sumEl) {
+        const first = points.length ? points[0].cost : 0;
+        const last = points.length ? points[points.length - 1].cost : 0;
+        if (points.length >= 2 && first > 0) {
+            const pct = (last - first) / first * 100;
+            sumEl.textContent = (pct > 0 ? '+' : '') + pct.toFixed(1).replace(/\.0$/, '') + '%';
+        } else sumEl.textContent = '';
+    }
+    if (_productCostChartInstance) { _productCostChartInstance.destroy(); _productCostChartInstance = null; }
     if (points.length < 2) {
         canvas.style.display = 'none';
+        emptyEl.textContent = _pdCostPeriod === 'all' ? t('prod_not_enough_price_points') : t('prod_cost_no_changes_period');
         emptyEl.classList.remove('hidden');
         return;
     }
-
     canvas.style.display = 'block';
     emptyEl.classList.add('hidden');
 
@@ -431,8 +475,23 @@ function openProductDetail(productId) {
     renderProductRecipe(prod);
     fillNewRecipeIngredientSelect();
     setupCopyRecipeControl(prod);
+    _pdCostPeriod = 'all';
+    pdTitleSync();
+    document.getElementById('pdCopyBox')?.classList.add('hidden');
     renderProductCostChart(prod);
     refreshFab();
+}
+
+// Крупное название в карточке повторяет поле «Название»
+function pdTitleSync() {
+    const el = document.getElementById('pdTitle');
+    if (el) el.textContent = (document.getElementById('pdName')?.value || '').trim();
+}
+function togglePdCopyBox() {
+    const box = document.getElementById('pdCopyBox');
+    if (!box) return;
+    box.classList.toggle('hidden');
+    if (!box.classList.contains('hidden')) document.getElementById('copyRecipeFromInput')?.focus();
 }
 
 function updatePdUnitUI(unit) {

@@ -527,22 +527,31 @@
             background: #e9e5d9; color: #b7b1a3; flex-shrink: 0;
         }
 
-        /* Фото товара — развёрнутая карточка (большой квадрат со скруглением) */
-        .pd-photo-wrap {
-            width: 100%; aspect-ratio: 1 / 1; border-radius: 18px; overflow: hidden;
-            background: #e9e5d9; position: relative; margin-bottom: 12px;
-        }
+        /* ===== THEME-UNIFIED-PRODUCT-CARD (29.10.2026): карточка изделия в стиле карточки заказа / склада =====
+           Первый блок: кнопки, крупное название, фото 72 px слева и три поля справа. Рецептура: размер партии и прочие расходы внутри, сводка под «Скопировать…». График: переключатель периода.
+           ОТКАТ: вернуть index.html (index-before-pdcard.html), products.js (products-before-pdcard.js), i18n-ru/en/lt/uk, sw.js. */
+        .pd-main-row { display: flex; gap: 12px; align-items: flex-start; }
+        .pd-fields { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px; }
+        .pd-title { font-size: 16px; font-weight: 600; color: #3c3a34; line-height: 1.25; margin: 2px 0 10px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+        .pd-title:empty { display: none; }
+        .pd-photo-wrap { width: 72px; height: 72px; flex-shrink: 0; border-radius: 14px; overflow: hidden; background: #e9e5d9; position: relative; }
         .pd-photo-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .pd-photo-empty {
-            width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            color: #b7b1a3; gap: 6px;
-        }
-        .pd-photo-edit-btn {
-            position: absolute; right: 10px; bottom: 10px; border: none; cursor: pointer;
-            background: rgba(50,47,40,0.72); color: #fff; border-radius: 10px;
-            padding: 6px 11px; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 5px;
-        }
-        .pd-photo-edit-btn svg { width: 13px; height: 13px; }
+        .pd-photo-empty { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #b7b1a3; cursor: pointer; }
+        .pd-photo-empty span { display: none; }
+        .pd-photo-edit-btn { position: absolute; right: 4px; bottom: 4px; border: none; cursor: pointer; background: rgba(50,47,40,0.72); color: #fff; border-radius: 8px; padding: 4px; display: flex; align-items: center; justify-content: center; }
+        .pd-photo-edit-btn span { display: none; }
+        .pd-photo-edit-btn svg { width: 12px; height: 12px; }
+        .pd-sec-title { font-size: 14px; font-weight: 600; color: #3c3a34; margin: 0 0 10px; }
+        .pd-link { display: block; background: none; border: none; padding: 2px 0; margin: 0 0 10px; font-size: 13px; color: #4f6349; cursor: pointer; text-align: left; }
+        .pd-cells { margin-top: 0; }
+        .pd-batchline { font-size: 12px; color: #8d887b; text-align: right; margin-top: 6px; }
+        .pd-batchline span:last-child { color: #3c3a34; font-weight: 600; }
+        .itm-card .pd-cells { margin-top: 0; }
+        .pd-chart-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+        .pd-periods { display: flex; gap: 6px; margin-bottom: 8px; }
+        .pd-per { border: none; background: none; font-size: 11.5px; font-weight: 600; color: #8d887b; padding: 3px 10px; border-radius: 999px; cursor: pointer; }
+        .pd-per.active { background: #e3ebdf; color: #4f6349; }
+        /* ===== /THEME-UNIFIED-PRODUCT-CARD ===== */
 
         /* ── Бейдж даты (месяц+число) в карточке заказа — заменяет текстовую дату ── */
         .oc-header { display: flex; gap: 10px; align-items: flex-start; }
@@ -1829,7 +1838,7 @@ function hideSplashScreen() {
 
             <!-- ДЕТАЛЬНЫЙ ВИД ИЗДЕЛИЯ / РЕЦЕПТУРА -->
             <div id="productDetail">
-                <div class="bg-white p-2 rounded-xl shadow-md mb-3">
+                <div class="itm-card pd-main">
                     <div class="flex items-center justify-between mb-2">
                         <button onclick="closeProductDetail()" class="pill-btn">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
@@ -1837,61 +1846,56 @@ function hideSplashScreen() {
                         </button>
                         <button onclick="deleteCurrentProduct()" class="pill-btn-danger perm-delete" data-i18n="prod_delete_btn">Удалить изделие</button>
                     </div>
-                    <p class="text-[11px] text-gray-400 mb-1" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
-                    <!-- Фото изделия — квадрат со скруглением, круг используется в компактной
-                         карточке списка (см. .oc-photo в CSS ниже). Хранится в Supabase Storage
-                         (бакет product-photos), в products.photo_url — только ссылка. -->
-                    <div id="pdPhotoWrap" class="pd-photo-wrap">
-                        <img id="pdPhotoImg" src="" style="display:none;">
-                        <div id="pdPhotoEmpty" class="pd-photo-empty">
-                            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="9" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-                            <span class="table-text" data-i18n="prod_photo_add">Добавить фото</span>
+                    <p class="itm-autosave" style="text-align:left;" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
+                    <div id="pdTitle" class="pd-title"></div>
+                    <div class="pd-main-row">
+                        <div id="pdPhotoWrap" class="pd-photo-wrap">
+                            <img id="pdPhotoImg" src="" style="display:none;">
+                            <div id="pdPhotoEmpty" class="pd-photo-empty">
+                                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="9" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                                <span class="table-text" data-i18n="prod_photo_add">Добавить фото</span>
+                            </div>
+                            <input type="file" id="pdPhotoFileInput" accept="image/png,image/jpeg,image/webp" class="hidden" onchange="handleProductPhotoFileSelected(this)">
+                            <button type="button" id="pdPhotoEditBtn" onclick="document.getElementById('pdPhotoFileInput').click()" class="pd-photo-edit-btn hidden" aria-label="Изменить фото" data-i18n-aria-label="prod_photo_edit">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+                                <span data-i18n="prod_photo_edit">Изменить</span>
+                            </button>
                         </div>
-                        <input type="file" id="pdPhotoFileInput" accept="image/png,image/jpeg,image/webp" class="hidden" onchange="handleProductPhotoFileSelected(this)">
-                        <button type="button" id="pdPhotoEditBtn" onclick="document.getElementById('pdPhotoFileInput').click()" class="pd-photo-edit-btn hidden">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
-                            <span data-i18n="prod_photo_edit">Изменить</span>
-                        </button>
+                        <div class="pd-fields">
+                            <div>
+                                <label class="itm-lbl" data-i18n="inv_col_name">Название</label>
+                                <textarea id="pdName" rows="2" oninput="pdTitleSync()" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}" onblur="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text text-gray-900" style="resize:none;display:block;"></textarea>
+                            </div>
+                            <div>
+                                <label class="itm-lbl" data-i18n="prod_sold_as">Продаётся</label>
+                                <select id="pdUnit" onchange="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text">
+                                    <option value="" data-i18n="prod_choose_placeholder">— выберите —</option>
+                                    <option value="pcs" data-i18n="prod_unit_pcs_option">за штуку (шт)</option>
+                                    <option value="kg" data-i18n="prod_unit_kg_option">на вес (кг)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="itm-lbl"><span data-i18n="prod_sale_price">Продажная цена</span> <span id="pdPriceUnitHint" class="text-gray-400"></span></label>
+                                <input id="pdPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" onchange="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text">
+                            </div>
+                        </div>
                     </div>
-                    <div id="pdUnitWarning" class="hidden text-xs rounded-xl p-1.5 mb-2" style="color:#a3493d; background:#f3ded9; border:1px solid #e8c4bb;">
+<div id="pdUnitWarning" class="hidden text-xs rounded-xl p-1.5 mb-2" style="color:#a3493d; background:#f3ded9; border:1px solid #e8c4bb;">
                         <svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg><span data-i18n="prod_unit_warning_single">Для этого изделия не выбрана единица измерения. Пожалуйста, выберите «шт» или «кг».</span>
-                    </div>
-                    <div class="grid grid-cols-2 gap-1 mb-2">
-                        <div>
-                            <label class="table-text text-gray-500" data-i18n="inv_col_name">Название</label>
-                            <input id="pdName" type="text" onblur="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text text-gray-900">
-                        </div>
-                        <div>
-                            <label class="table-text text-gray-500" data-i18n="prod_sale_unit">Единица продажи</label>
-                            <select id="pdUnit" onchange="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text">
-                                <option value="" data-i18n="prod_choose_placeholder">— выберите —</option>
-                                <option value="pcs" data-i18n="prod_unit_pcs_option">за штуку (шт)</option>
-                                <option value="kg" data-i18n="prod_unit_kg_option">на вес (кг)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="table-text text-gray-500"><span data-i18n="prod_sale_price">Продажная цена</span> <span id="pdPriceUnitHint" class="text-gray-400"></span></label>
-                            <input id="pdPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" onchange="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text">
-                        </div>
-                        <div>
-                            <label class="table-text text-gray-500" data-i18n="sf_batch_size">Размер партии</label>
-                            <input id="pdBatchSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" onchange="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text">
-                        </div>
-                        <div class="col-span-2">
-                            <label class="table-text text-gray-500" data-i18n="sf_other_costs">Прочие расходы на партию</label>
-                            <input id="pdOtherCosts" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" onchange="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text">
-                        </div>
                     </div>
                     <button id="pdSaveNewBtn" onclick="saveNewProduct()" class="hidden pill-btn w-full justify-center mt-2" data-i18n="common_save">Сохранить</button>
                 </div>
 
-                <div id="pdRecipeBlock" class="bg-white p-2 rounded-xl shadow-md">
-                    <h2 class="text-sm font-semibold text-gray-800 mb-2" data-i18n="sf_recipe_title">Рецептура (на партию)</h2>
-                    <div class="rounded-xl p-2 mb-2" style="background:#f4f1ea; border:1px dashed #d8d2c4;">
-                        <label class="table-text text-gray-500" data-i18n="prod_copy_recipe_label">Скопировать рецепт из другого изделия</label>
-                        <div class="search-input-wrap">
-                            <input id="copyRecipeFromInput" placeholder="— выберите изделие —" autocomplete="off" class="border p-1 rounded-xl table-text w-full" data-i18n-placeholder="prod_choose_product_placeholder">
-                            <div id="copyRecipeFromDropdown" class="search-dropdown hidden"></div>
+                <div id="pdRecipeBlock" class="itm-card">
+                    <h2 class="pd-sec-title" data-i18n="sf_recipe_title">Рецептура (на партию)</h2>
+                    <div class="grid grid-cols-2 gap-2 mb-2">
+                        <div>
+                            <label class="itm-lbl" data-i18n="sf_batch_size">Размер партии</label>
+                            <input id="pdBatchSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" onchange="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text">
+                        </div>
+                        <div>
+                            <label class="itm-lbl" data-i18n="prod_other_costs_short">Прочие расходы</label>
+                            <input id="pdOtherCosts" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" onchange="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                     </div>
                     <table class="w-full table-auto table-clean mb-2">
@@ -1914,25 +1918,43 @@ function hideSplashScreen() {
                             <button onclick="addIngredientToRecipe()" class="pill-btn whitespace-nowrap" data-i18n="sf_add_btn">+ Добавить</button>
                         </div>
                     </div>
-                    <label class="flex items-center gap-2 table-text text-gray-700 border-t pt-2 mb-1 cursor-pointer">
+                    <button type="button" id="pdCopyToggle" class="pd-link" onclick="togglePdCopyBox()"><span data-i18n="prod_copy_recipe_label">Скопировать рецепт из другого изделия</span> ›</button>
+                    <div id="pdCopyBox" class="hidden rounded-xl p-2 mb-2" style="background:#f4f1ea; border:1px dashed #d8d2c4;">
+                        <div class="search-input-wrap">
+                            <input id="copyRecipeFromInput" placeholder="— выберите изделие —" autocomplete="off" class="border p-1 rounded-xl table-text w-full" data-i18n-placeholder="prod_choose_product_placeholder">
+                            <div id="copyRecipeFromDropdown" class="search-dropdown hidden"></div>
+                        </div>
+                    </div>
+                    <div class="perm-view-costs">
+                        <div class="oc-cells pd-cells">
+                            <div class="oc-cell"><div class="oc-cell-lbl" data-i18n="prod_cell_cost">Себест. 1 шт</div><div class="oc-cell-val" id="pdUnitCost">0.00</div></div>
+                            <div class="oc-cell oc-cell-sep"><div class="oc-cell-lbl" data-i18n="prod_cell_profit">Прибыль 1 шт</div><div class="oc-cell-val" id="pdProfit" style="color:#4f6349;">0.00</div></div>
+                            <div class="oc-cell oc-cell-sep"><div class="oc-cell-lbl" data-i18n="prod_cell_margin">Маржа</div><div class="oc-cell-val" id="pdProfitPct">0.0%</div></div>
+                        </div>
+                        <div class="pd-batchline"><span data-i18n="sf_batch_cost">Себестоимость партии</span>: <span id="pdBatchCost">0.00</span></div>
+                    </div>
+                    <label class="flex items-center gap-2 table-text text-gray-700 border-t pt-2 mb-1 cursor-pointer" style="margin-top:10px;">
                         <input type="checkbox" id="pdRecipeConfirmed" onchange="toggleRecipeConfirmed()" style="accent-color:#7c9473;">
                         <span data-i18n="sf_recipe_confirmed_label">Рецепт заполнен полностью</span>
                         <button type="button" onclick="event.preventDefault(); showHelpModal('help_prod_flags_title','help_prod_flags_text')" class="help-marker" data-i18n-title="help_marker_label" title="Подробнее об этом разделе">?</button>
                     </label>
-                    <label class="flex items-center gap-2 table-text text-gray-700 mb-1 cursor-pointer plan-cost-only">
+                    <label class="flex items-center gap-2 table-text text-gray-700 cursor-pointer plan-cost-only">
                         <input type="checkbox" id="pdTrackStock" onchange="toggleTrackStock()" style="accent-color:#7c9473;">
                         <span data-i18n="sf_track_stock_label">Отслеживать остатки постоянно (показывать в «Умном складе»)</span>
                     </label>
-                    <div class="text-right table-text text-gray-600 space-y-0.5 border-t pt-1 perm-view-costs">
-                        <div><span data-i18n="sf_batch_cost">Себестоимость партии</span>: <span id="pdBatchCost" class="font-medium text-gray-800">0.00</span></div>
-                        <div><span data-i18n="prod_unit_cost_1pc">Себестоимость 1 шт</span>: <span id="pdUnitCost" class="font-semibold text-gray-900">0.00</span></div>
-                        <div><span data-i18n="prod_profit_1pc">Прибыль с 1 шт</span>: <span id="pdProfit" class="font-semibold" style="color:#4f6349;">0.00</span> (<span id="pdProfitPct">0.0</span>%)</div>
-                    </div>
                 </div>
 
                 <!-- График динамики себестоимости изделия -->
-                <div id="pdCostChartBlock" class="bg-white p-2 rounded-xl shadow-md mt-3 perm-view-costs">
-                    <h3 class="text-xs font-semibold text-gray-700 mb-2" data-i18n="prod_cost_dynamics">Динамика себестоимости</h3>
+                <div id="pdCostChartBlock" class="itm-card perm-view-costs">
+                    <div class="pd-chart-head">
+                        <h3 class="pd-sec-title" style="margin:0;" data-i18n="prod_cost_dynamics">Динамика себестоимости</h3>
+                        <span id="pdCostSum" class="itm-sec-sum"></span>
+                    </div>
+                    <div class="pd-periods">
+                        <button type="button" class="pd-per" id="pdPer30" onclick="setPdCostPeriod('30')" data-i18n="prod_period_30">30 дн.</button>
+                        <button type="button" class="pd-per" id="pdPer90" onclick="setPdCostPeriod('90')" data-i18n="prod_period_90">90 дн.</button>
+                        <button type="button" class="pd-per active" id="pdPerAll" onclick="setPdCostPeriod('all')" data-i18n="prod_period_all">Всё время</button>
+                    </div>
                     <canvas id="productCostChart" style="max-height:180px;"></canvas>
                     <p id="productCostChartEmpty" class="text-xs text-gray-400 hidden" data-i18n="prod_not_enough_price_points">Недостаточно данных — нужно минимум 2 точки изменения цен</p>
                 </div>
@@ -4091,7 +4113,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=106"></script>
+    <script src="i18n-core.js?v=107"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=16"></script>
     <script src="auth.js?v=30"></script>
@@ -4103,7 +4125,7 @@ function hideSplashScreen() {
 <script src="ingredients.js?v=59"></script>
 <script src="batches.js?v=11"></script>
 <script src="semifinished.js?v=56"></script>
-<script src="products.js?v=44"></script>
+<script src="products.js?v=45"></script>
 <script src="customers.js?v=62"></script>
 <script src="calendar.js?v=16"></script>
 <script src="orders.js?v=146"></script>
