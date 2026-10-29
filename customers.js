@@ -94,20 +94,23 @@ function customerCurrentOrdersSum(c) {
     return sum;
 }
 function _custMoneyNum(v) { const s = formatMoney(v); return (s.match(/\d[\d\s.,]*/) || [s])[0].trim(); }
+function _custInt(v) { return String(Math.round(v)).replace(/\B(?=(\d{3})+(?!\d))/g, '\u202f'); }
+function _custCur() { return (formatMoney(0).replace(/\d[\d\s.,]*/, '').trim()) || '€'; }
 function renderCustomerTiles(body) {
+    const cu = escapeHtml(_custCur());
     body.classList.add('cust-grid');
     body.innerHTML = customers.map(c => {
         const hasName = !!(c.name && c.name.trim());
         const debt = customerDebt(c);
         const hasDebt = debt > 0.01;
         const orderCnt = orders.filter(o => o.customer_id != null ? o.customer_id === c.id : o.customer === c.name).length;
-        const total = String(Math.round(customerTotalSpent(c)));
+        const total = _custInt(customerTotalSpent(c));
         const cur = Math.round(customerCurrentOrdersSum(c));
         return `<div class="pt-tile ctl-tile" data-name="${escapeHtml((c.name || '').toLowerCase())}" onclick="openCustomerDetail(${c.id})">
             <div class="ctl-row">${hasDebt ? `<span class="ctl-chip">${escapeHtml(_custMoneyNum(debt))}</span>` : ''}</div>
             <div class="ctl-name" style="${hasName ? '' : 'color:#a3493d;'}">${hasName ? escapeHtml(c.name) : '(имя не указано)'}</div>
-            <div class="ctl-total${total.length > 7 ? ' sm' : ''}">${total}</div>
-            <div class="ctl-bot"><span class="ctl-cnt">${orderCnt} ${t('cust_tile_orders')}</span>${cur > 0 ? `<span class="ctl-cur">${cur}</span>` : ''}</div>
+            <div class="ctl-total${total.length > 6 ? ' sm' : ''}"><span>${total}</span><span class="cu">${cu}</span></div>
+            <div class="ctl-bot"><span class="ctl-cnt">${orderCnt} ${t('cust_tile_orders')}</span>${cur > 0 ? `<span class="ctl-cur">${_custInt(cur)} ${cu}</span>` : ''}</div>
             ${hasName ? '' : '<span class="pt-flag"></span>'}
         </div>`;
     }).join('');
