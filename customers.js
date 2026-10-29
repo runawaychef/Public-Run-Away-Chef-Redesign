@@ -77,7 +77,7 @@ function displayCustomers() {
 
 // ---- Вид списка: карточки / плитки (запоминается на устройстве) ----
 function customersViewMode() {
-    try { return localStorage.getItem('sb_cust_view') === 'tiles' ? 'tiles' : 'cards'; } catch (e) { return 'cards'; }
+    try { return localStorage.getItem('sb_cust_view') === 'cards' ? 'cards' : 'tiles'; } catch (e) { return 'tiles'; }
 }
 function setCustomersViewMode(mode) {
     try { localStorage.setItem('sb_cust_view', mode === 'tiles' ? 'tiles' : 'cards'); } catch (e) {}

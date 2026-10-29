@@ -101,7 +101,7 @@ function stockCardCellsHtml(o) {
 
 // ---- Вид списка Склада: карточки / плитки (запоминается на устройстве, отдельно для ингредиентов и полуфабрикатов) ----
 function stockViewMode(kind) {
-    try { return localStorage.getItem('sb_' + kind + '_view') === 'tiles' ? 'tiles' : 'cards'; } catch (e) { return 'cards'; }
+    try { return localStorage.getItem('sb_' + kind + '_view') === 'cards' ? 'cards' : 'tiles'; } catch (e) { return 'tiles'; }
 }
 function setStockViewMode(kind, mode) {
     try { localStorage.setItem('sb_' + kind + '_view', mode === 'tiles' ? 'tiles' : 'cards'); } catch (e) {}

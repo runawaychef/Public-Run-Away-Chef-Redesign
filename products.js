@@ -19,8 +19,8 @@ function displayProducts() {
 }
 
 // ---- Карточный вид (по тому же принципу, что и карточки заказов) ----
-// ---- Вид списка: карточки / плитки (запоминается на устройстве) ----
-let productsViewMode = 'cards';
+let productsViewMode = 'tiles';
+try { if (localStorage.getItem('sb_products_view') === 'cards') productsViewMode = 'cards'; } catch (e) {}
 try { if (localStorage.getItem('sb_products_view') === 'tiles') productsViewMode = 'tiles'; } catch (e) {}
 
 function setProductsViewMode(mode) {
