@@ -41,10 +41,15 @@ function renderProductTiles() {
     body.innerHTML = products.map(p => {
         const photoSrc = p.photo_url ? escapeHtml(p.photo_url) : PRODUCT_PLACEHOLDER_SRC;
         const warn = p.recipe_confirmed ? '' : '<span class="pt-warn"><b>!</b></span>';
+        const ps = formatMoney(p.price);
+        const nm = (ps.match(/\d[\d\s.,]*/) || [ps])[0].trim();
+        const sym = ps.replace(nm, '').trim();
         return `<div class="pt-tile" data-name="${escapeHtml((p.name || '').toLowerCase())}" onclick="openProductDetail(${p.id})">
-            <img class="pt-photo" src="${photoSrc}" loading="lazy">
+            <div class="pt-top">
+                <img class="pt-photo" src="${photoSrc}" loading="lazy">
+                <div class="pt-pr${nm.length > 5 ? ' sm' : ''}"><b>${escapeHtml(nm)}</b><i>${escapeHtml(sym)}</i></div>
+            </div>
             <div class="pt-name">${escapeHtml(p.name || t('semifinished_no_name_fallback'))}</div>
-            <div class="pt-price">${formatMoney(p.price)}</div>
             ${warn}
         </div>`;
     }).join('');
