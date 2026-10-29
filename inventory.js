@@ -656,7 +656,7 @@ function openInventarizationModal(singleIngId) {
     const sorted = list.sort((a, b) => (a.name||'').localeCompare(b.name||''));
 
     let html = '<table class="w-full text-xs table-clean">';
-    html += '<thead><tr style="background-color:#e3e8df;"><th class="p-1 text-left">' + t('inv_col_ingredient') + '</th><th class="p-1 text-right">' + t('sf_current_balance') + '</th><th class="p-1 text-right">' + t('sf_actual') + '</th></tr></thead><tbody>';
+    html += '<thead><tr style="background-color:#e3e8df;"><th class="p-1 text-left">' + t('inv_col_ingredient') + '</th><th class="p-1 text-right">' + t('sf_current_balance') + '</th><th class="p-1 text-right">' + t('sf_actual') + '</th></tr><tr class="tbl-gap"><th colspan="3"></th></tr></thead><tbody>';
     sorted.forEach(ing => {
         const unitLabel = unitAbbrev(ing.unit);
         const balance   = getIngredientBalanceBeforeWriteoff(ing.id, pendingMap);

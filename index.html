@@ -664,6 +664,35 @@
         #semiFinishedDetail #sfStockHistory tbody > tr:last-child > td:last-child { border-bottom-right-radius: 12px; }
         #semiFinishedDetail table.table-clean thead tr.tbl-gap, #semiFinishedDetail table.table-clean thead tr.tbl-gap th { background: transparent !important; background-color: transparent !important; box-shadow: none !important; }
         /* ===== /THEME-UNIFIED-SF-CARD ===== */
+        /* ===== THEME-UNIFIED-INVCOUNT (29.10.2026): Инвентаризация — страница полного списка и окна одной позиции =====
+           Шапка оторвана от списка, строки в «острове» с тенью, поля и кнопки как в карточках. ОТКАТ: index-before-invcount.html, inventory-before-invcount.js, semifinished-before-invcount.js. */
+        #stockCountPage .cmp-card { border-radius: 16px; box-shadow: var(--sb-shadow); border: var(--sb-edge); padding: 12px; }
+        #stockCountPage .pill-btn, #inventarizationModal .modal-content, #sfInventarizationModal .modal-content .pill-btn, #inventarizationModal .modal-content, #sfInventarizationModal .modal-content .pill-btn-secondary { border-radius: 13px; min-height: 36px; box-shadow: 0 6px 10px -6px rgba(70,58,30,0.35); }
+        #stockCountPage .pill-btn svg { width: 13px; height: 13px; }
+        #stockCountPage #stockCountTitle { font-size: 15px; }
+        #stockCountPage .sc-search { border: 1px solid rgba(90,75,40,0.08); border-radius: 12px; background: #f4f1ea; box-shadow: inset 0 1px 2px rgba(70,58,30,0.06); min-height: 36px; padding: 0 12px; font-size: 12.5px; margin: 2px 0 10px; }
+        #stockCountPage .st-head { background: #eef2ea; border: 0; border-radius: 12px; color: #6b7a63; font-size: 10.5px; letter-spacing: .03em; padding: 9px 10px; margin: 0 0 8px; }
+        #stockCountPage #stockCountBody.ot-island { border: 1px solid rgba(90,75,40,0.06); box-shadow: 0 6px 12px -8px rgba(70,58,30,0.3); border-radius: 14px; padding: 2px 10px; background: #fff; }
+        #stockCountPage .st-row.sc-grid { padding: 8px 0; border-bottom: 1px solid #f1efe9; }
+        #stockCountPage .st-row.sc-grid:last-child { border-bottom: 0; }
+        #stockCountPage .st-name { font-weight: 600; color: #3c3a34; }
+        #stockCountPage .sc-input, #inventarizationModal .modal-content, #sfInventarizationModal .modal-content input.inv-qty-input, #inventarizationModal .modal-content, #sfInventarizationModal .modal-content input.sf-inv-qty-input { border: 1px solid rgba(90,75,40,0.08); border-radius: 12px; background: #f4f1ea; box-shadow: inset 0 1px 2px rgba(70,58,30,0.06); min-height: 34px; padding: 0 9px; font-size: 12.5px; }
+        #stockCountPage .sc-input.filled, #inventarizationModal .modal-content, #sfInventarizationModal .modal-content input.inv-qty-input:not(:placeholder-shown), #inventarizationModal .modal-content, #sfInventarizationModal .modal-content input.sf-inv-qty-input:not(:placeholder-shown) { border-color: #7c9473; background: #fff; }
+        #stockCountPage .sc-bar { border: var(--sb-edge); border-radius: 16px; box-shadow: var(--sb-shadow); padding: 8px; }
+        #stockCountPage .sc-bar .pill-btn { min-height: 42px; font-size: 13px; background: linear-gradient(180deg,#8aa380,#7c9473); box-shadow: 0 8px 14px -8px rgba(70,58,30,0.4), inset 0 1px 0 rgba(255,255,255,0.35); }
+        #inventarizationModal .modal-content, #sfInventarizationModal .modal-content { border-radius: 18px; }
+        #inventarizationModal .modal-content, #sfInventarizationModal .modal-content .pill-btn:not(.pill-btn-secondary) { min-height: 42px; background: linear-gradient(180deg,#8aa380,#7c9473); box-shadow: 0 8px 14px -8px rgba(70,58,30,0.4), inset 0 1px 0 rgba(255,255,255,0.35); }
+        #inventarizationContent table.table-clean thead tr, #sfInventarizationContent table.table-clean thead tr { background: #eef2ea !important; }
+        #inventarizationContent table.table-clean thead tr.tbl-gap, #sfInventarizationContent table.table-clean thead tr.tbl-gap { background: transparent !important; }
+        #inventarizationContent table.table-clean thead th, #sfInventarizationContent table.table-clean thead th { color: #6b7a63; font-size: 10.5px !important; letter-spacing: .03em; padding: 8px 6px !important; }
+        #inventarizationContent table.table-clean thead tr:first-child th:first-child, #sfInventarizationContent table.table-clean thead tr:first-child th:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+        #inventarizationContent table.table-clean thead tr:first-child th:last-child, #sfInventarizationContent table.table-clean thead tr:first-child th:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+        #inventarizationContent tbody td, #sfInventarizationContent tbody td { padding: 6px !important; }
+        #inventarizationContent tbody > tr:first-child > td:first-child, #sfInventarizationContent tbody > tr:first-child > td:first-child { border-top-left-radius: 12px; }
+        #inventarizationContent tbody > tr:first-child > td:last-child, #sfInventarizationContent tbody > tr:first-child > td:last-child { border-top-right-radius: 12px; }
+        #inventarizationContent tbody > tr:last-child > td:first-child, #sfInventarizationContent tbody > tr:last-child > td:first-child { border-bottom-left-radius: 12px; }
+        #inventarizationContent tbody > tr:last-child > td:last-child, #sfInventarizationContent tbody > tr:last-child > td:last-child { border-bottom-right-radius: 12px; }
+        /* ===== /THEME-UNIFIED-INVCOUNT ===== */
 
         /* ── Бейдж даты (месяц+число) в карточке заказа — заменяет текстовую дату ── */
         .oc-header { display: flex; gap: 10px; align-items: flex-start; }
@@ -4261,12 +4290,12 @@ function hideSplashScreen() {
     <script src="auth.js?v=30"></script>
     <script src="employees.js?v=58"></script>
     <script src="company.js?v=24"></script>
-    <script src="inventory.js?v=70"></script>
+    <script src="inventory.js?v=71"></script>
     <script src="billing.js?v=17"></script>
     <script src="push.js?v=9"></script>
 <script src="ingredients.js?v=63"></script>
 <script src="batches.js?v=12"></script>
-<script src="semifinished.js?v=59"></script>
+<script src="semifinished.js?v=60"></script>
 <script src="products.js?v=48"></script>
 <script src="customers.js?v=62"></script>
 <script src="calendar.js?v=16"></script>

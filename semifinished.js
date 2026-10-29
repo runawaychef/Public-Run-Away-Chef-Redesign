@@ -856,7 +856,7 @@ function openSfInventarizationModal(singleSfId) {
     if (singleSfId != null) list = list.filter(sf => sf.id === singleSfId);
     const sorted = list.sort((a, b) => (a.name||'').localeCompare(b.name||''));
     let html = '<table class="w-full table-text table-clean">';
-    html += '<thead><tr style="background-color:#e3e8df;"><th class="p-1 text-left">' + t('delete_label_semifinished') + '</th><th class="p-1 text-right">' + t('sf_current_balance') + '</th><th class="p-1 text-right">' + t('sf_actual') + '</th></tr></thead><tbody>';
+    html += '<thead><tr style="background-color:#e3e8df;"><th class="p-1 text-left">' + t('delete_label_semifinished') + '</th><th class="p-1 text-right">' + t('sf_current_balance') + '</th><th class="p-1 text-right">' + t('sf_actual') + '</th></tr><tr class="tbl-gap"><th colspan="3"></th></tr></thead><tbody>';
     sorted.forEach(sf => {
         const unitLabel = unitAbbrev(sf.unit);
         const balance   = getSemiFinishedBalanceBeforeWriteoff(sf.id, pendingMap);
