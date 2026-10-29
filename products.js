@@ -477,10 +477,29 @@ function openProductDetail(productId) {
     setupCopyRecipeControl(prod);
     _pdCostPeriod = 'all';
     pdTitleSync();
+    requestAnimationFrame(pdSyncPhotoSize);
     document.getElementById('pdCopyBox')?.classList.add('hidden');
     renderProductCostChart(prod);
     refreshFab();
 }
+
+// Фото в карточке изделия — квадрат со стороной, равной высоте трёх полей справа
+function pdSyncPhotoSize() {
+    const f = document.querySelector('#productDetail .pd-fields');
+    const row = document.querySelector('#productDetail .pd-main-row');
+    if (!f || !row) return;
+    const hgt = Math.round(f.getBoundingClientRect().height);
+    if (hgt > 40) row.style.setProperty('--pd-ph', hgt + 'px');
+}
+(function () {
+    const init = () => {
+        const f = document.querySelector('#productDetail .pd-fields');
+        if (!f) return;
+        if (window.ResizeObserver) new ResizeObserver(pdSyncPhotoSize).observe(f);
+        window.addEventListener('resize', pdSyncPhotoSize);
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
 
 // Крупное название в карточке повторяет поле «Название»
 function pdTitleSync() {

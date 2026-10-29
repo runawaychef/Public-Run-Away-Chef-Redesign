@@ -530,12 +530,12 @@
         /* ===== THEME-UNIFIED-PRODUCT-CARD (29.10.2026): карточка изделия в стиле карточки заказа / склада =====
            Первый блок: кнопки, крупное название, фото 72 px слева и три поля справа. Рецептура: размер партии и прочие расходы внутри, сводка под «Скопировать…». График: переключатель периода.
            ОТКАТ: вернуть index.html (index-before-pdcard.html), products.js (products-before-pdcard.js), i18n-ru/en/lt/uk, sw.js. */
-        .pd-main-row { display: flex; gap: 12px; align-items: flex-start; }
+        .pd-main-row { display: flex; gap: 12px; align-items: stretch; }
         .pd-fields { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px; }
         .pd-title { font-size: 16px; font-weight: 600; color: #3c3a34; line-height: 1.25; margin: 2px 0 10px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
         .pd-title:empty { display: none; }
-        .pd-photo-wrap { width: 160px; height: 160px; flex-shrink: 0; border-radius: 18px; overflow: hidden; background: #e9e5d9; position: relative; }
-        .pd-photo-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .pd-photo-wrap { width: min(var(--pd-ph, 130px), 56%); height: auto; align-self: stretch; flex-shrink: 0; border-radius: 18px; overflow: hidden; background: #e9e5d9; position: relative; }
+        .pd-photo-wrap img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
         .pd-photo-empty { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #b7b1a3; cursor: pointer; }
         .pd-photo-empty span { display: block; font-size: 11px; margin-top: 4px; }
         .pd-photo-edit-btn { position: absolute; right: 7px; bottom: 7px; border: none; cursor: pointer; background: rgba(50,47,40,0.72); color: #fff; border-radius: 10px; padding: 6px; display: flex; align-items: center; justify-content: center; }
@@ -565,6 +565,7 @@
         }
         #productDetail select.border { padding-right: 4px; }
         #productDetail textarea.border { padding: 6px 9px; min-height: 58px; }
+        #productDetail #pdName { min-height: 46px; }
         #productDetail label.table-text.text-gray-500 { font-size: 11.5px; font-weight: 600; color: #8d887b; }
         #productDetail button.pill-btn.w-full { min-height: 42px; font-size: 13px; background: linear-gradient(180deg,#8aa380,#7c9473); box-shadow: 0 8px 14px -8px rgba(70,58,30,0.4), inset 0 1px 0 rgba(255,255,255,0.35); }
         #productDetail table.table-clean thead tr { background: #eef2ea !important; }
@@ -4167,7 +4168,7 @@ function hideSplashScreen() {
 <script src="ingredients.js?v=59"></script>
 <script src="batches.js?v=11"></script>
 <script src="semifinished.js?v=56"></script>
-<script src="products.js?v=45"></script>
+<script src="products.js?v=46"></script>
 <script src="customers.js?v=62"></script>
 <script src="calendar.js?v=16"></script>
 <script src="orders.js?v=146"></script>
