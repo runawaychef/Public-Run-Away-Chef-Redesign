@@ -176,6 +176,7 @@ async function createDraftProductAndOpen() {
 
     updatePdUnitUI('pcs');
     pdTitleSync();
+    pdCurSync();
     refreshFab();
 }
 
@@ -477,6 +478,7 @@ function openProductDetail(productId) {
     setupCopyRecipeControl(prod);
     _pdCostPeriod = 'all';
     pdTitleSync();
+    pdCurSync();
     requestAnimationFrame(pdSyncPhotoSize);
     document.getElementById('pdCopyBox')?.classList.add('hidden');
     renderProductCostChart(prod);
@@ -502,6 +504,10 @@ function pdSyncPhotoSize() {
 })();
 
 // Крупное название в карточке повторяет поле «Название»
+function pdCurSync() {
+    const c = (typeof CURRENCY_SYMBOLS !== 'undefined' && CURRENCY_SYMBOLS[currentOrgCurrency]) || currentOrgCurrency || '';
+    document.querySelectorAll('#productDetail .pd-cur').forEach(el => { el.textContent = c; });
+}
 function pdTitleSync() {
     const el = document.getElementById('pdTitle');
     if (el) el.textContent = (document.getElementById('pdName')?.value || '').trim();

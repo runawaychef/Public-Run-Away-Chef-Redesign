@@ -542,6 +542,9 @@
         .pd-photo-edit-btn span { display: none; }
         .pd-photo-edit-btn svg { width: 15px; height: 15px; }
         .pd-link { display: block; background: none; border: none; padding: 2px 0; margin: 0 0 10px; font-size: 12.5px; color: #4f6349; cursor: pointer; text-align: left; }
+        .pd-money { position: relative; }
+        #productDetail .pd-money input.border { padding-right: 28px; }
+        .pd-cur { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); font-size: 12.5px; color: #8d887b; pointer-events: none; }
         .pd-sum { font-size: 12px; color: #8d887b; white-space: nowrap; }
         #productDetail .oc-cells { display: flex; background: #f6f4ec; border-radius: 12px; margin-top: 0; }
         #productDetail .oc-cell { flex: 1; min-width: 0; padding: 8px 10px; }
@@ -1918,7 +1921,7 @@ function hideSplashScreen() {
                             </div>
                             <div>
                                 <label class="table-text text-gray-500"><span data-i18n="prod_sale_price">Продажная цена</span> <span id="pdPriceUnitHint" class="text-gray-400"></span></label>
-                                <input id="pdPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" onchange="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text">
+                                <div class="pd-money"><input id="pdPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" onchange="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text"><span class="pd-cur"></span></div>
                             </div>
                         </div>
                     </div>
@@ -1937,7 +1940,7 @@ function hideSplashScreen() {
                         </div>
                         <div>
                             <label class="table-text text-gray-500" data-i18n="prod_other_costs_short">Прочие расходы</label>
-                            <input id="pdOtherCosts" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" onchange="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text">
+                            <div class="pd-money"><input id="pdOtherCosts" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" onchange="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text"><span class="pd-cur"></span></div>
                         </div>
                     </div>
                     <table class="w-full table-auto table-clean mb-2">
@@ -2842,17 +2845,23 @@ function hideSplashScreen() {
 
 
         <!-- Редактировать позицию рецепта -->
-        <div id="editRecipeItemModal" class="modal">
-            <div class="modal-content">
-                <h2 class="text-xs font-semibold mb-2 text-gray-800" data-i18n="prod_edit_recipe_item_title">Редактировать ингредиент рецепта</h2>
-                <label class="text-xs text-gray-600" data-i18n="inv_col_ingredient">Ингредиент</label>
-                <select id="editRecipeIngredient" class="border p-0.5 rounded-xl mb-1 w-full text-xs">
-                    <option value="" data-i18n="sf_choose_ingredient">Выберите ингредиент</option>
-                </select>
-                <label class="text-xs text-gray-600" data-i18n="inv_col_quantity">Количество</label>
-                <input id="editRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
-                <button onclick="saveRecipeItemEdit()" class="btn bg-[#7c9473] text-white p-0.5 rounded-xl hover:bg-[#6c8464] mr-1 text-xs" data-i18n="common_save">Сохранить</button>
-                <button onclick="closeModal()" class="btn bg-[#7c9473] text-white p-0.5 rounded-xl hover:bg-[#6c8464] text-xs" data-i18n="common_cancel">Отмена</button>
+        <div id="editRecipeItemModal" class="modal" onclick="if(event.target===this) closeModal();">
+            <div class="modal-content" style="max-width:420px;">
+                <h2 class="text-sm font-semibold text-gray-800 mb-2" data-i18n="prod_edit_recipe_item_title">Редактировать ингредиент рецепта</h2>
+                <div class="mb-2">
+                    <label class="itm-lbl" data-i18n="inv_col_ingredient">Ингредиент</label>
+                    <select id="editRecipeIngredient" class="border p-0.5 rounded-xl w-full table-text">
+                        <option value="" data-i18n="sf_choose_ingredient">Выберите ингредиент</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="itm-lbl" data-i18n="inv_col_quantity">Количество</label>
+                    <input id="editRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-0.5 rounded-xl w-full table-text">
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="closeModal()" class="pill-btn-secondary flex-1 justify-center" data-i18n="common_cancel">Отмена</button>
+                    <button onclick="saveRecipeItemEdit()" class="pill-btn flex-1 justify-center" data-i18n="common_save">Сохранить</button>
+                </div>
             </div>
         </div>
 
@@ -4168,7 +4177,7 @@ function hideSplashScreen() {
 <script src="ingredients.js?v=60"></script>
 <script src="batches.js?v=11"></script>
 <script src="semifinished.js?v=57"></script>
-<script src="products.js?v=47"></script>
+<script src="products.js?v=48"></script>
 <script src="customers.js?v=62"></script>
 <script src="calendar.js?v=16"></script>
 <script src="orders.js?v=146"></script>
