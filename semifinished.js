@@ -98,6 +98,7 @@ function renderSemiFinishedCards() {
                 <div class="order-card-body">
                     <div class="oc-row">
                         <span class="oc-name">${escapeHtml(sf.name || t('semifinished_no_name_fallback'))}</span>
+                        ${stockCardChipHtml(st)}
                     </div>
                     ${stockCardCellsHtml({ priceLabel: t('sf_unit_cost_short'), priceText: (typeof hasPermission !== 'function' || hasPermission('can_view_costs')) ? priceText : '', beforeText, afterText, afterColor, thirdLabel: thirdLabel, thirdText: thirdText, thirdColor: afterColor })}
                 </div>

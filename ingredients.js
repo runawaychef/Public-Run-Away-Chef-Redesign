@@ -121,6 +121,11 @@ function stockDaysChip(st) {
     if (!st || st.daysLeft === null || st.daysLeft === undefined) return null;
     return { cls: st.zone === 'critical' ? 'bad' : st.zone === 'warning' ? 'warn' : 'ok', text: `${st.daysLeft} ${t('inv_days_short')}` };
 }
+// Карточка Склада (Full): развёрнутая капсула «Хватит на N дн.» справа в строке названия
+function stockCardChipHtml(st) {
+    const c = stockDaysChip(st);
+    return c ? `<span class="stk-chip ${c.cls}">${t('ing_cell_lasts')} ${st.daysLeft} ${t('inv_days_short')}</span>` : '';
+}
 function stockTileHtml(o) {
     const num = o.numText;
     const full = (typeof hasPlanFeature !== 'function') || hasPlanFeature('cost_analytics');
@@ -177,6 +182,7 @@ function renderIngredientCards() {
                 <div class="order-card-body">
                     <div class="oc-row">
                         <span class="oc-name">${escapeHtml(ing.name || t('semifinished_no_name_fallback'))}</span>
+                        ${stockCardChipHtml(st)}
                     </div>
                     ${stockCardCellsHtml({ priceLabel: t('ing_price_per_unit'), priceText, beforeText, afterText, afterColor, thirdLabel: thirdLabel, thirdText: thirdText, thirdColor: afterColor })}
                 </div>

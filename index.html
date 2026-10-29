@@ -1332,6 +1332,9 @@
         .stt-sm .stt-big { font-size: 16px; }
         .stt-name { flex-shrink: 0; align-self: stretch; margin: 3px -3px 0; min-height: 2.4em; font-size: 12px; font-weight: 600; line-height: 1.2; color: #322f28; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
         .stt-price { margin-top: auto; flex-shrink: 0; font-size: 10px; font-weight: 700; color: #7a7568; white-space: nowrap; }
+        /* Капсула «Хватит на N дн.» в карточке Склада (Full) — справа в строке названия */
+        .stk-chip { flex-shrink: 0; align-self: center; font-size: 11.5px; font-weight: 700; line-height: 1.4; border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+        .stk-chip.ok { background: #e3ebdf; color: #4f6349; } .stk-chip.warn { background: #f6ecd0; color: #8a6a1f; } .stk-chip.bad { background: #f6e3df; color: #a3493d; }
         /* ===== /THEME-UNIFIED-TILES-STOCK ===== */
         /* ===== THEME-UNIFIED-WIDTH (27.10.2026): одинаковая ширина карточек в Заказах / Меню / Складе / Клиентах =====
            У Клиентов список обёрнут в блок p-2 (отступ 8px с каждой стороны) — карточки были уже на 16px. Убираем отступ и рамку-тень обёртки.
@@ -4079,9 +4082,9 @@ function hideSplashScreen() {
     <script src="inventory.js?v=70"></script>
     <script src="billing.js?v=17"></script>
     <script src="push.js?v=9"></script>
-<script src="ingredients.js?v=56"></script>
+<script src="ingredients.js?v=57"></script>
 <script src="batches.js?v=11"></script>
-<script src="semifinished.js?v=55"></script>
+<script src="semifinished.js?v=56"></script>
 <script src="products.js?v=43"></script>
 <script src="customers.js?v=59"></script>
 <script src="calendar.js?v=16"></script>
