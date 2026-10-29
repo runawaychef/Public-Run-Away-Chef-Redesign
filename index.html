@@ -580,6 +580,30 @@
         #productDetail #pdRecipeBlock .pill-btn { min-height: 30px; }
         #productDetail #newRecipeQty { min-width: 0; }
         /* ===== /THEME-UNIFIED-PRODUCT-CARD ===== */
+        /* ===== THEME-UNIFIED-INGREDIENT-CARD (29.10.2026): карточка ингредиента в стиле карточки заказа / изделия =====
+           Только #ingredientDetail. ОТКАТ: index-before-ingcard.html. */
+        .ing-fields { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 8px; }
+        #ingredientDetail .itm-card, #ingredientDetail .itm-sec { border-radius: 16px; box-shadow: var(--sb-shadow); border: var(--sb-edge); }
+        #ingredientDetail .itm-card { padding: 12px 14px; margin-bottom: 12px; }
+        #ingredientDetail .itm-card.ing-main { padding: 12px; }
+        #ingredientDetail .itm-sec { margin-bottom: 12px; }
+        #ingredientDetail .itm-sec-title { font-size: 14px; font-weight: 600; color: #3c3a34; }
+        #ingredientDetail .itm-actions button { border: var(--sb-edge); border-radius: 16px; box-shadow: var(--sb-shadow); font-weight: 600; padding: 11px 4px; }
+        #ingredientDetail .itm-actions { gap: 8px; margin-bottom: 12px; }
+        #ingredientDetail .pill-btn, #ingredientDetail .pill-btn-danger { border-radius: 13px; min-height: 36px; padding: 0 13px; font-size: 12.5px; box-shadow: 0 6px 10px -6px rgba(70,58,30,0.35); }
+        #ingredientDetail .pill-btn svg { width: 13px; height: 13px; }
+        #ingredientDetail input.border, #ingredientDetail textarea.border, #ingredientDetail select.border {
+            border: 1px solid rgba(90,75,40,0.08); border-radius: 12px; background: #f4f1ea;
+            box-shadow: inset 0 1px 2px rgba(70,58,30,0.06); min-height: 34px; padding: 0 9px; font-size: 12.5px;
+        }
+        #ingredientDetail select.border { padding-right: 4px; }
+        #ingredientDetail label.table-text.text-gray-500 { font-size: 11.5px; font-weight: 600; color: #8d887b; }
+        #ingredientDetail button.pill-btn.w-full { min-height: 42px; font-size: 13px; background: linear-gradient(180deg,#8aa380,#7c9473); box-shadow: 0 8px 14px -8px rgba(70,58,30,0.4), inset 0 1px 0 rgba(255,255,255,0.35); }
+        #ingredientDetail table.table-clean thead tr { background: #eef2ea !important; }
+        #ingredientDetail table.table-clean thead th { color: #6b7a63; font-size: 10.5px !important; letter-spacing: .03em; }
+        #ingredientDetail table.table-clean thead tr:first-child th:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+        #ingredientDetail table.table-clean thead tr:first-child th:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+        /* ===== /THEME-UNIFIED-INGREDIENT-CARD ===== */
 
         /* ── Бейдж даты (месяц+число) в карточке заказа — заменяет текстовую дату ── */
         .oc-header { display: flex; gap: 10px; align-items: flex-start; }
@@ -2036,24 +2060,23 @@ function hideSplashScreen() {
             <div id="ingredientDetail">
                 <!-- Карточка ингредиента — новая раскладка (21.10): шапка → основное → сводка (+ Умный склад) →
                      действия → сворачиваемые разделы → «Удалить» внизу -->
-                <div class="itm-top">
-                    <button onclick="closeIngredientDetail()" class="pill-btn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-                        <span data-i18n="common_back">Назад</span>
-                    </button>
-                    <h2 id="idTitle" class="itm-title"></h2>
-                </div>
-
-                <!-- Основное: название и единица -->
-                <div class="itm-card">
-                    <p class="itm-autosave" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
-                    <div class="grid grid-cols-2 gap-2">
+                <div class="itm-card ing-main">
+                    <div class="flex items-center justify-between gap-1.5 mb-2">
+                        <button onclick="closeIngredientDetail()" class="pill-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                            <span data-i18n="common_back">Назад</span>
+                        </button>
+                        <button onclick="deleteCurrentIngredient()" class="pill-btn-danger perm-delete" data-i18n="ing_delete_btn">Удалить ингредиент</button>
+                    </div>
+                    <p class="text-[11px] text-gray-400 mb-1" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
+                    <div id="idTitle" class="pd-title"></div>
+                    <div class="ing-fields">
                         <div>
-                            <label class="itm-lbl" data-i18n="inv_col_name">Название</label>
+                            <label class="table-text text-gray-500" data-i18n="inv_col_name">Название</label>
                             <input id="idNameInput" type="text" onblur="saveIngredientHeader()" oninput="document.getElementById('idTitle').textContent=this.value" class="border p-0.5 rounded-xl w-full table-text" placeholder="Например: Мука пшеничная" data-i18n-placeholder="ing_name_placeholder">
                         </div>
                         <div>
-                            <label class="itm-lbl" data-i18n="ing_unit_label">Единица</label>
+                            <label class="table-text text-gray-500" data-i18n="ing_unit_label">Единица</label>
                             <select id="idUnitInput" onchange="saveIngredientHeader()" class="border p-0.5 rounded-xl w-full table-text">
                                 <option value="g" data-i18n="unit_g">г</option>
                                 <option value="kg" data-i18n="unit_kg">кг</option>
@@ -2127,10 +2150,6 @@ function hideSplashScreen() {
                     </div>
                 </div>
 
-                <!-- Удалить — внизу по центру, стандартная красная кнопка -->
-                <div class="itm-del">
-                    <button onclick="deleteCurrentIngredient()" class="pill-btn-danger perm-delete" data-i18n="ing_delete_btn">Удалить ингредиент</button>
-                </div>
             </div>
         </div>
 
@@ -4180,7 +4199,7 @@ function hideSplashScreen() {
     <script src="inventory.js?v=70"></script>
     <script src="billing.js?v=17"></script>
     <script src="push.js?v=9"></script>
-<script src="ingredients.js?v=60"></script>
+<script src="ingredients.js?v=61"></script>
 <script src="batches.js?v=11"></script>
 <script src="semifinished.js?v=57"></script>
 <script src="products.js?v=48"></script>
