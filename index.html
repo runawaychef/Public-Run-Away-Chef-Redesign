@@ -1251,6 +1251,23 @@
         #orderDetail .new-item-row input { border: 1px solid rgba(90,75,40,0.1); border-radius: 10px; min-height: 30px; background: #fff; }
         #orderDetail .new-item-row .btn { border-radius: 11px; min-height: 30px; box-shadow: 0 5px 9px -6px rgba(70,58,30,0.4); }
         /* ===== /THEME-UNIFIED-DETAIL ===== */
+        /* ===== THEME-UNIFIED-TABLES-DETAIL (29.10.2026): таблицы позиций заказа и рецептуры изделия =====
+           Шапка оторвана от таблицы (строка .tbl-gap), у тела таблицы скруглены верх и низ, в заказе строка добавления оторвана от таблицы.
+           ОТКАТ: index-before-tbl.html. */
+        #orderDetail table.table-clean thead th, #productDetail table.table-clean thead th { padding: 8px 4px !important; line-height: 1.2; }
+        #orderDetail table.table-clean thead tr.tbl-gap, #productDetail table.table-clean thead tr.tbl-gap { background: transparent !important; }
+        #orderDetail table.table-clean thead tr.tbl-gap th, #productDetail table.table-clean thead tr.tbl-gap th,
+        #orderDetail table.table-clean tr.tbl-gap td { padding: 0 !important; height: 8px; border: 0; background: transparent !important; border-radius: 0 !important; }
+        #orderDetail #detailItemsBody > tr:first-child > td:first-child, #productDetail #recipeItemsBody > tr:first-child > td:first-child { border-top-left-radius: 12px; }
+        #orderDetail #detailItemsBody > tr:first-child > td:last-child, #productDetail #recipeItemsBody > tr:first-child > td:last-child { border-top-right-radius: 12px; }
+        #orderDetail #detailItemsBody > tr:last-child > td:first-child, #productDetail #recipeItemsBody > tr:last-child > td:first-child { border-bottom-left-radius: 12px; }
+        #orderDetail #detailItemsBody > tr:last-child > td:last-child, #productDetail #recipeItemsBody > tr:last-child > td:last-child { border-bottom-right-radius: 12px; }
+        /* Колонка «Действия» в позициях заказа: заголовок не вылезает за таблицу */
+        #orderDetail table.table-clean thead tr:first-child th:nth-child(1) { width: 38% !important; }
+        #orderDetail table.table-clean thead tr:first-child th:nth-child(3) { width: 18% !important; }
+        #orderDetail table.table-clean thead tr:first-child th:nth-child(4) { width: 17% !important; }
+        #orderDetail table.table-clean thead tr:first-child th:nth-child(5) { width: 15% !important; font-size: 9.5px !important; letter-spacing: 0; padding-left: 1px !important; padding-right: 1px !important; }
+        /* ===== /THEME-UNIFIED-TABLES-DETAIL ===== */
         /* ===== THEME-UNIFIED-DASH2 (27.10.2026): информативные плашки Dashboard (шапка / крупное число / середина / низ) =====
            Крупное число во всех плашках на одной высоте. ОТКАТ: index-before-dash2.html + dashboard-before-dash2.js (+ языковые ключи dash_*_s не мешают). */
         .dashboard-card.dc2 { gap: 0; padding: 11px 12px 10px; }
@@ -1928,7 +1945,7 @@ function hideSplashScreen() {
                             <th class="p-1 text-xs w-[25%]" data-i18n="inv_col_quantity">Кол-во</th>
                             <th class="p-1 text-xs w-[20%]" data-i18n="sf_col_cost">Стоимость</th>
                             <th class="p-1 text-xs w-[15%]" data-i18n="sf_col_actions">Действия</th>
-                        </tr></thead>
+                        </tr><tr class="tbl-gap"><th colspan="4"></th></tr></thead>
                         <tbody id="recipeItemsBody"></tbody>
                     </table>
                     <div class="rounded-xl p-2 mb-2" style="background:#f4f1ea; border:1px solid #e2ddd0;">
@@ -2725,10 +2742,11 @@ function hideSplashScreen() {
                             <th class="p-1 text-xs w-[19%]" data-i18n="prod_price">Цена</th>
                             <th class="p-1 text-xs w-[17%]" data-i18n="stats_col_total">Итого</th>
                             <th class="p-1 text-xs w-[6%]" data-i18n="sf_col_actions">Действия</th>
-                        </tr></thead>
+                        </tr><tr class="tbl-gap"><th colspan="5"></th></tr></thead>
                         <tbody id="detailItemsBody"></tbody>
                         <!-- Строка добавления новой позиции -->
                         <tbody>
+                            <tr class="tbl-gap"><td colspan="5"></td></tr>
                             <tr class="new-item-row" style="background:#f4f1ea;">
                                 <td><div class="search-input-wrap">
                                     <input id="newItemProduct" oninput="autoFillNewItemPrice()" placeholder="— изделие —" autocomplete="off" class="table-text" data-i18n-placeholder="orders_choose_product_placeholder">
