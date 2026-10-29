@@ -418,9 +418,9 @@ async function drawProductCostChart() {
             datasets: [{
                 label: `${t('prod_unit_cost_1pc')} (${CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency})`,
                 data,
-                borderColor: '#059669',
-                backgroundColor: 'rgba(5,150,105,0.08)',
-                pointBackgroundColor: '#059669',
+                borderColor: '#7c9473',
+                backgroundColor: 'rgba(124,148,115,0.14)',
+                pointBackgroundColor: '#7c9473',
                 pointRadius: 5,
                 fill: true,
                 tension: 0.3

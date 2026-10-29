@@ -1002,9 +1002,9 @@ async function renderIngredientPriceChart(ingredientId) {
             datasets: [{
                 label: `${t('ing_price_word')} (${CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency}/${unitLabel})`,
                 data,
-                borderColor: '#4f46e5',
-                backgroundColor: 'rgba(79,70,229,0.08)',
-                pointBackgroundColor: '#4f46e5',
+                borderColor: '#7c9473',
+                backgroundColor: 'rgba(124,148,115,0.14)',
+                pointBackgroundColor: '#7c9473',
                 pointRadius: 5,
                 fill: true,
                 tension: 0.3
