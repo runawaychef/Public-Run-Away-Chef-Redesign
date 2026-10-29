@@ -75,10 +75,53 @@ function displayCustomers() {
     filterCustomersList();
 }
 
+// ---- Вид списка: карточки / плитки (запоминается на устройстве) ----
+function customersViewMode() {
+    try { return localStorage.getItem('sb_cust_view') === 'tiles' ? 'tiles' : 'cards'; } catch (e) { return 'cards'; }
+}
+function setCustomersViewMode(mode) {
+    try { localStorage.setItem('sb_cust_view', mode === 'tiles' ? 'tiles' : 'cards'); } catch (e) {}
+    renderCustomerCards();
+    filterCustomersList();
+}
+// Сумма заказов клиента, которые ещё не выполнены (принят / в работе)
+function customerCurrentOrdersSum(c) {
+    let sum = 0;
+    orders.forEach(o => {
+        const matches = o.customer_id != null ? o.customer_id === c.id : o.customer === c.name;
+        if (matches && o.status !== 'выполнен') sum += orderGrandTotal(o);
+    });
+    return sum;
+}
+function _custMoneyNum(v) { const s = formatMoney(v); return (s.match(/\d[\d\s.,]*/) || [s])[0].trim(); }
+function renderCustomerTiles(body) {
+    body.classList.add('cust-grid');
+    body.innerHTML = customers.map(c => {
+        const hasName = !!(c.name && c.name.trim());
+        const debt = customerDebt(c);
+        const hasDebt = debt > 0.01;
+        const orderCnt = orders.filter(o => o.customer_id != null ? o.customer_id === c.id : o.customer === c.name).length;
+        const total = String(Math.round(customerTotalSpent(c)));
+        const cur = Math.round(customerCurrentOrdersSum(c));
+        return `<div class="pt-tile ctl-tile" data-name="${escapeHtml((c.name || '').toLowerCase())}" onclick="openCustomerDetail(${c.id})">
+            <div class="ctl-row">${hasDebt ? `<span class="ctl-chip">${escapeHtml(_custMoneyNum(debt))}</span>` : ''}</div>
+            <div class="ctl-name" style="${hasName ? '' : 'color:#a3493d;'}">${hasName ? escapeHtml(c.name) : '(имя не указано)'}</div>
+            <div class="ctl-total${total.length > 7 ? ' sm' : ''}">${total}</div>
+            <div class="ctl-bot"><span class="ctl-cnt">${orderCnt} ${t('cust_tile_orders')}</span>${cur > 0 ? `<span class="ctl-cur">${cur}</span>` : ''}</div>
+            ${hasName ? '' : '<span class="pt-flag"></span>'}
+        </div>`;
+    }).join('');
+}
+
 // ---- Карточный вид (тот же принцип, что у изделий) ----
 function renderCustomerCards() {
     const body = document.getElementById('customerCardsBody');
     if (!body) return;
+    const tiles = customersViewMode() === 'tiles';
+    document.getElementById('customersViewBtnCards')?.classList.toggle('active', !tiles);
+    document.getElementById('customersViewBtnTiles')?.classList.toggle('active', tiles);
+    if (tiles) { renderCustomerTiles(body); return; }
+    body.classList.remove('cust-grid');
     let html = '';
     customers.forEach(c => {
         const hasName = !!(c.name && c.name.trim());
@@ -267,9 +310,9 @@ function filterCustomersList() {
     document.getElementById('customerSearchIcon')?.classList.toggle('hidden', !!q);
 
     let visibleCards = 0;
-    document.querySelectorAll('#customerCardsBody .order-card').forEach(card => {
+    document.querySelectorAll('#customerCardsBody .order-card, #customerCardsBody .ctl-tile').forEach(card => {
         const match = !q || card.dataset.name.includes(q);
-        card.style.display = match ? 'flex' : 'none';
+        card.style.display = match ? (card.classList.contains('ctl-tile') ? '' : 'flex') : 'none';
         if (match) visibleCards++;
     });
     document.getElementById('customerCardsEmpty')?.classList.toggle('hidden', visibleCards !== 0);

@@ -672,6 +672,7 @@ I18N.ru = {
         cust_unpaid_5: '{n} неоплаченных заказов',
         cust_unpaid_title: 'Неоплаченные заказы',
         cust_cell_orders: 'Заказов',
+        cust_tile_orders: 'зак.',
         cust_cell_total: 'Сумма заказов',
         cust_cell_debt: 'Задолженность',
         cust_tag_company: 'Юр. лицо',

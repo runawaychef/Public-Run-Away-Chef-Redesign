@@ -663,6 +663,7 @@ I18N.uk = {
         cust_unpaid_5: '{n} неоплачених замовлень',
         cust_unpaid_title: 'Неоплачені замовлення',
         cust_cell_orders: 'Замовлень',
+        cust_tile_orders: 'зам.',
         cust_cell_total: 'Сума замовлень',
         cust_cell_debt: 'Заборгованість',
         cust_tag_company: 'Юр. особа',

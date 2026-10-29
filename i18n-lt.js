@@ -663,6 +663,7 @@ I18N.lt = {
         cust_unpaid_5: '{n} neapmokėtų užsakymų',
         cust_unpaid_title: 'Neapmokėti užsakymai',
         cust_cell_orders: 'Užsakymų',
+        cust_tile_orders: 'už.',
         cust_cell_total: 'Užsakymų suma',
         cust_cell_debt: 'Skola',
         cust_tag_company: 'Juridinis asmuo',

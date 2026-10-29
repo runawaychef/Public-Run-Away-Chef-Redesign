@@ -673,6 +673,7 @@ I18N.en = {
         cust_unpaid_5: '{n} unpaid orders',
         cust_unpaid_title: 'Unpaid orders',
         cust_cell_orders: 'Orders',
+        cust_tile_orders: 'ord.',
         cust_cell_total: 'Orders total',
         cust_cell_debt: 'Amount due',
         cust_tag_company: 'Company',
