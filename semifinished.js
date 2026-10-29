@@ -609,7 +609,7 @@ async function loadSfPriceHistory(sf) {
         if (hs) hs.textContent = `${t('sf_produced_short')} ${String(Math.round(totalIn * 10) / 10).replace('.', ',')} ${unitLabel}`;
         let html = `<p class="table-text text-gray-500 font-semibold mt-2 mb-1">${t('sf_history_produced_prefix')}: ${totalIn.toFixed(2)} ${unitLabel})</p>`;
         html += '<div style="max-height:224px;overflow-y:auto;touch-action:pan-y;overscroll-behavior:contain;">';
-        html += '<table class="w-full table-text table-clean"><thead><tr style="background-color:#e3e8df;" class="text-xs"><th class="p-1 text-left">' + t('history_col_date') + '</th><th class="p-1 text-right">' + t('inv_col_quantity') + '</th><th class="p-1 text-left">' + t('ing_note_label') + '</th></tr></thead><tbody>';
+        html += '<table class="w-full table-text table-clean"><thead><tr style="background-color:#e3e8df;" class="text-xs"><th class="p-1 text-left">' + t('history_col_date') + '</th><th class="p-1 text-right">' + t('inv_col_quantity') + '</th><th class="p-1 text-left">' + t('ing_note_label') + '</th></tr><tr class="tbl-gap"><th colspan="3"></th></tr></thead><tbody>';
         data.forEach(r => {
             const date = new Date(r.created_at).toLocaleDateString('ru-LT');
             const isIn = r.type === 'приход';

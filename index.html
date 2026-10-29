@@ -618,6 +618,52 @@
         #ingredientDetail #ingHistTableWrap, #ingredientDetail #ingBatchesList > div { padding-bottom: 2px; }
         #ingredientDetail table.table-clean thead tr.tbl-gap, #ingredientDetail table.table-clean thead tr.tbl-gap th { background: transparent !important; background-color: transparent !important; box-shadow: none !important; }
         /* ===== /THEME-UNIFIED-INGREDIENT-SECTIONS ===== */
+        /* ===== THEME-UNIFIED-SF-CARD (29.10.2026): карточка полуфабриката — копия стиля карточки ингредиента =====
+           ОТКАТ: index-before-sfcard.html + semifinished-before-sfcard.js. */
+        #semiFinishedDetail .itm-card, #semiFinishedDetail .itm-sec { border-radius: 16px; box-shadow: var(--sb-shadow); border: var(--sb-edge); }
+        #semiFinishedDetail .itm-card { padding: 12px 14px; margin-bottom: 12px; }
+        #semiFinishedDetail .itm-card.ing-main { padding: 12px; }
+        #semiFinishedDetail .itm-sec { margin-bottom: 12px; }
+        #semiFinishedDetail .itm-sec-title { font-size: 14px; font-weight: 600; color: #3c3a34; }
+        #semiFinishedDetail .itm-actions button { border: var(--sb-edge); border-radius: 16px; box-shadow: var(--sb-shadow); font-weight: 600; padding: 11px 4px; }
+        #semiFinishedDetail .itm-actions { gap: 8px; margin-bottom: 12px; }
+        #semiFinishedDetail .pill-btn, #semiFinishedDetail .pill-btn-danger { border-radius: 13px; min-height: 36px; padding: 0 13px; font-size: 12.5px; box-shadow: 0 6px 10px -6px rgba(70,58,30,0.35); }
+        #semiFinishedDetail .pill-btn svg { width: 13px; height: 13px; }
+        #semiFinishedDetail input.border, #semiFinishedDetail textarea.border, #semiFinishedDetail select.border {
+            border: 1px solid rgba(90,75,40,0.08); border-radius: 12px; background: #f4f1ea;
+            box-shadow: inset 0 1px 2px rgba(70,58,30,0.06); min-height: 34px; padding: 0 9px; font-size: 12.5px;
+        }
+        #semiFinishedDetail select.border { padding-right: 4px; }
+        #semiFinishedDetail label.table-text.text-gray-500 { font-size: 11.5px; font-weight: 600; color: #8d887b; }
+        #semiFinishedDetail button.pill-btn.w-full { min-height: 42px; font-size: 13px; background: linear-gradient(180deg,#8aa380,#7c9473); box-shadow: 0 8px 14px -8px rgba(70,58,30,0.4), inset 0 1px 0 rgba(255,255,255,0.35); }
+        #semiFinishedDetail table.table-clean thead tr { background: #eef2ea !important; }
+        #semiFinishedDetail table.table-clean thead th { color: #6b7a63; font-size: 10.5px !important; letter-spacing: .03em; }
+        #semiFinishedDetail table.table-clean thead tr:first-child th:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+        #semiFinishedDetail table.table-clean thead tr:first-child th:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+        #semiFinishedDetail .itm-sec-body table.table-clean thead th, #semiFinishedDetail #sfPriceContent table.table-clean thead th, #semiFinishedDetail #sfStockHistory table.table-clean thead th, #semiFinishedDetail #sfBatchesList table.table-clean thead th { padding: 8px 6px !important; line-height: 1.2; }
+        #semiFinishedDetail #sfStockHistory tbody td, #semiFinishedDetail #sfBatchesList tbody td, #semiFinishedDetail #sfPriceContent tbody td { padding: 6px 6px !important; }
+        #semiFinishedDetail #sfStockHistory tbody > tr:first-child > td:first-child, #semiFinishedDetail #sfBatchesList tbody > tr:first-child > td:first-child, #semiFinishedDetail #sfPriceContent tbody > tr:first-child > td:first-child { border-top-left-radius: 12px; }
+        #semiFinishedDetail #sfStockHistory tbody > tr:first-child > td:last-child, #semiFinishedDetail #sfBatchesList tbody > tr:first-child > td:last-child, #semiFinishedDetail #sfPriceContent tbody > tr:first-child > td:last-child { border-top-right-radius: 12px; }
+        #semiFinishedDetail #sfStockHistory tbody > tr:last-child > td:first-child, #semiFinishedDetail #sfBatchesList tbody > tr:last-child > td:first-child, #semiFinishedDetail #sfPriceContent tbody > tr:last-child > td:first-child { border-bottom-left-radius: 12px; }
+        #semiFinishedDetail #sfStockHistory tbody > tr:last-child > td:last-child, #semiFinishedDetail #sfBatchesList tbody > tr:last-child > td:last-child, #semiFinishedDetail #sfPriceContent tbody > tr:last-child > td:last-child { border-bottom-right-radius: 12px; }
+        #semiFinishedDetail #sfStockHistory .hist-tab { border-radius: 13px; padding: 5px 11px; font-size: 12px; font-weight: 600; }
+        #semiFinishedDetail #sfStockHistory, #semiFinishedDetail #sfBatchesList > div { padding-bottom: 2px; }
+        #semiFinishedDetail table.table-clean thead tr.tbl-gap, #semiFinishedDetail table.table-clean thead tr.tbl-gap th { background: transparent !important; background-color: transparent !important; box-shadow: none !important; }
+        #semiFinishedDetail table.table-clean thead th { padding: 8px 4px !important; line-height: 1.2; }
+        #semiFinishedDetail #sfRecipeItemsBody > tr:first-child > td:first-child { border-top-left-radius: 12px; }
+        #semiFinishedDetail #sfRecipeItemsBody > tr:first-child > td:last-child { border-top-right-radius: 12px; }
+        #semiFinishedDetail #sfRecipeItemsBody > tr:last-child > td:first-child { border-bottom-left-radius: 12px; }
+        #semiFinishedDetail #sfRecipeItemsBody > tr:last-child > td:last-child { border-bottom-right-radius: 12px; }
+        #semiFinishedDetail #sfRecipeItemsBody tr { border-bottom: 1px solid #f1efe9 !important; }
+        #semiFinishedDetail #sfRecipeItemsBody td { padding-top: 7px; padding-bottom: 7px; }
+        #semiFinishedDetail #sfRecipeSection .pill-btn { min-height: 30px; }
+        #semiFinishedDetail #sfStockHistory tbody td { padding: 6px 6px !important; }
+        #semiFinishedDetail #sfStockHistory tbody > tr:first-child > td:first-child { border-top-left-radius: 12px; }
+        #semiFinishedDetail #sfStockHistory tbody > tr:first-child > td:last-child { border-top-right-radius: 12px; }
+        #semiFinishedDetail #sfStockHistory tbody > tr:last-child > td:first-child { border-bottom-left-radius: 12px; }
+        #semiFinishedDetail #sfStockHistory tbody > tr:last-child > td:last-child { border-bottom-right-radius: 12px; }
+        #semiFinishedDetail table.table-clean thead tr.tbl-gap, #semiFinishedDetail table.table-clean thead tr.tbl-gap th { background: transparent !important; background-color: transparent !important; box-shadow: none !important; }
+        /* ===== /THEME-UNIFIED-SF-CARD ===== */
 
         /* ── Бейдж даты (месяц+число) в карточке заказа — заменяет текстовую дату ── */
         .oc-header { display: flex; gap: 10px; align-items: flex-start; }
@@ -2195,28 +2241,27 @@ function hideSplashScreen() {
             <!-- ДЕТАЛЬНЫЙ ВИД ПОЛУФАБРИКАТА — новая раскладка (21.10): шапка → основное → сводка (+ Умный склад) →
                  действия → «Рецепт» (открыт) и другие сворачиваемые разделы → «Удалить» внизу -->
             <div id="semiFinishedDetail">
-                <div class="itm-top">
-                    <button onclick="closeSemiFinishedDetail()" class="pill-btn">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-                        <span data-i18n="common_back">Назад</span>
-                    </button>
-                    <h2 class="itm-title"><span class="itm-title-in"><svg class="inv-sf-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l-8 4l8 4l8-4l-8-4"/><path d="M4 12l8 4l8-4"/><path d="M4 16l8 4l8-4"/></svg><span id="sfdTitle"></span></span></h2>
-                </div>
-
-                <!-- Основное -->
-                <div class="itm-card">
-                    <p class="itm-autosave" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
+                <div class="itm-card ing-main">
+                    <div class="flex items-center justify-between gap-1.5 mb-2">
+                        <button onclick="closeSemiFinishedDetail()" class="pill-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                            <span data-i18n="common_back">Назад</span>
+                        </button>
+                        <button onclick="deleteCurrentSemiFinished()" class="pill-btn-danger perm-delete" data-i18n="sf_delete_btn">Удалить полуфабрикат</button>
+                    </div>
+                    <p class="text-[11px] text-gray-400 mb-1" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
+                    <div id="sfdTitle" class="pd-title"></div>
                     <div class="grid grid-cols-2 gap-2">
                         <div class="col-span-2">
-                            <label class="itm-lbl" data-i18n="inv_col_name">Название</label>
+                            <label class="table-text text-gray-500" data-i18n="inv_col_name">Название</label>
                             <input id="sfdName" type="text" onblur="saveSfdHeader()" oninput="document.getElementById('sfdTitle').textContent=this.value" class="border p-0.5 rounded-xl w-full table-text text-gray-900">
                         </div>
                         <div>
-                            <label class="itm-lbl" data-i18n="sf_batch_size">Размер партии</label>
+                            <label class="table-text text-gray-500" data-i18n="sf_batch_size">Размер партии</label>
                             <input id="sfdBatchSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" onchange="saveSfdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                         <div>
-                            <label class="itm-lbl" data-i18n="ing_unit_label">Единица</label>
+                            <label class="table-text text-gray-500" data-i18n="ing_unit_label">Единица</label>
                             <select id="sfdUnit" onchange="saveSfdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                                 <option value="g" data-i18n="unit_g_full">граммы (г)</option>
                                 <option value="kg" data-i18n="unit_kg_full">килограммы (кг)</option>
@@ -2229,7 +2274,7 @@ function hideSplashScreen() {
                             </select>
                         </div>
                         <div class="col-span-2">
-                            <label class="itm-lbl" data-i18n="sf_other_costs">Прочие расходы на партию</label>
+                            <label class="table-text text-gray-500" data-i18n="sf_other_costs">Прочие расходы на партию</label>
                             <input id="sfdOtherCosts" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" onchange="saveSfdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                     </div>
@@ -2269,7 +2314,7 @@ function hideSplashScreen() {
                             <th class="p-1 text-xs w-[25%]" data-i18n="inv_col_quantity">Кол-во</th>
                             <th class="p-1 text-xs w-[20%]" data-i18n="sf_col_cost">Стоимость</th>
                             <th class="p-1 text-xs w-[15%]" data-i18n="sf_col_actions">Действия</th>
-                        </tr></thead>
+                        </tr><tr class="tbl-gap"><th colspan="4"></th></tr></thead>
                             <tbody id="sfRecipeItemsBody"></tbody>
                         </table>
                     <div class="rounded-xl p-2 mb-2" style="background:#f4f1ea; border:1px solid #e2ddd0;">
@@ -2338,10 +2383,6 @@ function hideSplashScreen() {
                     </div>
                 </div>
 
-                <!-- Удалить — внизу по центру, стандартная красная кнопка -->
-                <div class="itm-del">
-                    <button onclick="deleteCurrentSemiFinished()" class="pill-btn-danger perm-delete" data-i18n="sf_delete_btn">Удалить полуфабрикат</button>
-                </div>
             </div>
         </div>
 
@@ -4215,7 +4256,7 @@ function hideSplashScreen() {
     <script src="push.js?v=9"></script>
 <script src="ingredients.js?v=62"></script>
 <script src="batches.js?v=12"></script>
-<script src="semifinished.js?v=57"></script>
+<script src="semifinished.js?v=58"></script>
 <script src="products.js?v=48"></script>
 <script src="customers.js?v=62"></script>
 <script src="calendar.js?v=16"></script>
