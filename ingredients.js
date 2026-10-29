@@ -910,7 +910,7 @@ async function renderIngredientStockBlock(ing) {
                     <th class="p-1 text-right">${t('inv_col_quantity')}</th>
                     ${showMoney ? `<th class="p-1 text-right">${t('stats_col_sum')}</th>` : ''}
                     <th class="p-1 text-left">${t('ing_note_label')}</th>
-                </tr></thead>
+                </tr><tr class="tbl-gap"><th colspan="${showMoney ? 4 : 3}"></th></tr></thead>
                 <tbody id="ingHistTableBody">${rows}</tbody>
             </table>
         </div>`;
@@ -1038,7 +1038,7 @@ function renderIngredientPriceHistory(ingredientId) {
     if (!history.length) { container.innerHTML = `<p class="table-text text-gray-400">${t('ing_price_history_empty')}</p>`; return; }
     const ing = ingredients.find(i => i.id === ingredientId);
     const unitLabel = ing ? (unitAbbrev(ing.unit)) : '';
-    let html = '<table class="w-full table-text table-clean"><thead><tr style="background-color:#e3e8df;" class="table-text"><th class="p-0.5 text-left">' + t('ing_from_date') + '</th><th class="p-0.5 text-right">' + t('ing_package_price_short') + '</th><th class="p-0.5 text-right">' + t('ing_price_per_unit') + '</th><th class="p-0.5 w-12"></th></tr></thead><tbody>';
+    let html = '<table class="w-full table-text table-clean"><thead><tr style="background-color:#e3e8df;" class="table-text"><th class="p-0.5 text-left">' + t('ing_from_date') + '</th><th class="p-0.5 text-right">' + t('ing_package_price_short') + '</th><th class="p-0.5 text-right">' + t('ing_price_per_unit') + '</th><th class="p-0.5 w-12"></th></tr><tr class="tbl-gap"><th colspan="4"></th></tr></thead><tbody>';
     history.forEach((h, i) => {
         const unitPrice = h.package_size ? (h.package_price / h.package_size).toFixed(4) : '—';
         const isCurrent = i === 0;

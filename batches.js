@@ -139,7 +139,7 @@ function renderBatchesList(batches, unitLabel, itemType) {
     const exhausted = batches.filter(b => Number(b.qty_remaining) <= 0).reverse();
 
     let html = '<table class="w-full text-xs table-clean"><thead><tr style="background-color:#e3e8df;position:sticky;top:0;">' +
-        `<th class="p-1 text-left">${t('history_col_date')}</th><th class="p-1 text-right">${t('inv_col_balance')}</th><th class="p-1 text-right">${t('orders_price_per_unit_short')}</th></tr></thead><tbody>`;
+        `<th class="p-1 text-left">${t('history_col_date')}</th><th class="p-1 text-right">${t('inv_col_balance')}</th><th class="p-1 text-right">${t('orders_price_per_unit_short')}</th></tr><tr class="tbl-gap"><th colspan="3"></th></tr></thead><tbody>`;
     active.forEach(b => { html += renderRow(b); });
     if (active.length && exhausted.length) {
         html += `<tr><td colspan="3" class="p-1 text-xs font-semibold text-gray-400" style="background:#f4f1ea;">${t('batch_exhausted_label')}</td></tr>`;

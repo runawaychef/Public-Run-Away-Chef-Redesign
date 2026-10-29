@@ -604,6 +604,19 @@
         #ingredientDetail table.table-clean thead tr:first-child th:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
         #ingredientDetail table.table-clean thead tr:first-child th:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
         /* ===== /THEME-UNIFIED-INGREDIENT-CARD ===== */
+        /* ===== THEME-UNIFIED-INGREDIENT-SECTIONS (29.10.2026): История склада / Остаток по партиям / История цен =====
+           Шапка оторвана (строка .tbl-gap), тело таблицы скруглено сверху и снизу. ОТКАТ: index-before-ingsec.html + ingredients-before-ingsec.js + batches-before-ingsec.js. */
+        table.table-clean tr.tbl-gap th, table.table-clean tr.tbl-gap td { padding: 0 !important; height: 8px; border: 0 !important; background: transparent !important; border-radius: 0 !important; }
+        table.table-clean thead tr.tbl-gap { background: transparent !important; }
+        #ingredientDetail .itm-sec-body table.table-clean thead th, #ingredientDetail #idPriceHistory table.table-clean thead th, #ingredientDetail #ingStockHistory table.table-clean thead th, #ingredientDetail #ingBatchesList table.table-clean thead th { padding: 8px 6px !important; line-height: 1.2; }
+        #ingredientDetail #ingStockHistory tbody td, #ingredientDetail #ingBatchesList tbody td, #ingredientDetail #idPriceHistory tbody td { padding: 6px 6px !important; }
+        #ingredientDetail #ingStockHistory tbody > tr:first-child > td:first-child, #ingredientDetail #ingBatchesList tbody > tr:first-child > td:first-child, #ingredientDetail #idPriceHistory tbody > tr:first-child > td:first-child { border-top-left-radius: 12px; }
+        #ingredientDetail #ingStockHistory tbody > tr:first-child > td:last-child, #ingredientDetail #ingBatchesList tbody > tr:first-child > td:last-child, #ingredientDetail #idPriceHistory tbody > tr:first-child > td:last-child { border-top-right-radius: 12px; }
+        #ingredientDetail #ingStockHistory tbody > tr:last-child > td:first-child, #ingredientDetail #ingBatchesList tbody > tr:last-child > td:first-child, #ingredientDetail #idPriceHistory tbody > tr:last-child > td:first-child { border-bottom-left-radius: 12px; }
+        #ingredientDetail #ingStockHistory tbody > tr:last-child > td:last-child, #ingredientDetail #ingBatchesList tbody > tr:last-child > td:last-child, #ingredientDetail #idPriceHistory tbody > tr:last-child > td:last-child { border-bottom-right-radius: 12px; }
+        #ingredientDetail #ingStockHistory .hist-tab { border-radius: 13px; padding: 5px 11px; font-size: 12px; font-weight: 600; }
+        #ingredientDetail #ingHistTableWrap, #ingredientDetail #ingBatchesList > div { padding-bottom: 2px; }
+        /* ===== /THEME-UNIFIED-INGREDIENT-SECTIONS ===== */
 
         /* ── Бейдж даты (месяц+число) в карточке заказа — заменяет текстовую дату ── */
         .oc-header { display: flex; gap: 10px; align-items: flex-start; }
@@ -4199,8 +4212,8 @@ function hideSplashScreen() {
     <script src="inventory.js?v=70"></script>
     <script src="billing.js?v=17"></script>
     <script src="push.js?v=9"></script>
-<script src="ingredients.js?v=61"></script>
-<script src="batches.js?v=11"></script>
+<script src="ingredients.js?v=62"></script>
+<script src="batches.js?v=12"></script>
 <script src="semifinished.js?v=57"></script>
 <script src="products.js?v=48"></script>
 <script src="customers.js?v=62"></script>
