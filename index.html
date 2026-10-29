@@ -2866,17 +2866,23 @@ function hideSplashScreen() {
         </div>
 
         <!-- Редактировать позицию рецепта полуфабриката -->
-        <div id="editSfRecipeItemModal" class="modal">
-            <div class="modal-content">
-                <h2 class="text-xs font-semibold mb-2 text-gray-800" data-i18n="prod_edit_recipe_item_title">Редактировать ингредиент рецепта</h2>
-                <label class="text-xs text-gray-600" data-i18n="inv_col_ingredient">Ингредиент</label>
-                <select id="editSfRecipeIngredient" class="border p-0.5 rounded-xl mb-1 w-full text-xs">
-                    <option value="" data-i18n="sf_choose_ingredient">Выберите ингредиент</option>
-                </select>
-                <label class="text-xs text-gray-600" data-i18n="inv_col_quantity">Количество</label>
-                <input id="editSfRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-0.5 rounded-xl mb-2 w-full text-xs">
-                <button onclick="saveSfRecipeItemEdit()" class="btn bg-[#7c9473] text-white p-0.5 rounded-xl hover:bg-[#6c8464] mr-1 text-xs" data-i18n="common_save">Сохранить</button>
-                <button onclick="closeModal()" class="btn bg-[#7c9473] text-white p-0.5 rounded-xl hover:bg-[#6c8464] text-xs" data-i18n="common_cancel">Отмена</button>
+        <div id="editSfRecipeItemModal" class="modal" onclick="if(event.target===this) closeModal();">
+            <div class="modal-content" style="max-width:420px;">
+                <h2 class="text-sm font-semibold text-gray-800 mb-2" data-i18n="prod_edit_recipe_item_title">Редактировать ингредиент рецепта</h2>
+                <div class="mb-2">
+                    <label class="itm-lbl" data-i18n="inv_col_ingredient">Ингредиент</label>
+                    <select id="editSfRecipeIngredient" class="border p-0.5 rounded-xl w-full table-text">
+                        <option value="" data-i18n="sf_choose_ingredient">Выберите ингредиент</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="itm-lbl" data-i18n="inv_col_quantity">Количество</label>
+                    <input id="editSfRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-0.5 rounded-xl w-full table-text">
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="closeModal()" class="pill-btn-secondary flex-1 justify-center" data-i18n="common_cancel">Отмена</button>
+                    <button onclick="saveSfRecipeItemEdit()" class="pill-btn flex-1 justify-center" data-i18n="common_save">Сохранить</button>
+                </div>
             </div>
         </div>
 
