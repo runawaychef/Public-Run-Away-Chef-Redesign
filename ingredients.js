@@ -123,15 +123,14 @@ function stockDaysChip(st) {
 }
 function stockTileHtml(o) {
     const num = o.numText;
-    const cls = 'pt-tile stt-tile' + (num.length > 6 ? ' stt-sm' : '');
+    const full = (typeof hasPlanFeature !== 'function') || hasPlanFeature('cost_analytics');
+    const cls = 'pt-tile stt-tile' + (full ? ' stt-full' : '') + (num.length > 8 ? ' stt-sm' : '');
     return `<div class="${cls}" data-name="${escapeHtml((o.name || '').toLowerCase())}" data-critical="${o.attn ? '1' : '0'}" data-low="${o.red ? '1' : '0'}" onclick="${o.openCall}">
-        ${o.chip ? `<div class="stt-chip ${o.chip.cls}">${o.chip.text}</div>` : ''}
-        <div class="stt-sp"></div>
+        ${full ? `<div class="stt-row">${o.chip ? `<span class="stt-chip ${o.chip.cls}">${o.chip.text}</span>` : ''}</div>` : ''}
         <div class="stt-big" style="color:${o.red ? '#c0685c' : '#322f28'};">${num}${o.unit ? `<small>${escapeHtml(o.unit)}</small>` : ''}</div>
         <div class="stt-name">${escapeHtml(o.name || t('semifinished_no_name_fallback'))}</div>
-        <div class="stt-sp"></div>
         ${o.priceText ? `<div class="stt-price">${o.priceText}</div>` : ''}
-        ${o.attn ? '<span class="pt-warn"><b>!</b></span>' : ''}
+        ${o.attn ? '<span class="pt-flag"></span>' : ''}
     </div>`;
 }
 
