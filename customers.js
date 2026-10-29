@@ -638,6 +638,7 @@ function openCustomerDetail(custId) {
     if (typeof positionStickySearchBar === 'function') positionStickySearchBar('customersSearchBar', 'customersList', 'customerDetail');
 
     document.getElementById('cdName').value = cust.name;
+    cdTitleSync();
     document.getElementById('cdContact').value = cust.contact;
     document.getElementById('cdEmail').value = cust.email || '';
     document.getElementById('cdDiscount').value = cust.discount.toFixed(2);
@@ -1166,6 +1167,12 @@ function setCustomerEntityType(type, skipSave) {
     individualBtn.classList.toggle('active', !isCompany);
 
     if (!skipSave) saveCdHeader();
+}
+
+// Крупное имя клиента над полями (как название изделия в карточке изделия)
+function cdTitleSync() {
+    const el = document.getElementById('cdTitle');
+    if (el) el.textContent = (document.getElementById('cdName')?.value || '').trim();
 }
 
 async function saveCdHeader() {
