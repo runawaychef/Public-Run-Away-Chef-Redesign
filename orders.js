@@ -636,6 +636,7 @@ function renderDoneOrderCard(order, opts) {
                             ${noteLine}
                             ${payLine}
                             ${overdueLine}
+                            ${orderDocChipsHtml(order)}
                         </div>
                         <div class="oc-items" data-role="items" style="display:none;">${itemsLine}</div>
                         <div class="oc-bottom">
