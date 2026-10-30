@@ -35,6 +35,7 @@ async function openOrderConfirmation(orderId) {
     hideLoading();
     _confState = { orderId, org, lang };
     openAppPage('orderConfPage');
+    _renderOrderConf(); // _appPageOnShow срабатывает только при возврате на страницу, при открытии рисуем сами
 }
 
 function _confData() {
