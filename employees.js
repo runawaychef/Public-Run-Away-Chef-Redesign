@@ -12,6 +12,8 @@ let currentOrgCustomersUsed = 0;    // сколько клиентов созд�
 let currentOrgOrdersUsed = 0;       // сколько заказов создано за всё время (для лимита бесплатного тарифа)
 let currentOrgCurrency = 'EUR';     // код валюты расчёта организации (пригодится для formatMoney())
 let currentOrgVatRate = 0;          // ставка НДС организации (доля, не проценты — 0.21 = 21%); по умолчанию без НДС
+let currentOrgVatPayer = false;     // organizations.vat_payer — пекарня плательщик НДС (29.10.2026)
+let currentOrgVatPayerFrom = null;  // organizations.vat_payer_from — «плательщик с даты» (YYYY-MM-DD), null = с начала
 let currentOrgCountry = null;       // код страны организации (organizations.country: 'LT', 'BY', ...) — от неё зависят подписи реквизитов
 let currentOrgTimezone = null;
 let currentOrgPaymentMode = 'order'; // 'order' — оплата прямо в заказ; 'invoice' — только по счёту (organizations.payment_mode, 21.10)
@@ -195,7 +197,7 @@ async function loadCurrentOrg() {
 
         const { data, error } = await db
             .from('memberships')
-            .select('org_id, role, organizations(id, name, plan, plan_override, created_at, customers_created_total, orders_created_total, currency_code, country, vat_rate, detected_country, detected_country_updated_at, bcc_self_on_send, timezone, memo_remind_days, payment_mode, cash_without_invoice, is_protected)')
+            .select('org_id, role, organizations(id, name, plan, plan_override, created_at, customers_created_total, orders_created_total, currency_code, country, vat_rate, vat_payer, vat_payer_from, detected_country, detected_country_updated_at, bcc_self_on_send, timezone, memo_remind_days, payment_mode, cash_without_invoice, is_protected)')
             .eq('user_id', uid)
             .single();
         if (error) throw error;
@@ -213,6 +215,8 @@ async function loadCurrentOrg() {
         currentOrgOrdersUsed = (data.organizations && data.organizations.orders_created_total) || 0;
         currentOrgCurrency = (data.organizations && data.organizations.currency_code) || 'EUR';
         currentOrgCountry = (data.organizations && data.organizations.country) || null;
+        currentOrgVatPayer = !!(data.organizations && data.organizations.vat_payer);
+        currentOrgVatPayerFrom = (data.organizations && data.organizations.vat_payer_from) || null;
         currentOrgVatRate = (data.organizations && data.organizations.vat_rate != null) ? Number(data.organizations.vat_rate) : 0;
         currentOrgBccSelf = !!(data.organizations && data.organizations.bcc_self_on_send);
         currentOrgTimezone = (data.organizations && data.organizations.timezone) || null;

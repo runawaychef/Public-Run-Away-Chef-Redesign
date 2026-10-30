@@ -7,6 +7,7 @@
 // showAutosaveToast, updateHeaderOrgName (employees.js), logActivity.
 
 let _companyEntityType = 'company'; // текущее выбранное значение в открытой карточке
+let _cmpVatPayer = false;            // отображаемое состояние галки «Плательщик НДС» (29.10.2026)
 let _cmpCurrentCountryCode = null;   // код текущей страны — для обновления подписи при смене языка
 let _cmpCurrentCurrencyCode = null;  // код текущей валюты — аналогично
 
@@ -117,8 +118,11 @@ function updateCountrySpecificLabels() {
     regNumberLabelEl.textContent = t(r.regKey);
     vatCodeCompanyLabelEl.textContent = t(r.vatCompanyKey);
     vatCodeIndividualLabelEl.textContent = t(r.vatIndividualKey);
-    vatCodeCompanyWrap.classList.toggle('hidden', r.hideVat);
-    vatCodeIndividualWrap.classList.toggle('hidden', r.hideVat);
+    const hideVatCode = r.hideVat || !_cmpVatPayer;   // «Код НДС» нужен только плательщику НДС (29.10.2026)
+    vatCodeCompanyWrap.classList.toggle('hidden', hideVatCode);
+    vatCodeIndividualWrap.classList.toggle('hidden', hideVatCode);
+    document.getElementById('cmpRegNumber')?.parentElement?.classList.toggle('col-span-2', hideVatCode);
+    document.getElementById('cmpPersonalCode')?.parentElement?.classList.toggle('col-span-2', hideVatCode);
 
     if (bankAccountLabelEl) bankAccountLabelEl.textContent = isRU ? t('company_bank_account_label_ru') : t('company_bank_account_label');
     if (bankSwiftLabelEl) bankSwiftLabelEl.textContent = isRU ? t('company_bank_swift_label_ru') : t('company_bank_swift_label');
@@ -279,6 +283,56 @@ async function selectCountry(code) {
 }
 
 // Ставка НДС хранится в базе как доля (0.21), а вводится пользователем в процентах (21).
+// ==================== ПЛАТЕЛЬЩИК НДС (29.10.2026) ====================
+// Галка и «с даты» хранятся в organizations.vat_payer / vat_payer_from. Менять может только владелец
+// (триггер в базе); у защищённой организации (id1) — только просмотр. Расчёт сумм и документы пока не менялись.
+function updateVatPayerUI() {
+    const locked = !!currentOrgProtected;
+    const cb = document.getElementById('cmpVatPayer');
+    if (!cb) return;
+    cb.checked = _cmpVatPayer;
+    cb.disabled = locked;
+    document.getElementById('cmpVatPayerRow')?.style.setProperty('opacity', locked ? '.7' : '1');
+    ['cmpVatRate', 'cmpVatPayerFrom'].forEach(id => { const e = document.getElementById(id); if (e) e.disabled = locked; });
+    document.getElementById('cmpVatPayerFields')?.classList.toggle('hidden', !_cmpVatPayer);
+    const hint = document.getElementById('cmpVatPayerHint');
+    if (hint) hint.textContent = t(locked ? 'company_vat_payer_hint_locked' : (_cmpVatPayer ? 'company_vat_payer_hint_on' : 'company_vat_payer_hint_off'));
+    updateCountrySpecificLabels();
+}
+
+async function _saveVatPayerField(patch, onOk, onFail) {
+    try {
+        await updateChecked(db.from('organizations').update(patch).eq('id', currentOrgId));
+        onOk();
+        if (typeof saveAppSnapshot === 'function') saveAppSnapshot();
+        logActivity('system', `${t('log_field_changed')} «${Object.keys(patch)[0]}» ${t('log_in_company_info')}`);
+        showAutosaveToast();
+    } catch (e) {
+        console.error(e);
+        onFail();
+        showInfo(t('error_save_check_connection'));
+    }
+}
+
+async function toggleVatPayer(on) {
+    if (currentOrgProtected) { updateVatPayerUI(); return; }
+    const prev = _cmpVatPayer;
+    _cmpVatPayer = !!on;
+    updateVatPayerUI();
+    await _saveVatPayerField({ vat_payer: _cmpVatPayer },
+        () => { currentOrgVatPayer = _cmpVatPayer; },
+        () => { _cmpVatPayer = prev; updateVatPayerUI(); });
+}
+
+async function saveVatPayerFrom(value) {
+    if (currentOrgProtected) return;
+    const v = value || null;
+    const prev = currentOrgVatPayerFrom;
+    await _saveVatPayerField({ vat_payer_from: v },
+        () => { currentOrgVatPayerFrom = v; },
+        () => { const e = document.getElementById('cmpVatPayerFrom'); if (e) e.value = prev || ''; });
+}
+
 function saveVatRatePercent(percentStr) {
     const pct = parseFloat(String(percentStr).replace(',', '.'));
     if (isNaN(pct) || pct < 0 || pct > 100) {
@@ -322,7 +376,7 @@ async function openCompanyInfoModal() {
     showLoading();
     try {
         const { data, error } = await db.from('organizations')
-            .select('name, currency_code, country, vat_rate, entity_type, phone, email, address, legal_name, reg_number, vat_code, director_name, director_position, personal_code, bank_name, bank_account, bank_swift, logo_data_url, logo_on_documents, bcc_self_on_send, timezone')
+            .select('name, currency_code, country, vat_rate, vat_payer, vat_payer_from, entity_type, phone, email, address, legal_name, reg_number, vat_code, director_name, director_position, personal_code, bank_name, bank_account, bank_swift, logo_data_url, logo_on_documents, bcc_self_on_send, timezone')
             .eq('id', currentOrgId)
             .single();
         if (error) throw error;
@@ -338,6 +392,10 @@ async function openCompanyInfoModal() {
         currentOrgTimezone = data.timezone || null;
         renderTimezoneDropdown();
         updateTimezoneUI();
+        _cmpVatPayer = !!data.vat_payer;
+        currentOrgVatPayer = _cmpVatPayer;
+        currentOrgVatPayerFrom = data.vat_payer_from || null;
+        document.getElementById('cmpVatPayerFrom').value = data.vat_payer_from || '';
         document.getElementById('cmpVatRate').value = data.vat_rate != null ? (Number(data.vat_rate) * 100).toString() : '0';
         document.getElementById('cmpPhone').value        = data.phone || '';
         document.getElementById('cmpEmail').value        = data.email || '';
@@ -355,7 +413,7 @@ async function openCompanyInfoModal() {
         document.getElementById('cmpBankName').value     = data.bank_name || '';
         document.getElementById('cmpBankAccount').value  = data.bank_account || '';
         document.getElementById('cmpBankSwift').value    = data.bank_swift || '';
-        updateCountrySpecificLabels();
+        updateVatPayerUI();
         renderCompanyLogoUI(data.logo_data_url || '', !!data.logo_on_documents);
         updateProgressiveFieldsVisibility(!!data.country);
 
@@ -416,6 +474,8 @@ async function saveCompanyInfo(field, value) {
         if (field === 'vat_rate') {
             currentOrgVatRate = Number(value);
         }
+        if (field === 'vat_payer') currentOrgVatPayer = !!value;
+        if (field === 'vat_payer_from') currentOrgVatPayerFrom = value || null;
         if (field === 'legal_name') {
             const other = document.getElementById('cmpLegalName').id === document.activeElement?.id ? 'cmpLegalNameIndividual' : 'cmpLegalName';
             const otherEl = document.getElementById(other);

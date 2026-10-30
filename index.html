@@ -4107,7 +4107,7 @@ function hideSplashScreen() {
                     <p class="text-[11px] text-gray-400" data-i18n="company_timezone_hint">По этому поясу считаются даты заказов, счетов и «сегодня» — независимо от того, где находится сотрудник</p>
                 </div>
 
-                <div class="grid grid-cols-2 gap-1" id="cmpProgressiveFields">
+                <div id="cmpProgressiveFields">
                     <div>
                         <label class="table-text text-gray-500" data-i18n="company_currency_label">Валюта расчёта</label>
                         <div class="relative">
@@ -4118,9 +4118,34 @@ function hideSplashScreen() {
                             <div id="cmpCurrencyDropdown" class="hidden absolute z-10 bg-white border rounded-xl shadow-md w-full mt-1 max-h-52 overflow-y-auto p-1"></div>
                         </div>
                     </div>
-                    <div>
-                        <label class="table-text text-gray-500" data-i18n="company_vat_label">Ставка НДС, %</label>
-                        <input id="cmpVatRate" type="number" inputmode="decimal" min="0" max="100" step="0.1" autocomplete="off" onblur="saveVatRatePercent(this.value)" class="border p-1 rounded-xl w-full table-text" placeholder="21">
+                    <label class="flex items-center gap-2 table-text text-gray-700 mt-3 cursor-pointer" id="cmpVatPayerRow">
+
+                        <input type="checkbox" id="cmpVatPayer" onchange="toggleVatPayer(this.checked)" style="accent-color:#7c9473;">
+
+                        <span data-i18n="company_vat_payer_label">Плательщик НДС</span>
+
+                    </label>
+
+                    <p class="text-[11px] text-gray-400 mt-0.5" id="cmpVatPayerHint"></p>
+
+                    <div class="grid grid-cols-2 gap-1 mt-2 hidden" id="cmpVatPayerFields">
+
+                        <div>
+
+                            <label class="table-text text-gray-500" data-i18n="company_vat_label">Ставка НДС, %</label>
+
+                            <input id="cmpVatRate" type="number" inputmode="decimal" min="0" max="100" step="0.1" autocomplete="off" onblur="saveVatRatePercent(this.value)" class="border p-1 rounded-xl w-full table-text" placeholder="21">
+
+                        </div>
+
+                        <div>
+
+                            <label class="table-text text-gray-500" data-i18n="company_vat_payer_from_label">Плательщик с даты</label>
+
+                            <input id="cmpVatPayerFrom" type="date" onchange="saveVatPayerFrom(this.value)" class="border p-1 rounded-xl w-full table-text">
+
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -4332,12 +4357,12 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=11"></script>
-    <script src="i18n-core.js?v=107"></script>
+    <script src="i18n-core.js?v=108"></script>
     <script src="supabaseClient.js?v=7"></script>
-    <script src="cache.js?v=17"></script>
+    <script src="cache.js?v=18"></script>
     <script src="auth.js?v=30"></script>
-    <script src="employees.js?v=59"></script>
-    <script src="company.js?v=25"></script>
+    <script src="employees.js?v=60"></script>
+    <script src="company.js?v=26"></script>
     <script src="inventory.js?v=71"></script>
     <script src="billing.js?v=17"></script>
     <script src="push.js?v=9"></script>
