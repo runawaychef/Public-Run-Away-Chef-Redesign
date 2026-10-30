@@ -1329,6 +1329,8 @@ I18N.lt = {
         inv_col_sum_no_vat: 'Suma be PVM',
         inv_col_vat: 'PVM',
         inv_col_vat_pct: 'PVM %',
+        inv_col_price: 'Kaina',
+        inv_col_sum: 'Suma',
         inv_col_total: 'Iš viso',
         inv_total_qty: 'Iš viso kiekis',
         inv_total_no_vat: 'Iš viso be PVM',

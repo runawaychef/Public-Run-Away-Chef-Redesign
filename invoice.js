@@ -265,6 +265,9 @@ async function freezeDocumentSnapshot(order, docType, existing, opts) {
         // Версия формулы расчёта сумм. Документы, выставленные ДО введения единого
         // расчёта в центах (calc не задан), остаются на прежней формуле и со ставкой
         // НДС организации; новые получают calc: 2 и фиксируют ставку НДС на момент выставления.
+        // Вид документа по НДС (30.10.2026): у id1 поле не пишется (печать как раньше); у остальных — 'none'/'vat'.
+        // У уже выставленного документа сохраняется прежнее значение.
+        ...(existing ? (existing.vat_mode ? { vat_mode: existing.vat_mode } : {}) : (currentOrgProtected ? {} : { vat_mode: orderVatExempt(order) ? 'none' : 'vat' })),
         ...(existing && existing.calc !== 2 ? {} : {
             calc: 2,
             vat_rate: (existing && existing.calc === 2 && existing.vat_rate != null)
@@ -465,7 +468,10 @@ function documentTotals(snapshot) {
 function buildDocumentHtml(docType, snapshot, lang) {
     const { order, org, cust, number, issueDate, dueDate, customerNameFallback } = snapshot;
     const isInvoice = docType === 'invoice';
-    const title = isInvoice ? (org.vat_code ? tDoc('inv_title_vat_invoice', lang) : tDoc('inv_title_invoice', lang)) : tDoc('inv_title_delivery_note', lang);
+    // Вид документа (30.10.2026): vat_mode 'none' — пекарня не плательщик НДС / заказ до «с даты»: без колонок и строк НДС.
+    // Снимки без vat_mode (старые и все документы id1) печатаются как раньше.
+    const noVat = snapshot.vat_mode === 'none';
+    const title = isInvoice ? ((!noVat && (snapshot.vat_mode === 'vat' || org.vat_code)) ? tDoc('inv_title_vat_invoice', lang) : tDoc('inv_title_invoice', lang)) : tDoc('inv_title_delivery_note', lang);
     const numberPrefix = isInvoice ? 'INV-' : 'DN-';
     const sym = CURRENCY_SYMBOLS[org.currency_code] || org.currency_code || '€';
     const money = n => Number(n).toFixed(2) + ' ' + sym;
@@ -515,9 +521,9 @@ function buildDocumentHtml(docType, snapshot, lang) {
             <td style="padding:9px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">${escapeHtml(unitAbbrevDoc(item.unit, lang))}</td>
             <td style="padding:9px 8px;border-bottom:1px solid #e5e7eb;text-align:right;">${item.price == null ? '—' : money(item.price)}</td>
             <td style="padding:9px 8px;border-bottom:1px solid #e5e7eb;text-align:right;">${money(lineNetAfterDiscount)}</td>
-            <td style="padding:9px 8px;border-bottom:1px solid #e5e7eb;text-align:right;">${money(lineVat)}</td>
+            ${noVat ? '' : `<td style="padding:9px 8px;border-bottom:1px solid #e5e7eb;text-align:right;">${money(lineVat)}</td>
             <td style="padding:9px 8px;border-bottom:1px solid #e5e7eb;text-align:center;">${item.vatPct || vatPctLabel}</td>
-            <td style="padding:9px 8px;border-bottom:1px solid #e5e7eb;text-align:right;">${money(lineSubtotal)}</td>
+            <td style="padding:9px 8px;border-bottom:1px solid #e5e7eb;text-align:right;">${money(lineSubtotal)}</td>`}
         </tr>`;
     });
 
@@ -564,14 +570,14 @@ function buildDocumentHtml(docType, snapshot, lang) {
         <table class="table-clean" style="width:100%;border-collapse:separate;border-spacing:0;font-size:15px;table-layout:fixed;">
             <thead>
                 <tr style="background:#e3e8df;">
-                    <th style="padding:10px 8px;text-align:left;width:26%;">${tDoc('inv_col_name', lang)}</th>
-                    <th style="padding:10px 8px;text-align:center;width:8%;">${tDoc('inv_col_qty', lang)}</th>
-                    <th style="padding:10px 8px;text-align:center;width:8%;">${tDoc('inv_col_unit', lang)}</th>
-                    <th style="padding:10px 8px;text-align:right;width:13%;">${tDoc('inv_col_price_no_vat', lang)}</th>
-                    <th style="padding:10px 8px;text-align:right;width:13%;">${tDoc('inv_col_sum_no_vat', lang)}</th>
-                    <th style="padding:10px 8px;text-align:right;width:12%;">${tDoc('inv_col_vat', lang)}</th>
+                    <th style="padding:10px 8px;text-align:left;width:${noVat ? 40 : 26}%;">${tDoc('inv_col_name', lang)}</th>
+                    <th style="padding:10px 8px;text-align:center;width:${noVat ? 12 : 8}%;">${tDoc('inv_col_qty', lang)}</th>
+                    <th style="padding:10px 8px;text-align:center;width:${noVat ? 12 : 8}%;">${tDoc('inv_col_unit', lang)}</th>
+                    <th style="padding:10px 8px;text-align:right;width:${noVat ? 18 : 13}%;">${tDoc(noVat ? 'inv_col_price' : 'inv_col_price_no_vat', lang)}</th>
+                    <th style="padding:10px 8px;text-align:right;width:${noVat ? 18 : 13}%;">${tDoc(noVat ? 'inv_col_sum' : 'inv_col_sum_no_vat', lang)}</th>
+                    ${noVat ? '' : `<th style="padding:10px 8px;text-align:right;width:12%;">${tDoc('inv_col_vat', lang)}</th>
                     <th style="padding:10px 8px;text-align:center;width:8%;">${tDoc('inv_col_vat_pct', lang)}</th>
-                    <th style="padding:10px 8px;text-align:right;width:12%;">${tDoc('inv_col_total', lang)}</th>
+                    <th style="padding:10px 8px;text-align:right;width:12%;">${tDoc('inv_col_total', lang)}</th>`}
                 </tr>
             </thead>
             <tbody>${itemsHtml}</tbody>
@@ -579,8 +585,8 @@ function buildDocumentHtml(docType, snapshot, lang) {
 
         <div style="margin-top:20px;text-align:right;font-size:15px;">
             <div>${tDoc('inv_total_qty', lang)}: <b>${totalQty}</b></div>
-            <div>${tDoc('inv_total_no_vat', lang)}: <b>${money(afterDiscountAll)}</b></div>
-            <div>${tDoc('inv_vat_sum', lang)}: <b>${money(vatAll)}</b></div>
+            ${noVat ? '' : `<div>${tDoc('inv_total_no_vat', lang)}: <b>${money(afterDiscountAll)}</b></div>
+            <div>${tDoc('inv_vat_sum', lang)}: <b>${money(vatAll)}</b></div>`}
             <div style="font-size:19px;margin-top:6px;">${tDoc('inv_total_due', lang)}: <b>${money(grandAll)}</b></div>
         </div>
 
@@ -608,7 +614,10 @@ function buildDocumentHtml(docType, snapshot, lang) {
 async function buildDocumentPdf(docType, snapshot, lang) {
     const { order, org, cust, number, issueDate, dueDate, customerNameFallback } = snapshot;
     const isInvoice = docType === 'invoice';
-    const title = isInvoice ? (org.vat_code ? tDoc('inv_title_vat_invoice', lang) : tDoc('inv_title_invoice', lang)) : tDoc('inv_title_delivery_note', lang);
+    // Вид документа (30.10.2026): vat_mode 'none' — пекарня не плательщик НДС / заказ до «с даты»: без колонок и строк НДС.
+    // Снимки без vat_mode (старые и все документы id1) печатаются как раньше.
+    const noVat = snapshot.vat_mode === 'none';
+    const title = isInvoice ? ((!noVat && (snapshot.vat_mode === 'vat' || org.vat_code)) ? tDoc('inv_title_vat_invoice', lang) : tDoc('inv_title_invoice', lang)) : tDoc('inv_title_delivery_note', lang);
     const numberPrefix = isInvoice ? 'INV-' : 'DN-';
     const sym = CURRENCY_SYMBOLS[org.currency_code] || org.currency_code || '€';
     const money = n => Number(n).toFixed(2) + ' ' + sym;
@@ -648,10 +657,8 @@ async function buildDocumentPdf(docType, snapshot, lang) {
         const lineVat = docLines[idx].vat;
         const lineSubtotal = docLines[idx].gross;
         totalQty += Number(item.quantity);
-        return [
-            item.product, String(item.quantity), unitAbbrevDoc(item.unit, lang), item.price == null ? '—' : money(item.price),
-            money(lineNetAfterDiscount), money(lineVat), item.vatPct || vatPctLabel, money(lineSubtotal),
-        ];
+        const base = [item.product, String(item.quantity), unitAbbrevDoc(item.unit, lang), item.price == null ? '—' : money(item.price), money(lineNetAfterDiscount)];
+        return noVat ? base : [...base, money(lineVat), item.vatPct || vatPctLabel, money(lineSubtotal)];
     });
 
     const pdf = await createPdfDoc();
@@ -704,7 +711,9 @@ async function buildDocumentPdf(docType, snapshot, lang) {
     pdf.autoTable({
         startY: Math.max(yAfterSeller, yAfterBuyer) + 6,
         margin: { left: marginX, right: marginX },
-        head: [[tDoc('inv_col_name', lang), tDoc('inv_col_qty', lang), tDoc('inv_col_unit', lang), tDoc('inv_col_price_no_vat', lang), tDoc('inv_col_sum_no_vat', lang), tDoc('inv_col_vat', lang), tDoc('inv_col_vat_pct', lang), tDoc('inv_col_total', lang)]],
+        head: [noVat
+            ? [tDoc('inv_col_name', lang), tDoc('inv_col_qty', lang), tDoc('inv_col_unit', lang), tDoc('inv_col_price', lang), tDoc('inv_col_sum', lang)]
+            : [tDoc('inv_col_name', lang), tDoc('inv_col_qty', lang), tDoc('inv_col_unit', lang), tDoc('inv_col_price_no_vat', lang), tDoc('inv_col_sum_no_vat', lang), tDoc('inv_col_vat', lang), tDoc('inv_col_vat_pct', lang), tDoc('inv_col_total', lang)]],
         body: bodyRows,
         headStyles: { ...PDF_TABLE_HEAD_STYLE, fontSize: 9 },
         columnStyles: {
@@ -719,8 +728,10 @@ async function buildDocumentPdf(docType, snapshot, lang) {
     pdf.setFontSize(10); pdf.setFont('Roboto', 'normal'); pdf.setTextColor(...PDF_COLORS.textGray);
     const totalsRight = pageW - marginX;
     pdf.text(`${tDoc('inv_total_qty', lang)}: ${totalQty}`, totalsRight, y, { align: 'right' }); y += 5;
-    pdf.text(`${tDoc('inv_total_no_vat', lang)}: ${money(afterDiscountAll)}`, totalsRight, y, { align: 'right' }); y += 5;
-    pdf.text(`${tDoc('inv_vat_sum', lang)}: ${money(vatAll)}`, totalsRight, y, { align: 'right' }); y += 7;
+    if (!noVat) {
+        pdf.text(`${tDoc('inv_total_no_vat', lang)}: ${money(afterDiscountAll)}`, totalsRight, y, { align: 'right' }); y += 5;
+        pdf.text(`${tDoc('inv_vat_sum', lang)}: ${money(vatAll)}`, totalsRight, y, { align: 'right' }); y += 7;
+    } else { y += 2; }
     pdf.setFontSize(13); pdf.setFont('Roboto', 'bold'); pdf.setTextColor(...PDF_COLORS.textDark);
     pdf.text(`${tDoc('inv_total_due', lang)}: ${money(grandAll)}`, totalsRight, y, { align: 'right' });
 
@@ -867,6 +878,7 @@ async function freezeConsolidatedInvoice(orderIds, custId, opts) {
 
     const snapshot = {
         number, issueDate, dueDate, calc: 2, vat_rate: rate,
+        ...(currentOrgProtected ? {} : { vat_mode: orderVatExempt(list[0]) ? 'none' : 'vat' }),   // все заказы сводного счёта на одной стороне «с даты» (проверка в начале)
         customerNameFallback: (list[0] && list[0].customer) || '—',
         order: { items: [], discount: 0, vat_exempt: false },
         consolidated: {

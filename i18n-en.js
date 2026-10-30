@@ -1331,6 +1331,8 @@ I18N.en = {
         inv_col_sum_no_vat: 'Amount excl. VAT',
         inv_col_vat: 'VAT',
         inv_col_vat_pct: 'VAT %',
+        inv_col_price: 'Price',
+        inv_col_sum: 'Amount',
         inv_col_total: 'Total',
         inv_total_qty: 'Total qty.',
         inv_total_no_vat: 'Total excl. VAT',

@@ -1330,6 +1330,8 @@ I18N.ru = {
         inv_col_sum_no_vat: 'Сумма без НДС',
         inv_col_vat: 'НДС',
         inv_col_vat_pct: 'НДС %',
+        inv_col_price: 'Цена',
+        inv_col_sum: 'Сумма',
         inv_col_total: 'Итого',
         inv_total_qty: 'Итого кол-во',
         inv_total_no_vat: 'Итого без НДС',

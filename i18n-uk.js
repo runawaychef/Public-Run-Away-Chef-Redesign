@@ -1329,6 +1329,8 @@ I18N.uk = {
         inv_col_sum_no_vat: 'Сума без ПДВ',
         inv_col_vat: 'ПДВ',
         inv_col_vat_pct: 'ПДВ %',
+        inv_col_price: 'Ціна',
+        inv_col_sum: 'Сума',
         inv_col_total: 'Разом',
         inv_total_qty: 'Разом к-сть',
         inv_total_no_vat: 'Разом без ПДВ',
