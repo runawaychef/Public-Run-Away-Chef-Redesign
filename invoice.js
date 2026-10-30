@@ -260,7 +260,7 @@ async function freezeDocumentSnapshot(order, docType, existing, opts) {
         order: {
             items: (order.items || []).map(it => ({ product: it.product, quantity: it.quantity, price: it.price, unit: it.product_id ? (unitById[it.product_id] || null) : null })),
             discount: order.discount,
-            vat_exempt: order.vat_exempt,
+            vat_exempt: orderVatExempt(order),
         },
         // Версия формулы расчёта сумм. Документы, выставленные ДО введения единого
         // расчёта в центах (calc не задан), остаются на прежней формуле и со ставкой
@@ -796,6 +796,8 @@ async function freezeConsolidatedInvoice(orderIds, custId, opts) {
     const list = orderIds.map(id => orders.find(o => o.id === id)).filter(Boolean)
         .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')) || (a.id - b.id));
     if (!list.length) throw new Error('No orders selected');
+    // Сводный счёт не может объединять заказы с НДС и без НДС (до и после «плательщик с даты») — 30.10.2026
+    if (!currentOrgProtected && new Set(list.map(o => orderVatExempt(o))).size > 1) throw new Error(t('send_cons_vat_split'));
     const ids = list.map(o => o.id);
     // В сводном счёте указываются накладные: тем заказам, у которых накладной ещё нет, она
     // выставляется сейчас (датой поставки = дата заказа), по порядку дат — номера идут по возрастанию.
@@ -825,8 +827,9 @@ async function freezeConsolidatedInvoice(orderIds, custId, opts) {
     const groups = new Map();
     const orderInfos = [];
     list.forEach(o => {
-        const tt = calcTotals(o.items, o.discount, !!o.vat_exempt, rate);
-        const pct = o.vat_exempt ? '0%' : (rate * 100).toFixed(0) + '%';
+        const ex = orderVatExempt(o);
+        const tt = calcTotals(o.items, o.discount, ex, rate);
+        const pct = ex ? '0%' : (rate * 100).toFixed(0) + '%';
         (o.items || []).forEach((it, i) => {
             const unit = it.product_id ? (unitById[it.product_id] || null) : null;
             const price = Number(it.price) || 0;

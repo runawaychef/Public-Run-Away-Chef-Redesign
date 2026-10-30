@@ -1086,6 +1086,7 @@ I18N.en = {
         send_cons_member: 'Orders on this invoice:',
         send_cons_changed_warn: 'Issued for {old}, orders now total {new} — an updated invoice with the same number will be sent',
         send_cons_none: 'Select at least one order',
+        send_cons_vat_split: 'Orders with and without VAT (before and after the “VAT payer since” date) cannot be combined. Please make two invoices.',
         order_cons_banner: 'Part of consolidated invoice {number} dated {date}. If you change this order, the invoice will be updated the next time it is sent, keeping the same number.',
         order_delete_cons_note: 'This order is part of consolidated invoice {number}. After deletion it will drop out of the invoice: the next time it is sent, the invoice will be updated without it.',
         send_cons_empty: 'There are no orders left in this consolidated invoice, so it cannot be sent.',

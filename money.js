@@ -78,9 +78,21 @@ function calcTotals(items, discountPct, vatExempt, vatRate) {
     };
 }
 
+// «Без НДС» у заказа (30.10.2026). Защищённая пекарня (id1) — прежняя логика: флаг заказа order.vat_exempt.
+// Остальные: НДС есть, только если пекарня — плательщик НДС и дата заказа не раньше «плательщик с даты»
+// (пусто = с начала). Флаг заказа/клиента vat_exempt там не учитывается.
+function orderVatExempt(order) {
+    if (typeof currentOrgProtected !== 'undefined' && currentOrgProtected) return !!(order && order.vat_exempt);
+    if (typeof currentOrgVatPayer === 'undefined' || !currentOrgVatPayer) return true;
+    const from = typeof currentOrgVatPayerFrom !== 'undefined' ? currentOrgVatPayerFrom : null;
+    const d = order && (order.date || order.order_date);
+    if (from && d && String(d).slice(0, 10) < String(from).slice(0, 10)) return true;
+    return false;
+}
+
 function _orderTotals(order) {
     const rate = typeof currentOrgVatRate !== 'undefined' ? currentOrgVatRate : 0;
-    return calcTotals(order.items, order.discount, !!order.vat_exempt, rate);
+    return calcTotals(order.items, order.discount, orderVatExempt(order), rate);
 }
 
 // Сумма позиций без скидки и НДС

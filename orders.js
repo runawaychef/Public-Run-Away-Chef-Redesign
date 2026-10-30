@@ -75,7 +75,7 @@ function displayOrders() {
         return localStr(getMondayOf(new Date(order.date)));
     }
 
-    const hasVat = (typeof currentOrgVatRate !== 'undefined') && currentOrgVatRate > 0;
+    const hasVat = (typeof currentOrgVatRate !== 'undefined') && currentOrgVatRate > 0 && (currentOrgProtected || currentOrgVatPayer);
 
     function weekHeadHtml(weekKey) {
         const monday = new Date(weekKey + 'T00:00:00');
@@ -1150,7 +1150,7 @@ function updateOrdersFilterSummary(filtered) {
     const desc = ordersFilterDescription();
     if (!desc) { el.classList.add('hidden'); _ofsFiltered = []; return; }
     _ofsFiltered = filtered;
-    const hasVat = (typeof currentOrgVatRate !== 'undefined') && currentOrgVatRate > 0;
+    const hasVat = (typeof currentOrgVatRate !== 'undefined') && currentOrgVatRate > 0 && (currentOrgProtected || currentOrgVatPayer);
     const wt = calcGroupTotals(filtered, () => true);
     const counts = `${wt.count} ${t('orders_orders_short')}, ${wt.qty} ${t('unit_pcs')}`;
     const sums = hasVat
@@ -1164,7 +1164,7 @@ function updateOrdersFilterSummary(filtered) {
 
 function openOrdersProductsModal() {
     const orders_ = _ofsFiltered || [];
-    const hasVat = (typeof currentOrgVatRate !== 'undefined') && currentOrgVatRate > 0;
+    const hasVat = (typeof currentOrgVatRate !== 'undefined') && currentOrgVatRate > 0 && (currentOrgProtected || currentOrgVatPayer);
     const agg = {};
     orders_.forEach(o => {
         const tot = _orderTotals(o);
@@ -1489,6 +1489,7 @@ function openOrderDetail(orderId) {
     renderDetailStatusButton(order.status);
     document.getElementById('detailDiscount').value = (order.discount || 0);
     document.getElementById('detailVatExempt').checked = !!order.vat_exempt;
+    document.getElementById('detailVatExemptRow')?.classList.toggle('hidden', !currentOrgProtected);   // «Без НДС» в заказе — только у id1 (30.10.2026)
     document.getElementById('detailNotes').value = order.notes || '';
     fillDetailEmployeeSelect(order.employee_id);
     updateDetailSaveUi(order);
@@ -1990,7 +1991,7 @@ async function saveDetailHeader() {
     const date     = document.getElementById('detailDate').value;
     const status   = document.getElementById('detailStatus').value;
     const discount = parseFloat(document.getElementById('detailDiscount').value) || 0;
-    const vatExempt = document.getElementById('detailVatExempt').checked;
+    const vatExempt = currentOrgProtected ? document.getElementById('detailVatExempt').checked : false;
     const notes = document.getElementById('detailNotes').value;
     const employeeIdRaw = document.getElementById('detailEmployee').value;
     const employeeId = employeeIdRaw ? Number(employeeIdRaw) : null;

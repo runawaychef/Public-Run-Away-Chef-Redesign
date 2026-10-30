@@ -1084,6 +1084,7 @@ I18N.lt = {
         send_cons_member: 'Užsakymai šioje sąskaitoje:',
         send_cons_changed_warn: 'Išrašyta {old} sumai, dabar užsakymų suma {new} — bus išsiųsta atnaujinta sąskaita tuo pačiu numeriu',
         send_cons_none: 'Pasirinkite bent vieną užsakymą',
+        send_cons_vat_split: 'Negalima sujungti užsakymų su PVM ir be PVM (iki ir po datos „PVM mokėtojas nuo“). Sukurkite dvi sąskaitas.',
         order_cons_banner: 'Įtraukta į suvestinę sąskaitą {number}, {date}. Pakeitus užsakymą, sąskaita bus atnaujinta kitą kartą ją siunčiant – tuo pačiu numeriu.',
         order_delete_cons_note: 'Užsakymas įtrauktas į suvestinę sąskaitą {number}. Ištrynus jis iškris iš sąskaitos: kitą kartą siunčiant sąskaita bus atnaujinta be jo.',
         send_cons_empty: 'Šioje suvestinėje sąskaitoje neliko užsakymų – jos išsiųsti negalima.',

@@ -72,6 +72,8 @@ async function loadMonetizationLiveFlag() {
 // любые упоминания "с НДС"/"VAT" в интерфейсе, когда ставка равна нулю
 // (организация вообще не работает с НДС).
 function hasVat() {
+    // id1 (защищённая) — по ставке, как раньше; остальные — только если пекарня плательщик НДС (30.10.2026)
+    if (!currentOrgProtected && !currentOrgVatPayer) return false;
     return Number(currentOrgVatRate) > 0;
 }
 

@@ -950,7 +950,7 @@ async function _openSendDocumentSheetImpl(orderId, docType, seq, opts) {
         }
         // По умолчанию — все ещё не включённые в счёт заказы клиента до даты этого заказа включительно,
         // кроме заказов, у которых уже есть отдельный счёт
-        stNew.consSel = stNew.consCand.filter(o => o.id === orderId || (!o.cons_excluded && !stNew.consOwnInv[o.id] && String(o.date || '') <= String(order.date || ''))).map(o => o.id);
+        stNew.consSel = stNew.consCand.filter(o => o.id === orderId || (!o.cons_excluded && !stNew.consOwnInv[o.id] && String(o.date || '') <= String(order.date || '') && (currentOrgProtected || orderVatExempt(o) === orderVatExempt(order)))).map(o => o.id);
         if (!stNew.consSel.includes(orderId) && stNew.consCand.some(o => o.id === orderId)) stNew.consSel.push(orderId);
         if (_custUsesConsolidated(order) && stNew.consCand.length && !stNew.docs.invoice.issued) stNew.invKind = 'cons';
         // Из окна зачёта банка: у клиента несколько заказов без счёта — сразу сводный (21.10)
