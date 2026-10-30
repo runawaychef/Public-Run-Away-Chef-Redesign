@@ -4078,7 +4078,7 @@ function hideSplashScreen() {
                 <div id="payInvFromWrap" class="datebox hidden">
                     <label for="payInvFromInput" data-i18n="pay_invfrom_label">Вести учёт с даты</label>
                     <input id="payInvFromInput" type="hidden">
-                    <button type="button" class="field-select-btn" id="payInvFromBtn" onclick="toggleCustomCalendar('globalCalendarPopup','payInvFromInput','payInvFromLabel',{allowClear:true,onPick:function(iso){setInvoicingFrom(iso)}})"><span id="payInvFromLabel">—</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path stroke-linecap="round" d="M8 3v4M16 3v4M3.5 10h17"/></svg></button>
+                    <button type="button" class="field-select-btn" id="payInvFromBtn" onclick="event.stopPropagation(); toggleCustomCalendar('globalCalendarPopup','payInvFromInput','payInvFromLabel',{allowClear:true,onPick:function(iso){setInvoicingFrom(iso)}})"><span id="payInvFromLabel">—</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path stroke-linecap="round" d="M8 3v4M16 3v4M3.5 10h17"/></svg></button>
                     <p data-i18n="pay_invfrom_hint">Заказы раньше этой даты не попадают в напоминания о счетах и оплате — так старые заказы не мешают. Дату можно сдвинуть назад.</p>
                 </div>
                 <label id="payCashNoInvRow" class="hidden flex items-center justify-between gap-2 text-xs text-gray-600" style="margin-top:12px;"><span><span data-i18n="pay_cash_no_inv">Частные клиенты: наличные без счёта</span><span class="block text-[11px] text-gray-400" data-i18n="pay_cash_no_inv_desc">Безналичная оплата частников — по счёту</span></span><input type="checkbox" id="payCashNoInvToggle" onchange="setCashNoInvoice(this.checked)" style="accent-color:#7c9473;"></label>
@@ -4173,7 +4173,7 @@ function hideSplashScreen() {
                             <label class="table-text text-gray-500" data-i18n="company_vat_payer_from_label">Плательщик с даты</label>
 
                             <input id="cmpVatPayerFrom" type="hidden">
-                            <button type="button" class="field-select-btn" id="cmpVatPayerFromBtn" onclick="toggleCustomCalendar('globalCalendarPopup','cmpVatPayerFrom','cmpVatPayerFromLabel',{allowClear:true,onPick:function(iso){saveVatPayerFrom(iso)}})"><span id="cmpVatPayerFromLabel">—</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path stroke-linecap="round" d="M8 3v4M16 3v4M3.5 10h17"/></svg></button>
+                            <button type="button" class="field-select-btn" id="cmpVatPayerFromBtn" onclick="event.stopPropagation(); toggleCustomCalendar('globalCalendarPopup','cmpVatPayerFrom','cmpVatPayerFromLabel',{allowClear:true,onPick:function(iso){saveVatPayerFrom(iso)}})"><span id="cmpVatPayerFromLabel">—</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path stroke-linecap="round" d="M8 3v4M16 3v4M3.5 10h17"/></svg></button>
 
                         </div>
 
