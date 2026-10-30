@@ -2917,9 +2917,9 @@ function hideSplashScreen() {
                 <!-- Кнопка «Подготовить и отправить документ» + сводка отправленного (22.10, send-document.js renderDetailDocSummary):
                      плотная — ничего не отправлено или есть недоставленное; бледная — отправлено -->
                 <div class="mb-3">
-                    <button id="detailSendDocBtn" onclick="openSendDocumentSheet(currentOrderId)" class="pill-btn-secondary w-full justify-center" style="padding:10px 12px;">
+                    <button id="detailSendDocBtn" onclick="openOrderDocAction(currentOrderId)" class="pill-btn-secondary w-full justify-center" style="padding:10px 12px;">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12h6m-6 4h6m-8 5h10a2 2 0 002-2V7.828a2 2 0 00-.586-1.414l-3.828-3.828A2 2 0 0012.172 2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
-                        <span data-i18n="orders_invoice_doc">Подготовить и отправить документ</span>
+                        <span id="detailSendDocLabel" data-i18n="orders_invoice_doc">Подготовить и отправить документ</span>
                     </button>
                     <div id="detailDocSummary" class="doc-sum hidden"></div>
                 </div>
@@ -3868,6 +3868,19 @@ function hideSplashScreen() {
                 <div id="sendSheetBody"></div>
             </div>
         </div>
+        <!-- ===== СТРАНИЦА «Подтверждение заказа» (31.10.2026, confirmation.js): режим «По заказу» ===== -->
+        <div id="orderConfPage" class="app-page">
+            <div class="bg-white p-2 rounded-xl shadow-md mb-3">
+                <div class="flex items-center gap-2">
+                    <button onclick="closeAppPage()" class="pill-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        <span data-i18n="common_back">Назад</span>
+                    </button>
+                    <h2 class="text-gray-800" style="font-size:15px; font-weight:600; margin:0 0 0 auto; text-align:right;" data-i18n="conf_btn">Подтверждение заказа</h2>
+                </div>
+            </div>
+            <div id="orderConfBody"></div>
+        </div>
         <!-- ===== СТРАНИЦА «Документы» — архив счетов и накладных (17.10, documents.js); та же цепочка страниц ===== -->
         <div id="docsPage" class="app-page">
             <div class="bg-white p-2 rounded-xl shadow-md mb-3">
@@ -4388,7 +4401,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=12"></script>
-    <script src="i18n-core.js?v=116"></script>
+    <script src="i18n-core.js?v=117"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=30"></script>
@@ -4403,11 +4416,12 @@ function hideSplashScreen() {
 <script src="products.js?v=48"></script>
 <script src="customers.js?v=70"></script>
 <script src="calendar.js?v=16"></script>
-<script src="orders.js?v=152"></script>
+<script src="orders.js?v=153"></script>
 <script src="dashboard.js?v=9"></script>
 <script src="invoice.js?v=52"></script>
 <script src="send-document.js?v=41"></script>
-<script src="payments.js?v=32"></script>
+<script src="confirmation.js?v=1"></script>
+<script src="payments.js?v=33"></script>
 <script src="documents.js?v=12"></script>
 <script src="bank.js?v=13"></script>
 <script src="stats.js?v=22"></script>

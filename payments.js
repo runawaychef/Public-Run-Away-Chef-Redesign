@@ -217,6 +217,8 @@ function refreshDocsVisibility() {
     const b = document.getElementById('ordersDocsBtn'); if (b) b.classList.toggle('hidden', !show);
     const c = document.getElementById('cdDocsBtn'); if (c) c.classList.toggle('hidden', !show);
     const f = document.querySelector('.status-option[onclick*="noinv"]'); if (f) f.classList.toggle('hidden', !docsEnabled());
+    const lbl = document.getElementById('detailSendDocLabel');
+    if (lbl) { const k = docsEnabled() ? 'orders_invoice_doc' : 'conf_btn'; if (lbl.getAttribute('data-i18n') !== k) { lbl.setAttribute('data-i18n', k); lbl.textContent = t(k); } }
     const sel = document.getElementById('orderPaymentFilter');
     if (!docsEnabled() && sel && sel.value === 'noinv') { sel.value = ''; if (typeof applyOrderFilter === 'function') { try { applyOrderFilter(); } catch (e) {} } }
 }

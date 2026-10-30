@@ -310,7 +310,7 @@ function renderOrderCard(order) {
         </button>`;
     }
     leftBtnCount++;
-    leftBtns += `<button class="oc-swipe-btn oc-swipe-send" onclick="event.stopPropagation(); openSendDocumentSheet(${order.id})">
+    leftBtns += `<button class="oc-swipe-btn oc-swipe-send" onclick="event.stopPropagation(); openOrderDocAction(${order.id})">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75A2.25 2.25 0 014.5 4.5h15A2.25 2.25 0 0121.75 6.75v10.5A2.25 2.25 0 0119.5 19.5h-15a2.25 2.25 0 01-2.25-2.25V6.75zm0 0l9.75 6.75 9.75-6.75"/></svg>
         ${t('orders_send_btn')}
     </button>`;
@@ -601,7 +601,7 @@ function renderDoneOrderCard(order, opts) {
         </button>`;
     }
     leftBtnCount++;
-    leftBtns += `<button class="oc-swipe-btn oc-swipe-send" onclick="event.stopPropagation(); openSendDocumentSheet(${order.id})">
+    leftBtns += `<button class="oc-swipe-btn oc-swipe-send" onclick="event.stopPropagation(); openOrderDocAction(${order.id})">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75A2.25 2.25 0 014.5 4.5h15A2.25 2.25 0 0121.75 6.75v10.5A2.25 2.25 0 0119.5 19.5h-15a2.25 2.25 0 01-2.25-2.25V6.75zm0 0l9.75 6.75 9.75-6.75"/></svg>
         ${t('orders_send_btn')}
     </button>`;
