@@ -185,6 +185,57 @@ function numberToWordsEn(n) {
     return words.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
 }
 
+// ---- Литовский (30.10.2026): склонение по числу — 1 (кроме 11) → ед.ч.; 0, 10–19 → родит. мн.ч.; 2–9 → им. мн.ч.
+const _LT_ONES = ['', 'vienas', 'du', 'trys', 'keturi', 'penki', 'šeši', 'septyni', 'aštuoni', 'devyni'];
+const _LT_TEENS = ['dešimt', 'vienuolika', 'dvylika', 'trylika', 'keturiolika', 'penkiolika', 'šešiolika', 'septyniolika', 'aštuoniolika', 'devyniolika'];
+const _LT_TENS = ['', '', 'dvidešimt', 'trisdešimt', 'keturiasdešimt', 'penkiasdešimt', 'šešiasdešimt', 'septyniasdešimt', 'aštuoniasdešimt', 'devyniasdešimt'];
+
+function ltPlural(n, one, few, many) {
+    const n100 = n % 100, n10 = n % 10;
+    if (n10 === 1 && n100 !== 11) return one;
+    if (n10 === 0 || (n100 >= 11 && n100 <= 19)) return many;
+    return few;
+}
+
+function ltTriplet(n) {
+    const parts = [];
+    const h = Math.floor(n / 100);
+    const rest = n % 100;
+    if (h) parts.push(h === 1 ? 'šimtas' : _LT_ONES[h] + ' šimtai');
+    if (rest >= 10 && rest <= 19) {
+        parts.push(_LT_TEENS[rest - 10]);
+    } else {
+        const t = Math.floor(rest / 10), o = rest % 10;
+        if (t) parts.push(_LT_TENS[t]);
+        if (o) parts.push(_LT_ONES[o]);
+    }
+    return parts.join(' ');
+}
+
+function numberToWordsLt(n) {
+    n = Math.round(n);
+    if (n === 0) return 'nulis';
+    const groups = [
+        { div: 1000000000, one: 'milijardas', few: 'milijardai', many: 'milijardų' },
+        { div: 1000000, one: 'milijonas', few: 'milijonai', many: 'milijonų' },
+        { div: 1000, one: 'tūkstantis', few: 'tūkstančiai', many: 'tūkstančių', omitOne: true },
+    ];
+    let remaining = n;
+    const words = [];
+    for (const g of groups) {
+        const count = Math.floor(remaining / g.div);
+        if (count > 0) {
+            if (!(count === 1 && g.omitOne)) words.push(ltTriplet(count));
+            words.push(ltPlural(count, g.one, g.few, g.many));
+            remaining %= g.div;
+        }
+    }
+    if (remaining > 0) words.push(ltTriplet(remaining));
+    return words.filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+}
+
+const _LT_CURRENCY_MAJOR = { EUR: { one: 'euras', few: 'eurai', many: 'eurų' } };
+
 // Название валюты для RU-варианта суммы прописью — только известные валюты
 // склоняются по-русски (сейчас только EUR, основной кейс). Для остальных —
 // используется сам код валюты как есть (без склонения), это безопасный
@@ -203,6 +254,12 @@ function amountInWords(amount, currencyCode, lang) {
         const majorWord = major ? ruPlural(intPart, major.one, major.few, major.many) : currencyCode;
         const centsWord = ruPlural(cents, 'цент', 'цента', 'центов');
         return `${numberToWordsRu(intPart)} ${majorWord} и ${cents ? numberToWordsRu(cents) : 'ноль'} ${centsWord}`;
+    }
+    if (lang === 'lt') {
+        const major = _LT_CURRENCY_MAJOR[currencyCode];
+        const majorWord = major ? ltPlural(intPart, major.one, major.few, major.many) : currencyCode;
+        const centsWord = ltPlural(cents, 'centas', 'centai', 'centų');
+        return `${numberToWordsLt(intPart)} ${majorWord} ir ${numberToWordsLt(cents)} ${centsWord}`;
     }
     // EN — валюта всегда как код, чтобы не собирать словарь под все валюты сразу.
     const centsWordEn = 'cents';
