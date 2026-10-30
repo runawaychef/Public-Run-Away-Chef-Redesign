@@ -12,6 +12,7 @@
 //             _formatSentDateTime (send-document.js), formatMoney, formatDateDMY, escapeHtml, t.
 
 let _docsOldOpen = false; // раскрыта ли строка «Старые документы»
+let _docsTab = 'todo';   // вкладка страницы: 'todo' — «К выставлению» (заказы без счёта), 'issued' — «Выставлено» (30.10.2026)
 let _docsAll = [];      // все документы организации (после загрузки)
 // year: 'YYYY' или null (все годы); month: 'MM' или null (весь год)
 let _docsFilter = { type: 'all', custId: null, year: null, month: null, pay: '', q: '' };
@@ -127,6 +128,7 @@ async function openDocumentsSection(opts) {
     _docsFilter = { type: 'inv', custId, year: today.slice(0, 4), month: custId ? null : today.slice(5, 7), pay: '', q: '' };
     const q = document.getElementById('docsSearch');
     if (q) q.value = '';
+    _docsTab = (!custId && _docsTodoOrders().length) ? 'todo' : 'issued';
     showLoading();
     try {
         await _docsLoad();
@@ -222,13 +224,70 @@ function _docsSelect(field, value, options) {
     return `<select onchange="setDocsFilter('${field}', this.value)" style="font-size:12px; border-radius:999px; padding:5px 10px; background:#fff; border:1px solid #e3ddcc; color:#4f6349; max-width:100%;">${opts}</select>`;
 }
 
+// ---- Вкладка «К выставлению» (30.10.2026): заказы без счёта, по клиентам ----
+function _docsTodoOrders() {
+    return (typeof orders !== 'undefined' ? orders : []).filter(o => typeof orderNeedsInvoice === 'function' && orderNeedsInvoice(o));
+}
+
+function setDocsTab(tab) {
+    _docsTab = tab;
+    _docsOldOpen = false;
+    renderDocumentsSection();
+}
+
+function _docsTabsHtml() {
+    const n = _docsTodoOrders().length;
+    return `<div class="cd-seg" style="margin:8px 0 10px;">
+        <button type="button" class="${_docsTab === 'todo' ? 'active' : ''}" onclick="setDocsTab('todo')">${escapeHtml(t('docs_tab_todo'))}${n ? ' · ' + n : ''}</button>
+        <button type="button" class="${_docsTab === 'issued' ? 'active' : ''}" onclick="setDocsTab('issued')">${escapeHtml(t('docs_tab_issued'))}</button></div>`;
+}
+
+function docsIssueInvoice(orderId, cons) {
+    openSendDocumentSheet(orderId, 'invoice', cons ? { preferCons: true } : undefined);
+}
+
+function _docsRenderTodo(box) {
+    const q = _docsNorm(_docsFilter.q);
+    const byCust = new Map();
+    _docsTodoOrders().forEach(o => {
+        const name = o.customer || t('orders_no_customer');
+        if (q && !(_docsNorm(name).includes(q) || _docsNorm(o.order_number).includes(q))) return;
+        const key = o.customer_id || ('n:' + name);
+        const g = byCust.get(key) || { name, orders: [], sumC: 0 };
+        g.orders.push(o);
+        g.sumC += Math.round(orderGrandTotal(o) * 100);
+        byCust.set(key, g);
+    });
+    const groups = [...byCust.values()];
+    groups.forEach(g => g.orders.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')) || (b.id - a.id)));
+    groups.sort((a, b) => String(b.orders[0].date || '').localeCompare(String(a.orders[0].date || '')));
+    let html = _docsTabsHtml();
+    if (!groups.length) {
+        html += `<p style="font-size:13px; color:#9a9488; margin:16px 0; text-align:center;">${escapeHtml(t('docs_todo_empty'))}</p>`;
+    } else {
+        groups.forEach(g => {
+            const consBtn = g.orders.length > 1
+                ? `<button type="button" onclick="docsIssueInvoice(${g.orders[0].id}, true)" style="font-size:12px; font-weight:700; border-radius:12px; padding:0 12px; height:30px; background:#7c9473; color:#fff; border:0; white-space:nowrap;">${escapeHtml(t('docs_todo_issue'))}</button>` : '';
+            const rows = g.orders.map(o => `<div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-top:1px solid #ebe6d8;">
+                <div onclick="registryOpenOrder(${o.id})" style="flex:1; min-width:0; font-size:13px; color:#3c3a34; cursor:pointer;">${formatDateDMY(o.date)}${o.order_number ? ' · №' + escapeHtml(o.order_number) : ''}</div>
+                <div style="font-size:13px; font-weight:700; color:#3c3a34;">${formatMoney(orderGrandTotal(o))}</div>
+                <button type="button" onclick="docsIssueInvoice(${o.id}, false)" style="font-size:12px; font-weight:700; border-radius:12px; padding:0 10px; height:28px; background:#fff; color:#4f6349; border:1px solid #cfd8c8;">${escapeHtml(t('docs_todo_issue_short'))}</button></div>`).join('');
+            html += `<div style="background:#f6f4ec; border-radius:12px; padding:8px 10px 2px; margin-bottom:10px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;"><div style="flex:1; min-width:0;">
+                    <div style="font-size:13.5px; font-weight:700; color:#3c3a34;">${escapeHtml(g.name)}</div>
+                    <div style="font-size:12px; color:#888;">${escapeHtml(g.orders.length + ' ' + nWord(g.orders.length, 'word_orders'))} · ${formatMoney(g.sumC / 100)}</div></div>${consBtn}</div>${rows}</div>`;
+        });
+        html += `<div style="font-size:11.5px; color:#9a9488; margin:4px 2px 8px;">${escapeHtml(t('docs_todo_hint'))}</div>`;
+    }
+    box.innerHTML = html;
+}
+
 function renderDocumentsSection() {
     const box = document.getElementById('docsBody');
     if (!box) return;
+    if (_docsTab === 'todo') { _docsRenderTodo(box); return; }
     const f = _docsFilter;
 
-    const typeChips = [['all', t('docs_type_all')], ['inv', t('docs_type_inv')], ['dn', t('docs_type_dn')]]
-        .map(([v, l]) => `<button type="button" onclick="setDocsFilter('type','${v}')" style="font-size:12px; border-radius:999px; padding:5px 10px; white-space:nowrap; ${f.type === v ? 'background:#7c9473; border:1px solid #7c9473; color:#fff; font-weight:700;' : 'background:#fff; border:1px solid #e3ddcc; color:#4f6349;'}">${escapeHtml(l)}</button>`).join('');
 
     const custIds = [...new Set(_docsAll.map(d => d.custId).filter(Boolean))];
     const custOpts = [{ v: '', l: t('docs_customer_all') }].concat(
@@ -307,8 +366,9 @@ function renderDocumentsSection() {
     if (!list.length) rows = `<p style="font-size:13px; color:#9a9488; margin:16px 0; text-align:center;">${escapeHtml(t('docs_empty'))}</p>`;
 
     box.innerHTML = `
-        <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">${typeChips}</div>
+        ${_docsTabsHtml()}
         <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+            ${_docsSelect('type', f.type, [{ v: 'inv', l: t('docs_type_inv') }, { v: 'dn', l: t('docs_type_dn') }, { v: 'all', l: t('docs_type_all') }])}
             ${_docsSelect('year', f.year || '', yearOpts)}
             ${_docsSelect('month', f.month || '', monthOpts)}
             ${_docsSelect('custId', f.custId || '', custOpts)}
@@ -326,6 +386,7 @@ let _docsOpenEntry = null;
 async function openRegistryDoc(key) {
     const d = _docsAll.find(x => x.key === key);
     if (!d) return;
+    _docsTab = 'issued';
     showLoading(t('docs_opening'));
     try {
         let snapshot, consolidatedId = null;
@@ -417,6 +478,7 @@ async function returnToDocsPreview() {
     catch (e) { console.error('Документы: ошибка загрузки', e); hideLoading(); showInfo(t('error_save_check_connection')); return true; }
     hideLoading();
     _docsFilter = r.filter;
+    _docsTab = 'issued';
     const q = document.getElementById('docsSearch');
     if (q) q.value = r.q;
     openAppPage('docsPage');

@@ -1615,6 +1615,14 @@
 #cdStatsTags .oc-tag { display:inline-flex; align-items:center; justify-content:center; min-height:36px; min-width:120px; padding:0 8px; border-radius:13px; font-size:12.5px; font-weight:700; box-shadow: 0 6px 10px -6px rgba(163,73,61,0.35); }
 #cdStatsTags .oc-tags { margin-top:10px; }
 #customerDetail #cdStatsBtns [onclick^="openCustomerMemoDates"] { flex: 0 0 120px; }
+        /* Ярлыки документов в карточке заказа (30.10.2026) */
+        .oc-doc-line { display:flex; flex-wrap:wrap; gap:5px; margin-top:7px; }
+        .oc-chip { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:700; border-radius:999px; padding:2px 8px; white-space:nowrap; line-height:1.5; }
+        .oc-chip svg { width:11px; height:11px; }
+        .oc-chip-ok { background:#e9eee5; color:#4f6349; }
+        .oc-chip-cons { background:#dbe4d3; color:#3f5a38; }
+        .oc-chip-none { background:#fbf3df; color:#96712a; border:1px dashed #c9973a; }
+        .oc-chip-out { background:#f1eee3; color:#6b675d; }
 /* ===== /THEME-UNIFIED-CUSTOMER-CARD-34 ===== */
 
         /* ===== THEME-UNIFIED-TILES-CUST (28.10.2026): плитки в «Клиентах» =====
@@ -2759,6 +2767,7 @@ function hideSplashScreen() {
                                 <div class="status-option" onclick="setOrderPaymentFilter('partial')"><span><span class="dot" style="background:#d9a441;display:inline-block;margin-right:5px;"></span><span data-i18n="pay_status_partial">Частично оплачен</span></span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
                                 <div class="status-option" onclick="setOrderPaymentFilter('paid')"><span><span class="dot" style="background:#7c9473;display:inline-block;margin-right:5px;"></span><span data-i18n="pay_status_paid">Оплачен</span></span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
                                 <div class="status-option" onclick="setOrderPaymentFilter('overdue')"><span><span class="dot" style="background:#8b3a3a;display:inline-block;margin-right:5px;"></span><span data-i18n="pay_status_overdue">Просрочен</span></span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+                                <div class="status-option" onclick="setOrderPaymentFilter('noinv')"><span><span class="dot" style="background:#c9973a;display:inline-block;margin-right:5px;"></span><span data-i18n="orders_filter_no_invoice">Без счёта</span></span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
                             </div>
                         </div>
 
@@ -2767,7 +2776,7 @@ function hideSplashScreen() {
                     <!-- Значения-носители для существующей логики фильтрации (getFilteredOrdersForList) — не отображаются -->
                     <select id="orderDateRangeFilter" class="hidden"><option value="all">Весь период</option><option value="week">Текущая неделя</option><option value="month">Текущий месяц</option><option value="custom">От - До</option></select>
                     <select id="orderEmployeeFilter" class="hidden"><option value="">Все исполнители</option></select>
-                    <select id="orderPaymentFilter" class="hidden"><option value="">Оплата: все</option><option value="unpaid">Не оплачен</option><option value="partial">Частично оплачен</option><option value="paid">Оплачен</option><option value="overdue">Просрочен</option></select>
+                    <select id="orderPaymentFilter" class="hidden"><option value="">Оплата: все</option><option value="unpaid">Не оплачен</option><option value="partial">Частично оплачен</option><option value="paid">Оплачен</option><option value="overdue">Просрочен</option><option value="noinv">Без счёта</option></select>
 
                     <div id="orderCustomDateRange" class="hidden">
                         <input id="orderDateFrom" type="hidden">
@@ -4357,7 +4366,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=12"></script>
-    <script src="i18n-core.js?v=110"></script>
+    <script src="i18n-core.js?v=111"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=18"></script>
     <script src="auth.js?v=30"></script>
@@ -4372,12 +4381,12 @@ function hideSplashScreen() {
 <script src="products.js?v=48"></script>
 <script src="customers.js?v=70"></script>
 <script src="calendar.js?v=16"></script>
-<script src="orders.js?v=147"></script>
+<script src="orders.js?v=148"></script>
 <script src="dashboard.js?v=9"></script>
-<script src="invoice.js?v=51"></script>
+<script src="invoice.js?v=52"></script>
 <script src="send-document.js?v=39"></script>
 <script src="payments.js?v=29"></script>
-<script src="documents.js?v=10"></script>
+<script src="documents.js?v=11"></script>
 <script src="bank.js?v=13"></script>
 <script src="stats.js?v=22"></script>
 <script src="history.js?v=9"></script>
@@ -4477,7 +4486,7 @@ async function loadAllData(silent) {
             fetchAllRows(() => db.from('customers').select('id, name, contact, email, discount, vat_exempt, notes, address, reg_number, vat_code, personal_code, entity_type, payment_term_days, invoice_mode').eq('org_id', currentOrgId).order('name').order('id')),
             // invoice_snapshot / delivery_note_snapshot сюда НЕ входят: это копии документов с логотипом
             // (у большой пекарни ~15 МБ), в списке они не нужны — документы читают свой снимок из базы сами.
-            fetchAllRows(() => db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending, is_confirmed, is_demo, created_by, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via, invoice_sent_message_id, delivery_note_sent_message_id, invoice_delivery_status, delivery_note_delivery_status, consolidated_invoice_id, cons_excluded').eq('org_id', currentOrgId).is('deleted_at', null).order('id')),
+            fetchAllRows(() => db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending, is_confirmed, is_demo, created_by, inv_no, dn_no, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via, invoice_sent_message_id, delivery_note_sent_message_id, invoice_delivery_status, delivery_note_delivery_status, consolidated_invoice_id, cons_excluded').eq('org_id', currentOrgId).is('deleted_at', null).order('id')),
             fetchAllRows(() => db.from('order_items').select('id, order_id, product_id, quantity, price, item_cost').eq('org_id', currentOrgId).order('id')),
             db.from('employees').select('id, name').eq('org_id', currentOrgId).order('name').limit(1000),
             fetchAllRows(() => db.from('ingredients').select('id, name, package_price, package_size, unit').eq('org_id', currentOrgId).order('name').order('id')),
@@ -4588,6 +4597,8 @@ async function loadAllData(silent) {
                 created_by: o.created_by || null,
                 consolidated_invoice_id: o.consolidated_invoice_id || null,
                 cons_excluded: !!o.cons_excluded,
+                inv_no: o.inv_no || null,
+                dn_no: o.dn_no || null,
                 invoice_sent_at: o.invoice_sent_at || null,
                 invoice_sent_via: o.invoice_sent_via || null,
                 delivery_note_sent_at: o.delivery_note_sent_at || null,

@@ -351,6 +351,7 @@ function renderOrderCard(order) {
                     ${noteLine}
                     ${payLine}
                     ${overdueLine}
+                    ${orderDocChipsHtml(order)}
                     ${itemsLine}
                 </div>
             </div>
@@ -565,6 +566,7 @@ function renderDoneOrderCard(order, opts) {
                         </div>
                         ${payLine}
                         ${overdueLine}
+                        ${orderDocChipsHtml(order)}
                         ${extra}
                         <div class="oc-bottom">
                             <span class="pay-pill" data-pay="${payKey}" style="background:${stripeColor}; cursor:inherit;">${orderHasAutoBankPay(order.id) ? payAutoBankIconHtml(12) : ''}${payPillLabel}</span>
@@ -861,6 +863,50 @@ let selectedOrderCustomers = []; // пусто = все клиенты
 // Фильтр по статусу ставит ТОЛЬКО Dashboard (dashboard.js): '' = нет; иначе 'принят' / 'в работе' / 'выполнен'.
 // _dashSavedOnly — при фильтре из Dashboard в список входят только сохранённые заказы (без черновиков),
 // чтобы число на плашке совпадало со списком.
+// ==================== ЯРЛЫКИ ДОКУМЕНТОВ У ЗАКАЗА (30.10.2026) ====================
+// Состояние документов заказа: 'cons' — в сводном счёте; 'inv' — есть счёт по заказу (orders.inv_no);
+// 'out' — выставлен вне программы (cons_excluded); 'cash' — id1: частный клиент, оплачено наличными без счёта;
+// 'none' — счёта нет. Черновики не учитываются (null).
+function orderDocKind(o) {
+    if (!o || !isOrderSaved(o)) return null;
+    if (o.consolidated_invoice_id) return 'cons';
+    if (o.inv_no) return 'inv';
+    if (o.cons_excluded) return 'out';
+    if (typeof currentOrgCashNoInv !== 'undefined' && currentOrgCashNoInv) {
+        const cust = o.customer_id ? customers.find(c => c.id === o.customer_id) : null;
+        const isPrivate = !cust || cust.entity_type !== 'company';
+        if (isPrivate && getOrderPaymentStatus(o).status === 'paid') return 'cash';
+    }
+    return 'none';
+}
+function orderNeedsInvoice(o) { return orderDocKind(o) === 'none'; }
+
+let _docChipConsLoading = false;
+function orderDocChipsHtml(o) {
+    const kind = orderDocKind(o);
+    if (!kind) return '';
+    const chips = [];
+    if (kind === 'cons') {
+        let num = typeof _payConsNumber === 'function' ? _payConsNumber(o.consolidated_invoice_id) : '…';
+        if (num === '…' && !_docChipConsLoading && typeof _payLoadConsNumbers === 'function') {
+            _docChipConsLoading = true;
+            const ids = [...new Set(orders.map(x => x.consolidated_invoice_id).filter(Boolean))];
+            _payLoadConsNumbers(ids).then(() => { _docChipConsLoading = false; if (typeof displayOrders === 'function') displayOrders(); });
+        }
+        chips.push(`<span class="oc-chip oc-chip-cons"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3 3 8l9 5 9-5-9-5zM3 13l9 5 9-5"/></svg>${escapeHtml(t('orders_doc_in_cons'))} ${escapeHtml(num)}</span>`);
+    } else if (kind === 'inv') {
+        chips.push(`<span class="oc-chip oc-chip-ok">${escapeHtml(t('orders_doc_invoice'))} ${escapeHtml(_formatDocNumber('invoice', o.inv_no))}</span>`);
+    } else if (kind === 'out') {
+        chips.push(`<span class="oc-chip oc-chip-out">${escapeHtml(t('orders_doc_outside'))}</span>`);
+    } else if (kind === 'cash') {
+        chips.push(`<span class="oc-chip oc-chip-out">${escapeHtml(t('orders_doc_cash'))}</span>`);
+    } else {
+        chips.push(`<span class="oc-chip oc-chip-none">${escapeHtml(t('orders_doc_no_invoice'))}</span>`);
+    }
+    if (o.dn_no) chips.push(`<span class="oc-chip oc-chip-ok">${escapeHtml(t('orders_doc_delivery_note'))} ${escapeHtml(_formatDocNumber('delivery_note', o.dn_no))}</span>`);
+    return `<div class="oc-doc-line">${chips.join('')}</div>`;
+}
+
 let ordersStatusFilter = '';
 let _dashSavedOnly = false;
 // _dashUnpaidOnly — плашка «Ждут оплаты»: заказы, оплаченные не полностью (getOrderPaymentStatus)
@@ -884,6 +930,7 @@ function getFilteredOrdersForList(opts) {
     if (paymentFilter) {
         filtered = filtered.filter(o => {
             const info = getOrderPaymentStatus(o);
+            if (paymentFilter === 'noinv') return orderNeedsInvoice(o);
             return paymentFilter === 'overdue' ? info.overdue : info.status === paymentFilter;
         });
     }
@@ -1138,7 +1185,7 @@ function ordersFilterDescription() {
         parts.push(t('orders_master') + ': ' + (emp ? emp.name : '?'));
     }
     const pay = document.getElementById('orderPaymentFilter')?.value || '';
-    if (pay) parts.push(t('orders_payment') + ': ' + t('pay_status_' + pay));
+    if (pay) parts.push(pay === 'noinv' ? t('orders_filter_no_invoice') : t('orders_payment') + ': ' + t('pay_status_' + pay));
     if (ordersStatusFilter) parts.push(t('dash_status_label') + ': ' + orderStatusLabelCap(ordersStatusFilter));
     if (_dashUnpaidOnly) parts.push(t('dash_unpaid'));
     return parts.join(' · ');
@@ -1248,7 +1295,7 @@ function ordersCalendarFilterSubtitleHtml() {
         parts.push(t('orders_master') + ': <b>' + escapeHtml(emp ? emp.name : '?') + '</b>');
     }
     const pay = document.getElementById('orderPaymentFilter')?.value || '';
-    if (pay) parts.push(t('orders_payment') + ': <b>' + escapeHtml(t('pay_status_' + pay)) + '</b>');
+    if (pay) parts.push(pay === 'noinv' ? '<b>' + escapeHtml(t('orders_filter_no_invoice')) + '</b>' : t('orders_payment') + ': <b>' + escapeHtml(t('pay_status_' + pay)) + '</b>');
     return parts.join(' · ');
 }
 

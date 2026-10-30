@@ -351,6 +351,7 @@ async function freezeDocumentSnapshot(order, docType, existing, opts) {
     const field = snapshotField(docType);
     await updateChecked(db.from('orders').update({ [field]: snapshot }).eq('id', order.id));
     order[field] = snapshot;
+    order[docType === 'invoice' ? 'inv_no' : 'dn_no'] = snapshot.number;   // колонки inv_no/dn_no в базе вычисляются из снимка (30.10.2026)
     // Держим кэш мгновенного запуска (cache.js) в курсе присвоенного номера
     // немедленно — иначе при сворачивании приложения (Android часто выгружает
     // процесс из памяти) следующий запуск может подставить старый снимок без
