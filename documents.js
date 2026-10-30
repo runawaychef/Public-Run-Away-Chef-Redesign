@@ -11,7 +11,7 @@
 //             renderDocumentPreviewThumbnail (invoice.js), _formatDocNumber, openSendDocumentSheet,
 //             _formatSentDateTime (send-document.js), formatMoney, formatDateDMY, escapeHtml, t.
 
-let _docsOldOpen = false; // раскрыта ли строка «Старые документы»
+let _docsStatus = 'wait'; // плитка-статус во «Выставлено»: wait | over | unsent | paid (30.10.2026)
 let _docsTab = 'todo';   // вкладка страницы: 'todo' — «К выставлению» (заказы без счёта), 'issued' — «Выставлено» (30.10.2026)
 let _docsAll = [];      // все документы организации (после загрузки)
 // year: 'YYYY' или null (все годы); month: 'MM' или null (весь год)
@@ -45,13 +45,13 @@ async function _docsLoad() {
     const [ordRes, consRes] = await Promise.all([
         fetchAllRows(() => db.from('orders')
             .select('id, customer_id, order_number, order_date, deleted_at, consolidated_invoice_id, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via, invoice_delivery_status, delivery_note_delivery_status, '
-                + 'inv:invoice_snapshot->>number, invDate:invoice_snapshot->>issueDate, invOrder:invoice_snapshot->order, invCalc:invoice_snapshot->calc, invVat:invoice_snapshot->vat_rate, '
+                + 'inv:invoice_snapshot->>number, invDate:invoice_snapshot->>issueDate, invDue:invoice_snapshot->>dueDate, invOrder:invoice_snapshot->order, invCalc:invoice_snapshot->calc, invVat:invoice_snapshot->vat_rate, '
                 + 'dn:delivery_note_snapshot->>number, dnDate:delivery_note_snapshot->>issueDate, dnOrder:delivery_note_snapshot->order, dnCalc:delivery_note_snapshot->calc, dnVat:delivery_note_snapshot->vat_rate')
             .eq('org_id', currentOrgId)
             .or('invoice_snapshot.not.is.null,delivery_note_snapshot.not.is.null')
             .order('id')),
         fetchAllRows(() => db.from('consolidated_invoices')
-            .select('id, number, issue_date, customer_id, cancelled_at, grand:snapshot->consolidated->totals->>grand, members:snapshot->consolidated->orders')
+            .select('id, number, issue_date, due_date, customer_id, cancelled_at, grand:snapshot->consolidated->totals->>grand, members:snapshot->consolidated->orders')
             .eq('org_id', currentOrgId)
             .order('id')),
     ]);
@@ -73,7 +73,7 @@ async function _docsLoad() {
             const pay = live ? getOrderPaymentStatus(live).status : null;
             list.push(Object.assign({}, base, {
                 key: 'inv-' + r.id, kind: 'inv', docType: 'invoice', rawNumber: r.inv,
-                number: _formatDocNumber('invoice', r.inv), date: r.invDate || r.order_date || '',
+                number: _formatDocNumber('invoice', r.inv), date: r.invDate || r.order_date || '', due: r.invDue || null,
                 sumC: live ? Math.round(orderGrandTotal(live) * 100) : _docsSnapGrandC(r.invOrder, r.invCalc, r.invVat),
                 pay, sentAt: r.invoice_sent_at || null, sentVia: r.invoice_sent_via || null, delivery: r.invoice_delivery_status || null,
             }));
@@ -105,7 +105,7 @@ async function _docsLoad() {
         const sent = sentByCons[c.id] || null;
         list.push({
             key: 'cons-' + c.id, kind: 'cons', docType: 'invoice', consId: c.id, rawNumber: c.number,
-            number: _formatDocNumber('invoice', c.number), date: c.issue_date || '',
+            number: _formatDocNumber('invoice', c.number), date: c.issue_date || '', due: c.due_date || null,
             custId: c.customer_id || null, custName: _docsCustName(c.customer_id),
             sumC: c.grand != null ? Math.round(Number(c.grand) * 100) : null,
             pay, cancelled: !!c.cancelled_at, memberCount: liveMembers.length || memberInfos.length,
@@ -122,10 +122,10 @@ async function _docsLoad() {
 async function openDocumentsSection(opts) {
     const custId = opts && opts.custId ? opts.custId : null;
     const today = getLocalDateStr(0);
-    _docsOldOpen = false;
+    _docsStatus = 'wait';
     // Из карточки клиента — весь текущий год, иначе текущий месяц
     // По умолчанию — счета (обычные и сводные вместе)
-    _docsFilter = { type: 'inv', custId, year: today.slice(0, 4), month: custId ? null : today.slice(5, 7), pay: '', q: '' };
+    _docsFilter = { type: 'inv', custId, year: null, month: null, pay: '', q: '' }; // период — «Всё время»: неоплаченные счета не должны прятаться
     const q = document.getElementById('docsSearch');
     if (q) q.value = '';
     _docsTab = (!custId && _docsTodoOrders().length) ? 'todo' : 'issued';
@@ -150,14 +150,18 @@ function closeDocumentsSection() {
 
 function setDocsFilter(field, value) {
     if (field === 'custId') value = value ? Number(value) : null;
-    if (field === 'month' || field === 'year') value = value || null;
-    _docsFilter[field] = value;
-    _docsOldOpen = false;
+    if (field === 'period') { // одно поле «ГГГГ-ММ» или пусто
+        _docsFilter.year = value ? value.slice(0, 4) : null;
+        _docsFilter.month = value ? value.slice(5, 7) : null;
+    } else {
+        if (field === 'month' || field === 'year') value = value || null;
+        _docsFilter[field] = value;
+    }
     renderDocumentsSection();
 }
 
-function toggleDocsOld() {
-    _docsOldOpen = !_docsOldOpen;
+function setDocsStatus(st) {
+    _docsStatus = st;
     renderDocumentsSection();
 }
 
@@ -187,9 +191,11 @@ function _docsFiltered() {
         if (f.type === 'dn' && d.kind !== 'dn') return false;
         if (f.custId && d.custId !== f.custId) return false;
         const date = String(d.date);
-        if (f.year && date.slice(0, 4) !== f.year) return false;
-        // Пока идёт поиск — по всему выбранному году (месяц не учитывается)
-        if (f.month && !q && date.slice(5, 7) !== f.month) return false;
+        // Пока идёт поиск — по всему времени (период не учитывается)
+        if (!q) {
+            if (f.year && date.slice(0, 4) !== f.year) return false;
+            if (f.month && date.slice(5, 7) !== f.month) return false;
+        }
         if (f.pay && d.pay !== f.pay) return false;
         if (q && !(_docsNorm(d.number).includes(q) || _docsNorm(d.custName).includes(q) || _docsNorm(d.orderNumber).includes(q))) return false;
         return true;
@@ -231,7 +237,6 @@ function _docsTodoOrders() {
 
 function setDocsTab(tab) {
     _docsTab = tab;
-    _docsOldOpen = false;
     renderDocumentsSection();
 }
 
@@ -282,101 +287,152 @@ function _docsRenderTodo(box) {
     box.innerHTML = html;
 }
 
+// Статус счёта для плиток (DN и отменённые — вне плиток; находятся поиском)
+function _docsInvStatus(d, today) {
+    if (d.kind === 'dn' || d.cancelled || d.deleted) return null;
+    if (d.pay === 'paid') return { paid: true };
+    if (d.pay !== 'unpaid' && d.pay !== 'partial') return null;
+    const over = !!d.due && d.due < today;
+    return { wait: true, over, unsent: !d.sentAt };
+}
+function _docsStatusMatch(st, status) {
+    if (!st) return false;
+    if (status === 'paid') return !!st.paid;
+    return !!st[status];
+}
+function _docsShortDate(iso) {
+    const dt = new Date(iso);
+    if (isNaN(dt)) return '';
+    return `${String(dt.getDate()).padStart(2, '0')}.${String(dt.getMonth() + 1).padStart(2, '0')}`;
+}
+function _docsDayDiff(fromIso, toIso) {
+    return Math.floor((Date.parse(toIso) - Date.parse(fromIso)) / 86400000);
+}
+
+function _docsTile(label, n, sumC, status, red) {
+    const act = _docsStatus === status && !_docsNorm(_docsFilter.q);
+    const bd = act ? 'border:2px solid #7c9473; background:#eef2ea;' : 'border:1px solid #e3ddcc; background:#fff;';
+    const col = red && n ? '#a3493d' : '#3c3a34';
+    return `<div onclick="setDocsStatus('${status}')" style="${bd} border-radius:14px; padding:${act ? 7 : 8}px ${act ? 9 : 10}px; cursor:pointer;">
+        <div style="font-size:11.5px; color:#6b675d;">${escapeHtml(label)}</div>
+        <div style="display:flex; align-items:baseline; gap:6px;"><span style="font-size:20px; font-weight:700; color:${col};">${n}</span>${sumC != null ? `<span style="font-size:12px; color:#6b675d;">${formatMoney(sumC / 100)}</span>` : ''}</div></div>`;
+}
+
+function _docsInvNumberOfOrder(orderId) {
+    const inv = _docsAll.find(x => x.kind === 'inv' && x.orderId === orderId && !x.cancelled);
+    if (inv) return t('docs_dn_inv').replace('{n}', inv.number);
+    const cons = _docsAll.find(x => x.kind === 'cons' && !x.cancelled && (x.memberIds || []).includes(orderId));
+    if (cons) return t('docs_dn_in_cons').replace('{n}', cons.number);
+    return t('docs_dn_no_inv');
+}
+
 function renderDocumentsSection() {
     const box = document.getElementById('docsBody');
     if (!box) return;
     if (_docsTab === 'todo') { _docsRenderTodo(box); return; }
     const f = _docsFilter;
-
+    const q = _docsNorm(f.q);
+    const today = getLocalDateStr(0);
+    const isDn = f.type === 'dn';
 
     const custIds = [...new Set(_docsAll.map(d => d.custId).filter(Boolean))];
     const custOpts = [{ v: '', l: t('docs_customer_all') }].concat(
         custIds.map(id => ({ v: id, l: _docsCustName(id) })).sort((a, b) => a.l.localeCompare(b.l)));
-    const years = [...new Set(_docsAll.map(d => String(d.date).slice(0, 4)).filter(y => /^\d{4}$/.test(y)))];
-    if (f.year && !years.includes(f.year)) years.push(f.year);
-    years.sort().reverse();
-    const yearOpts = years.map(y => ({ v: y, l: y })).concat([{ v: '', l: t('docs_years_all') }]);
-    const monthOpts = [{ v: '', l: t('docs_month_all') }].concat(
-        ['01','02','03','04','05','06','07','08','09','10','11','12'].map(m => ({ v: m, l: _docsMonthName(m) })));
-    const payOpts = [{ v: '', l: t('docs_pay_all') }, { v: 'unpaid', l: t('pay_status_unpaid') }, { v: 'partial', l: t('pay_status_partial') }, { v: 'paid', l: t('pay_status_paid') }];
+    const yms = [...new Set(_docsAll.map(d => String(d.date).slice(0, 7)).filter(y => /^\d{4}-\d{2}$/.test(y)))];
+    const curYm = f.year && f.month ? f.year + '-' + f.month : '';
+    if (curYm && !yms.includes(curYm)) yms.push(curYm);
+    yms.sort().reverse();
+    const periodOpts = [{ v: '', l: t('docs_period_all') }].concat(yms.map(ym => ({ v: ym, l: _docsMonthLabel(ym) })));
 
-    const list = _docsFiltered();
-    const invDocs = list.filter(d => d.kind !== 'dn' && !d.cancelled);
-    const invSumC = invDocs.reduce((s, d) => s + (d.sumC || 0), 0);
-    const summary = `<div style="display:flex; justify-content:space-between; gap:8px; font-size:12px; color:#6b675d; background:#f6f4ec; border-radius:10px; padding:7px 10px; margin-top:10px;">
-        <span>${escapeHtml(`${list.length} ${nWord(list.length, 'word_docs')} · ${t('docs_summary_inv')} ${invDocs.length}`)}</span>
-        <span>${escapeHtml(t('docs_summary_sum'))} <b style="color:#3c3a34;">${formatMoney(invSumC / 100)}</b></span></div>`;
+    const sel = `${_docsSelect('custId', f.custId || '', custOpts)}${_docsSelect('period', curYm, periodOpts)}`;
+    const btnStyle = 'font-size:12px; border-radius:999px; padding:5px 10px; background:#fff; border:1px solid #e3ddcc; color:#4f6349; cursor:pointer;';
 
-    // «Старые документы» сворачиваем (только отображение): документы заказов с отметкой cons_excluded
-    // («выставлено вне программы») и решённые старше 14 дней — накладные, оплаченные/отменённые счета.
-    // Неоплаченные и частично оплаченные счета не сворачиваем никогда. При поиске ничего не сворачивается.
-    const lim = new Date(); lim.setDate(lim.getDate() - 14);
-    const limKey = `${lim.getFullYear()}-${String(lim.getMonth() + 1).padStart(2, '0')}-${String(lim.getDate()).padStart(2, '0')}`;
-    const isOldDoc = d => {
-        if (_docsNorm(f.q)) return false;
-        if (d.kind !== 'cons' && d.live && d.live.cons_excluded) return true;
-        if (String(d.date || '') >= limKey) return false;
-        if (d.kind === 'dn') return true;
-        if (d.cancelled || d.pay === 'paid') return true;
-        return d.kind === 'inv' && d.deleted && !d.pay;
-    };
-    const recentDocs = list.filter(d => !isOldDoc(d));
-    const oldDocs = list.filter(isOldDoc);
-
-    const buildRows = arr => {
-    let rows = '';
-    let lastMonth = null;
-    arr.forEach((d, i) => {
-        const ym = String(d.date).slice(0, 7);
-        if (ym !== lastMonth) {
-            rows += `<div style="font-size:12px; color:#9a9488; margin:12px 0 2px;">${escapeHtml(_docsMonthLabel(ym))}</div>`;
-            lastMonth = ym;
+    let head = '', rows = '';
+    const all = _docsFiltered();
+    const buildRow = d => {
+        const sum = d.sumC != null ? formatMoney(d.sumC / 100) : '—';
+        const dim = (d.cancelled || d.deleted) ? 'opacity:.55;' : '';
+        const gold = txt => `<b style="color:#96712a;">${escapeHtml(txt)}</b>`;
+        if (d.kind === 'dn') {
+            const sub = [escapeHtml(d.number || '—'), formatDateDMY(d.date)];
+            if (d.orderNumber) sub.push(escapeHtml(t('docs_order_n').replace('{n}', d.orderNumber)));
+            return `<div onclick="openRegistryDoc('${d.key}')" style="display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid #f0ebde; cursor:pointer; ${dim}">
+                <div style="flex:1; min-width:0;"><div style="font-size:14px; font-weight:700; color:#3c3a34;">${escapeHtml(d.custName)}</div>
+                    <div style="font-size:12px; color:#888;">${sub.join(' · ')}</div>
+                    <div style="font-size:11.5px; margin-top:2px; color:#9a9488;">${escapeHtml(_docsInvNumberOfOrder(d.orderId))}</div></div>
+                ${_docsSentIcon(d)}
+                <div style="text-align:right; flex:none; font-size:14px; font-weight:700; color:#3c3a34;">${sum}</div></div>`;
         }
-        const label = d.kind === 'cons'
-            ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline-block; vertical-align:-1px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15 3H8a2 2 0 00-2 2v12a2 2 0 002 2h9a2 2 0 002-2V7l-4-4z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 3v4h4M3 8v12a2 2 0 002 2h9"/></svg> INV`
-            : (d.kind === 'dn' ? 'DN' : 'INV');
-        const sub = [escapeHtml(d.custName)];
-        if (d.kind === 'cons') sub.push(escapeHtml(`${d.memberCount} ${nWord(d.memberCount, 'word_orders')}`));
-        else if (d.orderNumber) sub.push('№' + escapeHtml(d.orderNumber));
+        const sub = [escapeHtml(d.number || '—'), formatDateDMY(d.date)];
+        if (d.kind === 'cons') sub.push(escapeHtml(`${t('docs_cons_short')}, ${d.memberCount} ${nWord(d.memberCount, 'word_orders')}`));
+        else if (d.orderNumber) sub.push(escapeHtml(t('docs_order_n').replace('{n}', d.orderNumber)));
         if (d.cancelled) sub.push(escapeHtml(t('docs_cancelled')));
         else if (d.deleted) sub.push(escapeHtml(t('docs_order_deleted')));
-        const sum = d.sumC != null ? formatMoney(d.sumC / 100) : '—';
-        const pay = d.pay ? `<span style="font-size:11px; font-weight:700; border-radius:999px; padding:3px 8px; white-space:nowrap; ${_DOCS_PAY_STYLE[d.pay]}">${escapeHtml(t('pay_status_' + d.pay))}</span>` : '';
-        const dim = (d.cancelled || d.deleted) ? 'opacity:.55;' : '';
-        rows += `<div onclick="openRegistryDoc('${d.key}')" style="display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid #f0ebde; cursor:pointer; ${dim}">
-            <span style="font-size:11px; font-weight:700; border-radius:8px; padding:3px 0; flex:none; width:44px; text-align:center; ${_DOCS_TYPE_STYLE[d.kind]}">${label}</span>
-            <div style="flex:1; min-width:0;"><div style="font-size:13px; color:#3c3a34;"><b>${escapeHtml(d.number || '—')}</b> · ${formatDateDMY(d.date)}</div>
-                <div style="font-size:12px; color:#888; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${sub.join(' · ')}</div></div>
-            ${_docsSentIcon(d)}
-            <div style="text-align:right; flex:none; min-width:74px;"><div style="font-size:13px; color:#3c3a34; ${d.cancelled ? 'text-decoration:line-through;' : (d.kind !== 'dn' ? 'font-weight:700;' : '')}">${sum}</div>${pay}</div>
-        </div>`;
-    });
-    return rows;
+        let sentLine = '';
+        if (d.sentAt) {
+            const st = _docsSentState(d);
+            sentLine = st === 'alarm'
+                ? `<b style="color:#a3493d;">${escapeHtml(t('docs_mail_failed'))}</b>`
+                : escapeHtml(t('docs_sent_on').replace('{d}', _docsShortDate(d.sentAt)));
+        } else if (!d.cancelled && !d.deleted && d.pay !== 'paid') {
+            sentLine = gold(t('docs_not_sent_cap'));
+        }
+        if (d.pay === 'partial') sentLine += (sentLine ? ' · ' : '') + gold(t('docs_partial'));
+        let right = '';
+        if (d.pay === 'paid') right = `<div style="font-size:12px; font-weight:600; color:#4f6349;">${escapeHtml(t('pay_status_paid'))}</div>`;
+        else if ((d.pay === 'unpaid' || d.pay === 'partial') && d.due) {
+            right = d.due < today
+                ? `<div style="font-size:12px; font-weight:600; color:#a3493d;">${escapeHtml(t('docs_overdue_days').replace('{n}', _docsDayDiff(d.due, today)))}</div>`
+                : `<div style="font-size:12px; font-weight:600; color:#6b675d;">${escapeHtml(t('docs_due_till').replace('{d}', _docsShortDate(d.due + 'T12:00:00')))}</div>`;
+        }
+        return `<div onclick="openRegistryDoc('${d.key}')" style="display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid #f0ebde; cursor:pointer; ${dim}">
+            <div style="flex:1; min-width:0;"><div style="font-size:14px; font-weight:700; color:#3c3a34;">${escapeHtml(d.custName)}</div>
+                <div style="font-size:12px; color:#888;">${sub.join(' · ')}</div>
+                ${sentLine ? `<div style="font-size:11.5px; margin-top:2px; color:#9a9488;">${sentLine}</div>` : ''}</div>
+            <div style="text-align:right; flex:none;"><div style="font-size:14px; font-weight:700; color:#3c3a34; ${d.cancelled ? 'text-decoration:line-through;' : ''}">${sum}</div>${right}</div></div>`;
+    };
+    const withMonths = arr => {
+        let out = '', last = null;
+        arr.forEach(d => {
+            const ym = String(d.date).slice(0, 7);
+            if (ym !== last) { out += `<div style="font-size:12px; color:#9a9488; margin:12px 0 2px;">${escapeHtml(_docsMonthLabel(ym))}</div>`; last = ym; }
+            out += buildRow(d);
+        });
+        return out;
     };
 
-    let rows = buildRows(recentDocs);
-    if (oldDocs.length) {
-        const open = !!_docsOldOpen;
-        rows += `<div style="margin-top:10px; background:#f6f4ec; border-radius:10px; padding:2px 12px;">
-            <div onclick="toggleDocsOld()" style="display:flex; align-items:center; gap:8px; font-size:13px; color:#6b675d; min-height:40px; cursor:pointer;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b675d" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transform:rotate(${open ? 90 : 0}deg);"><polyline points="9 6 15 12 9 18"/></svg>
-                <span style="flex:1;">${escapeHtml(t('docs_old_fold').replace('{n}', oldDocs.length))}</span></div></div>`;
-        if (open) rows += buildRows(oldDocs);
+    let list;
+    if (isDn) {
+        head = `<div style="display:flex; align-items:center; gap:8px; margin:6px 0 8px;">
+            <span onclick="setDocsFilter('type','inv')" style="font-size:13px; color:#4f6349; font-weight:600; cursor:pointer;">‹ ${escapeHtml(t('docs_back_inv'))}</span>
+            <span style="flex:1; text-align:center; font-size:13px; color:#3c3a34; font-weight:700; padding-right:48px;">${escapeHtml(t('docs_type_dn'))}</span></div>
+            <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">${sel}</div>`;
+        list = all;
+        rows = withMonths(list);
+    } else {
+        // Плитки считаются по клиенту и периоду, но не по самому статусу
+        const sts = all.map(d => ({ d, st: _docsInvStatus(d, today) }));
+        const cnt = status => { const a = sts.filter(x => _docsStatusMatch(x.st, status)); return { n: a.length, sumC: a.reduce((s, x) => s + (x.d.sumC || 0), 0) }; };
+        const cw = cnt('wait'), co = cnt('over'), cu = cnt('unsent'), cp = cnt('paid');
+        const tiles = `<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:6px 0 10px;">
+            ${_docsTile(t('docs_tile_wait'), cw.n, cw.sumC, 'wait')}${_docsTile(t('docs_tile_over'), co.n, co.sumC, 'over', true)}
+            ${_docsTile(t('docs_tile_unsent'), cu.n, cu.sumC, 'unsent')}${_docsTile(t('docs_tile_paid'), cp.n, null, 'paid')}</div>`;
+        head = `${tiles}<div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">${sel}
+            <button type="button" onclick="setDocsFilter('type','dn')" style="margin-left:auto; ${btnStyle}">${escapeHtml(t('docs_type_dn'))} ›</button></div>`;
+        if (q) {
+            list = all.filter(d => d.kind !== 'dn');
+            rows = withMonths(list);
+        } else {
+            list = sts.filter(x => _docsStatusMatch(x.st, _docsStatus)).map(x => x.d);
+            if (_docsStatus === 'paid') rows = withMonths(list);
+            else {
+                list.sort((a, b) => String(a.due || '9999').localeCompare(String(b.due || '9999')) || String(a.date).localeCompare(String(b.date)));
+                rows = list.map(buildRow).join('');
+            }
+        }
     }
     if (!list.length) rows = `<p style="font-size:13px; color:#9a9488; margin:16px 0; text-align:center;">${escapeHtml(t('docs_empty'))}</p>`;
-
-    box.innerHTML = `
-        ${_docsTabsHtml()}
-        <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
-            ${_docsSelect('type', f.type, [{ v: 'inv', l: t('docs_type_inv') }, { v: 'dn', l: t('docs_type_dn') }, { v: 'all', l: t('docs_type_all') }])}
-            ${_docsSelect('year', f.year || '', yearOpts)}
-            ${_docsSelect('month', f.month || '', monthOpts)}
-            ${_docsSelect('custId', f.custId || '', custOpts)}
-            ${_docsSelect('pay', f.pay || '', payOpts)}
-        </div>
-        ${_docsNorm(f.q) && f.month && f.year ? `<div style="font-size:11px; color:#9a9488; margin-top:6px;">${escapeHtml(t('docs_search_year').replace('{year}', f.year))}</div>` : ''}
-        ${summary}
-        <div>${rows}</div>`;
+    box.innerHTML = `${_docsTabsHtml()}${head}<div>${rows}</div>`;
 }
 
 // ---- Открытие документа из списка ----
