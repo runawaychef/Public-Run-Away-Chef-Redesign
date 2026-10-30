@@ -676,12 +676,14 @@ function toggleCdRequisites() {
 function _cdRenderRequisitesSummary(cust) {
     const el = document.getElementById('cdReqSummary');
     if (!el || !cust) return;
+    // Под названием клиента — только скидка и отсрочка, и только если заданы
     const parts = [];
-    parts.push(cust.entity_type ? t(cust.entity_type === 'company' ? 'company_entity_company' : 'company_entity_individual') : t('cust_req_type_unset'));
-    parts.push(t(cust.vat_exempt ? 'cust_tag_no_vat' : 'cust_req_with_vat'));
+    const disc = Number(cust.discount) || 0;
+    if (disc > 0) parts.push(t('cust_tag_discount').replace('{n}', disc));
     const term = Number(cust.payment_term_days) || 0;
-    parts.push(term > 0 ? t('cust_req_term').replace('{n}', term) : t('cust_req_no_term'));
+    if (term > 0) parts.push(t('cust_req_term').replace('{n}', term));
     el.textContent = parts.join(' · ');
+    el.classList.toggle('hidden', !parts.length);
 }
 // ---- Календарь клиента (16.10, шаг 1): то же окно, что в «Заказах», только заказы этого клиента,
 // фильтр по мастеру (кто выполнил заказ), нажатие на день — окно дня. Памятные даты — шаг 2.
