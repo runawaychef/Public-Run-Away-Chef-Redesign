@@ -290,8 +290,9 @@ async function freezeDocumentSnapshot(order, docType, existing, opts) {
     if (!number && opts && opts.preview) {
         number = '…';
     } else if (!number) {
-        const rpcName = docType === 'invoice' ? 'get_next_invoice_number' : 'get_next_delivery_note_number';
-        const { data, error } = await db.rpc(rpcName, { p_org_id: currentOrgId });
+        // 31.10.2026: год номера = год ДАТЫ ДОКУМЕНТА (счётчики по годам, get_next_doc_number)
+        const _docDate = (opts && opts.issueDate) || getLocalDateStr(0);
+        const { data, error } = await db.rpc('get_next_doc_number', { p_org_id: currentOrgId, p_doc_type: docType === 'invoice' ? 'invoice' : 'delivery_note', p_year: Number(String(_docDate).slice(0, 4)) });
         if (error) throw error;
         number = data;
     }
@@ -926,7 +927,8 @@ async function freezeConsolidatedInvoice(orderIds, custId, opts) {
     } else if (opts && opts.preview) {
         number = '…';
     } else {
-        const { data, error } = await db.rpc('get_next_invoice_number', { p_org_id: currentOrgId });
+        const _docDate = (opts && opts.issueDate) || getLocalDateStr(0);
+        const { data, error } = await db.rpc('get_next_doc_number', { p_org_id: currentOrgId, p_doc_type: 'invoice', p_year: Number(String(_docDate).slice(0, 4)) });
         if (error) throw error;
         number = data;
     }
