@@ -642,7 +642,6 @@ function openCustomerDetail(custId) {
     document.getElementById('cdContact').value = cust.contact;
     document.getElementById('cdEmail').value = cust.email || '';
     document.getElementById('cdDiscount').value = cust.discount.toFixed(2);
-    document.getElementById('cdVatExempt').checked = !!cust.vat_exempt;
     document.getElementById('cdNotes').value = cust.notes || '';
     document.getElementById('cdDateRange').value = 'all';
     document.getElementById('cdDateRangeBtnLabel').textContent = t('stats_range_all');
@@ -656,8 +655,8 @@ function openCustomerDetail(custId) {
     document.getElementById('cdPersonalCode').value = cust.personal_code || '';
     document.getElementById('cdPaymentTermDays').value = cust.payment_term_days != null ? cust.payment_term_days : '';
     setCustomerEntityType(cust.entity_type || 'company', /*skipSave*/ true);
-    // Реквизиты раскрыты, пока тип лица не выбран (новый клиент); дальше — свёрнуты в строку-итог
-    _cdSetRequisitesOpen(!cust.entity_type);
+    // Блок раскрыт у нового пустого клиента (нет имени); у остальных свёрнут в строку-итог
+    _cdSetRequisitesOpen(!cust.name);
     _cdRenderRequisitesSummary(cust);
 
     renderCustomerStats(cust);
@@ -1183,7 +1182,8 @@ async function saveCdHeader() {
     const contact  = document.getElementById('cdContact').value.trim();
     const email    = document.getElementById('cdEmail').value.trim();
     const discount = parseFloat(document.getElementById('cdDiscount').value) || 0;
-    const vatExempt = document.getElementById('cdVatExempt').checked;
+    // Галки «Без НДС» в карточке клиента больше нет (29.10): значение не меняется отсюда, остаётся как в базе
+    const vatExempt = !!cust.vat_exempt;
     const notes    = document.getElementById('cdNotes').value.trim();
     const address     = document.getElementById('cdAddress').value.trim();
     const regNumber   = document.getElementById('cdRegNumber').value.trim();
