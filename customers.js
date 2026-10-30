@@ -1172,7 +1172,20 @@ function setCustomerEntityType(type, skipSave) {
     companyBtn.classList.toggle('active', isCompany);
     individualBtn.classList.toggle('active', !isCompany);
 
+    _cdApplyCountryRules();
     if (!skipSave) saveCdHeader();
+}
+
+// Подписи и видимость реквизитов клиента — по стране пекарни (те же правила, что в настройках пекарни; значения в БД не меняются)
+function _cdApplyCountryRules() {
+    if (typeof countryReqRules !== 'function') return;
+    const r = countryReqRules(typeof currentOrgCountry !== 'undefined' ? currentOrgCountry : null, false);
+    const isCompany = _customerEntityType === 'company';
+    const setLbl = (id, key) => { const l = document.getElementById(id)?.closest('div')?.querySelector('label'); if (l) l.textContent = t(key); };
+    setLbl('cdRegNumber', r.regKey);
+    setLbl('cdPersonalCode', r.personalKey);
+    setLbl('cdVatCode', isCompany ? r.vatCompanyKey : r.vatIndividualKey);
+    document.getElementById('cdVatCode')?.closest('div')?.classList.toggle('hidden', r.hideVat);
 }
 
 // Крупное имя клиента над полями (как название изделия в карточке изделия)

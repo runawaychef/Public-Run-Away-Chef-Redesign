@@ -86,6 +86,19 @@ const COUNTRY_OPTIONS = [
 //   Беларуси — в Украине НДС-номер = тот же ІПН, отдельного кода нет.
 // Значение в БД (personal_code/reg_number/vat_code) при этом не меняется —
 // меняются только подписи и видимость полей.
+// Единые правила подписей реквизитов по стране — для пекарни (own=true) и для клиента (own=false).
+// Возвращает ключи i18n и признак «поле Код НДС скрыто». Значения в БД не затрагиваются.
+function countryReqRules(code, own) {
+    const isBY = code === 'BY', isLT = code === 'LT', isRU = code === 'RU', isUA = code === 'UA';
+    return {
+        personalKey: isBY ? 'company_unp_label' : isRU ? 'company_inn_label' : isUA ? 'company_ipn_label' : (isLT && own) ? 'company_personal_code_label_lt' : 'company_personal_code_label',
+        regKey: isBY ? 'company_unp_label' : isRU ? 'company_ogrn_label' : isUA ? 'company_edrpou_label' : 'company_reg_number_label',
+        vatCompanyKey: isRU ? 'company_inn_kpp_label' : 'company_vat_code_label',
+        vatIndividualKey: isRU ? 'company_ogrnip_label' : 'company_vat_code_label',
+        hideVat: isBY || isUA
+    };
+}
+
 function updateCountrySpecificLabels() {
     const personalCodeLabelEl = document.getElementById('cmpPersonalCodeLabel');
     const regNumberLabelEl = document.getElementById('cmpRegNumberLabel');
@@ -97,17 +110,15 @@ function updateCountrySpecificLabels() {
     const bankSwiftLabelEl = document.getElementById('cmpBankSwiftLabel');
     if (!personalCodeLabelEl) return;
 
-    const isBY = _cmpCurrentCountryCode === 'BY';
-    const isLT = _cmpCurrentCountryCode === 'LT';
     const isRU = _cmpCurrentCountryCode === 'RU';
-    const isUA = _cmpCurrentCountryCode === 'UA';
+    const r = countryReqRules(_cmpCurrentCountryCode, true);
 
-    personalCodeLabelEl.textContent = isBY ? t('company_unp_label') : isRU ? t('company_inn_label') : isUA ? t('company_ipn_label') : isLT ? t('company_personal_code_label_lt') : t('company_personal_code_label');
-    regNumberLabelEl.textContent = isBY ? t('company_unp_label') : isRU ? t('company_ogrn_label') : isUA ? t('company_edrpou_label') : t('company_reg_number_label');
-    vatCodeCompanyLabelEl.textContent = isRU ? t('company_inn_kpp_label') : t('company_vat_code_label');
-    vatCodeIndividualLabelEl.textContent = isRU ? t('company_ogrnip_label') : t('company_vat_code_label');
-    vatCodeCompanyWrap.classList.toggle('hidden', isBY || isUA);
-    vatCodeIndividualWrap.classList.toggle('hidden', isBY || isUA);
+    personalCodeLabelEl.textContent = t(r.personalKey);
+    regNumberLabelEl.textContent = t(r.regKey);
+    vatCodeCompanyLabelEl.textContent = t(r.vatCompanyKey);
+    vatCodeIndividualLabelEl.textContent = t(r.vatIndividualKey);
+    vatCodeCompanyWrap.classList.toggle('hidden', r.hideVat);
+    vatCodeIndividualWrap.classList.toggle('hidden', r.hideVat);
 
     if (bankAccountLabelEl) bankAccountLabelEl.textContent = isRU ? t('company_bank_account_label_ru') : t('company_bank_account_label');
     if (bankSwiftLabelEl) bankSwiftLabelEl.textContent = isRU ? t('company_bank_swift_label_ru') : t('company_bank_swift_label');
@@ -234,6 +245,7 @@ function toggleCountryDropdown() {
 async function selectCountry(code) {
     const found = COUNTRY_OPTIONS.find(c => c.code === code);
     _cmpCurrentCountryCode = code;
+    currentOrgCountry = code;
     document.getElementById('cmpCountryLabel').textContent = countryLabel(code);
     document.getElementById('cmpCountryDropdown').classList.add('hidden');
     updateCountrySpecificLabels();
@@ -317,6 +329,7 @@ async function openCompanyInfoModal() {
 
         document.getElementById('cmpOrgName').value      = data.name || '';
         _cmpCurrentCountryCode = data.country || null;
+        currentOrgCountry = data.country || null;
         _cmpCurrentCurrencyCode = data.currency_code || 'EUR';
         renderCountryDropdown();
         document.getElementById('cmpCountryLabel').textContent = countryLabel(data.country);
