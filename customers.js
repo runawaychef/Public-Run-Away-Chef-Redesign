@@ -1314,7 +1314,7 @@ function renderCustomerOrders() {
     }
 
     const statusFlag = { 'принят': 'flag-red', 'в работе': 'flag-yellow', 'выполнен': 'flag-green' };
-    let html = '<table class="w-full table-text table-clean" style="table-layout:fixed;"><thead><tr style="background-color:#e3e8df;" class="text-xs"><th class="p-1 text-left" style="width:28%;">' + t('customers_col_number') + '</th><th class="p-1 text-left" style="width:20%;">' + t('customers_col_date') + '</th><th class="p-1 text-right" style="width:28%;">' + t('customers_col_sum') + ' (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-1 text-center" style="width:24%;">' + t('customers_col_status') + '</th></tr></thead><tbody>';
+    let html = '<table class="w-full table-text table-clean" style="table-layout:fixed;"><thead><tr class="text-xs"><th class="p-1 text-left" style="width:26%;">' + t('customers_col_number') + '</th><th class="p-1 text-left" style="width:25%;">' + t('customers_col_date') + '</th><th class="p-1 text-right" style="width:21%;">' + t('customers_col_sum') + ' (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-1 text-center" style="width:28%;">' + t('customers_col_status') + '</th></tr><tr class="tbl-gap"><th colspan="4"></th></tr></thead><tbody>';
     custOrders.forEach(o => {
         const oNum = o.order_number || `#${o.id}`;
         const payInfo = getOrderPaymentStatus(o);
