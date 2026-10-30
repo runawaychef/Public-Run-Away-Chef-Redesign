@@ -373,6 +373,8 @@ async function _sendLoadConsolidated(order) {
 
 // Клиент «сводный», если ему уже выставляли сводные счета (отдельной настройки в карточке нет).
 function _custUsesConsolidated(order) {
+    const cust = order.customer_id ? customers.find(c => c.id === order.customer_id) : null;
+    if (cust && cust.invoice_mode === 'consolidated') return true; // запомнено при «Выполнен» (30.10.2026)
     return !!order.customer_id && orders.some(o => o.customer_id === order.customer_id && o.consolidated_invoice_id);
 }
 
@@ -801,7 +803,10 @@ function _renderSendSheet() {
     const hasEmail = !!(cust && cust.email);
     const types = _sendCheckedTypes();
     const isEmail = st.via === 'email';
+    const isNone = st.via === 'none';
     const orderNumLabel = _sendOrderNumLabel(order);
+    const titleEl = document.getElementById('sendSheetTitle');
+    if (titleEl) titleEl.textContent = st.fromDone ? t('send_done_title').replace('{n}', _sendOrderNumLabel(order)) : t('send_sheet_title');
 
     const chips = types.map(dt => {
         const d = st.docs[dt];
@@ -811,7 +816,9 @@ function _renderSendSheet() {
     }).join('');
 
     let howBlock = '';
-    if (isEmail) {
+    if (isNone) {
+        howBlock = `<div style="font-size:12px; color:#888; margin:0 0 14px;">${escapeHtml(t('send_none_hint'))}</div>`;
+    } else if (isEmail) {
         const recipient = hasEmail
             ? `<div class="send-recipient-row" style="margin-bottom:12px;">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6b675d" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75"/></svg>
@@ -819,7 +826,7 @@ function _renderSendSheet() {
                 <span class="send-edit-link" onclick="openEmailQuickEdit(${cust.id})">${t('send_edit_email')}</span>
             </div>`
             : `<div style="font-size:12px; background:#f3ded9; color:#a3493d; border-radius:10px; padding:8px 10px; margin-bottom:12px;">${t('send_no_email_inline')} ${cust ? `<span class="send-edit-link" style="color:#a3493d; text-decoration:underline;" onclick="openEmailQuickEdit(${cust.id})">${t('send_add_email')}</span>` : ''}</div>`;
-        howBlock = `${recipient}
+        howBlock = (st.fromDone && !st.mailOpen) ? `${recipient}<div onclick="_sendToggleMail()" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:12px; background:#f6f4ec; font-size:13px; color:#4f6349; font-weight:600; margin-bottom:12px; cursor:pointer;"><span>${escapeHtml(t('send_mail_fold'))}</span><span>›</span></div>` : `${recipient}
             <div class="flex items-center justify-between" style="margin-bottom:6px;">
                 <p style="font-size:13px; color:#6b675d; margin:0;">${t('send_body_label')}</p>
                 <p style="font-size:11px; color:#9a9488; margin:0;">${t('send_letter_lang_label')}</p>
@@ -842,25 +849,34 @@ function _renderSendSheet() {
     }
 
     const canSubmit = types.length > 0 && (!isEmail || hasEmail) && !(_isConsInvoice() && !st.consExisting && !st.consSel.length);
-    const btnLabel = isEmail ? t('send_button') : (t('send_share_btn') + (types.length > 1 ? ` (${types.length})` : ''));
-    const icon = isEmail
+    const btnLabel = isNone ? t('send_issue_btn')
+        : (st.fromDone && isEmail) ? (t('send_issue_send_btn') + (types.length > 1 ? ` (${types.length})` : ''))
+        : isEmail ? t('send_button') : (t('send_share_btn') + (types.length > 1 ? ` (${types.length})` : ''));
+    const vatNote = (st.fromDone && st.checked.invoice && typeof orderVatExempt === 'function' && orderVatExempt(order) && !currentOrgProtected)
+        ? `<div style="font-size:12px; background:#eef2ea; color:#4f6349; border-radius:10px; padding:7px 10px; margin:2px 0 4px;">${escapeHtml(t('send_done_hint_novat'))}</div>` : '';
+    const consNote = (st.fromDone && cust && cust.invoice_mode === 'consolidated')
+        ? `<div style="font-size:12px; background:#eef2ea; color:#4f6349; border-radius:10px; padding:7px 10px; margin:2px 0 4px;">${escapeHtml(t('send_done_hint_cons'))}</div>` : '';
+    const icon = isNone ? '' : isEmail
         ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75A2.25 2.25 0 014.5 4.5h15A2.25 2.25 0 0121.75 6.75v10.5A2.25 2.25 0 0119.5 19.5h-15a2.25 2.25 0 01-2.25-2.25V6.75zm0 0l9.75 6.75 9.75-6.75"/></svg>`
         : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"/></svg>`;
 
     body.innerHTML = `
         <input type="hidden" id="sendDateInput"><span id="sendDateLabel" hidden></span>
         <p style="font-size:13px; color:#888; margin:0 0 6px;">${escapeHtml(order.customer || t('orders_no_customer'))} · ${escapeHtml(orderNumLabel)} · ${formatMoney(orderGrandTotal(order))}</p>
-        <p class="send-section-label">${t('send_what')}</p>
+        ${consNote}${vatNote}
+        <p class="send-section-label">${st.fromDone ? t('send_what_issue') : t('send_what')}</p>
         ${_SEND_DOC_TYPES.map(dt => _sendDocRowHtml(dt, order)).join('')}
         <p class="send-section-label">${t('send_how')}</p>
         <div class="send-doctype-switch" style="margin-bottom:12px;">
-            <button class="${isEmail ? 'active' : ''}" onclick="setSendVia('email')">${t('send_how_email')}</button>
-            <button class="${!isEmail ? 'active' : ''}" onclick="setSendVia('share')">${t('send_how_share')}</button>
+            <button style="font-size:12.5px; padding:8px 4px;" class="${isEmail ? 'active' : ''}" onclick="setSendVia('email')">${t('send_how_email')}</button>
+            <button style="font-size:12.5px; padding:8px 4px;" class="${st.via === 'share' ? 'active' : ''}" onclick="setSendVia('share')">${t('send_how_share')}</button>
+            <button style="font-size:12.5px; padding:8px 4px;" class="${isNone ? 'active' : ''}" onclick="setSendVia('none')">${t('send_how_none')}</button>
         </div>
         ${howBlock}
         <button class="pill-btn w-full justify-center" id="sendDocSubmitBtn" onclick="submitSendDocument()" ${canSubmit ? '' : 'disabled style="opacity:.5;"'}>
             ${icon}<span>${btnLabel}</span>
         </button>
+        ${st.fromDone ? `<button class="pill-btn-secondary w-full justify-center" style="margin-top:8px;" onclick="closeSendDocPage(true)">${escapeHtml(t('send_later'))}</button>` : ''}
         ${st.custId && typeof openDocumentsSection === 'function' ? `<div style="text-align:center; margin-top:12px;"><span onclick="openDocumentsSection({ custId: ${st.custId} })" style="color:#4f6349; font-size:13px; font-weight:700; cursor:pointer;">${t('docs_all_of_customer')} ›</span></div>` : ''}`;
 }
 
@@ -920,6 +936,14 @@ async function _openSendDocumentSheetImpl(orderId, docType, seq, opts) {
     if (seq !== _sendOpenSeq) { hideLoading(); return; }
     hideLoading();
 
+    const fromDone = !!(opts && opts.fromDone);
+    if (fromDone) {
+        // «Выполнен» (30.10.2026): если нужный документ уже выставлен — страницу не открываем
+        const di = _sendBuildDocInfo(order, row);
+        const wantDn0 = _custUsesConsolidated(order);
+        const already = wantDn0 ? di.delivery_note.issued : (di.invoice.issued || !!consExisting || !!order.consolidated_invoice_id);
+        if (already) return;
+    }
     const checked = { invoice: false, delivery_note: false };
     if (docType === 'invoice' || docType === 'delivery_note') checked[docType] = true;
     else if (_custUsesConsolidated(order)) checked.delivery_note = true;
@@ -940,6 +964,13 @@ async function _openSendDocumentSheetImpl(orderId, docType, seq, opts) {
         consCalMode: 'day', consCalMonth: String(order.date || getLocalDateStr(0)).slice(0, 7), consRangeStart: null,
     };
     const stNew = _sendSheetState;
+    if (fromDone) {
+        const wantDn = _custUsesConsolidated(order);
+        stNew.fromDone = true; stNew.mailOpen = false;
+        stNew.checked = { invoice: !wantDn, delivery_note: wantDn };
+        // Юрлицо с email — письмо; физлицо и клиент без email — просто выставить
+        stNew.via = (cust && cust.email && cust.entity_type === 'company') ? 'email' : 'none';
+    }
     if (!consExisting) {
         stNew.consCand = _consCandidates(order);
         if (stNew.consCand.length > 1 && order.customer_id) {
@@ -1122,7 +1153,7 @@ function _sendLimitMessage(r) {
 
 // Резервирует номера (если ещё не выставлены), сохраняет снимки и собирает PDF
 // для всех отмеченных документов. Только здесь документ становится «выставленным».
-async function _sendPrepareDocs(order, types, lang) {
+async function _sendPrepareDocs(order, types, lang, noPdf) {
     const st = _sendSheetState;
     const orderNumLabel = _sendOrderNumLabel(order);
     await ensureLangLoaded(lang);
@@ -1156,7 +1187,7 @@ async function _sendPrepareDocs(order, types, lang) {
             snap = await _reserveDocSnapshot(order, dt, st.dates[dt]);
         }
         const num = _formatDocNumber(dt, snap.number);
-        const pdf = await buildDocumentPdf(dt, snap, lang);
+        const pdf = noPdf ? null : await buildDocumentPdf(dt, snap, lang);
         out.push({ dt, snap, num, updated, cons: !!cons, pdf, filename: _sendAttachmentName(dt, lang, num, orderNumLabel) });
     }
     return out;
@@ -1170,6 +1201,7 @@ async function submitSendDocument() {
     if (!order) return;
     const types = _sendCheckedTypes();
     if (!types.length) { showInfo(t('send_need_one_doc')); return; }
+    if (st.via === 'none') return _sendIssueOnly(order, types);
     if (st.via === 'share') return _sendByShare(order, types);
     if (!cust || !cust.email) return;
 
@@ -1196,7 +1228,8 @@ async function submitSendDocument() {
         // Текст письма (bodyText) НЕ пересобираем — берём как есть из textarea,
         // чтобы не затереть возможные ручные правки пекаря.
         // Заглушки «INV-…» / «DN-…» заменяем номерами, присвоенными при отправке (21.10)
-        let bodyText = document.getElementById('sendEmailBody').value;
+        const bodyEl = document.getElementById('sendEmailBody'); // при свёрнутом письме (после «Выполнен») — текст по умолчанию
+        let bodyText = bodyEl ? bodyEl.value : st.bodyText;
         prepared.forEach(p => { bodyText = bodyText.split(_formatDocNumber(p.dt, '…')).join(p.num); });
         const subject = _sendBuildSubject(prepared, lang, currentOrgName || '');
 
@@ -1231,6 +1264,7 @@ async function submitSendDocument() {
             const docLabel = p.dt === 'invoice' ? t('orders_doc_invoice') : t('orders_doc_delivery_note');
             logActivity('order', `${docLabel} ${p.num} ${t('log_doc_email_sent')} (${cust.email})`, order.id);
         }
+        await _sendRememberChoice(types);
         closeSendDocPage(true);
         showInfo(t('send_success'));
     } catch (e) {
@@ -1240,6 +1274,61 @@ async function submitSendDocument() {
         hideLoading();
         if (btn) { btn.disabled = false; btn.style.opacity = ''; }
     }
+}
+
+// ---- «Выполнен» (30.10.2026): только выставить, без отправки; запоминание выбора по клиенту ----
+function _sendToggleMail() {
+    if (!_sendSheetState) return;
+    _sendSheetState.mailOpen = !_sendSheetState.mailOpen;
+    _renderSendSheet();
+}
+
+// Запоминает последний выбор для клиента (customers.invoice_mode): накладная/сводный счёт → 'consolidated', счёт → 'per_order'.
+// Только при входе из «Выполнен» и только если выбран один документ. Ошибка записи не мешает выставлению.
+async function _sendRememberChoice(types) {
+    const st = _sendSheetState;
+    if (!st || !st.fromDone || !st.custId || types.length !== 1) return;
+    const cust = customers.find(c => c.id === st.custId);
+    if (!cust) return;
+    const mode = (types[0] === 'delivery_note' || st.invKind === 'cons' || st.consExisting) ? 'consolidated' : 'per_order';
+    if (cust.invoice_mode === mode) return;
+    try {
+        await updateChecked(db.from('customers').update({ invoice_mode: mode }).eq('id', cust.id));
+        cust.invoice_mode = mode;
+    } catch (e) { console.warn('invoice_mode not saved', e); }
+}
+
+async function _sendIssueOnly(order, types) {
+    const st = _sendSheetState;
+    const btn = document.getElementById('sendDocSubmitBtn');
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+    showLoading();
+    try {
+        const prepared = await _sendPrepareDocs(order, types, st.emailLang, true);
+        prepared.forEach(p => {
+            const docLabel = p.dt === 'invoice' ? t('orders_doc_invoice') : t('orders_doc_delivery_note');
+            logActivity('order', `${docLabel} ${p.num} ${t('log_doc_issued')}`, order.id);
+        });
+        await _sendRememberChoice(types);
+        if (typeof displayOrders === 'function') { try { displayOrders(); } catch (e) {} }
+        closeSendDocPage(true);
+        showInfo(t('send_issued_ok'));
+    } catch (e) {
+        console.error(e);
+        showInfo(t('send_error_prefix') + (e && e.message ? e.message : t('inv_unknown_error')));
+    } finally {
+        hideLoading();
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+    }
+}
+
+// Вызывается при смене статуса заказа на «выполнен» (orders.js, quickSetOrderStatus).
+// Только режим «По счёту», не защищённая пекарня (id1 пока не затрагиваем), только заказы с клиентом.
+function maybeOpenDoneDocSheet(order) {
+    if (!order || !order.customer_id) return;
+    if (typeof currentOrgPaymentMode === 'undefined' || currentOrgPaymentMode !== 'invoice') return;
+    if (typeof currentOrgProtected !== 'undefined' && currentOrgProtected) return;
+    openSendDocumentSheet(order.id, null, { fromDone: true });
 }
 
 // Сводный счёт считается отправленным по каждому включённому заказу.
@@ -1273,6 +1362,7 @@ async function _sendByShare(order, types) {
                 const docLabel = p.dt === 'invoice' ? t('orders_doc_invoice') : t('orders_doc_delivery_note');
                 logActivity('order', `${docLabel} ${p.num} ${t('log_doc_shared')}`, order.id);
             }
+            await _sendRememberChoice(types);
             closeSendDocPage(true);
         } else {
             prepared.forEach(p => p.pdf.save(p.filename));

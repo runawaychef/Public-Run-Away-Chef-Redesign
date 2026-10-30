@@ -702,6 +702,7 @@ async function quickSetOrderStatus(orderId, newStatus) {
         await updateChecked(db.from('orders').update({ status: newStatus }).eq('id', orderId));
         const oNum = order.order_number ? ('№' + order.order_number) : ('#' + order.id);
         logActivity('order', `${t('trash_order_word')} ${oNum}: ${t('customers_col_status')} «${orderStatusLabel(oldStatus)}» → «${orderStatusLabel(newStatus)}»`, orderId);
+        if (newStatus === 'выполнен' && oldStatus !== 'выполнен' && typeof maybeOpenDoneDocSheet === 'function') maybeOpenDoneDocSheet(order); // 30.10.2026: окно «Что выставить»
     } catch (e) {
         order.status = oldStatus; // откат при ошибке сети/сохранения
         displayOrders();
