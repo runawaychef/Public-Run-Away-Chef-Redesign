@@ -168,9 +168,9 @@ function stockCardCellsHtml3(a, b, c) {
 // Окно «Неоплаченные заказы клиента»: заказы сгруппированы по счетам
 // (сводный счёт / счёт на один заказ / счёт не выставлен). Номера и даты счетов
 // берём из того же списка, что и раздел «Документы» (_docsLoad).
-function _unpaidOrderCardHtml(o, alsoInv, issueCol) {
+function _unpaidOrderCardHtml(o, alsoInv, issueCol, noSum) {
     // Старое имя оставлено; теперь возвращает одну строку таблицы (см. _custOrdersTableHtml)
-    return _custOrderRowHtml(o, 'goToOrderFromCustomerUnpaid', { alsoInv, showLeft: true, issueCol });
+    return _custOrderRowHtml(o, 'goToOrderFromCustomerUnpaid', { alsoInv, showLeft: true, issueCol, noSum, flagOnly: !!issueCol });
 }
 
 // Строка таблицы заказов клиента: № · Дата · Сумма (точка = оплата) · Статус.
@@ -181,7 +181,7 @@ function _custOrderRowHtml(o, onTap, opts) {
     const oNum = o.order_number || `#${o.id}`;
     const pay = getOrderPaymentStatus(o);
     const amt = opts.showLeft ? Math.max(0, pay.grandAmt - pay.paidAmt) : pay.grandAmt;
-    const cols = opts.issueCol ? 5 : 4;
+    const cols = (opts.noSum ? 3 : 4) + (opts.issueCol ? 1 : 0);
     const issue = opts.issueCol
         ? `<td class="p-0.5 text-right"><span class="cu-issue-btn" onclick="event.stopPropagation(); openCustomerUnpaidIssue(${o.id})" title="${t('cust_unpaid_issue')}" aria-label="${t('cust_unpaid_issue')}"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M12 11v6M9 14h6"/></svg></span></td>` : '';
     const also = opts.alsoInv
@@ -189,19 +189,25 @@ function _custOrderRowHtml(o, onTap, opts) {
     return `<tr class="border-b order-row" onclick="${onTap}(${o.id})">
         <td class="p-0.5 whitespace-nowrap">${escapeHtml(oNum)}</td>
         <td class="p-0.5">${formatDateDMY(o.date)}</td>
-        <td class="p-0.5 text-right font-semibold"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background-color:${getPaymentStripeColor(pay)};"></span>${amt.toFixed(2)}</td>
-        <td class="p-0.5 text-center"><span class="flag ${statusFlag[o.status] || ''}"></span> ${escapeHtml(orderStatusLabel(o.status))}</td>${issue}
+        ${opts.noSum ? '' : `<td class="p-0.5 text-right font-semibold"><span class="inline-block w-2 h-2 rounded-full mr-1" style="background-color:${getPaymentStripeColor(pay)};"></span>${amt.toFixed(2)}</td>`}
+        <td class="p-0.5 text-center"><span class="flag ${statusFlag[o.status] || ''}"${opts.flagOnly ? ` title="${escapeHtml(orderStatusLabel(o.status))}"` : ''}></span>${opts.flagOnly ? '' : ' ' + escapeHtml(orderStatusLabel(o.status))}</td>${issue}
     </tr>${also}`;
 }
-function _custOrdersTableHtml(rowsHtml, issueCol) {
-    const w = issueCol ? [25, 19, 22, 24, 10] : [28, 20, 26, 26];
+function _custOrdersTableHtml(rowsHtml, issueCol, mode) {
+    // mode: 'single' — один заказ: без шапки и без суммы (она в шапке плашки); 'multi' — шапка в новом стиле; не задан — прежний вид (окно дня)
+    if (mode === 'single') {
+        const ws = issueCol ? [30, 32, 26, 12] : [34, 36, 30];
+        return '<table class="w-full table-text table-clean" style="table-layout:fixed;"><colgroup>'
+            + ws.map(x => '<col style="width:' + x + '%">').join('') + '</colgroup><tbody>' + rowsHtml + '</tbody></table>';
+    }
+    const w = mode === 'multi' ? (issueCol ? [27, 28, 19, 14, 12] : [25, 27, 18, 30]) : (issueCol ? [23, 26, 17, 25, 9] : [25, 27, 18, 30]);
     return '<table class="w-full table-text table-clean" style="table-layout:fixed;"><thead><tr class="text-xs" style="color:#8a8a82;">'
         + '<th class="p-1 text-left" style="width:' + w[0] + '%;">' + t('customers_col_number') + '</th>'
         + '<th class="p-1 text-left" style="width:' + w[1] + '%;">' + t('customers_col_date') + '</th>'
         + '<th class="p-1 text-right" style="width:' + w[2] + '%;">' + t('customers_col_sum') + '</th>'
         + '<th class="p-1 text-center" style="width:' + w[3] + '%;">' + t('customers_col_status') + '</th>'
         + (issueCol ? '<th style="width:' + w[4] + '%;"></th>' : '')
-        + '</tr></thead><tbody>' + rowsHtml + '</tbody></table>';
+        + '</tr>' + (mode === 'multi' ? '<tr class="tbl-gap"><th colspan="' + (issueCol ? 5 : 4) + '"></th></tr>' : '') + '</thead><tbody>' + rowsHtml + '</tbody></table>';
 }
 
 function _unpaidGroupHtml(opts) {
@@ -267,8 +273,8 @@ async function openCustomerUnpaidModal(custId) {
             btnAction: `openCustomerUnpaidDoc(${custId}, '${g.key}')`,
             cards: _custOrdersTableHtml(g.orders.map(o => {
                 const own = isCons ? docByKey['inv-' + o.id] : null;
-                return _unpaidOrderCardHtml(o, own ? own.number : '');
-            }).join('')),
+                return _unpaidOrderCardHtml(o, own ? own.number : '', false, g.orders.length === 1);
+            }).join(''), false, g.orders.length === 1 ? 'single' : 'multi'),
         });
     });
     if (noInv.length) {
@@ -277,7 +283,7 @@ async function openCustomerUnpaidModal(custId) {
             title: t('cust_unpaid_none'), sub: t('cust_unpaid_none_sub'),
             total: noInv.reduce((sum, o) => sum + leftOf(o), 0),
             btnLabel: '',
-            cards: _custOrdersTableHtml(noInv.map(o => _unpaidOrderCardHtml(o, '', true)).join(''), true),
+            cards: _custOrdersTableHtml(noInv.map(o => _unpaidOrderCardHtml(o, '', true, noInv.length === 1)).join(''), true, noInv.length === 1 ? 'single' : 'multi'),
         });
     }
     document.getElementById('customerUnpaidTitle').textContent = t('cust_unpaid_title');
