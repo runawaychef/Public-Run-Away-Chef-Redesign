@@ -167,6 +167,8 @@ I18N.ru = {
         send_done_hint_novat: "Клиент без НДС — счёт выставится без НДС",
         send_done_hint_cons: "Для этого клиента запомнены сводные счета",
         log_doc_issued: "выставлен",
+        send_paid_now: "Оплачено сразу",
+        send_cash_no_doc: "Оплачено наличными, без счёта",
         pay_mode_by_order: "По заказу",
         pay_mode_by_order_desc: "Оплата вносится прямо в заказ, счёт — по желанию",
         pay_mode_by_invoice: "По счёту",

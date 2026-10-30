@@ -856,6 +856,7 @@ function _renderSendSheet() {
         ? `<div style="font-size:12px; background:#eef2ea; color:#4f6349; border-radius:10px; padding:7px 10px; margin:2px 0 4px;">${escapeHtml(t('send_done_hint_novat'))}</div>` : '';
     const consNote = (st.fromDone && cust && cust.invoice_mode === 'consolidated')
         ? `<div style="font-size:12px; background:#eef2ea; color:#4f6349; border-radius:10px; padding:7px 10px; margin:2px 0 4px;">${escapeHtml(t('send_done_hint_cons'))}</div>` : '';
+    const payRow = _sendPayRowHtml(order, cust);
     const icon = isNone ? '' : isEmail
         ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75A2.25 2.25 0 014.5 4.5h15A2.25 2.25 0 0121.75 6.75v10.5A2.25 2.25 0 0119.5 19.5h-15a2.25 2.25 0 01-2.25-2.25V6.75zm0 0l9.75 6.75 9.75-6.75"/></svg>`
         : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z"/></svg>`;
@@ -873,6 +874,7 @@ function _renderSendSheet() {
             <button style="font-size:12.5px; padding:8px 4px;" class="${isNone ? 'active' : ''}" onclick="setSendVia('none')">${t('send_how_none')}</button>
         </div>
         ${howBlock}
+        ${payRow}
         <button class="pill-btn w-full justify-center" id="sendDocSubmitBtn" onclick="submitSendDocument()" ${canSubmit ? '' : 'disabled style="opacity:.5;"'}>
             ${icon}<span>${btnLabel}</span>
         </button>
@@ -969,7 +971,8 @@ async function _openSendDocumentSheetImpl(orderId, docType, seq, opts) {
         stNew.fromDone = true; stNew.mailOpen = false;
         stNew.checked = { invoice: !wantDn, delivery_note: wantDn };
         // Юрлицо с email — письмо; физлицо и клиент без email — просто выставить
-        stNew.via = (cust && cust.email && cust.entity_type === 'company') ? 'email' : 'none';
+        stNew.via = (cust && cust.email && cust.entity_type === 'company' && !currentOrgProtected) ? 'email' : 'none'; // id1: по умолчанию без отправки
+        stNew.payMethod = 'наличные'; stNew.payOn = false;
     }
     if (!consExisting) {
         stNew.consCand = _consCandidates(order);
@@ -1264,7 +1267,7 @@ async function submitSendDocument() {
             const docLabel = p.dt === 'invoice' ? t('orders_doc_invoice') : t('orders_doc_delivery_note');
             logActivity('order', `${docLabel} ${p.num} ${t('log_doc_email_sent')} (${cust.email})`, order.id);
         }
-        await _sendRememberChoice(types);
+        await _sendAfterIssue(order, types);
         closeSendDocPage(true);
         showInfo(t('send_success'));
     } catch (e) {
@@ -1274,6 +1277,67 @@ async function submitSendDocument() {
         hideLoading();
         if (btn) { btn.disabled = false; btn.style.opacity = ''; }
     }
+}
+
+// ---- Оплата в окне «Выполнен» (только физлица) ----
+function _sendIsPrivate(cust) { return !cust || cust.entity_type !== 'company'; }
+function _sendCanPay(order, cust) {
+    return !!(_sendSheetState && _sendSheetState.fromDone && _sendIsPrivate(cust) && getOrderPaymentStatus(order).status !== 'paid');
+}
+function _sendPayRowHtml(order, cust) {
+    const st = _sendSheetState;
+    if (!_sendCanPay(order, cust)) return '';
+    const m = st.payMethod || 'наличные';
+    const chips = [['наличные', 'orders_method_cash'], ['карта', 'orders_method_card'], ['перевод', 'orders_method_transfer']].map(([v, k]) =>
+        `<button style="font-size:12.5px; padding:7px 4px;" class="${m === v ? 'active' : ''}" onclick="_sendSetPayMethod('${v}')">${escapeHtml(t(k))}</button>`).join('');
+    const head = `<div onclick="_sendTogglePay()" style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border-radius:12px; background:#f6f4ec; font-size:13px; color:#4f6349; font-weight:600; margin:4px 0 12px; cursor:pointer;"><span>${escapeHtml(t('send_paid_now'))}</span><span>${st.payOn ? '✓' : '›'}</span></div>`;
+    const body = st.payOn ? `<div class="send-doctype-switch" style="margin:-4px 0 12px;">${chips}</div>` : '';
+    const noDoc = (currentOrgProtected && currentOrgCashNoInv)
+        ? `<button class="pill-btn-secondary w-full justify-center" style="margin-bottom:8px;" onclick="_sendCashNoDoc()">${escapeHtml(t('send_cash_no_doc'))}</button>` : '';
+    return head + body + noDoc;
+}
+function _sendTogglePay() { if (!_sendSheetState) return; _sendSheetState.payOn = !_sendSheetState.payOn; _renderSendSheet(); }
+function _sendSetPayMethod(m) { if (!_sendSheetState) return; _sendSheetState.payMethod = m; _renderSendSheet(); }
+
+// Вносит оплату на весь остаток заказа (как плашка оплаты в карточке заказа)
+async function _sendRecordPayment(order, method) {
+    const grand = orderGrandTotal(order);
+    const paid = _orderPaidTotals[order.id] || 0;
+    const amount = Math.round((grand - paid) * 100) / 100;
+    if (amount <= 0) return;
+    const paidAt = getLocalDateStr(0);
+    const { error } = await db.from('order_payments').insert({
+        org_id: currentOrgId, order_id: order.id, amount, method, paid_at: paidAt, note: null,
+        created_by: currentEmployee ? currentEmployee.id : null
+    });
+    if (error) throw error;
+    _orderPaidTotals[order.id] = Math.round((paid + amount) * 100) / 100;
+    logActivity('order', `${t('log_payment_added')} ${formatMoney(amount)} (${method})`, order.id);
+}
+
+// После выставления: запомнить выбор по клиенту и внести оплату, если отмечена
+async function _sendAfterIssue(order, types) {
+    const st = _sendSheetState;
+    await _sendRememberChoice(types);
+    if (st && st.fromDone && st.payOn) {
+        try { await _sendRecordPayment(order, st.payMethod || 'наличные'); }
+        catch (e) { console.error(e); showInfo(t('error_save_payment')); }
+    }
+}
+
+// id1: частный клиент оплатил наличными, документ не нужен
+async function _sendCashNoDoc() {
+    const st = _sendSheetState; if (!st) return;
+    const order = orders.find(o => o.id === st.orderId); if (!order) return;
+    showLoading(t('common_saving'));
+    try {
+        suppressRealtimeFor3s();
+        await _sendRecordPayment(order, 'наличные');
+        if (typeof displayOrders === 'function') { try { displayOrders(); } catch (e) {} }
+        closeSendDocPage(true);
+    } catch (e) {
+        console.error(e); showInfo(t('error_save_payment'));
+    } finally { hideLoading(); }
 }
 
 // ---- «Выполнен» (30.10.2026): только выставить, без отправки; запоминание выбора по клиенту ----
@@ -1309,7 +1373,7 @@ async function _sendIssueOnly(order, types) {
             const docLabel = p.dt === 'invoice' ? t('orders_doc_invoice') : t('orders_doc_delivery_note');
             logActivity('order', `${docLabel} ${p.num} ${t('log_doc_issued')}`, order.id);
         });
-        await _sendRememberChoice(types);
+        await _sendAfterIssue(order, types);
         if (typeof displayOrders === 'function') { try { displayOrders(); } catch (e) {} }
         closeSendDocPage(true);
         showInfo(t('send_issued_ok'));
@@ -1327,7 +1391,8 @@ async function _sendIssueOnly(order, types) {
 function maybeOpenDoneDocSheet(order) {
     if (!order || !order.customer_id) return;
     if (typeof currentOrgPaymentMode === 'undefined' || currentOrgPaymentMode !== 'invoice') return;
-    if (typeof currentOrgProtected !== 'undefined' && currentOrgProtected) return;
+    // уже есть документ / оплачено наличными без счёта / вне программы — окно не нужно (без дублей)
+    if (typeof orderDocKind === 'function' && orderDocKind(order) !== 'none') return;
     openSendDocumentSheet(order.id, null, { fromDone: true });
 }
 
@@ -1362,7 +1427,7 @@ async function _sendByShare(order, types) {
                 const docLabel = p.dt === 'invoice' ? t('orders_doc_invoice') : t('orders_doc_delivery_note');
                 logActivity('order', `${docLabel} ${p.num} ${t('log_doc_shared')}`, order.id);
             }
-            await _sendRememberChoice(types);
+            await _sendAfterIssue(order, types);
             closeSendDocPage(true);
         } else {
             prepared.forEach(p => p.pdf.save(p.filename));

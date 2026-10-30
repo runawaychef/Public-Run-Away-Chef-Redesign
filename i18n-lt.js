@@ -173,6 +173,8 @@ I18N.lt = {
         send_done_hint_novat: "Klientas be PVM - sąskaita bus išrašyta be PVM",
         send_done_hint_cons: "Šiam klientui įsimintos suvestinės sąskaitos",
         log_doc_issued: "išrašytas",
+        send_paid_now: "Apmokėta iš karto",
+        send_cash_no_doc: "Apmokėta grynaisiais, be sąskaitos",
         pay_mode_by_order: "Pagal užsakymą",
         pay_mode_by_order_desc: "Apmokėjimas įvedamas tiesiai užsakyme, sąskaita – pagal poreikį",
         pay_mode_by_invoice: "Pagal sąskaitą",

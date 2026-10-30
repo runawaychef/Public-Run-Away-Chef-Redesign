@@ -168,6 +168,8 @@ I18N.en = {
         send_done_hint_novat: "Client without VAT - the invoice will be issued without VAT",
         send_done_hint_cons: "Consolidated invoices are remembered for this client",
         log_doc_issued: "issued",
+        send_paid_now: "Paid right away",
+        send_cash_no_doc: "Paid in cash, no invoice",
         pay_mode_by_order: "By order",
         pay_mode_by_order_desc: "Payments are entered directly in the order; an invoice is optional",
         pay_mode_by_invoice: "By invoice",
