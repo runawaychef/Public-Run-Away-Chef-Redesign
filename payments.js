@@ -236,33 +236,47 @@ function payGateIssueInvoice() {
     if (id && typeof openSendDocumentSheet === 'function') openSendDocumentSheet(id, 'invoice');
 }
 
-// Настройки → «Оплата»
+// «Информация о компании» → блок «Документы и оплата» (30.10.2026; раньше — Настройки → «Оплата»)
 function refreshPaymentModeUI() {
     const mode = _payByInvoice() ? 'invoice' : 'order';
-    document.querySelectorAll('input[name="payModeRadio"]').forEach(r => { r.checked = r.value === mode; });
     const isOwner = !!(currentEmployee && currentEmployee.is_owner);
-    document.querySelectorAll('input[name="payModeRadio"]').forEach(r => { r.disabled = !isOwner; });
+    const optO = document.getElementById('payOptOrder'), optI = document.getElementById('payOptInvoice');
+    if (optO) optO.classList.toggle('on', mode === 'order');
+    if (optI) optI.classList.toggle('on', mode === 'invoice');
+    const box = document.getElementById('payModeBox');
+    if (box) box.style.opacity = isOwner ? '' : '.6';
+    const dateWrap = document.getElementById('payInvFromWrap');
+    if (dateWrap) dateWrap.classList.toggle('hidden', mode !== 'invoice');
+    const dateInp = document.getElementById('payInvFromInput');
+    if (dateInp) { dateInp.value = currentOrgInvoicingFrom || ''; dateInp.disabled = !isOwner; }
     const row = document.getElementById('payCashNoInvRow');
     if (row) row.classList.toggle('hidden', !(currentOrgProtected && mode === 'invoice'));
     const cb = document.getElementById('payCashNoInvToggle');
     if (cb) { cb.checked = !!currentOrgCashNoInv; cb.disabled = !isOwner; }
     const hint = document.getElementById('payModeOwnerHint');
     if (hint) hint.classList.toggle('hidden', isOwner);
-    const short = document.getElementById('payModeShort');
-    if (short) short.textContent = t(mode === 'invoice' ? 'pay_mode_by_invoice' : 'pay_mode_by_order');
 }
 async function _saveOrgPayment(fields) {
     try {
         await updateChecked(db.from('organizations').update(fields).eq('id', currentOrgId));
         if ('payment_mode' in fields) currentOrgPaymentMode = fields.payment_mode;
         if ('cash_without_invoice' in fields) currentOrgCashNoInv = fields.cash_without_invoice;
+        if ('invoicing_from' in fields) currentOrgInvoicingFrom = fields.invoicing_from;
     } catch (e) {
         console.error(e);
         showInfo(e && e.code === '42501' ? t('pay_set_owner_only') : t('error_save_check_connection'));
     }
     refreshPaymentModeUI();
+    if (typeof displayOrders === 'function') { try { displayOrders(); } catch (e) {} }
 }
-function setPaymentMode(mode) { _saveOrgPayment({ payment_mode: mode === 'invoice' ? 'invoice' : 'order' }); }
+function setPaymentMode(mode) {
+    if (!(currentEmployee && currentEmployee.is_owner)) { refreshPaymentModeUI(); return; }
+    const fields = { payment_mode: mode === 'invoice' ? 'invoice' : 'order' };
+    // При переходе на «По счёту» дата учёта по умолчанию — сегодня (защищённую пекарню id1 не трогаем)
+    if (fields.payment_mode === 'invoice' && !currentOrgInvoicingFrom && !currentOrgProtected) fields.invoicing_from = getLocalDateStr(0);
+    _saveOrgPayment(fields);
+}
+function setInvoicingFrom(value) { _saveOrgPayment({ invoicing_from: value || null }); }
 function setCashNoInvoice(on) { _saveOrgPayment({ cash_without_invoice: !!on }); }
 
 function openAddPaymentModal(fillRemaining) {

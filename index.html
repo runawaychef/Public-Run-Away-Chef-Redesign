@@ -1601,6 +1601,21 @@
 #cdOrdersList table.table-clean tbody td { white-space:nowrap; }
 #cdOrdersBlock button.pill-btn.w-full { min-height:42px; font-size:13px; border-radius:13px; background: linear-gradient(180deg,#8aa380,#7c9473); box-shadow: 0 8px 14px -8px rgba(70,58,30,0.4), inset 0 1px 0 rgba(255,255,255,0.35); margin-top:12px; }
 /* переключатель Физ./Юр. лицо (шаг 5) */
+        /* ===== «Информация о компании» — единый стиль (30.10.2026, THEME-UNIFIED-COMPANY) ===== */
+        #companyInfoPage .cmp-card { border-radius: 16px; box-shadow: var(--sb-shadow); border: var(--sb-edge); padding: 12px 14px; margin-bottom: 14px; }
+        #companyInfoPage .cmp-card-title { font-size: 11.5px; font-weight: 700; color: #6b7a63; letter-spacing: .03em; text-transform: uppercase; margin-bottom: 10px; }
+        #companyInfoPage input.border:not([type="checkbox"]):not([type="file"]) { border-radius: 12px; background: #f4f1ea; border: 1px solid #e3ddcc; padding: 8px 10px; min-height: 34px; }
+        #companyInfoPage .field-select-btn { border-radius: 12px; min-height: 34px; font-size: 12.5px; font-weight: 600; }
+        #payModeCard .pm { display: flex; flex-direction: column; gap: 8px; }
+        #payModeCard .pm .opt { border: 1px solid #e3ddcc; background: #fff; border-radius: 14px; padding: 9px 12px; cursor: pointer; }
+        #payModeCard .pm .opt.on { border: 2px solid #7c9473; background: #eef2ea; padding: 8px 11px; }
+        #payModeCard .pm .opt b { display: block; font-size: 13.5px; color: #3c3a34; }
+        #payModeCard .pm .opt.on b { color: #4f6349; }
+        #payModeCard .pm .opt span { display: block; font-size: 11.5px; color: #8d887b; margin-top: 2px; line-height: 1.35; }
+        #payModeCard .datebox { margin-top: 12px; }
+        #payModeCard .datebox label { font-size: 11.5px; color: #6b675d; font-weight: 600; }
+        #payModeCard .datebox p { font-size: 11.5px; color: #8d887b; margin: 6px 0 0; line-height: 1.4; }
+
 .cd-seg { display:flex; gap:3px; padding:3px; background:#f4f1ea; border-radius:14px; box-shadow: inset 0 1px 2px rgba(70,58,30,0.08); border:1px solid rgba(90,75,40,0.06); margin-bottom:12px; }
 .cd-seg button { flex:1; min-height:32px; border-radius:11px; border:0; background:transparent; color:#8d887b; font-size:12.5px; font-weight:600; font-family:inherit; display:flex; align-items:center; justify-content:center; }
 .cd-seg button.active { background: linear-gradient(180deg,#8aa380,#7c9473); color:#fff; box-shadow: 0 4px 8px -4px rgba(70,58,30,0.4), inset 0 1px 0 rgba(255,255,255,0.35); }
@@ -3966,21 +3981,6 @@ function hideSplashScreen() {
                     </div>
                 </div>
 
-                <!-- Оплата (21.10): режим «По заказу» / «По счёту»; меняет владелец; «наличные без счёта» — только защищённая орг. -->
-                <div class="mb-3">
-                    <button type="button" id="settingsPayGroupBtn" onclick="document.getElementById('settingsPayGroup').classList.toggle('hidden'); document.getElementById('settingsPayGroupChevron').classList.toggle('rotate-180'); document.getElementById('settingsPayGroupBtn').classList.toggle('active')" class="settings-row-btn w-full justify-between">
-                        <span class="flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg><span data-i18n="pay_set_title">Оплата</span></span>
-                        <span class="flex items-center gap-2"><span id="payModeShort" class="text-xs text-gray-500"></span><svg id="settingsPayGroupChevron" class="w-3.5 h-3.5 flex-shrink-0 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg></span>
-                    </button>
-                    <div id="settingsPayGroup" class="hidden flex flex-col gap-0.5 mt-1">
-                        <div class="text-xs font-semibold text-gray-700" style="padding:6px 8px 2px;" data-i18n="pay_set_question">Как принимаем оплату</div>
-                        <label class="flex items-start gap-2 text-xs text-gray-600" style="padding:6px 8px;"><input type="radio" name="payModeRadio" value="order" onchange="setPaymentMode('order')" class="mt-0.5" style="accent-color:#7c9473;"><span><b data-i18n="pay_mode_by_order">По заказу</b><span class="block text-[11px] text-gray-400" data-i18n="pay_mode_by_order_desc">Оплата вносится прямо в заказ, счёт — по желанию</span></span></label>
-                        <label class="flex items-start gap-2 text-xs text-gray-600" style="padding:6px 8px;"><input type="radio" name="payModeRadio" value="invoice" onchange="setPaymentMode('invoice')" class="mt-0.5" style="accent-color:#7c9473;"><span><b data-i18n="pay_mode_by_invoice">По счёту</b><span class="block text-[11px] text-gray-400" data-i18n="pay_mode_by_invoice_desc">Любая оплата — только по выставленному счёту</span></span></label>
-                        <label id="payCashNoInvRow" class="hidden flex items-center justify-between gap-2 text-xs text-gray-600" style="padding:6px 8px 6px 32px;"><span><span data-i18n="pay_cash_no_inv">Частные клиенты: наличные без счёта</span><span class="block text-[11px] text-gray-400" data-i18n="pay_cash_no_inv_desc">Безналичная оплата частников — по счёту</span></span><input type="checkbox" id="payCashNoInvToggle" onchange="setCashNoInvoice(this.checked)" style="accent-color:#7c9473;"></label>
-                        <p id="payModeOwnerHint" class="hidden text-[11px] text-gray-400" style="padding:2px 8px 4px;" data-i18n="pay_set_owner_only">Меняет владелец пекарни</p>
-                    </div>
-                </div>
-
                 <!-- Группа 2+3: управление данными (свёрнуто по умолчанию) -->
                 <div class="mb-3">
                     <button type="button" id="settingsDataGroupBtn" onclick="document.getElementById('settingsDataGroup').classList.toggle('hidden'); document.getElementById('settingsDataGroupChevron').classList.toggle('rotate-180'); document.getElementById('settingsDataGroupBtn').classList.toggle('active')" class="settings-row-btn w-full justify-between">
@@ -4062,6 +4062,22 @@ function hideSplashScreen() {
                     <h2 class="text-gray-800" style="font-size:15px; font-weight:600; margin:0 0 0 auto; text-align:right; line-height:1.25;" data-i18n="company_title">Информация о компании</h2>
                 </div>
                 <p class="text-[11px] text-gray-400" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
+            </div>
+
+            <!-- Документы и оплата (30.10.2026): режим оплаты + «вести учёт с даты»; раньше — Настройки → «Оплата». Меняет владелец. -->
+            <div class="cmp-card" id="payModeCard">
+                <div class="cmp-card-title" data-i18n="pay_block_title">Документы и оплата</div>
+                <div id="payModeBox" class="pm">
+                    <div id="payOptOrder" class="opt" onclick="setPaymentMode('order')"><b data-i18n="pay_mode_by_order">По заказу</b><span data-i18n="pay_mode_by_order_desc">Оплата вносится прямо в заказ, счёт — по желанию</span></div>
+                    <div id="payOptInvoice" class="opt" onclick="setPaymentMode('invoice')"><b data-i18n="pay_mode_by_invoice">По счёту</b><span data-i18n="pay_mode_by_invoice_desc">Любая оплата — только по выставленному счёту</span></div>
+                </div>
+                <div id="payInvFromWrap" class="datebox hidden">
+                    <label for="payInvFromInput" data-i18n="pay_invfrom_label">Вести учёт с даты</label>
+                    <input id="payInvFromInput" type="date" onchange="setInvoicingFrom(this.value)" class="border p-1 rounded-xl w-full table-text">
+                    <p data-i18n="pay_invfrom_hint">Заказы раньше этой даты не попадают в напоминания о счетах и оплате — так старые заказы не мешают. Дату можно сдвинуть назад.</p>
+                </div>
+                <label id="payCashNoInvRow" class="hidden flex items-center justify-between gap-2 text-xs text-gray-600" style="margin-top:12px;"><span><span data-i18n="pay_cash_no_inv">Частные клиенты: наличные без счёта</span><span class="block text-[11px] text-gray-400" data-i18n="pay_cash_no_inv_desc">Безналичная оплата частников — по счёту</span></span><input type="checkbox" id="payCashNoInvToggle" onchange="setCashNoInvoice(this.checked)" style="accent-color:#7c9473;"></label>
+                <p id="payModeOwnerHint" class="hidden text-[11px] text-gray-400 mt-2" data-i18n="pay_set_owner_only">Меняет владелец пекарни</p>
             </div>
 
             <div class="cmp-card">
@@ -4366,12 +4382,12 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=12"></script>
-    <script src="i18n-core.js?v=112"></script>
+    <script src="i18n-core.js?v=113"></script>
     <script src="supabaseClient.js?v=7"></script>
-    <script src="cache.js?v=18"></script>
+    <script src="cache.js?v=19"></script>
     <script src="auth.js?v=30"></script>
-    <script src="employees.js?v=61"></script>
-    <script src="company.js?v=26"></script>
+    <script src="employees.js?v=62"></script>
+    <script src="company.js?v=27"></script>
     <script src="inventory.js?v=71"></script>
     <script src="billing.js?v=17"></script>
     <script src="push.js?v=9"></script>
@@ -4381,11 +4397,11 @@ function hideSplashScreen() {
 <script src="products.js?v=48"></script>
 <script src="customers.js?v=70"></script>
 <script src="calendar.js?v=16"></script>
-<script src="orders.js?v=149"></script>
+<script src="orders.js?v=150"></script>
 <script src="dashboard.js?v=9"></script>
 <script src="invoice.js?v=52"></script>
 <script src="send-document.js?v=39"></script>
-<script src="payments.js?v=29"></script>
+<script src="payments.js?v=30"></script>
 <script src="documents.js?v=12"></script>
 <script src="bank.js?v=13"></script>
 <script src="stats.js?v=22"></script>

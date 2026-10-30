@@ -376,7 +376,7 @@ async function openCompanyInfoModal() {
     showLoading();
     try {
         const { data, error } = await db.from('organizations')
-            .select('name, currency_code, country, vat_rate, vat_payer, vat_payer_from, entity_type, phone, email, address, legal_name, reg_number, vat_code, director_name, director_position, personal_code, bank_name, bank_account, bank_swift, logo_data_url, logo_on_documents, bcc_self_on_send, timezone')
+            .select('name, currency_code, country, vat_rate, vat_payer, vat_payer_from, invoicing_from, entity_type, phone, email, address, legal_name, reg_number, vat_code, director_name, director_position, personal_code, bank_name, bank_account, bank_swift, logo_data_url, logo_on_documents, bcc_self_on_send, timezone')
             .eq('id', currentOrgId)
             .single();
         if (error) throw error;
@@ -395,6 +395,7 @@ async function openCompanyInfoModal() {
         _cmpVatPayer = !!data.vat_payer;
         currentOrgVatPayer = _cmpVatPayer;
         currentOrgVatPayerFrom = data.vat_payer_from || null;
+        currentOrgInvoicingFrom = data.invoicing_from || null;
         document.getElementById('cmpVatPayerFrom').value = data.vat_payer_from || '';
         document.getElementById('cmpVatRate').value = data.vat_rate != null ? (Number(data.vat_rate) * 100).toString() : '0';
         document.getElementById('cmpPhone').value        = data.phone || '';
@@ -414,6 +415,7 @@ async function openCompanyInfoModal() {
         document.getElementById('cmpBankAccount').value  = data.bank_account || '';
         document.getElementById('cmpBankSwift').value    = data.bank_swift || '';
         updateVatPayerUI();
+        if (typeof refreshPaymentModeUI === 'function') refreshPaymentModeUI();
         renderCompanyLogoUI(data.logo_data_url || '', !!data.logo_on_documents);
         updateProgressiveFieldsVisibility(!!data.country);
 

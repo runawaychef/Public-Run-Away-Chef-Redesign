@@ -17,6 +17,7 @@ let currentOrgVatPayerFrom = null;  // organizations.vat_payer_from — «пла
 let currentOrgCountry = null;       // код страны организации (organizations.country: 'LT', 'BY', ...) — от неё зависят подписи реквизитов
 let currentOrgTimezone = null;
 let currentOrgPaymentMode = 'order'; // 'order' — оплата прямо в заказ; 'invoice' — только по счёту (organizations.payment_mode, 21.10)
+let currentOrgInvoicingFrom = null;  // organizations.invoicing_from — «вести учёт с даты» (YYYY-MM-DD): заказы раньше не требуют счёта; null = все (30.10.2026)
 let currentOrgCashNoInv = false;     // частные клиенты: наличные без счёта (только защищённая орг. id1)
 let currentOrgProtected = false;     // organizations.is_protected
 let currentOrgMemoRemindDays = 7;   // за сколько дней напоминать о памятных датах (organizations.memo_remind_days, общее для пекарни)       // IANA-пояс организации (напр. 'Europe/Vilnius'); null = по устройству
@@ -199,7 +200,7 @@ async function loadCurrentOrg() {
 
         const { data, error } = await db
             .from('memberships')
-            .select('org_id, role, organizations(id, name, plan, plan_override, created_at, customers_created_total, orders_created_total, currency_code, country, vat_rate, vat_payer, vat_payer_from, detected_country, detected_country_updated_at, bcc_self_on_send, timezone, memo_remind_days, payment_mode, cash_without_invoice, is_protected)')
+            .select('org_id, role, organizations(id, name, plan, plan_override, created_at, customers_created_total, orders_created_total, currency_code, country, vat_rate, vat_payer, vat_payer_from, detected_country, detected_country_updated_at, bcc_self_on_send, timezone, memo_remind_days, payment_mode, cash_without_invoice, invoicing_from, is_protected)')
             .eq('user_id', uid)
             .single();
         if (error) throw error;
@@ -225,6 +226,7 @@ async function loadCurrentOrg() {
         currentOrgMemoRemindDays = (data.organizations && Number(data.organizations.memo_remind_days)) || 7;
         currentOrgPaymentMode = (data.organizations && data.organizations.payment_mode) || 'order';
         currentOrgCashNoInv = !!(data.organizations && data.organizations.cash_without_invoice);
+        currentOrgInvoicingFrom = (data.organizations && data.organizations.invoicing_from) || null;
         currentOrgProtected = !!(data.organizations && data.organizations.is_protected);
         const detectedCountryUpdatedAt = (data.organizations && data.organizations.detected_country_updated_at) || null;
         await loadMonetizationLiveFlag();
@@ -444,7 +446,7 @@ async function refreshCurrentEmployeePermissions() {
     try {
         const [empResult, orgResult, settingsResult] = await Promise.all([
             db.from('employees').select(EMPLOYEE_SELECT_FIELDS).eq('id', currentEmployee.id).single(),
-            currentOrgId ? db.from('organizations').select('plan, plan_override, timezone, memo_remind_days, payment_mode, cash_without_invoice, is_protected').eq('id', currentOrgId).single() : Promise.resolve({ data: null, error: null }),
+            currentOrgId ? db.from('organizations').select('plan, plan_override, timezone, memo_remind_days, payment_mode, cash_without_invoice, invoicing_from, is_protected').eq('id', currentOrgId).single() : Promise.resolve({ data: null, error: null }),
             db.from('platform_settings').select('value').eq('key', 'monetization_live').maybeSingle(),
         ]);
 
@@ -463,6 +465,7 @@ async function refreshCurrentEmployeePermissions() {
             currentOrgMemoRemindDays = Number(orgResult.data.memo_remind_days) || 7;
             currentOrgPaymentMode = orgResult.data.payment_mode || 'order';
             currentOrgCashNoInv = !!orgResult.data.cash_without_invoice;
+            currentOrgInvoicingFrom = orgResult.data.invoicing_from || null;
             currentOrgProtected = !!orgResult.data.is_protected;
             const newPlan = orgResult.data.plan_override || orgResult.data.plan || 'free';
             const newIsOverridden = !!orgResult.data.plan_override;
@@ -640,8 +643,9 @@ async function saveOrgNameSetup() {
     const payMode = document.querySelector('input[name="orgSetupPayMode"]:checked')?.value === 'invoice' ? 'invoice' : 'order';
     if (payMode === 'invoice') {
         try {
-            await updateChecked(db.from('organizations').update({ payment_mode: 'invoice' }).eq('id', currentOrgId));
+            await updateChecked(db.from('organizations').update({ payment_mode: 'invoice', invoicing_from: getLocalDateStr(0) }).eq('id', currentOrgId));
             currentOrgPaymentMode = 'invoice';
+            currentOrgInvoicingFrom = getLocalDateStr(0);
         } catch (e) { console.error(e); }
     }
     if (name) {

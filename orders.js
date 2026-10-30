@@ -872,7 +872,8 @@ function orderDocKind(o) {
     if (!o || !isOrderSaved(o)) return null;
     if (o.consolidated_invoice_id) return 'cons';
     if (o.inv_no) return 'inv';
-    if (o.cons_excluded) return 'out';
+    // «Вести учёт с даты» (30.10.2026): заказы раньше даты — вне программы, счёт не требуется
+    if (o.cons_excluded || (typeof currentOrgInvoicingFrom !== 'undefined' && currentOrgInvoicingFrom && String(o.order_date || '') < currentOrgInvoicingFrom)) return 'out';
     if (typeof currentOrgCashNoInv !== 'undefined' && currentOrgCashNoInv) {
         const cust = o.customer_id ? customers.find(c => c.id === o.customer_id) : null;
         const isPrivate = !cust || cust.entity_type !== 'company';
