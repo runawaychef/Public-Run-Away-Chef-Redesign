@@ -247,8 +247,9 @@ function refreshPaymentModeUI() {
     if (box) box.style.opacity = isOwner ? '' : '.6';
     const dateWrap = document.getElementById('payInvFromWrap');
     if (dateWrap) dateWrap.classList.toggle('hidden', mode !== 'invoice');
-    const dateInp = document.getElementById('payInvFromInput');
-    if (dateInp) { dateInp.value = currentOrgInvoicingFrom || ''; dateInp.disabled = !isOwner; }
+    calSetFieldValue('payInvFromInput', 'payInvFromLabel', currentOrgInvoicingFrom || '');
+    const dateBtn = document.getElementById('payInvFromBtn');
+    if (dateBtn) dateBtn.disabled = !isOwner;
     const row = document.getElementById('payCashNoInvRow');
     if (row) row.classList.toggle('hidden', !(currentOrgProtected && mode === 'invoice'));
     const cb = document.getElementById('payCashNoInvToggle');

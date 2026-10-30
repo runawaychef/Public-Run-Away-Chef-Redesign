@@ -1606,6 +1606,10 @@
         #companyInfoPage .cmp-card-title { font-size: 11.5px; font-weight: 700; color: #6b7a63; letter-spacing: .03em; text-transform: uppercase; margin-bottom: 10px; }
         #companyInfoPage input.border:not([type="checkbox"]):not([type="file"]) { border-radius: 12px; background: #f4f1ea; border: 1px solid #e3ddcc; padding: 8px 10px; min-height: 34px; }
         #companyInfoPage .field-select-btn { border-radius: 12px; min-height: 34px; font-size: 12.5px; font-weight: 600; }
+        #companyInfoPage .cmp-logo-btn { border: var(--sb-edge); border-radius: 12px; min-height: 34px; padding: 0 14px; font-size: 12.5px; font-weight: 600; background: #fff; color: #4f6349; box-shadow: 0 6px 10px -6px rgba(70,58,30,0.35), 0 1px 2px rgba(70,58,30,0.1); }
+        #companyInfoPage .cmp-logo-btn-danger { color: #a3493d; }
+        #companyInfoPage .cmp-logo-btn:disabled, #companyInfoPage .field-select-btn:disabled { opacity: .6; }
+        #companyInfoPage .field-select-btn svg { flex: none; }
         #payModeCard .pm { display: flex; flex-direction: column; gap: 8px; }
         #payModeCard .pm .opt { border: 1px solid #e3ddcc; background: #fff; border-radius: 14px; padding: 9px 12px; cursor: pointer; }
         #payModeCard .pm .opt.on { border: 2px solid #7c9473; background: #eef2ea; padding: 8px 11px; }
@@ -4073,7 +4077,8 @@ function hideSplashScreen() {
                 </div>
                 <div id="payInvFromWrap" class="datebox hidden">
                     <label for="payInvFromInput" data-i18n="pay_invfrom_label">Вести учёт с даты</label>
-                    <input id="payInvFromInput" type="date" onchange="setInvoicingFrom(this.value)" class="border p-1 rounded-xl w-full table-text">
+                    <input id="payInvFromInput" type="hidden">
+                    <button type="button" class="field-select-btn" id="payInvFromBtn" onclick="toggleCustomCalendar('globalCalendarPopup','payInvFromInput','payInvFromLabel',{allowClear:true,onPick:function(iso){setInvoicingFrom(iso)}})"><span id="payInvFromLabel">—</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path stroke-linecap="round" d="M8 3v4M16 3v4M3.5 10h17"/></svg></button>
                     <p data-i18n="pay_invfrom_hint">Заказы раньше этой даты не попадают в напоминания о счетах и оплате — так старые заказы не мешают. Дату можно сдвинуть назад.</p>
                 </div>
                 <label id="payCashNoInvRow" class="hidden flex items-center justify-between gap-2 text-xs text-gray-600" style="margin-top:12px;"><span><span data-i18n="pay_cash_no_inv">Частные клиенты: наличные без счёта</span><span class="block text-[11px] text-gray-400" data-i18n="pay_cash_no_inv_desc">Безналичная оплата частников — по счёту</span></span><input type="checkbox" id="payCashNoInvToggle" onchange="setCashNoInvoice(this.checked)" style="accent-color:#7c9473;"></label>
@@ -4091,8 +4096,8 @@ function hideSplashScreen() {
                         <div class="table-text text-gray-500 mb-1" data-i18n="company_logo_label">Логотип для документов</div>
                         <div class="flex gap-2">
                             <input type="file" id="cmpLogoFileInput" accept="image/png,image/jpeg,image/webp" class="hidden" onchange="handleLogoFileSelected(this)">
-                            <button type="button" onclick="document.getElementById('cmpLogoFileInput').click()" class="btn bg-[#eef1ea] text-[#7c9473] px-2 py-1 rounded-lg text-xs hover:bg-[#e0e6d9]" data-i18n="company_logo_upload">Загрузить</button>
-                            <button type="button" id="cmpLogoRemoveBtn" onclick="removeCompanyLogo()" class="hidden btn bg-[#f3ded9] text-[#a3493d] px-2 py-1 rounded-lg text-xs hover:bg-[#eccec6]" data-i18n="company_logo_remove">Удалить</button>
+                            <button type="button" onclick="document.getElementById('cmpLogoFileInput').click()" class="cmp-logo-btn" data-i18n="company_logo_upload">Загрузить</button>
+                            <button type="button" id="cmpLogoRemoveBtn" onclick="removeCompanyLogo()" class="hidden cmp-logo-btn cmp-logo-btn-danger" data-i18n="company_logo_remove">Удалить</button>
                         </div>
                     </div>
                 </div>
@@ -4167,7 +4172,8 @@ function hideSplashScreen() {
 
                             <label class="table-text text-gray-500" data-i18n="company_vat_payer_from_label">Плательщик с даты</label>
 
-                            <input id="cmpVatPayerFrom" type="date" onchange="saveVatPayerFrom(this.value)" class="border p-1 rounded-xl w-full table-text">
+                            <input id="cmpVatPayerFrom" type="hidden">
+                            <button type="button" class="field-select-btn" id="cmpVatPayerFromBtn" onclick="toggleCustomCalendar('globalCalendarPopup','cmpVatPayerFrom','cmpVatPayerFromLabel',{allowClear:true,onPick:function(iso){saveVatPayerFrom(iso)}})"><span id="cmpVatPayerFromLabel">—</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path stroke-linecap="round" d="M8 3v4M16 3v4M3.5 10h17"/></svg></button>
 
                         </div>
 
@@ -4387,7 +4393,7 @@ function hideSplashScreen() {
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=30"></script>
     <script src="employees.js?v=62"></script>
-    <script src="company.js?v=27"></script>
+    <script src="company.js?v=28"></script>
     <script src="inventory.js?v=71"></script>
     <script src="billing.js?v=17"></script>
     <script src="push.js?v=9"></script>
@@ -4401,7 +4407,7 @@ function hideSplashScreen() {
 <script src="dashboard.js?v=9"></script>
 <script src="invoice.js?v=52"></script>
 <script src="send-document.js?v=39"></script>
-<script src="payments.js?v=30"></script>
+<script src="payments.js?v=31"></script>
 <script src="documents.js?v=12"></script>
 <script src="bank.js?v=13"></script>
 <script src="stats.js?v=22"></script>

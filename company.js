@@ -293,7 +293,7 @@ function updateVatPayerUI() {
     cb.checked = _cmpVatPayer;
     cb.disabled = locked;
     document.getElementById('cmpVatPayerRow')?.style.setProperty('opacity', locked ? '.7' : '1');
-    ['cmpVatRate', 'cmpVatPayerFrom'].forEach(id => { const e = document.getElementById(id); if (e) e.disabled = locked; });
+    ['cmpVatRate', 'cmpVatPayerFrom', 'cmpVatPayerFromBtn'].forEach(id => { const e = document.getElementById(id); if (e) e.disabled = locked; });
     document.getElementById('cmpVatPayerFields')?.classList.toggle('hidden', !_cmpVatPayer);
     const hint = document.getElementById('cmpVatPayerHint');
     if (hint) hint.textContent = t(locked ? 'company_vat_payer_hint_locked' : (_cmpVatPayer ? 'company_vat_payer_hint_on' : 'company_vat_payer_hint_off'));
@@ -330,7 +330,7 @@ async function saveVatPayerFrom(value) {
     const prev = currentOrgVatPayerFrom;
     await _saveVatPayerField({ vat_payer_from: v },
         () => { currentOrgVatPayerFrom = v; },
-        () => { const e = document.getElementById('cmpVatPayerFrom'); if (e) e.value = prev || ''; });
+        () => { calSetFieldValue('cmpVatPayerFrom', 'cmpVatPayerFromLabel', prev || ''); });
 }
 
 function saveVatRatePercent(percentStr) {
@@ -396,7 +396,7 @@ async function openCompanyInfoModal() {
         currentOrgVatPayer = _cmpVatPayer;
         currentOrgVatPayerFrom = data.vat_payer_from || null;
         currentOrgInvoicingFrom = data.invoicing_from || null;
-        document.getElementById('cmpVatPayerFrom').value = data.vat_payer_from || '';
+        calSetFieldValue('cmpVatPayerFrom', 'cmpVatPayerFromLabel', data.vat_payer_from || '');
         document.getElementById('cmpVatRate').value = data.vat_rate != null ? (Number(data.vat_rate) * 100).toString() : '0';
         document.getElementById('cmpPhone').value        = data.phone || '';
         document.getElementById('cmpEmail').value        = data.email || '';
