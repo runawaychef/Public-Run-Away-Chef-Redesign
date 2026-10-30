@@ -2604,7 +2604,7 @@ function hideSplashScreen() {
                     <div id="cdStatsBtns" class="flex gap-1.5" style="margin-top:8px;">
                         <button type="button" onclick="openCustomerMemoDates()" class="pill-btn-secondary flex-1 justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z"/></svg><span data-i18n="cust_memo_btn">Особые даты</span></button>
                         <button type="button" onclick="openCustomerCalendar()" class="pill-btn-secondary flex-1 justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span data-i18n="cust_calendar_btn">Календарь</span></button>
-                        <button onclick="openDocumentsSection({ custId: currentCustomerId })" class="pill-btn-secondary flex-1 justify-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H9a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V7l-4-4z"/><path d="M15 3v4h4"/><path d="M4 8v11a2 2 0 002 2h8"/></svg><span data-i18n="docs_title">Документы</span></button>
+                        <button id="cdDocsBtn" onclick="openDocumentsSection({ custId: currentCustomerId })" class="pill-btn-secondary flex-1 justify-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H9a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V7l-4-4z"/><path d="M15 3v4h4"/><path d="M4 8v11a2 2 0 002 2h8"/></svg><span data-i18n="docs_title">Документы</span></button>
                     </div>
                     <div id="cdMemoStrip"></div>
                 </div>
@@ -4388,7 +4388,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=12"></script>
-    <script src="i18n-core.js?v=115"></script>
+    <script src="i18n-core.js?v=116"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=30"></script>
@@ -4403,11 +4403,11 @@ function hideSplashScreen() {
 <script src="products.js?v=48"></script>
 <script src="customers.js?v=70"></script>
 <script src="calendar.js?v=16"></script>
-<script src="orders.js?v=151"></script>
+<script src="orders.js?v=152"></script>
 <script src="dashboard.js?v=9"></script>
 <script src="invoice.js?v=52"></script>
 <script src="send-document.js?v=41"></script>
-<script src="payments.js?v=31"></script>
+<script src="payments.js?v=32"></script>
 <script src="documents.js?v=12"></script>
 <script src="bank.js?v=13"></script>
 <script src="stats.js?v=22"></script>

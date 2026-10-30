@@ -208,6 +208,18 @@ async function saveDueDate() {
 // «По счёту»: оплата вносится только по выставленному счёту (счёт отправлен или заказ в сводном).
 // Исключение (только защищённая орг. id1, настройка cash_without_invoice): частные клиенты — наличными без счёта.
 function orderHasInvoice(o) { return !!(o && (o.invoice_sent_at || o.consolidated_invoice_id)); }
+// Режим «По счёту» (31.10): документы ведутся и отслеживаются. В режиме «По заказу» разделы документов скрыты.
+function docsEnabled() { return typeof currentOrgPaymentMode !== 'undefined' && currentOrgPaymentMode === 'invoice'; }
+// Есть ли выставленные документы (после возврата с «По счёту» раздел остаётся доступным)
+function _anyIssuedDocs() { return (typeof orders !== 'undefined' ? orders : []).some(o => o && (o.inv_no || o.dn_no || o.consolidated_invoice_id)); }
+function refreshDocsVisibility() {
+    const show = docsEnabled() || _anyIssuedDocs();
+    const b = document.getElementById('ordersDocsBtn'); if (b) b.classList.toggle('hidden', !show);
+    const c = document.getElementById('cdDocsBtn'); if (c) c.classList.toggle('hidden', !show);
+    const f = document.querySelector('.status-option[onclick*="noinv"]'); if (f) f.classList.toggle('hidden', !docsEnabled());
+    const sel = document.getElementById('orderPaymentFilter');
+    if (!docsEnabled() && sel && sel.value === 'noinv') { sel.value = ''; if (typeof applyOrderFilter === 'function') { try { applyOrderFilter(); } catch (e) {} } }
+}
 function _payByInvoice() { return typeof currentOrgPaymentMode !== 'undefined' && currentOrgPaymentMode === 'invoice'; }
 // 'ok' | 'cash_only' | 'need_invoice'
 function payGateFor(order) {
@@ -268,14 +280,29 @@ async function _saveOrgPayment(fields) {
         showInfo(e && e.code === '42501' ? t('pay_set_owner_only') : t('error_save_check_connection'));
     }
     refreshPaymentModeUI();
+    refreshDocsVisibility();
     if (typeof displayOrders === 'function') { try { displayOrders(); } catch (e) {} }
 }
-function setPaymentMode(mode) {
+async function setPaymentMode(mode) {
     if (!(currentEmployee && currentEmployee.is_owner)) { refreshPaymentModeUI(); return; }
+    const want = mode === 'invoice' ? 'invoice' : 'order';
+    if (want === (_payByInvoice() ? 'invoice' : 'order')) return;
+    // Переход на «По счёту» (31.10): подтверждение с датой учёта; защищённую id1 не трогаем
+    if (want === 'invoice' && !currentOrgProtected) {
+        const d = currentOrgInvoicingFrom || getLocalDateStr(0);
+        const ok = await showConfirm(t('pay_switch_confirm').replace('{d}', d), { ok: t('pay_switch_ok'), cancel: t('common_cancel') });
+        if (!ok) { refreshPaymentModeUI(); return; }
+    }
     const fields = { payment_mode: mode === 'invoice' ? 'invoice' : 'order' };
     // При переходе на «По счёту» дата учёта по умолчанию — сегодня (защищённую пекарню id1 не трогаем)
     if (fields.payment_mode === 'invoice' && !currentOrgInvoicingFrom && !currentOrgProtected) fields.invoicing_from = getLocalDateStr(0);
-    _saveOrgPayment(fields);
+    await _saveOrgPayment(fields);
+    // Реквизиты для документов: название и банковский счёт (подсказка, без запрета)
+    if (want === 'invoice' && !currentOrgProtected) {
+        const g = id => { const e = document.getElementById(id); return e ? (e.value || '').trim() : ''; };
+        const hasName = g('cmpLegalName') || g('cmpLegalNameIndividual');
+        if (!hasName || !g('cmpBankAccount')) showInfo(t('pay_switch_need_req'));
+    }
 }
 function setInvoicingFrom(value) { _saveOrgPayment({ invoicing_from: value || null }); }
 function setCashNoInvoice(on) { _saveOrgPayment({ cash_without_invoice: !!on }); }

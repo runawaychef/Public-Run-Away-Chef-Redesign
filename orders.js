@@ -40,6 +40,7 @@ function resetOrdersRenderLimits() {
 }
 
 function displayOrders() {
+    if (typeof refreshDocsVisibility === 'function') refreshDocsVisibility();
     _ordersMoreObserver.disconnect(); // старые sentinel'ы уйдут вместе с перерисованным DOM
     // Список карточек сейчас перерисуется целиком — если у какого-то заказа был
     // открыт статус-дропдаун (и портал увёл его из карточки наружу, см. helpers.js
@@ -870,6 +871,12 @@ let selectedOrderCustomers = []; // пусто = все клиенты
 // 'out' — выставлен вне программы (cons_excluded); 'cash' — id1: частный клиент, оплачено наличными без счёта;
 // 'none' — счёта нет. Черновики не учитываются (null).
 function orderDocKind(o) {
+    const k = _orderDocKindRaw(o);
+    // Режим «По заказу»: документы не отслеживаем — «нет счёта»/«наличные»/«вне программы» не показываем (выставленные остаются видны)
+    if ((k === 'none' || k === 'cash' || k === 'out') && typeof docsEnabled === 'function' && !docsEnabled()) return null;
+    return k;
+}
+function _orderDocKindRaw(o) {
     if (!o || !isOrderSaved(o)) return null;
     if (o.consolidated_invoice_id) return 'cons';
     if (o.inv_no) return 'inv';
