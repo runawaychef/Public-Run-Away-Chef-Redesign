@@ -136,10 +136,9 @@ function renderCustomerCards() {
         const contactText = c.contact && c.contact.trim() ? escapeHtml(c.contact) : '—';
         const orderCnt = orders.filter(o => o.customer_id != null ? o.customer_id === c.id : o.customer === c.name).length;
         const tagList = [];
-        if (c.entity_type === 'company' || c.entity_type === 'individual') tagList.push(`<span class="oc-tag">${t(c.entity_type === 'company' ? 'cust_tag_company' : 'cust_tag_individual')}</span>`);
-        // Порядок меток (16.10): постоянные признаки (тип, НДС) → условия (скидка) → тревожные (красные) в конце
-        if (c.vat_exempt) tagList.push(`<span class="oc-tag">${t('cust_tag_no_vat')}</span>`);
+        // Метки: только условия (скидка, отсрочка) → памятная дата → тревожные (красные) в конце. Тип лица и «Без НДС» в списке не показываем.
         if (Number(c.discount) > 0) tagList.push(`<span class="oc-tag">${t('cust_tag_discount').replace('{n}', Number(c.discount))}</span>`);
+        { const term = Number(c.payment_term_days) || 0; if (term > 0) { const s = t('cust_req_term').replace('{n}', term); tagList.push(`<span class="oc-tag">${escapeHtml(s.charAt(0).toUpperCase() + s.slice(1))}</span>`); } }
         { const memoTag = memoCustomerTagHtml(c.id); if (memoTag) tagList.push(memoTag); } // памятная дата скоро — перед тревожными
         if (unpaidCnt > 0) tagList.push(`<button type="button" class="oc-tag oc-tag-red" onclick="event.stopPropagation(); openCustomerUnpaidModal(${c.id})">${unpaidOrdersLabel(unpaidCnt)}</button>`);
         html += `
