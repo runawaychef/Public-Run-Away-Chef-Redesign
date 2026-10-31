@@ -185,7 +185,7 @@ async function openDocFromOrderSummary(kind) {
         document.getElementById('orderDocumentModal').style.display = 'flex';
     } catch (e) {
         console.error(e);
-        showInfo(t('inv_doc_error_prefix') + (e && e.message ? e.message : t('inv_unknown_error')));
+        showInfo((e && e.docYear ? '' : t('inv_doc_error_prefix')) + (e && e.message ? e.message : t('inv_unknown_error')));
     } finally {
         hideLoading();
     }
@@ -380,7 +380,8 @@ function _custUsesConsolidated(order) {
 
 function _consCandidates(order) {
     if (!order.customer_id) return [];
-    return orders.filter(o => o.customer_id === order.customer_id && o.is_confirmed && !o.consolidated_invoice_id)
+    // Только заказы того же года, что и текущий: сводный счёт не объединяет годы (31.10.2026)
+    return orders.filter(o => o.customer_id === order.customer_id && o.is_confirmed && !o.consolidated_invoice_id && docYearOfIso(o.date) === docYearOfIso(order.date))
         .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')) || (a.id - b.id));
 }
 
@@ -733,7 +734,11 @@ function pickSendDate(key) {
     const cur = key === 'dn_issue' ? st.dates.delivery_note.issueDate : key === 'inv_due' ? st.dates.invoice.dueDate : st.dates.invoice.issueDate;
     const inp = document.getElementById('sendDateInput');
     if (inp) inp.value = cur || '';
-    toggleCustomCalendar('globalCalendarPopup', 'sendDateInput', 'sendDateLabel', { onPick: iso => _sendSetDate(key, iso) });
+    // Дата документа — только в пределах года заказа; срок оплаты — без ограничений (31.10.2026)
+    const ord = orders.find(o => o.id === st.orderId);
+    const y = ord ? docYearOfIso(ord.date) : null;
+    const lim = (key !== 'inv_due' && y) ? { minDate: y + '-01-01', maxDate: y + '-12-31' } : {};
+    toggleCustomCalendar('globalCalendarPopup', 'sendDateInput', 'sendDateLabel', Object.assign({ onPick: iso => _sendSetDate(key, iso) }, lim));
 }
 function _sendDateTileHtml(key, label, iso, half) {
     return `<div class="send-date-tile" onclick="event.stopPropagation(); pickSendDate('${key}')" style="${half ? 'flex:0 0 calc(50% - 4px);' : 'flex:1;'}">
@@ -958,7 +963,7 @@ async function _openSendDocumentSheetImpl(orderId, docType, seq, opts) {
         // Даты ещё не выставленных документов (21.10): счёт — сегодня, срок — + отсрочка клиента;
         // накладная — дата заказа. Меняются плашками на странице и в «Посмотреть».
         dates: (() => {
-            const today = getLocalDateStr(0);
+            const today = docDefaultIssueDate(order.date); // сегодня, но в пределах года заказа (31.10.2026)
             return { invoice: { issueDate: today, dueDate: _isoAddDays(today, _sendTermDays(cust)), dueManual: false },
                 delivery_note: { issueDate: String(order.date || today).slice(0, 10) } };
         })(),
@@ -1095,7 +1100,7 @@ async function openSendDocPreview(docType) {
         document.getElementById('orderDocumentModal').style.display = 'flex';
     } catch (e) {
         console.error(e);
-        showInfo(t('inv_doc_error_prefix') + (e && e.message ? e.message : t('inv_unknown_error')));
+        showInfo((e && e.docYear ? '' : t('inv_doc_error_prefix')) + (e && e.message ? e.message : t('inv_unknown_error')));
     } finally {
         hideLoading();
     }
@@ -1272,7 +1277,7 @@ async function submitSendDocument() {
         showInfo(t('send_success'));
     } catch (e) {
         console.error(e);
-        showInfo(t('send_error_prefix') + (e && e.message ? e.message : t('inv_unknown_error')));
+        showInfo((e && e.docYear ? '' : t('send_error_prefix')) + (e && e.message ? e.message : t('inv_unknown_error')));
     } finally {
         hideLoading();
         if (btn) { btn.disabled = false; btn.style.opacity = ''; }
@@ -1379,7 +1384,7 @@ async function _sendIssueOnly(order, types) {
         showInfo(t('send_issued_ok'));
     } catch (e) {
         console.error(e);
-        showInfo(t('send_error_prefix') + (e && e.message ? e.message : t('inv_unknown_error')));
+        showInfo((e && e.docYear ? '' : t('send_error_prefix')) + (e && e.message ? e.message : t('inv_unknown_error')));
     } finally {
         hideLoading();
         if (btn) { btn.disabled = false; btn.style.opacity = ''; }
@@ -1435,7 +1440,7 @@ async function _sendByShare(order, types) {
         }
     } catch (e) {
         console.error(e);
-        showInfo(t('inv_doc_error_prefix') + (e && e.message ? e.message : t('inv_unknown_error')) + t('customers_pdf_error_suffix'));
+        showInfo((e && e.docYear ? '' : t('inv_doc_error_prefix')) + (e && e.message ? e.message : t('inv_unknown_error')) + t('customers_pdf_error_suffix'));
     } finally {
         hideLoading();
         if (btn) { btn.disabled = false; btn.style.opacity = ''; }

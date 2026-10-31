@@ -260,8 +260,9 @@ function _docsRenderTodo(box) {
     _docsTodoOrders().forEach(o => {
         const name = o.customer || t('orders_no_customer');
         if (q && !(_docsNorm(name).includes(q) || _docsNorm(o.order_number).includes(q))) return;
-        const key = o.customer_id || ('n:' + name);
-        const g = byCust.get(key) || { name, orders: [], sumC: 0 };
+        const yr = String(o.date || '').slice(0, 4); // сводный счёт — только из заказов одного года (31.10.2026)
+        const key = (o.customer_id || ('n:' + name)) + '|' + yr;
+        const g = byCust.get(key) || { name, yr, orders: [], sumC: 0 };
         g.orders.push(o);
         g.sumC += Math.round(orderGrandTotal(o) * 100);
         byCust.set(key, g);
@@ -269,7 +270,17 @@ function _docsRenderTodo(box) {
     const groups = [...byCust.values()];
     groups.forEach(g => g.orders.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')) || (b.id - a.id)));
     groups.sort((a, b) => String(b.orders[0].date || '').localeCompare(String(a.orders[0].date || '')));
+    // Если у клиента заказы нескольких лет — к имени добавляется год
+    const yrsByName = {};
+    groups.forEach(g => { (yrsByName[g.name] = yrsByName[g.name] || new Set()).add(g.yr); });
+    groups.forEach(g => { g.title = yrsByName[g.name].size > 1 && g.yr ? g.name + ' · ' + g.yr : g.name; });
     let html = _docsTabsHtml();
+    // С 15 декабря — напоминание о заказах текущего года без документа (31.10.2026)
+    const nowD = orgNowDate();
+    if (nowD.getMonth() === 11 && nowD.getDate() >= 15) {
+        const left = _docsTodoOrders().filter(o => String(o.date || '').slice(0, 4) === String(nowD.getFullYear())).length;
+        if (left) html += `<div style="background:#f7efdc; color:#8a6a24; border-radius:12px; padding:8px 10px; font-size:12.5px; font-weight:600; margin:0 0 10px;">${escapeHtml(t('docs_year_end_banner').replace('{n}', left))}</div>`;
+    }
     if (!groups.length) {
         html += `<p style="font-size:13px; color:#9a9488; margin:16px 0; text-align:center;">${escapeHtml(t('docs_todo_empty'))}</p>`;
     } else {
@@ -282,7 +293,7 @@ function _docsRenderTodo(box) {
                 <button type="button" onclick="docsIssueInvoice(${o.id}, false)" style="font-size:12px; font-weight:700; border-radius:12px; padding:0 10px; height:28px; background:#fff; color:#4f6349; border:1px solid #cfd8c8;">${escapeHtml(t('docs_todo_issue_short'))}</button></div>`).join('');
             html += `<div style="background:#f6f4ec; border-radius:12px; padding:8px 10px 2px; margin-bottom:10px;">
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;"><div style="flex:1; min-width:0;">
-                    <div style="font-size:13.5px; font-weight:700; color:#3c3a34;">${escapeHtml(g.name)}</div>
+                    <div style="font-size:13.5px; font-weight:700; color:#3c3a34;">${escapeHtml(g.title)}</div>
                     <div style="font-size:12px; color:#888;">${escapeHtml(g.orders.length + ' ' + nWord(g.orders.length, 'word_orders'))} · ${formatMoney(g.sumC / 100)}</div></div>${consBtn}</div>${rows}</div>`;
         });
         html += `<div style="font-size:11.5px; color:#9a9488; margin:4px 2px 8px;">${escapeHtml(t('docs_todo_hint'))}</div>`;

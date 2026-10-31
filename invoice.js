@@ -266,6 +266,27 @@ function amountInWords(amount, currencyCode, lang) {
     return `${numberToWordsEn(intPart)} ${currencyCode} and ${cents ? numberToWordsEn(cents) : 'zero'} ${centsWordEn}`;
 }
 
+// ---- Годовые правила документов (31.10.2026) ----
+// Номер документа несёт год ДАТЫ ДОКУМЕНТА. Выставлять можно за текущий год и за прошлый — до 15 января.
+function docYearOfIso(iso) { const y = Number(String(iso || '').slice(0, 4)); return y || orgNowDate().getFullYear(); }
+function docYearAllowed(year) {
+    const now = orgNowDate(), cur = now.getFullYear();
+    if (Number(year) === cur) return true;
+    return Number(year) === cur - 1 && now.getMonth() === 0 && now.getDate() <= 15;
+}
+function docYearError(year) {
+    const e = new Error(t('doc_year_not_allowed').replace('{y}', year));
+    e.docYear = true; // сообщение понятное само по себе — без приставки «Не удалось сформировать документ»
+    return e;
+}
+// Дата документа по умолчанию: сегодня, но в пределах года заказа
+function docDefaultIssueDate(orderIso) {
+    const today = getLocalDateStr(0), y = docYearOfIso(orderIso);
+    if (Number(today.slice(0, 4)) > y) return y + '-12-31';
+    if (Number(today.slice(0, 4)) < y) return y + '-01-01';
+    return today;
+}
+
 // opts (необязательно): { preview:true } — собрать снимок ТОЛЬКО в памяти (без номера из счётчика,
 // номер-заглушка «…», без записи в базу); { issueDate, dueDate } — даты для ещё не выставленного
 // документа (выбраны в предпросмотре), у уже выставленного даты остаются прежними.
@@ -292,8 +313,10 @@ async function freezeDocumentSnapshot(order, docType, existing, opts) {
     } else if (!number) {
         // 31.10.2026: год номера = год ДАТЫ ДОКУМЕНТА (счётчики по годам, get_next_doc_number)
         const _docDate = (opts && opts.issueDate) || getLocalDateStr(0);
-        const { data, error } = await db.rpc('get_next_doc_number', { p_org_id: currentOrgId, p_doc_type: docType === 'invoice' ? 'invoice' : 'delivery_note', p_year: Number(String(_docDate).slice(0, 4)) });
-        if (error) throw error;
+        const _docYear = Number(String(_docDate).slice(0, 4));
+        if (!docYearAllowed(_docYear)) throw docYearError(_docYear);
+        const { data, error } = await db.rpc('get_next_doc_number', { p_org_id: currentOrgId, p_doc_type: docType === 'invoice' ? 'invoice' : 'delivery_note', p_year: _docYear });
+        if (error) throw (/Year not allowed/i.test(String(error.message || '')) ? docYearError(_docYear) : error);
         number = data;
     }
 
@@ -866,6 +889,8 @@ async function freezeConsolidatedInvoice(orderIds, custId, opts) {
     const list = orderIds.map(id => orders.find(o => o.id === id)).filter(Boolean)
         .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')) || (a.id - b.id));
     if (!list.length) throw new Error('No orders selected');
+    // Сводный счёт — только из заказов одного года (31.10.2026)
+    if (new Set(list.map(o => docYearOfIso(o.date))).size > 1) { const e = new Error(t('doc_cons_one_year')); e.docYear = true; throw e; }
     // Сводный счёт не может объединять заказы с НДС и без НДС (до и после «плательщик с даты») — 30.10.2026
     if (!currentOrgProtected && new Set(list.map(o => orderVatExempt(o))).size > 1) throw new Error(t('send_cons_vat_split'));
     const ids = list.map(o => o.id);
@@ -928,8 +953,10 @@ async function freezeConsolidatedInvoice(orderIds, custId, opts) {
         number = '…';
     } else {
         const _docDate = (opts && opts.issueDate) || getLocalDateStr(0);
-        const { data, error } = await db.rpc('get_next_doc_number', { p_org_id: currentOrgId, p_doc_type: 'invoice', p_year: Number(String(_docDate).slice(0, 4)) });
-        if (error) throw error;
+        const _docYear = Number(String(_docDate).slice(0, 4));
+        if (!docYearAllowed(_docYear)) throw docYearError(_docYear);
+        const { data, error } = await db.rpc('get_next_doc_number', { p_org_id: currentOrgId, p_doc_type: 'invoice', p_year: _docYear });
+        if (error) throw (/Year not allowed/i.test(String(error.message || '')) ? docYearError(_docYear) : error);
         number = data;
     }
     const termDays = (cust && cust.payment_term_days != null) ? Number(cust.payment_term_days) : 7;

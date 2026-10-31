@@ -50,6 +50,7 @@ function toggleCustomCalendar(popupId, hiddenInputId, labelId, opts) {
         onPick: opts && opts.onPick,
         badge: opts && opts.badge,
         allowClear: opts && opts.allowClear,
+        minDate: opts && opts.minDate, maxDate: opts && opts.maxDate, // допустимые даты ГГГГ-ММ-ДД (31.10.2026)
         subtitle: opts && opts.subtitle,   // строка под месяцем (например, имя клиента)
         subtitleHtml: opts && opts.subtitleHtml, // то же, но готовый HTML (экранирует вызывающий), 23.10
         extraHtml: opts && opts.extraHtml, // функция → HTML между шапкой и днями недели (фильтр по мастеру)
@@ -126,6 +127,7 @@ function calPickDay(popupId, y, m, d) {
     const st = _calInstances[popupId];
     if (!st) return;
     const iso = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    if ((st.minDate && iso < st.minDate) || (st.maxDate && iso > st.maxDate)) return;
     const input = document.getElementById(st.hiddenInputId);
     if (input) input.value = iso;
     const lbl = document.getElementById(st.labelId);
@@ -199,6 +201,8 @@ function renderCalendarPopup(popupId) {
         const iso = `${st.viewYear}-${String(st.viewMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         let cls = 'cal-day';
         if (iso === todayIso) cls += ' today';
+        const off = !isRange && ((st.minDate && iso < st.minDate) || (st.maxDate && iso > st.maxDate));
+        if (off) cls += ' disabled';
         if (isRange) {
             if (iso === st.tempFrom) cls += ' selected range-start';
             if (iso === st.tempTo) cls += ' selected range-end';
@@ -221,7 +225,7 @@ function renderCalendarPopup(popupId) {
             }
         }
         const clickFn = isRange ? 'calPickRangeDay' : 'calPickDay';
-        cellsHtml += `<div class="${cls}" onclick="${clickFn}('${popupId}', ${st.viewYear}, ${st.viewMonth}, ${d})">${d}${badgeHtml}${dotsHtml}</div>`;
+        cellsHtml += `<div class="${cls}"${off ? '' : ` onclick="${clickFn}('${popupId}', ${st.viewYear}, ${st.viewMonth}, ${d})"`}>${d}${badgeHtml}${dotsHtml}</div>`;
     }
     const totalCells = startDay + daysInMonth;
     const tail = (7 - (totalCells % 7)) % 7;
