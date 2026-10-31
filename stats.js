@@ -1289,12 +1289,21 @@ function srvRender() {
         html += `<div class="stcl-card"><div class="stcl-empty">${escapeHtml(t('stcl_empty'))}</div></div>`;
     } else {
         // график: два столбика на месяц (выручка и прибыль), выбранный месяц выделен
-        const W = 340, H = 170, padl = 6, padr = 6, padt = 26, padb = 22;
-        const mx = Math.max(...rows.map(r => canCost ? Math.max(r.rev, r.prof, 0) : r.rev), 0.01);
+        const W = 340, H = 170, padl = 34, padr = 6, padt = 26, padb = 22;
+        const rawMax = Math.max(...rows.map(r => canCost ? Math.max(r.rev, r.prof, 0) : r.rev), 0.01);
+        // «красивая» шкала: шаг 1/2/2.5/5 × 10^k, 3–4 деления, верх шкалы = верхняя отметка
+        const mag = Math.pow(10, Math.floor(Math.log10(rawMax / 3)));
+        const stepV = [1, 2, 2.5, 5, 10].map(k => k * mag).find(s => rawMax / s <= 4) || 10 * mag;
+        const mx = Math.ceil(rawMax / stepV - 1e-9) * stepV;
+        const fmtAx = v => v >= 1000 ? (v / 1000).toLocaleString(typeof currentLang !== 'undefined' ? currentLang : undefined, { maximumFractionDigits: 1 }) + 'k' : String(Math.round(v));
         const slot = (W - padl - padr) / n, ch = H - padt - padb;
         const bw = canCost ? Math.min(slot * 0.30, 22) : Math.min(slot * 0.5, 30);
         const step = n > 12 ? Math.ceil(n / 12) : 1;
         let svg = '';
+        for (let v = 0; v <= mx + 1e-9; v += stepV) {
+            const y = padt + ch - ch * v / mx;
+            svg += `<line x1="${padl}" x2="${W - padr}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#ece7da" stroke-width="1"/><text x="${padl - 4}" y="${(y + 3).toFixed(1)}" text-anchor="end" font-size="9.5" fill="#a29c8c">${fmtAx(v)}</text>`;
+        }
         rows.forEach((r, i) => {
             const x0 = padl + i * slot + slot / 2, on = i === sel;
             const hr = Math.max(ch * r.rev / mx, r.rev > 0 ? 1.5 : 0), hp = Math.max(ch * Math.max(r.prof, 0) / mx, r.prof > 0 ? 1.5 : 0);
