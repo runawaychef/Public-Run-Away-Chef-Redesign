@@ -417,7 +417,7 @@ function applyScreenAccessPermissions() {
     const canInventory = hasPermission('can_manage_inventory') && hasPlanFeature('cost_analytics');
     const canReports = hasPermission('can_view_reports') && hasPlanFeature('stats');
 
-    document.getElementById('inventoryBtn').classList.toggle('hidden', !canInventory);
+    document.getElementById('inventoryBtn')?.classList.toggle('hidden', !canInventory);
     document.getElementById('statsBtn').classList.toggle('hidden', !canReports);
 
     if (!canInventory) {
@@ -624,7 +624,7 @@ async function logoutEmployee() {
     document.getElementById('appContent').classList.add('app-locked');
     document.getElementById('settingsBtn').classList.add('hidden');
     document.getElementById('statsBtn').classList.add('hidden');
-    document.getElementById('inventoryBtn').classList.add('hidden');
+    document.getElementById('inventoryBtn')?.classList.add('hidden');
     document.getElementById('ordersViewToggle')?.classList.add('hidden');
 }
 

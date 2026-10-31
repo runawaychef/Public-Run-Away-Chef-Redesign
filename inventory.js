@@ -449,12 +449,7 @@ function updateStockDots() {
 }
 
 function updateInventoryAlertDot() {
-    const dot = document.getElementById('inventoryAlertDot');
-    if (!dot) { updateStockDots(); return; }
-    // Точка горит ровно тогда, когда в «Умном складе» есть что-то в «Требует внимания»
-    // (тот же список и те же правила, решение владельца 21.10).
-    const on = smartStockRows(stockStateContext(30)).some(r => r.attention);
-    dot.classList.toggle('hidden', !on);
+    // Иконка «Умный склад» с точкой убрана из шапки (31.10.2026); остались точки раздела «Склад» и плашка на Dashboard
     updateStockDots();
     if (typeof renderDashboardIfVisible === 'function') renderDashboardIfVisible(); // плашка «Склад» на Dashboard
 }

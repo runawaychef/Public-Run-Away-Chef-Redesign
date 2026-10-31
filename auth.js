@@ -205,7 +205,7 @@ function showAuthScreen() {
     document.getElementById('appContent').classList.add('app-locked');
     document.getElementById('settingsBtn').classList.add('hidden');
     document.getElementById('statsBtn').classList.add('hidden');
-    document.getElementById('inventoryBtn').classList.add('hidden');
+    document.getElementById('inventoryBtn')?.classList.add('hidden');
     showLoginMode();
     if (_inviteSignup) {
         _inviteSignup = false; // только один раз за загрузку
