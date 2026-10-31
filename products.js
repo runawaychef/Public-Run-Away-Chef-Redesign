@@ -42,13 +42,15 @@ function renderProductTiles() {
         const photoSrc = p.photo_url ? escapeHtml(p.photo_url) : PRODUCT_PLACEHOLDER_SRC;
         const warn = p.recipe_confirmed ? '' : '<span class="pt-flag"></span>';
         const ps = formatMoney(p.price);
-        const nm = (ps.match(/\d[\d\s.,]*/) || [ps])[0].trim(); // только число, без символа валюты
-        return `<div class="pt-tile" data-name="${escapeHtml((p.name || '').toLowerCase())}" onclick="openProductDetail(${p.id})">
-            <div class="pt-top">
-                <img class="pt-photo" src="${photoSrc}" loading="lazy">
-                <div class="pt-pr${nm.length > 5 ? ' sm' : ''}"><b>${escapeHtml(nm)}</b></div>
+        const nm = (ps.match(/\d[\d\s.,]*/) || [ps])[0].trim(); // число без символа валюты
+        const cu = escapeHtml((ps.replace(/\d[\d\s.,]*/, '').trim()) || '€');
+        // Плитка 2 в ряд, размер как у плиток «Настроек» (31.10.2026): фото слева, справа название и цена с валютой
+        return `<div class="pt-tile ptm" data-name="${escapeHtml((p.name || '').toLowerCase())}" onclick="openProductDetail(${p.id})">
+            <img class="ptm-photo" src="${photoSrc}" loading="lazy">
+            <div class="ptm-body">
+                <div class="ptm-name">${escapeHtml(p.name || t('semifinished_no_name_fallback'))}</div>
+                <div class="ptm-price${nm.length > 7 ? ' sm' : ''}"><span>${escapeHtml(nm)}</span><i>${cu}</i></div>
             </div>
-            <div class="pt-name">${escapeHtml(p.name || t('semifinished_no_name_fallback'))}</div>
             ${warn}
         </div>`;
     }).join('');
