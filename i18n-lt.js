@@ -428,6 +428,7 @@ I18N.lt = {
         stats_title: 'Statistika',
         stats_h_rev: 'Pajamos ir pelnas',
         stats_h_share: 'Klientų dalis',
+        stats_h_clients: 'Klientai',
         stats_h_cust: 'Suma pagal klientus',
         stats_h_top: 'Populiariausi gaminiai',
         stats_h_margin: 'Pelningumas',

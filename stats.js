@@ -944,9 +944,12 @@ function statsBuildHome() {
     if (!box || box.dataset.built) return;
     box.dataset.built = '1';
     box.innerHTML =
-        statsTileHtml('rev', 'stH1', STATS_TILE_ICONS.rev, 'stats_h_rev', "statsOpenOld('monthlyCanvas')")
-        + statsTileHtml('day', 'stH2', STATS_TILE_ICONS.share, 'stats_h_share', "statsOpenOld('chartCanvas')")
-        + statsTileHtml('tom', 'stH3', STATS_TILE_ICONS.cust, 'stats_h_cust', "statsOpenOld('statsCustomerTableScroll')")
+        `<div class="dashboard-card dc2 sth-wide" role="button" tabindex="0" onclick="statsOpenOld('statsCustomerTableScroll')">
+            <div class="dashboard-card__hd dash-c-day"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${STATS_TILE_ICONS.cust}</svg><span class="dashboard-card__label" data-i18n="stats_h_clients">${escapeHtml(t('stats_h_clients'))}</span></div>
+            <div class="sth-wbody"><div class="sth-wdon" id="stHWDon"></div><div class="sth-wr"><div class="dc-val"><span class="dashboard-card__value" id="stHWVal">—</span><span class="dc-cap" id="stHWCap"></span></div><div class="dc-mid" id="stHWMid"></div></div></div>
+            <div class="dc-foot" id="stHWFoot">&nbsp;</div>
+        </div>`
+        + statsTileHtml('rev', 'stH1', STATS_TILE_ICONS.rev, 'stats_h_rev', "statsOpenOld('monthlyCanvas')")
         + statsTileHtml('stock', 'stH4', STATS_TILE_ICONS.top, 'stats_h_top', "statsOpenOld('statsProductTable')")
         + statsTileHtml('pay', 'stH5', STATS_TILE_ICONS.margin, 'stats_h_margin', "statsOpenOld('statsProductProfitability')", 'perm-view-costs')
         + statsTileHtml('acc', 'stH6', STATS_TILE_ICONS.ing, 'stats_h_ing', "statsOpenOld('ingredientUsageReport')", 'perm-view-costs');
@@ -1010,37 +1013,28 @@ function statsRenderHome() {
     const custSorted = Object.entries(byCust).sort((a, b) => b[1] - a[1]);
     const custTotal = custSorted.reduce((s, [, v]) => s + v, 0);
 
-    // 2. Доля клиентов: процент лидера и кольцо
+    // 2. Клиенты (широкая плитка): кольцо долей + сумма месяца + топ-3 и «Прочие»
     {
+        _stSet('stHWVal', _stMoneyVal(custTotal));
+        _stSet('stHWCap', hasVat() ? escapeHtml(t('stats_cap_vat')) : '');
         if (custSorted.length && custTotal > 0) {
-            const COLS = ['#5f7857', '#c9973a', '#4f7a88', '#b5574a', '#d9d3c3'];
+            const COLS = ['#5f7857', '#c9973a', '#4f7a88', '#b5574a'];
             const top = custSorted.slice(0, 3);
             const rest = custTotal - top.reduce((s, [, v]) => s + v, 0);
             const parts = top.map(([n, v]) => [n || t('stats_noname'), v]);
             if (rest > 0.005) parts.push([t('stats_others'), rest]);
             const r = 15, c = 2 * Math.PI * r;
-            let off = 0, circles = '', legend = '';
+            let off = 0, circles = '', rows = '';
             parts.forEach(([n, v], i) => {
                 const l = c * v / custTotal;
                 circles += `<circle cx="21" cy="21" r="${r}" fill="none" stroke="${COLS[i]}" stroke-width="8" stroke-dasharray="${l.toFixed(2)} ${(c - l).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 21 21)"/>`;
                 off += l;
-                legend += `<div class="sth-lg"><i style="background:${COLS[i]}"></i><span>${escapeHtml(n)}</span><b>${Math.round(v / custTotal * 100)}%</b></div>`;
+                rows += `<div class="sth-wrow"><i style="background:${COLS[i]}"></i><span>${escapeHtml(n)}</span><b>${escapeHtml(_stNum(v))}</b><u>${Math.round(v / custTotal * 100)}%</u></div>`;
             });
-            _stSet('stH2Val', `${Math.round(custSorted[0][1] / custTotal * 100)}<small>%</small>`);
-            _stSet('stH2Cap', escapeHtml(t('stats_cap_leader')));
-            _stSet('stH2Mid', `<div class="sth-don"><svg viewBox="0 0 42 42" width="52" height="52">${circles}</svg><div>${legend}</div></div>`);
-        } else {
-            _stSet('stH2Val', '—'); _stSet('stH2Cap', ''); _stSet('stH2Mid', _stNoData());
-        }
-        _stSet('stH2Foot', `<span>${escapeHtml(mLbl)}</span>`);
-    }
-
-    // 3. Сумма по клиентам
-    {
-        _stSet('stH3Val', _stMoneyVal(custTotal));
-        _stSet('stH3Cap', hasVat() ? escapeHtml(t('stats_cap_vat')) : '');
-        _stSet('stH3Mid', custSorted.length ? _stRows(custSorted.slice(0, 3).map(([n, v]) => [n || t('stats_noname'), _stNum(v)])) : _stNoData());
-        _stSet('stH3Foot', `<span>${escapeHtml(mLbl)}${custSorted.length ? ' · ' + escapeHtml(t('stats_foot_customers').replace('{n}', custSorted.length)) : ''}</span>`);
+            _stSet('stHWDon', `<svg viewBox="0 0 42 42" width="92" height="92">${circles}</svg>`);
+            _stSet('stHWMid', rows);
+        } else { _stSet('stHWDon', ''); _stSet('stHWMid', _stNoData()); }
+        _stSet('stHWFoot', `<span>${escapeHtml(mLbl)}${custSorted.length ? ' · ' + escapeHtml(t('stats_foot_customers').replace('{n}', custSorted.length)) : ''}</span>`);
     }
 
     // 4. Топ изделий по сумме

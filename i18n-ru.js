@@ -422,6 +422,7 @@ I18N.ru = {
         stats_title: 'Статистика',
         stats_h_rev: 'Выручка и прибыль',
         stats_h_share: 'Доля клиентов',
+        stats_h_clients: 'Клиенты',
         stats_h_cust: 'Сумма по клиентам',
         stats_h_top: 'Топ изделий',
         stats_h_margin: 'Рентабельность',

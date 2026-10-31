@@ -423,6 +423,7 @@ I18N.en = {
         stats_title: 'Analytics',
         stats_h_rev: 'Revenue & profit',
         stats_h_share: 'Customer share',
+        stats_h_clients: 'Customers',
         stats_h_cust: 'Sales by customer',
         stats_h_top: 'Top products',
         stats_h_margin: 'Profitability',

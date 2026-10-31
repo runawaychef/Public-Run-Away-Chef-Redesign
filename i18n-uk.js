@@ -428,6 +428,7 @@ I18N.uk = {
         stats_title: 'Статистика',
         stats_h_rev: 'Виручка і прибуток',
         stats_h_share: 'Частка клієнтів',
+        stats_h_clients: 'Клієнти',
         stats_h_cust: 'Сума за клієнтами',
         stats_h_top: 'Топ виробів',
         stats_h_margin: 'Рентабельність',
