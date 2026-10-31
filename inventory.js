@@ -118,6 +118,7 @@ async function loadInventory() {
         _inventoryCache = cache;
         _inventoryMovements = data || [];
         updateInventoryAlertDot();
+        try { refreshOrderStockUi(); } catch (e) { console.error(e); }
         if (typeof isAppPageOpen === 'function' && isAppPageOpen('inventoryPage')) renderInventoryPage();
     } catch (e) { console.error('Ошибка загрузки склада:', e); }
 }
@@ -248,8 +249,9 @@ function stockRunout(kind, id, ctx) {
             let need = 0;
             (o.items || []).forEach(it => { const m = it && ctx.byItem[it.id]; if (m && m[key]) need += m[key]; });
             if (need <= 1e-9) return;
+            const before = running;
             running = _r4(running - need);
-            list.push({ order: o, need: _r4(need), short: running < -1e-9 });
+            list.push({ order: o, need: _r4(need), short: running < -1e-9, before: _r4(Math.max(0, before)) });
         });
     const firstShort = list.find(x => x.short) || null;
     const deficit = st.after !== null && st.after < 0 ? _r4(-st.after) : 0;
@@ -267,6 +269,62 @@ function stockShortLineHtml(r, unit) {
     const num = typeof orderNumLabel === 'function' ? orderNumLabel(o) : (o.order_number ? '№' + o.order_number : '#' + o.id);
     const who = [o.customer ? escapeHtml(o.customer) : '', num].filter(Boolean).join(', ');
     return `<div class="inv-batch-warn">${typeof INV_WARN_ICON !== 'undefined' ? INV_WARN_ICON : ''}<span><b>${t('inv_short_since')} ${_invDM(o.date)}</b> · ${who} · ${t('inv_buy_more')} <b>${_invFmt(r.deficit)} ${unit}</b></span></div>`;
+}
+
+// ── Нехватка по заказу (30.10, только Full, только отслеживаемые позиции) ──────────
+// Для заказа: какие позиции не хватят именно под него (нужно / на складе / докупить).
+let _osMap = null;
+function _orderShortMap() {
+    const ctx = stockStateContext(30);
+    if (_osMap && _osMap.ctx === ctx) return _osMap.map;
+    const map = {};
+    if (stockForecastEnabled()) {
+        smartStockRows(ctx).forEach(r => {
+            r.runout.orders.forEach(x => {
+                if (!x.short) return;
+                const need = x.need, have = x.before, buy = _r4(Math.max(0, need - have));
+                (map[x.order.id] || (map[x.order.id] = [])).push({ kind: r.kind, item: r.item, name: r.item.name || '', need, have, buy, unit: unitAbbrev(r.item.unit) });
+            });
+        });
+        Object.keys(map).forEach(k => map[k].sort((a, b) => a.name.localeCompare(b.name)));
+    }
+    _osMap = { ctx, map };
+    return map;
+}
+function orderStockShortList(order) {
+    return (order && _orderShortMap()[order.id]) || [];
+}
+function orderStockShortLinesText(list) {
+    return list.map(x => t('ord_short_line').replace('{name}', x.name).replace('{need}', `${_invFmt(x.need)} ${x.unit}`).replace('{have}', `${_invFmt(x.have)} ${x.unit}`).replace('{buy}', `${_invFmt(x.buy)} ${x.unit}`));
+}
+// Красная капсула в списке заказов: «⚠ Не хватит: сливки, масло» (две позиции и «+N»)
+function orderStockShortCapsuleHtml(order) {
+    const l = orderStockShortList(order);
+    if (!l.length) return '';
+    const names = l.slice(0, 2).map(x => escapeHtml(x.name.toLowerCase())).join(', ') + (l.length > 2 ? ` +${l.length - 2}` : '');
+    return `<div class="oc-doc-line"><span class="oc-chip" style="background:#f6e3df;color:#a3493d;max-width:100%;overflow:hidden;text-overflow:ellipsis;">${INV_WARN_ICON}${t('ord_short_cap')} ${names}</span></div>`;
+}
+// Красный блок в карточке сохранённого заказа (у черновика — окно при сохранении)
+function updateOrderStockWarn() {
+    const el = document.getElementById('detailStockWarn');
+    if (!el) return;
+    const order = (typeof currentOrderId !== 'undefined' && currentOrderId !== null) ? (orders || []).find(o => o.id === currentOrderId) : null;
+    const l = order && typeof isOrderSaved === 'function' && isOrderSaved(order) ? orderStockShortList(order) : [];
+    if (!l.length) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+    el.innerHTML = `${INV_WARN_ICON}<span><b>${t('ord_short_title')}</b><br>${orderStockShortLinesText(l).map(escapeHtml).join('<br>')}</span>`;
+    el.classList.remove('hidden');
+}
+// После перезагрузки склада: обновить блок в карточке и (если список заказов поменялся) сам список
+let _osSig = '';
+function refreshOrderStockUi() {
+    updateOrderStockWarn();
+    const m = _orderShortMap();
+    const sig = Object.keys(m).map(k => k + ':' + m[k].map(x => x.name).join(',')).join('|');
+    if (sig !== _osSig) {
+        const first = _osSig === '' && sig === '';
+        _osSig = sig;
+        if (!first && typeof displayOrders === 'function' && document.getElementById('orderCardsBody')) displayOrders();
+    }
 }
 
 // Считает, сколько уже списано по заказам, которые ФИЗИЧЕСКИ ещё не выполнены

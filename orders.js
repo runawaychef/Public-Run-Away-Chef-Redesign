@@ -352,6 +352,7 @@ function renderOrderCard(order) {
                     ${noteLine}
                     ${payLine}
                     ${overdueLine}
+                    ${typeof orderStockShortCapsuleHtml === 'function' ? orderStockShortCapsuleHtml(order) : ''}
                     ${orderDocChipsHtml(order)}
                     ${itemsLine}
                 </div>
@@ -567,6 +568,7 @@ function renderDoneOrderCard(order, opts) {
                         </div>
                         ${payLine}
                         ${overdueLine}
+                    ${typeof orderStockShortCapsuleHtml === 'function' ? orderStockShortCapsuleHtml(order) : ''}
                         ${orderDocChipsHtml(order)}
                         ${extra}
                         <div class="oc-bottom">
@@ -637,6 +639,7 @@ function renderDoneOrderCard(order, opts) {
                             ${noteLine}
                             ${payLine}
                             ${overdueLine}
+                    ${typeof orderStockShortCapsuleHtml === 'function' ? orderStockShortCapsuleHtml(order) : ''}
                             ${orderDocChipsHtml(order)}
                         </div>
                         <div class="oc-items" data-role="items" style="display:none;">${itemsLine}</div>
@@ -1694,6 +1697,14 @@ async function saveDraftOrder(order) {
     if (!order) return false;
     if (isOrderSaved(order)) return true;
     if (!order.customer_id) { showInfo(t('orders_save_need_customer')); return false; }
+    // Full: не хватает ингредиентов под этот заказ — предупреждаем, но не блокируем (30.10)
+    if (typeof orderStockShortList === 'function') {
+        const sh = orderStockShortList(order);
+        if (sh.length) {
+            const ok = await showConfirm(t('ord_short_title') + '\n\n' + orderStockShortLinesText(sh).join('\n'), { ok: t('ord_short_anyway'), cancel: t('common_back') });
+            if (!ok) return false;
+        }
+    }
     suppressRealtimeFor3s();
     showLoading();
     try {
@@ -2207,6 +2218,7 @@ function renderDetailItems(order) {
         profitEl.className = 'font-semibold';
     }
     if (profitPctEl) profitPctEl.textContent = profitPct.toFixed(1);
+    if (typeof updateOrderStockWarn === 'function') updateOrderStockWarn();
 }
 
 let _addingItem = false; // защита от двойного срабатывания (pointerup + повторное касание)
