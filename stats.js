@@ -1259,7 +1259,10 @@ function srvRender() {
     const months = _srvMonths(rg, 0);
     const rows = _srvAgg(months);
     const n = months.length;
-    const sel = (_srv.sel != null && _srv.sel < n) ? _srv.sel : n - 1;
+    // по умолчанию выделен последний месяц С ДАННЫМИ (текущий может быть ещё пустым — 1-го числа)
+    let lastData = n - 1;
+    while (lastData > 0 && !(rows[lastData].rev > 0)) lastData--;
+    const sel = (_srv.sel != null && _srv.sel < n) ? _srv.sel : lastData;
     const totRev = rows.reduce((s, r) => s + r.rev, 0);
     const totProf = rows.reduce((s, r) => s + r.prof, 0);
     const totBase = rows.reduce((s, r) => s + r.base, 0);
@@ -1298,7 +1301,7 @@ function srvRender() {
         const fmtAx = v => v >= 1000 ? (v / 1000).toLocaleString(typeof currentLang !== 'undefined' ? currentLang : undefined, { maximumFractionDigits: 1 }) + 'k' : String(Math.round(v));
         const slot = (W - padl - padr) / n, ch = H - padt - padb;
         const bw = canCost ? Math.min(slot * 0.30, 22) : Math.min(slot * 0.5, 30);
-        const step = n > 12 ? Math.ceil(n / 12) : 1;
+        const step = n > 9 ? Math.ceil(n / 9) : 1;   // подписи месяцев не слипаются
         let svg = '';
         for (let v = 0; v <= mx + 1e-9; v += stepV) {
             const y = padt + ch - ch * v / mx;
@@ -1314,7 +1317,7 @@ function srvRender() {
             } else {
                 svg += `<rect x="${(x0 - bw / 2).toFixed(1)}" y="${(padt + ch - hr).toFixed(1)}" width="${bw.toFixed(1)}" height="${hr.toFixed(1)}" rx="3" fill="${on ? '#7c9473' : '#b9c8b2'}"/>`;
             }
-            if (i % step === 0 || on) svg += `<text x="${x0.toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="10.5" fill="${on ? '#322f28' : '#a29c8c'}" font-weight="${on ? 800 : 600}">${escapeHtml(_stMonthShort(months[i].y, months[i].m))}</text>`;
+            if (on || (i % step === 0 && (step === 1 || Math.abs(i - sel) >= 2))) svg += `<text x="${x0.toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="10.5" fill="${on ? '#322f28' : '#a29c8c'}" font-weight="${on ? 800 : 600}">${escapeHtml(_stMonthShort(months[i].y, months[i].m))}</text>`;
             svg += `<rect x="${(x0 - slot / 2).toFixed(1)}" y="0" width="${slot.toFixed(1)}" height="${H}" fill="transparent" onclick="srvSel(${i})"/>`;
         });
         const sr = rows[sel];
