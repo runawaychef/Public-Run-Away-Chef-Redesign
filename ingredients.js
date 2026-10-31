@@ -255,6 +255,7 @@ function renderIngredientCards() {
     });
     body.innerHTML = stockGroupsHtml(htmlAttn, htmlOk);
     initCopySwipeDelegation('ingredientCardsBody');
+    if (typeof updateStockDots === 'function') updateStockDots();
 }
 
 function quickCopyIngredientFromSwipe(realIdx) {

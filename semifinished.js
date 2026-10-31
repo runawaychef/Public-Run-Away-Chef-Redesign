@@ -118,6 +118,7 @@ function renderSemiFinishedCards() {
     });
     body.innerHTML = stockGroupsHtml(htmlAttn, htmlOk);
     initCopySwipeDelegation('semiFinishedCardsBody');
+    if (typeof updateStockDots === 'function') updateStockDots();
 }
 
 function quickCopySemiFinishedFromSwipe(realIdx) {

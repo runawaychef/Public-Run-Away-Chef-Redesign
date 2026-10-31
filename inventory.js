@@ -353,13 +353,27 @@ function avgDailyUsage(ingId, periodDays) {
 }
 
 // Показывает/скрывает пульсирующую точку на иконке корзины
+// Красные точки «Склада» (30.10, только Full): на иконке «Склад» в нижнем меню и на вкладке-соседе
+// («Полуфабрикаты» на странице ингредиентов и наоборот). Тот же список «Требует внимания», что в «Умном складе».
+function updateStockDots() {
+    const nav = document.getElementById('navStockDot'), a = document.getElementById('ingTabSfDot'), b = document.getElementById('sfTabIngDot');
+    let any = false, ing = false, sf = false;
+    if (stockForecastEnabled()) {
+        smartStockRows(stockStateContext(30)).forEach(r => { if (r.attention) { any = true; if (r.kind === 'sf') sf = true; else ing = true; } });
+    }
+    if (nav) nav.classList.toggle('hidden', !any);
+    if (a) a.classList.toggle('hidden', !sf);
+    if (b) b.classList.toggle('hidden', !ing);
+}
+
 function updateInventoryAlertDot() {
     const dot = document.getElementById('inventoryAlertDot');
-    if (!dot) return;
+    if (!dot) { updateStockDots(); return; }
     // Точка горит ровно тогда, когда в «Умном складе» есть что-то в «Требует внимания»
     // (тот же список и те же правила, решение владельца 21.10).
     const on = smartStockRows(stockStateContext(30)).some(r => r.attention);
     dot.classList.toggle('hidden', !on);
+    updateStockDots();
     if (typeof renderDashboardIfVisible === 'function') renderDashboardIfVisible(); // плашка «Склад» на Dashboard
 }
 
