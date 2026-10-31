@@ -447,6 +447,8 @@ I18N.lt = {
         stats_tile_nodata: 'Nėra duomenų',
         stats_noname: '(be pavadinimo)',
         stats_home_back: 'Atgal',
+        stats_info_1: 'Rodomas einamasis mėnuo. Bakstelėkite plytelę, kad atidarytumėte išsamią informaciją ir pasirinktumėte laikotarpį.',
+        stats_info_2: 'Pelningumas ir ingredientai matomi tik turint teisę peržiūrėti savikainą.',
         stats_all_customers: 'Visi klientai',
         stats_customers_count: 'Klientų:',
         stats_range_all: 'Visas laikotarpis',

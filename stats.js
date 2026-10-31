@@ -952,7 +952,8 @@ function statsBuildHome() {
         + statsTileHtml('rev', 'stH1', STATS_TILE_ICONS.rev, 'stats_h_rev', "statsOpenOld('monthlyCanvas')")
         + statsTileHtml('stock', 'stH4', STATS_TILE_ICONS.top, 'stats_h_top', "statsOpenOld('statsProductTable')")
         + statsTileHtml('pay', 'stH5', STATS_TILE_ICONS.margin, 'stats_h_margin', "statsOpenOld('statsProductProfitability')", 'perm-view-costs')
-        + statsTileHtml('acc', 'stH6', STATS_TILE_ICONS.ing, 'stats_h_ing', "statsOpenOld('ingredientUsageReport')", 'perm-view-costs');
+        + statsTileHtml('acc', 'stH6', STATS_TILE_ICONS.ing, 'stats_h_ing', "statsOpenOld('ingredientUsageReport')", 'perm-view-costs')
+        + `<div class="sth-info"><i>i</i><ul><li data-i18n="stats_info_1">${escapeHtml(t('stats_info_1'))}</li><li class="perm-view-costs" data-i18n="stats_info_2">${escapeHtml(t('stats_info_2'))}</li></ul></div>`;
 }
 
 function statsShowHome() {

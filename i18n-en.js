@@ -442,6 +442,8 @@ I18N.en = {
         stats_tile_nodata: 'No data',
         stats_noname: '(no name)',
         stats_home_back: 'Back',
+        stats_info_1: 'Showing the current month. Tap a tile for details and to choose a period.',
+        stats_info_2: 'Profitability and ingredients are visible only with the cost view permission.',
         stats_all_customers: 'All customers',
         stats_customers_count: 'Customers:',
         stats_range_all: 'All time',
