@@ -893,3 +893,203 @@ function drawDailyRevenueChart() {
         tooltip.classList.add('hidden');
     }
 }
+
+
+// ==================== ГЛАВНЫЙ ЭКРАН «СТАТИСТИКИ» — 6 плиток (31.10.2026) ====================
+// Плитки в стиле Dashboard; период каждой — текущий месяц (при каждом входе сбрасывается).
+// Нажатие пока открывает прежний блок статистики (#statsOld) с нужным разделом — позже заменится
+// страницами раскрытия по плиткам (claude/stats-redesign-2026-10-31.md).
+const STATS_TILE_ICONS = {
+    rev: '<path d="M5 20v-6M10 20V8M15 20v-9M20 20V4"/>',
+    share: '<path d="M12 3v9h9"/><path d="M20.5 15A9 9 0 1 1 9 3.5"/>',
+    cust: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5.2a3 3 0 0 1 0 5.6M18 14.3c1.9.8 3 2.7 3 5.7"/>',
+    top: '<path d="M8 21h8M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3"/>',
+    margin: '<path d="M19 5 5 19"/><circle cx="7" cy="7" r="2.3"/><circle cx="17" cy="17" r="2.3"/>',
+    ing: '<path d="M6 8h12l-1 11a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2z"/><path d="M9 8a3 3 0 0 1 6 0M8.5 12.5h7"/>'
+};
+let _statsHomeSeq = 0;
+
+function _stNum(v) {
+    const n = Math.round(Number(v) || 0);
+    try { return n.toLocaleString(typeof currentLang !== 'undefined' ? currentLang : undefined); } catch (e) { return String(n); }
+}
+function _stCur() {
+    return (typeof CURRENCY_SYMBOLS !== 'undefined' && CURRENCY_SYMBOLS[typeof currentOrgCurrency !== 'undefined' ? currentOrgCurrency : 'EUR']) || '';
+}
+function _stMoneyVal(v) { return `${escapeHtml(_stNum(v))}<small>&nbsp;${escapeHtml(_stCur())}</small>`; }
+function _stYm(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+function _stMonthShort(year, month) {
+    try {
+        const w = new Date(year, month, 15).toLocaleDateString(typeof currentLang !== 'undefined' ? currentLang : undefined, { month: 'short' }).replace('.', '');
+        return w.charAt(0).toUpperCase() + w.slice(1);
+    } catch (e) { return ''; }
+}
+function _stRows(list) {
+    return list.map(([a, b]) => `<div class="dc-row dc-row--plain"><span>${escapeHtml(a)}</span><span class="dashboard-card__value">${escapeHtml(b)}</span></div>`).join('');
+}
+function _stNoData() { return `<div class="dc-small" style="text-align:center">${escapeHtml(t('stats_tile_nodata'))}</div>`; }
+function _stSet(id, html) { const el = document.getElementById(id); if (el) el.innerHTML = html; }
+
+function statsTileHtml(key, id, icon, labelKey, onclickCall, extraCls) {
+    return `<div class="dashboard-card dc2${extraCls ? ' ' + extraCls : ''}" role="button" tabindex="0" onclick="${onclickCall}">
+        <div class="dashboard-card__hd dash-c-${key}"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${icon}</svg><span class="dashboard-card__label" data-i18n="${labelKey}">${escapeHtml(t(labelKey))}</span></div>
+        <div class="dc-val"><span class="dashboard-card__value" id="${id}Val">—</span><span class="dc-cap" id="${id}Cap"></span></div>
+        <div class="dc-mid" id="${id}Mid"></div>
+        <div class="dc-foot" id="${id}Foot">&nbsp;</div>
+    </div>`;
+}
+
+function statsBuildHome() {
+    const box = document.getElementById('statsHomeGrid');
+    if (!box || box.dataset.built) return;
+    box.dataset.built = '1';
+    box.innerHTML =
+        statsTileHtml('rev', 'stH1', STATS_TILE_ICONS.rev, 'stats_h_rev', "statsOpenOld('monthlyCanvas')")
+        + statsTileHtml('day', 'stH2', STATS_TILE_ICONS.share, 'stats_h_share', "statsOpenOld('chartCanvas')")
+        + statsTileHtml('tom', 'stH3', STATS_TILE_ICONS.cust, 'stats_h_cust', "statsOpenOld('statsCustomerTableScroll')")
+        + statsTileHtml('stock', 'stH4', STATS_TILE_ICONS.top, 'stats_h_top', "statsOpenOld('statsProductTable')")
+        + statsTileHtml('pay', 'stH5', STATS_TILE_ICONS.margin, 'stats_h_margin', "statsOpenOld('statsProductProfitability')", 'perm-view-costs')
+        + statsTileHtml('acc', 'stH6', STATS_TILE_ICONS.ing, 'stats_h_ing', "statsOpenOld('ingredientUsageReport')", 'perm-view-costs');
+}
+
+function statsShowHome() {
+    document.getElementById('statsOld')?.classList.add('hidden');
+    document.getElementById('statsHome')?.classList.remove('hidden');
+    statsBuildHome();
+    if (typeof applyCostVisibility === 'function') applyCostVisibility();
+    statsRenderHome();
+    window.scrollTo(0, 0);
+}
+
+function statsOpenOld(blockId) {
+    document.getElementById('statsHome')?.classList.add('hidden');
+    document.getElementById('statsOld')?.classList.remove('hidden');
+    try { setStatsDateRange('month'); } catch (e) {}   // период = месяц, как на плитках; setStatsDateRange сам перерисует
+    if (typeof updateStatsCustomerFilter === 'function') updateStatsCustomerFilter();
+    if (typeof applyFilter === 'function') applyFilter();
+    if (typeof updateInfoCounts === 'function') updateInfoCounts();
+    const el = document.getElementById(blockId);
+    const blk = el ? (el.closest('.bg-white') || el) : null;
+    if (blk) setTimeout(() => blk.scrollIntoView({ block: 'start' }), 50);
+    else window.scrollTo(0, 0);
+}
+function statsBackHome() { statsShowHome(); }
+
+function statsRenderHome() {
+    const mySeq = ++_statsHomeSeq;
+    const saved = (typeof orders !== 'undefined' ? orders : []).filter(o => typeof isOrderSaved === 'function' ? isOrderSaved(o) : true);
+    const now = orgNowDate();
+    const ym = _stYm(now);
+    const month = saved.filter(o => o.date && String(o.date).slice(0, 7) === ym);
+    const mLbl = t('stats_foot_month');
+    const canCost = (typeof hasPermission !== 'function' || hasPermission('can_view_costs'));
+    const cur = month.length;
+
+    // 1. Выручка и прибыль: число — выручка месяца, столбики — последние 6 месяцев
+    {
+        const revenue = month.reduce((s, o) => s + orderGrandTotal(o), 0);
+        const profit = month.reduce((s, o) => s + orderProfit(o), 0);
+        const base = month.reduce((s, o) => s + orderAfterDiscount(o), 0);
+        const keys = [];
+        for (let i = 5; i >= 0; i--) keys.push(new Date(now.getFullYear(), now.getMonth() - i, 1));
+        const sums = keys.map(d => saved.filter(o => o.date && String(o.date).slice(0, 7) === _stYm(d)).reduce((s, o) => s + orderGrandTotal(o), 0));
+        const mx = Math.max(...sums, 0);
+        _stSet('stH1Val', _stMoneyVal(revenue));
+        _stSet('stH1Cap', escapeHtml(t('stats_cap_rev')));
+        _stSet('stH1Mid', mx > 0
+            ? `<div class="dc-bars">${sums.map((v, i) => `<i style="height:${Math.max(6, Math.round(v / mx * 100))}%" class="${i === sums.length - 1 ? 't' : (v <= 0 ? 'z' : '')}"></i>`).join('')}</div><div class="dc-bl">${keys.map(d => `<span>${escapeHtml(_stMonthShort(d.getFullYear(), d.getMonth()))}</span>`).join('')}</div>`
+            : _stNoData());
+        _stSet('stH1Foot', canCost && cur
+            ? `<span>${escapeHtml(t('stats_profit'))}</span> ${escapeHtml(_stNum(profit))} · ${base > 0 ? Math.round(profit / base * 100) : 0}%`
+            : `<span>${escapeHtml(t('stats_foot_orders').replace('{n}', cur))}</span>`);
+    }
+
+    // Суммы по клиентам за месяц
+    const byCust = {};
+    month.forEach(o => { const k = o.customer || ''; byCust[k] = (byCust[k] || 0) + orderGrandTotal(o); });
+    const custSorted = Object.entries(byCust).sort((a, b) => b[1] - a[1]);
+    const custTotal = custSorted.reduce((s, [, v]) => s + v, 0);
+
+    // 2. Доля клиентов: процент лидера и кольцо
+    {
+        if (custSorted.length && custTotal > 0) {
+            const COLS = ['#5f7857', '#c9973a', '#4f7a88', '#b5574a', '#d9d3c3'];
+            const top = custSorted.slice(0, 3);
+            const rest = custTotal - top.reduce((s, [, v]) => s + v, 0);
+            const parts = top.map(([n, v]) => [n || t('stats_noname'), v]);
+            if (rest > 0.005) parts.push([t('stats_others'), rest]);
+            const r = 15, c = 2 * Math.PI * r;
+            let off = 0, circles = '', legend = '';
+            parts.forEach(([n, v], i) => {
+                const l = c * v / custTotal;
+                circles += `<circle cx="21" cy="21" r="${r}" fill="none" stroke="${COLS[i]}" stroke-width="8" stroke-dasharray="${l.toFixed(2)} ${(c - l).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 21 21)"/>`;
+                off += l;
+                legend += `<div class="sth-lg"><i style="background:${COLS[i]}"></i><span>${escapeHtml(n)}</span><b>${Math.round(v / custTotal * 100)}%</b></div>`;
+            });
+            _stSet('stH2Val', `${Math.round(custSorted[0][1] / custTotal * 100)}<small>%</small>`);
+            _stSet('stH2Cap', escapeHtml(t('stats_cap_leader')));
+            _stSet('stH2Mid', `<div class="sth-don"><svg viewBox="0 0 42 42" width="52" height="52">${circles}</svg><div>${legend}</div></div>`);
+        } else {
+            _stSet('stH2Val', '—'); _stSet('stH2Cap', ''); _stSet('stH2Mid', _stNoData());
+        }
+        _stSet('stH2Foot', `<span>${escapeHtml(mLbl)}</span>`);
+    }
+
+    // 3. Сумма по клиентам
+    {
+        _stSet('stH3Val', _stMoneyVal(custTotal));
+        _stSet('stH3Cap', hasVat() ? escapeHtml(t('stats_cap_vat')) : '');
+        _stSet('stH3Mid', custSorted.length ? _stRows(custSorted.slice(0, 3).map(([n, v]) => [n || t('stats_noname'), _stNum(v)])) : _stNoData());
+        _stSet('stH3Foot', `<span>${escapeHtml(mLbl)}${custSorted.length ? ' · ' + escapeHtml(t('stats_foot_customers').replace('{n}', custSorted.length)) : ''}</span>`);
+    }
+
+    // 4. Топ изделий по сумме
+    {
+        const tot = {};
+        month.forEach(o => (o.items || []).forEach(it => { tot[it.product] = (tot[it.product] || 0) + it.quantity * it.price; }));
+        const sorted = Object.entries(tot).sort((a, b) => b[1] - a[1]);
+        if (sorted.length) {
+            const mx = sorted[0][1];
+            _stSet('stH4Val', _stMoneyVal(mx));
+            _stSet('stH4Cap', escapeHtml(t('stats_cap_first')));
+            _stSet('stH4Mid', sorted.slice(0, 3).map(([n, v]) => `<div class="sth-br"><div class="sth-bt"><span>${escapeHtml(n)}</span><b>${escapeHtml(_stNum(v))}</b></div><div class="dc-prog"><i style="width:${mx > 0 ? Math.round(v / mx * 100) : 0}%;background:#7c9473"></i></div></div>`).join(''));
+        } else { _stSet('stH4Val', '—'); _stSet('stH4Cap', ''); _stSet('stH4Mid', _stNoData()); }
+        _stSet('stH4Foot', `<span>${escapeHtml(mLbl)}</span>`);
+    }
+
+    // 5. Рентабельность: маржа месяца и лучшие изделия (по рецепту, как в прежнем списке)
+    if (canCost) {
+        const profit = month.reduce((s, o) => s + orderProfit(o), 0);
+        const base = month.reduce((s, o) => s + orderAfterDiscount(o), 0);
+        const withRecipe = products.filter(p => (p.ingredients || []).length > 0 && p.price)
+            .sort((a, b) => productProfitPct(b) - productProfitPct(a)).slice(0, 3);
+        _stSet('stH5Val', base > 0 ? `${Math.round(profit / base * 100)}<small>%</small>` : '—');
+        _stSet('stH5Cap', escapeHtml(t('stats_cap_margin')));
+        _stSet('stH5Mid', withRecipe.length ? _stRows(withRecipe.map(p => [p.name, Math.round(productProfitPct(p)) + '%'])) : _stNoData());
+        _stSet('stH5Foot', `<span>${escapeHtml(mLbl)}</span>`);
+    }
+
+    // 6. Расход ингредиентов за месяц (запрос к снимкам рецептов, как в прежнем отчёте)
+    if (canCost) {
+        _stSet('stH6Val', '…'); _stSet('stH6Cap', escapeHtml(t('stats_cap_use'))); _stSet('stH6Mid', ''); _stSet('stH6Foot', `<span>${escapeHtml(mLbl)}</span>`);
+        const itemIds = month.flatMap(o => (o.items || []).map(it => it.id)).filter(Boolean);
+        if (!itemIds.length) { _stSet('stH6Val', _stMoneyVal(0)); _stSet('stH6Mid', _stNoData()); }
+        else {
+            db.from('order_item_ingredients').select('ingredient_id, ingredient_name, unit, quantity, total_cost').in('order_item_id', itemIds).then(({ data, error }) => {
+                if (mySeq !== _statsHomeSeq) return;
+                if (error || !data) { _stSet('stH6Val', '—'); _stSet('stH6Mid', _stNoData()); return; }
+                const map = {};
+                data.forEach(r => {
+                    const curIng = r.ingredient_id != null ? ingredients.find(i => i.id === r.ingredient_id) : null;
+                    const key = r.ingredient_id != null ? 'id:' + r.ingredient_id : 'n:' + r.ingredient_name + '|' + r.unit;
+                    if (!map[key]) map[key] = { name: curIng ? curIng.name : r.ingredient_name, cost: 0 };
+                    map[key].cost += Number(r.total_cost) || 0;
+                });
+                const rows = Object.values(map).sort((a, b) => b.cost - a.cost);
+                _stSet('stH6Val', _stMoneyVal(rows.reduce((s, r) => s + r.cost, 0)));
+                _stSet('stH6Mid', rows.length ? _stRows(rows.slice(0, 3).map(r => [r.name, _stNum(r.cost)])) : _stNoData());
+                _stSet('stH6Foot', `<span>${escapeHtml(mLbl)} · ${escapeHtml(t('stats_foot_items').replace('{n}', rows.length))}</span>`);
+            });
+        }
+    }
+}
