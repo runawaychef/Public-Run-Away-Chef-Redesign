@@ -296,13 +296,11 @@ function planCardConfig() {
 }
 
 function planFeatureRowsHtml(planKey) {
+    const chk = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+    const dash = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" d="M7 12h10"/></svg>';
     return planFeatureList().map(f => {
         const included = !!f[planKey];
-        const icon = included
-            ? `<svg viewBox="0 0 24 24" fill="none" stroke="#7c9473" stroke-width="2.5" style="width:14px;height:14px;flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>`
-            : `<svg viewBox="0 0 24 24" fill="none" stroke="#c9c3b3" stroke-width="2.5" style="width:14px;height:14px;flex-shrink:0;"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>`;
-        const textColor = included ? '#4a4a42' : '#b3ada0';
-        return `<div class="flex items-center gap-2" style="padding:3px 0;">${icon}<span class="text-xs" style="color:${textColor};">${escapeHtml(t(f.key))}</span></div>`;
+        return `<div class="nv-fr${included ? '' : ' no'}"><i>${included ? chk : dash}</i><span>${escapeHtml(t(f.key))}</span></div>`;
     }).join('');
 }
 
@@ -316,7 +314,7 @@ function togglePlanCard(planKey) {
         if (!rows) return;
         const shouldOpen = card.key === planKey && rows.style.display === 'none';
         rows.style.display = shouldOpen ? 'block' : 'none';
-        if (chevron) chevron.style.transform = shouldOpen ? 'rotate(90deg)' : 'rotate(0deg)';
+        if (chevron) chevron.style.transform = shouldOpen ? 'rotate(180deg)' : 'rotate(0deg)';
     });
 }
 
@@ -337,21 +335,19 @@ function renderPlanModalCards() {
     // Пояснения над карточками
     let topHtml = '';
     if (!canManage) {
-        topHtml = `<div style="background:#eef2ea;border:1px solid #d5ddcf;border-radius:10px;padding:8px 10px;font-size:12px;color:#4f6349;line-height:1.35;">${escapeHtml(t('plan_note_owner_only'))}</div>`;
+        topHtml = `<div style="background:#e3ebdf;border-radius:12px;padding:9px 12px;font-size:12px;color:#4f6349;line-height:1.35;">${escapeHtml(t('plan_note_owner_only'))}</div>`;
     } else if (source === 'google_play' && !playApp) {
-        topHtml = `<div style="background:#eef2ea;border:1px solid #d5ddcf;border-radius:10px;padding:8px 10px;font-size:12px;color:#4f6349;line-height:1.35;">${escapeHtml(t('plan_note_google_play'))}</div>`;
+        topHtml = `<div style="background:#e3ebdf;border-radius:12px;padding:9px 12px;font-size:12px;color:#4f6349;line-height:1.35;">${escapeHtml(t('plan_note_google_play'))}</div>`;
     } else if (source === 'stripe' && payProblem && !playApp) {
         topHtml = `<div style="background:#fdf0e3;border:1px solid #f0cfa5;border-radius:10px;padding:8px 10px;font-size:12px;color:#8a4b0f;line-height:1.35;">${escapeHtml(t('plan_past_due_warn'))}</div>`;
     }
 
     const cardsHtml = planCardConfig().map(card => {
         const isCurrent = card.key === current;
-        const border = isCurrent ? '2px solid #7c9473' : '1px solid #e2ddd0';
-        const bg = '#f4f1ea';
 
         let actionHtml = '';
         if (isCurrent) {
-            actionHtml = `<span class="text-xs font-semibold px-3 py-1.5 rounded-full" style="background:#e3e8df; color:#5a6b52;">${escapeHtml(t('plan_current_badge'))}</span>`;
+            actionHtml = `<span class="nv-badge">${escapeHtml(t('plan_current_badge'))}</span>`;
         } else if (card.sku && canManage && !overridden) {
             if (playApp) {
                 // Приложение из Google Play: только Google Play Billing (как раньше).
@@ -368,25 +364,26 @@ function renderPlanModalCards() {
         let untilHtml = '';
         if (isCurrent && source === 'stripe' && periodEnd && !payProblem) {
             if (info.cancel_at_period_end) {
-                untilHtml = `<div class="text-xs mt-1" style="margin-left:19px; color:#8a4b0f;">${escapeHtml(t('plan_cancelled_until').replace('{date}', periodEnd))}</div>`;
+                untilHtml = `<div class="nv-until" style="color:#8a4b0f;">${escapeHtml(t('plan_cancelled_until').replace('{date}', periodEnd))}</div>`;
             } else {
-                untilHtml = `<div class="text-xs mt-1" style="margin-left:19px; color:#4f6349;">${escapeHtml(t('plan_renews_on').replace('{date}', periodEnd))}</div>`;
+                untilHtml = `<div class="nv-until" style="color:#4f6349;">${escapeHtml(t('plan_renews_on').replace('{date}', periodEnd))}</div>`;
             }
         }
 
+        const pp = String(card.price || '').split(' / ');
+        const priceHtml = pp.length > 1
+            ? `<div class="nv-price" id="planPriceLabel_${card.key}">${escapeHtml(pp[0])} <small>/ ${escapeHtml(pp.slice(1).join(' / '))}</small></div>`
+            : `<div class="nv-price txt" id="planPriceLabel_${card.key}">${escapeHtml(card.price)}</div>`;
         return `
-            <div onclick="togglePlanCard('${card.key}')" style="border:${border}; background:${bg}; border-radius:14px; padding:12px; cursor:pointer;">
-                <div class="flex justify-between items-center mb-1">
-                    <span class="flex items-center gap-1.5">
-                        <svg id="planChevron_${card.key}" viewBox="0 0 24 24" fill="none" stroke="#9a9488" stroke-width="2" style="width:11px;height:11px;transition:transform 0.15s;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-                        <span class="text-sm font-semibold text-gray-800">${escapeHtml(card.name)}</span>
-                    </span>
-                    ${actionHtml}
+            <div class="nv-plan${isCurrent ? ' cur' : ''}" onclick="togglePlanCard('${card.key}')">
+                <div class="nv-ph">
+                    <span class="nv-pn">${escapeHtml(card.name)}</span>
+                    <span class="nv-pr">${actionHtml}<svg id="planChevron_${card.key}" class="nv-chv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition:transform 0.15s;"><path stroke-linecap="round" stroke-linejoin="round" d="M5 9l7 7 7-7"/></svg></span>
                 </div>
-                <div class="text-xs font-medium mb-1" id="planPriceLabel_${card.key}" style="color:#7c9473; margin-left:19px;">${escapeHtml(card.price)}</div>
-                <div class="text-xs text-gray-500" style="margin-left:19px;">${escapeHtml(card.desc)}</div>
+                ${priceHtml}
+                <div class="nv-desc">${escapeHtml(card.desc)}</div>
                 ${untilHtml}
-                <div id="planFeatureRows_${card.key}" style="display:none; margin-left:19px; margin-top:8px; padding-top:8px; border-top:1px solid #ece7d9;">${planFeatureRowsHtml(card.key)}</div>
+                <div id="planFeatureRows_${card.key}" class="nv-feat" style="display:none;">${planFeatureRowsHtml(card.key)}</div>
             </div>`;
     }).join('');
 
@@ -401,9 +398,9 @@ function renderPlanModalCards() {
                 : t('plan_manage_note');
             bottomHtml = `
                 <button type="button" id="planPortalBtn" onclick="openBillingPortal()" class="pill-btn w-full justify-center" style="padding:9px 12px; font-size:12px;">${escapeHtml(btnLabel)}</button>
-                <div class="text-xs text-gray-500" style="margin-top:-4px;">${escapeHtml(note)}</div>`;
+                <div class="nv-note">${escapeHtml(note)}</div>`;
         } else if (!source) {
-            bottomHtml = `<div class="text-xs text-gray-500">${escapeHtml(t('plan_web_price_note'))}</div>`;
+            bottomHtml = `<div class="nv-note">${escapeHtml(t('plan_web_price_note'))}</div>`;
         }
     }
 

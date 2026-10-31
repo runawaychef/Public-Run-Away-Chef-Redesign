@@ -338,16 +338,13 @@ function renderEmployeePickerList() {
     list.innerHTML = '';
     employees.forEach(emp => {
         const btn = document.createElement('button');
-        btn.className = 'btn';
-        btn.style.cssText = 'display:flex;align-items:center;gap:12px;background:#e3e8df;border-radius:14px;padding:10px 14px;text-align:left;width:100%;';
+        btn.className = 'nv-emp';
         const initial = (emp.name || '?').trim().charAt(0).toUpperCase();
         const roleLabel = emp.is_owner ? t('employees_role_owner') : t('employees_role_staff');
         btn.innerHTML = `
-            <span style="width:34px;height:34px;border-radius:50%;background:#7c9473;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:0 0 auto;">${escapeHtml(initial)}</span>
-            <span>
-                <span style="display:block;font-size:13.5px;font-weight:600;color:#3c3a34;">${escapeHtml(emp.name || '')}</span>
-                <span style="display:block;font-size:11px;color:#a6a196;">${roleLabel}</span>
-            </span>`;
+            <span class="nv-ava">${escapeHtml(initial)}</span>
+            <span class="nv-en"><b>${escapeHtml(emp.name || '')}</b><span class="nv-role${emp.is_owner ? ' own' : ''}">${roleLabel}</span></span>
+            <svg class="nv-chv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>`;
         btn.onclick = () => selectEmployee(emp);
         list.appendChild(btn);
     });
