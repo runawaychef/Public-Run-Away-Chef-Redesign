@@ -1259,10 +1259,8 @@ function srvRender() {
     const months = _srvMonths(rg, 0);
     const rows = _srvAgg(months);
     const n = months.length;
-    // по умолчанию выделен последний месяц С ДАННЫМИ (текущий может быть ещё пустым — 1-го числа)
-    let lastData = n - 1;
-    while (lastData > 0 && !(rows[lastData].rev > 0)) lastData--;
-    const sel = (_srv.sel != null && _srv.sel < n) ? _srv.sel : lastData;
+    // по умолчанию выделен последний месяц периода (текущий; 1-го числа он может быть пустым — это честно, решение владельца 31.10)
+    const sel = (_srv.sel != null && _srv.sel < n) ? _srv.sel : n - 1;
     const totRev = rows.reduce((s, r) => s + r.rev, 0);
     const totProf = rows.reduce((s, r) => s + r.prof, 0);
     const totBase = rows.reduce((s, r) => s + r.base, 0);
