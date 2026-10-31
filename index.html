@@ -1683,15 +1683,15 @@
         .cva-cnt { font-size: 10.5px; font-weight: 700; color: #7a7568; white-space: nowrap; }
         .cva-cur { font-size: 10.5px; font-weight: 700; color: #4f6349; white-space: nowrap; }
         /* ===== /THEME-UNIFIED-TILES-CUST2 ===== */
-        /* ===== THEME-UNIFIED-TILES-MENU (31.10.2026): плитки «Меню» — 2 в ряд, размер как у плиток «Настроек» (вариант A) =====
+        /* ===== THEME-UNIFIED-TILES-MENU (31.10.2026): плитки «Меню» — 2 в ряд, размер как у плиток «Настроек» (вариант B: название сверху, цена и мини-фото снизу) =====
            ОТКАТ: удалить блок + вернуть products.js (products-before-tiles2.js), index.html (index-before-menutiles2.html), sw.js. */
         #productCardsBody.pc-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding-bottom: 14px; }
-        .pt-tile.ptm { aspect-ratio: auto; min-height: 92px; padding: 11px; flex-direction: row; align-items: center; gap: 10px; border-radius: 16px; }
+        .pt-tile.ptm { aspect-ratio: auto; min-height: 92px; padding: 11px; flex-direction: column; align-items: stretch; justify-content: space-between; gap: 6px; border-radius: 16px; }
         .ptm .pt-flag { border-radius: 0 16px 0 0; }
-        .ptm-photo { width: 68px; height: 68px; flex-shrink: 0; object-fit: cover; border-radius: 11px; display: block; }
-        .ptm-body { flex: 1; min-width: 0; align-self: stretch; display: flex; flex-direction: column; justify-content: space-between; gap: 6px; padding-right: 4px; }
-        .ptm-name { font-size: 12.5px; font-weight: 600; line-height: 1.2; color: #322f28; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
-        .ptm-price { font-size: 19px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; color: #322f28; white-space: nowrap; font-variant-numeric: tabular-nums; }
+        .ptm-name { padding-right: 10px; font-size: 12.5px; font-weight: 600; line-height: 1.2; color: #322f28; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
+        .ptm-row { margin-top: auto; display: flex; align-items: flex-end; justify-content: space-between; gap: 6px; }
+        .ptm-photo { width: 42px; height: 42px; flex-shrink: 0; object-fit: cover; border-radius: 10px; display: block; }
+        .ptm-price { min-width: 0; font-size: 19px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; color: #322f28; white-space: nowrap; font-variant-numeric: tabular-nums; }
         .ptm-price.sm { font-size: 16px; }
         .ptm-price i { font-style: normal; font-size: 11px; font-weight: 700; color: #7a7568; margin-left: 2px; letter-spacing: 0; }
         /* ===== /THEME-UNIFIED-TILES-MENU ===== */
@@ -4737,7 +4737,7 @@ function hideSplashScreen() {
 <script src="ingredients.js?v=65"></script>
 <script src="batches.js?v=12"></script>
 <script src="semifinished.js?v=62"></script>
-<script src="products.js?v=49"></script>
+<script src="products.js?v=50"></script>
 <script src="customers.js?v=71"></script>
 <script src="calendar.js?v=17"></script>
 <script src="orders.js?v=155"></script>
