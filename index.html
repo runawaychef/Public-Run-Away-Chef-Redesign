@@ -2037,6 +2037,33 @@
         .sth-info > i { flex-shrink: 0; width: 16px; height: 16px; margin-top: 0; border-radius: 50%; background: #7c9473; color: #fff; font-style: normal; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
         .sth-info ul { margin: 0; padding: 0; list-style: none; }
         .sth-info li + li { margin-top: 3px; }
+        .stcl-chips { display: flex; gap: 6px; margin: 2px 0 4px; }
+        .stcl-chip { flex: 1; border: none; background: #fff; border-radius: 12px; min-height: 34px; font-size: 12px; font-weight: 700; color: #6b665a; box-shadow: 0 1px 3px rgba(70,58,30,.15); padding: 0 2px; cursor: pointer; }
+        .stcl-chip.on { background: #7c9473; color: #fff; }
+        .stcl-chip.cal { flex: 0 0 38px; display: flex; align-items: center; justify-content: center; }
+        .stcl-chip.cal svg { width: 16px; height: 16px; cursor: pointer; }
+        .stcl-cap { font-size: 11.5px; color: #a29c8c; text-align: center; margin: 0 0 8px; }
+        .stcl-card { background: #fff; border-radius: 16px; box-shadow: var(--sb-shadow); padding: 12px 13px; margin-bottom: 12px; }
+        .stcl-sum { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+        .stcl-big { font-size: 30px; font-weight: 800; color: #322f28; line-height: 34px; }
+        .stcl-big small { font-size: 14px; font-weight: 700; color: #a29c8c; }
+        .stcl-lbl { font-size: 12px; color: #8a8473; }
+        .stcl-delta { text-align: right; font-size: 14px; font-weight: 800; line-height: 18px; flex-shrink: 0; }
+        .stcl-delta span { display: block; font-size: 11px; font-weight: 600; color: #a29c8c; }
+        .stcl-delta.up { color: #4f6349; } .stcl-delta.dn { color: #c0685c; }
+        .stcl-meta { display: flex; gap: 16px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #efeadd; font-size: 12.5px; color: #8a8473; }
+        .stcl-meta b { color: #322f28; }
+        .stcl-chart { position: relative; display: flex; justify-content: center; margin-bottom: 8px; }
+        .stcl-hole { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+        .stcl-hole b { font-size: 26px; font-weight: 800; color: #322f28; line-height: 28px; }
+        .stcl-hole small { font-size: 11px; color: #a29c8c; }
+        .stcl-r { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid #efeadd; font-size: 13px; }
+        .stcl-r i { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+        .stcl-n { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #322f28; }
+        .stcl-r b { font-weight: 800; color: #322f28; }
+        .stcl-r u { text-decoration: none; width: 38px; text-align: right; color: #a29c8c; font-weight: 700; font-size: 12px; }
+        .stcl-r.tot { border-top: 2px solid #d8d2c0; } .stcl-r.tot .stcl-n { font-weight: 800; }
+        .stcl-empty { text-align: center; color: #a29c8c; font-size: 12.5px; padding: 8px 0; }
         /* ===== /THEME-UNIFIED-STATS ===== */
         /* ===== /THEME-UNIFIED ===== */
         /* Крестик «сбросить фильтр по статусу» в полосе итога заказов (фильтр из Dashboard) */
@@ -4271,6 +4298,20 @@ function hideSplashScreen() {
                 <div id="docsBody"></div>
             </div>
         </div>
+        <!-- ===== СТРАНИЦА «Клиенты» (раскрытие плитки в «Статистике», 31.10.2026, stats.js) — в общей цепочке страниц ===== -->
+        <div id="statsCustPage" class="app-page">
+            <div style="padding:0 2px;">
+                <div class="flex items-center gap-2 mb-2">
+                    <button onclick="closeAppPage()" class="pill-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        <span data-i18n="common_back">Назад</span>
+                    </button>
+                    <h2 class="text-gray-800" style="font-size:15px; font-weight:600; margin:0 0 0 auto;" data-i18n="stats_h_clients">Клиенты</h2>
+                </div>
+                <input type="hidden" id="stclFrom"><input type="hidden" id="stclTo">
+                <div id="stclBody"></div>
+            </div>
+        </div>
         <!-- ===== СТРАНИЦЫ «Поступления» и «Банк» (17.10, bank.js) — в общей цепочке страниц ===== -->
         <div id="bankPage" class="app-page">
             <div class="flex items-center gap-2 mb-2" style="position:relative; padding:0 2px;">
@@ -4774,7 +4815,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=12"></script>
-    <script src="i18n-core.js?v=126"></script>
+    <script src="i18n-core.js?v=127"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=31"></script>
@@ -4797,7 +4838,7 @@ function hideSplashScreen() {
 <script src="payments.js?v=33"></script>
 <script src="documents.js?v=14"></script>
 <script src="bank.js?v=13"></script>
-<script src="stats.js?v=26"></script>
+<script src="stats.js?v=27"></script>
 <script src="history.js?v=9"></script>
 <script src="modals.js?v=20"></script>
 <script src="demoData.js?v=19"></script>
@@ -5739,6 +5780,7 @@ document.body.classList.remove('style-loading');
 // само приложение.
 const _backHandledDetailScreens = [
     { id: 'sendDocPage',        close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
+    { id: 'statsCustPage',      close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'docsPage',           close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'bankPage',           close: () => { if (typeof closeBankSection === 'function') closeBankSection(); } },
     { id: 'bankSettingsPage',   close: () => { if (typeof closeBankSettings === 'function') closeBankSettings(); } },

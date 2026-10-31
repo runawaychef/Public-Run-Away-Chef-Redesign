@@ -944,7 +944,7 @@ function statsBuildHome() {
     if (!box || box.dataset.built) return;
     box.dataset.built = '1';
     box.innerHTML =
-        `<div class="dashboard-card dc2 sth-wide" role="button" tabindex="0" onclick="statsOpenOld('statsCustomerTableScroll')">
+        `<div class="dashboard-card dc2 sth-wide" role="button" tabindex="0" onclick="statsOpenCustomers()">
             <div class="dashboard-card__hd dash-c-day"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${STATS_TILE_ICONS.cust}</svg><span class="dashboard-card__label" data-i18n="stats_h_clients">${escapeHtml(t('stats_h_clients'))}</span></div>
             <div class="sth-wbody"><div class="sth-wdon" id="stHWDon"></div><div class="sth-wr"><div class="dc-val"><span class="dashboard-card__value" id="stHWVal">—</span><span class="dc-cap" id="stHWCap"></span></div><div class="dc-mid" id="stHWMid"></div></div></div>
             <div class="dc-foot" id="stHWFoot">&nbsp;</div>
@@ -1087,4 +1087,116 @@ function statsRenderHome() {
             });
         }
     }
+}
+
+// ==================== СТРАНИЦА «КЛИЕНТЫ» (раскрытие широкой плитки, 31.10.2026) ====================
+// Страница в общей цепочке app-page: «Назад» (и системная «Назад» Android — см. _backHandledDetailScreens) возвращает в «Статистику».
+let _stcl = { range: 'month', from: '', to: '' };
+function _stclIso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+// Границы периода; shift 0 — выбранный, -1 — предыдущий такой же. null — «Всё»
+function _stclBounds(range, from, to, shift) {
+    const now = orgNowDate();
+    let a, b;
+    if (range === 'week') {
+        const m = new Date(getMondayOf(now));
+        a = new Date(m); a.setDate(a.getDate() + 7 * shift);
+        b = new Date(a); b.setDate(b.getDate() + 6);
+    } else if (range === 'month') {
+        a = new Date(now.getFullYear(), now.getMonth() + shift, 1);
+        b = new Date(a.getFullYear(), a.getMonth() + 1, 0);
+    } else if (range === 'quarter') {
+        const q = Math.floor(now.getMonth() / 3) * 3 + 3 * shift;
+        a = new Date(now.getFullYear(), q, 1);
+        b = new Date(now.getFullYear(), q + 3, 0);
+    } else if (range === 'year') {
+        a = new Date(now.getFullYear() + shift, 0, 1);
+        b = new Date(now.getFullYear() + shift, 11, 31);
+    } else if (range === 'custom' && from && to) {
+        const A = new Date(from + 'T00:00:00'), B = new Date(to + 'T00:00:00');
+        const days = Math.round((B - A) / 86400000) + 1;
+        a = new Date(A); a.setDate(a.getDate() + days * shift);
+        b = new Date(B); b.setDate(b.getDate() + days * shift);
+    } else return null;
+    return { from: _stclIso(a), to: _stclIso(b) };
+}
+function _stclOrders(bd) {
+    return (typeof orders !== 'undefined' ? orders : []).filter(o => {
+        if (typeof isOrderSaved === 'function' && !isOrderSaved(o)) return false;
+        if (!o.date) return false;
+        if (!bd) return true;
+        const d = String(o.date).slice(0, 10);
+        return d >= bd.from && d <= bd.to;
+    });
+}
+function statsOpenCustomers() {
+    _stcl = { range: 'month', from: '', to: '' };   // каждый вход — снова «Месяц»
+    openAppPage('statsCustPage');
+    stclRender();
+}
+function stclSetRange(r) {
+    _stcl.range = r;
+    stclRender();
+}
+function stclPickRange(ev) {
+    if (ev) ev.stopPropagation();
+    toggleCustomCalendarRange('globalCalendarPopup', 'stclFrom', 'stclTo', null, null, {
+        onApply: function (f, to) { _stcl.range = 'custom'; _stcl.from = f; _stcl.to = to; stclRender(); }
+    });
+}
+function stclRender() {
+    const body = document.getElementById('stclBody');
+    if (!body) return;
+    const rg = _stcl.range;
+    const bd = _stclBounds(rg, _stcl.from, _stcl.to, 0);
+    const list = _stclOrders(bd);
+    const total = list.reduce((s, o) => s + orderGrandTotal(o), 0);
+    const vat = list.reduce((s, o) => s + orderVatAmount(o), 0);
+    const byC = {};
+    list.forEach(o => { const k = o.customer || ''; byC[k] = (byC[k] || 0) + orderGrandTotal(o); });
+    const rows = Object.entries(byC).sort((a, b) => b[1] - a[1]);
+
+    // сравнение с предыдущим таким же периодом (для «Всё» нет)
+    let deltaHtml = '';
+    const pb = _stclBounds(rg, _stcl.from, _stcl.to, -1);
+    if (pb) {
+        const prev = _stclOrders(pb).reduce((s, o) => s + orderGrandTotal(o), 0);
+        if (prev > 0) {
+            const pct = Math.round((total - prev) / prev * 100);
+            const up = pct >= 0;
+            deltaHtml = `<div class="stcl-delta ${up ? 'up' : 'dn'}">${up ? '▲' : '▼'} ${Math.abs(pct)}%<span>${escapeHtml(t('stcl_cmp_' + (rg === 'custom' ? 'custom' : rg)))}</span></div>`;
+        }
+    }
+
+    const chips = ['week', 'month', 'quarter', 'year', 'all'].map(k =>
+        `<button class="stcl-chip${rg === k ? ' on' : ''}" onclick="stclSetRange('${k}')">${escapeHtml(t('stcl_' + k))}</button>`).join('')
+        + `<button class="stcl-chip cal${rg === 'custom' ? ' on' : ''}" onclick="stclPickRange(event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></button>`;
+    const cap = bd ? `${formatDateDMY(bd.from)} – ${formatDateDMY(bd.to)}` : t('stcl_all_cap');
+
+    let html = `<div class="stcl-chips">${chips}</div><div class="stcl-cap">${escapeHtml(cap)}</div>`;
+    html += `<div class="stcl-card"><div class="stcl-sum"><div><div class="stcl-big">${_stMoneyVal(total)}</div>`
+        + (hasVat() ? `<div class="stcl-lbl">${escapeHtml(t('stats_cap_vat'))} · ${escapeHtml(t('stats_incl_vat'))} ${escapeHtml(_stNum(vat))} ${escapeHtml(_stCur())}</div>` : '')
+        + `</div>${deltaHtml}</div>`
+        + `<div class="stcl-meta"><span>${escapeHtml(t('stats_customers_count'))} <b>${rows.length}</b></span><span>${escapeHtml(t('stats_orders_count'))} <b>${list.length}</b></span></div></div>`;
+
+    if (!rows.length || total <= 0) {
+        html += `<div class="stcl-card"><div class="stcl-empty">${escapeHtml(t('stcl_empty'))}</div></div>`;
+    } else {
+        const COLS = ['#5f7857', '#c9973a', '#4f7a88', '#b5574a', '#8a7fa8'], REST = '#a29c8c';
+        const top = rows.slice(0, 5);
+        const rest = total - top.reduce((s, [, v]) => s + v, 0);
+        const parts = top.map(([, v], i) => [v, COLS[i]]);
+        if (rest > 0.005) parts.push([rest, REST]);
+        const r = 15, c = 2 * Math.PI * r;
+        let off = 0, circles = '';
+        parts.forEach(([v, col]) => {
+            const l = c * v / total;
+            circles += `<circle cx="21" cy="21" r="${r}" fill="none" stroke="${col}" stroke-width="7" stroke-dasharray="${l.toFixed(2)} ${(c - l).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 21 21)"/>`;
+            off += l;
+        });
+        const lines = rows.map(([n, v], i) =>
+            `<div class="stcl-r"><i style="background:${i < 5 ? COLS[i] : REST}"></i><span class="stcl-n">${escapeHtml(n || t('stats_noname'))}</span><b>${escapeHtml(_stNum(v))}</b><u>${Math.round(v / total * 100)}%</u></div>`).join('');
+        html += `<div class="stcl-card"><div class="stcl-chart"><svg viewBox="0 0 42 42" width="168" height="168">${circles}</svg><div class="stcl-hole"><b>${rows.length}</b><small>${escapeHtml(t('stats_customers_count').replace(':', ''))}</small></div></div>`
+            + lines + `<div class="stcl-r tot"><i style="background:transparent"></i><span class="stcl-n">${escapeHtml(t('stcl_total'))}</span><b>${escapeHtml(_stNum(total))}</b><u>100%</u></div></div>`;
+    }
+    body.innerHTML = html;
 }
