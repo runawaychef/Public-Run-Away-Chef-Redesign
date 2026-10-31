@@ -232,7 +232,10 @@ function _docsSelect(field, value, options) {
 
 // ---- Вкладка «К выставлению» (30.10.2026): заказы без счёта, по клиентам ----
 function _docsTodoOrders() {
-    return (typeof orders !== 'undefined' ? orders : []).filter(o => typeof orderNeedsInvoice === 'function' && orderNeedsInvoice(o));
+    // Если страницу открыли из карточки клиента — только заказы этого клиента (31.10.2026)
+    const cid = _docsFilter && _docsFilter.custId ? Number(_docsFilter.custId) : null;
+    return (typeof orders !== 'undefined' ? orders : []).filter(o => typeof orderNeedsInvoice === 'function' && orderNeedsInvoice(o)
+        && (!cid || Number(o.customer_id) === cid));
 }
 
 function setDocsTab(tab) {
@@ -336,6 +339,7 @@ function renderDocumentsSection() {
     const isDn = f.type === 'dn';
 
     const custIds = [...new Set(_docsAll.map(d => d.custId).filter(Boolean))];
+    if (f.custId && !custIds.includes(f.custId)) custIds.push(f.custId); // у клиента ещё нет документов — всё равно показать его в списке
     const custOpts = [{ v: '', l: t('docs_customer_all') }].concat(
         custIds.map(id => ({ v: id, l: _docsCustName(id) })).sort((a, b) => a.l.localeCompare(b.l)));
     const yms = [...new Set(_docsAll.map(d => String(d.date).slice(0, 7)).filter(y => /^\d{4}-\d{2}$/.test(y)))];
