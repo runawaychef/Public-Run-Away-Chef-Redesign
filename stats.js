@@ -950,7 +950,7 @@ function statsBuildHome() {
             <div class="dc-foot" id="stHWFoot">&nbsp;</div>
         </div>`
         + statsTileHtml('rev', 'stH1', STATS_TILE_ICONS.rev, 'stats_h_rev', "statsOpenRevenue()")
-        + statsTileHtml('stock', 'stH4', STATS_TILE_ICONS.top, 'stats_h_top', "statsOpenOld('statsProductTable')")
+        + statsTileHtml('stock', 'stH4', STATS_TILE_ICONS.top, 'stats_h_top', "statsOpenTop()")
         + statsTileHtml('pay', 'stH5', STATS_TILE_ICONS.margin, 'stats_h_margin', "statsOpenOld('statsProductProfitability')", 'perm-view-costs')
         + statsTileHtml('acc', 'stH6', STATS_TILE_ICONS.ing, 'stats_h_ing', "statsOpenOld('ingredientUsageReport')", 'perm-view-costs')
         + `<div class="sth-info"><i>i</i><ul><li data-i18n="stats_info_1">${escapeHtml(t('stats_info_1'))}</li></ul></div>`;
@@ -1325,5 +1325,92 @@ function srvRender() {
             + rows.map((r, i) => `<div class="srv-r${i === sel ? ' sel' : ''}" onclick="srvSel(${i})"><span class="srv-m">${escapeHtml(lbl(months[i]))}</span><b>${escapeHtml(_stNum(r.rev))}</b>${canCost ? `<em>${escapeHtml(_stNum(r.prof))}</em><u>${pct(r.prof, r.base)}</u>` : ''}</div>`).join('')
             + `<div class="srv-r tot"><span class="srv-m">${escapeHtml(t('stcl_total'))}</span><b>${escapeHtml(_stNum(totRev))}</b>${canCost ? `<em>${escapeHtml(_stNum(totProf))}</em><u>${pct(totProf, totBase)}</u>` : ''}</div></div>`;
     }
+    body.innerHTML = html;
+}
+
+// ==================== СТРАНИЦА «ТОП ИЗДЕЛИЙ» (раскрытие плитки, 31.10.2026) ====================
+// Период — тот же набор, что у «Клиентов» (_stclBounds/_stclOrders). Режимы «Список | График». «Назад» — в «Статистику».
+let _stp = { range: 'month', from: '', to: '', view: 'list', all: false };
+function _stpTotals(bd) {
+    const tot = {}, qty = {};
+    _stclOrders(bd).forEach(o => (o.items || []).forEach(it => {
+        const k = it.product || '';
+        tot[k] = (tot[k] || 0) + it.quantity * it.price;
+        qty[k] = (qty[k] || 0) + Number(it.quantity || 0);
+    }));
+    return { tot, qty };
+}
+function statsOpenTop() {
+    _stp = { range: 'month', from: '', to: '', view: 'list', all: false };   // каждый вход — «Месяц», «Список»
+    openAppPage('statsTopPage');
+    stpRender();
+}
+function stpSetRange(r) { _stp.range = r; _stp.all = false; stpRender(); }
+function stpSetView(v) { _stp.view = v; stpRender(); }
+function stpToggleAll() { _stp.all = !_stp.all; stpRender(); }
+function stpPickRange(ev) {
+    if (ev) ev.stopPropagation();
+    toggleCustomCalendarRange('globalCalendarPopup', 'stpFrom', 'stpTo', null, null, {
+        onApply: function (f, to) { _stp.range = 'custom'; _stp.from = f; _stp.to = to; _stp.all = false; stpRender(); }
+    });
+}
+function stpRender() {
+    const body = document.getElementById('stpBody');
+    if (!body) return;
+    const rg = _stp.range;
+    const bd = _stclBounds(rg, _stp.from, _stp.to, 0);
+    const { tot, qty } = _stpTotals(bd);
+    const rows = Object.entries(tot).sort((a, b) => b[1] - a[1]);
+    const total = rows.reduce((s, [, v]) => s + v, 0);
+    const qtyAll = Object.values(qty).reduce((s, v) => s + v, 0);
+
+    let deltaHtml = '';
+    const pb = _stclBounds(rg, _stp.from, _stp.to, -1);
+    if (pb) {
+        const prev = Object.values(_stpTotals(pb).tot).reduce((s, v) => s + v, 0);
+        if (prev > 0) {
+            const d = Math.round((total - prev) / prev * 100), up = d >= 0;
+            deltaHtml = `<div class="stcl-delta ${up ? 'up' : 'dn'}">${up ? '▲' : '▼'} ${Math.abs(d)}%<span>${escapeHtml(t('stcl_cmp_' + (rg === 'custom' ? 'custom' : rg)))}</span></div>`;
+        }
+    }
+    const chips = ['week', 'month', 'quarter', 'year', 'all'].map(k =>
+        `<button class="stcl-chip${rg === k ? ' on' : ''}" onclick="stpSetRange('${k}')">${escapeHtml(t('stcl_' + k))}</button>`).join('')
+        + `<button class="stcl-chip cal${rg === 'custom' ? ' on' : ''}" onclick="stpPickRange(event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></button>`;
+    const cap = bd ? `${formatDateDMY(bd.from)} – ${formatDateDMY(bd.to)}` : t('stcl_all_cap');
+    let html = `<div class="stcl-chips">${chips}</div><div class="stcl-cap">${escapeHtml(cap)}</div>`;
+    html += `<div class="stcl-card"><div class="stcl-sum"><div><div class="stcl-big">${_stMoneyVal(total)}</div><div class="stcl-lbl">${escapeHtml(t('stp_summary').replace('{n}', rows.length).replace('{q}', roundQty(qtyAll)))}</div></div>${deltaHtml}</div></div>`;
+
+    if (!rows.length || total <= 0) {
+        html += `<div class="stcl-card"><div class="stcl-empty">${escapeHtml(t('stcl_empty'))}</div></div>`;
+        body.innerHTML = html;
+        return;
+    }
+    const LIM = 8;
+    const chartMode = _stp.view === 'chart';
+    html += `<div class="stcl-card"><div class="stp-seg"><button class="${chartMode ? '' : 'on'}" onclick="stpSetView('list')">${escapeHtml(t('stp_list'))}</button><button class="${chartMode ? 'on' : ''}" onclick="stpSetView('chart')">${escapeHtml(t('stp_chart'))}</button></div>`;
+    if (chartMode) {
+        const top = rows.slice(0, LIM);
+        const rawMax = top[0][1];
+        const mag = Math.pow(10, Math.floor(Math.log10(rawMax / 3)));
+        const stepV = [1, 2, 2.5, 5, 10].map(k => k * mag).find(s => rawMax / s <= 4) || 10 * mag;
+        const topV = Math.ceil(rawMax / stepV - 1e-9) * stepV;
+        const fmtAx = v => v >= 1000 ? (v / 1000).toLocaleString(typeof currentLang !== 'undefined' ? currentLang : undefined, { maximumFractionDigits: 1 }) + 'k' : String(Math.round(v));
+        top.forEach(([n, v], i) => {
+            const w = v / topV * 78;
+            html += `<div class="stp-hb"><span class="n">${escapeHtml(n || t('stats_noname'))}</span><div class="t"><s style="width:${w.toFixed(1)}%;opacity:${i === 0 ? 1 : 0.8}"></s><b style="left:${w.toFixed(1)}%">${escapeHtml(_stNum(v))}</b></div></div>`;
+        });
+        let ax = '';
+        for (let v = 0; v <= topV + 1e-9; v += stepV) ax += `<span style="left:${(v / topV * 78).toFixed(1)}%">${fmtAx(v)}</span>`;
+        html += `<div class="stp-ax">${ax}</div>`;
+        if (rows.length > LIM) html += `<div class="stp-note">${escapeHtml(t('stp_topn').replace('{n}', LIM))}</div>`;
+    } else {
+        const shown = _stp.all ? rows : rows.slice(0, LIM);
+        const mx = rows[0][1];
+        shown.forEach(([n, v], i) => {
+            html += `<div class="stp-r${i === 0 ? ' first' : ''}"><em class="stp-rk">${i + 1}</em><div class="stp-c"><div class="stp-l"><span class="stp-n">${escapeHtml(n || t('stats_noname'))}</span><b>${escapeHtml(_stNum(v))}</b><u>${Math.round(v / total * 100)}%</u></div><div class="stp-bar"><s style="width:${mx > 0 ? Math.round(v / mx * 100) : 0}%"></s></div></div></div>`;
+        });
+        if (rows.length > LIM) html += `<div class="stp-more" onclick="stpToggleAll()">${escapeHtml(_stp.all ? t('stp_less') : t('stp_all').replace('{n}', rows.length))}</div>`;
+    }
+    html += '</div>';
     body.innerHTML = html;
 }
