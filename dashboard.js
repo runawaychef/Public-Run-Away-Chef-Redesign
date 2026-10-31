@@ -395,13 +395,15 @@ function renderDashboard() {
             if (rv) rv.style.fontSize = digits >= 7 ? '19px' : digits >= 6 ? '23px' : '';
         }
         _dashSet('dashRevenue', `${Math.round(r.revenue).toLocaleString(typeof currentLang !== 'undefined' ? currentLang : undefined)}&nbsp;<small>${_dashMoney(0).replace(/^[\d\s.,\u00a0\u202f]+/, '')}</small>`);
+        // Сравнение с прошлым месяцем и график — аналитика: только Full (31.10); на Light/Free плашка — число и «заказов за месяц»
+        const revAnalytics = _dashStockFull();
         let delta = '';
-        if (r.prevRev > 0) {
+        if (revAnalytics && r.prevRev > 0) {
             const pct = Math.round((r.revenue / r.prevRev - 1) * 100);
             delta = `<b class="${pct < 0 ? 'neg' : ''}">${pct < 0 ? '▼' : '▲'} ${pct > 0 ? '+' : ''}${pct}%</b> ${escapeHtml(t('dash_vs_prev'))}`;
         }
         _dashSet('dashRevDelta', delta || '&nbsp;');
-        _dashSet('dashRevSpark', _dashSpark(r));
+        _dashSet('dashRevSpark', revAnalytics ? _dashSpark(r) : '');
         const showProfit = hasPermission('can_view_costs') && hasPlanFeature('cost_analytics');
         _dashSet('dashRevenueSub', showProfit
             ? `${escapeHtml(t('dash_profit_s'))}<span> · ${_dashMoney(r.profit)}</span>`
