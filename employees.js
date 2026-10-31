@@ -513,6 +513,8 @@ async function refreshCurrentEmployeePermissions() {
 }
 
 async function selectEmployee(emp) {
+    _switchPrevEmployee = null;
+    document.getElementById('loginCancelBtn')?.classList.add('hidden');
     currentEmployee = emp;
     localStorage.setItem('currentEmployee', JSON.stringify(emp));
     applyPermissions(emp);
@@ -598,20 +600,37 @@ function startPeriodicRefresh() {
     });
 }
 
+// Кто был в системе до нажатия «Сменить» — нужен кнопке «Отмена» на экране выбора (30.10)
+let _switchPrevEmployee = null;
+
 async function logoutEmployee() {
     if (!(await showConfirm(t('employees_switch_confirm')))) return;
     closeModal();
+    _switchPrevEmployee = currentEmployee;
+    // Список для экрана выбора берём из базы заново: в памяти (особенно из локального снимка)
+    // он мог остаться старым — без признака владельца (30.10). Нет сети — остаётся то, что есть.
+    try { await reloadEmployeesList(); } catch (e) { /* оставляем список из памяти */ }
+    if (typeof saveAppSnapshot === 'function') { try { saveAppSnapshot(); } catch (e) { /* не критично */ } }
     if (typeof closeAllAppPages === 'function') closeAllAppPages(); // «Настройки» — страница (22.10)
     logActivity('auth', `${t('log_signout')}: ${currentEmployee ? currentEmployee.name : ''}`);
     currentEmployee = null;
     localStorage.removeItem('currentEmployee');
     renderEmployeePickerList();
+    document.getElementById('loginCancelBtn')?.classList.toggle('hidden', !_switchPrevEmployee);
     document.getElementById('loginScreen').classList.remove('hidden');
     document.getElementById('appContent').classList.add('app-locked');
     document.getElementById('settingsBtn').classList.add('hidden');
     document.getElementById('statsBtn').classList.add('hidden');
     document.getElementById('inventoryBtn').classList.add('hidden');
     document.getElementById('ordersViewToggle')?.classList.add('hidden');
+}
+
+// «Отмена» на экране выбора после «Сменить»: возвращаем того же сотрудника (30.10)
+async function cancelEmployeeSwitch() {
+    const prev = _switchPrevEmployee;
+    if (!prev) return;
+    const fresh = employees.find(e => e.id && e.id === prev.id) || prev;
+    await selectEmployee(fresh);
 }
 
 // ==================== НАЗВАНИЕ ПЕКАРНИ ====================

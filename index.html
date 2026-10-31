@@ -1776,6 +1776,8 @@
         .nv-fr.no i { background: #efece2; color: #c9c3b3; }
         .nv-note { font-size: 12px; color: #8d887b; margin: 0 4px; line-height: 1.35; }
         #planModal .nv-ok { display: flex; width: 100%; margin-top: 12px; border: 1px solid rgba(90,75,40,.06); background: #fff; color: #4f6349; font-weight: 700; font-size: 14px; min-height: 42px; border-radius: 14px; box-shadow: var(--sb-shadow); font-family: inherit; align-items: center; justify-content: center; }
+        #loginScreen .nv-link.hidden { display: none; }
+        #loginScreen .nv-cancel { margin-top: 12px; background: #fff; box-shadow: var(--sb-shadow); border: var(--sb-edge); }
         /* ===== /THEME-UNIFIED-PICKERS ===== */
         /* ===== THEME-UNIFIED-COMPACT (30.10.2026): компактные размеры Настроек, выбора сотрудника и тарифа =====
            Значения (шрифты цифр/имён) подстраиваются здесь. ОТКАТ: удалить этот блок. */
@@ -2019,6 +2021,7 @@ function hideSplashScreen() {
         <p class="nv-h" data-i18n="login_welcome_back">С возвращением</p>
         <p class="nv-sub" data-i18n="login_who_is_this">Кто вводит данные?</p>
         <div id="employeeList" class="flex flex-col gap-2"></div>
+        <button id="loginCancelBtn" type="button" class="nv-link nv-cancel hidden" onclick="cancelEmployeeSwitch()" data-i18n="common_cancel">Отмена</button>
         <p id="loginError" class="text-xs text-red-500 mt-2 hidden" data-i18n="login_error">Не удалось загрузить список сотрудников. Проверьте подключение к интернету.</p>
         <button id="loginRetryBtn" onclick="showAuthedApp()" class="btn bg-[#7c9473] text-white px-3 py-1 rounded-xl hover:bg-[#6c8464] text-xs mt-2 hidden inline-flex items-center gap-1"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"/></svg><span data-i18n="login_retry">Повторить попытку</span></button>
         <button type="button" class="nv-link" onclick="signOutAccount()" data-i18n="login_switch_account">Сменить аккаунт</button>
@@ -4606,7 +4609,7 @@ function hideSplashScreen() {
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=30"></script>
-    <script src="employees.js?v=64"></script>
+    <script src="employees.js?v=65"></script>
     <script src="company.js?v=28"></script>
     <script src="inventory.js?v=75"></script>
     <script src="billing.js?v=18"></script>
