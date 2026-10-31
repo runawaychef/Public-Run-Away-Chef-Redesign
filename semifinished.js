@@ -31,6 +31,8 @@ function semiFinishedUnitCost(sf) {
 // неподтверждённый рецепт), 1 — заканчивается (охра), 2 — норма.
 // «Склад» — справочник (21.10): прогноза нет, наверх — минус/ноль или неподтверждённый рецепт.
 function semiFinishedSeverity(sf, ctx) {
+    const f = stockFullInfo('sf', sf, ctx, stockTrackedIds());
+    if (f.on && (f.attention || !sf.recipe_confirmed)) return f.zone === 'critical' || !sf.recipe_confirmed ? 0 : 1;
     const after = stockState('sf', sf.id, ctx).after;
     return (after !== null && after <= 0) || !sf.recipe_confirmed ? 0 : 2;
 }
@@ -38,7 +40,7 @@ function semiFinishedSeverity(sf, ctx) {
 function displaySemiFinished() {
 
     // Общий расчёт склада (inventory.js stockState, 21.10)
-    const ctx = stockStateContext(30);
+    const ctx = stockStateContext(stockUi.period);
 
     // Сортировка: сначала критичные, потом заканчивающиеся, потом остальные —
     // внутри каждой группы по алфавиту.
@@ -58,7 +60,10 @@ function renderSemiFinishedCards() {
     const body = document.getElementById('semiFinishedCardsBody');
     if (!body) return;
 
-    const ctx = stockStateContext(30); // общий расчёт склада (inventory.js stockState, 21.10)
+    const ctx = stockStateContext(stockUi.period); // общий расчёт склада (inventory.js stockState, 21.10)
+    const tracked = stockTrackedIds();
+    renderStockFilterBar('sf');
+    const attnOnly = stockForecastOn() && stockUi.sf === 'attn';
     const tiles = stockViewMode('sf') === 'tiles';
     stockViewSync('sf');
     body.classList.toggle('stock-grid', tiles);
@@ -74,33 +79,39 @@ function renderSemiFinishedCards() {
         const shortage  = st.shortage;
 
         // «Склад» — справочник (21.10): без прогноза; красным — минус/ноль, наверх — и неподтверждённый рецепт.
-        const isCritical = balance !== null && balance <= 0;
+        const fi = stockFullInfo('sf', sf, ctx, tracked); // Full + отслеживается: аналитика «Умного склада»
+        const isCritical = fi.on ? fi.zone === 'critical' : (balance !== null && balance <= 0);
+        const isWarning = fi.on && fi.zone === 'warning';
         const notConfirmed = !sf.recipe_confirmed;
-        const accentColor = (isCritical || notConfirmed) ? '#c0685c' : '';
-        const afterColor = isCritical ? '#c0685c' : '#4f6349';
+        const batchRed = fi.on && fi.batchShort.length > 0;
+        const accentColor = (isCritical || notConfirmed || batchRed) ? '#c0685c' : isWarning ? '#d9a441' : '';
+        const isAttn = !!accentColor;
+        const afterColor = isCritical ? '#c0685c' : isWarning ? '#96712a' : '#4f6349';
         const thirdLabel = '';
         const thirdText = '';
         const beforeText = balanceBefore !== null ? `${Number(balanceBefore).toFixed(1)} ${unitLabel}` : '—';
         const afterText = balance !== null ? `${Number(balance).toFixed(1)} ${unitLabel}` : '—';
         const priceText = stockPriceText(unitCost, sf.unit);
         const stripe = accentColor ? `<div class="stripe" style="background:${accentColor};"></div>` : '';
+        if (attnOnly && !isAttn) return;
 
         if (tiles) {
             const showPrice = (typeof hasPermission !== 'function' || hasPermission('can_view_costs'));
-            (accentColor ? htmlAttn : htmlOk).push(stockTileHtml({ name: sf.name, attn: !!accentColor, red: isCritical, numText: balance !== null ? Number(balance).toFixed(1) : '—', unit: balance !== null ? unitLabel : '', priceText: showPrice ? priceText : '', chip: stockDaysChip(st), openCall: `openSemiFinishedDetail(${sf.id})` }));
+            (isAttn ? htmlAttn : htmlOk).push(stockTileHtml({ name: sf.name, attn: isAttn, red: isCritical, numText: balance !== null ? Number(balance).toFixed(1) : '—', unit: balance !== null ? unitLabel : '', priceText: showPrice ? priceText : '', chip: (fi.on && fi.chip) ? { cls: fi.chip.cls, text: fi.chip.tile } : null, openCall: `openSemiFinishedDetail(${sf.id})` }));
             return;
         }
-        (accentColor ? htmlAttn : htmlOk).push(`
-        <div class="oc-swipe-wrap" data-name="${escapeHtml((sf.name || '').toLowerCase())}" data-critical="${accentColor ? '1' : '0'}" data-low="${isCritical ? '1' : '0'}" style="--oc-swipe-x:-72px;">
+        (isAttn ? htmlAttn : htmlOk).push(`
+        <div class="oc-swipe-wrap" data-name="${escapeHtml((sf.name || '').toLowerCase())}" data-critical="${isAttn ? '1' : '0'}" data-low="${isCritical ? '1' : '0'}" style="--oc-swipe-x:-72px;">
             ${refCopySwipeBtnHtml(`quickCopySemiFinishedFromSwipe(${realIdx})`)}
             <div class="order-card" style="cursor:pointer;" onclick="openSemiFinishedDetail(${sf.id})">
                 ${stripe}
                 <div class="order-card-body">
                     <div class="oc-row">
                         <span class="oc-name">${escapeHtml(sf.name || t('semifinished_no_name_fallback'))}</span>
-                        ${stockCardChipHtml(st)}
+                        ${stockFullChipHtml(fi)}
                     </div>
                     ${stockCardCellsHtml({ priceLabel: t('sf_unit_cost_short'), priceText: (typeof hasPermission !== 'function' || hasPermission('can_view_costs')) ? priceText : '', beforeText, afterText, afterColor, thirdLabel: thirdLabel, thirdText: thirdText, thirdColor: afterColor })}
+                    ${stockFullExtraHtml(fi, unitLabel)}
                 </div>
             </div>
         </div>`);

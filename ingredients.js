@@ -31,13 +31,15 @@ function stockColorClass(daysLeft, prefix) {
 // использовала ровно те же условия, а не рисковала разойтись с окраской.
 // «Склад» — справочник (21.10): прогноза нет, наверх — только минус или ноль.
 function ingredientSeverity(ing, ctx) {
+    const f = stockFullInfo('ing', ing, ctx, stockTrackedIds());
+    if (f.on) return f.zone === 'critical' ? 0 : (f.attention ? 1 : 2);
     const after = stockState('ing', ing.id, ctx).after;
     return after !== null && after <= 0 ? 0 : 2;
 }
 
 function displayIngredients() {
     // Общий расчёт склада (inventory.js stockState, 21.10)
-    const ctx = stockStateContext(30);
+    const ctx = stockStateContext(stockUi.period);
 
     // Сортировка: сначала критичные (терракота), потом заканчивающиеся (охра),
     // потом остальные — внутри каждой группы по алфавиту.
@@ -139,12 +141,68 @@ function stockTileHtml(o) {
     </div>`;
 }
 
+// ---- «Склад» Full: аналитика «Умного склада» для ОТСЛЕЖИВАЕМЫХ позиций (30.10) ----
+// Фильтр «Все | Требует внимания» и период 7/30/90 — для вкладок «Ингредиенты» и «Полуфабрикаты».
+const stockUi = { ing: 'all', sf: 'all', period: 30 };
+function stockTrackedIds() {
+    return (typeof smartStockItemIds === 'function') ? smartStockItemIds() : { sf: new Set(), ing: new Set() };
+}
+// Сводка по позиции для Full: on — аналитика включена (Full + позиция отслеживается).
+function stockFullInfo(kind, item, ctx, tracked) {
+    const off = { on: false };
+    if (!stockForecastOn() || !tracked || !(kind === 'sf' ? tracked.sf : tracked.ing).has(item.id)) return off;
+    const ro = stockRunout(kind, item.id, ctx);
+    const st = ro.st;
+    const batchShort = kind === 'sf' ? sfBatchShortNames(item, ctx) : [];
+    const zone = st.zone;
+    const attention = zone !== 'ok' || batchShort.length > 0;
+    let chip = null;
+    if (ro.firstShort) chip = { cls: 'bad', text: `${t('inv_short_since_cell')} ${_invDM(ro.firstShort.order.date)}` };
+    else if (ro.forecastDate) chip = { cls: zone === 'critical' ? 'bad' : zone === 'warning' ? 'warn' : 'ok', text: `${t('inv_stock_until')} ≈ ${_invDM(ro.forecastDate)}`, tile: `≈ ${_invDM(ro.forecastDate)}` };
+    if (chip && !chip.tile) chip.tile = `${t('inv_since_prefix')} ${_invDM(ro.firstShort.order.date)}`;
+    return { on: true, ro, st, batchShort, zone, attention, chip };
+}
+// Строки под ячейками карточки: «Под заказы X · За N дн. Y», красная «Не хватит с …», «На новую партию не хватит: …»
+function stockFullExtraHtml(f, unit) {
+    if (!f.on) return '';
+    const usedLbl = t('inv_used_for_days').replace('{n}', stockUi.period);
+    let h = `<div class="inv-an"><span>${t('inv_reserved_chip')} ${_invFmt(f.st.reserved)} ${unit}</span><span>${usedLbl} ${_invFmt(f.st.usedInPeriod)} ${unit}</span></div>`;
+    h += stockShortLineHtml(f.ro, unit);
+    if (f.batchShort.length) h += `<div class="inv-batch-warn">${INV_WARN_ICON}<span>${t('inv_sf_batch_short')} ${f.batchShort.map(escapeHtml).join(', ')}</span></div>`;
+    return h;
+}
+function stockFullChipHtml(f) {
+    return f.on && f.chip ? `<span class="stk-chip ${f.chip.cls}">${f.chip.text}</span>` : '';
+}
+// Панель «Все | Требует внимания» + «7 | 30 | 90» (только Full)
+function renderStockFilterBar(kind) {
+    const el = document.getElementById(kind === 'ing' ? 'ingredientsFilterBar' : 'semiFinishedFilterBar');
+    if (!el) return;
+    if (!stockForecastOn()) { el.innerHTML = ''; el.classList.add('hidden'); return; }
+    const f = stockUi[kind];
+    el.classList.remove('hidden');
+    el.innerHTML = `<div class="fp"><button type="button" class="${f === 'all' ? 'active' : ''}" onclick="setStockFilter('${kind}','all')">${t('common_all')}</button><button type="button" class="${f === 'attn' ? 'active' : ''}" onclick="setStockFilter('${kind}','attn')">${t('stock_group_attention')}</button></div>`
+        + `<div class="fp">${[7, 30, 90].map(d => `<button type="button" class="${d === stockUi.period ? 'active' : ''}" onclick="setStockPeriod(${d})">${d}</button>`).join('')}</div>`;
+}
+function setStockFilter(kind, v) {
+    stockUi[kind] = v === 'attn' ? 'attn' : 'all';
+    if (kind === 'ing') { renderIngredientCards(); filterIngredientsList(); } else { renderSemiFinishedCards(); filterSemiFinishedList(); }
+}
+function setStockPeriod(d) {
+    stockUi.period = [7, 30, 90].includes(Number(d)) ? Number(d) : 30;
+    if (typeof displayIngredients === 'function') displayIngredients();
+    if (typeof displaySemiFinished === 'function') displaySemiFinished();
+}
+
 // ---- Карточный вид (тот же принцип, что у изделий/клиентов) ----
 function renderIngredientCards() {
     const body = document.getElementById('ingredientCardsBody');
     if (!body) return;
 
-    const ctx = stockStateContext(30); // общий расчёт склада (inventory.js stockState, 21.10)
+    const ctx = stockStateContext(stockUi.period); // общий расчёт склада (inventory.js stockState, 21.10)
+    const tracked = stockTrackedIds();
+    renderStockFilterBar('ing');
+    const attnOnly = stockForecastOn() && stockUi.ing === 'attn';
     const tiles = stockViewMode('ing') === 'tiles';
     stockViewSync('ing');
     body.classList.toggle('stock-grid', tiles);
@@ -160,31 +218,37 @@ function renderIngredientCards() {
         const shortfall = st.shortage;
 
         // «Склад» — справочник (21.10): без прогноза; наверх и красным — только минус или ноль.
-        const isCritical = balance !== null && balance <= 0;
-        const accentColor = isCritical ? '#c0685c' : '';
-        const afterColor = isCritical ? '#c0685c' : '#4f6349';
+        const fi = stockFullInfo('ing', ing, ctx, tracked); // Full + отслеживается: аналитика «Умного склада»
+        const isCritical = fi.on ? fi.zone === 'critical' : (balance !== null && balance <= 0);
+        const isWarning = fi.on && fi.zone === 'warning';
+        const accentColor = isCritical ? '#c0685c' : fi.on && fi.attention ? (isWarning ? '#d9a441' : '#c0685c') : (!fi.on && balance !== null && balance <= 0 ? '#c0685c' : '');
+        const isAttn = fi.on ? fi.attention : !!accentColor;
+        const afterColor = isCritical ? '#c0685c' : isWarning ? '#96712a' : '#4f6349';
         const thirdLabel = '';
         const thirdText = '';
         const beforeText = balanceBefore !== null ? `${Number(balanceBefore).toFixed(1)} ${unitLabel}` : '—';
         const afterText = balance !== null ? `${Number(balance).toFixed(1)} ${unitLabel}` : '—';
         const priceText = stockPriceText(unitPrice, ing.unit);
         const stripe = accentColor ? `<div class="stripe" style="background:${accentColor};"></div>` : '';
+        if (attnOnly && !isAttn) return;
 
         if (tiles) {
-            (accentColor ? htmlAttn : htmlOk).push(stockTileHtml({ name: ing.name, attn: !!accentColor, red: isCritical, numText: balance !== null ? Number(balance).toFixed(1) : '—', unit: balance !== null ? unitLabel : '', priceText, chip: stockDaysChip(st), openCall: `openIngredientDetail(${ing.id})` }));
+            const tChip = fi.on ? (fi.chip ? { cls: fi.chip.cls, text: fi.chip.tile } : null) : null;
+            (isAttn ? htmlAttn : htmlOk).push(stockTileHtml({ name: ing.name, attn: isAttn, red: isCritical, numText: balance !== null ? Number(balance).toFixed(1) : '—', unit: balance !== null ? unitLabel : '', priceText, chip: tChip, openCall: `openIngredientDetail(${ing.id})` }));
             return;
         }
-        (accentColor ? htmlAttn : htmlOk).push(`
-        <div class="oc-swipe-wrap" data-name="${escapeHtml((ing.name || '').toLowerCase())}" data-critical="${accentColor ? '1' : '0'}" data-low="${isCritical ? '1' : '0'}" style="--oc-swipe-x:-72px;">
+        (isAttn ? htmlAttn : htmlOk).push(`
+        <div class="oc-swipe-wrap" data-name="${escapeHtml((ing.name || '').toLowerCase())}" data-critical="${isAttn ? '1' : '0'}" data-low="${isCritical ? '1' : '0'}" style="--oc-swipe-x:-72px;">
             ${refCopySwipeBtnHtml(`quickCopyIngredientFromSwipe(${realIdx})`)}
             <div class="order-card" style="cursor:pointer;" onclick="openIngredientDetail(${ing.id})">
                 ${stripe}
                 <div class="order-card-body">
                     <div class="oc-row">
                         <span class="oc-name">${escapeHtml(ing.name || t('semifinished_no_name_fallback'))}</span>
-                        ${stockCardChipHtml(st)}
+                        ${stockFullChipHtml(fi)}
                     </div>
                     ${stockCardCellsHtml({ priceLabel: t('ing_price_per_unit'), priceText, beforeText, afterText, afterColor, thirdLabel: thirdLabel, thirdText: thirdText, thirdColor: afterColor })}
+                    ${stockFullExtraHtml(fi, unitLabel)}
                 </div>
             </div>
         </div>`);
