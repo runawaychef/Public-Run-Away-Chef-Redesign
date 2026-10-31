@@ -129,14 +129,17 @@ function stockCardChipHtml(st) {
     return c ? `<span class="stk-chip ${c.cls}">${t('ing_cell_lasts')} ${st.daysLeft} ${t('inv_days_short')}</span>` : '';
 }
 function stockTileHtml(o) {
-    const num = o.numText;
+    // 31.10: плитка 2 в ряд (вариант В): название, остаток + цена, нижняя строка «запас (Full) | срок годности».
+    // o.expiry = { cls: 'ok'|'soon'|'exp', text } — место под срок годности зарезервировано (раздел ещё не реализован, пока не передаётся).
     const full = (typeof hasPlanFeature !== 'function') || hasPlanFeature('cost_analytics');
-    const cls = 'pt-tile stt-tile' + (full ? ' stt-full' : '') + (num.length > 8 ? ' stt-sm' : '');
-    return `<div class="${cls}" data-name="${escapeHtml((o.name || '').toLowerCase())}" data-critical="${o.attn ? '1' : '0'}" data-low="${o.red ? '1' : '0'}" onclick="${o.openCall}">
-        ${full ? `<div class="stt-row">${o.chip ? `<span class="stt-chip ${o.chip.cls}">${o.chip.text}</span>` : ''}</div>` : ''}
-        <div class="stt-name">${escapeHtml(o.name || t('semifinished_no_name_fallback'))}</div>
-        <div class="stt-big" style="color:${o.red ? '#c0685c' : '#322f28'};">${num}${o.unit ? `<small>${escapeHtml(o.unit)}</small>` : ''}</div>
-        ${o.priceText ? `<div class="stt-price">${o.priceText}</div>` : ''}
+    const num = o.numText;
+    const left = full && o.chip ? `<span class="stx-l ${o.chip.cls}"><i></i>${o.chip.text}</span>` : '<span class="stx-l"></span>';
+    const right = o.expiry ? `<span class="stx-r ${o.expiry.cls}"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>${o.expiry.text}</span>` : '<span class="stx-r"></span>';
+    const hasFt = (full && o.chip) || o.expiry;
+    return `<div class="pt-tile stt-tile stx" data-name="${escapeHtml((o.name || '').toLowerCase())}" data-critical="${o.attn ? '1' : '0'}" data-low="${o.red ? '1' : '0'}" onclick="${o.openCall}">
+        <div class="stx-name">${escapeHtml(o.name || t('semifinished_no_name_fallback'))}</div>
+        <div class="stx-bt"><div class="stx-q${o.red ? ' red' : ''}${num.length > 8 ? ' sm' : ''}">${num}${o.unit ? `<small>${escapeHtml(o.unit)}</small>` : ''}</div>${o.priceText ? `<div class="stx-pr">${o.priceText}</div>` : ''}</div>
+        <div class="stx-ft${hasFt ? ' has' : ''}">${left}${right}</div>
         ${o.attn ? '<span class="pt-flag"></span>' : ''}
     </div>`;
 }
