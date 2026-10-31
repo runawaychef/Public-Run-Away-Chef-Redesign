@@ -522,7 +522,7 @@ I18N.en = {
         help_prod_stripe_title: 'What the colored stripe next to a name means',
         help_prod_stripe_text: 'The thin colored stripe next to an item\'s name is a warning: either the measurement unit (the "Unit" column) hasn\'t been set, or the "Recipe Complete" checkbox hasn\'t been checked in the item\'s card. Tap the row to open the card and fix it.',
         help_stock_cards_title: 'Ingredient & Semi-finished Item Cards',
-        help_stock_cards_text: '“Now” is what is physically in stock. “After write-off” is what will remain once all accepted orders are done. A red stripe and red number mean zero or negative stock (not enough for orders); such items are at the top, under “Needs attention”.\n\nThe forecast — how long the stock will last and which order it will not cover — is in Smart Stock (Full plan).\n\nTap a card to open the item. Swipe left for a quick “Copy” button.',
+        help_stock_cards_text: '“Now” is what is physically in stock. “After write-off” is what will remain once all accepted orders are done. A red stripe and red number mean zero or negative stock (not enough for orders); such items are at the top, under “Needs attention”.\n\nFull plan, for tracked items: a “Stock until ≈ date” or “Short from date” label, an “Reserved / Last N days” line and a red line showing which order is short and how much to buy. The “All / Needs attention” switch and the 7/30/90-day period are above the list. A red dot on “Stock” and on the neighbouring tab means items need attention. If an order is short of ingredients, you are warned in the order itself.\n\nTap a card to open the item. Swipe left for a quick “Copy” button.',
 
         // Inventory analytics + Shopping list
         inv_title: 'Smart Stock',
