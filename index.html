@@ -1666,6 +1666,42 @@
         .ctl-bot { margin-top: auto; align-self: stretch; display: flex; justify-content: space-between; align-items: baseline; gap: 4px; font-size: 10px; font-weight: 700; }
         .ctl-cnt { color: #7a7568; white-space: nowrap; } .ctl-cur { color: #4f6349; white-space: nowrap; }
         /* ===== /THEME-UNIFIED-TILES-CUST ===== */
+        /* ===== THEME-UNIFIED-SETTINGS (30.10.2026): главная страница «Настройки» в едином стиле =====
+           Каждая группа — отдельная парящая карточка. Только внешний вид; id и обработчики без изменений.
+           Единственная правка разметки: шапка (Назад / заголовок / язык / «Текущий сотрудник») обёрнута в div.set-head-card.
+           ОТКАТ: удалить этот блок и обёртку set-head-card (вернуть index-before-settings.html). */
+        #settingsPage > .bg-white { background: transparent; box-shadow: none; border-radius: 0; padding: 0 !important; margin-bottom: 0; }
+        #settingsPage .set-head-card,
+        #settingsPage > .bg-white > div:not(.set-head-card) > * { background: #fff; border-radius: 16px; box-shadow: var(--sb-shadow); border: var(--sb-edge); margin: 0 0 14px !important; }
+        #settingsPage > .bg-white > div:not(.set-head-card) > * { padding: 6px; }
+        #settingsPage .set-head-card { padding: 12px 14px; }
+        #settingsPage .set-head-card .pill-btn { border-radius: 13px; min-height: 36px; padding: 0 13px; font-size: 12.5px; box-shadow: 0 6px 10px -6px rgba(70,58,30,0.35); }
+        #settingsPage .set-head-card .pill-btn svg { width: 13px; height: 13px; }
+        #settingsPage .set-head-card .lang-pick-btn { min-height: 32px; padding: 0 12px; box-shadow: inset 0 1px 2px rgba(70,58,30,0.08); }
+        #settingsPage .set-head-card > p { background: #f4f1ea; border: 1px solid rgba(90,75,40,0.06); border-radius: 12px; box-shadow: inset 0 1px 2px rgba(70,58,30,0.08); padding: 8px 10px; margin: 0; }
+        /* «Тариф» */
+        #settingsPage > .bg-white > div:not(.set-head-card) > button.flex-col { background: #fff !important; border: var(--sb-edge) !important; padding: 10px 12px !important; }
+        /* строки */
+        #settingsPage .settings-row-btn { min-height: 40px; border-radius: 12px; gap: 10px; font-size: 12.5px; }
+        #settingsPage .settings-row-btn svg:not([id$="Chevron"]) { width: 26px; height: 26px; padding: 5.5px; box-sizing: border-box; border-radius: 9px; background: #eef2ea; color: #6b7a63; }
+        #settingsPage [id$="Group"] .settings-row-btn svg:not([id$="Chevron"]),
+        #settingsPage #companyInfoBtnBlock .settings-row-btn svg { background: #fff; box-shadow: 0 2px 4px -2px rgba(70,58,30,0.25); }
+        #settingsPage .settings-row-btn.danger svg:not([id$="Chevron"]) { background: #f6dad3; color: #c0685c; }
+        #settingsPage .settings-row-btn svg[id$="Chevron"] { color: #9a9488; }
+        /* заголовки групп — строки без плитки, раскрытая — светло-зелёная */
+        #settingsPage [id$="GroupBtn"] { background: transparent; border: 1px solid transparent; font-size: 13px; }
+        #settingsPage [id$="GroupBtn"].active { background: #e3ebdf; border-color: rgba(124,148,115,0.35); color: #4f6349; }
+        #settingsPage [id$="GroupBtn"].active svg:not([id$="Chevron"]) { background: #fff; color: #7c9473; }
+        /* вложенные строки — плитки с внутренней тенью */
+        #settingsPage [id$="Group"] { gap: 6px; padding: 6px 0 2px; margin-top: 0; }
+        #settingsPage #companyInfoBtnBlock { gap: 6px; }
+        #settingsPage [id$="Group"] .settings-row-btn,
+        #settingsPage #companyInfoBtnBlock .settings-row-btn { background: #f4f1ea; border: 1px solid rgba(90,75,40,0.06); box-shadow: inset 0 1px 2px rgba(70,58,30,0.08); }
+        #settingsPage .settings-row-btn.danger { background: #f3ded9 !important; border-color: #e8c4bb !important; }
+        #settingsPage #settingsPushGroup label,
+        #settingsPage #settingsMemoGroup label { background: #f4f1ea; border: 1px solid rgba(90,75,40,0.06); border-radius: 12px; box-shadow: inset 0 1px 2px rgba(70,58,30,0.08); padding: 9px 10px !important; min-height: 40px; }
+        #settingsPage #pushTypesList { gap: 6px; }
+        /* ===== /THEME-UNIFIED-SETTINGS ===== */
         /* ===== /THEME-UNIFIED ===== */
         /* Крестик «сбросить фильтр по статусу» в полосе итога заказов (фильтр из Dashboard) */
         .ofs-x { flex-shrink: 0; padding: 0 6px; color: #8d887b; font-size: 12px; cursor: pointer; }
@@ -3938,6 +3974,7 @@ function hideSplashScreen() {
              Короткие окна (тариф, язык, «Написать нам», удаление аккаунта, политика/условия/FAQ) — поверх страницы. ===== -->
         <div id="settingsPage" class="app-page">
             <div class="bg-white rounded-xl shadow-md mb-3" style="padding:10px 12px 12px;">
+                <div class="set-head-card">
                 <div class="flex items-center gap-2 mb-2">
                     <button onclick="closeSettingsPage()" class="pill-btn">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
@@ -3950,6 +3987,7 @@ function hideSplashScreen() {
                     </button>
                 </div>
                 <p class="text-xs text-gray-500 mb-3"><span data-i18n="settings_current_employee_label">Текущий сотрудник:</span> <b id="settingsCurrentEmployee" class="text-gray-800"></b></p>
+                </div>
 
                 <div>
 
