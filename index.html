@@ -1700,14 +1700,14 @@
         .stock-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding-bottom: 14px; }
         .pt-tile.stt-tile.stx { display: flex; flex-direction: column; align-items: stretch; text-align: left; aspect-ratio: auto; min-height: 104px; padding: 11px; border-radius: 16px; }
         .stx .pt-flag { border-radius: 0 16px 0 0; }
-        .stx-name { flex-shrink: 0; padding-right: 10px; max-height: 2.4em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 12.5px; font-weight: 600; line-height: 1.2; color: #322f28; word-break: break-word; }
-        .stx-bt { flex-shrink: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 4px; margin-top: 3px; }
+        .stx-name { flex-shrink: 0; padding-right: 10px; min-height: 2.4em; max-height: 2.4em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; font-size: 12.5px; font-weight: 600; line-height: 1.2; color: #322f28; word-break: break-word; }
+        .stx-bt { flex-shrink: 0; display: flex; justify-content: space-between; align-items: baseline; gap: 4px; margin: auto 0; }
         .stx-q { font-size: 19px; font-weight: 800; line-height: 24px; white-space: nowrap; font-variant-numeric: tabular-nums; color: #322f28; }
         .stx-q.sm { font-size: 16px; }
         .stx-q.red { color: #c0685c; }
         .stx-q small { font-size: 11.5px; font-weight: 700; color: #8d887b; margin-left: 2px; }
-        .stx-pr { font-size: 10px; font-weight: 700; color: #7a7568; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-        .stx-ft { margin-top: auto; height: 15px; padding-top: 4px; border-top: 1px solid transparent; display: flex; justify-content: space-between; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; line-height: 12px; }
+        .stx-pr { font-size: 12px; font-weight: 700; color: #7a7568; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+        .stx-ft { flex-shrink: 0; height: 15px; padding-top: 4px; border-top: 1px solid transparent; display: flex; justify-content: space-between; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; line-height: 12px; }
         .stx-ft.has { border-top-color: #efeadf; }
         .stx-ft span { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
         .stx-l i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block; }
