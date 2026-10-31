@@ -2008,9 +2008,9 @@
         /* ===== /THEME-UNIFIED-COMPANY2 ===== */
         /* ===== THEME-UNIFIED-STATS (31.10.2026): главный экран «Статистики» — 6 плиток в стиле Dashboard =====
            ОТКАТ: удалить блок + #statsHome в index.html (вернуть index-before-stathome.html), stats.js, i18n-*, sw.js. */
-        .stats-home-grid { grid-template-columns: 1fr 1fr; grid-template-rows: none; grid-auto-rows: auto; gap: 14px; }
-        .stats-home-grid .dashboard-card { min-height: 196px; }
-        .stats-home-grid .sth-wide { grid-column: 1 / -1; min-height: 0; }
+        .stats-home-grid { grid-template-columns: 1fr 1fr; grid-template-rows: none; grid-auto-rows: auto; gap: 16px; }
+        .stats-home-grid .dashboard-card { aspect-ratio: 1 / 1; min-height: 0; overflow: hidden; }
+        .stats-home-grid .sth-wide { grid-column: 1 / -1; aspect-ratio: auto; }
         .sth-wbody { display: flex; align-items: center; gap: 12px; }
         .sth-wdon { flex-shrink: 0; display: flex; }
         .sth-wr { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
