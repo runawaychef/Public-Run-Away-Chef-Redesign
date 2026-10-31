@@ -514,6 +514,7 @@ async function refreshCurrentEmployeePermissions() {
 
 async function selectEmployee(emp) {
     _switchPrevEmployee = null;
+    _switchFromSettings = false;
     document.getElementById('loginCancelBtn')?.classList.add('hidden');
     currentEmployee = emp;
     localStorage.setItem('currentEmployee', JSON.stringify(emp));
@@ -602,11 +603,13 @@ function startPeriodicRefresh() {
 
 // Кто был в системе до нажатия «Сменить» — нужен кнопке «Отмена» на экране выбора (30.10)
 let _switchPrevEmployee = null;
+let _switchFromSettings = false; // «Сменить» нажали на странице «Настройки» — «Отмена» вернёт туда же
 
 async function logoutEmployee() {
     if (!(await showConfirm(t('employees_switch_confirm')))) return;
     closeModal();
     _switchPrevEmployee = currentEmployee;
+    _switchFromSettings = (typeof isAppPageOpen === 'function') && isAppPageOpen('settingsPage');
     // Список для экрана выбора берём из базы заново: в памяти (особенно из локального снимка)
     // он мог остаться старым — без признака владельца (30.10). Нет сети — остаётся то, что есть.
     try { await reloadEmployeesList(); } catch (e) { /* оставляем список из памяти */ }
@@ -630,7 +633,9 @@ async function cancelEmployeeSwitch() {
     const prev = _switchPrevEmployee;
     if (!prev) return;
     const fresh = employees.find(e => e.id && e.id === prev.id) || prev;
+    const backToSettings = _switchFromSettings;
     await selectEmployee(fresh);
+    if (backToSettings && typeof openSettingsModal === 'function') openSettingsModal();
 }
 
 // ==================== НАЗВАНИЕ ПЕКАРНИ ====================
