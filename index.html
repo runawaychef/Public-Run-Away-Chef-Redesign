@@ -1898,6 +1898,30 @@
         #historyTableBody tr.order-row:active { background: #f4f1ea; }
         #historyLoadMoreBtn { min-height: 38px; padding: 0 18px; border-radius: 12px; background: #f4f1ea; color: #4f6349; border: 1px solid rgba(90,75,40,0.06); box-shadow: inset 0 1px 2px rgba(70,58,30,0.08); font-weight: 700; font-size: 12.5px; }
         /* ===== /THEME-UNIFIED-HISTORY ===== */
+        /* ===== THEME-UNIFIED-DIALOGS2 (30.10.2026): «Справка» и «Особые даты» ===== */
+        #helpModal .modal-content, #memoListModal .modal-content, #dashMemoModal .modal-content, #memoEditModal .modal-content { border-radius: 20px; padding: 18px 16px 16px; box-shadow: 0 22px 44px -14px rgba(40,32,12,0.45), 0 4px 10px -4px rgba(40,32,12,0.18); border: var(--sb-edge); }
+        #helpModal h2, #memoListModal h2, #dashMemoModal h2, #memoEditModal h2 { font-size: 16px; font-weight: 700; color: #322f28; margin: 0 2px 8px; }
+        #helpModalText { font-size: 13px; color: #3c3a34; line-height: 1.55; padding: 0 2px; }
+        #memoListSub, #memoEditSub { font-size: 12px; color: #8d887b; margin: -4px 2px 8px; }
+        #helpModal .pill-btn, #helpModal .pill-btn-secondary, #memoListModal .pill-btn, #memoListModal .pill-btn-secondary, #dashMemoModal .pill-btn-secondary, #memoEditModal .pill-btn, #memoEditModal .pill-btn-secondary { min-height: 42px; border-radius: 13px; font-size: 13px; font-weight: 700; font-family: inherit; }
+        #helpModal .pill-btn, #memoListModal .pill-btn, #memoEditModal .pill-btn { background: linear-gradient(180deg,#8aa380,#7c9473); box-shadow: 0 8px 14px -8px rgba(70,58,30,0.4), inset 0 1px 0 rgba(255,255,255,0.35); }
+        #helpModal .pill-btn-secondary, #memoListModal .pill-btn-secondary, #dashMemoModal .pill-btn-secondary, #memoEditModal .pill-btn-secondary { background: #f4f1ea; color: #4f6349; border: 1px solid rgba(90,75,40,0.06); box-shadow: inset 0 1px 2px rgba(70,58,30,0.08); }
+        #memoListBody, #dashMemoBody { padding: 4px 4px 8px; }
+        #memoListBody .memo-item, #dashMemoBody .memo-item { gap: 12px; padding: 9px 12px; margin-bottom: 10px; background: #fff; border: var(--sb-edge); border-radius: 14px; box-shadow: var(--sb-shadow); }
+        #memoListBody .memo-item:last-child, #dashMemoBody .memo-item:last-child { margin-bottom: 0; border-bottom: var(--sb-edge); }
+        #memoListBody .memo-item-ic, #dashMemoBody .memo-item-ic { width: 36px; height: 36px; }
+        #memoListBody .memo-item-t, #dashMemoBody .memo-item-t { font-size: 14px; font-weight: 700; color: #322f28; }
+        #memoListBody .memo-item-s, #dashMemoBody .memo-item-s { font-size: 12px; color: #8d887b; }
+        #memoListBody .memo-item-when.soon, #dashMemoBody .memo-item-when.soon { color: #96712a; background: #fbf3df; border-radius: 999px; padding: 3px 10px; font-size: 11.5px; }
+        #memoEditModal label.block { font-size: 12px; font-weight: 600; color: #8d887b; margin: 0 2px 4px; }
+        #memoEditModal input[type="text"], #memoEditModal input[type="number"], #memoEditModal select, #memoEditModal textarea { min-height: 38px; padding: 0 10px; border: 1px solid rgba(90,75,40,0.08); border-radius: 12px; background-color: #f4f1ea; box-shadow: inset 0 1px 2px rgba(70,58,30,0.08); font-size: 13.5px; color: #322f28; font-family: inherit; }
+        #memoEditModal textarea { padding: 8px 10px; min-height: 60px; }
+        #memoEditModal .memo-chip { background: #eef2ea; padding: 5px 11px; font-weight: 600; box-shadow: inset 0 1px 2px rgba(70,58,30,0.06); }
+        #memoEditModal .memo-seg { border-radius: 12px; padding: 3px; box-shadow: inset 0 1px 2px rgba(70,58,30,0.1); }
+        #memoEditModal .memo-seg button { border-radius: 10px; font-weight: 600; }
+        #memoEditModal .memo-seg button.on { background: linear-gradient(180deg,#8aa380,#7c9473); box-shadow: 0 4px 8px -4px rgba(70,58,30,0.4); }
+        #memoEditModal .memo-hint { border-radius: 12px; padding: 7px 10px; }
+        /* ===== /THEME-UNIFIED-DIALOGS2 ===== */
         /* ===== /THEME-UNIFIED ===== */
         /* Крестик «сбросить фильтр по статусу» в полосе итога заказов (фильтр из Dashboard) */
         .ofs-x { flex-shrink: 0; padding: 0 6px; color: #8d887b; font-size: 12px; cursor: pointer; }
