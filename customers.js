@@ -106,11 +106,10 @@ function renderCustomerTiles(body) {
         const orderCnt = orders.filter(o => o.customer_id != null ? o.customer_id === c.id : o.customer === c.name).length;
         const total = _custInt(customerTotalSpent(c));
         const cur = Math.round(customerCurrentOrdersSum(c));
-        return `<div class="pt-tile ctl-tile" data-name="${escapeHtml((c.name || '').toLowerCase())}" onclick="openCustomerDetail(${c.id})">
-            <div class="ctl-row">${hasDebt ? `<span class="ctl-chip">${escapeHtml(_custMoneyNum(debt))}</span>` : ''}</div>
-            <div class="ctl-name" style="${hasName ? '' : 'color:#a3493d;'}">${hasName ? escapeHtml(c.name) : '(имя не указано)'}</div>
-            <div class="ctl-total${total.length > 6 ? ' sm' : ''}"><span>${total}</span><span class="cu">${cu}</span></div>
-            <div class="ctl-bot"><span class="ctl-cnt">${orderCnt} ${t('cust_tile_orders')}</span>${cur > 0 ? `<span class="ctl-cur">${_custInt(cur)} ${cu}</span>` : ''}</div>
+        // Плитка 2 в ряд, размер как у плиток «Настроек» (31.10.2026): имя + капсула долга сверху, «Всего» крупно снизу слева, справа внизу — число заказов и сумма текущих
+        return `<div class="pt-tile ctl-tile cva${hasName ? '' : ' noname'}" data-name="${escapeHtml((c.name || '').toLowerCase())}" onclick="openCustomerDetail(${c.id})">
+            <div class="cva-top"><div class="cva-name" style="${hasName ? '' : 'color:#a3493d;'}">${hasName ? escapeHtml(c.name) : '(имя не указано)'}</div>${hasDebt ? `<span class="cva-chip">${escapeHtml(_custMoneyNum(debt))}</span>` : ''}</div>
+            <div class="cva-bot"><div class="cva-total${total.length > 7 ? ' sm' : ''}"><span>${total}</span><i>${cu}</i></div><div class="cva-side"><span class="cva-cnt">${orderCnt} ${t('cust_tile_orders')}</span>${cur > 0 ? `<span class="cva-cur">${_custInt(cur)} ${cu}</span>` : ''}</div></div>
             ${hasName ? '' : '<span class="pt-flag"></span>'}
         </div>`;
     }).join('');
