@@ -2100,6 +2100,28 @@
         .stp-ax { position: relative; height: 14px; margin-left: 110px; border-top: 1px solid #ece7da; }
         .stp-ax span { position: absolute; top: 2px; font-size: 10px; color: #a29c8c; transform: translateX(-50%); }
         .stp-ax span:first-child { transform: none; }
+        .stn-h { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+        .stn-d { position: relative; width: 128px; height: 128px; flex-shrink: 0; }
+        .stn-d .stcl-hole b { font-size: 22px; line-height: 24px; } .stn-d .stcl-hole small { font-size: 10px; }
+        .stn-lg { flex: 1; min-width: 0; }
+        .stn-lr { display: flex; align-items: center; gap: 7px; font-size: 12.5px; padding: 3px 0; }
+        .stn-lr i, .stn-hd i, .stn-row i { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+        .stn-lr span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #322f28; }
+        .stn-lr u { text-decoration: none; font-weight: 800; color: #322f28; }
+        .stn-hd, .stn-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+        .stn-hd { font-size: 11px; color: #a29c8c; padding: 6px 0 3px; border-top: 1px solid #efeadd; }
+        .stn-hd .stn-n { margin-left: 17px; }
+        .stn-hd em, .stn-hd b { font-weight: 600; color: #a29c8c; }
+        .stn-it { border-top: 1px solid #efeadd; cursor: pointer; }
+        .stn-row { padding: 9px 0; }
+        .stn-n { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #322f28; }
+        .stn-row em, .stn-hd em { font-style: normal; width: 44px; text-align: right; color: #6b665a; font-weight: 700; }
+        .stn-row b, .stn-hd b { width: 58px; text-align: right; font-weight: 800; color: #322f28; }
+        .stn-it.open { background: #f6f3ea; border-radius: 10px; margin: 0 -6px; padding: 0 6px; border-top-color: transparent; }
+        .stn-dt { padding: 0 0 10px 17px; }
+        .stn-full { font-size: 13px; line-height: 18px; color: #322f28; font-weight: 700; margin-bottom: 6px; word-break: break-word; }
+        .stn-m { display: flex; gap: 14px; font-size: 12px; color: #8a8473; flex-wrap: wrap; }
+        .stn-m b { color: #322f28; font-weight: 800; }
         /* ===== /THEME-UNIFIED-STATS ===== */
         /* ===== /THEME-UNIFIED ===== */
         /* Крестик «сбросить фильтр по статусу» в полосе итога заказов (фильтр из Dashboard) */
@@ -4878,7 +4900,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=12"></script>
-    <script src="i18n-core.js?v=129"></script>
+    <script src="i18n-core.js?v=130"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=31"></script>
@@ -4901,7 +4923,7 @@ function hideSplashScreen() {
 <script src="payments.js?v=33"></script>
 <script src="documents.js?v=14"></script>
 <script src="bank.js?v=13"></script>
-<script src="stats.js?v=31"></script>
+<script src="stats.js?v=32"></script>
 <script src="history.js?v=9"></script>
 <script src="modals.js?v=20"></script>
 <script src="demoData.js?v=19"></script>
