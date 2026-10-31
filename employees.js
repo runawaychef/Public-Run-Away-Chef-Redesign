@@ -723,34 +723,34 @@ async function openEmployeesModal() {
 
     employees.forEach(emp => {
         const row = document.createElement('button');
-        row.className = 'settings-row-btn';
-        row.style.justifyContent = 'space-between';
+        row.className = 'nv-emp';
         const badge = emp.is_owner ? t('employees_role_owner') : (emp.user_id ? t('employees_role_personal_login') : t('employees_role_shared_device'));
-        row.innerHTML = `<span>${escapeHtml(emp.name)}</span><span class="text-gray-400">${badge}</span>`;
+        const initial = (emp.name || '?').trim().charAt(0).toUpperCase();
+        row.innerHTML = `<span class="nv-ava">${escapeHtml(initial)}</span><span class="nv-en"><b>${escapeHtml(emp.name)}</b><span class="nv-role${emp.is_owner ? ' own' : ''}">${badge}</span></span><svg class="nv-chv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>`;
         row.onclick = () => openEmployeeEditModal(emp);
         content.appendChild(row);
     });
 
     pendingInvitations.forEach(inv => {
         const row = document.createElement('div');
-        row.className = 'px-2 py-1.5 rounded-xl text-xs text-left';
-        row.style.cssText = 'background:#f4f1ea; border:1px dashed #d8d2c4;';
+        row.className = 'nv-inv';
         row.innerHTML = `
-            <div class="flex justify-between items-center">
-                <span>${escapeHtml(inv.name)} <span class="text-gray-400">(${escapeHtml(inv.email)})</span></span>
-                <span style="color:#96712a;" class="flex-shrink-0 ml-1 inline-flex items-center">${icon('clock')}${t('employees_invite_pending')}</span>
+            <div class="nv-inv-top">
+                <span class="nv-ava" style="background:linear-gradient(180deg,#e3d4b0,#d8c590);color:#7a5a00;">${escapeHtml((inv.name || '?').trim().charAt(0).toUpperCase())}</span>
+                <span class="nv-en"><span class="nv-inv-name">${escapeHtml(inv.name)}</span><span class="nv-inv-mail">${escapeHtml(inv.email)}</span></span>
+                <span class="nv-role wait flex-shrink-0">${icon('clock')}${t('employees_invite_pending')}</span>
             </div>`;
         const actionsRow = document.createElement('div');
-        actionsRow.className = 'flex gap-2 mt-1';
+        actionsRow.className = 'nv-inv-act';
 
         const shareBtn = document.createElement('button');
         shareBtn.innerHTML = icon('share') + t('employees_invite_share');
-        shareBtn.className = 'text-xs inline-flex items-center invite-share-btn';
+        shareBtn.className = 'invite-share-btn';
         shareBtn.onclick = (e) => { e.stopPropagation(); shareInvitation(inv); };
 
         const cancelBtn = document.createElement('button');
         cancelBtn.innerHTML = icon('close') + t('employees_invite_cancel');
-        cancelBtn.className = 'text-gray-400 text-xs inline-flex items-center invite-cancel-btn';
+        cancelBtn.className = 'invite-cancel-btn';
         cancelBtn.onclick = (e) => { e.stopPropagation(); cancelInvitation(inv.id); };
 
         actionsRow.appendChild(shareBtn);

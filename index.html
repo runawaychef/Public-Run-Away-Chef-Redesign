@@ -1822,6 +1822,40 @@
         #planModal .nv-ok{min-height:38px;font-size:13px}
         #planModalCards{gap:10px !important}
         /* ===== /THEME-UNIFIED-COMPACT ===== */
+        /* ===== THEME-UNIFIED-TEAM (30.10.2026): «Сотрудники и права» и карточка сотрудника ===== */
+        #employeesPage .cmp-card, #employeePage .cmp-card { border-radius: 16px; box-shadow: var(--sb-shadow); border: var(--sb-edge); padding: 12px 14px; margin-bottom: 12px; }
+        #employeesPage .cmp-card:first-child { padding: 10px 12px; }
+        #employeePage .cmp-card:first-child { padding: 10px 12px 12px; }
+        #employeesPage .pill-btn, #employeePage .pill-btn { border-radius: 13px; min-height: 36px; padding: 0 13px; font-size: 12.5px; box-shadow: 0 6px 10px -6px rgba(70,58,30,0.35); }
+        #employeesPage .pill-btn svg, #employeePage .pill-btn svg { width: 13px; height: 13px; }
+        #employeesPage button.pill-btn.w-full, #employeePage button.pill-btn.w-full { min-height: 42px; font-size: 13px; background: linear-gradient(180deg,#8aa380,#7c9473); box-shadow: 0 8px 14px -8px rgba(70,58,30,0.4), inset 0 1px 0 rgba(255,255,255,0.35); }
+        #employeesListContent { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+        #employeesListContent .nv-inv { background: #fff; border: var(--sb-edge); border-radius: 14px; padding: 10px; box-shadow: var(--sb-shadow); }
+        #employeesListContent .nv-inv-top { display: flex; align-items: center; gap: 10px; }
+        #employeesListContent .nv-inv-name { font-size: 14.5px; font-weight: 700; color: #322f28; line-height: 1.2; min-width: 0; overflow-wrap: anywhere; }
+        #employeesListContent .nv-inv-mail { font-size: 11.5px; color: #8d887b; overflow-wrap: anywhere; }
+        #employeesListContent .nv-role.wait { background: #f7e6c4; color: #96712a; display: inline-flex; align-items: center; gap: 3px; }
+        #employeesListContent .nv-inv-act { display: flex; gap: 8px; margin-top: 8px; }
+        #employeesListContent .nv-inv-act button { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 0 12px; border-radius: 11px; font-size: 12px; font-weight: 700; background: #f4f1ea; border: 1px solid rgba(90,75,40,.06); box-shadow: inset 0 1px 2px rgba(70,58,30,.08); }
+        #employeesListContent .nv-inv-act .invite-cancel-btn { color: #8d887b; }
+        #employeesListContent .nv-inv-act svg { width: 13px; height: 13px; }
+        #employeePage .cmp-card label.text-xs.text-gray-500 { display: block; font-size: 12px; font-weight: 600; color: #8d887b; margin: 0 2px 4px; }
+        #employeePage input[type="text"], #employeePage input[type="email"] { min-height: 38px; padding: 0 12px !important; border: 1px solid rgba(90,75,40,0.08) !important; border-radius: 12px; background: #f4f1ea; box-shadow: inset 0 1px 2px rgba(70,58,30,0.08); font-size: 13.5px !important; color: #322f28; font-family: inherit; margin-bottom: 10px; }
+        #employeePage .cmp-card-title { font-size: 11.5px; font-weight: 700; color: #6b7a63; letter-spacing: .03em; text-transform: uppercase; margin-bottom: 6px; }
+        #employeePage #employeePermissionsLockedNote { border-radius: 12px; padding: 7px 10px; }
+        #employeePage .cmp-card label.flex { display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 6px 0; font-size: 13px; color: #3c3a34; border-bottom: 1px solid rgba(90,75,40,0.07); }
+        #employeePage .cmp-card label.flex:last-child { border-bottom: 0; }
+        #employeePage .cmp-card label.flex > svg { order: 1; width: 18px; height: 18px; color: #9a9488; flex-shrink: 0; }
+        #employeePage .cmp-card label.flex > span { order: 2; min-width: 0; line-height: 1.3; flex: 1; }
+        #employeePage .cmp-card label.flex > span .flex { display: flex; align-items: center; gap: 10px; }
+        #employeePage .cmp-card label.flex > span .block { margin-left: 28px !important; font-size: 11.5px !important; color: #8d887b; }
+        #employeePage .cmp-card label.flex > input[type="checkbox"] { order: 3; -webkit-appearance: none; appearance: none; position: relative; flex-shrink: 0; width: 44px !important; height: 26px !important; margin: 0 !important; border: 0; border-radius: 999px; background: #d9d3c2; box-shadow: inset 0 1px 2px rgba(70,58,30,0.2); transition: background .15s ease; }
+        #employeePage .cmp-card label.flex > input[type="checkbox"]::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgba(70,58,30,0.3); transition: transform .15s ease; }
+        #employeePage .cmp-card label.flex > input[type="checkbox"]:checked { background: #7c9473; }
+        #employeePage .cmp-card label.flex > input[type="checkbox"]:checked::after { transform: translateX(18px); }
+        #employeePage .cmp-card label.flex > input[type="checkbox"]:disabled { opacity: .55; }
+        #employeePage .cmp-card label.flex.items-start > input[type="checkbox"] { align-self: center; }
+        /* ===== /THEME-UNIFIED-TEAM ===== */
         /* ===== /THEME-UNIFIED ===== */
         /* Крестик «сбросить фильтр по статусу» в полосе итога заказов (фильтр из Dashboard) */
         .ofs-x { flex-shrink: 0; padding: 0 6px; color: #8d887b; font-size: 12px; cursor: pointer; }
@@ -4461,27 +4495,29 @@ function hideSplashScreen() {
              список → сотрудник. Форма сотрудника сохраняется кнопкой; при «Назад» с изменениями — вопрос «Сохранить изменения?» ===== -->
         <div id="employeesPage" class="app-page">
             <div class="cmp-card">
-                <div class="flex items-center gap-2 mb-2">
+                <div class="flex items-center gap-2">
                     <button onclick="closeAppPage()" class="pill-btn">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
                         <span data-i18n="common_back">Назад</span>
                     </button>
                     <h2 class="text-gray-800" style="font-size:15px; font-weight:600; margin:0 0 0 auto; text-align:right; line-height:1.25;" data-i18n="settings_employees_manage">Сотрудники и права</h2>
                 </div>
-                <div id="employeesListContent" class="flex flex-col gap-1 mb-3"></div>
-                <button onclick="openEmployeeEditModal(null)" class="pill-btn w-full justify-center" style="padding:10px 12px;" data-i18n="employees_create">+ Создать сотрудника</button>
             </div>
+            <div id="employeesListContent"></div>
+            <button onclick="openEmployeeEditModal(null)" class="pill-btn w-full justify-center" style="padding:10px 12px;" data-i18n="employees_create">+ Создать сотрудника</button>
         </div>
 
         <div id="employeePage" class="app-page">
             <div class="cmp-card">
-                <div class="flex items-center gap-2 mb-2">
+                <div class="flex items-center gap-2">
                     <button onclick="closeAppPage()" class="pill-btn">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
                         <span data-i18n="common_back">Назад</span>
                     </button>
                     <h2 id="employeeEditTitle" class="text-gray-800" style="font-size:15px; font-weight:600; margin:0 0 0 auto; text-align:right; line-height:1.25;">Новый сотрудник</h2>
                 </div>
+            </div>
+            <div class="cmp-card">
                 <input type="hidden" id="employeeEditId">
                 <input type="hidden" id="employeeEditUserId">
                 <label class="text-xs text-gray-500" data-i18n="employees_name_label">Имя сотрудника</label>
@@ -4570,7 +4606,7 @@ function hideSplashScreen() {
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=30"></script>
-    <script src="employees.js?v=63"></script>
+    <script src="employees.js?v=64"></script>
     <script src="company.js?v=28"></script>
     <script src="inventory.js?v=75"></script>
     <script src="billing.js?v=18"></script>
