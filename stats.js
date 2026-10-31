@@ -1329,8 +1329,8 @@ function srvRender() {
 }
 
 // ==================== СТРАНИЦА «ТОП ИЗДЕЛИЙ» (раскрытие плитки, 31.10.2026) ====================
-// Период — тот же набор, что у «Клиентов» (_stclBounds/_stclOrders). Режимы «Список | График». «Назад» — в «Статистику».
-let _stp = { range: 'month', from: '', to: '', view: 'list', all: false };
+// Период — тот же набор, что у «Клиентов» (_stclBounds/_stclOrders). Кольцо долей + список (вариант В). «Назад» — в «Статистику».
+let _stp = { range: 'month', from: '', to: '', all: false };
 function _stpTotals(bd) {
     const tot = {}, qty = {};
     _stclOrders(bd).forEach(o => (o.items || []).forEach(it => {
@@ -1341,12 +1341,11 @@ function _stpTotals(bd) {
     return { tot, qty };
 }
 function statsOpenTop() {
-    _stp = { range: 'month', from: '', to: '', view: 'list', all: false };   // каждый вход — «Месяц», «Список»
+    _stp = { range: 'month', from: '', to: '', all: false };   // каждый вход — «Месяц»
     openAppPage('statsTopPage');
     stpRender();
 }
 function stpSetRange(r) { _stp.range = r; _stp.all = false; stpRender(); }
-function stpSetView(v) { _stp.view = v; stpRender(); }
 function stpToggleAll() { _stp.all = !_stp.all; stpRender(); }
 function stpPickRange(ev) {
     if (ev) ev.stopPropagation();
@@ -1385,32 +1384,24 @@ function stpRender() {
         body.innerHTML = html;
         return;
     }
+    // кольцо долей (топ-5 + «Прочие») и список изделий: точка · название · сумма · %
     const LIM = 8;
-    const chartMode = _stp.view === 'chart';
-    html += `<div class="stcl-card"><div class="stp-seg"><button class="${chartMode ? '' : 'on'}" onclick="stpSetView('list')">${escapeHtml(t('stp_list'))}</button><button class="${chartMode ? 'on' : ''}" onclick="stpSetView('chart')">${escapeHtml(t('stp_chart'))}</button></div>`;
-    if (chartMode) {
-        const top = rows.slice(0, LIM);
-        const rawMax = top[0][1];
-        const mag = Math.pow(10, Math.floor(Math.log10(rawMax / 3)));
-        const stepV = [1, 2, 2.5, 5, 10].map(k => k * mag).find(s => rawMax / s <= 4) || 10 * mag;
-        const topV = Math.ceil(rawMax / stepV - 1e-9) * stepV;
-        const fmtAx = v => v >= 1000 ? (v / 1000).toLocaleString(typeof currentLang !== 'undefined' ? currentLang : undefined, { maximumFractionDigits: 1 }) + 'k' : String(Math.round(v));
-        top.forEach(([n, v], i) => {
-            const w = v / topV * 78;
-            html += `<div class="stp-hb"><span class="n">${escapeHtml(n || t('stats_noname'))}</span><div class="t"><s style="width:${w.toFixed(1)}%;opacity:${i === 0 ? 1 : 0.8}"></s><b style="left:${w.toFixed(1)}%">${escapeHtml(_stNum(v))}</b></div></div>`;
-        });
-        let ax = '';
-        for (let v = 0; v <= topV + 1e-9; v += stepV) ax += `<span style="left:${(v / topV * 78).toFixed(1)}%">${fmtAx(v)}</span>`;
-        html += `<div class="stp-ax">${ax}</div>`;
-        if (rows.length > LIM) html += `<div class="stp-note">${escapeHtml(t('stp_topn').replace('{n}', LIM))}</div>`;
-    } else {
-        const shown = _stp.all ? rows : rows.slice(0, LIM);
-        const mx = rows[0][1];
-        shown.forEach(([n, v], i) => {
-            html += `<div class="stp-r${i === 0 ? ' first' : ''}"><em class="stp-rk">${i + 1}</em><div class="stp-c"><div class="stp-l"><span class="stp-n">${escapeHtml(n || t('stats_noname'))}</span><b>${escapeHtml(_stNum(v))}</b><u>${Math.round(v / total * 100)}%</u></div><div class="stp-bar"><s style="width:${mx > 0 ? Math.round(v / mx * 100) : 0}%"></s></div></div></div>`;
-        });
-        if (rows.length > LIM) html += `<div class="stp-more" onclick="stpToggleAll()">${escapeHtml(_stp.all ? t('stp_less') : t('stp_all').replace('{n}', rows.length))}</div>`;
-    }
-    html += '</div>';
+    const COLS = ['#5f7857', '#c9973a', '#4f7a88', '#b5574a', '#8a7fa8'], REST = '#a29c8c';
+    const top5 = rows.slice(0, 5);
+    const restV = total - top5.reduce((s, [, v]) => s + v, 0);
+    const parts = top5.map(([, v], i) => [v, COLS[i]]);
+    if (restV > 0.005) parts.push([restV, REST]);
+    const r = 15, c = 2 * Math.PI * r;
+    let off = 0, circles = '';
+    parts.forEach(([v, col]) => {
+        const l = c * v / total;
+        circles += `<circle cx="21" cy="21" r="${r}" fill="none" stroke="${col}" stroke-width="7" stroke-dasharray="${l.toFixed(2)} ${(c - l).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 21 21)"/>`;
+        off += l;
+    });
+    const shown = _stp.all ? rows : rows.slice(0, LIM);
+    html += `<div class="stcl-card"><div class="stcl-chart"><svg viewBox="0 0 42 42" width="150" height="150">${circles}</svg><div class="stcl-hole"><b>${rows.length}</b><small>${escapeHtml(t('stats_products_count').replace(':', ''))}</small></div></div>`
+        + shown.map(([n, v], i) => `<div class="stcl-r"><i style="background:${i < 5 ? COLS[i] : REST}"></i><span class="stcl-n">${escapeHtml(n || t('stats_noname'))}</span><b>${escapeHtml(_stNum(v))}</b><u>${Math.round(v / total * 100)}%</u></div>`).join('')
+        + (rows.length > LIM ? `<div class="stp-more" onclick="stpToggleAll()">${escapeHtml(_stp.all ? t('stp_less') : t('stp_all').replace('{n}', rows.length))}</div>` : '')
+        + '</div>';
     body.innerHTML = html;
 }
