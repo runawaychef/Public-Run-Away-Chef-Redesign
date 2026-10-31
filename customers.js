@@ -106,10 +106,12 @@ function renderCustomerTiles(body) {
         const orderCnt = orders.filter(o => o.customer_id != null ? o.customer_id === c.id : o.customer === c.name).length;
         const total = _custInt(customerTotalSpent(c));
         const cur = Math.round(customerCurrentOrdersSum(c));
-        // Плитка 2 в ряд, размер как у плиток «Настроек» (31.10.2026): имя + капсула долга сверху, «Всего» крупно снизу слева, справа внизу — число заказов и сумма текущих
+        // Плитка 2 в ряд (31.10.2026, вариант В1): название + «N зак.» сверху; внизу слева «ВСЕГО» и сумма, справа подписанные строки «Долг» (красная) и «В работе» (зелёная, заказы не выполнены)
+        const rows = (hasDebt ? `<div class="cva-r debt"><span>${escapeHtml(t('cust_tile_debt'))}</span>${escapeHtml(_custMoneyNum(debt))}</div>` : '')
+            + (cur > 0 ? `<div class="cva-r cur"><span>${escapeHtml(t('cust_tile_work'))}</span>${_custInt(cur)}</div>` : '');
         return `<div class="pt-tile ctl-tile cva${hasName ? '' : ' noname'}" data-name="${escapeHtml((c.name || '').toLowerCase())}" onclick="openCustomerDetail(${c.id})">
-            <div class="cva-top"><div class="cva-name" style="${hasName ? '' : 'color:#a3493d;'}">${hasName ? escapeHtml(c.name) : '(имя не указано)'}</div>${hasDebt ? `<span class="cva-chip">${escapeHtml(_custMoneyNum(debt))}</span>` : ''}</div>
-            <div class="cva-bot"><div class="cva-total${total.length > 7 ? ' sm' : ''}"><span>${total}</span><i>${cu}</i></div><div class="cva-side"><span class="cva-cnt">${orderCnt} ${t('cust_tile_orders')}</span>${cur > 0 ? `<span class="cva-cur">${_custInt(cur)} ${cu}</span>` : ''}</div></div>
+            <div class="cva-top"><div class="cva-name" style="${hasName ? '' : 'color:#a3493d;'}">${hasName ? escapeHtml(c.name) : '(имя не указано)'}</div><span class="cva-cnt">${orderCnt} ${t('cust_tile_orders')}</span></div>
+            <div class="cva-bot"><div class="cva-l"><div class="cva-cap">${escapeHtml(t('cust_tile_all'))}</div><div class="cva-total${total.length > 6 ? ' sm' : ''}"><span>${total}</span><i>${cu}</i></div></div><div class="cva-side">${rows}</div></div>
             ${hasName ? '' : '<span class="pt-flag"></span>'}
         </div>`;
     }).join('');
