@@ -2064,6 +2064,19 @@
         .stcl-r u { text-decoration: none; width: 38px; text-align: right; color: #a29c8c; font-weight: 700; font-size: 12px; }
         .stcl-r.tot { border-top: 2px solid #d8d2c0; } .stcl-r.tot .stcl-n { font-weight: 800; }
         .stcl-empty { text-align: center; color: #a29c8c; font-size: 12.5px; padding: 8px 0; }
+        .srv-leg { display: flex; gap: 14px; font-size: 11.5px; color: #8a8473; margin-bottom: 4px; align-items: center; }
+        .srv-leg i { display: inline-block; width: 9px; height: 9px; border-radius: 3px; margin-right: 5px; }
+        .srv-pick { margin-left: auto; color: #322f28; text-align: right; }
+        .srv-hd, .srv-r { display: flex; align-items: center; gap: 6px; font-size: 13px; padding: 7px 6px; border-top: 1px solid #efeadd; cursor: pointer; }
+        .srv-hd { font-size: 11px; color: #a29c8c; border-top: none; margin-top: 6px; padding-top: 2px; padding-bottom: 2px; cursor: default; }
+        .srv-m { width: 58px; flex-shrink: 0; color: #322f28; }
+        .srv-r b { flex: 1; text-align: right; font-weight: 800; color: #322f28; }
+        .srv-r em { flex: 1; text-align: right; font-style: normal; font-weight: 700; color: #a07a22; }
+        .srv-r u { width: 42px; text-align: right; text-decoration: none; color: #a29c8c; font-weight: 700; font-size: 12px; }
+        .srv-hd span:not(.srv-m) { flex: 1; text-align: right; }
+        .srv-hd span.srv-pc { flex: none; width: 42px; }
+        .srv-r.sel { background: #f1efe6; border-radius: 8px; border-top-color: transparent; }
+        .srv-r.tot { border-top: 2px solid #d8d2c0; cursor: default; } .srv-r.tot .srv-m { font-weight: 800; }
         /* ===== /THEME-UNIFIED-STATS ===== */
         /* ===== /THEME-UNIFIED ===== */
         /* Крестик «сбросить фильтр по статусу» в полосе итога заказов (фильтр из Dashboard) */
@@ -4298,6 +4311,19 @@ function hideSplashScreen() {
                 <div id="docsBody"></div>
             </div>
         </div>
+        <!-- ===== СТРАНИЦА «Выручка и прибыль» (раскрытие плитки в «Статистике», 31.10.2026, stats.js) — в общей цепочке страниц ===== -->
+        <div id="statsRevPage" class="app-page">
+            <div style="padding:0 2px;">
+                <div class="flex items-center gap-2 mb-2">
+                    <button onclick="closeAppPage()" class="pill-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        <span data-i18n="common_back">Назад</span>
+                    </button>
+                    <h2 class="text-gray-800" style="font-size:15px; font-weight:600; margin:0 0 0 auto;" data-i18n="stats_h_rev">Выручка и прибыль</h2>
+                </div>
+                <div id="srvBody"></div>
+            </div>
+        </div>
         <!-- ===== СТРАНИЦА «Клиенты» (раскрытие плитки в «Статистике», 31.10.2026, stats.js) — в общей цепочке страниц ===== -->
         <div id="statsCustPage" class="app-page">
             <div style="padding:0 2px;">
@@ -4815,7 +4841,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=12"></script>
-    <script src="i18n-core.js?v=127"></script>
+    <script src="i18n-core.js?v=128"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=31"></script>
@@ -4838,7 +4864,7 @@ function hideSplashScreen() {
 <script src="payments.js?v=33"></script>
 <script src="documents.js?v=14"></script>
 <script src="bank.js?v=13"></script>
-<script src="stats.js?v=27"></script>
+<script src="stats.js?v=28"></script>
 <script src="history.js?v=9"></script>
 <script src="modals.js?v=20"></script>
 <script src="demoData.js?v=19"></script>
@@ -5780,6 +5806,7 @@ document.body.classList.remove('style-loading');
 // само приложение.
 const _backHandledDetailScreens = [
     { id: 'sendDocPage',        close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
+    { id: 'statsRevPage',       close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'statsCustPage',      close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'docsPage',           close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'bankPage',           close: () => { if (typeof closeBankSection === 'function') closeBankSection(); } },

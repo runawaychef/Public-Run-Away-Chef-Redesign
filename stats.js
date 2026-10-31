@@ -949,7 +949,7 @@ function statsBuildHome() {
             <div class="sth-wbody"><div class="sth-wdon" id="stHWDon"></div><div class="sth-wr"><div class="dc-val"><span class="dashboard-card__value" id="stHWVal">—</span><span class="dc-cap" id="stHWCap"></span></div><div class="dc-mid" id="stHWMid"></div></div></div>
             <div class="dc-foot" id="stHWFoot">&nbsp;</div>
         </div>`
-        + statsTileHtml('rev', 'stH1', STATS_TILE_ICONS.rev, 'stats_h_rev', "statsOpenOld('monthlyCanvas')")
+        + statsTileHtml('rev', 'stH1', STATS_TILE_ICONS.rev, 'stats_h_rev', "statsOpenRevenue()")
         + statsTileHtml('stock', 'stH4', STATS_TILE_ICONS.top, 'stats_h_top', "statsOpenOld('statsProductTable')")
         + statsTileHtml('pay', 'stH5', STATS_TILE_ICONS.margin, 'stats_h_margin', "statsOpenOld('statsProductProfitability')", 'perm-view-costs')
         + statsTileHtml('acc', 'stH6', STATS_TILE_ICONS.ing, 'stats_h_ing', "statsOpenOld('ingredientUsageReport')", 'perm-view-costs')
@@ -1197,6 +1197,124 @@ function stclRender() {
             `<div class="stcl-r"><i style="background:${i < 5 ? COLS[i] : REST}"></i><span class="stcl-n">${escapeHtml(n || t('stats_noname'))}</span><b>${escapeHtml(_stNum(v))}</b><u>${Math.round(v / total * 100)}%</u></div>`).join('');
         html += `<div class="stcl-card"><div class="stcl-chart"><svg viewBox="0 0 42 42" width="168" height="168">${circles}</svg><div class="stcl-hole"><b>${rows.length}</b><small>${escapeHtml(t('stats_customers_count').replace(':', ''))}</small></div></div>`
             + lines + `<div class="stcl-r tot"><i style="background:transparent"></i><span class="stcl-n">${escapeHtml(t('stcl_total'))}</span><b>${escapeHtml(_stNum(total))}</b><u>100%</u></div></div>`;
+    }
+    body.innerHTML = html;
+}
+
+// ==================== СТРАНИЦА «ВЫРУЧКА И ПРИБЫЛЬ» (раскрытие плитки, 31.10.2026) ====================
+// Страница в общей цепочке app-page: «Назад» (и системная Android) возвращает в «Статистику».
+let _srv = { range: '6m', sel: null };
+function _srvCanCost() { return typeof hasPermission !== 'function' || hasPermission('can_view_costs'); }
+// список месяцев [{y, m}] периода; shift -1 — предыдущий такой же (для «Всё» нет)
+function _srvMonths(range, shift) {
+    const now = orgNowDate();
+    const cy = now.getFullYear(), cm = now.getMonth();
+    let start, count;
+    if (range === '6m' || range === '12m') {
+        count = range === '6m' ? 6 : 12;
+        start = cy * 12 + cm - (count - 1) + shift * count;
+    } else if (range === 'year') {
+        count = cm + 1;                       // с января по текущий месяц; прошлый год — те же месяцы
+        start = (cy + shift) * 12;
+    } else {
+        if (shift) return null;
+        const all = (typeof orders !== 'undefined' ? orders : []).filter(o => o.date && (typeof isOrderSaved !== 'function' || isOrderSaved(o)));
+        if (!all.length) { start = cy * 12 + cm; count = 1; }
+        else {
+            const first = all.map(o => String(o.date).slice(0, 7)).sort()[0];
+            start = Number(first.slice(0, 4)) * 12 + Number(first.slice(5, 7)) - 1;
+            count = cy * 12 + cm - start + 1;
+        }
+    }
+    const res = [];
+    for (let i = 0; i < count; i++) { const k = start + i; res.push({ y: Math.floor(k / 12), m: k % 12 }); }
+    return res;
+}
+function _srvAgg(months) {
+    const keys = {};
+    months.forEach((mm, i) => { keys[mm.y + '-' + String(mm.m + 1).padStart(2, '0')] = i; });
+    const rows = months.map(() => ({ rev: 0, prof: 0, base: 0 }));
+    (typeof orders !== 'undefined' ? orders : []).forEach(o => {
+        if (!o.date || (typeof isOrderSaved === 'function' && !isOrderSaved(o))) return;
+        const i = keys[String(o.date).slice(0, 7)];
+        if (i === undefined) return;
+        rows[i].rev += orderGrandTotal(o);
+        rows[i].prof += orderProfit(o);
+        rows[i].base += orderAfterDiscount(o);
+    });
+    return rows;
+}
+function statsOpenRevenue() {
+    _srv = { range: '6m', sel: null };   // каждый вход — снова «6 мес.»
+    openAppPage('statsRevPage');
+    srvRender();
+}
+function srvSetRange(r) { _srv.range = r; _srv.sel = null; srvRender(); }
+function srvSel(i) { _srv.sel = i; srvRender(); }
+function srvRender() {
+    const body = document.getElementById('srvBody');
+    if (!body) return;
+    const canCost = _srvCanCost();
+    const rg = _srv.range;
+    const months = _srvMonths(rg, 0);
+    const rows = _srvAgg(months);
+    const n = months.length;
+    const sel = (_srv.sel != null && _srv.sel < n) ? _srv.sel : n - 1;
+    const totRev = rows.reduce((s, r) => s + r.rev, 0);
+    const totProf = rows.reduce((s, r) => s + r.prof, 0);
+    const totBase = rows.reduce((s, r) => s + r.base, 0);
+    const pct = (p, b) => b > 0 ? Math.round(p / b * 100) + '%' : '—';
+    const multiYear = months[0].y !== months[n - 1].y;
+    const lbl = mm => _stMonthShort(mm.y, mm.m) + (multiYear ? ' ' + String(mm.y).slice(2) : '');
+
+    let deltaHtml = '';
+    const pm = _srvMonths(rg, -1);
+    if (pm) {
+        const prev = _srvAgg(pm).reduce((s, r) => s + r.rev, 0);
+        if (prev > 0) {
+            const d = Math.round((totRev - prev) / prev * 100), up = d >= 0;
+            deltaHtml = `<div class="stcl-delta ${up ? 'up' : 'dn'}">${up ? '▲' : '▼'} ${Math.abs(d)}%<span>${escapeHtml(t('srv_cmp_' + rg))}</span></div>`;
+        }
+    }
+    const chips = [['6m', 'srv_6m'], ['12m', 'srv_12m'], ['year', 'stcl_year'], ['all', 'stcl_all']].map(([k, key]) =>
+        `<button class="stcl-chip${rg === k ? ' on' : ''}" onclick="srvSetRange('${k}')">${escapeHtml(t(key))}</button>`).join('');
+    const cap = `${_stMonthShort(months[0].y, months[0].m)}${multiYear ? ' ' + months[0].y : ''} – ${_stMonthShort(months[n - 1].y, months[n - 1].m)} ${months[n - 1].y}`;
+
+    let html = `<div class="stcl-chips">${chips}</div><div class="stcl-cap">${escapeHtml(cap)}</div>`;
+    html += `<div class="stcl-card"><div class="stcl-sum"><div><div class="stcl-big">${_stMoneyVal(totRev)}</div><div class="stcl-lbl">${escapeHtml(t('srv_rev'))}</div></div>${deltaHtml}</div>`
+        + (canCost ? `<div class="stcl-meta"><span>${escapeHtml(t('srv_profit'))} <b>${escapeHtml(_stNum(totProf))} ${escapeHtml(_stCur())}</b></span><span>${escapeHtml(t('srv_margin'))} <b>${pct(totProf, totBase)}</b></span></div>` : '')
+        + `</div>`;
+
+    if (totRev <= 0) {
+        html += `<div class="stcl-card"><div class="stcl-empty">${escapeHtml(t('stcl_empty'))}</div></div>`;
+    } else {
+        // график: два столбика на месяц (выручка и прибыль), выбранный месяц выделен
+        const W = 340, H = 170, padl = 6, padr = 6, padt = 26, padb = 22;
+        const mx = Math.max(...rows.map(r => canCost ? Math.max(r.rev, r.prof, 0) : r.rev), 0.01);
+        const slot = (W - padl - padr) / n, ch = H - padt - padb;
+        const bw = canCost ? Math.min(slot * 0.30, 22) : Math.min(slot * 0.5, 30);
+        const step = n > 12 ? Math.ceil(n / 12) : 1;
+        let svg = '';
+        rows.forEach((r, i) => {
+            const x0 = padl + i * slot + slot / 2, on = i === sel;
+            const hr = Math.max(ch * r.rev / mx, r.rev > 0 ? 1.5 : 0), hp = Math.max(ch * Math.max(r.prof, 0) / mx, r.prof > 0 ? 1.5 : 0);
+            if (on) svg += `<rect x="${(x0 - slot / 2 + 1).toFixed(1)}" y="${padt - 20}" width="${(slot - 2).toFixed(1)}" height="${ch + padb + 14}" rx="8" fill="#f1efe6"/>`;
+            if (canCost) {
+                svg += `<rect x="${(x0 - bw - 1).toFixed(1)}" y="${(padt + ch - hr).toFixed(1)}" width="${bw.toFixed(1)}" height="${hr.toFixed(1)}" rx="3" fill="${on ? '#7c9473' : '#b9c8b2'}"/>`
+                    + `<rect x="${(x0 + 1).toFixed(1)}" y="${(padt + ch - hp).toFixed(1)}" width="${bw.toFixed(1)}" height="${hp.toFixed(1)}" rx="3" fill="${on ? '#c9973a' : '#e3cf9f'}"/>`;
+            } else {
+                svg += `<rect x="${(x0 - bw / 2).toFixed(1)}" y="${(padt + ch - hr).toFixed(1)}" width="${bw.toFixed(1)}" height="${hr.toFixed(1)}" rx="3" fill="${on ? '#7c9473' : '#b9c8b2'}"/>`;
+            }
+            if (i % step === 0 || on) svg += `<text x="${x0.toFixed(1)}" y="${H - 6}" text-anchor="middle" font-size="10.5" fill="${on ? '#322f28' : '#a29c8c'}" font-weight="${on ? 800 : 600}">${escapeHtml(_stMonthShort(months[i].y, months[i].m))}</text>`;
+            svg += `<rect x="${(x0 - slot / 2).toFixed(1)}" y="0" width="${slot.toFixed(1)}" height="${H}" fill="transparent" onclick="srvSel(${i})"/>`;
+        });
+        const sr = rows[sel];
+        const pick = `${escapeHtml(lbl(months[sel]))}: <b>${escapeHtml(_stNum(sr.rev))}</b>${canCost ? ` · <b style="color:#a07a22">${escapeHtml(_stNum(sr.prof))}</b>` : ''}`;
+        html += `<div class="stcl-card"><div class="srv-leg"><span><i style="background:#7c9473"></i>${escapeHtml(t('srv_rev'))}</span>${canCost ? `<span><i style="background:#c9973a"></i>${escapeHtml(t('srv_profit'))}</span>` : ''}<span class="srv-pick">${pick}</span></div>`
+            + `<svg viewBox="0 0 ${W} ${H}" width="100%" style="cursor:pointer">${svg}</svg>`
+            + `<div class="srv-hd"><span class="srv-m">${escapeHtml(t('srv_month'))}</span><span>${escapeHtml(t('srv_rev'))}</span>${canCost ? `<span>${escapeHtml(t('srv_profit'))}</span><span class="srv-pc">${escapeHtml(t('srv_margin'))}</span>` : ''}</div>`
+            + rows.map((r, i) => `<div class="srv-r${i === sel ? ' sel' : ''}" onclick="srvSel(${i})"><span class="srv-m">${escapeHtml(lbl(months[i]))}</span><b>${escapeHtml(_stNum(r.rev))}</b>${canCost ? `<em>${escapeHtml(_stNum(r.prof))}</em><u>${pct(r.prof, r.base)}</u>` : ''}</div>`).join('')
+            + `<div class="srv-r tot"><span class="srv-m">${escapeHtml(t('stcl_total'))}</span><b>${escapeHtml(_stNum(totRev))}</b>${canCost ? `<em>${escapeHtml(_stNum(totProf))}</em><u>${pct(totProf, totBase)}</u>` : ''}</div></div>`;
     }
     body.innerHTML = html;
 }
