@@ -1685,7 +1685,7 @@
         #settingsPage .set-swapbtn { border: 1px solid rgba(90,75,40,0.08); background: #f4f1ea; color: #4f6349; font-weight: 700; font-size: 12.5px; border-radius: 12px; min-height: 34px; padding: 0 12px; flex-shrink: 0; box-shadow: inset 0 1px 2px rgba(70,58,30,0.08); }
         #settingsPage .set-plan { display: block; width: 100%; text-align: left; margin: 12px 0 0; background: #f4f1ea; border: 1px solid rgba(90,75,40,0.06); border-radius: 14px; padding: 11px 12px; box-shadow: inset 0 1px 2px rgba(70,58,30,0.08); }
         #settingsPage .set-plan .text-xs { font-size: 12.5px; }
-        #settingsPage #settingsPlanBadge { font-size: 15px; font-weight: 800; padding: 3px 12px; }
+        #settingsPage #settingsPlanBadge { font-size: 16px; font-weight: 800; padding: 0 !important; background: transparent !important; border-radius: 0; }
         #settingsPage #settingsPlanUsage { font-size: 13px; color: #6b675d; margin-top: 4px; }
         /* плитки как на Дашборде */
         #settingsPage .set-grid { display: grid; grid-template-columns: 1fr 1fr; grid-auto-flow: row dense; gap: 14px; margin-bottom: 14px; }
@@ -1693,13 +1693,12 @@
         #settingsPage .set-tile { position: relative; display: flex; flex-direction: column; gap: 4px; min-width: 0; min-height: 112px; text-align: left; background: #fff; border-radius: 16px; padding: 12px; box-shadow: var(--sb-shadow); border: var(--sb-edge); font-family: inherit; -webkit-tap-highlight-color: transparent; transition: transform .12s ease; }
         #settingsPage .set-tile:active { transform: scale(0.98); }
         #settingsPage .set-tile.active { box-shadow: 0 0 0 2px rgba(124,148,115,0.6), var(--sb-shadow); }
-        #settingsPage .set-th { display: flex; align-items: flex-start; gap: 7px; color: var(--dc, #5f7857); padding-right: 16px; }
+        #settingsPage .set-th { display: flex; align-items: flex-start; gap: 7px; color: var(--dc, #5f7857); }
         #settingsPage .set-th > span { font-size: 13px; font-weight: 600; color: #322f28; line-height: 1.2; }
         #settingsPage .set-ti { width: 24px; height: 24px; flex-shrink: 0; }
         #settingsPage .set-tv { margin-top: auto; font-size: 22px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; color: #322f28; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         #settingsPage .set-tv--name { font-size: 18px; letter-spacing: -0.01em; }
         #settingsPage .set-tv span { font-size: inherit; font-weight: inherit; }
-        #settingsPage .set-tchev { position: absolute; top: 14px; right: 12px; width: 14px; height: 14px; color: #a29c8c; }
         /* раскрытые группы плиток — на всю ширину */
         #settingsPage .set-grid [id$="Group"] { grid-column: 1 / -1; background: #fff; border-radius: 16px; box-shadow: var(--sb-shadow); border: var(--sb-edge); padding: 6px 12px; margin: 0; }
         /* список */
@@ -1725,6 +1724,19 @@
         #settingsPage [id$="Group"] .settings-row-btn.danger svg { color: #c0685c; }
         #settingsPage [id$="Group"] label { padding: 10px 6px !important; min-height: 44px; border-bottom: 1px solid rgba(90,75,40,0.07); }
         #settingsPage [id$="Group"] label:last-child, #settingsPage #pushTypesList label:last-child { border-bottom: 0; }
+        /* списки Push и «Особые даты»: переключатели, выбор дней, ровные строки (30.10, этап 2) */
+        #settingsPage #settingsPushGroup, #settingsPage #settingsMemoGroup { padding: 4px 14px; }
+        #settingsPage #settingsPushGroup label, #settingsPage #settingsMemoGroup label { font-size: 13.5px; color: #3c3a34; min-height: 52px; gap: 12px; }
+        #settingsPage #pushMasterRow { font-weight: 700; }
+        #settingsPage #settingsPushGroup label > span, #settingsPage #settingsMemoGroup label > span:first-child { min-width: 0; line-height: 1.3; }
+        #settingsPage #memoRemindDaysHint, #settingsPage #settingsMemoGroup .text-gray-400 { font-size: 11.5px; color: #8d887b; margin-top: 2px; }
+        #settingsPage #settingsPushGroup input[type="checkbox"], #settingsPage #settingsMemoGroup input[type="checkbox"] { -webkit-appearance: none; appearance: none; position: relative; flex-shrink: 0; width: 44px !important; height: 26px !important; margin: 0; border: 0; border-radius: 999px; background: #d9d3c2; box-shadow: inset 0 1px 2px rgba(70,58,30,0.18); transition: background .15s ease; outline: none; -webkit-tap-highlight-color: transparent; }
+        #settingsPage #settingsPushGroup input[type="checkbox"]::after, #settingsPage #settingsMemoGroup input[type="checkbox"]::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 2px 4px rgba(70,58,30,0.3); transition: transform .15s ease; }
+        #settingsPage #settingsPushGroup input[type="checkbox"]:checked, #settingsPage #settingsMemoGroup input[type="checkbox"]:checked { background: #7c9473; }
+        #settingsPage #settingsPushGroup input[type="checkbox"]:checked::after, #settingsPage #settingsMemoGroup input[type="checkbox"]:checked::after { transform: translateX(18px); }
+        #settingsPage #settingsPushGroup input[type="checkbox"]:disabled, #settingsPage #settingsMemoGroup input[type="checkbox"]:disabled { opacity: .6; }
+        #settingsPage #memoRemindDaysSel { -webkit-appearance: none; appearance: none; width: 66px !important; min-height: 36px; padding: 0 22px 0 12px; border: 1px solid rgba(90,75,40,0.1); border-radius: 12px; background: #f4f1ea url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238d887b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 6px center / 14px 14px; box-shadow: inset 0 1px 2px rgba(70,58,30,0.08); font-size: 14px; font-weight: 700; color: #322f28; font-family: inherit; }
+        #settingsPage #settingsMemoGroup [data-i18n="memo_set_days_unit"] { color: #8d887b; font-size: 13px; }
         /* ===== /THEME-UNIFIED-SETTINGS ===== */
         /* ===== /THEME-UNIFIED ===== */
         /* Крестик «сбросить фильтр по статусу» в полосе итога заказов (фильтр из Dashboard) */
@@ -4035,10 +4047,9 @@ function hideSplashScreen() {
                     </button>
                 </div>
                 <div>
-                    <button type="button" id="settingsTeamGroupBtn" onclick="document.getElementById('settingsTeamGroup').classList.toggle('hidden'); document.getElementById('settingsTeamGroupChevron').classList.toggle('rotate-180'); document.getElementById('settingsTeamGroupBtn').classList.toggle('active')" class="set-tile" style="--dc:#4f7a88">
+                    <button type="button" id="settingsTeamGroupBtn" onclick="toggleSettingsTile('Team')" class="set-tile" style="--dc:#4f7a88">
                         <span class="set-th"><svg class="set-ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg><span data-i18n="settings_team">Команда и доступ</span></span>
                         <span class="set-tv" id="settingsTeamCount">—</span>
-                        <svg id="settingsTeamGroupChevron" class="set-tchev w-3.5 h-3.5 flex-shrink-0 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
                     </button>
                     <div id="settingsTeamGroup" class="hidden flex flex-col gap-1 mt-1">
                         <button id="employeesManageBtn" onclick="openEmployeesModal()" class="settings-row-btn hidden"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg><span data-i18n="settings_employees_manage">Сотрудники и права</span></button>
@@ -4048,10 +4059,9 @@ function hideSplashScreen() {
                     </div>
                 </div>
                 <div id="pushSettingsBlock" class="hidden">
-                    <button type="button" id="settingsPushGroupBtn" onclick="document.getElementById('settingsPushGroup').classList.toggle('hidden'); document.getElementById('settingsPushGroupChevron').classList.toggle('rotate-180'); document.getElementById('settingsPushGroupBtn').classList.toggle('active')" class="set-tile" style="--dc:#c9973a">
+                    <button type="button" id="settingsPushGroupBtn" onclick="toggleSettingsTile('Push')" class="set-tile" style="--dc:#c9973a">
                         <span class="set-th"><svg class="set-ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg><span data-i18n="settings_push_title">Push-уведомления</span></span>
                         <span class="set-tv"><span id="pushMasterToggleState" data-i18n="push_state_off">Выкл</span></span>
-                        <svg id="settingsPushGroupChevron" class="set-tchev w-3.5 h-3.5 flex-shrink-0 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
                     </button>
                     <div id="settingsPushGroup" class="hidden flex flex-col gap-0.5 mt-1">
                         <label id="pushMasterRow" class="flex items-center justify-between gap-2 text-xs text-gray-700" style="padding:7px 8px; font-weight:600;">
@@ -4072,10 +4082,9 @@ function hideSplashScreen() {
                     </div>
                 </div>
                 <div>
-                    <button type="button" id="settingsMemoGroupBtn" onclick="document.getElementById('settingsMemoGroup').classList.toggle('hidden'); document.getElementById('settingsMemoGroupChevron').classList.toggle('rotate-180'); document.getElementById('settingsMemoGroupBtn').classList.toggle('active')" class="set-tile" style="--dc:#b5574a">
+                    <button type="button" id="settingsMemoGroupBtn" onclick="toggleSettingsTile('Memo')" class="set-tile" style="--dc:#b5574a">
                         <span class="set-th"><svg class="set-ti" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z"/></svg><span data-i18n="memo_set_title">Особые даты клиентов</span></span>
                         <span class="set-tv"><span id="memoRemindDaysShort"></span></span>
-                        <svg id="settingsMemoGroupChevron" class="set-tchev w-3.5 h-3.5 flex-shrink-0 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
                     </button>
                     <div id="settingsMemoGroup" class="hidden flex flex-col gap-0.5 mt-1">
                         <label class="flex items-center justify-between gap-2 text-xs text-gray-600" style="padding:7px 8px;">
@@ -4479,7 +4488,7 @@ function hideSplashScreen() {
     <script src="auth.js?v=30"></script>
     <script src="employees.js?v=62"></script>
     <script src="company.js?v=28"></script>
-    <script src="inventory.js?v=74"></script>
+    <script src="inventory.js?v=75"></script>
     <script src="billing.js?v=17"></script>
     <script src="push.js?v=9"></script>
 <script src="ingredients.js?v=65"></script>

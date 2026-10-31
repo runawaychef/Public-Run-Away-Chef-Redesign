@@ -13,6 +13,22 @@ function unitAbbrev(code) {
 
 const STOCK_LOW_DAYS = 7; // порог «критически мало» — менее N дней запаса
 
+// Плитки «Настроек» (30.10): открыта может быть только одна. Нажатие на открытую закрывает её,
+// нажатие на другую закрывает прежнюю и открывает новую. Группы «Данные» и «О приложении» не затрагиваются.
+function toggleSettingsTile(name) {
+    const names = ['Team', 'Push', 'Memo'];
+    const target = document.getElementById('settings' + name + 'Group');
+    if (!target) return;
+    const willOpen = target.classList.contains('hidden');
+    names.forEach(function (n) {
+        const grp = document.getElementById('settings' + n + 'Group');
+        const btn = document.getElementById('settings' + n + 'GroupBtn');
+        const open = (n === name) && willOpen;
+        if (grp) grp.classList.toggle('hidden', !open);
+        if (btn) btn.classList.toggle('active', open);
+    });
+}
+
 // Настройки — страница (22.10). Имя openSettingsModal оставлено: его вызывают кнопки
 // «Закрыть» вложенных окон (корзина, политика/FAQ и т.д.) — тогда просто закрываются окна,
 // а страница «Настройки» остаётся под ними (с тем же местом прокрутки и раскрытыми группами).
