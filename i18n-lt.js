@@ -232,6 +232,7 @@ I18N.lt = {
         settings_team: 'Komanda ir prieiga',
         settings_employees_manage: 'Darbuotojai ir teisės',
         settings_switch_employee: 'Pakeisti darbuotoją',
+        settings_switch_short: 'Keisti',
         settings_sign_out: 'Atsijungti',
         settings_delete_account: 'Ištrinti paskyrą',
         settings_about: 'Apie programėlę',

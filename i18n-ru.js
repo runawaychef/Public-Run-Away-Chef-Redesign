@@ -226,6 +226,7 @@ I18N.ru = {
         settings_team: 'Команда и доступ',
         settings_employees_manage: 'Сотрудники и права',
         settings_switch_employee: 'Сменить сотрудника',
+        settings_switch_short: 'Сменить',
         settings_sign_out: 'Выйти из аккаунта',
         settings_delete_account: 'Удалить аккаунт',
         settings_about: 'О приложении',

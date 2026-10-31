@@ -232,6 +232,7 @@ I18N.uk = {
         settings_team: 'Команда і доступ',
         settings_employees_manage: 'Співробітники і права',
         settings_switch_employee: 'Змінити співробітника',
+        settings_switch_short: 'Змінити',
         settings_sign_out: 'Вийти з акаунта',
         settings_delete_account: 'Видалити акаунт',
         settings_about: 'Про застосунок',

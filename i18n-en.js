@@ -227,6 +227,7 @@ I18N.en = {
         settings_team: 'Team & Access',
         settings_employees_manage: 'Staff & Permissions',
         settings_switch_employee: 'Switch Staff Member',
+        settings_switch_short: 'Switch',
         settings_sign_out: 'Sign out',
         settings_delete_account: 'Delete Account',
         settings_about: 'About Simple Bake',

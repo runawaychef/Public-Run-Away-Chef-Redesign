@@ -20,6 +20,14 @@ function openSettingsModal() {
     closeModal();
     if (appPageTop() !== 'settingsPage') openAppPage('settingsPage');
     document.getElementById('settingsCurrentEmployee').textContent = currentEmployee ? currentEmployee.name : '—';
+    // Профиль и плитки (30.10): буква в круге, название пекарни, число сотрудников
+    const _empName = currentEmployee ? String(currentEmployee.name || '') : '';
+    const _ava = document.getElementById('settingsAvatar');
+    if (_ava) _ava.textContent = (_empName.trim().charAt(0) || '•').toUpperCase();
+    const _cmpTile = document.getElementById('settingsCompanyTileName');
+    if (_cmpTile) _cmpTile.textContent = (typeof currentOrgName !== 'undefined' && currentOrgName) ? currentOrgName : '—';
+    const _teamCnt = document.getElementById('settingsTeamCount');
+    if (_teamCnt) _teamCnt.textContent = (typeof employees !== 'undefined' && employees && employees.length) ? String(employees.length) : '—';
     renderPlanInfo();
     if (typeof scheduleRefreshOrderQuota === 'function') scheduleRefreshOrderQuota();
     if (typeof refreshDeleteDemoDataVisibility === 'function') refreshDeleteDemoDataVisibility();
