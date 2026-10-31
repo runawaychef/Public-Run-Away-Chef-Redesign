@@ -46,11 +46,9 @@ function renderProductTiles() {
         const cu = escapeHtml((ps.replace(/\d[\d\s.,]*/, '').trim()) || '€');
         // Плитка 2 в ряд, размер как у плиток «Настроек» (31.10.2026, вариант B): название сверху на всю ширину, внизу цена с валютой и мини-фото
         return `<div class="pt-tile ptm" data-name="${escapeHtml((p.name || '').toLowerCase())}" onclick="openProductDetail(${p.id})">
-            <div class="ptm-name">${escapeHtml(p.name || t('semifinished_no_name_fallback'))}</div>
-            <div class="ptm-row">
-                <div class="ptm-price${nm.length > 7 ? ' sm' : ''}"><span>${escapeHtml(nm)}</span><i>${cu}</i></div>
-                <img class="ptm-photo" src="${photoSrc}" loading="lazy">
-            </div>
+            <div class="ptm-name"><span class="ptm-sp"></span>${escapeHtml(p.name || t('semifinished_no_name_fallback'))}</div>
+            <div class="ptm-price${nm.length > 7 ? ' sm' : ''}"><span>${escapeHtml(nm)}</span><i>${cu}</i></div>
+            <img class="ptm-photo" src="${photoSrc}" loading="lazy">
             ${warn}
         </div>`;
     }).join('');
