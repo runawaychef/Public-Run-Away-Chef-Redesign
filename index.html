@@ -2124,6 +2124,8 @@
         .stn-full { font-size: 13px; line-height: 18px; color: #322f28; font-weight: 700; margin-bottom: 6px; word-break: break-word; }
         .stn-m { display: flex; gap: 14px; font-size: 12px; color: #8a8473; flex-wrap: wrap; }
         .stn-m b { color: #322f28; font-weight: 800; }
+        .stn-row em.sti-q, .stn-hd em.sti-q { width: 84px; white-space: nowrap; }
+        .sti-q-in { width: 100%; box-sizing: border-box; border: 1px solid #e6e0d0; background: #faf8f2; border-radius: 10px; height: 34px; padding: 0 10px; font-size: 13px; margin: 2px 0 8px; outline: none; color: #322f28; }
         .smg-hd, .smg-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
         .smg-hd { font-size: 11px; color: #a29c8c; padding: 6px 0 3px; border-top: 1px solid #efeadd; }
         .smg-hd em, .smg-hd b { font-weight: 600; color: #a29c8c; }
@@ -4393,6 +4395,19 @@ function hideSplashScreen() {
                 <div id="stpBody"></div>
             </div>
         </div>
+        <div id="statsIngPage" class="app-page">
+            <div style="padding:0 2px;">
+                <div class="flex items-center gap-2 mb-2">
+                    <button onclick="closeAppPage()" class="pill-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        <span data-i18n="common_back">Назад</span>
+                    </button>
+                    <h2 class="text-gray-800" style="font-size:15px; font-weight:600; margin:0 0 0 auto;" data-i18n="stats_h_ing">Ингредиенты</h2>
+                </div>
+                <input type="hidden" id="stiFrom"><input type="hidden" id="stiTo">
+                <div id="stiBody"></div>
+            </div>
+        </div>
         <!-- ===== СТРАНИЦА «Выручка и прибыль» (раскрытие плитки в «Статистике», 31.10.2026, stats.js) — в общей цепочке страниц ===== -->
         <div id="statsRevPage" class="app-page">
             <div style="padding:0 2px;">
@@ -4923,7 +4938,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=12"></script>
-    <script src="i18n-core.js?v=132"></script>
+    <script src="i18n-core.js?v=133"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=31"></script>
@@ -4946,7 +4961,7 @@ function hideSplashScreen() {
 <script src="payments.js?v=33"></script>
 <script src="documents.js?v=14"></script>
 <script src="bank.js?v=13"></script>
-<script src="stats.js?v=39"></script>
+<script src="stats.js?v=40"></script>
 <script src="history.js?v=9"></script>
 <script src="modals.js?v=20"></script>
 <script src="demoData.js?v=19"></script>
@@ -5890,6 +5905,7 @@ const _backHandledDetailScreens = [
     { id: 'sendDocPage',        close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'statsMarginPage',    close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'statsTopPage',       close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
+    { id: 'statsIngPage      ',       close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'statsRevPage',       close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'statsCustPage',      close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'docsPage',           close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },

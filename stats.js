@@ -952,7 +952,7 @@ function statsBuildHome() {
         + statsTileHtml('rev', 'stH1', STATS_TILE_ICONS.rev, 'stats_h_rev', "statsOpenRevenue()")
         + statsTileHtml('stock', 'stH4', STATS_TILE_ICONS.top, 'stats_h_top', "statsOpenTop()")
         + statsTileHtml('pay', 'stH5', STATS_TILE_ICONS.margin, 'stats_h_margin', "statsOpenMargin()", 'perm-view-costs')
-        + statsTileHtml('acc', 'stH6', STATS_TILE_ICONS.ing, 'stats_h_ing', "statsOpenOld('ingredientUsageReport')", 'perm-view-costs')
+        + statsTileHtml('acc', 'stH6', STATS_TILE_ICONS.ing, 'stats_h_ing', "statsOpenIng()", 'perm-view-costs')
         + `<div class="sth-info"><i>i</i><ul><li data-i18n="stats_info_1">${escapeHtml(t('stats_info_1'))}</li></ul></div>`;
 }
 
@@ -1501,4 +1501,126 @@ function smRender() {
         + (rows.length > LIM ? `<div class="stp-more" onclick="smToggleAll()">${escapeHtml(_sm.all ? t('stp_less') : t('stp_all').replace('{n}', rows.length))}</div>` : '')
         + `<div class="smg-note">${escapeHtml(t('sm_note'))}</div></div>`;
     body.innerHTML = html;
+}
+
+// ==================== СТРАНИЦА «ИНГРЕДИЕНТЫ» (раскрытие плитки, 31.10.2026) ====================
+// Расход ингредиентов за период (order_item_ingredients по сохранённым заказам, _stclBounds/_stclOrders). Кольцо долей по стоимости,
+// поиск, сортировка «по стоимости / по количеству», строка раскрывается. Только при праве can_view_costs. «Назад» — в «Статистику».
+let _sti = { range: 'month', from: '', to: '', sort: 'cost', all: false, open: null, q: '', rows: null, seq: 0 };
+function _stiAgg(bd) {
+    const ids = _stclOrders(bd).flatMap(o => (o.items || []).map(it => it.id)).filter(Boolean);
+    if (!ids.length) return Promise.resolve([]);
+    return db.from('order_item_ingredients').select('ingredient_id, ingredient_name, unit, quantity, total_cost').in('order_item_id', ids).then(({ data, error }) => {
+        if (error || !data) return null;
+        const map = {};
+        data.forEach(r => {
+            const cur = r.ingredient_id != null && typeof ingredients !== 'undefined' ? ingredients.find(i => i.id === r.ingredient_id) : null;
+            const key = r.ingredient_id != null ? 'id:' + r.ingredient_id : 'n:' + r.ingredient_name + '|' + r.unit;
+            if (!map[key]) map[key] = { key: key, name: cur ? cur.name : (r.ingredient_name || ''), unit: r.unit || '', qty: 0, cost: 0 };
+            map[key].qty += Number(r.quantity) || 0;
+            map[key].cost += Number(r.total_cost) || 0;
+        });
+        return Object.values(map);
+    });
+}
+function statsOpenIng() {
+    if (typeof hasPermission === 'function' && !hasPermission('can_view_costs')) return;
+    _sti = { range: 'month', from: '', to: '', sort: 'cost', all: false, open: null, q: '', rows: null, seq: 0 };   // каждый вход — «Месяц», «По стоимости»
+    openAppPage('statsIngPage');
+    stiLoad();
+}
+function stiLoad() {
+    const my = ++_sti.seq;
+    _sti.rows = null; _sti.prev = undefined;
+    stiRender();
+    const bd = _stclBounds(_sti.range, _sti.from, _sti.to, 0), pb = _stclBounds(_sti.range, _sti.from, _sti.to, -1);
+    Promise.all([_stiAgg(bd), pb ? _stiAgg(pb) : Promise.resolve(undefined)]).then(([cur, prev]) => {
+        if (my !== _sti.seq) return;
+        _sti.rows = cur || [];
+        _sti.err = !cur;
+        _sti.prev = prev ? prev.reduce((s, r) => s + r.cost, 0) : undefined;
+        stiRender();
+    }).catch(() => { if (my !== _sti.seq) return; _sti.rows = []; _sti.err = true; stiRender(); });
+}
+function stiSetRange(r) { _sti.range = r; _sti.all = false; _sti.open = null; stiLoad(); }
+function stiPickRange(ev) {
+    if (ev) ev.stopPropagation();
+    toggleCustomCalendarRange('globalCalendarPopup', 'stiFrom', 'stiTo', null, null, {
+        onApply: function (f, to) { _sti.range = 'custom'; _sti.from = f; _sti.to = to; _sti.all = false; _sti.open = null; stiLoad(); }
+    });
+}
+function stiSetSort(s) { _sti.sort = s; _sti.all = false; _sti.open = null; stiRows(); }
+function stiToggleAll() { _sti.all = !_sti.all; stiRows(); }
+function stiFilter(v) { _sti.q = v || ''; _sti.open = null; stiRows(); }
+function stiOpen(i) { const k = (_sti.view || [])[i]; _sti.open = (_sti.open === k) ? null : k; stiRows(); }
+function stiRows() {
+    const box = document.getElementById('stiRows');
+    if (!box || !_sti.rows) return;
+    const COLS = ['#5f7857', '#c9973a', '#4f7a88', '#b5574a', '#8a7fa8'], REST = '#a29c8c';
+    const byCost = _sti.rows.slice().sort((a, b) => b.cost - a.cost);
+    const total = byCost.reduce((s, r) => s + r.cost, 0);
+    const rank = {}; byCost.forEach((r, i) => { rank[r.key] = i; });
+    const q = (_sti.q || '').trim().toLowerCase();
+    let list = _sti.sort === 'qty' ? _sti.rows.slice().sort((a, b) => b.qty - a.qty) : byCost.slice();
+    if (q) list = list.filter(r => (r.name || '').toLowerCase().indexOf(q) !== -1);
+    const LIM = 8, shown = (_sti.all || q) ? list : list.slice(0, LIM);
+    _sti.view = shown.map(r => r.key);
+    const cur = _stCur(), fq = _stpFq;
+    const nm = n => n || t('stats_noname');
+    box.innerHTML = shown.map((r, i) => {
+        const on = _sti.open === r.key, ri = rank[r.key], u = r.unit ? ' ' + r.unit : '';
+        return `<div class="stn-it${on ? ' open' : ''}" onclick="stiOpen(${i})"><div class="stn-row"><i style="background:${ri < 5 ? COLS[ri] : REST}"></i><span class="stn-n">${escapeHtml(nm(r.name))}</span><em class="sti-q">${escapeHtml(fq(r.qty) + u)}</em><b>${escapeHtml(_stNum(r.cost))}</b></div>`
+            + (on ? `<div class="stn-dt"><div class="stn-full">${escapeHtml(nm(r.name))}</div><div class="stn-m"><span>${escapeHtml(t('stp_h_qty'))} <b>${escapeHtml(fq(r.qty) + u)}</b></span><span>${escapeHtml(t('stp_h_sum'))} <b>${escapeHtml(_stNum(r.cost))} ${escapeHtml(cur)}</b></span><span>${escapeHtml(t('stp_share'))} <b>${total > 0 ? Math.round(r.cost / total * 100) : 0}%</b></span>${r.qty > 0 ? `<span>${escapeHtml(t('ing_avg'))} <b>${escapeHtml(_smFmt2(r.cost / r.qty))} ${escapeHtml(cur)}${r.unit ? '/' + escapeHtml(r.unit) : ''}</b></span>` : ''}</div></div>` : '')
+            + '</div>';
+    }).join('')
+        + (!q && list.length > LIM ? `<div class="stp-more" onclick="stiToggleAll()">${escapeHtml(_sti.all ? t('stp_less') : t('stp_all').replace('{n}', list.length))}</div>` : '');
+}
+function stiRender() {
+    const body = document.getElementById('stiBody');
+    if (!body) return;
+    const rg = _sti.range;
+    const bd = _stclBounds(rg, _sti.from, _sti.to, 0);
+    const chips = ['week', 'month', 'quarter', 'year', 'all'].map(k =>
+        `<button class="stcl-chip${rg === k ? ' on' : ''}" onclick="stiSetRange('${k}')">${escapeHtml(t('stcl_' + k))}</button>`).join('')
+        + `<button class="stcl-chip cal${rg === 'custom' ? ' on' : ''}" onclick="stiPickRange(event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></button>`;
+    const cap = bd ? `${formatDateDMY(bd.from)} – ${formatDateDMY(bd.to)}` : t('stcl_all_cap');
+    let html = `<div class="stcl-chips">${chips}</div><div class="stcl-cap">${escapeHtml(cap)}</div>`;
+    if (!_sti.rows) {
+        html += `<div class="stcl-card"><div class="stcl-empty">${escapeHtml(t('stats_loading'))}</div></div>`;
+        body.innerHTML = html;
+        return;
+    }
+    const rows = _sti.rows.slice().sort((a, b) => b.cost - a.cost);
+    const total = rows.reduce((s, r) => s + r.cost, 0);
+    let deltaHtml = '';
+    if (_sti.prev > 0) {
+        const d = Math.round((total - _sti.prev) / _sti.prev * 100), up = d >= 0;
+        deltaHtml = `<div class="stcl-delta ${up ? 'up' : 'dn'}">${up ? '▲' : '▼'} ${Math.abs(d)}%<span>${escapeHtml(t('stcl_cmp_' + (rg === 'custom' ? 'custom' : rg)))}</span></div>`;
+    }
+    html += `<div class="stcl-card"><div class="stcl-sum"><div><div class="stcl-big">${_stMoneyVal(total)}</div><div class="stcl-lbl">${escapeHtml(t('ing_summary').replace('{n}', rows.length))}</div></div>${deltaHtml}</div></div>`;
+    if (!rows.length) {
+        html += `<div class="stcl-card"><div class="stcl-empty">${escapeHtml(t(_sti.err ? 'stats_load_error' : 'stcl_empty'))}</div></div>`;
+        body.innerHTML = html;
+        return;
+    }
+    const COLS = ['#5f7857', '#c9973a', '#4f7a88', '#b5574a', '#8a7fa8'], REST = '#a29c8c';
+    const top5 = rows.slice(0, 5);
+    const restV = total - top5.reduce((s, r) => s + r.cost, 0);
+    const parts = top5.map((r, i) => [r.cost, COLS[i], r.name]);
+    if (restV > 0.005) parts.push([restV, REST, null]);
+    const rr = 15, c = 2 * Math.PI * rr;
+    let off = 0, circles = '';
+    if (total > 0) parts.forEach(([v, col]) => {
+        const l = c * v / total;
+        circles += `<circle cx="21" cy="21" r="${rr}" fill="none" stroke="${col}" stroke-width="7" stroke-dasharray="${l.toFixed(2)} ${(c - l).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 21 21)"/>`;
+        off += l;
+    });
+    const legend = parts.map(([v, col, n]) => `<div class="stn-lr"><i style="background:${col}"></i><span>${escapeHtml(n === null ? t('stats_others') : (n || t('stats_noname')))}</span><u>${total > 0 ? Math.round(v / total * 100) : 0}%</u></div>`).join('');
+    const qs = _sti.sort === 'qty';
+    html += `<div class="stcl-card"><div class="stn-h"><div class="stn-d"><svg viewBox="0 0 42 42" width="128" height="128">${circles}</svg><div class="stcl-hole"><b>${rows.length}</b><small>${escapeHtml(t('ing_hole'))}</small></div></div><div class="stn-lg">${legend}</div></div>`
+        + `<input id="stiQ" class="sti-q-in" type="text" value="${escapeHtml(_sti.q || '')}" placeholder="${escapeHtml(t('stats_filter_by_name'))}" oninput="stiFilter(this.value)">`
+        + `<div class="stp-seg"><button class="${qs ? '' : 'on'}" onclick="stiSetSort('cost')">${escapeHtml(t('ing_by_cost'))}</button><button class="${qs ? 'on' : ''}" onclick="stiSetSort('qty')">${escapeHtml(t('ing_by_qty'))}</button></div>`
+        + `<div class="stn-hd"><span class="stn-n">${escapeHtml(t('ing_h_item'))}</span><em class="sti-q">${escapeHtml(t('stp_h_qty'))}</em><b>${escapeHtml(t('stp_h_sum'))}</b></div><div id="stiRows"></div></div>`;
+    body.innerHTML = html;
+    stiRows();
 }
