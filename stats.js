@@ -1335,7 +1335,7 @@ function srvRender() {
 
 // ==================== СТРАНИЦА «ТОП ИЗДЕЛИЙ» (раскрытие плитки, 31.10.2026) ====================
 // Период — тот же набор, что у «Клиентов» (_stclBounds/_stclOrders). Кольцо долей + список (вариант В). «Назад» — в «Статистику».
-let _stp = { range: 'month', from: '', to: '', all: false, open: null };
+let _stp = { range: 'month', from: '', to: '', all: false, open: null, q: '', view: [] };
 function _stpFq(v) { try { return roundQty(v).toLocaleString(typeof currentLang !== 'undefined' ? currentLang : undefined, { maximumFractionDigits: 2 }); } catch (e) { return String(roundQty(v)); } }
 function _stpTotals(bd) {
     const tot = {}, qty = {};
@@ -1347,17 +1347,18 @@ function _stpTotals(bd) {
     return { tot, qty };
 }
 function statsOpenTop() {
-    _stp = { range: 'month', from: '', to: '', all: false, open: null };   // каждый вход — «Месяц»
+    _stp = { range: 'month', from: '', to: '', all: false, open: null, q: '', view: [] };   // каждый вход — «Месяц»
     openAppPage('statsTopPage');
     stpRender();
 }
-function stpSetRange(r) { _stp.range = r; _stp.all = false; _stp.open = null; stpRender(); }
-function stpOpen(i) { const rows = Object.entries(_stpTotals(_stclBounds(_stp.range, _stp.from, _stp.to, 0)).tot).sort((a, b) => b[1] - a[1]); const n = rows[i] ? rows[i][0] : null; _stp.open = (_stp.open === n) ? null : n; stpRender(); }
-function stpToggleAll() { _stp.all = !_stp.all; stpRender(); }
+function stpSetRange(r) { _stp.range = r; _stp.all = false; _stp.open = null; _stp.q = ''; stpRender(); }
+function stpOpen(i) { const n = _stp.view[i]; _stp.open = (_stp.open === n) ? null : n; stpRows(); }
+function stpToggleAll() { _stp.all = !_stp.all; stpRows(); }
+function stpFilter(v) { _stp.q = v || ''; _stp.open = null; stpRows(); }
 function stpPickRange(ev) {
     if (ev) ev.stopPropagation();
     toggleCustomCalendarRange('globalCalendarPopup', 'stpFrom', 'stpTo', null, null, {
-        onApply: function (f, to) { _stp.range = 'custom'; _stp.from = f; _stp.to = to; _stp.all = false; _stp.open = null; stpRender(); }
+        onApply: function (f, to) { _stp.range = 'custom'; _stp.from = f; _stp.to = to; _stp.all = false; _stp.open = null; _stp.q = ''; stpRender(); }
     });
 }
 function stpRender() {
@@ -1405,21 +1406,36 @@ function stpRender() {
         circles += `<circle cx="21" cy="21" r="${r}" fill="none" stroke="${col}" stroke-width="7" stroke-dasharray="${l.toFixed(2)} ${(c - l).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 21 21)"/>`;
         off += l;
     });
-    const shown = _stp.all ? rows : rows.slice(0, LIM);
-    const fq = _stpFq;
     const nm = n => n || t('stats_noname');
     const legend = parts.map(([v, col], i) => `<div class="stn-lr"><i style="background:${col}"></i><span>${escapeHtml(i < top5.length ? nm(top5[i][0]) : t('stats_others'))}</span><u>${Math.round(v / total * 100)}%</u></div>`).join('');
     html += `<div class="stcl-card"><div class="stn-h"><div class="stn-d"><svg viewBox="0 0 42 42" width="128" height="128">${circles}</svg><div class="stcl-hole"><b>${rows.length}</b><small>${escapeHtml(t('stats_products_count').replace(':', ''))}</small></div></div><div class="stn-lg">${legend}</div></div>`
-        + `<div class="stn-hd"><span class="stn-n">${escapeHtml(t('stp_h_item'))}</span><em>${escapeHtml(t('stp_h_qty'))}</em><b>${escapeHtml(t('stp_h_sum'))}</b></div>`
-        + shown.map(([n, v], i) => {
-            const on = _stp.open === n;
-            return `<div class="stn-it${on ? ' open' : ''}" onclick="stpOpen(${i})"><div class="stn-row"><i style="background:${i < 5 ? COLS[i] : REST}"></i><span class="stn-n">${escapeHtml(nm(n))}</span><em>${escapeHtml(fq(qty[n] || 0))}</em><b>${escapeHtml(_stNum(v))}</b></div>`
-                + (on ? `<div class="stn-dt"><div class="stn-full">${escapeHtml(nm(n))}</div><div class="stn-m"><span>${escapeHtml(t('stp_h_qty'))} <b>${escapeHtml(fq(qty[n] || 0))}</b></span><span>${escapeHtml(t('stp_h_sum'))} <b>${escapeHtml(_stNum(v))} ${escapeHtml(_stCur())}</b></span><span>${escapeHtml(t('stp_share'))} <b>${Math.round(v / total * 100)}%</b></span></div></div>` : '')
-                + '</div>';
-        }).join('')
-        + (rows.length > LIM ? `<div class="stp-more" onclick="stpToggleAll()">${escapeHtml(_stp.all ? t('stp_less') : t('stp_all').replace('{n}', rows.length))}</div>` : '')
-        + '</div>';
+        + `<input id="stpQ" class="sti-q-in" type="text" value="${escapeHtml(_stp.q || '')}" placeholder="${escapeHtml(t('stats_filter_by_name'))}" oninput="stpFilter(this.value)">`
+        + `<div class="stn-hd"><span class="stn-n">${escapeHtml(t('stp_h_item'))}</span><em>${escapeHtml(t('stp_h_qty'))}</em><b>${escapeHtml(t('stp_h_sum'))}</b></div><div id="stpRows"></div></div>`;
     body.innerHTML = html;
+    stpRows();
+}
+
+function stpRows() {
+    const box = document.getElementById('stpRows');
+    if (!box) return;
+    const { tot, qty } = _stpTotals(_stclBounds(_stp.range, _stp.from, _stp.to, 0));
+    const rows = Object.entries(tot).sort((a, b) => b[1] - a[1]);
+    const total = rows.reduce((s, [, v]) => s + v, 0);
+    const COLS = ['#5f7857', '#c9973a', '#4f7a88', '#b5574a', '#8a7fa8'], REST = '#a29c8c';
+    const rank = {}; rows.forEach(([n], i) => { rank[n] = i; });
+    const q = (_stp.q || '').trim().toLowerCase();
+    const list = q ? rows.filter(([n]) => (n || '').toLowerCase().indexOf(q) !== -1) : rows;
+    const LIM = 8, shown = (_stp.all || q) ? list : list.slice(0, LIM);
+    _stp.view = shown.map(([n]) => n);
+    const fq = _stpFq;
+    const nm = n => n || t('stats_noname');
+    box.innerHTML = shown.map(([n, v], i) => {
+        const on = _stp.open === n, ri = rank[n];
+        return `<div class="stn-it${on ? ' open' : ''}" onclick="stpOpen(${i})"><div class="stn-row"><i style="background:${ri < 5 ? COLS[ri] : REST}"></i><span class="stn-n">${escapeHtml(nm(n))}</span><em>${escapeHtml(fq(qty[n] || 0))}</em><b>${escapeHtml(_stNum(v))}</b></div>`
+            + (on ? `<div class="stn-dt"><div class="stn-full">${escapeHtml(nm(n))}</div><div class="stn-m"><span>${escapeHtml(t('stp_h_qty'))} <b>${escapeHtml(fq(qty[n] || 0))}</b></span><span>${escapeHtml(t('stp_h_sum'))} <b>${escapeHtml(_stNum(v))} ${escapeHtml(_stCur())}</b></span><span>${escapeHtml(t('stp_share'))} <b>${total > 0 ? Math.round(v / total * 100) : 0}%</b></span></div></div>` : '')
+            + '</div>';
+    }).join('')
+        + (!q && list.length > LIM ? `<div class="stp-more" onclick="stpToggleAll()">${escapeHtml(_stp.all ? t('stp_less') : t('stp_all').replace('{n}', list.length))}</div>` : '');
 }
 
 // ==================== СТРАНИЦА «РЕНТАБЕЛЬНОСТЬ» (раскрытие плитки, 31.10.2026) ====================
