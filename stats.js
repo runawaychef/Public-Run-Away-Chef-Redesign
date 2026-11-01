@@ -1094,7 +1094,7 @@ function statsRenderHome() {
 
 // ==================== СТРАНИЦА «КЛИЕНТЫ» (раскрытие широкой плитки, 31.10.2026) ====================
 // Страница в общей цепочке app-page: «Назад» (и системная «Назад» Android — см. _backHandledDetailScreens) возвращает в «Статистику».
-let _stcl = { range: 'month', from: '', to: '' };
+let _stcl = { range: 'year', from: '', to: '' };
 function _stclIso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 // Границы периода; shift 0 — выбранный, -1 — предыдущий такой же. null — «Всё»
 function _stclBounds(range, from, to, shift) {
@@ -1132,7 +1132,7 @@ function _stclOrders(bd) {
     });
 }
 function statsOpenCustomers() {
-    _stcl = { range: 'month', from: '', to: '' };   // каждый вход — снова «Месяц»
+    _stcl = { range: 'year', from: '', to: '' };   // каждый вход — «Год» (решение владельца 31.10; на остальных страницах — «Месяц»)
     openAppPage('statsCustPage');
     stclRender();
 }
