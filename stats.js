@@ -1008,9 +1008,10 @@ function statsRenderHome() {
         _stSet('stH1Foot', `<span>${escapeHtml(mLbl)}</span>${rightFoot}`);
     }
 
-    // Суммы по клиентам за месяц
+    // Суммы по клиентам за ГОД (плитка «Клиенты» — за год, как и её страница; решение владельца 31.10)
+    const yearOrders = saved.filter(o => o.date && String(o.date).slice(0, 4) === String(now.getFullYear()));
     const byCust = {};
-    month.forEach(o => { const k = o.customer || ''; byCust[k] = (byCust[k] || 0) + orderGrandTotal(o); });
+    yearOrders.forEach(o => { const k = o.customer || ''; byCust[k] = (byCust[k] || 0) + orderGrandTotal(o); });
     const custSorted = Object.entries(byCust).sort((a, b) => b[1] - a[1]);
     const custTotal = custSorted.reduce((s, [, v]) => s + v, 0);
 
@@ -1035,7 +1036,7 @@ function statsRenderHome() {
             _stSet('stHWDon', `<svg viewBox="0 0 42 42" width="92" height="92">${circles}</svg>`);
             _stSet('stHWMid', rows);
         } else { _stSet('stHWDon', ''); _stSet('stHWMid', _stNoData()); }
-        _stSet('stHWFoot', `<span>${escapeHtml(mLbl)}${custSorted.length ? ' · ' + escapeHtml(t('stats_foot_customers').replace('{n}', custSorted.length)) : ''}</span>`);
+        _stSet('stHWFoot', `<span>${escapeHtml(t('stats_foot_year'))}${custSorted.length ? ' · ' + escapeHtml(t('stats_foot_customers').replace('{n}', custSorted.length)) : ''}</span>`);
     }
 
     // 4. Топ изделий по сумме
