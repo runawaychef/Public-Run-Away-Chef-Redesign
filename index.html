@@ -2017,6 +2017,34 @@
         .docs2-grid .d2t .dc-val { flex: 1; align-items: center; margin-top: 0; min-height: 0; }
         .docs2-grid .d2t .dc-foot { border-top: 1px solid #eee9db; padding-top: 6px; margin-top: 0; }
         .docs2-grid .d2t .dc-val .dashboard-card__value { font-size: 20px; }
+        .d2chips { display: flex; gap: 8px; margin: 2px 0 10px; }
+        .d2chip { flex: 1; min-width: 0; border: 1px solid #e3ddcc; background: #fff; border-radius: 14px; padding: 8px 12px; cursor: pointer; text-align: left; font-family: inherit; }
+        .d2chip.on { border: 2px solid #7c9473; background: #eef2ea; padding: 7px 11px; }
+        .d2chip small { display: block; font-size: 11.5px; color: #6b675d; }
+        .d2chip b { font-size: 20px; font-weight: 800; color: #3c3a34; }
+        .d2chip.red b { color: #a3493d; }
+        .d2chip span { font-size: 12px; color: #6b665a; margin-left: 6px; }
+        .d2bar { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+        .d2bar select, .d2bar button { font-size: 12px; border-radius: 999px; padding: 6px 11px; background: #fff; border: 1px solid #e3ddcc; color: #4f6349; max-width: 100%; font-family: inherit; }
+        .d2bar button { margin-left: auto; cursor: pointer; }
+        .d2g { background: #fff; border-radius: 16px; box-shadow: 0 4px 10px rgba(70,58,30,0.10); margin-bottom: 10px; overflow: hidden; }
+        .d2gh { display: flex; align-items: center; gap: 8px; padding: 11px 14px; cursor: pointer; }
+        .d2gh .ch { color: #9a9488; font-size: 15px; width: 14px; text-align: center; flex-shrink: 0; }
+        .d2gh .nm { flex: 1; min-width: 0; }
+        .d2gh .nm b { display: block; font-size: 15px; color: #322f28; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .d2gh .nm small { font-size: 12px; color: #8d887b; }
+        .d2gh .sm { font-size: 16px; font-weight: 800; color: #322f28; white-space: nowrap; }
+        .d2gh .sm.red { color: #a3493d; }
+        .d2o { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-top: 1px solid #f0ebde; cursor: pointer; }
+        .d2o .l { flex: 1; min-width: 0; }
+        .d2o .a { font-size: 13.5px; font-weight: 700; color: #3c3a34; }
+        .d2o .b { font-size: 12px; color: #888; }
+        .d2o .c { font-size: 11.5px; color: #9a9488; margin-top: 1px; }
+        .d2o .r { text-align: right; flex-shrink: 0; }
+        .d2o .r b { font-size: 14px; color: #3c3a34; }
+        .d2o .r div { font-size: 11.5px; font-weight: 600; color: #6b675d; }
+        .d2o .r div.red { color: #a3493d; }
+        .d2gold { color: #96712a; font-weight: 700; }
         .docs2-grid .d2pill { margin-left: auto; background: #f1ede2; color: #6b665a; border-radius: 10px; font-size: 12px; font-weight: 700; padding: 1px 8px; flex-shrink: 0; }
         .stats-home-grid .docs2-alert { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; background: #f7efdc; color: #8a6a24;
             border-radius: 14px; padding: 9px 12px; font-size: 12.5px; font-weight: 600; cursor: pointer; }
@@ -4268,6 +4296,19 @@ function hideSplashScreen() {
                 <div id="docs2Home" class="dashboard" style="padding-top:2px;"></div>
             </div>
         </div>
+        <!-- ===== НОВЫЙ РАЗДЕЛ «Документы» — страница «Ждут оплаты / Просрочено» (1.11.2026, documents2.js) ===== -->
+        <div id="docs2WaitPage" class="app-page">
+            <div style="padding:0 2px;">
+                <div class="flex items-center gap-2 mb-2">
+                    <button onclick="closeAppPage()" class="pill-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        <span data-i18n="common_back">Назад</span>
+                    </button>
+                    <h2 class="text-gray-800" style="font-size:15px; font-weight:600; margin:0 0 0 auto;" data-i18n="docs_tile_wait">Ждут оплаты</h2>
+                </div>
+                <div id="docs2Wait" style="padding-top:2px; padding-bottom:24px;"></div>
+            </div>
+        </div>
         <!-- ===== СТРАНИЦА «Рентабельность» (раскрытие плитки в «Статистике», 31.10.2026, stats.js) — в общей цепочке страниц ===== -->
         <div id="statsMarginPage" class="app-page">
             <div style="padding:0 2px;">
@@ -4839,7 +4880,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=12"></script>
-    <script src="i18n-core.js?v=141"></script>
+    <script src="i18n-core.js?v=142"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=31"></script>
@@ -4861,7 +4902,7 @@ function hideSplashScreen() {
 <script src="confirmation.js?v=2"></script>
 <script src="payments.js?v=34"></script>
 <script src="documents.js?v=14"></script>
-<script src="documents2.js?v=12"></script>
+<script src="documents2.js?v=13"></script>
 <script src="bank.js?v=13"></script>
 <script src="stats.js?v=43"></script>
 <script src="history.js?v=9"></script>
@@ -5812,6 +5853,7 @@ const _backHandledDetailScreens = [
     { id: 'statsCustPage',      close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'docsPage',           close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'docs2HomePage',      close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
+    { id: 'docs2WaitPage',      close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'bankPage',           close: () => { if (typeof closeBankSection === 'function') closeBankSection(); } },
     { id: 'bankSettingsPage',   close: () => { if (typeof closeBankSettings === 'function') closeBankSettings(); } },
     { id: 'inventoryPage',      close: () => { if (typeof closeInventoryPage === 'function') closeInventoryPage(); } },

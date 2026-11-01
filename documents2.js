@@ -105,22 +105,23 @@ function _d2Tile(o) {
     </div>`;
 }
 
-// Остаток к оплате по документу в центах: сумма счёта минус уже внесённые платежи (как «К оплате» в Дашборде).
-// Для сводного счёта — сумма остатков по заказам, которые сейчас в нём числятся.
-function _d2Rem(d) {
-    const rem = o => {
+// ---- Неоплаченные заказы (главный документ — заказ). Считается так же, как «Ждут оплаты» в Дашборде:
+// сохранённые заказы, не оплаченные полностью; сумма — остаток (заказ минус внесённые платежи). ----
+function _d2Unpaid() {
+    const today = getLocalDateStr(0);
+    const docs = (typeof _docsAll !== 'undefined' && Array.isArray(_docsAll)) ? _docsAll : [];
+    const out = [];
+    (typeof orders !== 'undefined' ? orders : []).forEach(o => {
+        if (!isOrderSaved(o)) return;
         const st = getOrderPaymentStatus(o);
-        return Math.max(0, Math.round(st.grandAmt * 100) - Math.round(st.paidAmt * 100));
-    };
-    try {
-        if (d.kind === 'inv') return d.live ? rem(d.live) : (d.sumC || 0);
-        if (d.kind === 'cons') {
-            const ids = d.memberIds || [];
-            const ms = (typeof orders !== 'undefined' ? orders : []).filter(o => ids.indexOf(o.id) >= 0);
-            return ms.length ? ms.reduce((a, o) => a + rem(o), 0) : (d.sumC || 0);
-        }
-    } catch (e) { console.error('Документы 2: остаток', e); }
-    return d.sumC || 0;
+        if (st.status === 'paid') return;
+        const remC = Math.max(0, Math.round(st.grandAmt * 100) - Math.round(st.paidAmt * 100));
+        const cons = docs.find(x => x.kind === 'cons' && !x.cancelled && (x.memberIds || []).indexOf(o.id) >= 0) || null;
+        const inv = cons ? null : (docs.find(x => x.kind === 'inv' && x.orderId === o.id && !x.cancelled) || null);
+        out.push({ o, remC, partial: st.status === 'partial', over: !!st.overdue, due: o.due_date || null,
+            overDays: st.overdue ? _docsDayDiff(o.due_date, today) : 0, cons, inv });
+    });
+    return out;
 }
 
 function docs2RenderHome() {
@@ -130,10 +131,14 @@ function docs2RenderHome() {
     const ym = _d2Months().cur;
     const docs = (typeof _docsAll !== 'undefined' && Array.isArray(_docsAll)) ? _docsAll : [];
 
-    // ---- Документы: статусы не пересекаются (просрочено / ждут в срок / оплачены) ----
+    // ---- Неоплаченные заказы: «в срок» и «просрочено» (как в Дашборде) ----
     const over = { n: 0, c: 0, maxDays: 0 };
     const wait = { n: 0, c: 0, nextDue: null };
-        let unsent = 0, unsentC = 0, dnMonth = 0, lastDn = '', total = 0;
+    _d2Unpaid().forEach(u => {
+        if (u.over) { over.n++; over.c += u.remC; over.maxDays = Math.max(over.maxDays, u.overDays); }
+        else { wait.n++; wait.c += u.remC; if (u.due && (!wait.nextDue || u.due < wait.nextDue)) wait.nextDue = u.due; }
+    });
+    let unsent = 0, unsentC = 0, dnMonth = 0, lastDn = '', total = 0;
     // Заказы, вошедшие в действующий сводный счёт: их отдельный счёт (старые заказы) в суммах не учитываем — иначе заказ считается дважды
     const inCons = new Set();
     docs.forEach(d => { if (d.kind === 'cons' && !d.cancelled) (d.memberIds || []).forEach(id => inCons.add(id)); });
@@ -149,16 +154,7 @@ function docs2RenderHome() {
         const st = _docsInvStatus(d, today);
         if (!st) return;
         if (st.paid) return;
-        if (st.wait) {
-            if (st.over) {
-                over.n++; over.c += _d2Rem(d);
-                if (d.due) over.maxDays = Math.max(over.maxDays, _docsDayDiff(d.due, today));
-            } else {
-                wait.n++; wait.c += _d2Rem(d);
-                if (d.due && (!wait.nextDue || d.due < wait.nextDue)) wait.nextDue = d.due;
-            }
-            if (st.unsent) { unsent++; unsentC += d.sumC || 0; }
-        }
+        if (st.wait && st.unsent) { unsent++; unsentC += d.sumC || 0; }
     });
 
     // ---- Заказы без счёта (главный документ — заказ) ----
@@ -173,9 +169,9 @@ function docs2RenderHome() {
                   footL: todo.length ? t('docs2_todo_sum') : '', footR: todo.length ? plain(todoSumC) : '' }),
         _d2Tile({ color: 'dash-c-day', icon: 'alert', label: t('docs2_unsent_t'), value: String(unsent), cap: unsent ? t('docs2_unsent_cap') : '',
                   footL: unsent ? t('docs2_todo_sum') : '', footR: unsent ? plain(unsentC) : '' }),
-        _d2Tile({ color: 'dash-c-tom', icon: 'clock', label: t('docs_tile_wait'), value: _d2Money(wait.c), pill: wait.n,
+        _d2Tile({ color: 'dash-c-tom', icon: 'clock', label: t('docs_tile_wait'), value: _d2Money(wait.c), pill: wait.n, click: "openDocs2Wait('wait')",
                   footL: wait.nextDue ? t('docs2_next_due') : '', footR: shortDate(wait.nextDue) }),
-        _d2Tile({ color: 'dash-c-pay', icon: 'alert', label: t('docs_tile_over'), value: _d2Money(over.c), pill: over.n,
+        _d2Tile({ color: 'dash-c-pay', icon: 'alert', label: t('docs_tile_over'), value: _d2Money(over.c), pill: over.n, click: "openDocs2Wait('over')",
                   footL: over.n ? t('docs2_longest') : '', footR: over.n ? t('docs2_days_short').replace('{n}', over.maxDays) : '' }),
         _d2Tile({ color: 'dash-c-acc', icon: 'check', label: t('docs_tile_paid'), value: _d2Paid ? _d2Money(_d2Paid.c) : '&mdash;', pill: _d2Paid ? _d2Paid.n : '',
                   footL: _d2Paid ? t('docs2_prev_month') : '', footR: _d2Paid ? plain(_d2Paid.pc) : '' }),
@@ -187,4 +183,116 @@ function docs2RenderHome() {
 
     box.innerHTML = `<div class="dashboard-grid stats-home-grid docs2-grid">${tiles}
         <div class="sth-info"><i>i</i><ul><li>${escapeHtml(t('docs2_info'))}</li></ul></div></div>`;
+}
+
+
+// ==================== Страница «Ждут оплаты / Просрочено» (1.11.2026) ====================
+// Список неоплаченных заказов по клиентам. Клиент сворачивается/разворачивается; режим «свёрнуто/развёрнуто» запоминается.
+// Нажатие на заказ — открывает карточку заказа (оплата принимается там).
+let _d2W = { mode: 'wait', cust: '', period: '', open: new Set() };
+function _d2View() { try { return localStorage.getItem('docs2_wait_view') === 'expanded' ? 'expanded' : 'collapsed'; } catch (e) { return 'collapsed'; } }
+function _d2SetView(v) { try { localStorage.setItem('docs2_wait_view', v); } catch (e) {} }
+
+function _d2GroupKey(u) { return String(u.o.customer_id || ('n:' + (u.o.customer || ''))); }
+
+// Применить сохранённый режим к набору раскрытых клиентов (развёрнуто — все; свёрнуто — никого, кроме единственного клиента)
+function _d2ApplyView(groupKeys) {
+    _d2W.open = new Set();
+    if (_d2View() === 'expanded' || groupKeys.length === 1) groupKeys.forEach(k => _d2W.open.add(k));
+}
+
+async function openDocs2Wait(mode) {
+    if (!docs2Allowed()) return;
+    _d2W.mode = mode === 'over' ? 'over' : 'wait';
+    _d2W.cust = '';
+    _d2W.period = '';
+    openAppPage('docs2WaitPage');
+    docs2RenderWait(true);
+}
+(window._appPageOnShow = window._appPageOnShow || {}).docs2WaitPage = () => docs2RenderWait(false);
+
+function docs2WaitSet(field, v) {
+    _d2W[field] = v;
+    docs2RenderWait(true);
+}
+function docs2WaitToggle(key) {
+    if (_d2W.open.has(key)) _d2W.open.delete(key); else _d2W.open.add(key);
+    docs2RenderWait(false);
+}
+function docs2WaitToggleAll() {
+    _d2SetView(_d2View() === 'expanded' ? 'collapsed' : 'expanded');
+    docs2RenderWait(true);
+}
+function docs2OpenOrder(orderId) {
+    if (typeof closeAllAppPages === 'function') closeAllAppPages();
+    if (typeof showTab === 'function') showTab('orders');
+    if (typeof openOrderDetail === 'function') openOrderDetail(orderId);
+}
+
+function docs2RenderWait(reapplyView) {
+    const box = document.getElementById('docs2Wait');
+    if (!box) return;
+    const today = getLocalDateStr(0);
+    const all = _d2Unpaid();
+    // Фильтры клиент/период действуют на плитки-переключатели и на список; статус выбирается переключателем
+    const ymOf = u => String(u.o.date || '').slice(0, 7);
+    const base = all.filter(u => (!_d2W.cust || _d2GroupKey(u) === _d2W.cust) && (!_d2W.period || ymOf(u) === _d2W.period));
+    const wait = base.filter(u => !u.over), over = base.filter(u => u.over);
+    const sum = a => a.reduce((s, u) => s + u.remC, 0);
+    const list = _d2W.mode === 'over' ? over : wait;
+
+    // Группы по клиентам, самый большой долг сверху
+    const groups = new Map();
+    list.forEach(u => {
+        const k = _d2GroupKey(u);
+        if (!groups.has(k)) groups.set(k, { key: k, name: u.o.customer || t('orders_no_customer'), items: [], sumC: 0 });
+        const g = groups.get(k); g.items.push(u); g.sumC += u.remC;
+    });
+    const gl = [...groups.values()].sort((a, b) => b.sumC - a.sumC);
+    if (reapplyView) _d2ApplyView(gl.map(g => g.key));
+
+    // Выпадающие списки: клиенты и месяцы по всем неоплаченным заказам
+    const custMap = new Map();
+    all.forEach(u => custMap.set(_d2GroupKey(u), u.o.customer || t('orders_no_customer')));
+    const custOpts = [`<option value="">${escapeHtml(t('docs_customer_all'))}</option>`].concat(
+        [...custMap.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([k, n]) => `<option value="${escapeHtml(k)}"${k === _d2W.cust ? ' selected' : ''}>${escapeHtml(n)}</option>`));
+    const yms = [...new Set(all.map(ymOf).filter(y => /^\d{4}-\d{2}$/.test(y)))].sort().reverse();
+    const perOpts = [`<option value="">${escapeHtml(t('docs_period_all'))}</option>`].concat(
+        yms.map(ym => `<option value="${ym}"${ym === _d2W.period ? ' selected' : ''}>${escapeHtml(_docsMonthLabel(ym))}</option>`));
+
+    const chip = (mode, label, arr, red) => `<button type="button" class="d2chip${_d2W.mode === mode ? ' on' : ''}${red ? ' red' : ''}" onclick="docs2WaitSet('mode','${mode}')">
+        <small>${escapeHtml(label)}</small><b>${arr.length}</b><span>${escapeHtml(formatMoney(sum(arr) / 100))}</span></button>`;
+    const expanded = _d2View() === 'expanded';
+
+    const row = u => {
+        const o = u.o;
+        const doc = u.cons ? t('docs2_in_cons').replace('{n}', u.cons.number) : (u.inv ? u.inv.number : t('docs2_no_inv'));
+        const d = u.cons || u.inv;
+        const gold = x => `<span class="d2gold">${escapeHtml(x)}</span>`;
+        let st = '';
+        if (d) st = d.sentAt ? escapeHtml(t('docs_sent_on').replace('{d}', _docsShortDate(d.sentAt))) : gold(t('docs_not_sent_cap'));
+        if (u.partial) st += (st ? ' · ' : '') + gold(t('docs_partial'));
+        let due = '';
+        if (u.over) due = `<div class="red">${escapeHtml(t('docs_overdue_days').replace('{n}', u.overDays))}</div>`;
+        else if (u.due) due = `<div>${escapeHtml(t('docs_due_till').replace('{d}', _docsShortDate(u.due + 'T12:00:00')))}</div>`;
+        return `<div class="d2o" onclick="docs2OpenOrder(${o.id})"><div class="l">
+            <div class="a">${escapeHtml(t('docs2_order').replace('{n}', o.order_number || ('#' + o.id)))}</div>
+            <div class="b">${escapeHtml(formatDateDMY(o.date))} · ${escapeHtml(doc)}</div>
+            ${st ? `<div class="c">${st}</div>` : ''}</div>
+            <div class="r"><b>${escapeHtml(formatMoney(u.remC / 100))}</b>${due}</div></div>`;
+    };
+    const order = (a, b) => String(a.due || '9999').localeCompare(String(b.due || '9999')) || String(a.o.date).localeCompare(String(b.o.date));
+    const groupHtml = gl.map(g => {
+        const open = _d2W.open.has(g.key);
+        const body = open ? g.items.slice().sort(order).map(row).join('') : '';
+        return `<div class="d2g"><div class="d2gh" onclick="docs2WaitToggle(this.getAttribute('data-k'))" data-k="${escapeHtml(g.key)}">
+            <span class="ch">${open ? '&#8964;' : '&rsaquo;'}</span>
+            <div class="nm"><b>${escapeHtml(g.name)}</b><small>${g.items.length} ${escapeHtml(nWord(g.items.length, 'word_orders'))}</small></div>
+            <span class="sm${_d2W.mode === 'over' ? ' red' : ''}">${escapeHtml(formatMoney(g.sumC / 100))}</span></div>${body}</div>`;
+    }).join('');
+
+    box.innerHTML = `<div class="d2chips">${chip('wait', t('docs2_in_term'), wait, false)}${chip('over', t('docs_tile_over'), over, true)}</div>
+        <div class="d2bar"><select onchange="docs2WaitSet('cust', this.value)">${custOpts.join('')}</select><select onchange="docs2WaitSet('period', this.value)">${perOpts.join('')}</select>
+        <button type="button" onclick="docs2WaitToggleAll()">${escapeHtml(t(expanded ? 'docs2_collapse' : 'docs2_expand'))}</button></div>
+        ${gl.length ? groupHtml : `<p style="font-size:13px; color:#9a9488; margin:24px 0; text-align:center;">${escapeHtml(t('docs2_wait_empty'))}</p>`}`;
 }
