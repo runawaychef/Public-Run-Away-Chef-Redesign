@@ -150,7 +150,13 @@ function docs2Debug() {
         });
         cov.forEach(id => { if (!bIds.has(id)) covNotB++; });
         const m = c => formatMoney(c / 100);
-        showInfo('Счета: ' + nInv + ' шт ' + m(dInv) + ' | сводные: ' + nCons + ' шт ' + m(dCons) + ' | полная сумма документов: ' + m(fullAll)
+        // Заказы, которые попали сразу в счёт и в сводный
+        const consOf = {};
+        docs.forEach(d => { if (d.kind === 'cons') { const st = _docsInvStatus(d, today); if (st && st.wait) (d.memberIds || []).forEach(id => { consOf[id] = d.number; }); } });
+        const dup = [];
+        docs.forEach(d => { if (d.kind === 'inv') { const st = _docsInvStatus(d, today); if (st && st.wait && consOf[d.orderId]) dup.push(d.number + ' (' + m(_d2Rem(d)) + ') в ' + consOf[d.orderId]); } });
+        console.log('docs2 dup', dup);
+        showInfo('Дубли счёт+сводный: ' + dup.length + (dup.length ? ' — ' + dup.join('; ') : '') + ' || ' +'Счета: ' + nInv + ' шт ' + m(dInv) + ' | сводные: ' + nCons + ' шт ' + m(dCons) + ' | полная сумма документов: ' + m(fullAll)
             + ' || Дашборд: ' + bN + ' зак ' + m(bSum) + ' | из них без документа: ' + cN + ' зак ' + m(cSum)
             + ' | заказов в документах, но не в Дашборде: ' + covNotB);
     } catch (e) { showInfo('debug error: ' + e.message); }
