@@ -118,8 +118,11 @@ function _d2Unpaid() {
         const remC = Math.max(0, Math.round(st.grandAmt * 100) - Math.round(st.paidAmt * 100));
         const cons = docs.find(x => x.kind === 'cons' && !x.cancelled && (x.memberIds || []).indexOf(o.id) >= 0) || null;
         const inv = cons ? null : (docs.find(x => x.kind === 'inv' && x.orderId === o.id && !x.cancelled) || null);
-        out.push({ o, remC, partial: st.status === 'partial', over: !!st.overdue, due: o.due_date || null,
-            overDays: st.overdue ? _docsDayDiff(o.due_date, today) : 0, cons, inv });
+        // Срок оплаты: у выставленного счёта — срок из документа (сводного или обычного), иначе срок, заданный в заказе
+        const due = (cons && cons.due) || (inv && inv.due) || o.due_date || null;
+        const over = !!due && due < today;
+        out.push({ o, remC, partial: st.status === 'partial', over, due,
+            overDays: over ? _docsDayDiff(due, today) : 0, cons, inv });
     });
     return out;
 }
