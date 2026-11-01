@@ -1366,6 +1366,7 @@ I18N.uk = {
         docs_open_order: 'Відкрити замовлення',
         docs_all_of_customer: 'Усі документи клієнта',
         docs2_todo_cap: 'замовлень без рахунку',
+        docs2_todo_ok: 'усі замовлення мають рахунки',
         docs2_todo_sum: 'на суму',
         docs2_next_due: 'найближчий термін',
         docs2_longest: 'найдовше',

@@ -175,8 +175,8 @@ function docs2RenderHome() {
     const shortDate = iso => { const p = String(iso || '').split('-'); return p.length === 3 ? p[2] + '.' + p[1] : ''; };
 
     const tiles = [
-        _d2Tile({ color: 'dash-c-day', icon: 'plus', label: t('docs_tab_todo'), value: String(todo.length), click: "openDocs2Todo()", cap: todo.length ? t('docs2_todo_cap') : t('docs_todo_empty'),
-                  footL: todo.length ? t('docs2_todo_sum') : '', footR: todo.length ? plain(todoSumC) : '' }),
+        _d2Tile({ color: 'dash-c-day', icon: 'plus', label: t('docs_tab_todo'), value: String(todo.length), click: "openDocs2Todo()", cap: todo.length ? t('docs2_todo_cap') : '',
+                  footL: todo.length ? t('docs2_todo_sum') : t('docs2_todo_ok'), footR: todo.length ? plain(todoSumC) : '' }),
         _d2Tile({ color: 'dash-c-day', icon: 'alert', label: t('docs2_unsent_t'), value: String(unsent), click: "openDocs2Unsent()", cap: unsent ? t('docs2_unsent_cap') : '',
                   footL: unsent ? t('docs2_todo_sum') : '', footR: unsent ? plain(unsentC) : '' }),
         _d2Tile({ color: 'dash-c-tom', icon: 'clock', label: t('docs_tile_wait'), value: _d2Money(wait.c + over.c), pill: wait.n + over.n, click: "openDocs2Wait('all')",

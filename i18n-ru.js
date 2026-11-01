@@ -1367,6 +1367,7 @@ I18N.ru = {
         docs_open_order: 'Открыть заказ',
         docs_all_of_customer: 'Все документы клиента',
         docs2_todo_cap: 'заказов без счёта',
+        docs2_todo_ok: 'все заказы со счетами',
         docs2_todo_sum: 'на сумму',
         docs2_next_due: 'ближайший срок',
         docs2_longest: 'дольше всех',

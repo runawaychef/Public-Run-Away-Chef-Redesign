@@ -1368,6 +1368,7 @@ I18N.en = {
         docs_open_order: 'Open order',
         docs_all_of_customer: 'All customer documents',
         docs2_todo_cap: 'orders without an invoice',
+        docs2_todo_ok: 'all orders have invoices',
         docs2_todo_sum: 'total',
         docs2_next_due: 'nearest due date',
         docs2_longest: 'longest',

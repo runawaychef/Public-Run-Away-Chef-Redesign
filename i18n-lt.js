@@ -1366,6 +1366,7 @@ I18N.lt = {
         docs_open_order: 'Atidaryti užsakymą',
         docs_all_of_customer: 'Visi kliento dokumentai',
         docs2_todo_cap: 'užsakymų be sąskaitos',
+        docs2_todo_ok: 'visi užsakymai turi sąskaitas',
         docs2_todo_sum: 'suma',
         docs2_next_due: 'artimiausias terminas',
         docs2_longest: 'ilgiausiai',
