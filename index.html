@@ -2024,9 +2024,11 @@
         .d2chip b { font-size: 20px; font-weight: 800; color: #3c3a34; }
         .d2chip.red b { color: #a3493d; }
         .d2chip span { font-size: 12px; color: #6b665a; margin-left: 6px; }
-        .d2bar { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
-        .d2bar select, .d2bar button { font-size: 12px; border-radius: 999px; padding: 6px 11px; background: #fff; border: 1px solid #e3ddcc; color: #4f6349; max-width: 100%; font-family: inherit; }
-        .d2bar button { margin-left: auto; cursor: pointer; }
+        #docs2WaitBar { --tb: 34px; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+        #docs2WaitBar .view-toggle-pill { padding: 3px; gap: 1px; border: 1px solid rgba(90,75,40,0.06); box-shadow: 0 6px 12px -6px rgba(70,58,30,0.35), 0 1px 2px rgba(70,58,30,0.1); }
+        #docs2WaitBar .view-toggle-btn { width: var(--tb); height: var(--tb); }
+        #docs2WaitBar .view-toggle-btn svg { width: 20px; height: 20px; }
+        #docs2WaitBar .view-toggle-btn.active, #docs2WaitBar .view-toggle-btn.is-open { background: #e3ebdf; color: #4f6349; }
         .d2g { background: #fff; border-radius: 16px; box-shadow: 0 4px 10px rgba(70,58,30,0.10); margin-bottom: 10px; overflow: hidden; }
         .d2gh { display: flex; align-items: center; gap: 8px; padding: 11px 14px; cursor: pointer; }
         .d2gh .ch { color: #9a9488; font-size: 15px; width: 14px; text-align: center; flex-shrink: 0; }
@@ -4307,6 +4309,9 @@ function hideSplashScreen() {
                     <h2 class="text-gray-800" style="font-size:15px; font-weight:600; margin:0 0 0 auto;" data-i18n="docs_tile_wait">Ждут оплаты</h2>
                 </div>
                 <div id="docs2Wait" style="padding-top:2px; padding-bottom:24px;"></div>
+                <!-- Выпадающие списки фильтров (механизм «Заказов»: toggleFilterDropdown → портал) -->
+                <div id="docs2DdCust" class="filter-dropdown hidden" style="left:0; right:auto; min-width:230px;"></div>
+                <div id="docs2DdPer" class="filter-dropdown hidden" style="left:0; right:auto; min-width:200px;"></div>
             </div>
         </div>
         <!-- ===== СТРАНИЦА «Рентабельность» (раскрытие плитки в «Статистике», 31.10.2026, stats.js) — в общей цепочке страниц ===== -->
@@ -4902,7 +4907,7 @@ function hideSplashScreen() {
 <script src="confirmation.js?v=2"></script>
 <script src="payments.js?v=34"></script>
 <script src="documents.js?v=14"></script>
-<script src="documents2.js?v=13"></script>
+<script src="documents2.js?v=14"></script>
 <script src="bank.js?v=13"></script>
 <script src="stats.js?v=43"></script>
 <script src="history.js?v=9"></script>

@@ -189,6 +189,12 @@ function docs2RenderHome() {
 // ==================== Страница «Ждут оплаты / Просрочено» (1.11.2026) ====================
 // Список неоплаченных заказов по клиентам. Клиент сворачивается/разворачивается; режим «свёрнуто/развёрнуто» запоминается.
 // Нажатие на заказ — открывает карточку заказа (оплата принимается там).
+const _D2_BAR_ICONS = {
+    cust: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.5a3.5 3.5 0 010 7M18 14.5c2 .7 3.5 2.4 3.5 5.5"/></svg>',
+    per:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+    exp:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8l5-5 5 5M7 16l5 5 5-5"/></svg>',
+    col:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4l5 5 5-5M7 20l5-5 5 5"/></svg>'
+};
 let _d2W = { mode: 'wait', cust: '', period: '', open: new Set() };
 function _d2View() { try { return localStorage.getItem('docs2_wait_view') === 'expanded' ? 'expanded' : 'collapsed'; } catch (e) { return 'collapsed'; } }
 function _d2SetView(v) { try { localStorage.setItem('docs2_wait_view', v); } catch (e) {} }
@@ -214,6 +220,10 @@ async function openDocs2Wait(mode) {
 function docs2WaitSet(field, v) {
     _d2W[field] = v;
     docs2RenderWait(true);
+}
+function docs2WaitPick(field, v) {
+    if (typeof closeAllFilterDropdowns === 'function') closeAllFilterDropdowns();
+    docs2WaitSet(field === 'per' ? 'period' : 'cust', v);
 }
 function docs2WaitToggle(key) {
     if (_d2W.open.has(key)) _d2W.open.delete(key); else _d2W.open.add(key);
@@ -251,14 +261,17 @@ function docs2RenderWait(reapplyView) {
     const gl = [...groups.values()].sort((a, b) => b.sumC - a.sumC);
     if (reapplyView) _d2ApplyView(gl.map(g => g.key));
 
-    // Выпадающие списки: клиенты и месяцы по всем неоплаченным заказам
+    // Выпадающие списки (механизм «Заказов»): клиенты и месяцы по всем неоплаченным заказам, выбор один
     const custMap = new Map();
     all.forEach(u => custMap.set(_d2GroupKey(u), u.o.customer || t('orders_no_customer')));
-    const custOpts = [`<option value="">${escapeHtml(t('docs_customer_all'))}</option>`].concat(
-        [...custMap.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([k, n]) => `<option value="${escapeHtml(k)}"${k === _d2W.cust ? ' selected' : ''}>${escapeHtml(n)}</option>`));
+    const CHK = '<svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>';
+    const opt = (field, v, label, sel) => `<div class="status-option${sel ? ' selected' : ''}" data-v="${escapeHtml(v)}" onclick="docs2WaitPick('${field}', this.getAttribute('data-v'))"><span>${escapeHtml(label)}</span>${CHK}</div>`;
+    const ddC = document.getElementById('docs2DdCust'), ddP = document.getElementById('docs2DdPer');
+    if (ddC) ddC.innerHTML = opt('cust', '', t('docs_customer_all'), !_d2W.cust)
+        + [...custMap.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([k, n]) => opt('cust', k, n, k === _d2W.cust)).join('');
     const yms = [...new Set(all.map(ymOf).filter(y => /^\d{4}-\d{2}$/.test(y)))].sort().reverse();
-    const perOpts = [`<option value="">${escapeHtml(t('docs_period_all'))}</option>`].concat(
-        yms.map(ym => `<option value="${ym}"${ym === _d2W.period ? ' selected' : ''}>${escapeHtml(_docsMonthLabel(ym))}</option>`));
+    if (ddP) ddP.innerHTML = opt('per', '', t('docs_period_all'), !_d2W.period)
+        + yms.map(ym => opt('per', ym, _docsMonthLabel(ym), ym === _d2W.period)).join('');
 
     const chip = (mode, label, arr, red) => `<button type="button" class="d2chip${_d2W.mode === mode ? ' on' : ''}${red ? ' red' : ''}" onclick="docs2WaitSet('mode','${mode}')">
         <small>${escapeHtml(label)}</small><b>${arr.length}</b><span>${escapeHtml(formatMoney(sum(arr) / 100))}</span></button>`;
@@ -292,7 +305,9 @@ function docs2RenderWait(reapplyView) {
     }).join('');
 
     box.innerHTML = `<div class="d2chips">${chip('wait', t('docs2_in_term'), wait, false)}${chip('over', t('docs_tile_over'), over, true)}</div>
-        <div class="d2bar"><select onchange="docs2WaitSet('cust', this.value)">${custOpts.join('')}</select><select onchange="docs2WaitSet('period', this.value)">${perOpts.join('')}</select>
-        <button type="button" onclick="docs2WaitToggleAll()">${escapeHtml(t(expanded ? 'docs2_collapse' : 'docs2_expand'))}</button></div>
+        <div id="docs2WaitBar"><div class="view-toggle-pill">
+            <button type="button" class="view-toggle-btn${_d2W.cust ? ' active' : ''}" onclick="toggleFilterDropdown('docs2DdCust')" title="${escapeHtml(t('stats_all_customers_short'))}">${_D2_BAR_ICONS.cust}</button>
+            <button type="button" class="view-toggle-btn${_d2W.period ? ' active' : ''}" onclick="toggleFilterDropdown('docs2DdPer')" title="${escapeHtml(t('orders_period'))}">${_D2_BAR_ICONS.per}</button></div>
+            <div class="view-toggle-pill"><button type="button" class="view-toggle-btn${expanded ? ' active' : ''}" onclick="docs2WaitToggleAll()" title="${escapeHtml(t(expanded ? 'docs2_collapse' : 'docs2_expand'))}">${expanded ? _D2_BAR_ICONS.col : _D2_BAR_ICONS.exp}</button></div></div>
         ${gl.length ? groupHtml : `<p style="font-size:13px; color:#9a9488; margin:24px 0; text-align:center;">${escapeHtml(t('docs2_wait_empty'))}</p>`}`;
 }
