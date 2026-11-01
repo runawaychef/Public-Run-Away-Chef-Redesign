@@ -1368,6 +1368,7 @@ I18N.uk = {
         docs2_todo_cap: 'замовлень без рахунку',
         docs2_todo_sum: 'на суму',
         docs2_docs_n: 'Документів: {n}',
+        docs2_pays_n: 'Платежів: {n}',
         docs2_next_due: 'найближчий термін',
         docs2_longest: 'найдовше',
         docs2_days_short: '{n} дн.',

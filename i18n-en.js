@@ -1370,6 +1370,7 @@ I18N.en = {
         docs2_todo_cap: 'orders without an invoice',
         docs2_todo_sum: 'total',
         docs2_docs_n: 'Documents: {n}',
+        docs2_pays_n: 'Payments: {n}',
         docs2_next_due: 'nearest due date',
         docs2_longest: 'longest',
         docs2_days_short: '{n} d',

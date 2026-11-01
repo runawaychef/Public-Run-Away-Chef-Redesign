@@ -1369,6 +1369,7 @@ I18N.ru = {
         docs2_todo_cap: 'заказов без счёта',
         docs2_todo_sum: 'на сумму',
         docs2_docs_n: 'Документов: {n}',
+        docs2_pays_n: 'Платежей: {n}',
         docs2_next_due: 'ближайший срок',
         docs2_longest: 'дольше всех',
         docs2_days_short: '{n} дн.',

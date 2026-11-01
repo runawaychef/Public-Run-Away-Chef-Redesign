@@ -1368,6 +1368,7 @@ I18N.lt = {
         docs2_todo_cap: 'užsakymų be sąskaitos',
         docs2_todo_sum: 'suma',
         docs2_docs_n: 'Dokumentų: {n}',
+        docs2_pays_n: 'Mokėjimų: {n}',
         docs2_next_due: 'artimiausias terminas',
         docs2_longest: 'ilgiausiai',
         docs2_days_short: '{n} d.',
