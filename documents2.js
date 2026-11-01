@@ -150,7 +150,7 @@ function docs2RenderHome() {
         _d2Tile({ color: 'dash-c-day', icon: 'plus', label: t('docs_tab_todo'), value: String(todo.length), cap: todo.length ? t('docs2_todo_cap') : t('docs_todo_empty'),
                   footL: todo.length ? t('docs2_todo_sum') : '', footR: todo.length ? plain(todoSumC) : '' }),
         _d2Tile({ color: 'dash-c-day', icon: 'alert', label: t('docs2_unsent_t'), value: String(unsent), cap: unsent ? t('docs2_unsent_cap') : '',
-                  footL: unsent ? t('docs2_todo_sum') : '', footR: unsent ? plain(unsentC) : '', cls: unsent ? 'd2warm' : '' }),
+                  footL: unsent ? t('docs2_todo_sum') : '', footR: unsent ? plain(unsentC) : '' }),
         _d2Tile({ color: 'dash-c-tom', icon: 'clock', label: t('docs_tile_wait'), value: _d2Money(wait.c), pill: wait.n,
                   footL: wait.nextDue ? t('docs2_next_due') : '', footR: shortDate(wait.nextDue) }),
         _d2Tile({ color: 'dash-c-pay', icon: 'alert', label: t('docs_tile_over'), value: _d2Money(over.c), pill: over.n,
