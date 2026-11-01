@@ -1549,7 +1549,12 @@ function stiPickRange(ev) {
         onApply: function (f, to) { _sti.range = 'custom'; _sti.from = f; _sti.to = to; _sti.all = false; _sti.open = null; stiLoad(); }
     });
 }
-function stiSetSort(s) { _sti.sort = s; _sti.all = false; _sti.open = null; stiRows(); }
+function stiSetSort(s) {
+    _sti.sort = s; _sti.all = false; _sti.open = null;
+    const seg = document.getElementById('stiSeg');
+    if (seg) { const bs = seg.querySelectorAll('button'); if (bs.length > 1) { bs[0].classList.toggle('on', s !== 'qty'); bs[1].classList.toggle('on', s === 'qty'); } }
+    stiRows();
+}
 function stiToggleAll() { _sti.all = !_sti.all; stiRows(); }
 function stiFilter(v) { _sti.q = v || ''; _sti.open = null; stiRows(); }
 function stiOpen(i) { const k = (_sti.view || [])[i]; _sti.open = (_sti.open === k) ? null : k; stiRows(); }
@@ -1568,9 +1573,9 @@ function stiRows() {
     const cur = _stCur(), fq = _stpFq;
     const nm = n => n || t('stats_noname');
     box.innerHTML = shown.map((r, i) => {
-        const on = _sti.open === r.key, ri = rank[r.key], u = r.unit ? ' ' + r.unit : '';
+        const on = _sti.open === r.key, ri = rank[r.key], ua = r.unit ? (typeof unitAbbrev === 'function' ? unitAbbrev(r.unit) : r.unit) : '', u = ua ? ' ' + ua : '';
         return `<div class="stn-it${on ? ' open' : ''}" onclick="stiOpen(${i})"><div class="stn-row"><i style="background:${ri < 5 ? COLS[ri] : REST}"></i><span class="stn-n">${escapeHtml(nm(r.name))}</span><em class="sti-q">${escapeHtml(fq(r.qty) + u)}</em><b>${escapeHtml(_stNum(r.cost))}</b></div>`
-            + (on ? `<div class="stn-dt"><div class="stn-full">${escapeHtml(nm(r.name))}</div><div class="stn-m"><span>${escapeHtml(t('stp_h_qty'))} <b>${escapeHtml(fq(r.qty) + u)}</b></span><span>${escapeHtml(t('stp_h_sum'))} <b>${escapeHtml(_stNum(r.cost))} ${escapeHtml(cur)}</b></span><span>${escapeHtml(t('stp_share'))} <b>${total > 0 ? Math.round(r.cost / total * 100) : 0}%</b></span>${r.qty > 0 ? `<span>${escapeHtml(t('ing_avg'))} <b>${escapeHtml(_smFmt2(r.cost / r.qty))} ${escapeHtml(cur)}${r.unit ? '/' + escapeHtml(r.unit) : ''}</b></span>` : ''}</div></div>` : '')
+            + (on ? `<div class="stn-dt"><div class="stn-full">${escapeHtml(nm(r.name))}</div><div class="stn-m"><span>${escapeHtml(t('stp_h_qty'))} <b>${escapeHtml(fq(r.qty) + u)}</b></span><span>${escapeHtml(t('stp_h_sum'))} <b>${escapeHtml(_stNum(r.cost))} ${escapeHtml(cur)}</b></span><span>${escapeHtml(t('stp_share'))} <b>${total > 0 ? Math.round(r.cost / total * 100) : 0}%</b></span>${r.qty > 0 ? `<span>${escapeHtml(t('ing_avg'))} <b>${escapeHtml(_smFmt2(r.cost / r.qty))} ${escapeHtml(cur)}${ua ? '/' + escapeHtml(ua) : ''}</b></span>` : ''}</div></div>` : '')
             + '</div>';
     }).join('')
         + (!q && list.length > LIM ? `<div class="stp-more" onclick="stiToggleAll()">${escapeHtml(_sti.all ? t('stp_less') : t('stp_all').replace('{n}', list.length))}</div>` : '');
@@ -1619,7 +1624,7 @@ function stiRender() {
     const qs = _sti.sort === 'qty';
     html += `<div class="stcl-card"><div class="stn-h"><div class="stn-d"><svg viewBox="0 0 42 42" width="128" height="128">${circles}</svg><div class="stcl-hole"><b>${rows.length}</b><small>${escapeHtml(t('ing_hole'))}</small></div></div><div class="stn-lg">${legend}</div></div>`
         + `<input id="stiQ" class="sti-q-in" type="text" value="${escapeHtml(_sti.q || '')}" placeholder="${escapeHtml(t('stats_filter_by_name'))}" oninput="stiFilter(this.value)">`
-        + `<div class="stp-seg"><button class="${qs ? '' : 'on'}" onclick="stiSetSort('cost')">${escapeHtml(t('ing_by_cost'))}</button><button class="${qs ? 'on' : ''}" onclick="stiSetSort('qty')">${escapeHtml(t('ing_by_qty'))}</button></div>`
+        + `<div class="stp-seg" id="stiSeg"><button class="${qs ? '' : 'on'}" onclick="stiSetSort('cost')">${escapeHtml(t('ing_by_cost'))}</button><button class="${qs ? 'on' : ''}" onclick="stiSetSort('qty')">${escapeHtml(t('ing_by_qty'))}</button></div>`
         + `<div class="stn-hd"><span class="stn-n">${escapeHtml(t('ing_h_item'))}</span><em class="sti-q">${escapeHtml(t('stp_h_qty'))}</em><b>${escapeHtml(t('stp_h_sum'))}</b></div><div id="stiRows"></div></div>`;
     body.innerHTML = html;
     stiRows();
