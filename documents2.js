@@ -105,6 +105,24 @@ function _d2Tile(o) {
     </div>`;
 }
 
+// Остаток к оплате по документу в центах: сумма счёта минус уже внесённые платежи (как «К оплате» в Дашборде).
+// Для сводного счёта — сумма остатков по заказам, которые сейчас в нём числятся.
+function _d2Rem(d) {
+    const rem = o => {
+        const st = getOrderPaymentStatus(o);
+        return Math.max(0, Math.round(st.grandAmt * 100) - Math.round(st.paidAmt * 100));
+    };
+    try {
+        if (d.kind === 'inv') return d.live ? rem(d.live) : (d.sumC || 0);
+        if (d.kind === 'cons') {
+            const ids = d.memberIds || [];
+            const ms = (typeof orders !== 'undefined' ? orders : []).filter(o => ids.indexOf(o.id) >= 0);
+            return ms.length ? ms.reduce((a, o) => a + rem(o), 0) : (d.sumC || 0);
+        }
+    } catch (e) { console.error('Документы 2: остаток', e); }
+    return d.sumC || 0;
+}
+
 function docs2RenderHome() {
     const box = document.getElementById('docs2Home');
     if (!box) return;
@@ -129,10 +147,10 @@ function docs2RenderHome() {
         if (st.paid) return;
         if (st.wait) {
             if (st.over) {
-                over.n++; over.c += d.sumC || 0;
+                over.n++; over.c += _d2Rem(d);
                 if (d.due) over.maxDays = Math.max(over.maxDays, _docsDayDiff(d.due, today));
             } else {
-                wait.n++; wait.c += d.sumC || 0;
+                wait.n++; wait.c += _d2Rem(d);
                 if (d.due && (!wait.nextDue || d.due < wait.nextDue)) wait.nextDue = d.due;
             }
             if (st.unsent) { unsent++; unsentC += d.sumC || 0; }
