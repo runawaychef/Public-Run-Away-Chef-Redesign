@@ -171,7 +171,7 @@ function docs2RenderHome() {
         _d2Tile({ color: 'dash-c-pay', icon: 'alert', label: t('docs_tile_over'), value: _d2Money(over.c), mid: nDocs(over.n),
                   footL: over.n ? t('docs2_longest') : '', footR: over.n ? t('docs2_days_short').replace('{n}', over.maxDays) : '' }),
         _d2Tile({ color: 'dash-c-acc', icon: 'check', label: t('docs_tile_paid'), value: _d2Paid ? _d2Money(_d2Paid.c) : '&mdash;', mid: _d2Paid ? t('docs2_pays_n').replace('{n}', _d2Paid.n) : '',
-                  footL: _d2Paid ? t('docs2_prev_month') : '', footR: _d2Paid ? _d2Money(_d2Paid.pc) : '' }),
+                  footL: _d2Paid ? t('docs2_prev_month') : '', footR: _d2Paid ? formatMoney(_d2Paid.pc / 100) : '' }),
         _d2Tile({ color: 'dash-c-stock', icon: 'dn', label: t('docs_type_dn'), value: String(dnMonth), mid: t('docs2_this_month'),
                   footL: lastDn ? t('docs2_last') : '', footR: lastDn }),
         _d2Tile({ color: 'dash-c-rev', icon: 'all', label: t('docs2_all'), value: String(total), mid: t('docs2_all_sub'), footL: t('docs2_total') }),

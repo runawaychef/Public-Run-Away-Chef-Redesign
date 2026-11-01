@@ -1373,7 +1373,7 @@ I18N.uk = {
         docs2_longest: 'найдовше',
         docs2_days_short: '{n} дн.',
         docs2_this_month: 'цього місяця',
-        docs2_prev_month: 'минулого місяця',
+        docs2_prev_month: 'минулий міс.',
         docs2_last: 'остання',
         docs2_all: 'Усі документи',
         docs2_all_sub: 'рахунки та накладні',

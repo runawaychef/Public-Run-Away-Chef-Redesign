@@ -1374,7 +1374,7 @@ I18N.ru = {
         docs2_longest: 'дольше всех',
         docs2_days_short: '{n} дн.',
         docs2_this_month: 'в этом месяце',
-        docs2_prev_month: 'прошлый месяц',
+        docs2_prev_month: 'прошлый мес.',
         docs2_last: 'последняя',
         docs2_all: 'Все документы',
         docs2_all_sub: 'счета и накладные',

@@ -1373,7 +1373,7 @@ I18N.lt = {
         docs2_longest: 'ilgiausiai',
         docs2_days_short: '{n} d.',
         docs2_this_month: 'šį mėnesį',
-        docs2_prev_month: 'praėjusį mėnesį',
+        docs2_prev_month: 'praėjęs mėn.',
         docs2_last: 'paskutinis',
         docs2_all: 'Visi dokumentai',
         docs2_all_sub: 'sąskaitos ir važtaraščiai',
