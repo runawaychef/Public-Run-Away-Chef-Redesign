@@ -1056,7 +1056,10 @@ function statsRenderHome() {
     if (canCost) {
         const profit = month.reduce((s, o) => s + orderProfit(o), 0);
         const base = month.reduce((s, o) => s + orderAfterDiscount(o), 0);
-        const withRecipe = products.filter(p => (p.ingredients || []).length > 0 && p.price)
+        // только изделия, проданные в этом месяце (нет заказов — нет и списка)
+        const soldIds = new Set(), soldNames = new Set();
+        month.forEach(o => (o.items || []).forEach(it => { if (it.product_id != null) soldIds.add(it.product_id); if (it.product) soldNames.add(it.product); }));
+        const withRecipe = products.filter(p => (p.ingredients || []).length > 0 && p.price && (soldIds.has(p.id) || soldNames.has(p.name)))
             .sort((a, b) => productProfitPct(b) - productProfitPct(a)).slice(0, 3);
         _stSet('stH5Val', base > 0 ? `${Math.round(profit / base * 100)}<small>%</small>` : '—');
         _stSet('stH5Cap', escapeHtml(t('stats_cap_margin')));
