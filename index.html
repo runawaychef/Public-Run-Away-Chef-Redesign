@@ -4343,7 +4343,7 @@ function hideSplashScreen() {
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
                         <span data-i18n="common_back">Назад</span>
                     </button>
-                    <h2 class="text-gray-800" style="font-size:15px; font-weight:600; margin:0 0 0 auto;" data-i18n="docs_tab_todo">К выставлению</h2>
+                    <h2 class="text-gray-800" style="font-size:15px; font-weight:600; margin:0 0 0 auto;" data-i18n="docs2_todo_t">Без счёта</h2>
                 </div>
                 <div id="docs2Todo" style="padding-top:2px; padding-bottom:24px;"></div>
                 <div id="docs2TdCust" class="filter-dropdown hidden" style="left:0; right:auto; min-width:230px;"></div>
@@ -4363,6 +4363,21 @@ function hideSplashScreen() {
                 <div id="docs2Unsent" style="padding-top:2px; padding-bottom:24px;"></div>
                 <div id="docs2UdCust" class="filter-dropdown hidden" style="left:0; right:auto; min-width:230px;"></div>
                 <div id="docs2UdPer" class="filter-dropdown hidden" style="left:0; right:auto; min-width:200px;"></div>
+            </div>
+        </div>
+        <!-- ===== НОВЫЙ РАЗДЕЛ «Документы» — страница «Накладные» (1.11.2026, documents2.js) ===== -->
+        <div id="docs2DnPage" class="app-page">
+            <div style="padding:0 2px;">
+                <div class="flex items-center gap-2 mb-2">
+                    <button onclick="closeAppPage()" class="pill-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        <span data-i18n="common_back">Назад</span>
+                    </button>
+                    <h2 class="text-gray-800" style="font-size:15px; font-weight:600; margin:0 0 0 auto;" data-i18n="docs_type_dn">Накладные</h2>
+                </div>
+                <div id="docs2Dn" style="padding-top:2px; padding-bottom:24px;"></div>
+                <div id="docs2DnCust" class="filter-dropdown hidden" style="left:0; right:auto; min-width:230px;"></div>
+                <div id="docs2DnPer" class="filter-dropdown hidden" style="left:0; right:auto; min-width:200px;"></div>
             </div>
         </div>
         <!-- ===== СТРАНИЦА «Рентабельность» (раскрытие плитки в «Статистике», 31.10.2026, stats.js) — в общей цепочке страниц ===== -->
@@ -4936,7 +4951,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=12"></script>
-    <script src="i18n-core.js?v=147"></script>
+    <script src="i18n-core.js?v=148"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=31"></script>
@@ -4958,7 +4973,7 @@ function hideSplashScreen() {
 <script src="confirmation.js?v=2"></script>
 <script src="payments.js?v=34"></script>
 <script src="documents.js?v=14"></script>
-<script src="documents2.js?v=21"></script>
+<script src="documents2.js?v=22"></script>
 <script src="bank.js?v=13"></script>
 <script src="stats.js?v=43"></script>
 <script src="history.js?v=9"></script>
@@ -5913,6 +5928,7 @@ const _backHandledDetailScreens = [
     { id: 'docs2PaidPage',      close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'docs2TodoPage',      close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'docs2UnsentPage',      close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
+    { id: 'docs2DnPage',      close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'bankPage',           close: () => { if (typeof closeBankSection === 'function') closeBankSection(); } },
     { id: 'bankSettingsPage',   close: () => { if (typeof closeBankSettings === 'function') closeBankSettings(); } },
     { id: 'inventoryPage',      close: () => { if (typeof closeInventoryPage === 'function') closeInventoryPage(); } },

@@ -145,7 +145,7 @@ function docs2RenderHome() {
         else { wait.n++; wait.c += u.remC; }
         if (u.partial) { part.n++; part.c += u.remC; part.paidC += u.paidC; }
     });
-    let dnMonth = 0, lastDn = '', total = 0;
+    let dnMonth = 0, dnUnsent = 0, lastDn = '', total = 0;
     // Заказы, вошедшие в действующий сводный счёт: их отдельный счёт (старые заказы) в суммах не учитываем — иначе заказ считается дважды
     const inCons = new Set();
     docs.forEach(d => { if (d.kind === 'cons' && !d.cancelled) (d.memberIds || []).forEach(id => inCons.add(id)); });
@@ -153,7 +153,7 @@ function docs2RenderHome() {
         if (d.cancelled) return;
         total++;
         if (d.kind === 'dn') {
-            if (String(d.date).slice(0, 7) === ym) dnMonth++;
+            if (String(d.date).slice(0, 7) === ym) { dnMonth++; if (!d.sentAt && !d.deleted) dnUnsent++; }
             if (String(d.rawNumber || '') > lastDn) lastDn = String(d.rawNumber || '');
             return;
         }
@@ -175,7 +175,7 @@ function docs2RenderHome() {
     const shortDate = iso => { const p = String(iso || '').split('-'); return p.length === 3 ? p[2] + '.' + p[1] : ''; };
 
     const tiles = [
-        _d2Tile({ color: 'dash-c-day', icon: 'plus', label: t('docs_tab_todo'), value: String(todo.length), click: "openDocs2Todo()", cap: todo.length ? t('docs2_todo_cap') : '',
+        _d2Tile({ color: 'dash-c-day', icon: 'plus', label: t('docs2_todo_t'), value: String(todo.length), click: "openDocs2Todo()", cap: todo.length ? t('docs2_todo_cap') : '',
                   footL: todo.length ? t('docs2_todo_sum') : t('docs2_todo_ok'), footR: todo.length ? plain(todoSumC) : '' }),
         _d2Tile({ color: 'dash-c-day', icon: 'alert', label: t('docs2_unsent_t'), value: String(unsent), click: "openDocs2Unsent()", cap: unsent ? t('docs2_unsent_cap') : '',
                   footL: unsent ? t('docs2_todo_sum') : '', footR: unsent ? plain(unsentC) : '' }),
@@ -185,7 +185,7 @@ function docs2RenderHome() {
         _d2Tile({ color: 'dash-c-acc', icon: 'check', label: t('docs_tile_paid'), value: _d2Paid ? _d2Money(_d2Paid.c) : '&mdash;', pill: _d2Paid ? _d2Paid.n : '', click: "openDocs2Paid()",
                   footL: _d2Paid ? t('docs2_prev_month') : '', footR: _d2Paid ? plain(_d2Paid.pc) : '' }),
         _d2Tile({ color: 'dash-c-stock', icon: 'dn', label: t('docs_type_dn'), value: String(dnMonth), cap: t('docs2_this_month'),
-                  footL: lastDn ? t('docs2_last') : '', footR: lastDn }),
+                  footL: dnUnsent ? t('docs2_dn_unsent').replace('{n}', dnUnsent) : (lastDn ? t('docs2_last') : ''), footR: dnUnsent ? '' : lastDn, click: "openDocs2Dn()" }),
         _d2Tile({ color: 'dash-c-rev', icon: 'all', label: t('docs2_all'), value: String(total), footL: t('docs2_all_sub') }),
         _d2Tile({ color: 'dash-c-stock', icon: 'exp', label: t('docs2_export'), value: '&mdash;', footL: t('docs2_export_sub'), footR: t('docs2_soon'), cls: 'docs2-soon sth-wide' })
     ].join('');
@@ -628,4 +628,130 @@ function docs2RenderUnsent(reapplyView) {
             <button type="button" class="view-toggle-btn${_d2U.period ? ' active' : ''}" onclick="toggleFilterDropdown('docs2UdPer')" title="${escapeHtml(t('orders_period'))}">${_D2_BAR_ICONS.per}</button></div>
             <div class="view-toggle-pill"><button type="button" class="view-toggle-btn${expanded ? ' active' : ''}" onclick="docs2UnsentToggleAll()" title="${escapeHtml(t(expanded ? 'docs2_collapse' : 'docs2_expand'))}">${expanded ? _D2_BAR_ICONS.col : _D2_BAR_ICONS.exp}</button></div></div>
         ${gl.length ? groupHtml : `<p style="font-size:13px; color:#9a9488; margin:24px 0; text-align:center;">${escapeHtml(t('docs2_unsent_empty'))}</p>`}`;
+}
+
+
+// ==================== Страница «Накладные» (1.11.2026) ====================
+// Выставленные накладные (по клиентам; период по умолчанию — текущий месяц). Кнопка «Не отправлены» оставляет неотправленные.
+// Кнопка «Без накладной» переключает список на заказы без накладной — оттуда накладную можно выставить.
+const _D2_DN_ICONS = {
+    unsent: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5L2.8 19.5h18.4z"/><path d="M12 10v4.5M12 17.2v.2"/></svg>',
+    nodn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5M12 11v6M9 14h6"/></svg>'
+};
+let _d2D = { cust: '', period: '', unsent: false, nodn: false, open: new Set() };
+
+function openDocs2Dn() {
+    if (!docs2Allowed()) return;
+    _d2D.cust = '';
+    _d2D.period = _d2Months().cur;
+    _d2D.unsent = false;
+    _d2D.nodn = false;
+    openAppPage('docs2DnPage');
+    docs2RenderDn(true);
+}
+(window._appPageOnShow = window._appPageOnShow || {}).docs2DnPage = () => docs2RenderDn(false);
+
+function docs2DnPick(field, v) {
+    if (typeof closeAllFilterDropdowns === 'function') closeAllFilterDropdowns();
+    _d2D[field === 'per' ? 'period' : 'cust'] = v;
+    docs2RenderDn(true);
+}
+function docs2DnFlag(field) {
+    // «Не отправлены» и «Без накладной» не сочетаются: включая одну, выключаем другую
+    const on = !_d2D[field];
+    _d2D.unsent = false; _d2D.nodn = false;
+    _d2D[field] = on;
+    docs2RenderDn(true);
+}
+function docs2DnToggle(key) {
+    if (_d2D.open.has(key)) _d2D.open.delete(key); else _d2D.open.add(key);
+    docs2RenderDn(false);
+}
+function docs2DnToggleAll() {
+    _d2SetView(_d2View() === 'expanded' ? 'collapsed' : 'expanded');
+    docs2RenderDn(true);
+}
+function docs2DnIssue(orderId) {
+    if (typeof openSendDocumentSheet === 'function') openSendDocumentSheet(orderId, 'delivery_note');
+}
+
+function docs2RenderDn(reapplyView) {
+    const box = document.getElementById('docs2Dn');
+    if (!box) return;
+    const docs = (typeof _docsAll !== 'undefined' && Array.isArray(_docsAll)) ? _docsAll : [];
+    // Единый вид элемента: { key (клиент), name, ym, o (заказ), id, c (сумма), number, date, sent }
+    let items;
+    if (_d2D.nodn) {
+        items = (typeof orders !== 'undefined' ? orders : []).filter(o => isOrderSaved(o) && !o.dn_no).map(o => ({
+            key: String(o.customer_id || ('n:' + (o.customer || ''))), name: o.customer || t('orders_no_customer'),
+            ym: String(o.date || '').slice(0, 7), oid: o.id, onum: o.order_number, c: Math.round(orderGrandTotal(o) * 100), date: o.date, number: '', sent: true }));
+    } else {
+        items = docs.filter(d => d.kind === 'dn' && !d.cancelled && !d.deleted).map(d => ({
+            key: String(d.custId || ('n:' + (d.custName || ''))), name: d.custName || t('orders_no_customer'),
+            ym: String(d.date || '').slice(0, 7), oid: d.orderId, onum: d.orderNumber, c: d.sumC || 0, date: d.date, number: d.number, sent: !!d.sentAt }));
+        if (_d2D.unsent) items = items.filter(x => !x.sent);
+    }
+    const all = items;
+    const base = all.filter(x => (!_d2D.cust || x.key === _d2D.cust) && (!_d2D.period || x.ym === _d2D.period));
+    const sumC = base.reduce((s, x) => s + x.c, 0);
+
+    const groups = new Map();
+    base.forEach(x => {
+        if (!groups.has(x.key)) groups.set(x.key, { key: x.key, name: x.name, items: [], sumC: 0 });
+        const g = groups.get(x.key); g.items.push(x); g.sumC += x.c;
+    });
+    const gl = [...groups.values()].sort((a, b) => b.sumC - a.sumC);
+    if (reapplyView) {
+        _d2D.open = new Set();
+        if (_d2View() === 'expanded' || gl.length === 1) gl.forEach(g => _d2D.open.add(g.key));
+    }
+
+    const custMap = new Map();
+    all.forEach(x => custMap.set(x.key, x.name));
+    const CHK = '<svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>';
+    const opt = (field, v, label, sel) => `<div class="status-option${sel ? ' selected' : ''}" data-v="${escapeHtml(v)}" onclick="docs2DnPick('${field}', this.getAttribute('data-v'))"><span>${escapeHtml(label)}</span>${CHK}</div>`;
+    const ddC = document.getElementById('docs2DnCust'), ddP = document.getElementById('docs2DnPer');
+    if (ddC) ddC.innerHTML = opt('cust', '', t('docs_customer_all'), !_d2D.cust)
+        + [...custMap.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([k, n]) => opt('cust', k, n, k === _d2D.cust)).join('');
+    const yms = [...new Set(all.map(x => x.ym).concat([_d2Months().cur]).filter(y => /^\d{4}-\d{2}$/.test(y)))].sort().reverse();
+    if (ddP) ddP.innerHTML = opt('per', '', t('docs_period_all'), !_d2D.period)
+        + yms.map(ym => opt('per', ym, _docsMonthLabel(ym), ym === _d2D.period)).join('');
+
+    const expanded = _d2View() === 'expanded';
+    const gold = x => `<span class="d2gold">${escapeHtml(x)}</span>`;
+    const row = x => {
+        const oname = t('docs2_order').replace('{n}', x.onum || ('#' + x.oid));
+        if (_d2D.nodn) {
+            return `<div class="d2o"><div class="l" onclick="docs2OpenOrder(${x.oid})">
+                <div class="a">${escapeHtml(oname)}</div><div class="b">${escapeHtml(formatDateDMY(x.date))}</div></div>
+                <div class="r"><b>${escapeHtml(formatMoney(x.c / 100))}</b></div>
+                <button type="button" class="d2btn" onclick="docs2DnIssue(${x.oid})">${escapeHtml(t('docs2_dn_btn'))}</button></div>`;
+        }
+        return `<div class="d2o" onclick="docs2OpenOrder(${x.oid})"><div class="l">
+            <div class="a">${escapeHtml(x.number || '')}</div>
+            <div class="b">${escapeHtml(formatDateDMY(x.date))} \u00b7 ${escapeHtml(oname)}</div>
+            ${x.sent ? '' : `<div class="c">${gold(t('docs2_dn_not_sent'))}</div>`}</div>
+            <div class="r"><b>${escapeHtml(formatMoney(x.c / 100))}</b></div></div>`;
+    };
+    const byDate = (a, b) => String(b.date || '').localeCompare(String(a.date || '')) || (b.oid - a.oid);
+    const groupHtml = gl.map(g => {
+        const open = _d2D.open.has(g.key);
+        const body = open ? g.items.slice().sort(byDate).map(row).join('') : '';
+        return `<div class="d2g"><div class="d2gh" onclick="docs2DnToggle(this.getAttribute('data-k'))" data-k="${escapeHtml(g.key)}">
+            <span class="ch">${open ? '&#8964;' : '&rsaquo;'}</span>
+            <div class="nm"><b>${escapeHtml(g.name)}</b><small>${escapeHtml(_d2D.nodn ? (g.items.length + ' ' + nWord(g.items.length, 'word_orders')) : (t('docs2_dn_word') + ': ' + g.items.length))}</small></div>
+            <span class="sm">${escapeHtml(formatMoney(g.sumC / 100))}</span></div>${body}</div>`;
+    }).join('');
+
+    const lbl = _d2D.nodn ? t('docs2_dn_none_t') : (_d2D.unsent ? t('docs2_dn_unsent_t') : t('docs_type_dn'));
+    const cntTxt = _d2D.nodn ? (base.length + ' ' + nWord(base.length, 'word_orders')) : (t('docs2_dn_word') + ': ' + base.length);
+    box.innerHTML = `<div class="d2chips">
+            <div class="d2chip on"><small>${escapeHtml(lbl + ' \u00b7 ' + cntTxt)}</small><b>${escapeHtml(formatMoney(sumC / 100))}</b></div></div>
+        <div id="docs2WaitBar"><div class="view-toggle-pill">
+            <button type="button" class="view-toggle-btn${_d2D.cust ? ' active' : ''}" onclick="toggleFilterDropdown('docs2DnCust')" title="${escapeHtml(t('stats_all_customers_short'))}">${_D2_BAR_ICONS.cust}</button>
+            <button type="button" class="view-toggle-btn${_d2D.period ? ' active' : ''}" onclick="toggleFilterDropdown('docs2DnPer')" title="${escapeHtml(t('orders_period'))}">${_D2_BAR_ICONS.per}</button>
+            <button type="button" class="view-toggle-btn${_d2D.unsent ? ' active' : ''}" onclick="docs2DnFlag('unsent')" title="${escapeHtml(t('docs2_dn_unsent_t'))}">${_D2_DN_ICONS.unsent}</button>
+            <button type="button" class="view-toggle-btn${_d2D.nodn ? ' active' : ''}" onclick="docs2DnFlag('nodn')" title="${escapeHtml(t('docs2_dn_none_t'))}">${_D2_DN_ICONS.nodn}</button></div>
+            <div class="view-toggle-pill"><button type="button" class="view-toggle-btn${expanded ? ' active' : ''}" onclick="docs2DnToggleAll()" title="${escapeHtml(t(expanded ? 'docs2_collapse' : 'docs2_expand'))}">${expanded ? _D2_BAR_ICONS.col : _D2_BAR_ICONS.exp}</button></div></div>
+        ${gl.length ? groupHtml : `<p style="font-size:13px; color:#9a9488; margin:24px 0; text-align:center;">${escapeHtml(t(_d2D.nodn ? 'docs2_dn_none_empty' : 'docs2_dn_empty'))}</p>`}`;
 }
