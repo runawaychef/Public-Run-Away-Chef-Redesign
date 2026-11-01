@@ -163,5 +163,6 @@ function docs2RenderHome() {
         _d2Tile({ color: 'dash-c-stock', icon: 'exp', label: t('docs2_export'), value: '&mdash;', footL: t('docs2_export_sub'), footR: t('docs2_soon'), cls: 'docs2-soon' })
     ].join('');
 
-    box.innerHTML = `<div class="dashboard-grid stats-home-grid docs2-grid">${tiles}</div>`;
+    box.innerHTML = `<div class="dashboard-grid stats-home-grid docs2-grid">${tiles}
+        <div class="sth-info"><i>i</i><ul><li>${escapeHtml(t('docs2_info'))}</li></ul></div></div>`;
 }

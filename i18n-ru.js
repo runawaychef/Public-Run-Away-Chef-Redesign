@@ -1379,6 +1379,7 @@ I18N.ru = {
         docs2_export: 'Выгрузка',
         docs2_export_sub: 'PDF и реестр',
         docs2_soon: 'скоро',
+        docs2_info: 'Нажмите на плитку, чтобы открыть список документов.',
         docs2_unsent_t: 'Не отправлены',
         docs2_unsent_cap: 'счетов',
         docs2_next_step: 'Эта страница появится на следующем шаге.',

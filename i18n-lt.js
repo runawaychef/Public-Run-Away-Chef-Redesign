@@ -1378,6 +1378,7 @@ I18N.lt = {
         docs2_export: 'Eksportas',
         docs2_export_sub: 'PDF ir registras',
         docs2_soon: 'netrukus',
+        docs2_info: 'Bakstelėkite plytelę, kad atidarytumėte dokumentų sąrašą.',
         docs2_unsent_t: 'Neišsiųsta',
         docs2_unsent_cap: 'sąskaitų',
         docs2_next_step: 'Šis puslapis atsiras kitame žingsnyje.',

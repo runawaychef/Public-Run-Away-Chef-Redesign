@@ -1380,6 +1380,7 @@ I18N.en = {
         docs2_export: 'Export',
         docs2_export_sub: 'PDF and register',
         docs2_soon: 'soon',
+        docs2_info: 'Tap a tile to open the list of documents.',
         docs2_unsent_t: 'Not sent',
         docs2_unsent_cap: 'invoices',
         docs2_next_step: 'This page will appear in the next step.',
