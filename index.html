@@ -85,7 +85,6 @@
         /* Единый стиль таблиц — сетка как в Складе */
         table td, table th { border: 1px solid #e5e7eb; padding: 2px 4px !important; line-height: 1.3; }
         table thead tr { background: #f3f4f6; }
-        #statsCustomerTableScroll table { touch-action: pan-y; }
         td, th { font-size: 13px; font-family: inherit; }
         /* Пробное увеличение шрифта в таблицах — испытываем сначала только на
            списке заказов, отдельным классом, не трогая text-xs (он используется
@@ -99,7 +98,6 @@
         svg { cursor: pointer; }
         input::placeholder, select:invalid { color: #6b7280; opacity: 1; }
         select option { color: #1f2937; }
-        #chartCanvas { max-width: 300px; max-height: 300px; }
 
         /* ── Fade-in для карточек ── */
         @keyframes fadeInUp {
@@ -2082,8 +2080,6 @@
         .stp-seg { display: flex; background: #efeadd; border-radius: 11px; padding: 3px; margin-bottom: 8px; }
         .stp-seg button { flex: 1; border: none; background: transparent; font-size: 12px; font-weight: 700; color: #8a8473; padding: 6px 0; border-radius: 9px; cursor: pointer; }
         .stp-seg button.on { background: #fff; color: #322f28; box-shadow: 0 1px 3px rgba(70,58,30,.18); }
-        .stp-r { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid #efeadd; }
-        .stp-r.first { border-top: none; }
         .stp-rk { width: 18px; font-style: normal; font-size: 12px; font-weight: 800; color: #a29c8c; text-align: center; flex-shrink: 0; }
         .stp-c { flex: 1; min-width: 0; }
         .stp-l { display: flex; align-items: center; gap: 8px; font-size: 13px; }
@@ -2094,14 +2090,6 @@
         .stp-bar s { display: block; height: 100%; border-radius: 3px; background: #7c9473; }
         .stp-more { text-align: center; font-size: 12px; color: #7c9473; font-weight: 700; padding: 9px 0 2px; border-top: 1px solid #efeadd; cursor: pointer; }
         .stp-note { text-align: center; font-size: 11.5px; color: #a29c8c; padding: 8px 0 0; border-top: 1px solid #efeadd; margin-top: 4px; }
-        .stp-hb { display: flex; align-items: center; gap: 6px; margin: 5px 0; font-size: 12px; }
-        .stp-hb .n { width: 104px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #322f28; text-align: right; }
-        .stp-hb .t { flex: 1; height: 18px; position: relative; }
-        .stp-hb .t s { display: block; height: 100%; border-radius: 4px; background: #7c9473; }
-        .stp-hb .t b { position: absolute; top: 0; line-height: 18px; padding-left: 5px; font-size: 11.5px; color: #322f28; font-weight: 800; white-space: nowrap; }
-        .stp-ax { position: relative; height: 14px; margin-left: 110px; border-top: 1px solid #ece7da; }
-        .stp-ax span { position: absolute; top: 2px; font-size: 10px; color: #a29c8c; transform: translateX(-50%); }
-        .stp-ax span:first-child { transform: none; }
         .stn-h { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
         .stn-d { position: relative; width: 128px; height: 128px; flex-shrink: 0; }
         .stn-d .stcl-hole b { font-size: 22px; line-height: 24px; } .stn-d .stcl-hole small { font-size: 10px; }
@@ -4201,129 +4189,6 @@ function hideSplashScreen() {
             <div id="statsHome" class="dashboard" style="padding-top:2px;">
                 <div id="statsHomeGrid" class="dashboard-grid stats-home-grid"></div>
             </div>
-            <!-- Прежний вид Статистики — открывается по нажатию на плитку, пока не готовы страницы раскрытия -->
-            <div id="statsOld" class="hidden">
-                <div class="mb-2"><button onclick="statsBackHome()" class="pill-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg><span data-i18n="stats_home_back">Назад</span></button></div>
-            <div class="bg-white rounded-xl shadow-md p-2 mb-3">
-                <h2 class="text-sm font-semibold mb-2 text-gray-800" data-i18n="stats_title">Статистика</h2>
-
-                <!-- Фильтры -->
-                <div class="grid grid-cols-2 gap-1.5 mb-1">
-                    <div style="position:relative;" onclick="if (!event.target.closest('[data-fn]')) event.stopPropagation();">
-                        <button type="button" onclick="toggleCustomerFilterDropdown()" id="customerFilterBtn" class="field-select-btn">
-                            <span id="customerFilterLabel" data-i18n="stats_all_customers">Все клиенты</span>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
-                        </button>
-                        <div id="customerFilterDropdown" class="status-dropdown">
-                            <div class="status-option selected" id="statsFilterAllRow" onclick="toggleAllCustomersFilter()" style="justify-content:flex-start; gap:8px; border-bottom:1px solid #f1efe9;">
-                                <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
-                                <span data-i18n="stats_all_customers">Все клиенты</span>
-                            </div>
-                            <div id="customerFilterList"></div>
-                        </div>
-                    </div>
-                    <div style="position:relative;" onclick="event.stopPropagation();">
-                        <select id="statsDateRange" class="hidden"><option value="all">Весь период</option><option value="week">Текущая неделя</option><option value="month">Текущий месяц</option><option value="year">Текущий год</option><option value="custom">От - До</option></select>
-                        <button type="button" class="field-select-btn" id="statsDateRangeBtn" onclick="toggleStatsDateRangeDropdown()">
-                            <span id="statsDateRangeBtnLabel" data-i18n="stats_range_all">Весь период</span>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
-                        </button>
-                        <div class="status-dropdown" id="statsDateRangeDropdown">
-                            <div class="status-option selected" onclick="setStatsDateRange('all')"><span data-i18n="stats_range_all">Весь период</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
-                            <div class="status-option" onclick="setStatsDateRange('week')"><span data-i18n="stats_range_week">Текущая неделя</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
-                            <div class="status-option" onclick="setStatsDateRange('month')"><span data-i18n="stats_range_month">Текущий месяц</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
-                            <div class="status-option" onclick="setStatsDateRange('year')"><span data-i18n="stats_range_year">Текущий год</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
-                            <div class="status-option" onclick="setStatsDateRange('custom')"><span data-i18n="stats_range_custom">От – До</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
-                        </div>
-                    </div>
-                </div>
-                <div id="customDateRange" class="hidden">
-                    <input id="statsDateFrom" type="hidden">
-                    <input id="statsDateTo" type="hidden">
-                </div>
-            </div>
-
-                <!-- Таблица по клиентам -->
-                <div class="bg-white rounded-xl shadow-md p-2 mb-5">
-                    <h3 id="statsCustomersTableTitle" class="text-xs font-semibold text-gray-700 mb-1 " data-i18n="stats_customers_table_title">Сумма по клиентам (с НДС)</h3>
-                    <div id="statsCustomerTableScroll" style="max-height:240px;overflow-y:auto; touch-action:pan-y; overscroll-behavior:contain;"></div>
-                    <div id="statsCustomerTableTotal" class="border-t mb-2"></div>
-                </div>
-
-                <!-- Круговая диаграмма -->
-                <div class="bg-white rounded-xl shadow-md p-2 mb-5">
-                    <h3 id="statsPieTitle" class="text-xs font-semibold text-gray-700 mb-1 " data-i18n="stats_pie_title">Доля клиентов (с НДС)</h3>
-                    <div class="flex justify-center mb-1">
-                        <canvas id="chartCanvas" width="200" height="200"></canvas>
-                    </div>
-                    <!-- Легенда отдельно, со скроллом -->
-                    <div id="chartLegend" style="max-height:120px;overflow-y:auto; touch-action:pan-y; overscroll-behavior:contain; background:#e3e8df;" class="border rounded-xl p-2"></div>
-                </div>
-
-                <!-- Общие цифры -->
-                <div class="bg-white rounded-xl shadow-md p-2 mb-5">
-                    <div class="rounded-xl p-2 mb-2 grid grid-cols-2 gap-1 text-center" style="background:#e3e8df;">
-                        <div><p id="statsTotalLabel" class="text-xs text-gray-500" data-i18n="stats_total_with_vat">Всего (с НДС)</p><p id="totalPrice" class="text-xs font-bold text-gray-800">0.00</p></div>
-                        <div id="statsInclVatRow"><p class="text-xs text-gray-500" data-i18n="stats_incl_vat">в т.ч. НДС</p><p id="totalVatModal" class="text-sm font-bold" style="color:#6b7280;">0.00</p></div>
-                        <div><p id="weekTotalLabel" class="text-xs text-gray-500" data-i18n="stats_week_with_vat">Неделя (с НДС)</p><p id="weekTotalModal" class="text-xs font-bold text-gray-800">0.00</p></div>
-                        <div><p id="monthTotalLabel" class="text-xs text-gray-500" data-i18n="stats_month_with_vat">Месяц (с НДС)</p><p id="monthTotalModal" class="text-xs font-bold text-gray-800">0.00</p></div>
-                    </div>
-                    <div class="flex gap-3 text-xs text-gray-500">
-                        <span><span data-i18n="stats_customers_count">Клиентов:</span> <b id="customerCount" class="text-gray-700">0</b></span>
-                        <span><span data-i18n="stats_products_count">Изделий:</span> <b id="productCount" class="text-gray-700">0</b></span>
-                        <span><span data-i18n="stats_orders_count">Заказов:</span> <b id="orderCount" class="text-gray-700">0</b></span>
-                    </div>
-                </div>
-
-                <!-- Динамика по месяцам -->
-                <div class="bg-white rounded-xl shadow-md p-2 mb-5 perm-view-costs">
-                    <h3 class="text-xs font-semibold text-gray-700 mb-1 " data-i18n="stats_monthly_dynamics_title">Динамика по месяцам: выручка и прибыль</h3>
-                    <canvas id="monthlyCanvas" style="width:100%;height:140px;"></canvas>
-                </div>
-
-                <!-- Топ изделий -->
-                <div class="bg-white rounded-xl shadow-md p-2 mb-5">
-                    <div class="flex items-center gap-2 mb-1">
-                        <h3 class="text-xs font-semibold text-gray-700" data-i18n="stats_top_products_title">Топ изделий по сумме</h3>
-                        <input id="statsProductFilter" type="text" placeholder="Фильтр по названию..." data-i18n-placeholder="stats_filter_by_name"
-                            class="border p-0.5 rounded text-xs flex-1" style="max-width:160px;">
-                    </div>
-                    <div id="statsProductTable"></div>
-                </div>
-
-                <!-- Рентабельность за период + топ изделий по рентабельности -->
-                <div class="bg-white rounded-xl shadow-md p-2 mb-5 perm-view-costs">
-                    <div class="rounded-xl p-2 mb-2 grid grid-cols-3 gap-1 text-center" style="background:#e3e8df;">
-                        <div><p class="text-xs text-gray-500" data-i18n="stats_cost_price">Себестоимость</p><p id="statsTotalCost" class="text-xs font-bold text-gray-800">0.00</p></div>
-                        <div><p class="text-xs text-gray-500" data-i18n="stats_profit">Прибыль</p><p id="statsTotalProfit" class="text-sm font-bold" style="color:#4f6349;">0.00</p></div>
-                        <div><p class="text-xs text-gray-500" data-i18n="stats_margin">Рентабельность</p><p id="statsProfitPct" class="text-sm font-bold text-gray-800">0.0%</p></div>
-                    </div>
-                    <div class="flex items-center gap-2 mb-2">
-                        <h3 class="text-xs font-semibold text-gray-700 " data-i18n="stats_products_margin_title">Рентабельность изделий</h3>
-                        <input id="productProfitFilter" type="text" placeholder="Фильтр по названию..." data-i18n-placeholder="stats_filter_by_name"
-                            class="border p-0.5 rounded text-xs flex-1" style="max-width:160px;">
-                    </div>
-                    <div id="statsProductProfitability"></div>
-                </div>
-
-                <!-- Расход ингредиентов за период — использует уже выбранный период
-                     всего экрана Статистики, отдельного переключателя не нужно. -->
-                <div class="bg-white rounded-xl shadow-md p-2 mb-5 perm-view-costs">
-                    <div class="flex items-center justify-between mb-2">
-                        <h3 class="text-xs font-semibold text-gray-700" data-i18n="stats_ingredient_usage_title">Расход ингредиентов за период</h3>
-                        <button onclick="exportIngredientUsageReportPdf()" class="text-xs font-semibold" style="color:#4f6349;" data-i18n="stats_ingredient_usage_export">Экспорт в PDF</button>
-                    </div>
-                    <div class="rounded-xl p-2 mb-2 grid grid-cols-2 gap-1 text-center" style="background:#e3e8df;">
-                        <div><p class="text-xs text-gray-500" data-i18n="stats_ingredient_usage_count">Позиций ингредиентов</p><p id="ingUsageCount" class="text-sm font-bold text-gray-800">0</p></div>
-                        <div><p class="text-xs text-gray-500" data-i18n="stats_cost_price">Себестоимость</p><p id="ingUsageTotalCost" class="text-sm font-bold" style="color:#4f6349;">0.00</p></div>
-                    </div>
-                    <input id="ingUsageFilter" type="text" placeholder="Фильтр по названию..." data-i18n-placeholder="stats_filter_by_name"
-                        class="border p-0.5 rounded text-xs w-full mb-2">
-                    <div id="ingredientUsageReport"></div>
-                </div>
-
-                <p class="text-xs text-gray-400 mb-3" data-i18n="stats_synced_footer">Данные синхронизированы с облаком (Supabase)</p>
-            </div>
         </div>
 
         <!-- ===== СТРАНИЦА «Отправить документ» (17.10): вместо шторки — страница поверх текущего раздела,
@@ -4938,7 +4803,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=12"></script>
-    <script src="i18n-core.js?v=133"></script>
+    <script src="i18n-core.js?v=134"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=31"></script>
@@ -4951,9 +4816,9 @@ function hideSplashScreen() {
 <script src="batches.js?v=12"></script>
 <script src="semifinished.js?v=62"></script>
 <script src="products.js?v=51"></script>
-<script src="customers.js?v=72"></script>
+<script src="customers.js?v=73"></script>
 <script src="calendar.js?v=17"></script>
-<script src="orders.js?v=155"></script>
+<script src="orders.js?v=156"></script>
 <script src="dashboard.js?v=10"></script>
 <script src="invoice.js?v=54"></script>
 <script src="send-document.js?v=42"></script>
@@ -4961,11 +4826,11 @@ function hideSplashScreen() {
 <script src="payments.js?v=33"></script>
 <script src="documents.js?v=14"></script>
 <script src="bank.js?v=13"></script>
-<script src="stats.js?v=42"></script>
+<script src="stats.js?v=43"></script>
 <script src="history.js?v=9"></script>
 <script src="modals.js?v=20"></script>
 <script src="demoData.js?v=19"></script>
-<script src="helpers.js?v=50"></script>
+<script src="helpers.js?v=51"></script>
 <script>
 // SUPABASE_URL, SUPABASE_KEY, db перенесены в supabaseClient.js
 

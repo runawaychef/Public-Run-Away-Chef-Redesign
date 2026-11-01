@@ -5,7 +5,7 @@
 // Зависит от: db (supabaseClient.js), orders/customers/products/employees (главный скрипт),
 // orderGrandTotal (money.js), formatDateDMY/getMondayOf/MONTH_NAMES_RU (dates.js),
 // showLoading/hideLoading, logActivity (employees.js), currentEmployee (employees.js),
-// svgEdit/svgDelete/svgCopy, openOrderDetail, updateTotals (главный скрипт).
+// svgEdit/svgDelete/svgCopy, openOrderDetail (главный скрипт).
 
 // ---- Список заказов ----
 
@@ -205,7 +205,6 @@ function displayOrders() {
         { const sn = document.getElementById('ocMoreSentinel'); if (sn) _ordersMoreObserver.observe(sn); }
     }
 
-    updateTotals(filteredOrders);
     updateOrdersFilterSummary(filteredOrders);
 
     // Пересчитываем позицию переключателя вида при каждой перерисовке списка —

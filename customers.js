@@ -3,7 +3,7 @@
 // Обычный скрипт (без модулей) — функции доступны глобально, как раньше.
 // Зависит от: db (supabaseClient.js), customers/orders (главный скрипт),
 // showLoading/hideLoading, logActivity (employees.js),
-// svgEdit/svgDelete, updateCustomerSelects, updateStatsCustomerFilter,
+// svgEdit/svgDelete, updateCustomerSelects,
 // updateOrderCustomerFilter, openDeleteModal, closeModal (главный скрипт).
 
 // Если карточка клиента открыта кнопкой "Карточка клиента" из заказа (goToCustomerFromOrder
@@ -69,7 +69,6 @@ function displayCustomers() {
     const warningEl = document.getElementById('customersNameWarning');
     if (warningEl) warningEl.classList.toggle('hidden', warningCount === 0);
     updateCustomerSelects();
-    updateStatsCustomerFilter();
     updateOrderCustomerFilter();
     renderCustomerCards();
     filterCustomersList();

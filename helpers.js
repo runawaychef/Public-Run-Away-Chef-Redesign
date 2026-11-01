@@ -888,6 +888,8 @@ function _appPageShowTop() {
     // Шестерёнка подсвечена, пока «Настройки» — верхняя страница (22.10)
     const settingsTop = appPageTop() === 'settingsPage';
     document.getElementById('settingsBtn')?.classList.toggle('active', settingsTop);
+    // Иконка «Статистики» подсвечена, только пока открыт раздел статистики и сверху нет «Настроек»/«Умного склада» (31.10)
+    document.getElementById('statsBtn')?.classList.toggle('active', !smartTop && !settingsTop && typeof currentTabId !== 'undefined' && currentTabId === 'stats');
     // «Умный склад» — отдельный раздел: в нижнем меню ничего не подсвечиваем (22.10);
     // после закрытия возвращаем подсветку разделу, который лежит под страницей
     const navBtns = document.querySelectorAll('.bottom-nav-item');
