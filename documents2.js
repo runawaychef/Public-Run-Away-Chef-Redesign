@@ -123,6 +123,39 @@ function _d2Rem(d) {
     return d.sumC || 0;
 }
 
+// ВРЕМЕННАЯ диагностика (1.11.2026): нажатие на подсказку внизу — сверка сумм «Документы» и «Дашборд». Убрать после сверки.
+function docs2Debug() {
+    try {
+        const today = getLocalDateStr(0);
+        const docs = (typeof _docsAll !== 'undefined' && Array.isArray(_docsAll)) ? _docsAll : [];
+        const cov = new Set();
+        let dInv = 0, dCons = 0, nInv = 0, nCons = 0, fullAll = 0;
+        docs.forEach(d => {
+            const st = _docsInvStatus(d, today);
+            if (!st || !st.wait) return;
+            const r = _d2Rem(d);
+            fullAll += d.sumC || 0;
+            if (d.kind === 'inv') { dInv += r; nInv++; cov.add(d.orderId); }
+            else if (d.kind === 'cons') { dCons += r; nCons++; (d.memberIds || []).forEach(id => cov.add(id)); }
+        });
+        const saved = (typeof _dashSavedOrders === 'function') ? _dashSavedOrders() : orders;
+        let bN = 0, bSum = 0, cN = 0, cSum = 0, covNotB = 0;
+        const bIds = new Set();
+        saved.forEach(o => {
+            const st = getOrderPaymentStatus(o);
+            if (st.status === 'paid') return;
+            const r = Math.max(0, Math.round(st.grandAmt * 100) - Math.round(st.paidAmt * 100));
+            bN++; bSum += r; bIds.add(o.id);
+            if (!cov.has(o.id)) { cN++; cSum += r; }
+        });
+        cov.forEach(id => { if (!bIds.has(id)) covNotB++; });
+        const m = c => formatMoney(c / 100);
+        showInfo('Счета: ' + nInv + ' шт ' + m(dInv) + ' | сводные: ' + nCons + ' шт ' + m(dCons) + ' | полная сумма документов: ' + m(fullAll)
+            + ' || Дашборд: ' + bN + ' зак ' + m(bSum) + ' | из них без документа: ' + cN + ' зак ' + m(cSum)
+            + ' | заказов в документах, но не в Дашборде: ' + covNotB);
+    } catch (e) { showInfo('debug error: ' + e.message); }
+}
+
 function docs2RenderHome() {
     const box = document.getElementById('docs2Home');
     if (!box) return;
@@ -182,5 +215,5 @@ function docs2RenderHome() {
     ].join('');
 
     box.innerHTML = `<div class="dashboard-grid stats-home-grid docs2-grid">${tiles}
-        <div class="sth-info"><i>i</i><ul><li>${escapeHtml(t('docs2_info'))}</li></ul></div></div>`;
+        <div class="sth-info" onclick="docs2Debug()"><i>i</i><ul><li>${escapeHtml(t('docs2_info'))}</li></ul></div></div>`;
 }
