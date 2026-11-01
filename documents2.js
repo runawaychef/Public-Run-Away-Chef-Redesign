@@ -44,20 +44,28 @@ async function openDocs2Home() {
 
 // Реальные поступления денег за текущий месяц — по дате платежа (order_payments.paid_at), а не по дате документа.
 // null — не удалось загрузить (плитка покажет прочерк).
+// Текущий и прошлый месяц (YYYY-MM) по локальной дате
+function _d2Months() {
+    const p = String(getLocalDateStr(0)).split('-').map(Number);
+    const cur = p[0] + '-' + String(p[1]).padStart(2, '0');
+    const pd = new Date(p[0], p[1] - 2, 1);
+    const prev = pd.getFullYear() + '-' + String(pd.getMonth() + 1).padStart(2, '0');
+    return { cur, prev };
+}
 let _d2Paid = null;
 async function _d2LoadPaid() {
     _d2Paid = null;
     try {
-        const ym = String(getLocalDateStr(0)).slice(0, 7);
+        const mm = _d2Months();
         const { data, error } = await db.from('order_payments').select('amount, paid_at')
-            .eq('org_id', currentOrgId).gte('paid_at', ym + '-01').limit(5000);
+            .eq('org_id', currentOrgId).gte('paid_at', mm.prev + '-01').limit(5000);
         if (error) throw error;
-        let c = 0, n = 0;
+        let c = 0, n = 0, pc = 0;
         (data || []).forEach(p => {
-            if (String(p.paid_at || '').slice(0, 7) !== ym) return;
-            c += Math.round(Number(p.amount || 0) * 100); n++;
+            const m = String(p.paid_at || '').slice(0, 7), cc = Math.round(Number(p.amount || 0) * 100);
+            if (m === mm.cur) { c += cc; n++; } else if (m === mm.prev) { pc += cc; }
         });
-        _d2Paid = { c, n };
+        _d2Paid = { c, n, pc };
     } catch (e) {
         console.error('Документы 2: ошибка загрузки платежей', e);
     }
@@ -99,7 +107,7 @@ function docs2RenderHome() {
     const box = document.getElementById('docs2Home');
     if (!box) return;
     const today = getLocalDateStr(0);
-    const ym = String(today).slice(0, 7);
+    const ym = _d2Months().cur;
     const docs = (typeof _docsAll !== 'undefined' && Array.isArray(_docsAll)) ? _docsAll : [];
 
     // ---- Документы: статусы не пересекаются (просрочено / ждут в срок / оплачены) ----
@@ -163,7 +171,7 @@ function docs2RenderHome() {
         _d2Tile({ color: 'dash-c-pay', icon: 'alert', label: t('docs_tile_over'), value: _d2Money(over.c), mid: nDocs(over.n),
                   footL: over.n ? t('docs2_longest') : '', footR: over.n ? t('docs2_days_short').replace('{n}', over.maxDays) : '' }),
         _d2Tile({ color: 'dash-c-acc', icon: 'check', label: t('docs_tile_paid'), value: _d2Paid ? _d2Money(_d2Paid.c) : '&mdash;', mid: _d2Paid ? t('docs2_pays_n').replace('{n}', _d2Paid.n) : '',
-                  footL: t('docs2_this_month') }),
+                  footL: _d2Paid ? t('docs2_prev_month') : '', footR: _d2Paid ? _d2Money(_d2Paid.pc) : '' }),
         _d2Tile({ color: 'dash-c-stock', icon: 'dn', label: t('docs_type_dn'), value: String(dnMonth), mid: t('docs2_this_month'),
                   footL: lastDn ? t('docs2_last') : '', footR: lastDn }),
         _d2Tile({ color: 'dash-c-rev', icon: 'all', label: t('docs2_all'), value: String(total), mid: t('docs2_all_sub'), footL: t('docs2_total') }),
