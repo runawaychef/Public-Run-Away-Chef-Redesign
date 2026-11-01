@@ -1003,9 +1003,9 @@ function statsRenderHome() {
         _stSet('stH1Mid', mx > 0
             ? `<div class="dc-bars">${sums.map((v, i) => `<i style="height:${Math.max(6, Math.round(v / mx * 100))}%" class="${i === sums.length - 1 ? 't' : (v <= 0 ? 'z' : '')}"></i>`).join('')}</div><div class="dc-bl">${keys.map(d => `<span>${escapeHtml(_stMonthShort(d.getFullYear(), d.getMonth()))}</span>`).join('')}</div>`
             : _stNoData());
-        _stSet('stH1Foot', canCost && cur
-            ? `<span>${escapeHtml(t('stats_profit'))}</span> ${escapeHtml(_stNum(profit))} · ${base > 0 ? Math.round(profit / base * 100) : 0}%`
-            : `<span>${escapeHtml(t('stats_foot_orders').replace('{n}', cur))}</span>`);
+        // слева всегда период, справа: есть данные и право на себестоимость — прибыль; есть данные без права — число заказов; данных нет — пусто
+        const rightFoot = !cur ? '' : (canCost ? `<em>${escapeHtml(_stNum(profit))}&nbsp;${escapeHtml(_stCur())}</em>` : `<em>${cur}&nbsp;${escapeHtml(t('cust_tile_orders'))}</em>`);
+        _stSet('stH1Foot', `<span>${escapeHtml(mLbl)}</span>${rightFoot}`);
     }
 
     // Суммы по клиентам за месяц
