@@ -87,6 +87,7 @@ const _D2_ICONS = {
     check: '<circle cx="12" cy="12" r="8.5"/><path d="m8 12.3 2.8 2.8L16 9.5"/>',
     dn:    '<path d="M3 7h11v9H3zM14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.7"/><circle cx="17" cy="17.5" r="1.7"/>',
     all:   '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    half:  '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/>',
     exp:   '<path d="M12 15V3M7.5 7.5 12 3l4.5 4.5M5 15v4h14v-4"/>'
 };
 function _d2Icon(key) {
@@ -98,9 +99,10 @@ function _d2Icon(key) {
 function _d2Tile(o) {
     const pill = (o.pill !== undefined && o.pill !== null && o.pill !== '') ? `<span class="d2pill">${escapeHtml(String(o.pill))}</span>` : '';
     const cap = o.cap ? `<span class="dc-cap">${escapeHtml(o.cap)}</span>` : '';
+    const mid = o.mid ? `<span class="d2mid">${escapeHtml(o.mid)}</span>` : '';
     return `<div class="dashboard-card dc2 d2t${o.cls ? ' ' + o.cls : ''}" role="button" tabindex="0" onclick="${o.click || 'docs2Soon()'}">
         <div class="dashboard-card__hd ${o.color}">${_d2Icon(o.icon)}<span class="dashboard-card__label">${escapeHtml(o.label)}</span>${pill}</div>
-        <div class="dc-val"><span class="dashboard-card__value">${o.value}</span>${cap}</div>
+        <div class="dc-val${mid ? ' d2col' : ''}"><span class="dashboard-card__value">${o.value}</span>${cap}${mid}</div>
         <div class="dc-foot"><span>${escapeHtml(o.footL || '')}</span><em>${escapeHtml(o.footR || '')}</em></div>
     </div>`;
 }
@@ -121,7 +123,7 @@ function _d2Unpaid() {
         // Срок оплаты: у выставленного счёта — срок из документа (сводного или обычного), иначе срок, заданный в заказе
         const due = (cons && cons.due) || (inv && inv.due) || o.due_date || null;
         const over = !!due && due < today;
-        out.push({ o, remC, partial: st.status === 'partial', over, due,
+        out.push({ o, remC, paidC: Math.round(st.paidAmt * 100), partial: st.status === 'partial', over, due,
             overDays: over ? _docsDayDiff(due, today) : 0, cons, inv });
     });
     return out;
@@ -136,10 +138,12 @@ function docs2RenderHome() {
 
     // ---- Неоплаченные заказы: «в срок» и «просрочено» (как в Дашборде) ----
     const over = { n: 0, c: 0, maxDays: 0 };
-    const wait = { n: 0, c: 0, nextDue: null };
+    const wait = { n: 0, c: 0 };
+    const part = { n: 0, c: 0, paidC: 0 };
     _d2Unpaid().forEach(u => {
         if (u.over) { over.n++; over.c += u.remC; over.maxDays = Math.max(over.maxDays, u.overDays); }
-        else { wait.n++; wait.c += u.remC; if (u.due && (!wait.nextDue || u.due < wait.nextDue)) wait.nextDue = u.due; }
+        else { wait.n++; wait.c += u.remC; }
+        if (u.partial) { part.n++; part.c += u.remC; part.paidC += u.paidC; }
     });
     let unsent = 0, unsentC = 0, dnMonth = 0, lastDn = '', total = 0;
     // Заказы, вошедшие в действующий сводный счёт: их отдельный счёт (старые заказы) в суммах не учитываем — иначе заказ считается дважды
@@ -172,16 +176,15 @@ function docs2RenderHome() {
                   footL: todo.length ? t('docs2_todo_sum') : '', footR: todo.length ? plain(todoSumC) : '' }),
         _d2Tile({ color: 'dash-c-day', icon: 'alert', label: t('docs2_unsent_t'), value: String(unsent), cap: unsent ? t('docs2_unsent_cap') : '',
                   footL: unsent ? t('docs2_todo_sum') : '', footR: unsent ? plain(unsentC) : '' }),
-        _d2Tile({ color: 'dash-c-tom', icon: 'clock', label: t('docs_tile_wait'), value: _d2Money(wait.c), pill: wait.n, click: "openDocs2Wait('wait')",
-                  footL: wait.nextDue ? t('docs2_next_due') : '', footR: shortDate(wait.nextDue) }),
-        _d2Tile({ color: 'dash-c-pay', icon: 'alert', label: t('docs_tile_over'), value: _d2Money(over.c), pill: over.n, click: "openDocs2Wait('over')",
-                  footL: over.n ? t('docs2_longest') : '', footR: over.n ? t('docs2_days_short').replace('{n}', over.maxDays) : '' }),
+        _d2Tile({ color: 'dash-c-tom', icon: 'clock', label: t('docs_tile_wait'), value: _d2Money(wait.c + over.c), pill: wait.n + over.n, click: "openDocs2Wait('all')",
+                  mid: part.n ? t('docs2_partial_line').replace('{n}', part.n) : '',
+                  footL: over.n ? t('docs2_over_short') : '', footR: over.n ? plain(over.c) : '' }),
         _d2Tile({ color: 'dash-c-acc', icon: 'check', label: t('docs_tile_paid'), value: _d2Paid ? _d2Money(_d2Paid.c) : '&mdash;', pill: _d2Paid ? _d2Paid.n : '',
                   footL: _d2Paid ? t('docs2_prev_month') : '', footR: _d2Paid ? plain(_d2Paid.pc) : '' }),
         _d2Tile({ color: 'dash-c-stock', icon: 'dn', label: t('docs_type_dn'), value: String(dnMonth), cap: t('docs2_this_month'),
                   footL: lastDn ? t('docs2_last') : '', footR: lastDn }),
         _d2Tile({ color: 'dash-c-rev', icon: 'all', label: t('docs2_all'), value: String(total), footL: t('docs2_all_sub') }),
-        _d2Tile({ color: 'dash-c-stock', icon: 'exp', label: t('docs2_export'), value: '&mdash;', footL: t('docs2_export_sub'), footR: t('docs2_soon'), cls: 'docs2-soon' })
+        _d2Tile({ color: 'dash-c-stock', icon: 'exp', label: t('docs2_export'), value: '&mdash;', footL: t('docs2_export_sub'), footR: t('docs2_soon'), cls: 'docs2-soon sth-wide' })
     ].join('');
 
     box.innerHTML = `<div class="dashboard-grid stats-home-grid docs2-grid">${tiles}
@@ -196,9 +199,10 @@ const _D2_BAR_ICONS = {
     cust: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 4.5a3.5 3.5 0 010 7M18 14.5c2 .7 3.5 2.4 3.5 5.5"/></svg>',
     per:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
     exp:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8l5-5 5 5M7 16l5 5 5-5"/></svg>',
+    half: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg>',
     col:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4l5 5 5-5M7 20l5-5 5 5"/></svg>'
 };
-let _d2W = { mode: 'wait', cust: '', period: '', open: new Set() };
+let _d2W = { mode: 'all', part: false, cust: '', period: '', open: new Set() };
 function _d2View() { try { return localStorage.getItem('docs2_wait_view') === 'expanded' ? 'expanded' : 'collapsed'; } catch (e) { return 'collapsed'; } }
 function _d2SetView(v) { try { localStorage.setItem('docs2_wait_view', v); } catch (e) {} }
 
@@ -210,9 +214,10 @@ function _d2ApplyView(groupKeys) {
     if (_d2View() === 'expanded' || groupKeys.length === 1) groupKeys.forEach(k => _d2W.open.add(k));
 }
 
-async function openDocs2Wait(mode) {
+async function openDocs2Wait(mode, part) {
     if (!docs2Allowed()) return;
-    _d2W.mode = mode === 'over' ? 'over' : 'wait';
+    _d2W.mode = mode === 'over' ? 'over' : (mode === 'wait' ? 'wait' : 'all');
+    _d2W.part = !!part;
     _d2W.cust = '';
     _d2W.period = '';
     openAppPage('docs2WaitPage');
@@ -249,10 +254,10 @@ function docs2RenderWait(reapplyView) {
     const all = _d2Unpaid();
     // Фильтры клиент/период действуют на плитки-переключатели и на список; статус выбирается переключателем
     const ymOf = u => String(u.o.date || '').slice(0, 7);
-    const base = all.filter(u => (!_d2W.cust || _d2GroupKey(u) === _d2W.cust) && (!_d2W.period || ymOf(u) === _d2W.period));
+    const base = all.filter(u => (!_d2W.cust || _d2GroupKey(u) === _d2W.cust) && (!_d2W.period || ymOf(u) === _d2W.period) && (!_d2W.part || u.partial));
     const wait = base.filter(u => !u.over), over = base.filter(u => u.over);
     const sum = a => a.reduce((s, u) => s + u.remC, 0);
-    const list = _d2W.mode === 'over' ? over : wait;
+    const list = _d2W.mode === 'over' ? over : (_d2W.mode === 'wait' ? wait : base);
 
     // Группы по клиентам, самый большой долг сверху
     const groups = new Map();
@@ -307,10 +312,11 @@ function docs2RenderWait(reapplyView) {
             <span class="sm${_d2W.mode === 'over' ? ' red' : ''}">${escapeHtml(formatMoney(g.sumC / 100))}</span></div>${body}</div>`;
     }).join('');
 
-    box.innerHTML = `<div class="d2chips">${chip('wait', t('docs2_in_term'), wait, false)}${chip('over', t('docs_tile_over'), over, true)}</div>
+    box.innerHTML = `<div class="d2chips">${chip('all', t('docs2_chip_all'), base, false)}${chip('wait', t('docs2_in_term'), wait, false)}${chip('over', t('docs_tile_over'), over, true)}</div>
         <div id="docs2WaitBar"><div class="view-toggle-pill">
             <button type="button" class="view-toggle-btn${_d2W.cust ? ' active' : ''}" onclick="toggleFilterDropdown('docs2DdCust')" title="${escapeHtml(t('stats_all_customers_short'))}">${_D2_BAR_ICONS.cust}</button>
-            <button type="button" class="view-toggle-btn${_d2W.period ? ' active' : ''}" onclick="toggleFilterDropdown('docs2DdPer')" title="${escapeHtml(t('orders_period'))}">${_D2_BAR_ICONS.per}</button></div>
+            <button type="button" class="view-toggle-btn${_d2W.period ? ' active' : ''}" onclick="toggleFilterDropdown('docs2DdPer')" title="${escapeHtml(t('orders_period'))}">${_D2_BAR_ICONS.per}</button>
+            <button type="button" class="view-toggle-btn${_d2W.part ? ' active' : ''}" onclick="docs2WaitSet('part', !_d2W.part)" title="${escapeHtml(t('docs2_partial_t'))}">${_D2_BAR_ICONS.half}</button></div>
             <div class="view-toggle-pill"><button type="button" class="view-toggle-btn${expanded ? ' active' : ''}" onclick="docs2WaitToggleAll()" title="${escapeHtml(t(expanded ? 'docs2_collapse' : 'docs2_expand'))}">${expanded ? _D2_BAR_ICONS.col : _D2_BAR_ICONS.exp}</button></div></div>
         ${gl.length ? groupHtml : `<p style="font-size:13px; color:#9a9488; margin:24px 0; text-align:center;">${escapeHtml(t('docs2_wait_empty'))}</p>`}`;
 }
