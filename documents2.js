@@ -145,7 +145,7 @@ function docs2RenderHome() {
         else { wait.n++; wait.c += u.remC; }
         if (u.partial) { part.n++; part.c += u.remC; part.paidC += u.paidC; }
     });
-    let unsent = 0, unsentC = 0, dnMonth = 0, lastDn = '', total = 0;
+    let dnMonth = 0, lastDn = '', total = 0;
     // Заказы, вошедшие в действующий сводный счёт: их отдельный счёт (старые заказы) в суммах не учитываем — иначе заказ считается дважды
     const inCons = new Set();
     docs.forEach(d => { if (d.kind === 'cons' && !d.cancelled) (d.memberIds || []).forEach(id => inCons.add(id)); });
@@ -161,8 +161,11 @@ function docs2RenderHome() {
         const st = _docsInvStatus(d, today);
         if (!st) return;
         if (st.paid) return;
-        if (st.wait && st.unsent) { unsent++; unsentC += d.sumC || 0; }
     });
+
+    // ---- Не отправлены: неоплаченные заказы, у которых счёт (свой или сводный) выставлен, но не отправлен клиенту ----
+    const unsentL = _d2Unsent();
+    const unsent = unsentL.length, unsentC = unsentL.reduce((s, u) => s + u.remC, 0);
 
     // ---- Заказы без счёта (главный документ — заказ) ----
     const todo = (typeof orders !== 'undefined' ? orders : []).filter(o => typeof orderNeedsInvoice === 'function' && orderNeedsInvoice(o));
@@ -174,7 +177,7 @@ function docs2RenderHome() {
     const tiles = [
         _d2Tile({ color: 'dash-c-day', icon: 'plus', label: t('docs_tab_todo'), value: String(todo.length), click: "openDocs2Todo()", cap: todo.length ? t('docs2_todo_cap') : t('docs_todo_empty'),
                   footL: todo.length ? t('docs2_todo_sum') : '', footR: todo.length ? plain(todoSumC) : '' }),
-        _d2Tile({ color: 'dash-c-day', icon: 'alert', label: t('docs2_unsent_t'), value: String(unsent), cap: unsent ? t('docs2_unsent_cap') : '',
+        _d2Tile({ color: 'dash-c-day', icon: 'alert', label: t('docs2_unsent_t'), value: String(unsent), click: "openDocs2Unsent()", cap: unsent ? t('docs2_unsent_cap') : '',
                   footL: unsent ? t('docs2_todo_sum') : '', footR: unsent ? plain(unsentC) : '' }),
         _d2Tile({ color: 'dash-c-tom', icon: 'clock', label: t('docs_tile_wait'), value: _d2Money(wait.c + over.c), pill: wait.n + over.n, click: "openDocs2Wait('all')",
                   mid: part.n ? t('docs2_partial_line').replace('{n}', part.n) : '',
@@ -530,4 +533,99 @@ function docs2RenderTodo(reapplyView) {
             <button type="button" class="view-toggle-btn${_d2T.period ? ' active' : ''}" onclick="toggleFilterDropdown('docs2TdPer')" title="${escapeHtml(t('orders_period'))}">${_D2_BAR_ICONS.per}</button></div>
             <div class="view-toggle-pill"><button type="button" class="view-toggle-btn${expanded ? ' active' : ''}" onclick="docs2TodoToggleAll()" title="${escapeHtml(t(expanded ? 'docs2_collapse' : 'docs2_expand'))}">${expanded ? _D2_BAR_ICONS.col : _D2_BAR_ICONS.exp}</button></div></div>
         ${gl.length ? groupHtml + `<div class="d2hint">${escapeHtml(t('docs_todo_hint'))}</div>` : `<p style="font-size:13px; color:#9a9488; margin:24px 0; text-align:center;">${escapeHtml(t('docs_todo_empty'))}</p>`}`;
+}
+
+
+// ==================== Страница «Не отправлены» (1.11.2026) ====================
+// Заказы (по заказам, как и остальное): счёт выставлен, но клиенту не отправлен; заказ ещё не оплачен полностью.
+// Оплаченные без отметки отправки сюда не попадают. Накладные не учитываются (не обязательный документ).
+function _d2Unsent() {
+    return _d2Unpaid().filter(u => { const d = u.cons || u.inv; return !!d && !d.sentAt; });
+}
+let _d2U = { cust: '', period: '', open: new Set() };
+
+function openDocs2Unsent() {
+    if (!docs2Allowed()) return;
+    _d2U.cust = '';
+    _d2U.period = '';
+    openAppPage('docs2UnsentPage');
+    docs2RenderUnsent(true);
+}
+(window._appPageOnShow = window._appPageOnShow || {}).docs2UnsentPage = () => docs2RenderUnsent(false);
+
+function docs2UnsentPick(field, v) {
+    if (typeof closeAllFilterDropdowns === 'function') closeAllFilterDropdowns();
+    _d2U[field === 'per' ? 'period' : 'cust'] = v;
+    docs2RenderUnsent(true);
+}
+function docs2UnsentToggle(key) {
+    if (_d2U.open.has(key)) _d2U.open.delete(key); else _d2U.open.add(key);
+    docs2RenderUnsent(false);
+}
+function docs2UnsentToggleAll() {
+    _d2SetView(_d2View() === 'expanded' ? 'collapsed' : 'expanded');
+    docs2RenderUnsent(true);
+}
+function docs2UnsentSend(orderId, cons) {
+    if (typeof openSendDocumentSheet === 'function') openSendDocumentSheet(orderId, 'invoice', cons ? { preferCons: true } : undefined);
+}
+
+function docs2RenderUnsent(reapplyView) {
+    const box = document.getElementById('docs2Unsent');
+    if (!box) return;
+    const all = _d2Unsent();
+    const ymOf = u => String(u.o.date || '').slice(0, 7);
+    const base = all.filter(u => (!_d2U.cust || _d2GroupKey(u) === _d2U.cust) && (!_d2U.period || ymOf(u) === _d2U.period));
+    const sumC = base.reduce((s, u) => s + u.remC, 0);
+
+    const groups = new Map();
+    base.forEach(u => {
+        const k = _d2GroupKey(u);
+        if (!groups.has(k)) groups.set(k, { key: k, name: u.o.customer || t('orders_no_customer'), items: [], sumC: 0 });
+        const g = groups.get(k); g.items.push(u); g.sumC += u.remC;
+    });
+    const gl = [...groups.values()].sort((a, b) => b.sumC - a.sumC);
+    if (reapplyView) {
+        _d2U.open = new Set();
+        if (_d2View() === 'expanded' || gl.length === 1) gl.forEach(g => _d2U.open.add(g.key));
+    }
+
+    const custMap = new Map();
+    all.forEach(u => custMap.set(_d2GroupKey(u), u.o.customer || t('orders_no_customer')));
+    const CHK = '<svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>';
+    const opt = (field, v, label, sel) => `<div class="status-option${sel ? ' selected' : ''}" data-v="${escapeHtml(v)}" onclick="docs2UnsentPick('${field}', this.getAttribute('data-v'))"><span>${escapeHtml(label)}</span>${CHK}</div>`;
+    const ddC = document.getElementById('docs2UdCust'), ddP = document.getElementById('docs2UdPer');
+    if (ddC) ddC.innerHTML = opt('cust', '', t('docs_customer_all'), !_d2U.cust)
+        + [...custMap.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([k, n]) => opt('cust', k, n, k === _d2U.cust)).join('');
+    const yms = [...new Set(all.map(ymOf).filter(y => /^\d{4}-\d{2}$/.test(y)))].sort().reverse();
+    if (ddP) ddP.innerHTML = opt('per', '', t('docs_period_all'), !_d2U.period)
+        + yms.map(ym => opt('per', ym, _docsMonthLabel(ym), ym === _d2U.period)).join('');
+
+    const expanded = _d2View() === 'expanded';
+    const row = u => {
+        const o = u.o;
+        const doc = u.cons ? t('docs2_in_cons').replace('{n}', u.cons.number) : u.inv.number;
+        return `<div class="d2o"><div class="l" onclick="docs2OpenOrder(${o.id})">
+            <div class="a">${escapeHtml(t('docs2_order').replace('{n}', o.order_number || ('#' + o.id)))}</div>
+            <div class="b">${escapeHtml(formatDateDMY(o.date))} \u00b7 ${escapeHtml(doc)}</div></div>
+            <div class="r"><b>${escapeHtml(formatMoney(u.remC / 100))}</b></div>
+            <button type="button" class="d2btn" onclick="docs2UnsentSend(${o.id}, ${u.cons ? 'true' : 'false'})">${escapeHtml(t('docs_send'))}</button></div>`;
+    };
+    const byDate = (a, b) => String(a.o.date || '').localeCompare(String(b.o.date || '')) || (a.o.id - b.o.id);
+    const groupHtml = gl.map(g => {
+        const open = _d2U.open.has(g.key);
+        const body = open ? g.items.slice().sort(byDate).map(row).join('') : '';
+        return `<div class="d2g"><div class="d2gh" onclick="docs2UnsentToggle(this.getAttribute('data-k'))" data-k="${escapeHtml(g.key)}">
+            <span class="ch">${open ? '&#8964;' : '&rsaquo;'}</span>
+            <div class="nm"><b>${escapeHtml(g.name)}</b><small>${g.items.length} ${escapeHtml(nWord(g.items.length, 'word_orders'))}</small></div>
+            <span class="sm">${escapeHtml(formatMoney(g.sumC / 100))}</span></div>${body}</div>`;
+    }).join('');
+
+    box.innerHTML = `<div class="d2chips">
+            <div class="d2chip on"><small>${escapeHtml(t('docs2_unsent_t') + ' \u00b7 ' + base.length + ' ' + nWord(base.length, 'word_orders'))}</small><b>${escapeHtml(formatMoney(sumC / 100))}</b></div></div>
+        <div id="docs2WaitBar"><div class="view-toggle-pill">
+            <button type="button" class="view-toggle-btn${_d2U.cust ? ' active' : ''}" onclick="toggleFilterDropdown('docs2UdCust')" title="${escapeHtml(t('stats_all_customers_short'))}">${_D2_BAR_ICONS.cust}</button>
+            <button type="button" class="view-toggle-btn${_d2U.period ? ' active' : ''}" onclick="toggleFilterDropdown('docs2UdPer')" title="${escapeHtml(t('orders_period'))}">${_D2_BAR_ICONS.per}</button></div>
+            <div class="view-toggle-pill"><button type="button" class="view-toggle-btn${expanded ? ' active' : ''}" onclick="docs2UnsentToggleAll()" title="${escapeHtml(t(expanded ? 'docs2_collapse' : 'docs2_expand'))}">${expanded ? _D2_BAR_ICONS.col : _D2_BAR_ICONS.exp}</button></div></div>
+        ${gl.length ? groupHtml : `<p style="font-size:13px; color:#9a9488; margin:24px 0; text-align:center;">${escapeHtml(t('docs2_unsent_empty'))}</p>`}`;
 }
