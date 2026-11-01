@@ -2122,6 +2122,13 @@
         .stn-full { font-size: 13px; line-height: 18px; color: #322f28; font-weight: 700; margin-bottom: 6px; word-break: break-word; }
         .stn-m { display: flex; gap: 14px; font-size: 12px; color: #8a8473; flex-wrap: wrap; }
         .stn-m b { color: #322f28; font-weight: 800; }
+        .smg-hd, .smg-row { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+        .smg-hd { font-size: 11px; color: #a29c8c; padding: 6px 0 3px; border-top: 1px solid #efeadd; }
+        .smg-hd em, .smg-hd b { font-weight: 600; color: #a29c8c; }
+        .smg-row { padding: 9px 0; }
+        .smg-row em, .smg-hd em { font-style: normal; width: 46px; text-align: right; color: #6b665a; font-weight: 700; flex-shrink: 0; }
+        .smg-row b, .smg-hd b { width: 44px; text-align: right; font-weight: 800; flex-shrink: 0; }
+        .smg-note { text-align: center; font-size: 11px; color: #a29c8c; padding-top: 8px; }
         /* ===== /THEME-UNIFIED-STATS ===== */
         /* ===== /THEME-UNIFIED ===== */
         /* Крестик «сбросить фильтр по статусу» в полосе итога заказов (фильтр из Dashboard) */
@@ -4356,6 +4363,20 @@ function hideSplashScreen() {
                 <div id="docsBody"></div>
             </div>
         </div>
+        <!-- ===== СТРАНИЦА «Рентабельность» (раскрытие плитки в «Статистике», 31.10.2026, stats.js) — в общей цепочке страниц ===== -->
+        <div id="statsMarginPage" class="app-page">
+            <div style="padding:0 2px;">
+                <div class="flex items-center gap-2 mb-2">
+                    <button onclick="closeAppPage()" class="pill-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        <span data-i18n="common_back">Назад</span>
+                    </button>
+                    <h2 class="text-gray-800" style="font-size:15px; font-weight:600; margin:0 0 0 auto;" data-i18n="stats_h_margin">Рентабельность</h2>
+                </div>
+                <input type="hidden" id="smFrom"><input type="hidden" id="smTo">
+                <div id="smBody"></div>
+            </div>
+        </div>
         <!-- ===== СТРАНИЦА «Топ изделий» (раскрытие плитки в «Статистике», 31.10.2026, stats.js) — в общей цепочке страниц ===== -->
         <div id="statsTopPage" class="app-page">
             <div style="padding:0 2px;">
@@ -4900,7 +4921,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=12"></script>
-    <script src="i18n-core.js?v=130"></script>
+    <script src="i18n-core.js?v=131"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=31"></script>
@@ -4923,7 +4944,7 @@ function hideSplashScreen() {
 <script src="payments.js?v=33"></script>
 <script src="documents.js?v=14"></script>
 <script src="bank.js?v=13"></script>
-<script src="stats.js?v=34"></script>
+<script src="stats.js?v=35"></script>
 <script src="history.js?v=9"></script>
 <script src="modals.js?v=20"></script>
 <script src="demoData.js?v=19"></script>
@@ -5865,6 +5886,7 @@ document.body.classList.remove('style-loading');
 // само приложение.
 const _backHandledDetailScreens = [
     { id: 'sendDocPage',        close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
+    { id: 'statsMarginPage',    close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'statsTopPage',       close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'statsRevPage',       close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'statsCustPage',      close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },

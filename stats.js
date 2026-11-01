@@ -951,7 +951,7 @@ function statsBuildHome() {
         </div>`
         + statsTileHtml('rev', 'stH1', STATS_TILE_ICONS.rev, 'stats_h_rev', "statsOpenRevenue()")
         + statsTileHtml('stock', 'stH4', STATS_TILE_ICONS.top, 'stats_h_top', "statsOpenTop()")
-        + statsTileHtml('pay', 'stH5', STATS_TILE_ICONS.margin, 'stats_h_margin', "statsOpenOld('statsProductProfitability')", 'perm-view-costs')
+        + statsTileHtml('pay', 'stH5', STATS_TILE_ICONS.margin, 'stats_h_margin', "statsOpenMargin()", 'perm-view-costs')
         + statsTileHtml('acc', 'stH6', STATS_TILE_ICONS.ing, 'stats_h_ing', "statsOpenOld('ingredientUsageReport')", 'perm-view-costs')
         + `<div class="sth-info"><i>i</i><ul><li data-i18n="stats_info_1">${escapeHtml(t('stats_info_1'))}</li></ul></div>`;
 }
@@ -1415,5 +1415,86 @@ function stpRender() {
         }).join('')
         + (rows.length > LIM ? `<div class="stp-more" onclick="stpToggleAll()">${escapeHtml(_stp.all ? t('stp_less') : t('stp_all').replace('{n}', rows.length))}</div>` : '')
         + '</div>';
+    body.innerHTML = html;
+}
+
+// ==================== СТРАНИЦА «РЕНТАБЕЛЬНОСТЬ» (раскрытие плитки, 31.10.2026) ====================
+// Сводка (маржа, прибыль, себестоимость) — за выбранный период (_stclBounds/_stclOrders); список изделий — по рецептам
+// (текущие цена и себестоимость, от периода не зависит). Только при праве can_view_costs. «Назад» — в «Статистику».
+let _sm = { range: 'month', from: '', to: '', sort: 'best', all: false, open: null };
+function _smTotals(bd) {
+    const list = _stclOrders(bd);
+    return {
+        cost: list.reduce((s, o) => s + orderCost(o), 0),
+        profit: list.reduce((s, o) => s + orderProfit(o), 0),
+        base: list.reduce((s, o) => s + orderAfterDiscount(o), 0)
+    };
+}
+function _smFmt2(v) { try { return Number(v).toLocaleString(typeof currentLang !== 'undefined' ? currentLang : undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } catch (e) { return Number(v).toFixed(2); } }
+function _smColor(p) { return p >= 50 ? '#4f6349' : (p >= 25 ? '#a07a22' : '#c0685c'); }
+function _smRows() {
+    const list = (typeof products !== 'undefined' ? products : []).filter(p => (p.ingredients || []).length > 0 && p.price);
+    list.sort((a, b) => _sm.sort === 'worst' ? productProfitPct(a) - productProfitPct(b) : productProfitPct(b) - productProfitPct(a));
+    return list;
+}
+function statsOpenMargin() {
+    if (typeof hasPermission === 'function' && !hasPermission('can_view_costs')) return;
+    _sm = { range: 'month', from: '', to: '', sort: 'best', all: false, open: null };   // каждый вход — «Месяц», «Лучшие»
+    openAppPage('statsMarginPage');
+    smRender();
+}
+function smSetRange(r) { _sm.range = r; smRender(); }
+function smSetSort(s) { _sm.sort = s; _sm.all = false; _sm.open = null; smRender(); }
+function smToggleAll() { _sm.all = !_sm.all; smRender(); }
+function smOpen(i) { const p = _smRows()[i]; const id = p ? p.id : null; _sm.open = (_sm.open === id) ? null : id; smRender(); }
+function smPickRange(ev) {
+    if (ev) ev.stopPropagation();
+    toggleCustomCalendarRange('globalCalendarPopup', 'smFrom', 'smTo', null, null, {
+        onApply: function (f, to) { _sm.range = 'custom'; _sm.from = f; _sm.to = to; smRender(); }
+    });
+}
+function smRender() {
+    const body = document.getElementById('smBody');
+    if (!body) return;
+    const rg = _sm.range;
+    const bd = _stclBounds(rg, _sm.from, _sm.to, 0);
+    const cur = _smTotals(bd);
+    const mPct = cur.base > 0 ? cur.profit / cur.base * 100 : null;
+
+    let deltaHtml = '';
+    const pb = _stclBounds(rg, _sm.from, _sm.to, -1);
+    if (pb && mPct != null) {
+        const pt = _smTotals(pb);
+        if (pt.base > 0) {
+            const d = Math.round((mPct - pt.profit / pt.base * 100) * 10) / 10, up = d >= 0;
+            const dTxt = (Math.abs(d) % 1 === 0 ? String(Math.abs(d)) : Math.abs(d).toFixed(1));
+            deltaHtml = `<div class="stcl-delta ${up ? 'up' : 'dn'}">${up ? '▲' : '▼'} ${escapeHtml(dTxt)} ${escapeHtml(t('sm_pp'))}<span>${escapeHtml(t('stcl_cmp_' + (rg === 'custom' ? 'custom' : rg)))}</span></div>`;
+        }
+    }
+    const chips = ['week', 'month', 'quarter', 'year', 'all'].map(k =>
+        `<button class="stcl-chip${rg === k ? ' on' : ''}" onclick="smSetRange('${k}')">${escapeHtml(t('stcl_' + k))}</button>`).join('')
+        + `<button class="stcl-chip cal${rg === 'custom' ? ' on' : ''}" onclick="smPickRange(event)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></button>`;
+    const cap = bd ? `${formatDateDMY(bd.from)} – ${formatDateDMY(bd.to)}` : t('stcl_all_cap');
+    let html = `<div class="stcl-chips">${chips}</div><div class="stcl-cap">${escapeHtml(cap)}</div>`;
+    html += `<div class="stcl-card"><div class="stcl-sum"><div><div class="stcl-big">${mPct == null ? '—' : Math.round(mPct) + '<small>&nbsp;%</small>'}</div><div class="stcl-lbl">${escapeHtml(t('sm_cap'))}</div></div>${deltaHtml}</div>`
+        + `<div class="stcl-meta"><span>${escapeHtml(t('srv_profit'))} <b>${escapeHtml(_stNum(cur.profit))} ${escapeHtml(_stCur())}</b></span><span>${escapeHtml(t('sm_cost'))} <b>${escapeHtml(_stNum(cur.cost))} ${escapeHtml(_stCur())}</b></span></div></div>`;
+
+    const rows = _smRows();
+    if (!rows.length) {
+        html += `<div class="stcl-card"><div class="stcl-empty">${escapeHtml(t('sm_empty'))}</div></div>`;
+        body.innerHTML = html;
+        return;
+    }
+    const LIM = 8, shown = _sm.all ? rows : rows.slice(0, LIM), worst = _sm.sort === 'worst';
+    html += `<div class="stcl-card"><div class="stp-seg"><button class="${worst ? '' : 'on'}" onclick="smSetSort('best')">${escapeHtml(t('sm_best'))}</button><button class="${worst ? 'on' : ''}" onclick="smSetSort('worst')">${escapeHtml(t('sm_worst'))}</button></div>`
+        + `<div class="smg-hd"><span class="stn-n">${escapeHtml(t('stp_h_item'))}</span><em>${escapeHtml(t('sm_h_cost'))}</em><em>${escapeHtml(t('sm_h_price'))}</em><b>${escapeHtml(t('srv_margin'))}</b></div>`
+        + shown.map((p, i) => {
+            const cost = productUnitCost(p), pct = productProfitPct(p), on = _sm.open === p.id, cl = _smColor(pct), cu = _stCur();
+            return `<div class="stn-it${on ? ' open' : ''}" onclick="smOpen(${i})"><div class="smg-row"><span class="stn-n">${escapeHtml(p.name)}</span><em>${escapeHtml(_smFmt2(cost))}</em><em>${escapeHtml(_smFmt2(p.price))}</em><b style="color:${cl}">${Math.round(pct)}%</b></div>`
+                + (on ? `<div class="stn-dt" style="padding-left:0"><div class="stn-full">${escapeHtml(p.name)}</div><div class="stn-m"><span>${escapeHtml(t('sm_cost'))} <b>${escapeHtml(_smFmt2(cost))} ${escapeHtml(cu)}</b></span><span>${escapeHtml(t('sm_price'))} <b>${escapeHtml(_smFmt2(p.price))} ${escapeHtml(cu)}</b></span><span>${escapeHtml(t('sm_unit_profit'))} <b>${escapeHtml(_smFmt2(p.price - cost))} ${escapeHtml(cu)}</b></span></div></div>` : '')
+                + '</div>';
+        }).join('')
+        + (rows.length > LIM ? `<div class="stp-more" onclick="smToggleAll()">${escapeHtml(_sm.all ? t('stp_less') : t('stp_all').replace('{n}', rows.length))}</div>` : '')
+        + `<div class="smg-note">${escapeHtml(t('sm_note'))}</div></div>`;
     body.innerHTML = html;
 }
