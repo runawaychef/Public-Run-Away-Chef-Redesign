@@ -93,12 +93,14 @@ function _d2Icon(key) {
     return `<svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${_D2_ICONS[key]}</svg>`;
 }
 
-// Плитка-квадрат: число/сумма, строка пояснения, подвал «слева — справа»
+// Плитка 8-шт. главного экрана: заголовок (+ число-значок справа), крупное значение по центру, подвал «слева — справа».
+// footR выводится как простой текст (без разметки).
 function _d2Tile(o) {
-    return `<div class="dashboard-card dc2${o.cls ? ' ' + o.cls : ''}" role="button" tabindex="0" onclick="${o.click || 'docs2Soon()'}">
-        <div class="dashboard-card__hd ${o.color}">${_d2Icon(o.icon)}<span class="dashboard-card__label">${escapeHtml(o.label)}</span></div>
-        <div class="dc-val"><span class="dashboard-card__value">${o.value}</span></div>
-        <div class="dc-mid"><div class="sth-wrow"><span>${escapeHtml(o.mid || '')}</span></div></div>
+    const pill = (o.pill !== undefined && o.pill !== null && o.pill !== '') ? `<span class="d2pill">${escapeHtml(String(o.pill))}</span>` : '';
+    const cap = o.cap ? `<span class="dc-cap">${escapeHtml(o.cap)}</span>` : '';
+    return `<div class="dashboard-card dc2 d2t${o.cls ? ' ' + o.cls : ''}" role="button" tabindex="0" onclick="${o.click || 'docs2Soon()'}">
+        <div class="dashboard-card__hd ${o.color}">${_d2Icon(o.icon)}<span class="dashboard-card__label">${escapeHtml(o.label)}</span>${pill}</div>
+        <div class="dc-val"><span class="dashboard-card__value">${o.value}</span>${cap}</div>
         <div class="dc-foot"><span>${escapeHtml(o.footL || '')}</span><em>${escapeHtml(o.footR || '')}</em></div>
     </div>`;
 }
@@ -113,7 +115,7 @@ function docs2RenderHome() {
     // ---- Документы: статусы не пересекаются (просрочено / ждут в срок / оплачены) ----
     const over = { n: 0, c: 0, maxDays: 0 };
     const wait = { n: 0, c: 0, nextDue: null };
-        let unsent = 0, dnMonth = 0, lastDn = '', total = 0;
+        let unsent = 0, unsentC = 0, dnMonth = 0, lastDn = '', total = 0;
     docs.forEach(d => {
         if (d.cancelled) return;
         total++;
@@ -133,52 +135,33 @@ function docs2RenderHome() {
                 wait.n++; wait.c += d.sumC || 0;
                 if (d.due && (!wait.nextDue || d.due < wait.nextDue)) wait.nextDue = d.due;
             }
-            if (st.unsent) unsent++;
+            if (st.unsent) { unsent++; unsentC += d.sumC || 0; }
         }
     });
 
     // ---- Заказы без счёта (главный документ — заказ) ----
     const todo = (typeof orders !== 'undefined' ? orders : []).filter(o => typeof orderNeedsInvoice === 'function' && orderNeedsInvoice(o));
     let todoSumC = 0;
-    const byCust = new Map();
-    todo.forEach(o => {
-        todoSumC += Math.round(orderGrandTotal(o) * 100);
-        const name = o.customer || t('orders_no_customer');
-        byCust.set(name, (byCust.get(name) || 0) + 1);
-    });
-    const top = [...byCust.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3);
-    const DOTS = ['#c9973a', '#5f7857', '#4f7a88'];
-    const topRows = top.map(([name, n], i) => `<div class="sth-wrow"><i style="background:${DOTS[i]}"></i><span>${escapeHtml(name)}</span><b>${n}</b></div>`).join('');
-
+    todo.forEach(o => { todoSumC += Math.round(orderGrandTotal(o) * 100); });
+    const plain = c => formatMoney((c || 0) / 100);
     const shortDate = iso => { const p = String(iso || '').split('-'); return p.length === 3 ? p[2] + '.' + p[1] : ''; };
-    const nDocs = n => t('docs2_docs_n').replace('{n}', n);
-
-    const alertHtml = unsent
-        ? `<div class="docs2-alert" role="button" tabindex="0" onclick="docs2Soon()"><span>${escapeHtml(t('docs2_unsent').replace('{n}', unsent))}</span><b>&rsaquo;</b></div>` : '';
-
-    const wide = `<div class="dashboard-card dc2 sth-wide" role="button" tabindex="0" onclick="docs2Soon()">
-        <div class="dashboard-card__hd dash-c-day">${_d2Icon('plus')}<span class="dashboard-card__label">${escapeHtml(t('docs_tab_todo'))}</span></div>
-        <div class="sth-wbody"><div class="sth-wr">
-            <div class="dc-val"><span class="dashboard-card__value">${todo.length}</span><span class="dc-cap">${escapeHtml(todo.length ? t('docs2_todo_cap') : t('docs_todo_empty'))}</span></div>
-            <div class="dc-mid">${topRows}</div>
-        </div></div>
-        <div class="dc-foot"><span>${escapeHtml(todo.length ? t('docs2_todo_sum') : '')}</span><em>${todo.length ? _d2Money(todoSumC) : ''}</em></div>
-    </div>`;
 
     const tiles = [
-        _d2Tile({ color: 'dash-c-tom', icon: 'clock', label: t('docs_tile_wait'), value: _d2Money(wait.c), mid: nDocs(wait.n),
+        _d2Tile({ color: 'dash-c-day', icon: 'plus', label: t('docs_tab_todo'), value: String(todo.length), cap: todo.length ? t('docs2_todo_cap') : t('docs_todo_empty'),
+                  footL: todo.length ? t('docs2_todo_sum') : '', footR: todo.length ? plain(todoSumC) : '' }),
+        _d2Tile({ color: 'dash-c-day', icon: 'alert', label: t('docs2_unsent_t'), value: String(unsent), cap: unsent ? t('docs2_unsent_cap') : '',
+                  footL: unsent ? t('docs2_todo_sum') : '', footR: unsent ? plain(unsentC) : '', cls: unsent ? 'd2warm' : '' }),
+        _d2Tile({ color: 'dash-c-tom', icon: 'clock', label: t('docs_tile_wait'), value: _d2Money(wait.c), pill: wait.n,
                   footL: wait.nextDue ? t('docs2_next_due') : '', footR: shortDate(wait.nextDue) }),
-        _d2Tile({ color: 'dash-c-pay', icon: 'alert', label: t('docs_tile_over'), value: _d2Money(over.c), mid: nDocs(over.n),
+        _d2Tile({ color: 'dash-c-pay', icon: 'alert', label: t('docs_tile_over'), value: _d2Money(over.c), pill: over.n,
                   footL: over.n ? t('docs2_longest') : '', footR: over.n ? t('docs2_days_short').replace('{n}', over.maxDays) : '' }),
-        _d2Tile({ color: 'dash-c-acc', icon: 'check', label: t('docs_tile_paid'), value: _d2Paid ? _d2Money(_d2Paid.c) : '&mdash;', mid: _d2Paid ? t('docs2_pays_n').replace('{n}', _d2Paid.n) : '',
-                  footL: _d2Paid ? t('docs2_prev_month') : '', footR: _d2Paid ? formatMoney(_d2Paid.pc / 100) : '' }),
-        _d2Tile({ color: 'dash-c-stock', icon: 'dn', label: t('docs_type_dn'), value: String(dnMonth), mid: t('docs2_this_month'),
+        _d2Tile({ color: 'dash-c-acc', icon: 'check', label: t('docs_tile_paid'), value: _d2Paid ? _d2Money(_d2Paid.c) : '&mdash;', pill: _d2Paid ? _d2Paid.n : '',
+                  footL: _d2Paid ? t('docs2_prev_month') : '', footR: _d2Paid ? plain(_d2Paid.pc) : '' }),
+        _d2Tile({ color: 'dash-c-stock', icon: 'dn', label: t('docs_type_dn'), value: String(dnMonth), cap: t('docs2_this_month'),
                   footL: lastDn ? t('docs2_last') : '', footR: lastDn }),
-        _d2Tile({ color: 'dash-c-rev', icon: 'all', label: t('docs2_all'), value: String(total), mid: t('docs2_all_sub'), footL: t('docs2_total') }),
-        _d2Tile({ color: 'dash-c-stock', icon: 'exp', label: t('docs2_export'), value: '&mdash;', mid: t('docs2_export_sub'),
-                  footL: t('docs2_soon'), cls: 'docs2-soon', click: 'docs2Soon()' })
+        _d2Tile({ color: 'dash-c-rev', icon: 'all', label: t('docs2_all'), value: String(total), footL: t('docs2_all_sub') }),
+        _d2Tile({ color: 'dash-c-stock', icon: 'exp', label: t('docs2_export'), value: '&mdash;', footL: t('docs2_export_sub'), footR: t('docs2_soon'), cls: 'docs2-soon' })
     ].join('');
 
-    box.innerHTML = `<div class="dashboard-grid stats-home-grid">${alertHtml}${wide}${tiles}
-        <div class="sth-info"><i>i</i><ul><li>${escapeHtml(t('docs2_info'))}</li></ul></div></div>`;
+    box.innerHTML = `<div class="dashboard-grid stats-home-grid docs2-grid">${tiles}</div>`;
 }
