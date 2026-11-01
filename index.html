@@ -2049,6 +2049,10 @@
         .d2o .r div { font-size: 11.5px; font-weight: 600; color: #6b675d; }
         .d2o .r div.red { color: #a3493d; }
         .d2gold { color: #96712a; font-weight: 700; }
+        .d2btn { font-size: 12px; font-weight: 700; border-radius: 12px; padding: 0 11px; height: 30px; background: #fff; color: #4f6349; border: 1px solid #cfd8c8; white-space: nowrap; flex-shrink: 0; }
+        .d2btn.on { background: #7c9473; color: #fff; border-color: #7c9473; }
+        .d2warn { background: #f7efdc; color: #8a6a24; border-radius: 12px; padding: 8px 10px; font-size: 12.5px; font-weight: 600; margin: 0 0 10px; }
+        .d2hint { font-size: 11.5px; color: #9a9488; margin: 4px 2px 8px; }
         .docs2-grid .d2pill { margin-left: auto; background: #f1ede2; color: #6b665a; border-radius: 10px; font-size: 12px; font-weight: 700; padding: 1px 8px; flex-shrink: 0; }
         .stats-home-grid .docs2-alert { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; background: #f7efdc; color: #8a6a24;
             border-radius: 14px; padding: 9px 12px; font-size: 12.5px; font-weight: 600; cursor: pointer; }
@@ -4331,6 +4335,21 @@ function hideSplashScreen() {
                 <div id="docs2PdPer" class="filter-dropdown hidden" style="left:0; right:auto; min-width:200px;"></div>
             </div>
         </div>
+        <!-- ===== НОВЫЙ РАЗДЕЛ «Документы» — страница «К выставлению» (1.11.2026, documents2.js) ===== -->
+        <div id="docs2TodoPage" class="app-page">
+            <div style="padding:0 2px;">
+                <div class="flex items-center gap-2 mb-2">
+                    <button onclick="closeAppPage()" class="pill-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        <span data-i18n="common_back">Назад</span>
+                    </button>
+                    <h2 class="text-gray-800" style="font-size:15px; font-weight:600; margin:0 0 0 auto;" data-i18n="docs_tab_todo">К выставлению</h2>
+                </div>
+                <div id="docs2Todo" style="padding-top:2px; padding-bottom:24px;"></div>
+                <div id="docs2TdCust" class="filter-dropdown hidden" style="left:0; right:auto; min-width:230px;"></div>
+                <div id="docs2TdPer" class="filter-dropdown hidden" style="left:0; right:auto; min-width:200px;"></div>
+            </div>
+        </div>
         <!-- ===== СТРАНИЦА «Рентабельность» (раскрытие плитки в «Статистике», 31.10.2026, stats.js) — в общей цепочке страниц ===== -->
         <div id="statsMarginPage" class="app-page">
             <div style="padding:0 2px;">
@@ -4924,7 +4943,7 @@ function hideSplashScreen() {
 <script src="confirmation.js?v=2"></script>
 <script src="payments.js?v=34"></script>
 <script src="documents.js?v=14"></script>
-<script src="documents2.js?v=18"></script>
+<script src="documents2.js?v=19"></script>
 <script src="bank.js?v=13"></script>
 <script src="stats.js?v=43"></script>
 <script src="history.js?v=9"></script>
@@ -5877,6 +5896,7 @@ const _backHandledDetailScreens = [
     { id: 'docs2HomePage',      close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'docs2WaitPage',      close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'docs2PaidPage',      close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
+    { id: 'docs2TodoPage',      close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'bankPage',           close: () => { if (typeof closeBankSection === 'function') closeBankSection(); } },
     { id: 'bankSettingsPage',   close: () => { if (typeof closeBankSettings === 'function') closeBankSettings(); } },
     { id: 'inventoryPage',      close: () => { if (typeof closeInventoryPage === 'function') closeInventoryPage(); } },

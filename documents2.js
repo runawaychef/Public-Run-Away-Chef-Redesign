@@ -172,7 +172,7 @@ function docs2RenderHome() {
     const shortDate = iso => { const p = String(iso || '').split('-'); return p.length === 3 ? p[2] + '.' + p[1] : ''; };
 
     const tiles = [
-        _d2Tile({ color: 'dash-c-day', icon: 'plus', label: t('docs_tab_todo'), value: String(todo.length), cap: todo.length ? t('docs2_todo_cap') : t('docs_todo_empty'),
+        _d2Tile({ color: 'dash-c-day', icon: 'plus', label: t('docs_tab_todo'), value: String(todo.length), click: "openDocs2Todo()", cap: todo.length ? t('docs2_todo_cap') : t('docs_todo_empty'),
                   footL: todo.length ? t('docs2_todo_sum') : '', footR: todo.length ? plain(todoSumC) : '' }),
         _d2Tile({ color: 'dash-c-day', icon: 'alert', label: t('docs2_unsent_t'), value: String(unsent), cap: unsent ? t('docs2_unsent_cap') : '',
                   footL: unsent ? t('docs2_todo_sum') : '', footR: unsent ? plain(unsentC) : '' }),
@@ -429,4 +429,105 @@ function docs2RenderPaid(reapplyView) {
             <button type="button" class="view-toggle-btn${_d2P.period ? ' active' : ''}" onclick="toggleFilterDropdown('docs2PdPer')" title="${escapeHtml(t('orders_period'))}">${_D2_BAR_ICONS.per}</button></div>
             <div class="view-toggle-pill"><button type="button" class="view-toggle-btn${expanded ? ' active' : ''}" onclick="docs2PaidToggleAll()" title="${escapeHtml(t(expanded ? 'docs2_collapse' : 'docs2_expand'))}">${expanded ? _D2_BAR_ICONS.col : _D2_BAR_ICONS.exp}</button></div></div>
         ${gl.length ? groupHtml : `<p style="font-size:13px; color:#9a9488; margin:24px 0; text-align:center;">${escapeHtml(t('docs2_paid_empty'))}</p>`}`;
+}
+
+// ==================== Страница «К выставлению» (1.11.2026) ====================
+// Заказы без счёта по клиентам (та же логика, что во вкладке старого раздела). Выставление — через окно отправки документа.
+let _d2T = { cust: '', period: '', open: new Set() };
+
+function openDocs2Todo() {
+    if (!docs2Allowed()) return;
+    _d2T.cust = '';
+    _d2T.period = '';
+    openAppPage('docs2TodoPage');
+    docs2RenderTodo(true);
+}
+(window._appPageOnShow = window._appPageOnShow || {}).docs2TodoPage = () => docs2RenderTodo(false);
+
+function docs2TodoPick(field, v) {
+    if (typeof closeAllFilterDropdowns === 'function') closeAllFilterDropdowns();
+    _d2T[field === 'per' ? 'period' : 'cust'] = v;
+    docs2RenderTodo(true);
+}
+function docs2TodoToggle(key) {
+    if (_d2T.open.has(key)) _d2T.open.delete(key); else _d2T.open.add(key);
+    docs2RenderTodo(false);
+}
+function docs2TodoToggleAll() {
+    _d2SetView(_d2View() === 'expanded' ? 'collapsed' : 'expanded');
+    docs2RenderTodo(true);
+}
+function docs2TodoIssue(orderId, cons) {
+    if (typeof openSendDocumentSheet === 'function') openSendDocumentSheet(orderId, 'invoice', cons ? { preferCons: true } : undefined);
+}
+
+function docs2RenderTodo(reapplyView) {
+    const box = document.getElementById('docs2Todo');
+    if (!box) return;
+    const all = (typeof orders !== 'undefined' ? orders : []).filter(o => typeof orderNeedsInvoice === 'function' && orderNeedsInvoice(o));
+    const ymOf = o => String(o.date || '').slice(0, 7);
+    const keyOf = o => String(o.customer_id || ('n:' + (o.customer || '')));
+    const base = all.filter(o => (!_d2T.cust || keyOf(o) === _d2T.cust) && (!_d2T.period || ymOf(o) === _d2T.period));
+    const totC = o => Math.round(orderGrandTotal(o) * 100);
+    const sumC = base.reduce((s, o) => s + totC(o), 0);
+
+    // Группы клиент + год (сводный счёт — только из заказов одного года)
+    const byG = new Map();
+    base.forEach(o => {
+        const name = o.customer || t('orders_no_customer');
+        const yr = String(o.date || '').slice(0, 4);
+        const k = keyOf(o) + '|' + yr;
+        if (!byG.has(k)) byG.set(k, { key: k, name, yr, items: [], sumC: 0 });
+        const g = byG.get(k); g.items.push(o); g.sumC += totC(o);
+    });
+    const gl = [...byG.values()].sort((a, b) => b.sumC - a.sumC);
+    const yrsByName = {};
+    gl.forEach(g => { (yrsByName[g.name] = yrsByName[g.name] || new Set()).add(g.yr); });
+    gl.forEach(g => { g.title = yrsByName[g.name].size > 1 && g.yr ? g.name + ' · ' + g.yr : g.name; });
+    if (reapplyView) {
+        _d2T.open = new Set();
+        if (_d2View() === 'expanded' || gl.length === 1) gl.forEach(g => _d2T.open.add(g.key));
+    }
+
+    const custMap = new Map();
+    all.forEach(o => custMap.set(keyOf(o), o.customer || t('orders_no_customer')));
+    const CHK = '<svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>';
+    const opt = (field, v, label, sel) => `<div class="status-option${sel ? ' selected' : ''}" data-v="${escapeHtml(v)}" onclick="docs2TodoPick('${field}', this.getAttribute('data-v'))"><span>${escapeHtml(label)}</span>${CHK}</div>`;
+    const ddC = document.getElementById('docs2TdCust'), ddP = document.getElementById('docs2TdPer');
+    if (ddC) ddC.innerHTML = opt('cust', '', t('docs_customer_all'), !_d2T.cust)
+        + [...custMap.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([k, n]) => opt('cust', k, n, k === _d2T.cust)).join('');
+    const yms = [...new Set(all.map(ymOf).filter(y => /^\d{4}-\d{2}$/.test(y)))].sort().reverse();
+    if (ddP) ddP.innerHTML = opt('per', '', t('docs_period_all'), !_d2T.period)
+        + yms.map(ym => opt('per', ym, _docsMonthLabel(ym), ym === _d2T.period)).join('');
+
+    const expanded = _d2View() === 'expanded';
+    const row = o => `<div class="d2o"><div class="l" onclick="docs2OpenOrder(${o.id})">
+            <div class="a">${escapeHtml(t('docs2_order').replace('{n}', o.order_number || ('#' + o.id)))}</div>
+            <div class="b">${escapeHtml(formatDateDMY(o.date))}</div></div>
+            <div class="r"><b>${escapeHtml(formatMoney(totC(o) / 100))}</b></div>
+            <button type="button" class="d2btn" onclick="docs2TodoIssue(${o.id}, false)">${escapeHtml(t('docs_todo_issue_short'))}</button></div>`;
+    const byDate = (a, b) => String(a.date || '').localeCompare(String(b.date || '')) || (a.id - b.id);
+    const groupHtml = gl.map(g => {
+        const open = _d2T.open.has(g.key);
+        const body = open ? g.items.slice().sort(byDate).map(row).join('') : '';
+        const consBtn = g.items.length > 1 ? `<button type="button" class="d2btn on" onclick="event.stopPropagation(); docs2TodoIssue(${g.items.slice().sort(byDate)[0].id}, true)">${escapeHtml(t('docs_todo_issue'))}</button>` : '';
+        return `<div class="d2g"><div class="d2gh" onclick="docs2TodoToggle(this.getAttribute('data-k'))" data-k="${escapeHtml(g.key)}">
+            <span class="ch">${open ? '&#8964;' : '&rsaquo;'}</span>
+            <div class="nm"><b>${escapeHtml(g.title)}</b><small>${g.items.length} ${escapeHtml(nWord(g.items.length, 'word_orders'))} · ${escapeHtml(formatMoney(g.sumC / 100))}</small></div>${consBtn}</div>${body}</div>`;
+    }).join('');
+
+    let banner = '';
+    const nowD = typeof orgNowDate === 'function' ? orgNowDate() : new Date();
+    if (nowD.getMonth() === 11 && nowD.getDate() >= 15) {
+        const left = all.filter(o => String(o.date || '').slice(0, 4) === String(nowD.getFullYear())).length;
+        if (left) banner = `<div class="d2warn">${escapeHtml(t('docs_year_end_banner').replace('{n}', left))}</div>`;
+    }
+
+    box.innerHTML = `${banner}<div class="d2chips">
+            <div class="d2chip on"><small>${escapeHtml(t('docs_tab_todo') + ' · ' + base.length + ' ' + nWord(base.length, 'word_orders'))}</small><b>${escapeHtml(formatMoney(sumC / 100))}</b></div></div>
+        <div id="docs2WaitBar"><div class="view-toggle-pill">
+            <button type="button" class="view-toggle-btn${_d2T.cust ? ' active' : ''}" onclick="toggleFilterDropdown('docs2TdCust')" title="${escapeHtml(t('stats_all_customers_short'))}">${_D2_BAR_ICONS.cust}</button>
+            <button type="button" class="view-toggle-btn${_d2T.period ? ' active' : ''}" onclick="toggleFilterDropdown('docs2TdPer')" title="${escapeHtml(t('orders_period'))}">${_D2_BAR_ICONS.per}</button></div>
+            <div class="view-toggle-pill"><button type="button" class="view-toggle-btn${expanded ? ' active' : ''}" onclick="docs2TodoToggleAll()" title="${escapeHtml(t(expanded ? 'docs2_collapse' : 'docs2_expand'))}">${expanded ? _D2_BAR_ICONS.col : _D2_BAR_ICONS.exp}</button></div></div>
+        ${gl.length ? groupHtml + `<div class="d2hint">${escapeHtml(t('docs_todo_hint'))}</div>` : `<p style="font-size:13px; color:#9a9488; margin:24px 0; text-align:center;">${escapeHtml(t('docs_todo_empty'))}</p>`}`;
 }
