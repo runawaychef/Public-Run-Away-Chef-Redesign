@@ -883,7 +883,7 @@ function _orderDocKindRaw(o) {
     if (o.consolidated_invoice_id) return 'cons';
     if (o.inv_no) return 'inv';
     // «Вести учёт с даты» (30.10.2026): заказы раньше даты — вне программы, счёт не требуется
-    if (o.cons_excluded || (typeof currentOrgInvoicingFrom !== 'undefined' && currentOrgInvoicingFrom && String(o.order_date || '') < currentOrgInvoicingFrom)) return 'out';
+    if (o.cons_excluded || (typeof currentOrgInvoicingFrom !== 'undefined' && currentOrgInvoicingFrom && String(o.date || o.order_date || '') < currentOrgInvoicingFrom)) return 'out';
     // Годовые правила (31.10.2026): заказ прошлого года без документа после 15 января — вне программы (в базу не пишется, считается на лету)
     if (typeof docYearAllowed === 'function') {
         const oy = Number(String(o.date || o.order_date || '').slice(0, 4));
