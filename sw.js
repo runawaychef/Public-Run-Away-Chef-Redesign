@@ -1,4 +1,4 @@
-const CACHE_NAME = 'runwaychef-public-cache-v783';
+const CACHE_NAME = 'runwaychef-public-cache-v784';
 const ASSETS = [
   './index.html',
   './i18n-core.js',
@@ -21,7 +21,7 @@ const ASSETS = [
   './notification-icon-96.png',
   './notification-badge-96.png',
   './product-placeholder.png',
-  // demo-*.jpg в предзагрузке нет: нужны только демо-организации, закэшируются при первом показе
+  // demo-*.jpg в предзагрузке нет: нужны только демо-организации, закэшируются позже.
   './supabaseClient.js',
   './cache.js',
   './auth.js',
@@ -39,6 +39,7 @@ const ASSETS = [
   './confirmation.js',
   './payments.js',
   './documents.js',
+  './documents2.js',
   './bank.js',
   './customers.js',
   './products.js',

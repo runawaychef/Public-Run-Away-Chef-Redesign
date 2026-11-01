@@ -213,6 +213,7 @@ function docsEnabled() { return typeof currentOrgPaymentMode !== 'undefined' && 
 // Есть ли выставленные документы (после возврата с «По счёту» раздел остаётся доступным)
 function _anyIssuedDocs() { return (typeof orders !== 'undefined' ? orders : []).some(o => o && (o.inv_no || o.dn_no || o.consolidated_invoice_id)); }
 function refreshDocsVisibility() {
+    if (typeof refreshDocs2Visibility === 'function') refreshDocs2Visibility(); // новый раздел «Документы» (тест, 31.10.2026)
     const show = docsEnabled() || _anyIssuedDocs();
     const b = document.getElementById('ordersDocsBtn'); if (b) b.classList.toggle('hidden', !show);
     const c = document.getElementById('cdDocsBtn'); if (c) c.classList.toggle('hidden', !show);

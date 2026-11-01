@@ -889,7 +889,10 @@ function _appPageShowTop() {
     const settingsTop = appPageTop() === 'settingsPage';
     document.getElementById('settingsBtn')?.classList.toggle('active', settingsTop);
     // Иконка «Статистики» подсвечена, только пока открыт раздел статистики и сверху нет «Настроек»/«Умного склада» (31.10)
-    document.getElementById('statsBtn')?.classList.toggle('active', !smartTop && !settingsTop && typeof currentTabId !== 'undefined' && currentTabId === 'stats');
+    // Иконка «Документы» (новый раздел, тест) подсвечена, пока верхняя страница — одна из страниц docs2* (31.10.2026)
+    const docs2Top = String(appPageTop() || '').indexOf('docs2') === 0;
+    document.getElementById('docs2Btn')?.classList.toggle('active', docs2Top);
+    document.getElementById('statsBtn')?.classList.toggle('active', !smartTop && !settingsTop && !docs2Top && typeof currentTabId !== 'undefined' && currentTabId === 'stats');
     // «Умный склад» — отдельный раздел: в нижнем меню ничего не подсвечиваем (22.10);
     // после закрытия возвращаем подсветку разделу, который лежит под страницей
     const navBtns = document.querySelectorAll('.bottom-nav-item');

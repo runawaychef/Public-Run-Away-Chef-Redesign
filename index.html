@@ -2004,6 +2004,19 @@
         #companyInfoPage label.flex.items-center.gap-2, #companyInfoPage label.flex.items-center.gap-1\.5 { justify-content: space-between; gap: 10px; }
         .st-head.trash-grid, .st-row.trash-grid { grid-template-columns: 58px 58px minmax(0, 1fr) 56px; }
         /* ===== /THEME-UNIFIED-COMPANY2 ===== */
+        /* ===== DOCS2 (31.10.2026): новый раздел «Документы» — иконка в шапке и главный экран (тест, только id1) =====
+           ОТКАТ: удалить этот блок, #docs2Btn и #docs2HomePage в index.html, documents2.js, строки docs2 в helpers.js и payments.js. */
+        #docs2Btn { position: relative; flex-shrink: 0; width: 38px; height: 38px; background: #fff; border: 1px solid rgba(90,75,40,0.06); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; cursor: pointer; color: #9a9488;
+            box-shadow: 0 6px 12px -6px rgba(70,58,30,0.35), 0 1px 2px rgba(70,58,30,0.1); }
+        #docs2Btn.hidden { display: none; }
+        #docs2Btn.active { color: #7c9473; border-color: #7c9473; }
+        #headerIcons:has(#settingsBtn.hidden) #docs2Btn { display: none; } /* пока вход не выполнен (настройки скрыты) — иконки нет */
+        .stats-home-grid .docs2-alert { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; background: #f7efdc; color: #8a6a24;
+            border-radius: 14px; padding: 9px 12px; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+        .stats-home-grid .docs2-alert span { flex: 1; min-width: 0; }
+        .stats-home-grid .docs2-alert b { font-size: 16px; line-height: 1; }
+        .stats-home-grid .dashboard-card.docs2-soon { opacity: .55; border-style: dashed; cursor: default; }
         /* ===== THEME-UNIFIED-STATS (31.10.2026): главный экран «Статистики» — 6 плиток в стиле Dashboard =====
            ОТКАТ: удалить блок + #statsHome в index.html (вернуть index-before-stathome.html), stats.js, i18n-*, sw.js. */
         .stats-home-grid { grid-template-columns: 1fr 1fr; grid-template-rows: none; grid-auto-rows: auto; gap: 16px; }
@@ -2450,6 +2463,10 @@ function hideSplashScreen() {
 <!-- Иконка «Умный склад» (тележка) убрана 31.10.2026: дублировала раздел «Склад». Откат — вернуть кнопку из git. -->
 <button id="statsBtn" class="hidden" onclick="showTab('stats')" title="Статистика">
     <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="13" width="3" height="5"/><rect x="12" y="9" width="3" height="9"/><rect x="17" y="5" width="3" height="13"/></svg>
+</button>
+<!-- Новый раздел «Документы» (тест, только id1; 31.10.2026, documents2.js) -->
+<button id="docs2Btn" class="hidden" onclick="openDocs2Home()" title="Документы" data-i18n-title="docs_title">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/></svg>
 </button>
 <button id="settingsBtn" class="hidden" onclick="toggleSettingsPage()" title="Настройки">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -4232,6 +4249,19 @@ function hideSplashScreen() {
                 <div id="docsBody"></div>
             </div>
         </div>
+        <!-- ===== НОВЫЙ РАЗДЕЛ «Документы» — главный экран (31.10.2026, documents2.js; тест, только id1) ===== -->
+        <div id="docs2HomePage" class="app-page">
+            <div style="padding:0 2px;">
+                <div class="flex items-center gap-2 mb-2">
+                    <button onclick="closeAppPage()" class="pill-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        <span data-i18n="common_back">Назад</span>
+                    </button>
+                    <h2 class="text-gray-800" style="font-size:15px; font-weight:600; margin:0 0 0 auto;" data-i18n="docs_title">Документы</h2>
+                </div>
+                <div id="docs2Home" class="dashboard" style="padding-top:2px;"></div>
+            </div>
+        </div>
         <!-- ===== СТРАНИЦА «Рентабельность» (раскрытие плитки в «Статистике», 31.10.2026, stats.js) — в общей цепочке страниц ===== -->
         <div id="statsMarginPage" class="app-page">
             <div style="padding:0 2px;">
@@ -4803,7 +4833,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=12"></script>
-    <script src="i18n-core.js?v=134"></script>
+    <script src="i18n-core.js?v=135"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=31"></script>
@@ -4823,14 +4853,15 @@ function hideSplashScreen() {
 <script src="invoice.js?v=54"></script>
 <script src="send-document.js?v=42"></script>
 <script src="confirmation.js?v=2"></script>
-<script src="payments.js?v=33"></script>
+<script src="payments.js?v=34"></script>
 <script src="documents.js?v=14"></script>
+<script src="documents2.js?v=1"></script>
 <script src="bank.js?v=13"></script>
 <script src="stats.js?v=43"></script>
 <script src="history.js?v=9"></script>
 <script src="modals.js?v=20"></script>
 <script src="demoData.js?v=19"></script>
-<script src="helpers.js?v=51"></script>
+<script src="helpers.js?v=52"></script>
 <script>
 // SUPABASE_URL, SUPABASE_KEY, db перенесены в supabaseClient.js
 
@@ -5774,6 +5805,7 @@ const _backHandledDetailScreens = [
     { id: 'statsRevPage',       close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'statsCustPage',      close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'docsPage',           close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
+    { id: 'docs2HomePage',      close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'bankPage',           close: () => { if (typeof closeBankSection === 'function') closeBankSection(); } },
     { id: 'bankSettingsPage',   close: () => { if (typeof closeBankSettings === 'function') closeBankSettings(); } },
     { id: 'inventoryPage',      close: () => { if (typeof closeInventoryPage === 'function') closeInventoryPage(); } },
