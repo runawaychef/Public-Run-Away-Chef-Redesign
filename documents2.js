@@ -145,13 +145,13 @@ function docs2RenderHome() {
         else { wait.n++; wait.c += u.remC; }
         if (u.partial) { part.n++; part.c += u.remC; part.paidC += u.paidC; }
     });
-    let dnMonth = 0, dnUnsent = 0, lastDn = '', total = 0;
+    let dnMonth = 0, dnUnsent = 0, lastDn = '', total = 0, totDn = 0, totInv = 0;
     // Заказы, вошедшие в действующий сводный счёт: их отдельный счёт (старые заказы) в суммах не учитываем — иначе заказ считается дважды
     const inCons = new Set();
     docs.forEach(d => { if (d.kind === 'cons' && !d.cancelled) (d.memberIds || []).forEach(id => inCons.add(id)); });
     docs.forEach(d => {
         if (d.cancelled) return;
-        total++;
+        if (!(d.kind === 'inv' && inCons.has(d.orderId))) { total++; if (d.kind === 'dn') totDn++; else totInv++; }
         if (d.kind === 'dn') {
             if (String(d.date).slice(0, 7) === ym) { dnMonth++; if (!d.sentAt && !d.deleted) dnUnsent++; }
             if (String(d.rawNumber || '') > lastDn) lastDn = String(d.rawNumber || '');
@@ -177,7 +177,7 @@ function docs2RenderHome() {
     const tiles = [
         _d2Tile({ color: 'dash-c-day', icon: 'plus', label: t('docs2_todo_t'), value: String(todo.length), click: "openDocs2Todo()", cap: todo.length ? t('docs2_todo_cap') : '',
                   footL: todo.length ? t('docs2_todo_sum') : t('docs2_todo_ok'), footR: todo.length ? plain(todoSumC) : '' }),
-        _d2Tile({ color: 'dash-c-day', icon: 'alert', label: t('docs2_unsent_t'), value: String(unsent), click: "openDocs2Unsent()", cap: unsent ? t('docs2_unsent_cap') : '',
+        _d2Tile({ color: 'dash-c-day', icon: 'alert', label: t('docs2_tosend_t'), value: String(unsent), click: "openDocs2Unsent()", cap: unsent ? t('docs2_unsent_cap') : '',
                   footL: unsent ? t('docs2_todo_sum') : '', footR: unsent ? plain(unsentC) : '' }),
         _d2Tile({ color: 'dash-c-tom', icon: 'clock', label: t('docs_tile_wait'), value: _d2Money(wait.c + over.c), pill: wait.n + over.n, click: "openDocs2Wait('all')",
                   mid: part.n ? t('docs2_partial_line').replace('{n}', part.n) : '',
@@ -186,7 +186,7 @@ function docs2RenderHome() {
                   footL: _d2Paid ? t('docs2_prev_month') : '', footR: _d2Paid ? plain(_d2Paid.pc) : '' }),
         _d2Tile({ color: 'dash-c-stock', icon: 'dn', label: t('docs_type_dn'), value: String(dnMonth), cap: t('docs2_this_month'),
                   footL: dnUnsent ? t('docs2_dn_unsent').replace('{n}', dnUnsent) : (lastDn ? t('docs2_last') : ''), footR: dnUnsent ? '' : lastDn, click: "openDocs2Dn()" }),
-        _d2Tile({ color: 'dash-c-rev', icon: 'all', label: t('docs2_all'), value: String(total), footL: t('docs2_all_sub') }),
+        _d2Tile({ color: 'dash-c-rev', icon: 'all', label: t('docs2_all'), value: String(total), click: "openDocs2All()", footL: total ? t('docs2_all_foot').replace('{i}', totInv).replace('{d}', totDn) : '' }),
         _d2Tile({ color: 'dash-c-stock', icon: 'exp', label: t('docs2_export'), value: '&mdash;', footL: t('docs2_export_sub'), footR: t('docs2_soon'), cls: 'docs2-soon sth-wide' })
     ].join('');
 
@@ -622,7 +622,7 @@ function docs2RenderUnsent(reapplyView) {
     }).join('');
 
     box.innerHTML = `<div class="d2chips">
-            <div class="d2chip on"><small>${escapeHtml(t('docs2_unsent_t') + ' \u00b7 ' + base.length + ' ' + nWord(base.length, 'word_orders'))}</small><b>${escapeHtml(formatMoney(sumC / 100))}</b></div></div>
+            <div class="d2chip on"><small>${escapeHtml(t('docs2_tosend_t') + ' \u00b7 ' + base.length + ' ' + nWord(base.length, 'word_orders'))}</small><b>${escapeHtml(formatMoney(sumC / 100))}</b></div></div>
         <div id="docs2WaitBar"><div class="view-toggle-pill">
             <button type="button" class="view-toggle-btn${_d2U.cust ? ' active' : ''}" onclick="toggleFilterDropdown('docs2UdCust')" title="${escapeHtml(t('stats_all_customers_short'))}">${_D2_BAR_ICONS.cust}</button>
             <button type="button" class="view-toggle-btn${_d2U.period ? ' active' : ''}" onclick="toggleFilterDropdown('docs2UdPer')" title="${escapeHtml(t('orders_period'))}">${_D2_BAR_ICONS.per}</button></div>
@@ -754,4 +754,135 @@ function docs2RenderDn(reapplyView) {
             <button type="button" class="view-toggle-btn${_d2D.nodn ? ' active' : ''}" onclick="docs2DnFlag('nodn')" title="${escapeHtml(t('docs2_dn_none_t'))}">${_D2_DN_ICONS.nodn}</button></div>
             <div class="view-toggle-pill"><button type="button" class="view-toggle-btn${expanded ? ' active' : ''}" onclick="docs2DnToggleAll()" title="${escapeHtml(t(expanded ? 'docs2_collapse' : 'docs2_expand'))}">${expanded ? _D2_BAR_ICONS.col : _D2_BAR_ICONS.exp}</button></div></div>
         ${gl.length ? groupHtml : `<p style="font-size:13px; color:#9a9488; margin:24px 0; text-align:center;">${escapeHtml(t(_d2D.nodn ? 'docs2_dn_none_empty' : 'docs2_dn_empty'))}</p>`}`;
+}
+
+
+// ==================== Страница «Все документы» (1.11.2026) ====================
+// Реестр выставленных документов: счета, сводные счета, накладные. Счета, вошедшие в сводный, отдельно не показываются.
+// Поиск по номеру и клиенту (при поиске период не ограничивает), фильтры: клиент, период (по умолчанию текущий месяц), тип, статус.
+const _D2_ALL_ICONS = {
+    type: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>',
+    st: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></svg>'
+};
+let _d2A = { q: '', cust: '', period: '', type: '', st: '', open: new Set() };
+
+function openDocs2All() {
+    if (!docs2Allowed()) return;
+    _d2A = { q: '', cust: '', period: _d2Months().cur, type: '', st: '', open: new Set() };
+    openAppPage('docs2AllPage');
+    docs2RenderAll(true);
+}
+(window._appPageOnShow = window._appPageOnShow || {}).docs2AllPage = () => docs2RenderAll(false);
+
+function docs2AllPick(field, v) {
+    if (typeof closeAllFilterDropdowns === 'function') closeAllFilterDropdowns();
+    _d2A[field === 'per' ? 'period' : field] = v;
+    docs2RenderAll(true);
+}
+function docs2AllToggle(key) {
+    if (_d2A.open.has(key)) _d2A.open.delete(key); else _d2A.open.add(key);
+    docs2RenderAll(false);
+}
+function docs2AllToggleAll() {
+    _d2SetView(_d2View() === 'expanded' ? 'collapsed' : 'expanded');
+    docs2RenderAll(true);
+}
+function docs2AllSearch(v) {
+    _d2A.q = v;
+    docs2RenderAll(true, true);
+}
+function docs2AllOpen(oid) { if (oid) docs2OpenOrder(oid); }
+
+function docs2RenderAll(reapplyView, keepFocus) {
+    const box = document.getElementById('docs2All');
+    if (!box) return;
+    const docs = (typeof _docsAll !== 'undefined' && Array.isArray(_docsAll)) ? _docsAll : [];
+    const inCons = new Set();
+    docs.forEach(d => { if (d.kind === 'cons' && !d.cancelled) (d.memberIds || []).forEach(id => inCons.add(id)); });
+    const norm = typeof _docsNorm === 'function' ? _docsNorm : (x => String(x || '').toLowerCase());
+    const all = docs.filter(d => !d.cancelled && !d.deleted && !(d.kind === 'inv' && inCons.has(d.orderId))).map(d => ({
+        d, key: String(d.custId || ('n:' + (d.custName || ''))), name: d.custName || t('orders_no_customer'),
+        ym: String(d.date || '').slice(0, 7), c: d.sumC || 0,
+        oid: d.kind === 'cons' ? d.liveMemberId : d.orderId }));
+    const q = norm(_d2A.q);
+    const stOk = x => {
+        const d = x.d;
+        if (!_d2A.st) return true;
+        if (_d2A.st === 'unsent') return !d.sentAt;
+        if (d.kind === 'dn') return false;
+        if (_d2A.st === 'paid') return d.pay === 'paid';
+        return d.pay === 'unpaid' || d.pay === 'partial';
+    };
+    const base = all.filter(x => (!q || norm(x.d.number).includes(q) || norm(x.name).includes(q))
+        && (!_d2A.cust || x.key === _d2A.cust)
+        && (q || !_d2A.period || x.ym === _d2A.period)
+        && (!_d2A.type || (_d2A.type === 'dn' ? x.d.kind === 'dn' : x.d.kind !== 'dn'))
+        && stOk(x));
+    const sumC = base.reduce((s, x) => s + x.c, 0);
+
+    const groups = new Map();
+    base.forEach(x => {
+        if (!groups.has(x.key)) groups.set(x.key, { key: x.key, name: x.name, items: [], sumC: 0 });
+        const g = groups.get(x.key); g.items.push(x); g.sumC += x.c;
+    });
+    const gl = [...groups.values()].sort((a, b) => b.sumC - a.sumC);
+    if (reapplyView) {
+        _d2A.open = new Set();
+        if (_d2View() === 'expanded' || gl.length === 1 || q) gl.forEach(g => _d2A.open.add(g.key));
+    }
+
+    const CHK = '<svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>';
+    const opt = (field, v, label, sel) => `<div class="status-option${sel ? ' selected' : ''}" data-v="${escapeHtml(v)}" onclick="docs2AllPick('${field}', this.getAttribute('data-v'))"><span>${escapeHtml(label)}</span>${CHK}</div>`;
+    const custMap = new Map();
+    all.forEach(x => custMap.set(x.key, x.name));
+    const set = (id, html) => { const e = document.getElementById(id); if (e) e.innerHTML = html; };
+    set('docs2AdCust', opt('cust', '', t('docs_customer_all'), !_d2A.cust)
+        + [...custMap.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([k, n]) => opt('cust', k, n, k === _d2A.cust)).join(''));
+    const yms = [...new Set(all.map(x => x.ym).concat([_d2Months().cur]).filter(y => /^\d{4}-\d{2}$/.test(y)))].sort().reverse();
+    set('docs2AdPer', opt('per', '', t('docs_period_all'), !_d2A.period) + yms.map(ym => opt('per', ym, _docsMonthLabel(ym), ym === _d2A.period)).join(''));
+    set('docs2AdType', opt('type', '', t('docs_type_all'), !_d2A.type) + opt('type', 'inv', t('docs_type_inv'), _d2A.type === 'inv') + opt('type', 'dn', t('docs_type_dn'), _d2A.type === 'dn'));
+    set('docs2AdSt', opt('st', '', t('docs_type_all'), !_d2A.st) + opt('st', 'paid', t('docs_tile_paid'), _d2A.st === 'paid')
+        + opt('st', 'unpaid', t('docs2_unpaid_t'), _d2A.st === 'unpaid') + opt('st', 'unsent', t('docs2_unsent_t'), _d2A.st === 'unsent'));
+
+    const expanded = _d2View() === 'expanded';
+    const gold = x => `<span class="d2gold">${escapeHtml(x)}</span>`;
+    const row = x => {
+        const d = x.d;
+        const what = d.kind === 'cons' ? t('docs2_cons_n').replace('{n}', d.memberCount || (d.memberIds || []).length)
+            : t('docs2_order').replace('{n}', d.orderNumber || ('#' + d.orderId));
+        let st = [];
+        if (d.kind !== 'dn') {
+            if (d.pay === 'paid') st.push(escapeHtml(t('docs2_st_paid')));
+            else if (d.pay === 'partial') st.push(gold(t('docs_partial')));
+            else if (d.pay === 'unpaid') st.push(escapeHtml(t('docs2_st_unpaid')));
+        }
+        if (!d.sentAt) st.push(gold(t('docs_not_sent_cap')));
+        return `<div class="d2o" onclick="docs2AllOpen(${x.oid || 0})"><div class="l">
+            <div class="a">${escapeHtml(d.number || '')}</div>
+            <div class="b">${escapeHtml(formatDateDMY(d.date))} \u00b7 ${escapeHtml(what)}</div>
+            ${st.length ? `<div class="c">${st.join(' \u00b7 ')}</div>` : ''}</div>
+            <div class="r"><b>${escapeHtml(formatMoney(x.c / 100))}</b></div></div>`;
+    };
+    const byDate = (a, b) => String(b.d.date || '').localeCompare(String(a.d.date || '')) || String(b.d.rawNumber).localeCompare(String(a.d.rawNumber));
+    const groupHtml = gl.map(g => {
+        const open = _d2A.open.has(g.key);
+        const body = open ? g.items.slice().sort(byDate).map(row).join('') : '';
+        return `<div class="d2g"><div class="d2gh" onclick="docs2AllToggle(this.getAttribute('data-k'))" data-k="${escapeHtml(g.key)}">
+            <span class="ch">${open ? '&#8964;' : '&rsaquo;'}</span>
+            <div class="nm"><b>${escapeHtml(g.name)}</b><small>${escapeHtml(t('docs2_docs_line').replace('{n}', g.items.length))}</small></div>
+            <span class="sm">${escapeHtml(formatMoney(g.sumC / 100))}</span></div>${body}</div>`;
+    }).join('');
+
+    const hadFocus = keepFocus && document.activeElement && document.activeElement.id === 'docs2AllQ';
+    box.innerHTML = `<div class="d2chips">
+            <div class="d2chip on"><small>${escapeHtml(t('docs2_all') + ' \u00b7 ' + t('docs2_docs_line').replace('{n}', base.length))}</small><b>${escapeHtml(formatMoney(sumC / 100))}</b></div></div>
+        <input id="docs2AllQ" type="search" class="d2search" placeholder="${escapeHtml(t('docs_search_placeholder'))}" value="${escapeHtml(_d2A.q)}" oninput="docs2AllSearch(this.value)">
+        <div id="docs2WaitBar"><div class="view-toggle-pill">
+            <button type="button" class="view-toggle-btn${_d2A.cust ? ' active' : ''}" onclick="toggleFilterDropdown('docs2AdCust')" title="${escapeHtml(t('stats_all_customers_short'))}">${_D2_BAR_ICONS.cust}</button>
+            <button type="button" class="view-toggle-btn${_d2A.period && !q ? ' active' : ''}" onclick="toggleFilterDropdown('docs2AdPer')" title="${escapeHtml(t('orders_period'))}">${_D2_BAR_ICONS.per}</button>
+            <button type="button" class="view-toggle-btn${_d2A.type ? ' active' : ''}" onclick="toggleFilterDropdown('docs2AdType')">${_D2_ALL_ICONS.type}</button>
+            <button type="button" class="view-toggle-btn${_d2A.st ? ' active' : ''}" onclick="toggleFilterDropdown('docs2AdSt')">${_D2_ALL_ICONS.st}</button></div>
+            <div class="view-toggle-pill"><button type="button" class="view-toggle-btn${expanded ? ' active' : ''}" onclick="docs2AllToggleAll()" title="${escapeHtml(t(expanded ? 'docs2_collapse' : 'docs2_expand'))}">${expanded ? _D2_BAR_ICONS.col : _D2_BAR_ICONS.exp}</button></div></div>
+        ${gl.length ? groupHtml : `<p style="font-size:13px; color:#9a9488; margin:24px 0; text-align:center;">${escapeHtml(t('docs2_all_empty'))}</p>`}`;
+    if (hadFocus) { const i = document.getElementById('docs2AllQ'); if (i) { i.focus(); try { i.setSelectionRange(i.value.length, i.value.length); } catch (e) {} } }
 }
