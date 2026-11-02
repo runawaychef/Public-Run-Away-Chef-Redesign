@@ -891,7 +891,8 @@ async function saveEmployee(opts) {
         return true;
     } catch (e) {
         console.error(e);
-        showInfo(t('employees_save_error'));
+        const emsg = String((e && (e.message || e.details)) || '');
+        showInfo(emsg.indexOf('TEAM_REQUIRES_FULL') !== -1 ? t('employees_team_requires_full') : t('employees_save_error'));
         return false;
     } finally { hideLoading(); }
 }

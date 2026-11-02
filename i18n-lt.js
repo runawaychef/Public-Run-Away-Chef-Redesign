@@ -354,6 +354,7 @@ I18N.lt = {
         employees_name_required: 'Įveskite darbuotojo vardą.',
         employees_invite_created_prefix: 'Kvietimas sukurtas. Praneškite darbuotojui, kad jis turi užsiregistruoti programėlėje naudodamas šį el. pašto adresą:',
         employees_save_error: 'Nepavyko išsaugoti darbuotojo.',
+        employees_team_requires_full: 'Komanda prieinama Full plane. Pereikite prie Full, kad galėtumėte pridėti darbuotojų.',
         employees_delete_warning_with_login: 'Pašalinti šį darbuotoją? Jis visiškai praras prieigą prie kepyklos (asmeninis prisijungimas taip pat bus panaikintas). Veiksmų žurnalo įrašai bus išsaugoti.',
         employees_delete_warning_simple: 'Pašalinti šį darbuotoją? Veiksmų žurnalo įrašai bus išsaugoti.',
         employees_delete_membership_error: 'Darbuotojo kortelė pašalinta, tačiau nepavyko panaikinti prieigos prie organizacijos. Patikrinkite rankiniu būdu Supabase (lentelėje memberships).',

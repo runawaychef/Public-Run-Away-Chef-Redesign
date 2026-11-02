@@ -349,6 +349,7 @@ I18N.en = {
         employees_name_required: 'Enter the employee name.',
         employees_invite_created_prefix: 'Invitation created. Ask the employee to register in the app using this email:',
         employees_save_error: 'Failed to save the employee.',
+        employees_team_requires_full: 'Team is available on the Full plan. Upgrade to Full to add employees.',
         employees_delete_warning_with_login: 'Delete this employee? They will completely lose access to the organization (personal login will also be revoked). Activity log entries will be kept.',
         employees_delete_warning_simple: 'Delete this employee? Activity log entries will be kept.',
         employees_delete_membership_error: 'The employee record was deleted, but access to the organization could not be revoked. Please check manually in Supabase (memberships table).',
