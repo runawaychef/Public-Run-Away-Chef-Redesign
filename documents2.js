@@ -764,11 +764,11 @@ const _D2_ALL_ICONS = {
     type: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg>',
     st: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></svg>'
 };
-let _d2A = { q: '', cust: '', period: '', type: '', st: '', open: new Set() };
+let _d2A = { q: '', cust: '', period: '', type: '', st: '', open: new Set(), cons: new Set() };
 
 function openDocs2All() {
     if (!docs2Allowed()) return;
-    _d2A = { q: '', cust: '', period: _d2Months().cur, type: '', st: '', open: new Set() };
+    _d2A = { q: '', cust: '', period: _d2Months().cur, type: '', st: '', open: new Set(), cons: new Set() };
     openAppPage('docs2AllPage');
     docs2RenderAll(true);
 }
@@ -792,6 +792,10 @@ function docs2AllSearch(v) {
     docs2RenderAll(true, true);
 }
 function docs2AllOpen(oid) { if (oid) docs2OpenOrder(oid); }
+function docs2AllCons(key) {
+    if (_d2A.cons.has(key)) _d2A.cons.delete(key); else _d2A.cons.add(key);
+    docs2RenderAll(false);
+}
 
 function docs2RenderAll(reapplyView, keepFocus) {
     const box = document.getElementById('docs2All');
@@ -857,11 +861,30 @@ function docs2RenderAll(reapplyView, keepFocus) {
             else if (d.pay === 'unpaid') st.push(escapeHtml(t('docs2_st_unpaid')));
         }
         if (!d.sentAt) st.push(gold(t('docs_not_sent_cap')));
-        return `<div class="d2o" onclick="docs2AllOpen(${x.oid || 0})"><div class="l">
+        const isCons = d.kind === 'cons';
+        const cOpen = isCons && _d2A.cons.has(d.key);
+        const main = `<div class="d2o" onclick="${isCons ? "docs2AllCons(\'" + escapeHtml(d.key) + "\')" : 'docs2AllOpen(' + (x.oid || 0) + ')'}"><div class="l">
             <div class="a">${escapeHtml(d.number || '')}</div>
             <div class="b">${escapeHtml(formatDateDMY(d.date))} \u00b7 ${escapeHtml(what)}</div>
             ${st.length ? `<div class="c">${st.join(' \u00b7 ')}</div>` : ''}</div>
-            <div class="r"><b>${escapeHtml(formatMoney(x.c / 100))}</b></div></div>`;
+            <div class="r"><b>${escapeHtml(formatMoney(x.c / 100))}</b></div>${isCons ? `<span class="d2ch">${cOpen ? '&#8964;' : '&rsaquo;'}</span>` : ''}</div>`;
+        if (!cOpen) return main;
+        // Заказы сводного счёта со служебной информацией: оплата, отправка счёта, накладная и её отправка
+        const gold2 = z => `<span class="d2gold">${escapeHtml(z)}</span>`;
+        const subs = (typeof orders !== 'undefined' ? orders : []).filter(o => (d.memberIds || []).indexOf(o.id) >= 0)
+            .sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')) || (a.id - b.id)).map(o => {
+            const ps = getOrderPaymentStatus(o);
+            const pay = ps.status === 'paid' ? escapeHtml(t('docs2_st_paid')) : (ps.status === 'partial' ? gold2(t('docs_partial')) : escapeHtml(t('docs2_st_unpaid')));
+            const inv = o.invoice_sent_at ? escapeHtml(t('docs2_svc_inv_sent')) : gold2(t('docs2_svc_inv_not'));
+            const dn = o.dn_no ? escapeHtml(t('docs2_svc_dn').replace('{n}', _formatDocNumber('delivery_note', o.dn_no)) + ' \u00b7 ')
+                + (o.delivery_note_sent_at ? escapeHtml(t('docs2_svc_sent')) : gold2(t('docs2_svc_not_sent'))) : escapeHtml(t('docs2_svc_nodn'));
+            return `<div class="d2o d2sub" onclick="docs2AllOpen(${o.id})"><div class="l">
+                <div class="a">${escapeHtml(t('docs2_order').replace('{n}', o.order_number || ('#' + o.id)))}</div>
+                <div class="b">${escapeHtml(formatDateDMY(o.date))} \u00b7 ${pay}</div>
+                <div class="c">${inv} \u00b7 ${dn}</div></div>
+                <div class="r"><b>${escapeHtml(formatMoney(orderGrandTotal(o)))}</b></div></div>`;
+        }).join('');
+        return main + subs;
     };
     const byDate = (a, b) => String(b.d.date || '').localeCompare(String(a.d.date || '')) || String(b.d.rawNumber).localeCompare(String(a.d.rawNumber));
     const groupHtml = gl.map(g => {
@@ -873,9 +896,15 @@ function docs2RenderAll(reapplyView, keepFocus) {
             <span class="sm">${escapeHtml(formatMoney(g.sumC / 100))}</span></div>${body}</div>`;
     }).join('');
 
+    // Активные фильтры словами — чтобы было видно, за какой период и по чему показан список
+    const fl = [];
+    fl.push(q ? t('docs2_search_all') : (_d2A.period ? _docsMonthLabel(_d2A.period) : t('docs2_period_none')));
+    if (_d2A.cust) fl.push(custMap.get(_d2A.cust) || '');
+    if (_d2A.type) fl.push(_d2A.type === 'dn' ? t('docs_type_dn') : t('docs_type_inv'));
+    if (_d2A.st) fl.push(_d2A.st === 'paid' ? t('docs_tile_paid') : (_d2A.st === 'unpaid' ? t('docs2_unpaid_t') : t('docs2_unsent_t')));
     const hadFocus = keepFocus && document.activeElement && document.activeElement.id === 'docs2AllQ';
     box.innerHTML = `<div class="d2chips">
-            <div class="d2chip on"><small>${escapeHtml(t('docs2_all') + ' \u00b7 ' + t('docs2_docs_line').replace('{n}', base.length))}</small><b>${escapeHtml(formatMoney(sumC / 100))}</b></div></div>
+            <div class="d2chip on"><small>${escapeHtml(t('docs2_all') + ' \u00b7 ' + t('docs2_docs_line').replace('{n}', base.length))}</small><b>${escapeHtml(formatMoney(sumC / 100))}</b><em class="d2flt">${escapeHtml(fl.join(' \u00b7 '))}</em></div></div>
         <input id="docs2AllQ" type="search" class="d2search" placeholder="${escapeHtml(t('docs_search_placeholder'))}" value="${escapeHtml(_d2A.q)}" oninput="docs2AllSearch(this.value)">
         <div id="docs2WaitBar"><div class="view-toggle-pill">
             <button type="button" class="view-toggle-btn${_d2A.cust ? ' active' : ''}" onclick="toggleFilterDropdown('docs2AdCust')" title="${escapeHtml(t('stats_all_customers_short'))}">${_D2_BAR_ICONS.cust}</button>
