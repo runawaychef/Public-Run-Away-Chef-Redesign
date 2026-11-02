@@ -82,7 +82,7 @@ function renderPlanInfo() {
 
     const isFree = currentOrgPlan === 'free';
     if (isFree) {
-        badge.textContent = t('settings_plan_free');
+        badge.textContent = t('plan_free_name');
         badge.className = 'text-xs font-semibold px-2 py-0.5 rounded-full';
         badge.style.cssText = 'background:#ece7db; color:#6b6355;';
 
@@ -100,7 +100,10 @@ function renderPlanInfo() {
             usage.innerHTML = `<div style="color:#6b7280;">${t('settings_orders_label')}: …</div>`;
         }
     } else {
-        badge.textContent = t('settings_plan_paid');
+        // 2.11: показываем название тарифа (Light / Full), а не общее «Платный»; для неизвестного значения — запасной вариант.
+        const planKey = 'plan_' + currentOrgPlan + '_name';
+        const planName = t(planKey);
+        badge.textContent = (planName && planName !== planKey) ? planName : t('settings_plan_paid');
         badge.className = 'text-xs font-semibold px-2 py-0.5 rounded-full';
         badge.style.cssText = 'background:#e3e8df; color:#4f6349;';
         usage.innerHTML = `<div>${t('settings_limits_not_apply')}</div>`;
