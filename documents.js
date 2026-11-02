@@ -42,6 +42,7 @@ function _docsSnapGrandC(orderPart, calc, vatRate) {
 }
 
 async function _docsLoad() {
+    const _dg0 = performance.now(); const _dg = { ord: 0, cons: 0, kb: 0, rows: 0, proc: 0 }; // ВРЕМЕННО: диагностика скорости
     const [ordRes, consRes] = await Promise.all([
         fetchAllRows(() => db.from('orders')
             .select('id, customer_id, order_number, order_date, deleted_at, consolidated_invoice_id, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via, invoice_delivery_status, delivery_note_delivery_status, '
@@ -49,12 +50,14 @@ async function _docsLoad() {
                 + 'dn:delivery_note_snapshot->>number, dnDate:delivery_note_snapshot->>issueDate, dnOrder:delivery_note_snapshot->order, dnCalc:delivery_note_snapshot->calc, dnVat:delivery_note_snapshot->vat_rate')
             .eq('org_id', currentOrgId)
             .or('invoice_snapshot.not.is.null,delivery_note_snapshot.not.is.null')
-            .order('id')),
+            .order('id')).then(r => { _dg.ord = Math.round(performance.now() - _dg0); return r; }),
         fetchAllRows(() => db.from('consolidated_invoices')
             .select('id, number, issue_date, due_date, customer_id, cancelled_at, grand:snapshot->consolidated->totals->>grand, members:snapshot->consolidated->orders')
             .eq('org_id', currentOrgId)
-            .order('id')),
+            .order('id')).then(r => { _dg.cons = Math.round(performance.now() - _dg0); return r; }),
     ]);
+    const _dg1 = performance.now();
+    try { _dg.rows = (ordRes.data || []).length; _dg.kb = Math.round(JSON.stringify(ordRes.data || []).length / 1024); } catch (e) {}
     if (ordRes.error) throw ordRes.error;
     if (consRes.error) throw consRes.error;
 
@@ -116,6 +119,7 @@ async function _docsLoad() {
 
     list.sort((a, b) => String(b.date).localeCompare(String(a.date)) || String(b.rawNumber).localeCompare(String(a.rawNumber)));
     _docsAll = list;
+    _dg.proc = Math.round(performance.now() - _dg1); window._docsDiag = _dg; // ВРЕМЕННО
 }
 
 // opts: { custId } — открыть сразу с фильтром по клиенту (тогда период — за всё время)

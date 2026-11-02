@@ -26,6 +26,7 @@ function refreshDocs2Visibility() {
 async function openDocs2Home() {
     if (!docs2Allowed()) return;
     showLoading();
+    const _t0 = performance.now(); // ВРЕМЕННО: диагностика скорости
     try {
         await _docsLoad();
     } catch (e) {
@@ -34,10 +35,13 @@ async function openDocs2Home() {
         showInfo(t('error_save_check_connection'));
         return;
     }
+    const _t1 = performance.now();
     await _d2LoadPaid();
+    const _t2 = performance.now();
     hideLoading();
     openAppPage('docs2HomePage');
     docs2RenderHome();
+    window._d2Diag = { load: Math.round(_t1 - _t0), paid: Math.round(_t2 - _t1), render: Math.round(performance.now() - _t2), total: Math.round(performance.now() - _t0) };
 }
 (window._appPageOnShow = window._appPageOnShow || {}).docs2HomePage = () => docs2RenderHome();
 
@@ -128,6 +132,13 @@ function _d2Unpaid() {
     return out;
 }
 
+// ВРЕМЕННО: диагностика скорости — нажатие на нижнюю справочную панель показывает замеры последнего открытия раздела
+function d2ShowDiag() {
+    const a = window._d2Diag, b = window._docsDiag;
+    if (!a || !b) { showInfo('Нет замеров'); return; }
+    showInfo('Заказы+сводные: ' + a.load + ' мс (заказы ' + b.ord + ', сводные до ' + b.cons + ', разбор ' + b.proc + '); строк ' + b.rows + ', ' + b.kb + ' КБ. Платежи: ' + a.paid + ' мс. Отрисовка: ' + a.render + ' мс. Всего: ' + a.total + ' мс.');
+}
+
 function docs2RenderHome() {
     const box = document.getElementById('docs2Home');
     if (!box) return;
@@ -190,7 +201,7 @@ function docs2RenderHome() {
     ].join('');
 
     box.innerHTML = `<div class="dashboard-grid stats-home-grid docs2-grid">${tiles}
-        <div class="sth-info"><i>i</i><ul><li>${escapeHtml(t('docs2_info'))}</li></ul></div></div>`;
+        <div class="sth-info" onclick="d2ShowDiag()"><i>i</i><ul><li>${escapeHtml(t('docs2_info'))}</li></ul></div></div>`;
 }
 
 
