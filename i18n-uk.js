@@ -1181,6 +1181,8 @@ I18N.uk = {
         send_open_fail: 'Не вдалося відкрити «Документ» (код {code}). Зробіть знімок екрана й перезапустіть застосунок.',
         stock_group_attention: 'Потребує уваги',
         stock_group_ok: 'Усе гаразд',
+        sf_recipe_none_short: 'Немає рецепта',
+        sf_recipe_not_confirmed: 'Рецепт не підтверджено',
         send_cons_total: 'Разом',
         send_cons_member: 'Замовлення в цьому рахунку:',
         send_cons_changed_warn: 'Виставлено на {old}, зараз за замовленнями {new} — буде надіслано оновлений рахунок з тим самим номером',

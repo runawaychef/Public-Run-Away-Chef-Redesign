@@ -1181,6 +1181,8 @@ I18N.lt = {
         send_open_fail: 'Nepavyko atidaryti „Dokumentas“ (kodas {code}). Padarykite ekrano nuotrauką ir paleiskite programą iš naujo.',
         stock_group_attention: 'Reikia dėmesio',
         stock_group_ok: 'Viskas gerai',
+        sf_recipe_none_short: 'Nėra recepto',
+        sf_recipe_not_confirmed: 'Receptas nepatvirtintas',
         send_cons_total: 'Iš viso',
         send_cons_member: 'Užsakymai šioje sąskaitoje:',
         send_cons_changed_warn: 'Išrašyta {old} sumai, dabar užsakymų suma {new} — bus išsiųsta atnaujinta sąskaita tuo pačiu numeriu',

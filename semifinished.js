@@ -31,6 +31,7 @@ function semiFinishedUnitCost(sf) {
 // неподтверждённый рецепт), 1 — заканчивается (охра), 2 — норма.
 // «Склад» — справочник (21.10): прогноза нет, наверх — минус/ноль или неподтверждённый рецепт.
 function semiFinishedSeverity(sf, ctx) {
+    if (!stockForecastOn()) return 2; // Free/Light (2.11): только алфавит
     const f = stockFullInfo('sf', sf, ctx, stockTrackedIds());
     if (f.on && (f.attention || !sf.recipe_confirmed)) return f.zone === 'critical' || !sf.recipe_confirmed ? 0 : 1;
     const after = stockState('sf', sf.id, ctx).after;
@@ -84,8 +85,12 @@ function renderSemiFinishedCards() {
         const isWarning = fi.on && fi.zone === 'warning';
         const notConfirmed = !sf.recipe_confirmed;
         const batchRed = fi.on && fi.batchShort.length > 0;
-        const accentColor = (isCritical || notConfirmed || batchRed) ? '#c0685c' : isWarning ? '#d9a441' : '';
-        const isAttn = !!accentColor;
+        // 2.11: неподтверждённый рецепт — не уголок/полоса, а подпись (плитка «Нет рецепта», карточка «Рецепт не подтверждён»).
+        // Free/Light: ни уголка, ни полосы, ни групп; Full: уголок/полоса — по остальным причинам, группа «Требует внимания» — и по рецепту.
+        const fullOn = stockForecastOn();
+        const accentColor = !fullOn ? '' : (isCritical || batchRed) ? '#c0685c' : isWarning ? '#d9a441' : '';
+        const isAttn = fullOn && (!!accentColor || notConfirmed);
+        const recipeLabel = notConfirmed ? `<span class="stk-chip bad stk-nr">${t('sf_recipe_not_confirmed')}</span>` : '';
         const afterColor = isCritical ? '#c0685c' : isWarning ? '#96712a' : '#4f6349';
         const thirdLabel = '';
         const thirdText = '';
@@ -97,7 +102,7 @@ function renderSemiFinishedCards() {
 
         if (tiles) {
             const showPrice = (typeof hasPermission !== 'function' || hasPermission('can_view_costs'));
-            (isAttn ? htmlAttn : htmlOk).push(stockTileHtml({ name: sf.name, attn: isAttn, red: isCritical, numText: balance !== null ? Number(balance).toFixed(1) : '—', unit: balance !== null ? unitLabel : '', priceText: showPrice ? priceText : '', chip: (fi.on && fi.chip) ? { cls: fi.chip.cls, text: fi.chip.tile } : null, openCall: `openSemiFinishedDetail(${sf.id})` }));
+            (isAttn ? htmlAttn : htmlOk).push(stockTileHtml({ name: sf.name, attn: isAttn, flag: !!accentColor, recipe: notConfirmed, red: isCritical, numText: balance !== null ? Number(balance).toFixed(1) : '—', unit: balance !== null ? unitLabel : '', priceText: showPrice ? priceText : '', chip: (fi.on && fi.chip) ? { cls: fi.chip.cls, text: fi.chip.tile } : null, openCall: `openSemiFinishedDetail(${sf.id})` }));
             return;
         }
         (isAttn ? htmlAttn : htmlOk).push(`
@@ -108,7 +113,7 @@ function renderSemiFinishedCards() {
                 <div class="order-card-body">
                     <div class="oc-row">
                         <span class="oc-name">${escapeHtml(sf.name || t('semifinished_no_name_fallback'))}</span>
-                        ${stockFullChipHtml(fi)}
+                        ${recipeLabel}${stockFullChipHtml(fi)}
                     </div>
                     ${stockCardCellsHtml({ priceLabel: t('sf_unit_cost_short'), priceText: (typeof hasPermission !== 'function' || hasPermission('can_view_costs')) ? priceText : '', beforeText, afterText, afterColor, thirdLabel: thirdLabel, thirdText: thirdText, thirdColor: afterColor })}
                     ${stockFullExtraHtml(fi, unitLabel)}

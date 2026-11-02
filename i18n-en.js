@@ -1183,6 +1183,8 @@ I18N.en = {
         send_open_fail: 'Could not open “Document” (code {code}). Take a screenshot and restart the app.',
         stock_group_attention: 'Needs attention',
         stock_group_ok: 'All good',
+        sf_recipe_none_short: 'No recipe',
+        sf_recipe_not_confirmed: 'Recipe not confirmed',
         send_cons_total: 'Total',
         send_cons_member: 'Orders on this invoice:',
         send_cons_changed_warn: 'Issued for {old}, orders now total {new} — an updated invoice with the same number will be sent',

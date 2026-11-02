@@ -1182,6 +1182,8 @@ I18N.ru = {
         send_open_fail: 'Не удалось открыть «Документ» (код {code}). Сделайте снимок экрана и перезапустите приложение.',
         stock_group_attention: 'Требует внимания',
         stock_group_ok: 'Всё в порядке',
+        sf_recipe_none_short: 'Нет рецепта',
+        sf_recipe_not_confirmed: 'Рецепт не подтверждён',
         send_cons_total: 'Итого',
         send_cons_member: 'Заказы в этом счёте:',
         send_cons_changed_warn: 'Выставлено на {old}, сейчас по заказам {new} — будет отправлен обновлённый счёт с тем же номером',

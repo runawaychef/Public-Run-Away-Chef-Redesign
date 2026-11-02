@@ -31,6 +31,7 @@ function stockColorClass(daysLeft, prefix) {
 // использовала ровно те же условия, а не рисковала разойтись с окраской.
 // «Склад» — справочник (21.10): прогноза нет, наверх — только минус или ноль.
 function ingredientSeverity(ing, ctx) {
+    if (!stockForecastOn()) return 2; // Free/Light (2.11): только алфавит, без подъёма критичных наверх
     const f = stockFullInfo('ing', ing, ctx, stockTrackedIds());
     if (f.on) return f.zone === 'critical' ? 0 : (f.attention ? 1 : 2);
     const after = stockState('ing', ing.id, ctx).after;
@@ -64,6 +65,8 @@ function stockForecastOn() {
 // у полуфабрикатов — и неподтверждённый рецепт) и «Всё в порядке». Показываются для каждой непустой группы (даже если группа одна);
 // при поиске прячутся (filter*List). Стиль — как в «Заказах».
 function stockGroupsHtml(attn, ok) {
+    // Free/Light (2.11): без групп «Требует внимания» / «Всё в порядке» — просто список по алфавиту.
+    if (!stockForecastOn()) return attn.concat(ok).join('');
     // Заголовок группы показываем всегда, когда в ней есть карточки (28.10: даже если группа одна); пустую группу — нет.
     if (!attn.length && !ok.length) return '';
     const div = (label, svg) => `<div class="oc-section-divider stock-divider"><span class="label">${svg}${label}</span></div>`;
@@ -133,14 +136,18 @@ function stockTileHtml(o) {
     // o.expiry = { cls: 'ok'|'soon'|'exp', text } — место под срок годности зарезервировано (раздел ещё не реализован, пока не передаётся).
     const full = (typeof hasPlanFeature !== 'function') || hasPlanFeature('cost_analytics');
     const num = o.numText;
-    const left = full && o.chip ? `<span class="stx-l ${o.chip.cls}"><i></i>${o.chip.text}</span>` : '<span class="stx-l"></span>';
-    const right = o.expiry ? `<span class="stx-r ${o.expiry.cls}"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>${o.expiry.text}</span>` : '<span class="stx-r"></span>';
-    const hasFt = (full && o.chip) || o.expiry;
+    // 2.11: подпись «Нет рецепта» (неподтверждённый рецепт ПФ) — в нижней строке плитки; высота плитки не меняется.
+    // Слева, если там нет метки «запас» (Full); иначе — справа.
+    const rcp = o.recipe ? `<i></i>${t('sf_recipe_none_short')}` : '';
+    const leftChip = full && o.chip;
+    const left = leftChip ? `<span class="stx-l ${o.chip.cls}"><i></i>${o.chip.text}</span>` : (rcp ? `<span class="stx-l bad">${rcp}</span>` : '<span class="stx-l"></span>');
+    const right = o.expiry ? `<span class="stx-r ${o.expiry.cls}"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>${o.expiry.text}</span>` : (rcp && leftChip ? `<span class="stx-r stx-rcp">${rcp}</span>` : '<span class="stx-r"></span>');
+    const hasFt = leftChip || o.expiry || !!rcp;
     return `<div class="pt-tile stt-tile stx" data-name="${escapeHtml((o.name || '').toLowerCase())}" data-critical="${o.attn ? '1' : '0'}" data-low="${o.red ? '1' : '0'}" onclick="${o.openCall}">
         <div class="stx-name">${escapeHtml(o.name || t('semifinished_no_name_fallback'))}</div>
         <div class="stx-bt"><div class="stx-q${o.red ? ' red' : ''}${num.length > 8 ? ' sm' : ''}">${num}${o.unit ? `<small>${escapeHtml(o.unit)}</small>` : ''}</div>${o.priceText ? `<div class="stx-pr">${o.priceText}</div>` : ''}</div>
         <div class="stx-ft${hasFt ? ' has' : ''}">${left}${right}</div>
-        ${o.attn ? '<span class="pt-flag"></span>' : ''}
+        ${o.flag ? '<span class="pt-flag"></span>' : ''}
     </div>`;
 }
 
@@ -224,7 +231,8 @@ function renderIngredientCards() {
         const fi = stockFullInfo('ing', ing, ctx, tracked); // Full + отслеживается: аналитика «Умного склада»
         const isCritical = fi.on ? fi.zone === 'critical' : (balance !== null && balance <= 0);
         const isWarning = fi.on && fi.zone === 'warning';
-        const accentColor = isCritical ? '#c0685c' : fi.on && fi.attention ? (isWarning ? '#d9a441' : '#c0685c') : (!fi.on && balance !== null && balance <= 0 ? '#c0685c' : '');
+        // Free/Light (2.11): ни уголка, ни полосы — минус виден только красной цифрой.
+        const accentColor = !stockForecastOn() ? '' : isCritical ? '#c0685c' : fi.on && fi.attention ? (isWarning ? '#d9a441' : '#c0685c') : (!fi.on && balance !== null && balance <= 0 ? '#c0685c' : '');
         const isAttn = fi.on ? fi.attention : !!accentColor;
         const afterColor = isCritical ? '#c0685c' : isWarning ? '#96712a' : '#4f6349';
         const thirdLabel = '';
@@ -237,7 +245,7 @@ function renderIngredientCards() {
 
         if (tiles) {
             const tChip = fi.on ? (fi.chip ? { cls: fi.chip.cls, text: fi.chip.tile } : null) : null;
-            (isAttn ? htmlAttn : htmlOk).push(stockTileHtml({ name: ing.name, attn: isAttn, red: isCritical, numText: balance !== null ? Number(balance).toFixed(1) : '—', unit: balance !== null ? unitLabel : '', priceText, chip: tChip, openCall: `openIngredientDetail(${ing.id})` }));
+            (isAttn ? htmlAttn : htmlOk).push(stockTileHtml({ name: ing.name, attn: isAttn, flag: !!accentColor, red: isCritical, numText: balance !== null ? Number(balance).toFixed(1) : '—', unit: balance !== null ? unitLabel : '', priceText, chip: tChip, openCall: `openIngredientDetail(${ing.id})` }));
             return;
         }
         (isAttn ? htmlAttn : htmlOk).push(`

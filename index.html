@@ -1509,6 +1509,8 @@
         /* Капсула «Хватит на N дн.» в карточке Склада (Full) — справа в строке названия */
         .stk-chip { flex-shrink: 0; align-self: center; font-size: 11.5px; font-weight: 700; line-height: 1.4; border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
         .stk-chip.ok { background: #e3ebdf; color: #4f6349; } .stk-chip.warn { background: #f6ecd0; color: #8a6a1f; } .stk-chip.bad { background: #f6e3df; color: #a3493d; }
+.stk-chip.stk-nr { font-size: 11px; line-height: 1.2; padding: 2px 8px; margin-left: auto; }
+.stx-ft .stx-rcp { color: #a3493d; }
         /* ===== /THEME-UNIFIED-TILES-STOCK ===== */
         /* ===== THEME-UNIFIED-WIDTH (27.10.2026): одинаковая ширина карточек в Заказах / Меню / Складе / Клиентах =====
            У Клиентов список обёрнут в блок p-2 (отступ 8px с каждой стороны) — карточки были уже на 16px. Убираем отступ и рамку-тень обёртки.
@@ -1712,7 +1714,7 @@
         .stx-ft { flex-shrink: 0; height: 15px; padding-top: 4px; border-top: 1px solid transparent; display: flex; justify-content: space-between; align-items: center; gap: 4px; font-size: 10px; font-weight: 700; line-height: 12px; }
         .stx-ft.has { border-top-color: #efeadf; }
         .stx-ft span { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
-        .stx-l i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block; }
+        .stx-l i, .stx-rcp i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block; }
         .stx-ft .ok { color: #4f6349; } .stx-ft .warn, .stx-ft .soon { color: #8a6a1f; } .stx-ft .bad, .stx-ft .exp { color: #a3493d; }
         /* ===== /THEME-UNIFIED-TILES-STOCK ===== */
         /* ===== THEME-UNIFIED-SETTINGS (30.10.2026, вариант 2): главная страница «Настройки» как на Дашборде =====
@@ -4971,7 +4973,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=12"></script>
-    <script src="i18n-core.js?v=152"></script>
+    <script src="i18n-core.js?v=153"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=31"></script>
@@ -4980,9 +4982,9 @@ function hideSplashScreen() {
     <script src="inventory.js?v=76"></script>
     <script src="billing.js?v=18"></script>
     <script src="push.js?v=11"></script>
-<script src="ingredients.js?v=66"></script>
+<script src="ingredients.js?v=67"></script>
 <script src="batches.js?v=12"></script>
-<script src="semifinished.js?v=62"></script>
+<script src="semifinished.js?v=63"></script>
 <script src="products.js?v=51"></script>
 <script src="customers.js?v=73"></script>
 <script src="calendar.js?v=17"></script>
