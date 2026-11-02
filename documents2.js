@@ -244,10 +244,42 @@ function docs2WaitToggleAll() {
     _d2SetView(_d2View() === 'expanded' ? 'collapsed' : 'expanded');
     docs2RenderWait(true);
 }
+// Возврат из заказа в ту страницу «Документов», откуда его открыли (по образцу возврата в просмотр документа / карточку позиции)
+const _D2_SUB_PAGES = ['docs2WaitPage', 'docs2PaidPage', 'docs2TodoPage', 'docs2UnsentPage', 'docs2DnPage', 'docs2AllPage'];
+let _d2Return = null;
+function docs2ReturnPending() { return !!_d2Return; }
+function forgetDocs2Return() { _d2Return = null; }
 function docs2OpenOrder(orderId) {
+    let from = null;
+    if (typeof isAppPageOpen === 'function') _D2_SUB_PAGES.forEach(id => { if (!from && isAppPageOpen(id)) from = id; });
     if (typeof closeAllAppPages === 'function') closeAllAppPages();
     if (typeof showTab === 'function') showTab('orders');
+    _d2Return = from ? { page: from } : null; // после showTab — он сбрасывает память
     if (typeof openOrderDetail === 'function') openOrderDetail(orderId);
+}
+async function returnToDocs2() {
+    const r = _d2Return;
+    _d2Return = null;
+    if (!r || !docs2Allowed()) return false;
+    showLoading();
+    try {
+        await _docsLoad();
+        await _d2LoadPaid();
+        if (r.page === 'docs2PaidPage') await _d2FetchPaidRows();
+    } catch (e) {
+        console.error('Документы 2: ошибка загрузки при возврате', e);
+        hideLoading();
+        showInfo(t('error_save_check_connection'));
+        return true;
+    }
+    hideLoading();
+    openAppPage('docs2HomePage');
+    docs2RenderHome();
+    openAppPage(r.page);
+    const rr = { docs2WaitPage: docs2RenderWait, docs2PaidPage: docs2RenderPaid, docs2TodoPage: docs2RenderTodo,
+        docs2UnsentPage: docs2RenderUnsent, docs2DnPage: docs2RenderDn, docs2AllPage: docs2RenderAll }[r.page];
+    if (rr) rr(false);
+    return true;
 }
 
 function docs2RenderWait(reapplyView) {
@@ -330,14 +362,17 @@ function docs2RenderWait(reapplyView) {
 let _d2PRows = [];
 let _d2P = { cust: '', period: '', open: new Set() };
 
+async function _d2FetchPaidRows() {
+    const { data, error } = await db.from('order_payments').select('id, order_id, amount, paid_at, consolidated_invoice_id')
+        .eq('org_id', currentOrgId).order('paid_at', { ascending: false }).limit(5000);
+    if (error) throw error;
+    _d2PRows = data || [];
+}
 async function openDocs2Paid() {
     if (!docs2Allowed()) return;
     showLoading();
     try {
-        const { data, error } = await db.from('order_payments').select('id, order_id, amount, paid_at, consolidated_invoice_id')
-            .eq('org_id', currentOrgId).order('paid_at', { ascending: false }).limit(5000);
-        if (error) throw error;
-        _d2PRows = data || [];
+        await _d2FetchPaidRows();
     } catch (e) {
         console.error('Документы 2: ошибка загрузки платежей', e);
         hideLoading();

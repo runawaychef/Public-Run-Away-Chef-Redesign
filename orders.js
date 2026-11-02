@@ -1813,6 +1813,8 @@ async function closeOrderDetail() {
     if (typeof stockCardReturnPending === 'function' && stockCardReturnPending()) await returnToStockCard();
     // Заказ открыли из просмотра документа — возвращаемся в этот просмотр (documents.js, 22.10)
     else if (typeof docsReturnPending === 'function' && docsReturnPending()) await returnToDocsPreview();
+    // Заказ открыли со страницы нового раздела «Документы» — возвращаемся на эту страницу (documents2.js, 1.11)
+    else if (typeof docs2ReturnPending === 'function' && docs2ReturnPending()) await returnToDocs2();
 }
 
 // Сброс детального вида заказа без повторной перерисовки списка

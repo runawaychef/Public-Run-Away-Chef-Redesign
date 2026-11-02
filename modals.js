@@ -99,6 +99,7 @@ async function confirmDelete() {
             // Удалили заказ, открытый из карточки позиции, — возвращаемся в карточку (inventory.js, 22.10)
             if (wasOpenInDetail && typeof stockCardReturnPending === 'function' && stockCardReturnPending()) await returnToStockCard();
             else if (wasOpenInDetail && typeof docsReturnPending === 'function' && docsReturnPending()) await returnToDocsPreview();
+            else if (wasOpenInDetail && typeof docs2ReturnPending === 'function' && docs2ReturnPending()) await returnToDocs2();
         } else if (deleteType === 'item') {
             const order = orders.find(o => o.id === currentOrderId);
             if (order) {

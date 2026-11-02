@@ -4987,18 +4987,18 @@ function hideSplashScreen() {
 <script src="products.js?v=51"></script>
 <script src="customers.js?v=73"></script>
 <script src="calendar.js?v=17"></script>
-<script src="orders.js?v=157"></script>
+<script src="orders.js?v=158"></script>
 <script src="dashboard.js?v=10"></script>
 <script src="invoice.js?v=54"></script>
 <script src="send-document.js?v=42"></script>
 <script src="confirmation.js?v=2"></script>
-<script src="payments.js?v=34"></script>
+<script src="payments.js?v=35"></script>
 <script src="documents.js?v=14"></script>
-<script src="documents2.js?v=25"></script>
+<script src="documents2.js?v=26"></script>
 <script src="bank.js?v=13"></script>
 <script src="stats.js?v=43"></script>
 <script src="history.js?v=9"></script>
-<script src="modals.js?v=20"></script>
+<script src="modals.js?v=21"></script>
 <script src="demoData.js?v=19"></script>
 <script src="helpers.js?v=52"></script>
 <script>
@@ -5264,6 +5264,7 @@ function showTab(tabId) {
     // Переход по меню сбрасывает память «вернуться в Умный склад» (inventory.js, 21.10)
     if (typeof forgetSmartStockReturn === 'function') forgetSmartStockReturn();
     if (typeof forgetDocsReturn === 'function') forgetDocsReturn(); // возврат в просмотр документа (22.10)
+    if (typeof forgetDocs2Return === 'function') forgetDocs2Return(); // возврат на страницу нового раздела «Документы» (1.11)
     if (tabId === 'stats' && typeof hasPermission === 'function' && !hasPermission('can_view_reports')) {
         showInfo('У вас нет доступа к статистике. Обратитесь к владельцу пекарни.');
         return;
