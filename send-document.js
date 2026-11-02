@@ -884,7 +884,7 @@ function _renderSendSheet() {
             ${icon}<span>${btnLabel}</span>
         </button>
         ${st.fromDone ? `<button class="pill-btn-secondary w-full justify-center" style="margin-top:8px;" onclick="closeSendDocPage(true)">${escapeHtml(t('send_later'))}</button>` : ''}
-        ${st.custId && typeof openDocumentsSection === 'function' ? `<div style="text-align:center; margin-top:12px;"><span onclick="openDocumentsSection({ custId: ${st.custId} })" style="color:#4f6349; font-size:13px; font-weight:700; cursor:pointer;">${t('docs_all_of_customer')} ›</span></div>` : ''}`;
+        ${st.custId && typeof openDocs2Customer === 'function' ? `<div style="text-align:center; margin-top:12px;"><span onclick="openDocs2Customer(${st.custId})" style="color:#4f6349; font-size:13px; font-weight:700; cursor:pointer;">${t('docs_all_of_customer')} ›</span></div>` : ''}`;
 }
 
 // «Разговорчивая» кнопка (16.10): раньше при сбое форма «Документ» молча не открывалась.

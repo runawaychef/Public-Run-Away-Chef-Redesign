@@ -1,5 +1,5 @@
 // ==================== НОВЫЙ РАЗДЕЛ «ДОКУМЕНТЫ» — шаг 1: главный экран (31.10.2026) ====================
-// ТЕСТ: пока виден только в id1 (currentOrgProtected). Старый documents.js не меняется и работает у всех.
+// Раздел «Документы» (новый, 1.11.2026): доступен всем при включённом учёте документов. documents.js остаётся как источник данных (_docsLoad и др.), его страница из интерфейса отключена.
 // Новый раздел ТОЛЬКО ЧИТАЕТ: данные грузит старая функция _docsLoad() (documents.js), статусы считает
 // _docsInvStatus() оттуда же. Ничего не пишет в базу.
 // Главный документ для пекаря — заказ: «К выставлению» считается по заказам (orderNeedsInvoice, orders.js),
@@ -11,10 +11,9 @@
 //             orderGrandTotal, docsEnabled, _anyIssuedDocs (payments.js), formatMoney, getLocalDateStr,
 //             openAppPage (helpers.js), showLoading/hideLoading/showInfo, escapeHtml, t.
 
-// Кому показывать новый раздел. Сейчас — только защищённой организации id1.
-// Когда откроем всем: убрать условие currentOrgProtected (одна строка).
+// Кому показывать раздел «Документы»: всем, у кого включён учёт документов (режим «По счёту») или уже есть выставленные документы.
+// С 1.11.2026 — для всех организаций; старый раздел из «Заказов» отключён (код documents.js остаётся как источник данных).
 function docs2Allowed() {
-    if (typeof currentOrgProtected === 'undefined' || !currentOrgProtected) return false;
     const on = (typeof docsEnabled === 'function' && docsEnabled()) || (typeof _anyIssuedDocs === 'function' && _anyIssuedDocs());
     return !!on;
 }
@@ -949,4 +948,23 @@ function docs2RenderAll(reapplyView, keepFocus) {
             <div class="view-toggle-pill"><button type="button" class="view-toggle-btn${expanded ? ' active' : ''}" onclick="docs2AllToggleAll()" title="${escapeHtml(t(expanded ? 'docs2_collapse' : 'docs2_expand'))}">${expanded ? _D2_BAR_ICONS.col : _D2_BAR_ICONS.exp}</button></div></div>
         ${gl.length ? groupHtml : `<p style="font-size:13px; color:#9a9488; margin:24px 0; text-align:center;">${escapeHtml(t('docs2_all_empty'))}</p>`}`;
     if (hadFocus) { const i = document.getElementById('docs2AllQ'); if (i) { i.focus(); try { i.setSelectionRange(i.value.length, i.value.length); } catch (e) {} } }
+}
+
+
+// Документы одного клиента (из карточки клиента и из окна отправки): сразу «Все документы» с фильтром по клиенту, за всё время.
+async function openDocs2Customer(custId) {
+    if (!docs2Allowed() || !custId) return;
+    showLoading();
+    try {
+        await _docsLoad();
+    } catch (e) {
+        console.error('Документы 2: ошибка загрузки', e);
+        hideLoading();
+        showInfo(t('error_save_check_connection'));
+        return;
+    }
+    hideLoading();
+    _d2A = { q: '', cust: String(custId), period: '', type: '', st: '', open: new Set(), cons: new Set() };
+    openAppPage('docs2AllPage');
+    docs2RenderAll(true);
 }

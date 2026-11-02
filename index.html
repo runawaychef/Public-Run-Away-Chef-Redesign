@@ -2388,7 +2388,6 @@ function hideSplashScreen() {
                 <span id="ordersBankDot" class="hidden" style="position:absolute; top:-3px; left:-3px; width:11px; height:11px; border-radius:50%; background:#d9a441; border:2px solid #f4f1ea; box-sizing:content-box; pointer-events:none;"></span>
                 <span id="ordersBankBadge" class="hidden" style="position:absolute; top:-8px; right:-8px; min-width:18px; height:18px; border-radius:9px; background:#c0654f; color:#fff; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; padding:0 4px; pointer-events:none;"></span>
             </span>
-            <button type="button" class="view-toggle-btn" id="ordersDocsBtn" onclick="openDocumentsSection()" title="Документы" data-i18n-title="docs_title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H9a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V7l-4-4z"/><path d="M15 3v4h4"/><path d="M4 8v11a2 2 0 002 2h8"/></svg></button>
         </div>
     <div class="view-toggle-pill">
         <button class="view-toggle-btn active" id="ordersViewBtnCards" onclick="setOrdersViewMode('cards')" title="Карточки">
@@ -3131,7 +3130,7 @@ function hideSplashScreen() {
                     <div id="cdStatsBtns" class="flex gap-1.5" style="margin-top:8px;">
                         <button type="button" onclick="openCustomerMemoDates()" class="pill-btn-secondary flex-1 justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20s-7-4.4-7-10a4 4 0 017-2.6A4 4 0 0119 10c0 5.6-7 10-7 10z"/></svg><span data-i18n="cust_memo_btn">Особые даты</span></button>
                         <button type="button" onclick="openCustomerCalendar()" class="pill-btn-secondary flex-1 justify-center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span data-i18n="cust_calendar_btn">Календарь</span></button>
-                        <button id="cdDocsBtn" onclick="openDocumentsSection({ custId: currentCustomerId })" class="pill-btn-secondary flex-1 justify-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H9a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V7l-4-4z"/><path d="M15 3v4h4"/><path d="M4 8v11a2 2 0 002 2h8"/></svg><span data-i18n="docs_title">Документы</span></button>
+                        <button id="cdDocsBtn" onclick="openDocs2Customer(currentCustomerId)" class="pill-btn-secondary flex-1 justify-center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3H9a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V7l-4-4z"/><path d="M15 3v4h4"/><path d="M4 8v11a2 2 0 002 2h8"/></svg><span data-i18n="docs_title">Документы</span></button>
                     </div>
                     <div id="cdMemoStrip"></div>
                 </div>
@@ -4990,11 +4989,11 @@ function hideSplashScreen() {
 <script src="orders.js?v=158"></script>
 <script src="dashboard.js?v=10"></script>
 <script src="invoice.js?v=54"></script>
-<script src="send-document.js?v=42"></script>
+<script src="send-document.js?v=43"></script>
 <script src="confirmation.js?v=2"></script>
 <script src="payments.js?v=35"></script>
 <script src="documents.js?v=14"></script>
-<script src="documents2.js?v=26"></script>
+<script src="documents2.js?v=27"></script>
 <script src="bank.js?v=13"></script>
 <script src="stats.js?v=43"></script>
 <script src="history.js?v=9"></script>
