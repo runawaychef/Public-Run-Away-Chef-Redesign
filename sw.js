@@ -1,4 +1,4 @@
-const CACHE_NAME = 'runwaychef-public-cache-v819';
+const CACHE_NAME = 'runwaychef-public-cache-v820';
 const ASSETS = [
   './index.html',
   './i18n-core.js',
@@ -126,7 +126,7 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'Simple Bake';
   const options = {
     body: data.body || '',
-    icon: './notification-icon-192.png',
+    // xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
     badge: './notification-badge-96.png',
     tag: data.tag || undefined,
     data: { url: data.url || './' }
