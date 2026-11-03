@@ -136,7 +136,7 @@ function _d2Unpaid() {
 function d2ShowDiag() {
     const a = window._d2Diag, b = window._docsDiag;
     if (!a || !b) { showInfo('Нет замеров'); return; }
-    showInfo('Заказы+сводные: ' + a.load + ' мс (заказы ' + b.ord + ', сводные до ' + b.cons + ', разбор ' + b.proc + '); строк ' + b.rows + ', ' + b.kb + ' КБ. Платежи: ' + a.paid + ' мс. Отрисовка: ' + a.render + ' мс. Всего: ' + a.total + ' мс.');
+    showInfo('Заказы+сводные: ' + a.load + ' мс (заказы ' + b.ord + ', сводные до ' + b.cons + ', удалённые до ' + b.del + ', разбор ' + b.proc + '); строк ' + b.rows + ', ' + b.kb + ' КБ. Платежи: ' + a.paid + ' мс. Отрисовка: ' + a.render + ' мс. Всего: ' + a.total + ' мс.');
 }
 
 function docs2RenderHome() {

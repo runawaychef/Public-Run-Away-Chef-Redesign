@@ -42,12 +42,14 @@ function _docsSnapGrandC(orderPart, calc, vatRate) {
 }
 
 async function _docsLoad() {
-    const _dg0 = performance.now(); const _dg = { ord: 0, cons: 0, kb: 0, rows: 0, proc: 0 }; // ВРЕМЕННО: диагностика скорости
-    const [ordRes, consRes] = await Promise.all([
+    const _dg0 = performance.now(); const _dg = { ord: 0, cons: 0, del: 0, kb: 0, rows: 0, proc: 0 }; // ВРЕМЕННО: диагностика скорости
+    const _HEAVY = 'id, invOrder:invoice_snapshot->order, invCalc:invoice_snapshot->calc, invVat:invoice_snapshot->vat_rate, dnOrder:delivery_note_snapshot->order, dnCalc:delivery_note_snapshot->calc, dnVat:delivery_note_snapshot->vat_rate';
+    const [ordRes, consRes, delRes] = await Promise.all([
         fetchAllRows(() => db.from('orders')
             .select('id, customer_id, order_number, order_date, deleted_at, consolidated_invoice_id, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via, invoice_delivery_status, delivery_note_delivery_status, '
-                + 'inv:invoice_snapshot->>number, invDate:invoice_snapshot->>issueDate, invDue:invoice_snapshot->>dueDate, invOrder:invoice_snapshot->order, invCalc:invoice_snapshot->calc, invVat:invoice_snapshot->vat_rate, '
-                + 'dn:delivery_note_snapshot->>number, dnDate:delivery_note_snapshot->>issueDate, dnOrder:delivery_note_snapshot->order, dnCalc:delivery_note_snapshot->calc, dnVat:delivery_note_snapshot->vat_rate')
+                // 2.11: список берёт ЛЁГКИЕ вычисляемые колонки (inv_no, inv_issue_date, ...), а не поля из тяжёлого снимка (в нём логотип ~105 КБ):
+                // чтение снимков с диска давало 2-3 с. Тяжёлые части снимка (для сумм удалённых заказов) — отдельным запросом ниже.
+                + 'inv:inv_no, invDate:inv_issue_date, invDue:inv_due_date, dn:dn_no, dnDate:dn_issue_date')
             .eq('org_id', currentOrgId)
             .or('invoice_snapshot.not.is.null,delivery_note_snapshot.not.is.null')
             .order('id')).then(r => { _dg.ord = Math.round(performance.now() - _dg0); return r; }),
@@ -55,16 +57,34 @@ async function _docsLoad() {
             .select('id, number, issue_date, due_date, customer_id, cancelled_at, grand:snapshot->consolidated->totals->>grand, members:snapshot->consolidated->orders')
             .eq('org_id', currentOrgId)
             .order('id')).then(r => { _dg.cons = Math.round(performance.now() - _dg0); return r; }),
+        // Удалённые заказы с документами: их суммы берутся из снимка (в списке живых заказов их нет)
+        fetchAllRows(() => db.from('orders').select(_HEAVY)
+            .eq('org_id', currentOrgId).not('deleted_at', 'is', null)
+            .or('invoice_snapshot.not.is.null,delivery_note_snapshot.not.is.null')
+            .order('id')).then(r => { _dg.del = Math.round(performance.now() - _dg0); return r; }),
     ]);
     const _dg1 = performance.now();
     try { _dg.rows = (ordRes.data || []).length; _dg.kb = Math.round(JSON.stringify(ordRes.data || []).length / 1024); } catch (e) {}
     if (ordRes.error) throw ordRes.error;
     if (consRes.error) throw consRes.error;
+    if (delRes.error) throw delRes.error;
+
+    // Тяжёлые части снимков: удалённые заказы + (на всякий случай) любые заказы, которых нет в памяти приложения
+    const heavy = {};
+    (delRes.data || []).forEach(h => { heavy[h.id] = h; });
+    const liveIds = new Set(orders.map(o => o.id));
+    const missing = (ordRes.data || []).filter(r => !liveIds.has(r.id) && !heavy[r.id]).map(r => r.id);
+    for (let i = 0; i < missing.length; i += 100) {
+        const { data: hd, error: he } = await db.from('orders').select(_HEAVY).eq('org_id', currentOrgId).in('id', missing.slice(i, i + 100));
+        if (he) throw he;
+        (hd || []).forEach(h => { heavy[h.id] = h; });
+    }
 
     const list = [];
     const sentByCons = {}; // { consId: последняя отметка «отправлено» среди заказов счёта }
     (ordRes.data || []).forEach(r => {
         const live = orders.find(o => o.id === r.id) || null;
+        const hv = heavy[r.id] || {};
         const deleted = !!r.deleted_at;
         const custName = live ? (live.customer || _docsCustName(r.customer_id)) : _docsCustName(r.customer_id);
         const base = { orderId: r.id, orderNumber: r.order_number || null, custId: r.customer_id || null, custName, deleted, live };
@@ -77,7 +97,7 @@ async function _docsLoad() {
             list.push(Object.assign({}, base, {
                 key: 'inv-' + r.id, kind: 'inv', docType: 'invoice', rawNumber: r.inv,
                 number: _formatDocNumber('invoice', r.inv), date: r.invDate || r.order_date || '', due: r.invDue || null,
-                sumC: live ? Math.round(orderGrandTotal(live) * 100) : _docsSnapGrandC(r.invOrder, r.invCalc, r.invVat),
+                sumC: live ? Math.round(orderGrandTotal(live) * 100) : _docsSnapGrandC(hv.invOrder, hv.invCalc, hv.invVat),
                 pay, sentAt: r.invoice_sent_at || null, sentVia: r.invoice_sent_via || null, delivery: r.invoice_delivery_status || null,
             }));
         }
@@ -85,7 +105,7 @@ async function _docsLoad() {
             list.push(Object.assign({}, base, {
                 key: 'dn-' + r.id, kind: 'dn', docType: 'delivery_note', rawNumber: r.dn,
                 number: _formatDocNumber('delivery_note', r.dn), date: r.dnDate || r.order_date || '',
-                sumC: live ? Math.round(orderGrandTotal(live) * 100) : _docsSnapGrandC(r.dnOrder, r.dnCalc, r.dnVat),
+                sumC: live ? Math.round(orderGrandTotal(live) * 100) : _docsSnapGrandC(hv.dnOrder, hv.dnCalc, hv.dnVat),
                 pay: null, sentAt: r.delivery_note_sent_at || null, sentVia: r.delivery_note_sent_via || null, delivery: r.delivery_note_delivery_status || null,
             }));
         }
