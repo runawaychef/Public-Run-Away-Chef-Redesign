@@ -27,6 +27,8 @@ async function openDocs2Home() {
     if (!docs2Allowed()) return;
     showLoading();
     const _t0 = performance.now(); // ВРЕМЕННО: диагностика скорости
+    // 2.11: платежи грузим ПАРАЛЛЕЛЬНО со списком документов (раньше — после него, лишнее ожидание сети). _d2LoadPaid ошибки глотает сама.
+    const _paidP = _d2LoadPaid();
     try {
         await _docsLoad();
     } catch (e) {
@@ -36,7 +38,7 @@ async function openDocs2Home() {
         return;
     }
     const _t1 = performance.now();
-    await _d2LoadPaid();
+    await _paidP;
     const _t2 = performance.now();
     hideLoading();
     openAppPage('docs2HomePage');
@@ -136,7 +138,7 @@ function _d2Unpaid() {
 function d2ShowDiag() {
     const a = window._d2Diag, b = window._docsDiag;
     if (!a || !b) { showInfo('Нет замеров'); return; }
-    showInfo('Заказы+сводные: ' + a.load + ' мс (заказы ' + b.ord + ', сводные до ' + b.cons + ', удалённые до ' + b.del + ', разбор ' + b.proc + '); строк ' + b.rows + ', ' + b.kb + ' КБ. Платежи: ' + a.paid + ' мс. Отрисовка: ' + a.render + ' мс. Всего: ' + a.total + ' мс.');
+    showInfo('Заказы+сводные: ' + a.load + ' мс (заказы ' + b.ord + ', сводные до ' + b.cons + ', удалённые до ' + b.del + ', разбор ' + b.proc + '); строк ' + b.rows + ', ' + b.kb + ' КБ. Платежи (доп. ожидание): ' + a.paid + ' мс. Отрисовка: ' + a.render + ' мс. Всего: ' + a.total + ' мс.');
 }
 
 function docs2RenderHome() {
@@ -273,9 +275,7 @@ async function returnToDocs2() {
     if (!r || !docs2Allowed()) return false;
     showLoading();
     try {
-        await _docsLoad();
-        await _d2LoadPaid();
-        if (r.page === 'docs2PaidPage') await _d2FetchPaidRows();
+        await Promise.all([_docsLoad(), _d2LoadPaid(), r.page === 'docs2PaidPage' ? _d2FetchPaidRows() : null]);
     } catch (e) {
         console.error('Документы 2: ошибка загрузки при возврате', e);
         hideLoading();
