@@ -1529,7 +1529,10 @@
         .dashboard-card.dc-alldone .dc-prog i { background: #7c9473; }
         /* Плитка «Сегодня»: крупная цифра = все заказы дня, кольцо = выполнено/всего */
         .dc-ring { position: relative; flex: 1; min-height: 0; }
-        .dc-ring svg { position: absolute; right: 0; top: 50%; transform: translateY(-50%); height: 100%; max-height: 96px; width: auto; aspect-ratio: 1; }
+        /* низ кольца = линия-основание столбиков в плитке «Принятые» (столбики 30px + подписи ~13px, по центру dc-mid → основание на 8.5px ниже центра) */
+        .dc-ring svg { position: absolute; right: 12px; top: calc(50% + 8.5px); transform: translateY(-100%); width: 75px; height: 75px; }
+        .dashboard.dash-compact .dc-ring svg { width: 64px; height: 64px; }
+        .dashboard.dash-compact2 .dc-ring svg { width: 52px; height: 52px; top: calc(50% + 15px); }
         .dc-ring .rt { stroke: #ece8dc; }
         .dc-ring .rp { stroke: #7c9473; transition: stroke-dasharray .4s ease; }
         .dc-ring text { fill: #6b6552; font-weight: 700; }
