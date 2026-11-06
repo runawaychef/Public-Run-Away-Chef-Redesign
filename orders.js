@@ -41,6 +41,7 @@ function resetOrdersRenderLimits() {
 
 function displayOrders() {
     if (typeof refreshDocsVisibility === 'function') refreshDocsVisibility();
+    renderDraftBar();
     _ordersMoreObserver.disconnect(); // старые sentinel'ы уйдут вместе с перерисованным DOM
     // Список карточек сейчас перерисуется целиком — если у какого-то заказа был
     // открыт статус-дропдаун (и портал увёл его из карточки наружу, см. helpers.js
@@ -337,7 +338,7 @@ function renderOrderCard(order) {
                                 <span class="oc-sum">${total}</span>
                             </div>
                             <div class="oc-row" style="margin-top:3px;">
-                                <span class="oc-meta">${escapeHtml(oNum)}</span>
+                                <span class="oc-meta">${orderMetaHtml(order)}</span>
                                 <div style="position:relative;" onclick="event.stopPropagation();">
                                     <button class="status-btn" style="background:${statusColor};" onclick="toggleOrderStatusDropdown(${order.id})">
                                         ${orderStatusLabelCap(order.status)}
@@ -561,7 +562,7 @@ function renderDoneOrderCard(order, opts) {
                                     <span class="oc-sum">${total}</span>
                                 </div>
                                 <div class="oc-row" style="margin-top:3px;">
-                                    <span class="oc-meta">${escapeHtml(oNum)}</span>
+                                    <span class="oc-meta">${orderMetaHtml(order)}</span>
                                 </div>
                             </div>
                         </div>
@@ -631,7 +632,7 @@ function renderDoneOrderCard(order, opts) {
                                         <span class="oc-sum">${total}</span>
                                     </div>
                                     <div class="oc-row" style="margin-top:3px;">
-                                        <span class="oc-meta">${escapeHtml(oNum)}</span>
+                                        <span class="oc-meta">${orderMetaHtml(order)}</span>
                                     </div>
                                 </div>
                             </div>
@@ -1386,6 +1387,40 @@ function updateDetailSaveUi(order) {
 }
 
 function orderNumLabel(o) { return o.order_number ? ('№' + o.order_number) : t('orders_draft_label'); }
+
+// Подпись в карточке списка: номер у сохранённого заказа, заметная плашка у несохранённого
+// (черновик виден только автору: другие сотрудники его не видят, push не уходит).
+function orderMetaHtml(o) {
+    if (isOrderSaved(o)) return escapeHtml(orderNumLabel(o));
+    return `<span class="oc-chip oc-chip-unsaved">${escapeHtml(t('orders_unsaved_chip'))}</span>`;
+}
+
+// Полоса над списком заказов: свои несохранённые заказы (с клиентом или позициями).
+function renderDraftBar() {
+    const box = document.getElementById('ordersDraftBar');
+    if (!box) return;
+    const me = currentEmployee ? currentEmployee.id : null;
+    const mine = orders.filter(o => !o.deleted_at && !isOrderSaved(o) && (o.created_by || null) === me && isOrderVisible(o));
+    if (!mine.length) { box.innerHTML = ''; return; }
+    box.innerHTML = `<div class="oc-draftbar">
+        <span class="db-t">${escapeHtml(t('orders_unsaved_bar').replace('{n}', String(mine.length)))}<span class="db-s">${escapeHtml(t('orders_unsaved_bar_sub'))}</span></span>
+        <button type="button" onclick="openOrderDetail(${mine[0].id})">${escapeHtml(t('orders_unsaved_open'))}</button>
+    </div>`;
+}
+
+// Переключение нижней вкладки из открытого несохранённого заказа: так же, как «Назад»,
+// сначала сохраняем или спрашиваем (resolveDraftOnLeave), и только потом уходим.
+// true — переход отложен (showTab вызовется снова после решения).
+function orderDraftGuardOnTab(tabId) {
+    if (tabId === 'orders' || currentOrderId === null) return false;
+    const detail = document.getElementById('orderDetail');
+    if (!detail || !detail.classList.contains('active')) return false;
+    const order = orders.find(o => o.id === currentOrderId);
+    if (!order || isOrderSaved(order)) return false;
+    if (!order.customer_id && !(order.items && order.items.length > 0)) return false;
+    resolveDraftOnLeave(order).then(ok => { if (ok) showTab(tabId); });
+    return true;
+}
 
 // Есть ли в пекарне другие сотрудники, которым уйдёт уведомление о сохранённом заказе
 function orderTeamHasOthers() {

@@ -1650,6 +1650,11 @@
         .oc-chip-ok { background:#e9eee5; color:#4f6349; }
         .oc-chip-cons { background:#dbe4d3; color:#3f5a38; }
         .oc-chip-none { background:#fbf3df; color:#96712a; border:1px dashed #c9973a; }
+        .oc-chip-unsaved { background:#fff4dc; color:#8a5a0a; border:1px dashed #d08a2e; }
+        .oc-draftbar { display:flex; align-items:center; gap:10px; background:#fff4dc; border:1.5px dashed #d08a2e; border-radius:16px; padding:10px 12px; margin:0 0 10px; color:#6b4a0a; font-size:13px; }
+        .oc-draftbar .db-t { flex:1; min-width:0; font-weight:700; }
+        .oc-draftbar .db-s { display:block; font-weight:400; font-size:11.5px; }
+        .oc-draftbar button { background:#d08a2e; color:#fff; border:0; border-radius:14px; padding:7px 12px; font-size:12.5px; font-weight:600; }
         .oc-chip-out { background:#f1eee3; color:#6b675d; }
 /* ===== /THEME-UNIFIED-CUSTOMER-CARD-34 ===== */
 
@@ -3269,6 +3274,7 @@ function hideSplashScreen() {
             <!-- СПИСОК ЗАКАЗОВ -->
             <div id="ordersList">
                 <div id="ordersBankNotice" style="padding:0 2px;"></div>
+                <div id="ordersDraftBar"></div>
 
                 <!-- Итог по включённым фильтрам (виден только при активном фильтре) — тап открывает разбивку по изделиям -->
                 <div id="ordersFilterSummary" class="hidden" onclick="openOrdersProductsModal()"></div>
@@ -4976,7 +4982,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=12"></script>
-    <script src="i18n-core.js?v=155"></script>
+    <script src="i18n-core.js?v=156"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=31"></script>
@@ -4991,7 +4997,7 @@ function hideSplashScreen() {
 <script src="products.js?v=52"></script>
 <script src="customers.js?v=73"></script>
 <script src="calendar.js?v=17"></script>
-<script src="orders.js?v=158"></script>
+<script src="orders.js?v=159"></script>
 <script src="dashboard.js?v=10"></script>
 <script src="invoice.js?v=54"></script>
 <script src="send-document.js?v=43"></script>
@@ -5263,6 +5269,7 @@ function renderAllScreens() {
 
 // ==================== ТАБЫ ====================
 function showTab(tabId) {
+    if (typeof orderDraftGuardOnTab === 'function' && orderDraftGuardOnTab(tabId)) return;
     // Открыта страница «Отправить документ»: уход по меню/иконкам закрывает её (с вопросом, если текст письма изменён)
     if (typeof appPagesLeaveGuard === 'function' && appPagesLeaveGuard(() => showTab(tabId))) return;
     // Переход по меню сбрасывает память «вернуться в Умный склад» (inventory.js, 21.10)
