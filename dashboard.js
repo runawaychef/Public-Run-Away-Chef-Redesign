@@ -264,6 +264,21 @@ function _dashOrdWord(n) {
     return t(k);
 }
 // Нижняя строка плашки: «6 заказов · 312 €» (сумма — только если заказы есть)
+// «Завтра»: клиенты и суммы их заказов (суммируем по клиенту, по убыванию). До 3 строк; больше — две строки и «ещё N»
+function _dashTomorrowRows(saved, day) {
+    const map = {};
+    saved.forEach(o => {
+        if (o.date !== day) return;
+        const key = o.customer_id != null ? 'id' + o.customer_id : 'n' + (o.customer || '');
+        if (!map[key]) map[key] = { name: o.customer || '—', sum: 0 };
+        map[key].sum += orderGrandTotal(o);
+    });
+    const list = Object.values(map).sort((a, b) => b.sum - a.sum);
+    const row = c => `<div class="dc-row dc-row--plain dc-trow"><span>${escapeHtml(c.name)}</span><span class="dashboard-card__value">${_dashMoney(c.sum)}</span></div>`;
+    if (list.length <= 3) return list.map(row).join('');
+    return list.slice(0, 2).map(row).join('')
+        + `<div class="dc-row dc-row--plain dc-trow dc-trow--more"><span>${escapeHtml(t('dash_more').replace('{n}', list.length - 2))}</span></div>`;
+}
 function _dashFoot(g) {
     return `${g.count} ${escapeHtml(_dashOrdWord(g.count))}` + (g.count ? `<span> · ${_dashMoney(g.sum)}</span>` : '');
 }
@@ -397,6 +412,7 @@ function renderDashboard() {
         const tm = calcGroupTotals(saved, o => o.date === tomorrow);
         _dashSet('dashTomorrow', String(tm.count));
         _dashSet('dashTomorrowSub', _dashFoot(tm));
+        _dashSet('dashTomorrowList', _dashTomorrowRows(saved, tomorrow));
         // Выручка
         const r = _dashRevenue(saved);
         { // длинная сумма (6+ цифр) уменьшается, чтобы не вылезать из плашки
@@ -439,13 +455,11 @@ function renderDashboard() {
             const s = _dashStock();
             const tot = s.ing + s.sf;
             _dashSet('dashStockTotal', String(tot), tot > 0 ? 'bad' : '');
-            _dashSet('dashStockCap', escapeHtml(t('dash_short').toLowerCase()));
             _dashSet('dashIngredients', String(s.ing), s.ing > 0 ? 'bad' : '');
             _dashSet('dashSemi', String(s.sf), s.sf > 0 ? 'bad' : '');
         } else {
             // Light/Free: счётчиков нет; позже здесь появятся данные о сроке годности
             _dashSet('dashStockTotal', '—', 'muted');
-            _dashSet('dashStockCap', '');
         }
     } catch (e) {
         console.error('dashboard: stock', e);

@@ -1708,6 +1708,7 @@ I18N.uk = {
         dash_full_only: 'Доступно на тарифі Full',
         dash_acc_s: 'Прийняті',
         dash_later: 'Пізніше',
+        dash_more: 'ще {n}',
         dash_today_s: 'Сьогодні',
         dash_tom_s: 'Завтра',
         dash_rev_s: 'Виручка',

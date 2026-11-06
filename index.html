@@ -1538,6 +1538,9 @@
         .dc-ring text { fill: #6b6552; font-weight: 700; }
         .dashboard-card.dc-alldone .dc-ring text { fill: #5f7857; }
         .dashboard-card .dashboard-card__value.dc-zero { color: #cfc8b8; }
+        /* «Завтра»: список клиентов (до 3 строк; на самых низких экранах — одна) */
+        .dc-trow--more { color: #8d887b; font-weight: 500; }
+        .dashboard.dash-compact2 .dc-trow:nth-child(n+2) { display: none; }
         /* ===== /THEME-UNIFIED-DASH3 ===== */
         /* ===== THEME-UNIFIED-STOCK (28.10.2026): раздел «Склад» (ингредиенты и полуфабрикаты) в стиле плашек Dashboard =====
            Только #ingredientsList / #semiFinishedList и их панели поиска. Карточки как у заказов (парящие, красная полоска у критичных),
@@ -2577,7 +2580,7 @@ function hideSplashScreen() {
                     </div>
                     <div class="dashboard-card dc2 dashboard-card--stock">
                         <div class="dashboard-card__hd dash-c-stock"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5L12 12l8-4.5M12 12v9"/></svg><div class="dashboard-card__label" data-i18n="dash_stock_title">Склад: внимание</div></div>
-                        <div class="dc-val"><span class="dashboard-card__value" id="dashStockTotal"><span class="dash-sk"></span></span><span class="dc-cap" id="dashStockCap"></span></div>
+                        <div class="dc-val"><span class="dashboard-card__value" id="dashStockTotal"><span class="dash-sk"></span></span></div>
                         <div class="dc-mid">
                             <div class="dc-row" id="dashRowIng" role="button" tabindex="0" onclick="dashOpenIngredients()"><span data-i18n="dash_ingredients">Ингредиенты</span><span class="dashboard-card__value" id="dashIngredients"><span class="dash-sk"></span></span></div>
                             <div class="dc-row" id="dashRowSemi" role="button" tabindex="0" onclick="dashOpenSemiFinished()"><span data-i18n="dash_semi">Полуфабрикаты</span><span class="dashboard-card__value" id="dashSemi"><span class="dash-sk"></span></span></div>
@@ -2588,7 +2591,7 @@ function hideSplashScreen() {
                     <div class="dashboard-card dc2 " role="button" tabindex="0" onclick="dashOpenTomorrow()">
                         <div class="dashboard-card__hd dash-c-tom"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/><path d="M9.5 15.5h5M12.5 13l2.5 2.5-2.5 2.5"/></svg><div class="dashboard-card__label" data-i18n="dash_tom_s"></div></div>
                         <div class="dc-val"><span class="dashboard-card__value" id="dashTomorrow"><span class="dash-sk"></span></span><span class="dc-cap" id="dashTomorrowCap"></span></div>
-                        <div class="dc-mid"></div>
+                        <div class="dc-mid" id="dashTomorrowList"></div>
                         <div class="dc-foot" id="dashTomorrowSub">&nbsp;</div>
                     </div>
                     <div class="dashboard-card dc2 " role="button" tabindex="0" onclick="dashOpenUnpaid()">
@@ -4993,7 +4996,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=12"></script>
-    <script src="i18n-core.js?v=156"></script>
+    <script src="i18n-core.js?v=157"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=31"></script>
@@ -5009,7 +5012,7 @@ function hideSplashScreen() {
 <script src="customers.js?v=73"></script>
 <script src="calendar.js?v=17"></script>
 <script src="orders.js?v=159"></script>
-<script src="dashboard.js?v=11"></script>
+<script src="dashboard.js?v=12"></script>
 <script src="invoice.js?v=54"></script>
 <script src="send-document.js?v=43"></script>
 <script src="confirmation.js?v=2"></script>

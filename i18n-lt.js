@@ -1708,6 +1708,7 @@ I18N.lt = {
         dash_full_only: 'Galima Full plane',
         dash_acc_s: 'Priimti',
         dash_later: 'Vėliau',
+        dash_more: 'dar {n}',
         dash_today_s: 'Šiandien',
         dash_tom_s: 'Rytoj',
         dash_rev_s: 'Pajamos',

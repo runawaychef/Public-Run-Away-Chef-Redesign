@@ -1711,6 +1711,7 @@ I18N.en = {
         dash_full_only: 'Available on the Full plan',
         dash_acc_s: 'Accepted',
         dash_later: 'Later',
+        dash_more: '+{n} more',
         dash_today_s: 'Today',
         dash_tom_s: 'Tomorrow',
         dash_rev_s: 'Revenue',
