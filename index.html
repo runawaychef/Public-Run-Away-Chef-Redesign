@@ -1527,6 +1527,14 @@
         .dc-prog i { transition: background .3s ease; }
         .dashboard-card.dc-alldone .dashboard-card__hd { --dc: #7c9473; }
         .dashboard-card.dc-alldone .dc-prog i { background: #7c9473; }
+        /* Плитка «Сегодня»: крупная цифра = все заказы дня, кольцо = выполнено/всего */
+        .dc-ring { position: relative; flex: 1; min-height: 0; }
+        .dc-ring svg { position: absolute; right: 0; top: 50%; transform: translateY(-50%); height: 100%; max-height: 96px; width: auto; aspect-ratio: 1; }
+        .dc-ring .rt { stroke: #ece8dc; }
+        .dc-ring .rp { stroke: #7c9473; transition: stroke-dasharray .4s ease; }
+        .dc-ring text { fill: #6b6552; font-weight: 700; }
+        .dashboard-card.dc-alldone .dc-ring text { fill: #5f7857; }
+        .dashboard-card .dashboard-card__value.dc-zero { color: #cfc8b8; }
         /* ===== /THEME-UNIFIED-DASH3 ===== */
         /* ===== THEME-UNIFIED-STOCK (28.10.2026): раздел «Склад» (ингредиенты и полуфабрикаты) в стиле плашек Dashboard =====
            Только #ingredientsList / #semiFinishedList и их панели поиска. Карточки как у заказов (парящие, красная полоска у критичных),
@@ -2560,8 +2568,8 @@ function hideSplashScreen() {
                     </div>
                     <div class="dashboard-card dc2 " role="button" tabindex="0" onclick="dashOpenToday()">
                         <div class="dashboard-card__hd dash-c-day"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/><circle cx="12" cy="15.5" r="1.3" fill="currentColor"/></svg><div class="dashboard-card__label" data-i18n="dash_today_s"></div></div>
-                        <div class="dc-val"><span class="dashboard-card__value" id="dashToday"><span class="dash-sk"></span></span><span class="dc-cap" id="dashTodayCap"></span></div>
-                        <div class="dc-mid"><div class="dc-prog"><i id="dashTodayBar" style="width:0"></i></div></div>
+                        <div class="dc-val"><span class="dashboard-card__value" id="dashToday"><span class="dash-sk"></span></span></div>
+                        <div class="dc-mid"><div class="dc-ring" id="dashTodayRing"></div></div>
                         <div class="dc-foot" id="dashTodaySub">&nbsp;</div>
                     </div>
                     <div class="dashboard-card dc2 dashboard-card--stock">
@@ -4998,7 +5006,7 @@ function hideSplashScreen() {
 <script src="customers.js?v=73"></script>
 <script src="calendar.js?v=17"></script>
 <script src="orders.js?v=159"></script>
-<script src="dashboard.js?v=10"></script>
+<script src="dashboard.js?v=11"></script>
 <script src="invoice.js?v=54"></script>
 <script src="send-document.js?v=43"></script>
 <script src="confirmation.js?v=2"></script>

@@ -378,10 +378,20 @@ function renderDashboard() {
         // Сегодня: «выполнено из всех» + полоска + «N заказов · сумма»
         const td = calcGroupTotals(saved, o => o.date === today);
         const done = saved.filter(o => o.date === today && o.status === 'выполнен').length;
-        _dashSet('dashToday', String(done));
-        _dashSet('dashTodayCap', td.count ? escapeHtml(t('dash_of_done').replace('{n}', td.count)) : '');
-        const bar = _dashEl('dashTodayBar'); if (bar) bar.style.width = (td.count ? Math.round(done / td.count * 100) : 0) + '%';
-        { const tc = bar && bar.closest('.dashboard-card'); if (tc) tc.classList.toggle('dc-alldone', td.count > 0 && done === td.count); } // всё выполнено → полоска и иконка фисташковые
+        _dashSet('dashToday', String(td.count));
+        { const v = _dashEl('dashToday'); if (v) v.classList.toggle('dc-zero', !td.count); }
+        { // кольцо: выполнено / всего (на пустой день — пустое кольцо без цифр)
+            const rg = _dashEl('dashTodayRing');
+            if (rg) {
+                const R = 34.5, C = 2 * Math.PI * R, p = td.count ? done / td.count : 0;
+                const lbl = td.count ? done + '/' + td.count : '';
+                const fs = lbl.length > 4 ? 15 : 19;
+                rg.innerHTML = '<svg viewBox="0 0 80 80" role="img" aria-label="' + lbl + '"><circle class="rt" cx="40" cy="40" r="' + R + '" fill="none" stroke-width="10"/>'
+                    + (p > 0 ? '<circle class="rp" cx="40" cy="40" r="' + R + '" fill="none" stroke-width="10" stroke-linecap="round" stroke-dasharray="' + (C * p).toFixed(1) + ' ' + C.toFixed(1) + '" transform="rotate(-90 40 40)"/>' : '')
+                    + (lbl ? '<text x="40" y="' + (40 + fs * 0.35).toFixed(1) + '" text-anchor="middle" font-size="' + fs + '">' + lbl + '</text>' : '') + '</svg>';
+                const tc = rg.closest('.dashboard-card'); if (tc) tc.classList.toggle('dc-alldone', td.count > 0 && done === td.count);
+            }
+        }
         _dashSet('dashTodaySub', _dashFoot(td));
         // Завтра
         const tm = calcGroupTotals(saved, o => o.date === tomorrow);
