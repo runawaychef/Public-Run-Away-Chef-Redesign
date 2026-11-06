@@ -1648,6 +1648,7 @@ I18N.lt = {
         prod_unit_pcs_option: 'už vienetą (vnt)',
         prod_unit_kg_option: 'pagal svorį (kg)',
         prod_sale_price: 'Pardavimo kaina',
+        prod_price_per_unit_hint: '(už {u})',
         prod_unit_cost_1pc: '1 vnt. savikaina',
         prod_profit_1pc: 'Pelnas nuo 1 vnt.',
         prod_cost_dynamics: 'Savikainos dinamika',

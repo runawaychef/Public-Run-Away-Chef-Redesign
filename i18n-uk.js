@@ -1648,6 +1648,7 @@ I18N.uk = {
         prod_unit_pcs_option: 'за штуку (шт)',
         prod_unit_kg_option: 'на вагу (кг)',
         prod_sale_price: 'Ціна продажу',
+        prod_price_per_unit_hint: '(за {u})',
         prod_unit_cost_1pc: 'Собівартість 1 шт',
         prod_profit_1pc: 'Прибуток з 1 шт',
         prod_cost_dynamics: 'Динаміка собівартості',

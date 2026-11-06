@@ -1650,6 +1650,7 @@ I18N.ru = {
         prod_unit_pcs_option: 'за штуку (шт)',
         prod_unit_kg_option: 'на вес (кг)',
         prod_sale_price: 'Продажная цена',
+        prod_price_per_unit_hint: '(за {u})',
         prod_unit_cost_1pc: 'Себестоимость 1 шт',
         prod_profit_1pc: 'Прибыль с 1 шт',
         prod_cost_dynamics: 'Динамика себестоимости',

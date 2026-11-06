@@ -523,7 +523,7 @@ function updatePdUnitUI(unit) {
     const warning = document.getElementById('pdUnitWarning');
     const hint = document.getElementById('pdPriceUnitHint');
     if (warning) warning.classList.toggle('hidden', !!unit);
-    if (hint) hint.textContent = unit ? `(за ${unitAbbrev(unit)})` : '';
+    if (hint) hint.textContent = unit ? t('prod_price_per_unit_hint').replace('{u}', unitAbbrev(unit)) : '';
 }
 
 async function closeProductDetail() {

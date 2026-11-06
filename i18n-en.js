@@ -1651,6 +1651,7 @@ I18N.en = {
         prod_unit_pcs_option: 'per piece (pcs)',
         prod_unit_kg_option: 'by weight (kg)',
         prod_sale_price: 'Sale price',
+        prod_price_per_unit_hint: '(per {u})',
         prod_unit_cost_1pc: 'Cost per piece',
         prod_profit_1pc: 'Profit per piece',
         prod_cost_dynamics: 'Cost trend',
