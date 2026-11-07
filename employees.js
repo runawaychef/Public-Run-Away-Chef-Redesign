@@ -569,6 +569,10 @@ async function selectEmployee(emp) {
 // Права сотрудника и тариф сверяем с базой реже: раз в 5 минут и при возврате
 // в приложение после паузы. На скрытой вкладке ничего не делаем.
 const PERMISSIONS_REFRESH_MS = 5 * 60 * 1000;
+// Тихое обновление данных при возврате в приложение: если оно было скрыто дольше этого времени
+// (телефон спал, переключились на другое приложение), realtime-связь могла оборваться и чужие
+// правки (например, сотрудника) не дошли. Кнопку «Обновить данные» в Настройках убрали (7.11.2026).
+const RESUME_DATA_REFRESH_MS = 5 * 60 * 1000;
 let _periodicRefreshStarted = false;
 function startPeriodicRefresh() {
     if (_periodicRefreshStarted) return;
@@ -585,7 +589,17 @@ function startPeriodicRefresh() {
         if (currentDate !== _lastKnownDate) {
             _lastKnownDate = currentDate;
             loadAllData(true);
+            return true; // данные уже перезагружаются — повторно не грузим
         }
+        return false;
+    };
+    let _hiddenAt = 0;
+    let _resumeRefreshBusy = false;
+    const resumeRefresh = async () => {
+        if (_resumeRefreshBusy) return;
+        _resumeRefreshBusy = true;
+        try { await loadAllData(true); } catch (err) { console.warn('[resume refresh]', err); }
+        finally { _resumeRefreshBusy = false; }
     };
 
     setInterval(() => {
@@ -595,9 +609,13 @@ function startPeriodicRefresh() {
     }, 60000);
 
     document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') { _hiddenAt = Date.now(); return; }
         if (document.visibilityState !== 'visible') return;
-        checkDate();
+        const dateReloaded = checkDate();
         if (Date.now() - _lastPermissionsCheck >= 60000) checkPermissions();
+        // Вернулись после долгой паузы: тихо подтягиваем свежие данные (без оверлея, как realtime).
+        if (!dateReloaded && _hiddenAt && Date.now() - _hiddenAt >= RESUME_DATA_REFRESH_MS) resumeRefresh();
+        _hiddenAt = 0;
     });
 }
 
