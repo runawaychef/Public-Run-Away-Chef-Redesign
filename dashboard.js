@@ -288,6 +288,16 @@ function _dashWeekday(dateStr) {
         return w.charAt(0).toUpperCase() + w.slice(1);
     } catch (e) { return ''; }
 }
+// Дата в углу карточек «Сегодня» / «Завтра»: «Пт · 06.11» (день недели и порядок числа/месяца — по языку интерфейса).
+// День недели в отдельном span, чтобы на узких экранах его можно было скрыть через CSS (.dc-date-wd).
+function _dashDateTag(dateStr) {
+    let num = '';
+    try {
+        num = new Date(dateStr + 'T12:00:00').toLocaleDateString(typeof currentLang !== 'undefined' ? currentLang : undefined, { day: '2-digit', month: '2-digit' });
+    } catch (e) { num = dateStr.slice(8, 10) + '.' + dateStr.slice(5, 7); }
+    const wd = _dashWeekday(dateStr);
+    return (wd ? `<span class="dc-date-wd">${escapeHtml(wd)} · </span>` : '') + escapeHtml(num);
+}
 // Столбики «Принятые» на 7 дней вперёд (сегодня + 6) + восьмой столбик «Позже» (всё дальше шестого дня):
 // число принятых заказов на каждый день. Пик (тёмный) выбирается только среди 7 дней.
 function _dashBars(saved) {
@@ -384,6 +394,9 @@ function renderDashboard() {
     try {
         const saved = _dashSavedOrders();
         const today = getLocalDateStr(0), tomorrow = getLocalDateStr(1);
+        // Даты в углу карточек «Сегодня» и «Завтра» (по часовому поясу пекарни)
+        _dashSet('dashTodayDate', _dashDateTag(today));
+        _dashSet('dashTomorrowDate', _dashDateTag(tomorrow));
         // Принятые: число + столбики на 7 дней + «N заказов · сумма»
         const acc = calcGroupTotals(saved, o => o.status === 'принят');
         _dashSet('dashAccepted', String(acc.count));

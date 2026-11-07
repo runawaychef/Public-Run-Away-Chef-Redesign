@@ -1398,6 +1398,12 @@
         .dc2 .dashboard-card__hd { height: 24px; gap: 6px; }
         .dc2 .dashboard-card__ic { width: 22px; height: 22px; }
         .dc2 .dashboard-card__label { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        /* Дата в правом верхнем углу карточек «Сегодня» и «Завтра» (рисует dashboard.js): «Пт · 06.11». ОТКАТ: убрать .dc-date и span#dashTodayDate / #dashTomorrowDate. */
+        .dc-date { margin-left: auto; flex-shrink: 0; font-size: 11.5px; font-weight: 600; color: #8d887b; white-space: nowrap; letter-spacing: 0; }
+        .dashboard.dash-compact .dc-date { font-size: 11px; }
+        .dashboard.dash-compact2 .dc-date { font-size: 10.5px; }
+        .dashboard.dash-compact2 .dc-date-wd { display: none; }
+        @media (max-width: 370px) { .dc-date-wd { display: none; } }
         .dc-val { display: flex; align-items: baseline; gap: 6px; margin-top: 6px; min-height: 32px; white-space: nowrap; }
         .dc-val .dashboard-card__value { font-size: 30px; }
         .dc-cap { font-size: 12px; font-weight: 600; color: #8d887b; overflow: hidden; text-overflow: ellipsis; }
@@ -2575,7 +2581,7 @@ function hideSplashScreen() {
                         <div class="dc-foot" id="dashAcceptedSub">&nbsp;</div>
                     </div>
                     <div class="dashboard-card dc2 " role="button" tabindex="0" onclick="dashOpenToday()">
-                        <div class="dashboard-card__hd dash-c-day"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/><circle cx="12" cy="15.5" r="1.3" fill="currentColor"/></svg><div class="dashboard-card__label" data-i18n="dash_today_s"></div></div>
+                        <div class="dashboard-card__hd dash-c-day"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/><circle cx="12" cy="15.5" r="1.3" fill="currentColor"/></svg><div class="dashboard-card__label" data-i18n="dash_today_s"></div><span class="dc-date" id="dashTodayDate"></span></div>
                         <div class="dc-val"><span class="dashboard-card__value" id="dashToday"><span class="dash-sk"></span></span></div>
                         <div class="dc-mid"><div class="dc-ring" id="dashTodayRing"></div></div>
                         <div class="dc-foot" id="dashTodaySub">&nbsp;</div>
@@ -2591,7 +2597,7 @@ function hideSplashScreen() {
                         <div class="dc-foot dc-foot--stub"><span data-i18n="dash_expiry">Срок годности</span>: <span data-i18n="dash_soon">скоро</span></div>
                     </div>
                     <div class="dashboard-card dc2 " role="button" tabindex="0" onclick="dashOpenTomorrow()">
-                        <div class="dashboard-card__hd dash-c-tom"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/><path d="M9.5 15.5h5M12.5 13l2.5 2.5-2.5 2.5"/></svg><div class="dashboard-card__label" data-i18n="dash_tom_s"></div></div>
+                        <div class="dashboard-card__hd dash-c-tom"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/><path d="M9.5 15.5h5M12.5 13l2.5 2.5-2.5 2.5"/></svg><div class="dashboard-card__label" data-i18n="dash_tom_s"></div><span class="dc-date" id="dashTomorrowDate"></span></div>
                         <div class="dc-val"><span class="dashboard-card__value" id="dashTomorrow"><span class="dash-sk"></span></span><span class="dc-cap" id="dashTomorrowCap"></span></div>
                         <div class="dc-mid" id="dashTomorrowList"></div>
                         <div class="dc-foot" id="dashTomorrowSub">&nbsp;</div>
@@ -5014,7 +5020,7 @@ function hideSplashScreen() {
 <script src="customers.js?v=73"></script>
 <script src="calendar.js?v=17"></script>
 <script src="orders.js?v=159"></script>
-<script src="dashboard.js?v=12"></script>
+<script src="dashboard.js?v=13"></script>
 <script src="invoice.js?v=54"></script>
 <script src="send-document.js?v=43"></script>
 <script src="confirmation.js?v=2"></script>
