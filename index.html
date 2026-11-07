@@ -335,7 +335,7 @@
 
         /* ── FAB кнопка "+" — создание новой записи ── */
         #fabAddBtn {
-            position: fixed; right: 16px; bottom: calc(88px + env(safe-area-inset-bottom));
+            position: fixed; right: var(--hdr-icons-right); bottom: calc(88px + env(safe-area-inset-bottom));
             width: 56px; height: 56px; border-radius: 50%;
             background: linear-gradient(135deg, #8fa885, #7c9473);
             color: white; border: none;
@@ -418,7 +418,7 @@
 
         /* ── Карточный вид списка заказов ──────────────────────────────── */
         #ordersViewToggle {
-            position: fixed; left: 6px; right: 6px; /* top выставляется в JS — positionOrdersViewToggle() */
+            position: fixed; left: calc(var(--hdr-icons-right) - 10px); right: calc(var(--hdr-icons-right) - 10px); /* top выставляется в JS — positionOrdersViewToggle(); на широком экране края колонки, на телефоне 6px */
             z-index: 150; display: flex; align-items: center; justify-content: space-between; gap: 6px;
             pointer-events: none; /* средняя пустая часть не должна перехватывать нажатия */
         }
