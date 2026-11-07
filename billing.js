@@ -95,8 +95,24 @@ async function probePlayApp() {
     } catch (e) { /* не Play-приложение */ }
 }
 
+// Оплата на сайте (Stripe) видна ТОЛЬКО когда глобальный рубильник
+// platform_settings.monetization_live = 'true' (или организация защищённая — для тестов
+// владельца). Пока рубильник выключен, кнопок/текстов про оплату на сайте нет ни у кого,
+// в том числе у проверяющих Google (шаг A, 06.11.2026). Любая ошибка чтения = скрыто.
+// ВКЛЮЧИТЬ ОБРАТНО после релиза: ничего менять не нужно — достаточно monetization_live='true'.
+let _webPayFlag = false;
+async function loadWebPayFlag() {
+    try {
+        const { data, error } = await db.from('platform_settings').select('value').eq('key', 'monetization_live').maybeSingle();
+        _webPayFlag = !error && !!data && data.value === 'true';
+    } catch (e) { _webPayFlag = false; }
+}
+function webPayVisible() {
+    return _webPayFlag || (typeof currentOrgProtected !== 'undefined' && !!currentOrgProtected);
+}
+
 async function openPlanModal() {
-    await probePlayApp();
+    await Promise.all([probePlayApp(), loadWebPayFlag()]);
     renderPlanModalCards();
     document.getElementById('planModal').style.display = 'flex';
     refreshPlanModalPrices();
@@ -168,6 +184,7 @@ async function _billingFnErrorCode(error) {
 // и переходим на неё. Тариф включится только после реальной оплаты (вебхук).
 async function startWebCheckout(planKey) {
     if (isPlayApp()) return; // страховка: в приложении Google Play этой кнопки быть не должно
+    if (!webPayVisible()) return; // рубильник оплаты на сайте выключен
     const btn = document.getElementById(`planWebBtn_${planKey}`);
     const originalLabel = btn ? btn.textContent : '';
     if (btn) { btn.disabled = true; btn.textContent = t('plan_processing'); }
@@ -201,6 +218,7 @@ async function startWebCheckout(planKey) {
 // портал Stripe (отмена, карта, смена тарифа).
 async function openBillingPortal() {
     if (isPlayApp()) return;
+    if (!webPayVisible()) return;
     const btn = document.getElementById('planPortalBtn');
     const originalLabel = btn ? btn.textContent : '';
     if (btn) { btn.disabled = true; btn.textContent = t('plan_processing'); }
@@ -338,7 +356,7 @@ function renderPlanModalCards() {
         topHtml = `<div style="background:#e3ebdf;border-radius:12px;padding:9px 12px;font-size:12px;color:#4f6349;line-height:1.35;">${escapeHtml(t('plan_note_owner_only'))}</div>`;
     } else if (source === 'google_play' && !playApp) {
         topHtml = `<div style="background:#e3ebdf;border-radius:12px;padding:9px 12px;font-size:12px;color:#4f6349;line-height:1.35;">${escapeHtml(t('plan_note_google_play'))}</div>`;
-    } else if (source === 'stripe' && payProblem && !playApp) {
+    } else if (source === 'stripe' && payProblem && !playApp && webPayVisible()) {
         topHtml = `<div style="background:#fdf0e3;border:1px solid #f0cfa5;border-radius:10px;padding:8px 10px;font-size:12px;color:#8a4b0f;line-height:1.35;">${escapeHtml(t('plan_past_due_warn'))}</div>`;
     }
 
@@ -354,7 +372,7 @@ function renderPlanModalCards() {
                 if (source !== 'stripe') {
                     actionHtml = `<button type="button" id="planBuyBtn_${card.key}" onclick="event.stopPropagation(); purchasePlan('${card.key}')" class="pill-btn text-xs px-3 py-1.5" disabled style="opacity:0.5;">${escapeHtml(t('plan_coming_soon'))}</button>`;
                 }
-            } else if (!source) {
+            } else if (!source && webPayVisible()) {
                 // Веб: оплата на сайте, только если подписки ещё нет.
                 actionHtml = `<button type="button" id="planWebBtn_${card.key}" onclick="event.stopPropagation(); startWebCheckout('${card.key}')" class="pill-btn text-xs px-3 py-1.5">${escapeHtml(t('plan_pay_web_btn'))}</button>`;
             }
@@ -389,7 +407,7 @@ function renderPlanModalCards() {
 
     // Блок под карточками (только веб, только у тех, кто может менять тариф)
     let bottomHtml = '';
-    if (!playApp && canManage && !overridden) {
+    if (!playApp && canManage && !overridden && webPayVisible()) {
         if (source === 'stripe') {
             const btnLabel = info.cancel_at_period_end ? t('plan_resume_btn')
                 : (payProblem ? t('plan_fix_payment_btn') : t('plan_manage_btn'));
