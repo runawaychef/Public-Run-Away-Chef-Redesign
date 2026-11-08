@@ -602,3 +602,35 @@ function expiryProdWarn(sf) {
     el.style.display = names.length ? 'flex' : 'none';
     el.innerHTML = names.length ? `<span>${t('exp_prod_warn').replace('{names}', escapeHtml(names.join(', ')))}</span>` : '';
 }
+
+// Предупреждение при добавлении позиции в заказ (Full): в рецепте есть ингредиент/п/ф с просроченной ближайшей партией.
+// Только напоминание, списание не блокируется. Сообщения собираются в одно окно (копирование заказа, правки подряд).
+function expiryExpiredNames(recipe) {
+    const names = [];
+    if (!expIsFull()) return names;
+    (recipe || []).forEach(ri => {
+        const isSf = !!ri.semi_finished_id;
+        const id = isSf ? ri.semi_finished_id : ri.ingredient_id;
+        if (!id) return;
+        const a = expState[isSf ? 'sf' : 'ing'][id];
+        if (a && a.length && expStatus(a[0].iso).days < 0) {
+            const item = (isSf ? semiFinished : ingredients).find(x => x.id === id);
+            if (item && item.name) names.push('«' + item.name + '»');
+        }
+    });
+    return names;
+}
+let _expOrderPending = new Set(), _expOrderTimer = null;
+function expiryOrderWarn(recipe) {
+    try {
+        const names = expiryExpiredNames(recipe);
+        if (!names.length) return;
+        names.forEach(n => _expOrderPending.add(n));
+        clearTimeout(_expOrderTimer);
+        _expOrderTimer = setTimeout(() => {
+            const list = Array.from(_expOrderPending).join(', ');
+            _expOrderPending = new Set();
+            showInfo(t('exp_order_warn').replace('{names}', list));
+        }, 500);
+    } catch (e) { console.error(e); }
+}

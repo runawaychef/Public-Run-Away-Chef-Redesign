@@ -1005,6 +1005,7 @@ async function writeOffInventoryForItem(prod, itemQty, orderId, orderItemId = nu
     const order = orders.find(o => o.id === orderId);
     if (!order) return 0;
     if (!prod || !prod.ingredients || !prod.ingredients.length) return 0;
+    if (typeof expiryOrderWarn === 'function') expiryOrderWarn(prod.ingredients); // срок годности: только напоминание
     const rows = [];
     const qtyFactor = 1 / Number(prod.batch_size || 1);
 
