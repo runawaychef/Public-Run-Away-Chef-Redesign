@@ -245,7 +245,7 @@ function renderIngredientCards() {
 
         if (tiles) {
             const tChip = fi.on ? (fi.chip ? { cls: fi.chip.cls, text: fi.chip.tile } : null) : null;
-            (isAttn ? htmlAttn : htmlOk).push(stockTileHtml({ name: ing.name, attn: isAttn, flag: !!accentColor, red: isCritical, numText: balance !== null ? Number(balance).toFixed(1) : '—', unit: balance !== null ? unitLabel : '', priceText, chip: tChip, openCall: `openIngredientDetail(${ing.id})` }));
+            (isAttn ? htmlAttn : htmlOk).push(stockTileHtml({ name: ing.name, attn: isAttn, flag: !!accentColor, red: isCritical, numText: balance !== null ? Number(balance).toFixed(1) : '—', unit: balance !== null ? unitLabel : '', priceText, chip: tChip, expiry: (typeof expiryTileInfo === 'function' ? expiryTileInfo('ing', ing.id) : null), openCall: `openIngredientDetail(${ing.id})` }));
             return;
         }
         (isAttn ? htmlAttn : htmlOk).push(`
@@ -872,6 +872,7 @@ async function renderIngredientStockBlock(ing) {
     // Прогноз из «Склада» убран (21.10) — на Full вместо него блок «Умный склад»
     if (daysEl) { daysEl.textContent = ''; daysEl.className = 'table-text'; }
     if (typeof renderStockSmartInfo === 'function') renderStockSmartInfo('ing', ing, 'ingSmartInfo');
+    if (typeof expiryReload === 'function') { await expiryReload(false); expiryRenderBox('ing', ing, 'ingExpiryBox'); }
     if (typeof updateBatchesBlockVisibility === 'function') updateBatchesBlockVisibility('ingredient', ing.id, 'ingBatchesBlock', balanceBefore);
 
     // История пополнений и списаний

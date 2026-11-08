@@ -121,6 +121,8 @@ function renderBatchesList(batches, unitLabel, itemType) {
         return `<div class="table-text text-gray-400">${t('batch_no_active')}</div>`;
     }
 
+    const withExp = expIsFull() && batches.some(x => x.expires_on);
+    const colN = withExp ? 4 : 3;
     const renderRow = (b) => {
         const dateStr = new Date(b.created_at).toLocaleDateString('ru-RU');
         const isActive = Number(b.qty_remaining) > 0;
@@ -129,6 +131,7 @@ function renderBatchesList(batches, unitLabel, itemType) {
             <td class="p-0.5">${escapeHtml(dateStr)}</td>
             <td class="p-0.5 text-right">${Number(b.qty_remaining).toFixed(2)} ${escapeHtml(unitLabel)}</td>
             <td class="p-0.5 text-right">${formatMoney(b.unit_price, 4)}</td>
+            ${withExp ? expCellHtml(b, isActive) : ''}
         </tr>`;
     };
 
@@ -139,10 +142,10 @@ function renderBatchesList(batches, unitLabel, itemType) {
     const exhausted = batches.filter(b => Number(b.qty_remaining) <= 0).reverse();
 
     let html = '<table class="w-full text-xs table-clean"><thead><tr style="background-color:#e3e8df;position:sticky;top:0;">' +
-        `<th class="p-1 text-left">${t('history_col_date')}</th><th class="p-1 text-right">${t('inv_col_balance')}</th><th class="p-1 text-right">${t('orders_price_per_unit_short')}</th></tr><tr class="tbl-gap"><th colspan="3"></th></tr></thead><tbody>`;
+        `<th class="p-1 text-left">${t('history_col_date')}</th><th class="p-1 text-right">${t('inv_col_balance')}</th><th class="p-1 text-right">${t('orders_price_per_unit_short')}</th>${withExp ? `<th class="p-1 text-right">${t('exp_col')}</th>` : ''}</tr><tr class="tbl-gap"><th colspan="${colN}"></th></tr></thead><tbody>`;
     active.forEach(b => { html += renderRow(b); });
     if (active.length && exhausted.length) {
-        html += `<tr><td colspan="3" class="p-1 text-xs font-semibold text-gray-400" style="background:#f4f1ea;">${t('batch_exhausted_label')}</td></tr>`;
+        html += `<tr><td colspan="${colN}" class="p-1 text-xs font-semibold text-gray-400" style="background:#f4f1ea;">${t('batch_exhausted_label')}</td></tr>`;
     }
     exhausted.forEach(b => { html += renderRow(b); });
     html += '</tbody></table>';
@@ -286,7 +289,7 @@ async function toggleIngredientBatches() {
         if (!ing) return;
         list.innerHTML = `<div class="table-text text-gray-400">${t('common_loading')}</div>`;
         const { data, error } = await db.from('stock_batches')
-            .select('id, unit_price, qty_remaining, created_at')
+            .select('id, unit_price, qty_remaining, created_at, expires_on')
             .eq('item_type', 'ingredient').eq('ingredient_id', ing.id)
             .order('created_at', { ascending: true });
         const unitLabel = unitAbbrev(ing.unit);
@@ -308,7 +311,7 @@ async function toggleSfBatches() {
         if (!sf) return;
         list.innerHTML = `<div class="table-text text-gray-400">${t('common_loading')}</div>`;
         const { data, error } = await db.from('stock_batches')
-            .select('id, unit_price, qty_remaining, created_at')
+            .select('id, unit_price, qty_remaining, created_at, expires_on')
             .eq('item_type', 'semi_finished').eq('semi_finished_id', sf.id)
             .order('created_at', { ascending: true });
         const unitLabel = unitAbbrev(sf.unit);
@@ -449,4 +452,107 @@ async function ingExpiryRemember(ing, receiptIso, expiryIso) {
         const { error } = await db.from('ingredients').update({ shelf_life_days: days }).eq('id', ing.id);
         if (!error) ing.shelf_life_days = days;
     } catch (e) { console.error(e); } // не критично: приход уже записан
+}
+
+// ---- Показ срока годности (шаг 3b) ----
+// Кэш: ближайшие сроки по партиям с остатком. { ing: {id: [{iso, qty}]}, sf: {...} }, отсортировано по дате.
+let expState = { ing: {}, sf: {} };
+
+async function expiryReload(rerender) {
+    try {
+        if (!expIsFull() || typeof currentOrgId === 'undefined' || !currentOrgId) {
+            expState = { ing: {}, sf: {} };
+        } else {
+            const { data, error } = await db.from('stock_batches')
+                .select('item_type, ingredient_id, semi_finished_id, expires_on, qty_remaining')
+                .eq('org_id', currentOrgId).not('expires_on', 'is', null).gt('qty_remaining', 0).limit(5000);
+            if (error) throw error;
+            const s = { ing: {}, sf: {} };
+            (data || []).forEach(x => {
+                const k = x.item_type === 'semi_finished' ? 'sf' : 'ing';
+                const id = k === 'sf' ? x.semi_finished_id : x.ingredient_id;
+                (s[k][id] = s[k][id] || []).push({ iso: x.expires_on, qty: Number(x.qty_remaining) });
+            });
+            Object.keys(s).forEach(k => Object.keys(s[k]).forEach(id => s[k][id].sort((p, q) => p.iso < q.iso ? -1 : p.iso > q.iso ? 1 : 0)));
+            expState = s;
+        }
+        if (rerender) {
+            if (typeof displayIngredients === 'function') displayIngredients();
+            if (typeof displaySemiFinished === 'function') displaySemiFinished();
+        }
+    } catch (e) { console.error(e); }
+}
+
+function expFmtDM(iso) { const p = String(iso).split('-'); return p[2] + '.' + p[1]; }
+function expFmtDMY(iso) { const p = String(iso).split('-'); return p[2] + '.' + p[1] + '.' + p[0]; }
+
+// cls: exp — просрочено, soon — осталось 0..3 дня, ok — дальше
+function expStatus(iso) {
+    const d = expDiffDays(getLocalDateStr(0), iso);
+    return { days: d, cls: d < 0 ? 'exp' : d <= 3 ? 'soon' : 'ok' };
+}
+
+function expShortText(days, iso) {
+    if (days < 0) return t('exp_expired');
+    if (days === 0) return t('exp_today');
+    if (days <= 7) return t('exp_in_days').replace('{n}', days);
+    return t('exp_until').replace('{date}', expFmtDM(iso));
+}
+
+// Метка в правом нижнем углу плитки (Full): ближайший срок среди партий с остатком; нет срока — пусто
+function expiryTileInfo(kind, id) {
+    if (!expIsFull()) return null;
+    const a = expState[kind] && expState[kind][id];
+    if (!a || !a.length) return null;
+    const s = expStatus(a[0].iso);
+    return { cls: s.cls, text: expShortText(s.days, a[0].iso) };
+}
+
+// Ячейка «Годен до» в таблице партий
+function expCellHtml(b, isActive) {
+    if (!b.expires_on) return '<td class="p-0.5 text-right">—</td>';
+    const s = expStatus(b.expires_on);
+    const color = isActive && s.cls === 'exp' ? 'color:#a3493d;font-weight:700;' : isActive && s.cls === 'soon' ? 'color:#8a6a1f;' : '';
+    return `<td class="p-0.5 text-right" style="${color}">${expFmtDMY(b.expires_on)}</td>`;
+}
+
+// Строка «Срок годности» + красная плашка на карточке ингредиента/полуфабриката
+function expiryRenderBox(kind, item, elId) {
+    const el = document.getElementById(elId);
+    if (!el || !item) return;
+    if (!expIsFull()) {
+        el.innerHTML = kind === 'ing'
+            ? `<div class="exp-lock"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><span>${t('exp_locked')}</span></div>`
+            : '';
+        return;
+    }
+    const a = (expState[kind] && expState[kind][item.id]) || [];
+    if (!a.length) { el.innerHTML = ''; return; }
+    const unit = typeof unitAbbrev === 'function' ? unitAbbrev(item.unit) : '';
+    const q = n => String(Math.round(Number(n) * 100) / 100);
+    const chips = a.slice(0, 4).map(x => `<span class="exp-chip ${expStatus(x.iso).cls}">${expFmtDM(x.iso)} · ${q(x.qty)} ${escapeHtml(unit)}</span>`).join('')
+        + (a.length > 4 ? `<span class="exp-chip">+${a.length - 4}</span>` : '');
+    let html = `<div class="exp-row"><span class="exp-lbl">${t('exp_row_title')}</span><div class="exp-chips">${chips}</div></div>`;
+    const expired = a.filter(x => expStatus(x.iso).days < 0);
+    if (expired.length) {
+        const total = expired.reduce((s, x) => s + x.qty, 0);
+        const txt = t('exp_banner').replace('{date}', expFmtDM(expired[0].iso)).replace('{qty}', `${q(total)} ${escapeHtml(unit)}`);
+        html += `<div class="exp-banner"><span>${txt}</span><button type="button" onclick="expWriteOffExpired('${kind}', ${total})">${t('ing_action_writeoff')}</button></div>`;
+    }
+    el.innerHTML = html;
+}
+
+// Кнопка «Списать» в плашке: открывает обычное окно списания с подставленным количеством.
+// Само списание идёт как всегда (FIFO со старейшей партии), срок его не блокирует.
+function expWriteOffExpired(kind, qty) {
+    const v = String(Math.round(Number(qty) * 100) / 100);
+    if (kind === 'ing') {
+        openWriteOffModal();
+        const qe = document.getElementById('writeOffQty'); if (qe) qe.value = v;
+        const re = document.getElementById('writeOffReason'); if (re) re.value = 'Испортилось';
+    } else {
+        openSfWriteOffModal();
+        const qe = document.getElementById('sfWriteOffQty'); if (qe) qe.value = v;
+        const ne = document.getElementById('sfWriteOffNote'); if (ne) ne.value = t('ing_reason_spoiled');
+    }
 }

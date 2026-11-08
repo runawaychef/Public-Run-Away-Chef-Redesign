@@ -1741,6 +1741,16 @@
         .stx-ft span { display: inline-flex; align-items: center; gap: 3px; white-space: nowrap; }
         .stx-l i, .stx-rcp i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block; }
         .stx-ft .ok { color: #4f6349; } .stx-ft .warn, .stx-ft .soon { color: #8a6a1f; } .stx-ft .bad, .stx-ft .exp { color: #a3493d; }
+        /* ===== EXPIRY (срок годности, 7.11.2026) ===== ОТКАТ: удалить этот блок */
+        .exp-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+        .exp-lbl { font-size: 11px; color: #a29c8c; }
+        .exp-chips { display: flex; gap: 5px; flex-wrap: wrap; }
+        .exp-chip { font-size: 11px; font-weight: 700; border-radius: 999px; padding: 2px 8px; background: #f4f1ea; color: #7a7568; white-space: nowrap; }
+        .exp-chip.ok { background: #e3ebdf; color: #4f6349; } .exp-chip.soon { background: #f6ecd0; color: #8a6a1f; } .exp-chip.exp { background: #f6e3df; color: #a3493d; }
+        .exp-banner { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding: 6px 10px; border-radius: 10px; background: #f6e3df; color: #a3493d; font-size: 12px; line-height: 1.35; }
+        .exp-banner button { flex-shrink: 0; font-weight: 700; color: #a3493d; border: 1px solid #a3493d; border-radius: 999px; padding: 2px 10px; font-size: 12px; background: transparent; }
+        .exp-lock { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding: 6px 10px; border-radius: 12px; background: #f4f1ea; color: #a29c8c; font-size: 11px; }
+        /* ===== /EXPIRY ===== */
         /* ===== /THEME-UNIFIED-TILES-STOCK ===== */
         /* ===== THEME-UNIFIED-SETTINGS (30.10.2026, вариант 2): главная страница «Настройки» как на Дашборде =====
            Профиль + тариф, плитки 2×2 (Компания, Команда, Push, Даты), список (Банк, Данные, О приложении).
@@ -2834,6 +2844,7 @@ function hideSplashScreen() {
                         <div id="ingDaysLeft" class="hidden"></div>
                         <!-- «Умный склад» — прогноз и ближайшие заказы (только Full, inventory.js renderStockSmartInfo) -->
                         <div id="ingSmartInfo" class="inv-info itm-smart hidden"></div>
+                        <div id="ingExpiryBox"></div>
                     </div>
 
                     <!-- Действия -->
@@ -2966,6 +2977,7 @@ function hideSplashScreen() {
                     <div id="sfDaysLeft" class="hidden"></div>
                     <!-- «Умный склад» — прогноз и ближайшие заказы (только Full, inventory.js renderStockSmartInfo) -->
                     <div id="sfSmartInfo" class="inv-info itm-smart hidden"></div>
+                    <div id="sfExpiryBox"></div>
                 </div>
 
                 <!-- Действия -->
@@ -5035,7 +5047,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=12"></script>
-    <script src="i18n-core.js?v=158"></script>
+    <script src="i18n-core.js?v=159"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=31"></script>
@@ -5044,9 +5056,9 @@ function hideSplashScreen() {
     <script src="inventory.js?v=78"></script>
     <script src="billing.js?v=19"></script>
     <script src="push.js?v=11"></script>
-<script src="ingredients.js?v=68"></script>
-<script src="batches.js?v=13"></script>
-<script src="semifinished.js?v=64"></script>
+<script src="ingredients.js?v=69"></script>
+<script src="batches.js?v=14"></script>
+<script src="semifinished.js?v=65"></script>
 <script src="products.js?v=52"></script>
 <script src="customers.js?v=73"></script>
 <script src="calendar.js?v=17"></script>
@@ -5294,6 +5306,7 @@ async function loadAllData(silent) {
 
         saveAppSnapshot(); // кэш для мгновенного запуска (см. cache.js) — держим свежим после каждой успешной загрузки
         renderAllScreens();
+        if (typeof expiryReload === 'function') expiryReload(true); // срок годности (Full): плитки Склада
         if (typeof scheduleRefreshOrderQuota === 'function') scheduleRefreshOrderQuota();
         if (typeof bankRefreshState === 'function') bankRefreshState(); // кнопка «Поступления» и значок (bank.js)
         // Памятные даты клиентов (17.10): грузим фоном — нужны календарю «Заказов» и напоминаниям

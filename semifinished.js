@@ -102,7 +102,7 @@ function renderSemiFinishedCards() {
 
         if (tiles) {
             const showPrice = (typeof hasPermission !== 'function' || hasPermission('can_view_costs'));
-            (isAttn ? htmlAttn : htmlOk).push(stockTileHtml({ name: sf.name, attn: isAttn, flag: !!accentColor, recipe: notConfirmed, red: isCritical, numText: balance !== null ? Number(balance).toFixed(1) : '—', unit: balance !== null ? unitLabel : '', priceText: showPrice ? priceText : '', chip: (fi.on && fi.chip) ? { cls: fi.chip.cls, text: fi.chip.tile } : null, openCall: `openSemiFinishedDetail(${sf.id})` }));
+            (isAttn ? htmlAttn : htmlOk).push(stockTileHtml({ name: sf.name, attn: isAttn, flag: !!accentColor, recipe: notConfirmed, red: isCritical, numText: balance !== null ? Number(balance).toFixed(1) : '—', unit: balance !== null ? unitLabel : '', priceText: showPrice ? priceText : '', chip: (fi.on && fi.chip) ? { cls: fi.chip.cls, text: fi.chip.tile } : null, expiry: (typeof expiryTileInfo === 'function' ? expiryTileInfo('sf', sf.id) : null), openCall: `openSemiFinishedDetail(${sf.id})` }));
             return;
         }
         (isAttn ? htmlAttn : htmlOk).push(`
@@ -601,6 +601,7 @@ async function renderSfStockBlock(sf) {
     // Прогноз из «Склада» убран (21.10) — на Full вместо него блок «Умный склад»
     if (daysEl) { daysEl.textContent = ''; daysEl.style.color = ''; }
     if (typeof renderStockSmartInfo === 'function') renderStockSmartInfo('sf', sf, 'sfSmartInfo');
+    if (typeof expiryReload === 'function') { await expiryReload(false); expiryRenderBox('sf', sf, 'sfExpiryBox'); }
     if (typeof updateBatchesBlockVisibility === 'function') updateBatchesBlockVisibility('semi_finished', sf.id, 'sfBatchesBlock', balanceBefore);
 }
 
