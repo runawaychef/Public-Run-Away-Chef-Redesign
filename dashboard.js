@@ -484,7 +484,7 @@ function renderDashboard() {
                 ef.innerHTML = parts.length ? `${t('exp_dash_label')}: ${parts.join(' · ')}` : (c.any ? t('exp_dash_ok') : `${t('exp_dash_label')}: —`);
                 ef.classList.toggle('dc-foot--stub', !parts.length);
             } else {
-                ef.innerHTML = t('exp_dash_lock');
+                ef.innerHTML = '&nbsp;'; // Light/Free: подсказка «на Full» уже есть в плашке выше, не дублируем
                 ef.classList.add('dc-foot--stub');
             }
         }
