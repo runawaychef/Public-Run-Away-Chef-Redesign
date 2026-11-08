@@ -31,6 +31,10 @@ function stockColorClass(daysLeft, prefix) {
 // использовала ровно те же условия, а не рисковала разойтись с окраской.
 // «Склад» — справочник (21.10): прогноза нет, наверх — только минус или ноль.
 function ingredientSeverity(ing, ctx) {
+    const base = _ingSeverityBase(ing, ctx);
+    return (typeof expiryAttn === 'function' && expiryAttn('ing', ing.id)) ? Math.min(base, 1) : base; // срок: не ниже «заканчивается»
+}
+function _ingSeverityBase(ing, ctx) {
     if (!stockForecastOn()) return 2; // Free/Light (2.11): только алфавит, без подъёма критичных наверх
     const f = stockFullInfo('ing', ing, ctx, stockTrackedIds());
     if (f.on) return f.zone === 'critical' ? 0 : (f.attention ? 1 : 2);
@@ -143,7 +147,7 @@ function stockTileHtml(o) {
     const left = leftChip ? `<span class="stx-l ${o.chip.cls}"><i></i>${o.chip.text}</span>` : (rcp ? `<span class="stx-l bad">${rcp}</span>` : '<span class="stx-l"></span>');
     const right = o.expiry ? `<span class="stx-r ${o.expiry.cls}"><svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>${o.expiry.text}</span>` : (rcp && leftChip ? `<span class="stx-r stx-rcp">${rcp}</span>` : '<span class="stx-r"></span>');
     const hasFt = leftChip || o.expiry || !!rcp;
-    return `<div class="pt-tile stt-tile stx" data-name="${escapeHtml((o.name || '').toLowerCase())}" data-critical="${o.attn ? '1' : '0'}" data-low="${o.red ? '1' : '0'}" onclick="${o.openCall}">
+    return `<div class="pt-tile stt-tile stx" data-name="${escapeHtml((o.name || '').toLowerCase())}" data-critical="${o.attn ? '1' : '0'}" data-low="${(o.red || o.lowExp) ? '1' : '0'}" onclick="${o.openCall}">
         <div class="stx-name">${escapeHtml(o.name || t('semifinished_no_name_fallback'))}</div>
         <div class="stx-bt"><div class="stx-q${o.red ? ' red' : ''}${num.length > 8 ? ' sm' : ''}">${num}${o.unit ? `<small>${escapeHtml(o.unit)}</small>` : ''}</div>${o.priceText ? `<div class="stx-pr">${o.priceText}</div>` : ''}</div>
         <div class="stx-ft${hasFt ? ' has' : ''}">${left}${right}</div>
@@ -233,7 +237,8 @@ function renderIngredientCards() {
         const isWarning = fi.on && fi.zone === 'warning';
         // Free/Light (2.11): ни уголка, ни полосы — минус виден только красной цифрой.
         const accentColor = !stockForecastOn() ? '' : isCritical ? '#c0685c' : fi.on && fi.attention ? (isWarning ? '#d9a441' : '#c0685c') : (!fi.on && balance !== null && balance <= 0 ? '#c0685c' : '');
-        const isAttn = fi.on ? fi.attention : !!accentColor;
+        const expAttn = typeof expiryAttn === 'function' && expiryAttn('ing', ing.id); // срок годности (Full)
+        const isAttn = (fi.on ? fi.attention : !!accentColor) || expAttn;
         const afterColor = isCritical ? '#c0685c' : isWarning ? '#96712a' : '#4f6349';
         const thirdLabel = '';
         const thirdText = '';
@@ -245,11 +250,11 @@ function renderIngredientCards() {
 
         if (tiles) {
             const tChip = fi.on ? (fi.chip ? { cls: fi.chip.cls, text: fi.chip.tile } : null) : null;
-            (isAttn ? htmlAttn : htmlOk).push(stockTileHtml({ name: ing.name, attn: isAttn, flag: !!accentColor, red: isCritical, numText: balance !== null ? Number(balance).toFixed(1) : '—', unit: balance !== null ? unitLabel : '', priceText, chip: tChip, expiry: (typeof expiryTileInfo === 'function' ? expiryTileInfo('ing', ing.id) : null), openCall: `openIngredientDetail(${ing.id})` }));
+            (isAttn ? htmlAttn : htmlOk).push(stockTileHtml({ name: ing.name, attn: isAttn, flag: !!accentColor, red: isCritical, numText: balance !== null ? Number(balance).toFixed(1) : '—', unit: balance !== null ? unitLabel : '', priceText, chip: tChip, lowExp: expAttn, expiry: (typeof expiryTileInfo === 'function' ? expiryTileInfo('ing', ing.id) : null), openCall: `openIngredientDetail(${ing.id})` }));
             return;
         }
         (isAttn ? htmlAttn : htmlOk).push(`
-        <div class="oc-swipe-wrap" data-name="${escapeHtml((ing.name || '').toLowerCase())}" data-critical="${isAttn ? '1' : '0'}" data-low="${isCritical ? '1' : '0'}" style="--oc-swipe-x:-72px;">
+        <div class="oc-swipe-wrap" data-name="${escapeHtml((ing.name || '').toLowerCase())}" data-critical="${isAttn ? '1' : '0'}" data-low="${(isCritical || expAttn) ? '1' : '0'}" style="--oc-swipe-x:-72px;">
             ${refCopySwipeBtnHtml(`quickCopyIngredientFromSwipe(${realIdx})`)}
             <div class="order-card" style="cursor:pointer;" onclick="openIngredientDetail(${ing.id})">
                 ${stripe}

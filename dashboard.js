@@ -160,11 +160,11 @@ function _dashStock() {
     let ing = 0, sf = 0;
     (typeof ingredients !== 'undefined' ? ingredients : []).forEach(i => {
         const a = stockState('ing', i.id, ctx).after;
-        if (a !== null && a <= 0) ing++;
+        if ((a !== null && a <= 0) || (typeof expiryAttn === 'function' && expiryAttn('ing', i.id))) ing++;
     });
     (typeof semiFinished !== 'undefined' ? semiFinished : []).forEach(s => {
         const a = stockState('sf', s.id, ctx).after;
-        if (a !== null && a <= 0) sf++;
+        if ((a !== null && a <= 0) || (typeof expiryAttn === 'function' && expiryAttn('sf', s.id))) sf++;
     });
     return { ing, sf };
 }
@@ -471,8 +471,22 @@ function renderDashboard() {
             _dashSet('dashIngredients', String(s.ing), s.ing > 0 ? 'bad' : '');
             _dashSet('dashSemi', String(s.sf), s.sf > 0 ? 'bad' : '');
         } else {
-            // Light/Free: счётчиков нет; позже здесь появятся данные о сроке годности
+            // Light/Free: счётчиков нет
             _dashSet('dashStockTotal', '—', 'muted');
+        }
+        // Нижняя строка плашки: срок годности (Full — счётчики, Light/Free — замок-намёк)
+        const ef = _dashEl('dashExpiryFoot');
+        if (ef) {
+            if (full && typeof expiryCounts === 'function') {
+                const c = expiryCounts(), parts = [];
+                if (c.soon) parts.push(t('exp_dash_soon').replace('{n}', c.soon));
+                if (c.exp) parts.push(`<span class="dashboard-bad">${t('exp_dash_exp').replace('{n}', c.exp)}</span>`);
+                ef.innerHTML = parts.length ? `${t('exp_dash_label')}: ${parts.join(' · ')}` : (c.any ? t('exp_dash_ok') : `${t('exp_dash_label')}: —`);
+                ef.classList.toggle('dc-foot--stub', !parts.length);
+            } else {
+                ef.innerHTML = t('exp_dash_lock');
+                ef.classList.add('dc-foot--stub');
+            }
         }
     } catch (e) {
         console.error('dashboard: stock', e);

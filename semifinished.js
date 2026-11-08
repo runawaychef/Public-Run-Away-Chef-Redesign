@@ -89,7 +89,8 @@ function renderSemiFinishedCards() {
         // Free/Light: ни уголка, ни полосы, ни групп; Full: уголок/полоса — по остальным причинам, группа «Требует внимания» — и по рецепту.
         const fullOn = stockForecastOn();
         const accentColor = !fullOn ? '' : (isCritical || batchRed) ? '#c0685c' : isWarning ? '#d9a441' : '';
-        const isAttn = fullOn && (!!accentColor || notConfirmed);
+        const expAttn = typeof expiryAttn === 'function' && expiryAttn('sf', sf.id); // срок годности (Full)
+        const isAttn = fullOn && (!!accentColor || notConfirmed || expAttn);
         const recipeLabel = notConfirmed ? `<span class="stk-chip bad stk-nr">${t('sf_recipe_not_confirmed')}</span>` : '';
         const afterColor = isCritical ? '#c0685c' : isWarning ? '#96712a' : '#4f6349';
         const thirdLabel = '';
@@ -102,11 +103,11 @@ function renderSemiFinishedCards() {
 
         if (tiles) {
             const showPrice = (typeof hasPermission !== 'function' || hasPermission('can_view_costs'));
-            (isAttn ? htmlAttn : htmlOk).push(stockTileHtml({ name: sf.name, attn: isAttn, flag: !!accentColor, recipe: notConfirmed, red: isCritical, numText: balance !== null ? Number(balance).toFixed(1) : '—', unit: balance !== null ? unitLabel : '', priceText: showPrice ? priceText : '', chip: (fi.on && fi.chip) ? { cls: fi.chip.cls, text: fi.chip.tile } : null, expiry: (typeof expiryTileInfo === 'function' ? expiryTileInfo('sf', sf.id) : null), openCall: `openSemiFinishedDetail(${sf.id})` }));
+            (isAttn ? htmlAttn : htmlOk).push(stockTileHtml({ name: sf.name, attn: isAttn, flag: !!accentColor, recipe: notConfirmed, red: isCritical, numText: balance !== null ? Number(balance).toFixed(1) : '—', unit: balance !== null ? unitLabel : '', priceText: showPrice ? priceText : '', chip: (fi.on && fi.chip) ? { cls: fi.chip.cls, text: fi.chip.tile } : null, lowExp: expAttn, expiry: (typeof expiryTileInfo === 'function' ? expiryTileInfo('sf', sf.id) : null), openCall: `openSemiFinishedDetail(${sf.id})` }));
             return;
         }
         (isAttn ? htmlAttn : htmlOk).push(`
-        <div class="oc-swipe-wrap" data-name="${escapeHtml((sf.name || '').toLowerCase())}" data-critical="${isAttn ? '1' : '0'}" data-low="${isCritical ? '1' : '0'}" style="--oc-swipe-x:-72px;">
+        <div class="oc-swipe-wrap" data-name="${escapeHtml((sf.name || '').toLowerCase())}" data-critical="${isAttn ? '1' : '0'}" data-low="${(isCritical || expAttn) ? '1' : '0'}" style="--oc-swipe-x:-72px;">
             ${refCopySwipeBtnHtml(`quickCopySemiFinishedFromSwipe(${realIdx})`)}
             <div class="order-card" style="cursor:pointer;" onclick="openSemiFinishedDetail(${sf.id})">
                 ${stripe}
@@ -755,6 +756,7 @@ async function sfProduceCalc() {
     document.getElementById('sfConfirmIngLine').textContent =
         `${primaryIng ? primaryIng.name : ''}: ${inputQty} ${primaryUnitLabel}`;
     document.getElementById('sfConfirmResultQty').value = sfResultCalc;
+    if (typeof expiryProdWarn === 'function') expiryProdWarn(sf);
     document.getElementById('sfConfirmResultUnit').textContent = unitLabel;
     sfConfirmExpiryInit(sf);
 

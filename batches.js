@@ -479,6 +479,7 @@ async function expiryReload(rerender) {
         if (rerender) {
             if (typeof displayIngredients === 'function') displayIngredients();
             if (typeof displaySemiFinished === 'function') displaySemiFinished();
+            if (typeof renderDashboardIfVisible === 'function') renderDashboardIfVisible();
         }
     } catch (e) { console.error(e); }
 }
@@ -561,4 +562,43 @@ function expWriteOffExpired(kind, qty) {
 function expiryCardLineHtml(kind, id) {
     const i = expiryTileInfo(kind, id);
     return i ? `<div class="exp-row"><span class="exp-lbl">${t('exp_row_title')}</span><span class="exp-chip ${i.cls}">${i.text}</span></div>` : '';
+}
+
+// ---- Сводка по срокам для «Требует внимания» и главного экрана (шаг 3c) ----
+// Позиция требует внимания, если её ближайшая партия просрочена или истекает в ближайшие 3 дня (Full)
+function expiryAttn(kind, id) {
+    if (!expIsFull()) return false;
+    const a = expState[kind] && expState[kind][id];
+    if (!a || !a.length) return false;
+    return expStatus(a[0].iso).cls !== 'ok';
+}
+
+// Сколько позиций со сроком: скоро (0..3 дн.), просрочено, всего со сроком
+function expiryCounts() {
+    let soon = 0, exp = 0, any = 0;
+    ['ing', 'sf'].forEach(k => Object.keys(expState[k]).forEach(id => {
+        const a = expState[k][id];
+        if (!a || !a.length) return;
+        any++;
+        const c = expStatus(a[0].iso).cls;
+        if (c === 'exp') exp++; else if (c === 'soon') soon++;
+    }));
+    return { soon, exp, any };
+}
+
+// Окно подтверждения производства: предупреждение о просроченных ингредиентах рецепта (не запрещает)
+function expiryProdWarn(sf) {
+    const el = document.getElementById('sfConfirmExpWarn');
+    if (!el) return;
+    const names = [];
+    if (expIsFull()) (sf.ingredients || []).forEach(ri => {
+        if (!ri.ingredient_id) return;
+        const a = expState.ing[ri.ingredient_id];
+        if (a && a.length && expStatus(a[0].iso).days < 0) {
+            const ing = ingredients.find(i => i.id === ri.ingredient_id);
+            if (ing) names.push('«' + ing.name + '»');
+        }
+    });
+    el.style.display = names.length ? 'flex' : 'none';
+    el.innerHTML = names.length ? `<span>${t('exp_prod_warn').replace('{names}', escapeHtml(names.join(', ')))}</span>` : '';
 }

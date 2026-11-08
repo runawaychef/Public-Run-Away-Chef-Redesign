@@ -2604,7 +2604,7 @@ function hideSplashScreen() {
                             <div class="dc-row" id="dashRowSemi" role="button" tabindex="0" onclick="dashOpenSemiFinished()"><span data-i18n="dash_semi">Полуфабрикаты</span><span class="dashboard-card__value" id="dashSemi"><span class="dash-sk"></span></span></div>
                             <div class="dc-lock" id="dashStockLock" role="button" tabindex="0" onclick="dashOpenIngredients()" style="display:none" data-i18n="dash_full_only">Доступно на тарифе Full</div>
                         </div>
-                        <div class="dc-foot dc-foot--stub"><span data-i18n="dash_expiry">Срок годности</span>: <span data-i18n="dash_soon">скоро</span></div>
+                        <div class="dc-foot dc-foot--stub" id="dashExpiryFoot">&nbsp;</div>
                     </div>
                     <div class="dashboard-card dc2 " role="button" tabindex="0" onclick="dashOpenTomorrow()">
                         <div class="dashboard-card__hd dash-c-tom"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/><path d="M9.5 15.5h5M12.5 13l2.5 2.5-2.5 2.5"/></svg><div class="dashboard-card__label" data-i18n="dash_tom_s"></div><span class="dc-date" id="dashTomorrowDate"></span></div>
@@ -4077,6 +4077,7 @@ function hideSplashScreen() {
                     <p class="mb-1" data-i18n="sf_will_be_written_off">Будет списано:</p>
                     <p class="font-semibold" id="sfConfirmIngLine"></p>
                 </div>
+                <div id="sfConfirmExpWarn" class="exp-banner" style="display:none;margin:-4px 0 12px;"></div>
                 <div class="mb-4">
                     <label class="text-xs text-gray-600 block mb-1" data-i18n="sf_actual_output">Фактический выход п/ф:</label>
                     <div class="flex gap-2 items-center">
@@ -5047,7 +5048,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=12"></script>
-    <script src="i18n-core.js?v=159"></script>
+    <script src="i18n-core.js?v=160"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=31"></script>
@@ -5056,14 +5057,14 @@ function hideSplashScreen() {
     <script src="inventory.js?v=78"></script>
     <script src="billing.js?v=19"></script>
     <script src="push.js?v=11"></script>
-<script src="ingredients.js?v=70"></script>
-<script src="batches.js?v=15"></script>
-<script src="semifinished.js?v=66"></script>
+<script src="ingredients.js?v=71"></script>
+<script src="batches.js?v=16"></script>
+<script src="semifinished.js?v=67"></script>
 <script src="products.js?v=52"></script>
 <script src="customers.js?v=73"></script>
 <script src="calendar.js?v=17"></script>
 <script src="orders.js?v=159"></script>
-<script src="dashboard.js?v=13"></script>
+<script src="dashboard.js?v=14"></script>
 <script src="invoice.js?v=54"></script>
 <script src="send-document.js?v=43"></script>
 <script src="confirmation.js?v=2"></script>
