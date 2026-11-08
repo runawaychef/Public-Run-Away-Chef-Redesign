@@ -260,6 +260,7 @@ function renderIngredientCards() {
                     </div>
                     ${stockCardCellsHtml({ priceLabel: t('ing_price_per_unit'), priceText, beforeText, afterText, afterColor, thirdLabel: thirdLabel, thirdText: thirdText, thirdColor: afterColor })}
                     ${stockFullExtraHtml(fi, unitLabel)}
+                    ${typeof expiryCardLineHtml === 'function' ? expiryCardLineHtml('ing', ing.id) : ''}
                 </div>
             </div>
         </div>`);

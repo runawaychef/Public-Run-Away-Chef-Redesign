@@ -556,3 +556,9 @@ function expWriteOffExpired(kind, qty) {
         const ne = document.getElementById('sfWriteOffNote'); if (ne) ne.value = t('ing_reason_spoiled');
     }
 }
+
+// Строка срока в списке-карточках Склада (вид «карточки», Full)
+function expiryCardLineHtml(kind, id) {
+    const i = expiryTileInfo(kind, id);
+    return i ? `<div class="exp-row"><span class="exp-lbl">${t('exp_row_title')}</span><span class="exp-chip ${i.cls}">${i.text}</span></div>` : '';
+}
