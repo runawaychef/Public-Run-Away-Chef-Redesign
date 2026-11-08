@@ -278,6 +278,8 @@ function openSemiFinishedDetail(sfId) {
     document.getElementById('sfdOtherCosts').value = (sf.other_costs || 0).toFixed(2);
     document.getElementById('sfdRecipeConfirmed').checked = !!sf.recipe_confirmed;
     document.getElementById('sfdTrackStock').checked = !!sf.track_stock;
+    const _sfShelfEl = document.getElementById('sfdShelfDays');
+    if (_sfShelfEl) _sfShelfEl.value = sf.shelf_life_days || '';
 
     renderSemiFinishedRecipe(sf);
     fillNewSfRecipeIngredientSelect();
@@ -752,6 +754,7 @@ async function sfProduceCalc() {
         `${primaryIng ? primaryIng.name : ''}: ${inputQty} ${primaryUnitLabel}`;
     document.getElementById('sfConfirmResultQty').value = sfResultCalc;
     document.getElementById('sfConfirmResultUnit').textContent = unitLabel;
+    sfConfirmExpiryInit(sf);
 
     // Сохраняем factor для финального шага
     document.getElementById('sfConfirmModal').dataset.factor = factor;
@@ -774,6 +777,7 @@ async function confirmSfProduce() {
     const actualResult = parseFloat(document.getElementById('sfConfirmResultQty').value);
     if (isNaN(actualResult) || actualResult <= 0) { showInfo(t('sf_enter_valid_output')); return; }
 
+    const expiryVal = document.getElementById('sfConfirmExpiryDate')?.value || '';
     closeModal();
     showLoading(t('sf_recording_production'));
     try {
@@ -808,7 +812,8 @@ async function confirmSfProduce() {
             p_unit_price: unitPrice,
             p_qty: actualResult,
             p_source: 'производство',
-            p_notes: `${t('sf_batch_produced_note')} ${today}`
+            p_notes: `${t('sf_batch_produced_note')} ${today}`,
+            p_expires_on: expiryVal || null
         });
         if (receiveError) throw receiveError;
 
@@ -1107,4 +1112,45 @@ async function drawSfCostChart() {
             }
         }
     });
+}
+
+// ==================== СРОК ГОДНОСТИ ПОЛУФАБРИКАТА (Full) ====================
+// «Хранится N дн.» на карточке: срок партии при производстве = дата изготовления + N дней.
+// Подставляется в окне подтверждения производства, там же его можно изменить.
+function sfConfirmExpiryInit(sf) {
+    const full = expIsFull();
+    const block = document.getElementById('sfConfirmExpiryBlock');
+    if (block) block.style.display = full ? 'block' : 'none';
+    const days = Number(sf.shelf_life_days) || 0;
+    const today = getLocalDateStr(0);
+    calSetFieldValue('sfConfirmExpiryDate', 'sfConfirmExpiryBtnLabel', (full && days > 0) ? expAddDays(today, days) : '');
+    const hint = document.getElementById('sfConfirmExpiryHint');
+    if (hint) hint.textContent = days > 0
+        ? t('exp_sf_hint').replace('{date}', formatDateDMY(today).slice(0, 5)).replace('{n}', days)
+        : t('exp_sf_hint_none');
+}
+
+// Сохраняет «Хранится N дн.» с карточки полуфабриката (пусто = срок не задан).
+async function saveSfShelfLife() {
+    const sf = semiFinished.find(s => s.id === currentSemiFinishedId);
+    if (!sf) return;
+    const el = document.getElementById('sfdShelfDays');
+    if (!el) return;
+    const raw = el.value.trim();
+    let days = null;
+    if (raw !== '') {
+        days = parseInt(raw, 10);
+        if (!(days >= 1 && days <= 3650)) { showInfo(t('exp_invalid_days')); el.value = sf.shelf_life_days || ''; return; }
+    }
+    if ((sf.shelf_life_days || null) === days) return;
+    suppressRealtimeFor3s();
+    try {
+        const { error } = await db.from('semi_finished').update({ shelf_life_days: days }).eq('id', sf.id);
+        if (error) throw error;
+        sf.shelf_life_days = days;
+    } catch (e) {
+        console.error(e);
+        showInfo(t('error_save_generic'));
+        el.value = sf.shelf_life_days || '';
+    }
 }

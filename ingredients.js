@@ -506,10 +506,12 @@ async function saveStockAndPrice() {
     const packageSize  = parseFloat(document.getElementById('idPackageSize').value);
     const validFrom    = document.getElementById('idNewPriceDate').value;
     const stockQty     = parseFloat(document.getElementById('idStockQty').value) || 0;
+    const expiryVal    = document.getElementById('idExpiryDate')?.value || '';
 
     if (!validFrom || isNaN(packagePrice) || isNaN(packageSize) || packageSize <= 0) {
         showInfo(t('ing_fill_date_price_size')); return;
     }
+    if (stockQty > 0 && expiryVal && expiryVal < validFrom) { showInfo(t('exp_before_receipt')); return; }
 
     showLoading();
     try {
@@ -552,9 +554,11 @@ async function saveStockAndPrice() {
                 p_unit_price: unitPrice,
                 p_qty: parseFloat(stockQty.toFixed(4)),
                 p_source: 'приход',
-                p_notes: `${t('ing_purchase_note')} ${validFrom}`
+                p_notes: `${t('ing_purchase_note')} ${validFrom}`,
+                p_expires_on: expiryVal || null
             });
             if (rpcError) throw rpcError;
+            if (expiryVal) await ingExpiryRemember(ing, validFrom, expiryVal);
             await loadInventory();
         }
 
@@ -756,6 +760,7 @@ function openIngredientReceiveModal() {
     const nameEl = document.getElementById('ingReceiveName');
     if (nameEl) nameEl.textContent = ing.name || '';
     renderIngredientUnitPricePreview();
+    ingExpiryInit(ing);
     document.getElementById('ingReceiveModal').style.display = 'flex';
 }
 

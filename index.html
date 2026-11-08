@@ -3019,6 +3019,11 @@ function hideSplashScreen() {
                         <input type="checkbox" id="sfdTrackStock" onchange="toggleSfTrackStock()" style="accent-color:#7c9473;">
                         <span data-i18n="sf_track_stock_label">Отслеживать остатки постоянно</span>
                     </label>
+                    <div class="flex items-center gap-2 table-text text-gray-700 mb-1 plan-cost-only">
+                        <span data-i18n="exp_stored_for">Хранится</span>
+                        <input type="number" inputmode="numeric" step="1" min="1" max="3650" id="sfdShelfDays" class="border p-0.5 rounded-xl table-text text-center" style="width:64px;" onchange="saveSfShelfLife()">
+                        <span data-i18n="exp_days_from_production">дн. от даты изготовления</span>
+                    </div>
                     <div class="text-right table-text text-gray-600 space-y-0.5 border-t pt-1 perm-view-costs">
                         <div><span data-i18n="sf_batch_cost">Себестоимость партии</span>: <span id="sfdBatchCost" class="font-medium text-gray-800">0.00</span></div>
                         <div><span data-i18n="sf_unit_cost">Себестоимость за единицу</span>: <span id="sfdUnitCost" class="font-semibold text-gray-900">0.0000</span></div>
@@ -3900,6 +3905,22 @@ function hideSplashScreen() {
                         <input id="idPackageSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" oninput="renderIngredientUnitPricePreview()" onchange="renderIngredientUnitPricePreview()" class="border p-0.5 rounded-xl table-text w-full">
                     </div>
                 </div>
+                <div id="ingExpiryBlock" class="mb-2" style="display:none;padding:8px 10px;border-radius:12px;background:#f4f1ea;">
+                    <div class="flex justify-between items-baseline mb-0.5"><label class="itm-lbl" style="margin-bottom:0;" data-i18n="exp_best_before">Годен до</label><span class="text-[11px] text-gray-400" data-i18n="exp_optional">необязательно</span></div>
+                    <div style="position:relative;" onclick="event.stopPropagation();">
+                        <input id="idExpiryDate" type="hidden">
+                        <button type="button" class="field-select-btn" id="idExpiryDateBtn" onclick="toggleCustomCalendar('globalCalendarPopup','idExpiryDate','idExpiryDateBtnLabel',{onPick:function(){ingExpiryPicked();}})">
+                            <span id="idExpiryDateBtnLabel">—</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/></svg>
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-2" style="margin-top:6px;">
+                        <button type="button" id="ingExpiryChip" class="pill-btn" style="display:none;" onclick="ingExpiryApplyChip()"></button>
+                        <span id="ingExpiryChipHint" class="text-[11px] text-gray-500" style="display:none;" data-i18n="exp_same_as_last">как в прошлый раз</span>
+                        <button type="button" id="ingExpiryClear" class="text-[11px] text-gray-400 underline" style="display:none;margin-left:auto;background:none;border:none;" onclick="ingExpiryClear()" data-i18n="exp_clear">Очистить</button>
+                    </div>
+                </div>
+                <div id="ingExpiryLock" class="mb-2 text-[11px] text-gray-400 items-center gap-1" style="display:none;padding:6px 10px;border-radius:12px;background:#f4f1ea;"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><span data-i18n="exp_locked">Срок годности — на тарифе Full</span></div>
                 <p class="table-text text-gray-500 mb-1"><span data-i18n="ing_price_per_unit">Цена за ед.</span>: <span id="idUnitPricePreview" class="font-semibold text-gray-800"></span></p>
                 <p class="text-[11px] text-gray-400 mb-3" data-i18n="ing_receive_hint">Без количества сохранится только новая цена.</p>
                 <div class="flex gap-2">
@@ -4052,6 +4073,17 @@ function hideSplashScreen() {
                         <span id="sfConfirmResultUnit" class="text-xs text-gray-500 w-8"></span>
                     </div>
                     <p class="text-xs text-gray-400 mt-1" data-i18n="sf_calculated_value_hint">Расчётное значение подставлено автоматически. Измените если фактический выход отличается.</p>
+                </div>
+                <div id="sfConfirmExpiryBlock" class="mb-4" style="display:none;padding:8px 10px;border-radius:12px;background:#f4f1ea;">
+                    <div class="flex justify-between items-baseline mb-0.5"><label class="itm-lbl" style="margin-bottom:0;" data-i18n="exp_best_before">Годен до</label><span class="text-[11px] text-gray-400" data-i18n="exp_optional">необязательно</span></div>
+                    <div style="position:relative;" onclick="event.stopPropagation();">
+                        <input id="sfConfirmExpiryDate" type="hidden">
+                        <button type="button" class="field-select-btn" onclick="toggleCustomCalendar('globalCalendarPopup','sfConfirmExpiryDate','sfConfirmExpiryBtnLabel',{})">
+                            <span id="sfConfirmExpiryBtnLabel">—</span>
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/></svg>
+                        </button>
+                    </div>
+                    <p id="sfConfirmExpiryHint" class="text-[11px] text-gray-500" style="margin:6px 0 0;"></p>
                 </div>
                 <div class="flex gap-2">
                     <button onclick="confirmSfProduce()" class="pill-btn flex-1 justify-center" data-i18n="common_confirm">Подтвердить</button>
@@ -5003,7 +5035,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=12"></script>
-    <script src="i18n-core.js?v=157"></script>
+    <script src="i18n-core.js?v=158"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=31"></script>
@@ -5012,9 +5044,9 @@ function hideSplashScreen() {
     <script src="inventory.js?v=78"></script>
     <script src="billing.js?v=19"></script>
     <script src="push.js?v=11"></script>
-<script src="ingredients.js?v=67"></script>
-<script src="batches.js?v=12"></script>
-<script src="semifinished.js?v=63"></script>
+<script src="ingredients.js?v=68"></script>
+<script src="batches.js?v=13"></script>
+<script src="semifinished.js?v=64"></script>
 <script src="products.js?v=52"></script>
 <script src="customers.js?v=73"></script>
 <script src="calendar.js?v=17"></script>
@@ -5128,9 +5160,9 @@ async function loadAllData(silent) {
             fetchAllRows(() => db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending, is_confirmed, is_demo, created_by, inv_no, dn_no, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via, invoice_sent_message_id, delivery_note_sent_message_id, invoice_delivery_status, delivery_note_delivery_status, consolidated_invoice_id, cons_excluded').eq('org_id', currentOrgId).is('deleted_at', null).order('id')),
             fetchAllRows(() => db.from('order_items').select('id, order_id, product_id, quantity, price, item_cost').eq('org_id', currentOrgId).order('id')),
             db.from('employees').select('id, name').eq('org_id', currentOrgId).order('name').limit(1000),
-            fetchAllRows(() => db.from('ingredients').select('id, name, package_price, package_size, unit').eq('org_id', currentOrgId).order('name').order('id')),
+            fetchAllRows(() => db.from('ingredients').select('id, name, package_price, package_size, unit, shelf_life_days').eq('org_id', currentOrgId).order('name').order('id')),
             fetchAllRows(() => db.from('product_ingredients').select('id, product_id, ingredient_id, semi_finished_id, quantity').eq('org_id', currentOrgId).order('id')),
-            fetchAllRows(() => db.from('semi_finished').select('id, name, batch_size, unit, other_costs, recipe_confirmed, track_stock').eq('org_id', currentOrgId).order('name').order('id')),
+            fetchAllRows(() => db.from('semi_finished').select('id, name, batch_size, unit, other_costs, recipe_confirmed, track_stock, shelf_life_days').eq('org_id', currentOrgId).order('name').order('id')),
             fetchAllRows(() => db.from('semi_finished_ingredients').select('id, semi_finished_id, ingredient_id, quantity, is_primary').eq('org_id', currentOrgId).order('id')),
             fetchAllRows(() => db.from('order_payments').select('order_id, amount, bank_transaction_id').eq('org_id', currentOrgId).order('id'))
         ]);
@@ -5153,7 +5185,7 @@ async function loadAllData(silent) {
             if (p.bank_transaction_id) (_orderBankTx[p.order_id] = _orderBankTx[p.order_id] || []).push(p.bank_transaction_id);
         });
 
-        ingredients = (ingRes.data || []).map(i => ({ id: i.id, name: i.name, package_price: Number(i.package_price), package_size: Number(i.package_size), unit: i.unit }));
+        ingredients = (ingRes.data || []).map(i => ({ id: i.id, name: i.name, package_price: Number(i.package_price), package_size: Number(i.package_size), unit: i.unit, shelf_life_days: i.shelf_life_days == null ? null : Number(i.shelf_life_days) }));
 
         const sfRecipeBySf = {};
         (sfiRes.data || []).forEach(ri => {
@@ -5164,6 +5196,7 @@ async function loadAllData(silent) {
             id: sf.id, name: sf.name, batch_size: Number(sf.batch_size || 1), unit: sf.unit, other_costs: Number(sf.other_costs || 0),
             recipe_confirmed: !!sf.recipe_confirmed,
             track_stock: !!sf.track_stock,
+            shelf_life_days: sf.shelf_life_days == null ? null : Number(sf.shelf_life_days),
             ingredients: sfRecipeBySf[sf.id] || []
         }));
 

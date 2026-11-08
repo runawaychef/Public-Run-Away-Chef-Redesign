@@ -382,3 +382,71 @@ async function updateBatchesBlockVisibility(itemType, itemId, blockId, nowQty) {
     } catch (e) { block.classList.remove('batches-not-needed'); }
 }
 
+// ==================== СРОК ГОДНОСТИ (только Full) ====================
+// Срок хранится на партии (stock_batches.expires_on); списание остаётся FIFO по порядку прихода.
+
+function expIsFull() {
+    return (typeof hasPlanFeature !== 'function') || hasPlanFeature('cost_analytics');
+}
+
+// ISO-дата + n дней → ISO-дата (без часовых поясов, по календарю)
+function expAddDays(iso, n) {
+    const [y, m, d] = String(iso).split('-').map(Number);
+    return new Date(Date.UTC(y, m - 1, d + Number(n))).toISOString().slice(0, 10);
+}
+
+// Сколько дней от fromIso до toIso (целое)
+function expDiffDays(fromIso, toIso) {
+    const a = String(fromIso).split('-').map(Number);
+    const c = String(toIso).split('-').map(Number);
+    return Math.round((Date.UTC(c[0], c[1] - 1, c[2]) - Date.UTC(a[0], a[1] - 1, a[2])) / 86400000);
+}
+
+// Окно «Приход» ингредиента: показать поле срока (Full) или замок-намёк (Light), сбросить значение
+function ingExpiryInit(ing) {
+    const full = expIsFull();
+    const block = document.getElementById('ingExpiryBlock');
+    const lock = document.getElementById('ingExpiryLock');
+    if (block) block.style.display = full ? 'block' : 'none';
+    if (lock) lock.style.display = full ? 'none' : 'flex';
+    calSetFieldValue('idExpiryDate', 'idExpiryDateBtnLabel', '');
+    const days = Number(ing && ing.shelf_life_days) || 0;
+    const chip = document.getElementById('ingExpiryChip');
+    const hint = document.getElementById('ingExpiryChipHint');
+    if (chip) { chip.style.display = days > 0 ? 'inline-flex' : 'none'; chip.textContent = t('exp_plus_days').replace('{n}', days); }
+    if (hint) hint.style.display = days > 0 ? 'inline' : 'none';
+    ingExpiryUpdateClear();
+}
+
+function ingExpiryUpdateClear() {
+    const v = document.getElementById('idExpiryDate')?.value || '';
+    const el = document.getElementById('ingExpiryClear');
+    if (el) el.style.display = v ? 'inline' : 'none';
+}
+
+function ingExpiryPicked() { ingExpiryUpdateClear(); }
+
+function ingExpiryClear() {
+    calSetFieldValue('idExpiryDate', 'idExpiryDateBtnLabel', '');
+    ingExpiryUpdateClear();
+}
+
+// Кнопка «+N дн.»: дата прихода + запомненный срок хранения
+function ingExpiryApplyChip() {
+    const ing = ingredients.find(i => i.id === currentIngredientId);
+    const days = Number(ing && ing.shelf_life_days) || 0;
+    if (!days) return;
+    const base = document.getElementById('idNewPriceDate')?.value || getLocalDateStr(0);
+    calSetFieldValue('idExpiryDate', 'idExpiryDateBtnLabel', expAddDays(base, days));
+    ingExpiryUpdateClear();
+}
+
+// После прихода со сроком запоминаем интервал в днях — для кнопки «+N дн.» в следующий раз
+async function ingExpiryRemember(ing, receiptIso, expiryIso) {
+    try {
+        const days = expDiffDays(receiptIso, expiryIso);
+        if (!(days >= 1 && days <= 3650) || days === Number(ing.shelf_life_days)) return;
+        const { error } = await db.from('ingredients').update({ shelf_life_days: days }).eq('id', ing.id);
+        if (!error) ing.shelf_life_days = days;
+    } catch (e) { console.error(e); } // не критично: приход уже записан
+}
