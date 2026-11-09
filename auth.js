@@ -541,6 +541,15 @@ async function handlePasswordReset() {
 
 // ===== Вход через Google =====
 
+// Сторож зависания входа через Google (8.11.2026): если после нажатия экран не сменился, кнопка не остаётся
+// заблокированной молча — через 12 с она снова активна, а в тексте ошибки виден шаг, на котором остановились.
+let _gStage = 'start', _gRetryTimer = null, _gWatchTimer = null, _gResetFn = null;
+function _gClearTimers() { clearTimeout(_gRetryTimer); clearTimeout(_gWatchTimer); _gRetryTimer = _gWatchTimer = null; }
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { _gClearTimers(); return; } // ушли на страницу Google — сторож не нужен
+    if (_gResetFn) { const fn = _gResetFn; _gResetFn = null; fn(false); } // вернулись, а кнопка осталась «Открываем…»
+});
+
 async function handleGoogleSignIn() {
     const errEl = document.getElementById('authError');
     errEl.classList.add('hidden');
@@ -551,6 +560,20 @@ async function handleGoogleSignIn() {
     const gLabelText = gLabel ? gLabel.textContent : '';
     gBtn.disabled = true;
     if (gLabel) gLabel.textContent = t('auth_google_opening');
+    _gStage = 'start'; _gClearTimers();
+    const resetBtn = (showErr) => {
+        _gClearTimers(); _gResetFn = null;
+        sessionStorage.removeItem('sb_google_oauth_pending');
+        try { sessionStorage.removeItem(GOOGLE_CHANNEL_KEY); } catch (e) {}
+        gBtn.disabled = false;
+        if (gLabel) gLabel.textContent = gLabelText;
+        if (showErr) {
+            errEl.textContent = t('auth_error_google_failed') + ' [' + _gStage + ']';
+            errEl.classList.remove('hidden');
+        }
+    };
+    _gResetFn = resetBtn;
+    _gWatchTimer = setTimeout(() => { if (!document.hidden) resetBtn(true); }, 12000);
     try {
         // Ставим флаг ДО редиректа — по нему onAuthStateChange распознает
         // возврат из Google OAuth и покажет экран "Возвращаемся в Simple Bake"
@@ -571,10 +594,19 @@ async function handleGoogleSignIn() {
         ]);
         if (res.error) throw res.error;
         if (!res.data || !res.data.url) throw new Error('oauth-no-url');
-        window.location.assign(res.data.url);
+        _gStage = 'assign';
+        const _gUrl = res.data.url;
+        window.location.assign(_gUrl);
+        // Если через 5 с экран всё ещё здесь (переход молча не сработал) — пробуем ещё раз другим способом
+        _gRetryTimer = setTimeout(() => {
+            if (document.hidden) return;
+            _gStage = 'retry';
+            try { window.location.replace(_gUrl); } catch (e) { _gStage = 'retry-fail'; }
+        }, 5000);
         // Google перенаправит пользователя — дальнейший код не выполняется
     } catch (err) {
         console.error(err);
+        _gClearTimers(); _gResetFn = null;
         sessionStorage.removeItem('sb_google_oauth_pending');
         try { sessionStorage.removeItem(GOOGLE_CHANNEL_KEY); } catch (e) {}
         gBtn.disabled = false;
