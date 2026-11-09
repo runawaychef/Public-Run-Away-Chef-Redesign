@@ -1752,6 +1752,16 @@
         .exp-lock { display: flex; align-items: center; gap: 6px; margin-top: 10px; padding: 6px 10px; border-radius: 12px; background: #f4f1ea; color: #a29c8c; font-size: 11px; }
         #dashExpiryFoot { white-space: normal; line-height: 1.25; }
         /* ===== /EXPIRY ===== */
+        /* ===== PW-EYE (показать пароль, 8.11.2026) ===== ОТКАТ: удалить блок и обёртки .pw-wrap в форме входа */
+        .pw-wrap { position: relative; }
+        .pw-wrap:has(> input.hidden) { display: none; }
+        .pw-wrap > input.hidden ~ .pw-eye { display: none; }
+        .pw-eye { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: #a6a196; background: transparent; border: 0; border-radius: 10px; }
+        .pw-eye.on { color: #4f6349; }
+        .pw-eye .eye-off { display: none; }
+        .pw-eye.on .eye-off { display: block; }
+        .pw-eye.on .eye-on { display: none; }
+        /* ===== /PW-EYE ===== */
         /* ===== /THEME-UNIFIED-TILES-STOCK ===== */
         /* ===== THEME-UNIFIED-SETTINGS (30.10.2026, вариант 2): главная страница «Настройки» как на Дашборде =====
            Профиль + тариф, плитки 2×2 (Компания, Команда, Push, Даты), список (Банк, Данные, О приложении).
@@ -2296,17 +2306,55 @@ function hideSplashScreen() {
         <form id="authForm" class="flex flex-col gap-2 text-left">
             <input id="authEmail" type="email" required placeholder="Email" autocomplete="username"
                 style="background:#fbfaf6;border:1.5px solid #e3ded0;border-radius:14px;padding:12px 14px;font-size:13.5px;color:#3c3a34;" class="focus:outline-none">
-            <input id="authPassword" type="password" placeholder="Пароль" autocomplete="current-password" data-i18n-placeholder="auth_password_placeholder"
-                style="background:#fbfaf6;border:1.5px solid #e3ded0;border-radius:14px;padding:12px 14px;font-size:13.5px;color:#3c3a34;" class="focus:outline-none">
+            <div class="pw-wrap">
+                <input id="authPassword" type="password" placeholder="Пароль" autocomplete="current-password" data-i18n-placeholder="auth_password_placeholder"
+                    style="width:100%;background:#fbfaf6;border:1.5px solid #e3ded0;border-radius:14px;padding:12px 44px 12px 14px;font-size:13.5px;color:#3c3a34;" class="focus:outline-none">
+                <button type="button" class="pw-eye" data-i18n-title="auth_show_password" title="Показать пароль" aria-label="Показать пароль" onmousedown="event.preventDefault()" onclick="togglePwVisible('authPassword', this)">
+                    <svg class="eye-on" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <svg class="eye-off" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.2A10.6 10.6 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.5 6.6A17 17 0 0 0 2 12s3.6 7 10 7c1.7 0 3.2-.4 4.6-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+                </button>
+            </div>
             <!-- Режим «Новый пароль» (после ссылки из письма сброса), 23.10 -->
             <p id="authPasswordHint" class="hidden" style="font-size:11px;color:#a6a196;margin:-2px 0 2px 4px;" data-i18n="auth_password_min_hint">Не менее 6 символов</p>
-            <input id="authPassword2" type="password" placeholder="Повторите пароль" autocomplete="new-password" data-i18n-placeholder="auth_repeat_password_placeholder"
-                style="background:#fbfaf6;border:1.5px solid #e3ded0;border-radius:14px;padding:12px 14px;font-size:13.5px;color:#3c3a34;" class="focus:outline-none hidden">
+            <div class="pw-wrap">
+                <input id="authPassword2" type="password" placeholder="Повторите пароль" autocomplete="new-password" data-i18n-placeholder="auth_repeat_password_placeholder"
+                    style="width:100%;background:#fbfaf6;border:1.5px solid #e3ded0;border-radius:14px;padding:12px 44px 12px 14px;font-size:13.5px;color:#3c3a34;" class="focus:outline-none hidden">
+                <button type="button" class="pw-eye" data-i18n-title="auth_show_password" title="Показать пароль" aria-label="Показать пароль" onmousedown="event.preventDefault()" onclick="togglePwVisible('authPassword2', this)">
+                    <svg class="eye-on" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+                    <svg class="eye-off" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 5.2A10.6 10.6 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.5 6.6A17 17 0 0 0 2 12s3.6 7 10 7c1.7 0 3.2-.4 4.6-1"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>
+                </button>
+            </div>
             <button id="authSubmitBtn" type="submit"
                 style="background:#4f6349;color:#f4f1ea;border-radius:14px;padding:13px;font-size:14px;font-weight:600;margin-top:4px;" class="btn" data-i18n="auth_submit_login">
                 Войти
             </button>
         </form>
+        <script>
+        // Показать/скрыть пароль (глаз в поле). Пароль снова скрывается при отправке формы и когда приложение уходит в фон.
+        function togglePwVisible(id, btn) {
+            var el = document.getElementById(id); if (!el) return;
+            var show = el.type === 'password';
+            el.type = show ? 'text' : 'password';
+            btn.classList.toggle('on', show);
+            var key = show ? 'auth_hide_password' : 'auth_show_password';
+            var txt = (typeof t === 'function') ? t(key) : '';
+            if (txt && txt !== key) { btn.title = txt; btn.setAttribute('aria-label', txt); }
+            btn.setAttribute('data-i18n-title', key);
+        }
+        function pwHideAll() {
+            ['authPassword', 'authPassword2'].forEach(function (id) {
+                var el = document.getElementById(id); if (!el || el.type === 'password') return;
+                el.type = 'password';
+                var b = el.parentNode && el.parentNode.querySelector('.pw-eye');
+                if (b) { b.classList.remove('on'); b.setAttribute('data-i18n-title', 'auth_show_password'); }
+            });
+        }
+        (function () {
+            var f = document.getElementById('authForm');
+            if (f) f.addEventListener('submit', pwHideAll);
+            document.addEventListener('visibilitychange', function () { if (document.hidden) pwHideAll(); });
+        })();
+        </script>
 
         <!-- Сообщения об ошибке и успехе -->
         <p id="authError" class="text-xs text-red-500 mt-2 hidden"></p>
@@ -5049,7 +5097,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=12"></script>
-    <script src="i18n-core.js?v=161"></script>
+    <script src="i18n-core.js?v=163"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=31"></script>
@@ -6096,7 +6144,31 @@ function _closeTopOverlay() {
 const BACK_BUFFER_SIZE = 200;
 for (let i = 0; i < BACK_BUFFER_SIZE; i++) history.pushState({ backBuffer: true }, '');
 
+// ---- Выход по «назад» с главного экрана (8.11.2026, отчёт тестировщиков) ----
+// Chrome пропускает записи истории, созданные без касания пользователя, поэтому запас из 200 записей
+// выше мог не срабатывать, и «назад» на Dashboard сразу закрывало приложение. Теперь по касаниям
+// подкладываем по одной записи (_backDepth, не больше 5): они не пропускаются, и «назад» доходит сюда.
+// На Dashboard первое «назад» показывает подсказку, второе в течение 2 с закрывает приложение.
+// ОТКАТ: удалить этот блок, строки с _backDepth/_backLeaving в popstate и ветку «выход» внизу обработчика.
+let _backDepth = 0, _backExitAt = 0, _backLeaving = false, _backToastEl = null, _backToastTimer = null;
+document.addEventListener('pointerup', function () {
+    if (_backDepth < 5) { try { history.pushState({ backGuard: true }, ''); _backDepth++; } catch (e) {} }
+}, true);
+function _showBackToast(msg) {
+    if (!_backToastEl) {
+        _backToastEl = document.createElement('div');
+        _backToastEl.style.cssText = 'position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:100000;background:rgba(40,40,36,.92);color:#f4f1ea;font-size:13px;font-weight:600;padding:10px 16px;border-radius:999px;max-width:86vw;text-align:center;pointer-events:none;';
+        document.body.appendChild(_backToastEl);
+    }
+    _backToastEl.textContent = msg;
+    _backToastEl.style.display = 'block';
+    clearTimeout(_backToastTimer);
+    _backToastTimer = setTimeout(function () { if (_backToastEl) _backToastEl.style.display = 'none'; }, 2000);
+}
+
 window.addEventListener('popstate', function () {
+    if (_backLeaving) { history.back(); return; } // идём к началу истории, приложение закроется
+    if (_backDepth > 0) _backDepth--;
     if (_hasOpenOverlay()) {
         _closeTopOverlay();
         return;
@@ -6115,9 +6187,11 @@ window.addEventListener('popstate', function () {
         showTab('dashboard');
         return;
     }
-    // иначе (уже на карточном виде вкладки заказов, ничего не открыто) — просто
-    // ничего не делаем; запас записей в истории огромный, так что Android
-    // не закроет приложение — очередное нажатие "Назад" будет перехвачено точно так же
+    // Dashboard, ничего не открыто: первое «назад» — подсказка, второе в течение 2 с — выход из приложения
+    var now = Date.now();
+    if (now - _backExitAt < 2000) { _backLeaving = true; setTimeout(function () { _backLeaving = false; }, 3000); history.back(); return; }
+    _backExitAt = now;
+    _showBackToast((typeof t === 'function' && t('back_exit_hint') !== 'back_exit_hint') ? t('back_exit_hint') : 'Press back again to exit');
 });
 
 
