@@ -6194,40 +6194,6 @@ window.addEventListener('popstate', function () {
     _showBackToast((typeof t === 'function' && t('back_exit_hint') !== 'back_exit_hint') ? t('back_exit_hint') : 'Press back again to exit');
 });
 
-// ===== ВРЕМЕННАЯ ДИАГНОСТИКА «назад» (8.11.2026) — удалить после выяснения причины =====
-// Пишет в localStorage последние события (касание с новой записью истории, popstate, уход в фон) и при
-// следующем запуске показывает их плашкой в углу экрана (нажать, чтобы скрыть; сама исчезает через 40 с).
-(function () {
-    var K = 'bk_dbg';
-    function load() { try { return JSON.parse(localStorage.getItem(K) || '[]'); } catch (e) { return []; } }
-    function rec(ev) {
-        try {
-            var a = load();
-            a.push([Math.round(Date.now() / 1000) % 100000, ev, history.length, _backDepth]);
-            if (a.length > 14) a = a.slice(-14);
-            localStorage.setItem(K, JSON.stringify(a));
-        } catch (e) {}
-    }
-    var prev = load();
-    var lastDepth = -1;
-    document.addEventListener('pointerup', function () { if (_backDepth !== lastDepth) { lastDepth = _backDepth; rec('tap'); } }, true);
-    window.addEventListener('popstate', function () { rec('pop'); });
-    document.addEventListener('visibilitychange', function () { rec(document.hidden ? 'hide' : 'show'); });
-    window.addEventListener('pagehide', function () { rec('pagehide'); });
-    var nav = ''; try { nav = performance.getEntriesByType('navigation')[0].type; } catch (e) {}
-    var sa = false; try { sa = matchMedia('(display-mode: standalone)').matches || matchMedia('(display-mode: fullscreen)').matches; } catch (e) {}
-    rec('start ' + nav + (sa ? ' standalone' : ' browser') + ' ref=' + (document.referrer || '-').slice(0, 24));
-    if (prev.length) {
-        setTimeout(function () {
-            var d = document.createElement('div');
-            d.style.cssText = 'position:fixed;left:6px;top:6px;right:6px;z-index:100001;background:#fff;border:2px solid #c0392b;border-radius:10px;padding:6px 8px;font:10px/1.35 monospace;color:#222;white-space:pre-wrap;';
-            d.textContent = 'DEBUG back (sec ev len depth)\n' + prev.map(function (r) { return r.join(' '); }).join('\n');
-            d.onclick = function () { d.remove(); };
-            document.body.appendChild(d);
-            setTimeout(function () { if (d.parentNode) d.remove(); }, 40000);
-        }, 1500);
-    }
-})();
 
 
 // выполнить много синхронного JS (как у нас — компиляция Tailwind на лету +
