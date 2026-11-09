@@ -501,7 +501,7 @@ I18N.en = {
         stats_customers_table_title: 'Total by customer (incl. VAT)',
         stats_pie_title: 'Customer share (incl. VAT)',
         stats_total_with_vat: 'Total (incl. VAT)',
-        stats_incl_vat: 'incl. VAT',
+        stats_incl_vat: 'of which VAT',
         stats_week_with_vat: 'This week (incl. VAT)',
         stats_month_with_vat: 'This month (incl. VAT)',
         stats_customers_table_title_novat: 'Total by customer',

@@ -497,7 +497,10 @@ function setInventoryPagePeriod(days) {
     renderInventoryPage();
 }
 
-function _invFmt(x) { return x === null || x === undefined ? '—' : String(Math.round(Number(x) * 10) / 10).replace('.', ','); }
+// Десятичный разделитель по языку интерфейса: английский — точка, остальные (ru/uk/lt) — запятая.
+function _decSep(str) { return (typeof currentLang !== 'undefined' && currentLang === 'en') ? String(str) : String(str).replace('.', ','); }
+function _n1(x) { return _decSep(Number(x).toFixed(1)); }
+function _invFmt(x) { return x === null || x === undefined ? '—' : _decSep(String(Math.round(Number(x) * 10) / 10)); }
 
 // Значок полуфабриката в общем списке — «слои» (выбор владельца 21.10)
 const INV_SF_ICON = '<svg class="inv-sf-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4l-8 4l8 4l8-4l-8-4"/><path d="M4 12l8 4l8-4"/><path d="M4 16l8 4l8-4"/></svg>';

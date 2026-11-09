@@ -242,15 +242,15 @@ function renderIngredientCards() {
         const afterColor = isCritical ? '#c0685c' : isWarning ? '#96712a' : '#4f6349';
         const thirdLabel = '';
         const thirdText = '';
-        const beforeText = balanceBefore !== null ? `${Number(balanceBefore).toFixed(1)} ${unitLabel}` : '—';
-        const afterText = balance !== null ? `${Number(balance).toFixed(1)} ${unitLabel}` : '—';
+        const beforeText = balanceBefore !== null ? `${_n1(balanceBefore)} ${unitLabel}` : '—';
+        const afterText = balance !== null ? `${_n1(balance)} ${unitLabel}` : '—';
         const priceText = stockPriceText(unitPrice, ing.unit);
         const stripe = accentColor ? `<div class="stripe" style="background:${accentColor};"></div>` : '';
         if (attnOnly && !isAttn) return;
 
         if (tiles) {
             const tChip = fi.on ? (fi.chip ? { cls: fi.chip.cls, text: fi.chip.tile } : null) : null;
-            (isAttn ? htmlAttn : htmlOk).push(stockTileHtml({ name: ing.name, attn: isAttn, flag: !!accentColor, red: isCritical, numText: balance !== null ? Number(balance).toFixed(1) : '—', unit: balance !== null ? unitLabel : '', priceText, chip: tChip, lowExp: expAttn, expiry: (typeof expiryTileInfo === 'function' ? expiryTileInfo('ing', ing.id) : null), openCall: `openIngredientDetail(${ing.id})` }));
+            (isAttn ? htmlAttn : htmlOk).push(stockTileHtml({ name: ing.name, attn: isAttn, flag: !!accentColor, red: isCritical, numText: balance !== null ? _n1(balance) : '—', unit: balance !== null ? unitLabel : '', priceText, chip: tChip, lowExp: expAttn, expiry: (typeof expiryTileInfo === 'function' ? expiryTileInfo('ing', ing.id) : null), openCall: `openIngredientDetail(${ing.id})` }));
             return;
         }
         (isAttn ? htmlAttn : htmlOk).push(`
@@ -859,14 +859,14 @@ async function renderIngredientStockBlock(ing) {
     const balBeforeEl = document.getElementById('ingBalanceBeforeValue');
     const unitBeforeEl = document.getElementById('ingBalanceBeforeUnit');
 
-    if (balBeforeEl) balBeforeEl.textContent = balanceBefore !== null ? Number(balanceBefore).toFixed(1) : '—'; // 1 знак — как на карточке «Склада»
+    if (balBeforeEl) balBeforeEl.textContent = balanceBefore !== null ? _n1(balanceBefore) : '—'; // 1 знак — как на карточке «Склада»
     if (unitBeforeEl) unitBeforeEl.textContent = unitLabel;
 
     if (balEl) {
         // Показываем реальное число, включая отрицательное (реальная нехватка) —
         // раньше отрицательный баланс подменялся на "0", скрывая проблему.
         if (balance !== null) {
-            balEl.textContent = Number(balance).toFixed(1);
+            balEl.textContent = _n1(balance);
             const colorClass = balance <= 0 ? 'text-[#c0685c]' : 'text-[#4f6349]';
             balEl.className = colorClass + ' font-bold';
         } else {

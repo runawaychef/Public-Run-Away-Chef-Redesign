@@ -95,15 +95,15 @@ function renderSemiFinishedCards() {
         const afterColor = isCritical ? '#c0685c' : isWarning ? '#96712a' : '#4f6349';
         const thirdLabel = '';
         const thirdText = '';
-        const beforeText = balanceBefore !== null ? `${Number(balanceBefore).toFixed(1)} ${unitLabel}` : '—';
-        const afterText = balance !== null ? `${Number(balance).toFixed(1)} ${unitLabel}` : '—';
+        const beforeText = balanceBefore !== null ? `${_n1(balanceBefore)} ${unitLabel}` : '—';
+        const afterText = balance !== null ? `${_n1(balance)} ${unitLabel}` : '—';
         const priceText = stockPriceText(unitCost, sf.unit);
         const stripe = accentColor ? `<div class="stripe" style="background:${accentColor};"></div>` : '';
         if (attnOnly && !isAttn) return;
 
         if (tiles) {
             const showPrice = (typeof hasPermission !== 'function' || hasPermission('can_view_costs'));
-            (isAttn ? htmlAttn : htmlOk).push(stockTileHtml({ name: sf.name, attn: isAttn, flag: !!accentColor, recipe: notConfirmed, red: isCritical, numText: balance !== null ? Number(balance).toFixed(1) : '—', unit: balance !== null ? unitLabel : '', priceText: showPrice ? priceText : '', chip: (fi.on && fi.chip) ? { cls: fi.chip.cls, text: fi.chip.tile } : null, lowExp: expAttn, expiry: (typeof expiryTileInfo === 'function' ? expiryTileInfo('sf', sf.id) : null), openCall: `openSemiFinishedDetail(${sf.id})` }));
+            (isAttn ? htmlAttn : htmlOk).push(stockTileHtml({ name: sf.name, attn: isAttn, flag: !!accentColor, recipe: notConfirmed, red: isCritical, numText: balance !== null ? _n1(balance) : '—', unit: balance !== null ? unitLabel : '', priceText: showPrice ? priceText : '', chip: (fi.on && fi.chip) ? { cls: fi.chip.cls, text: fi.chip.tile } : null, lowExp: expAttn, expiry: (typeof expiryTileInfo === 'function' ? expiryTileInfo('sf', sf.id) : null), openCall: `openSemiFinishedDetail(${sf.id})` }));
             return;
         }
         (isAttn ? htmlAttn : htmlOk).push(`
@@ -582,14 +582,14 @@ async function renderSfStockBlock(sf) {
     const balBeforeEl = document.getElementById('sfBalanceBeforeValue');
     const unitBeforeEl = document.getElementById('sfBalanceBeforeUnit');
 
-    if (balBeforeEl) balBeforeEl.textContent = balanceBefore !== null ? Number(balanceBefore).toFixed(1) : '—';
+    if (balBeforeEl) balBeforeEl.textContent = balanceBefore !== null ? _n1(balanceBefore) : '—';
     if (unitBeforeEl) unitBeforeEl.textContent = unitLabel;
 
     if (balEl) {
         // Показываем реальное число, включая отрицательное (реальная нехватка) —
         // раньше отрицательный баланс подменялся на "0", скрывая проблему.
         if (balance !== null) {
-            balEl.textContent = Number(balance).toFixed(1);
+            balEl.textContent = _n1(balance);
             // Цвет (21.10, без прогноза): терракота — минус/ноль, шалфей — есть запас
             balEl.className = 'text-lg font-bold';
             balEl.style.color = balance <= 0 ? '#c0685c' : '#4f6349';
@@ -739,7 +739,7 @@ async function sfProduceCalc() {
         if (balance < needed) {
             const ing = ingredients.find(i => i.id === ri.ingredient_id);
             const ingUnit = ing ? unitAbbrev(ing.unit) : '';
-            shortages.push(`«${ing ? ing.name : '?'}»: ${t('sf_needed')} ${needed.toFixed(1)} ${ingUnit}, ${t('sf_have')} ${balance.toFixed(1)} ${ingUnit}`);
+            shortages.push(`«${ing ? ing.name : '?'}»: ${t('sf_needed')} ${_n1(needed)} ${ingUnit}, ${t('sf_have')} ${_n1(balance)} ${ingUnit}`);
         }
     });
 
