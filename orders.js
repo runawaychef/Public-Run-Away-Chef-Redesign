@@ -354,8 +354,8 @@ function renderOrderCard(order) {
                     ${noteLine}
                     ${payLine}
                     ${overdueLine}
-                    ${typeof orderStockShortCapsuleHtml === 'function' ? orderStockShortCapsuleHtml(order) : ''}
                     ${orderDocChipsHtml(order)}
+                    ${typeof orderStockShortCapsuleHtml === 'function' ? orderStockShortCapsuleHtml(order) : ''}
                     ${itemsLine}
                 </div>
             </div>
@@ -570,8 +570,8 @@ function renderDoneOrderCard(order, opts) {
                         </div>
                         ${payLine}
                         ${overdueLine}
-                    ${typeof orderStockShortCapsuleHtml === 'function' ? orderStockShortCapsuleHtml(order) : ''}
                         ${orderDocChipsHtml(order)}
+                    ${typeof orderStockShortCapsuleHtml === 'function' ? orderStockShortCapsuleHtml(order) : ''}
                         ${extra}
                         <div class="oc-bottom">
                             <span class="pay-pill" data-pay="${payKey}" style="background:${stripeColor}; cursor:inherit;">${orderHasAutoBankPay(order.id) ? payAutoBankIconHtml(12) : ''}${payPillLabel}</span>
@@ -641,8 +641,8 @@ function renderDoneOrderCard(order, opts) {
                             ${noteLine}
                             ${payLine}
                             ${overdueLine}
-                    ${typeof orderStockShortCapsuleHtml === 'function' ? orderStockShortCapsuleHtml(order) : ''}
                             ${orderDocChipsHtml(order)}
+                    ${typeof orderStockShortCapsuleHtml === 'function' ? orderStockShortCapsuleHtml(order) : ''}
                         </div>
                         <div class="oc-items" data-role="items" style="display:none;">${itemsLine}</div>
                         <div class="oc-bottom">
