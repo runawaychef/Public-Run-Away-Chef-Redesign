@@ -641,6 +641,9 @@ function _tourInjectStyle() {
 .tour-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 20px; border: 0; border-radius: 12px; font-size: 15px; font-weight: 700; }
 .tour-btn.tour-prev { background: none; color: #4f6349; padding: 0 14px; }
 .tour-btn.tour-next { background: #5b7552; color: #fff; }
+#tourBackdrop { position: fixed; inset: 0; z-index: 158; background: #f4f1ea; }
+#tourCard.tour-center { bottom: auto; top: 50%; transform: translate(-50%, -50%); }
+#tourCard.tour-center .tour-text { max-height: 50vh; }
 #tourAsk { position: fixed; inset: 0; z-index: 170; background: rgba(47,61,42,.45); display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
 #tourAsk .ta-box { width: 100%; max-width: 360px; background: #fff; border-radius: 20px; box-shadow: 0 16px 40px rgba(0,0,0,.28); padding: 24px 22px 14px; box-sizing: border-box; }
 #tourAsk .ta-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 23px; color: #2f3d2a; }
@@ -838,6 +841,15 @@ function _tourRender() {
         '<div class="tour-text">' + _tourEsc(text) + '</div>' +
         (s.plan ? _tourPlanBox() : '') +
         '<div class="tour-btns">' + btns + '</div>';
+    // Шаг «Тарифы»: экран приложения не показываем, только карточка по центру на нейтральном фоне
+    let bd = document.getElementById('tourBackdrop');
+    if (s.plan && !demoEnd) {
+        if (!bd) { bd = document.createElement('div'); bd.id = 'tourBackdrop'; document.body.insertBefore(bd, _tourEl); }
+        _tourEl.classList.add('tour-center');
+    } else {
+        if (bd) bd.remove();
+        _tourEl.classList.remove('tour-center');
+    }
     // Запас внизу страницы, чтобы карточка не закрывала последние строки при прокрутке
     if (_tourSpacer) _tourSpacer.style.height = (_tourEl.offsetHeight + 90) + 'px';
 }
@@ -881,6 +893,7 @@ function tourPrev() {
 }
 // Просто убрать карточку (без вопросов)
 function tourClose() {
+    document.getElementById('tourBackdrop')?.remove();
     if (_tourEl) { _tourEl.remove(); _tourEl = null; }
     if (_tourSpacer) { _tourSpacer.remove(); _tourSpacer = null; }
     _tourSteps = null; _tourIdx = 0; _tourDemo = false;
