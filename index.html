@@ -5129,7 +5129,7 @@ function hideSplashScreen() {
 <script src="stats.js?v=43"></script>
 <script src="history.js?v=9"></script>
 <script src="modals.js?v=21"></script>
-<script src="demoData.js?v=20"></script>
+<script src="demoData.js?v=21"></script>
 <script src="helpers.js?v=52"></script>
 <script>
 // SUPABASE_URL, SUPABASE_KEY, db перенесены в supabaseClient.js
@@ -6133,6 +6133,7 @@ function _closeTopOverlay() {
         return;
     }
     if (_getOpenModalEl()) { closeModal(); return; }
+    if (typeof tourOwnsTop === 'function' && tourOwnsTop()) { tourClose(); return; }
     const openDetail = _backHandledDetailScreens.find(s => {
         const el = document.getElementById(s.id);
         return el?.classList.contains('active') && _isReallyVisible(el);

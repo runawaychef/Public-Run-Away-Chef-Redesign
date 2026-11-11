@@ -595,7 +595,7 @@ const TOUR_STEPS = [
     { id: 'stock',  tab: 'ingredients', title: 'Склад',           text: 'Склад предупредит заранее и покажет, на сколько хватит каждого ингредиента.' },
     { id: 'cust',   tab: 'customers',   title: 'Клиенты',         text: 'Здесь видно, кто из клиентов сколько вам должен.' },
     { id: 'stats',  tab: 'stats',       title: 'Статистика',      text: 'Какие клиенты и изделия приносят больше всего.' },
-    { id: 'plans',  tab: 'dashboard',   title: 'Тарифы',          text: 'Первые 7 дней доступны все функции. Дальше бесплатно до 50 заказов. Light снимает лимит и даёт всё для ежедневной работы: заказы, рецепты, склад, клиенты, документы. Для работы Light достаточно. Full добавляет полную статистику по изделиям и клиентам, анализ себестоимости и склада, журнал действий, уведомления и работу в команде.' },
+    { id: 'plans',  tab: 'settings',   title: 'Тарифы',          text: 'Первые 7 дней доступны все функции. Дальше бесплатно до 50 заказов. Light снимает лимит и даёт всё для ежедневной работы: заказы, рецепты, склад, клиенты, документы. Для работы Light достаточно. Full добавляет полную статистику по изделиям и клиентам, анализ себестоимости и склада, журнал действий, уведомления и работу в команде.' },
     { id: 'end',    tab: 'dashboard',   title: 'Готово',          text: 'Тур можно повторить в любой момент: Настройки → Инструкция.' }
 ];
 let _tourSteps = null, _tourIdx = 0, _tourEl = null, _tourSpacer = null;
@@ -606,6 +606,11 @@ function _tt(key, ru) {
     return ru;
 }
 function tourIsActive() { return !!_tourEl; }
+// Тур сам открыл Настройки (шаг «Тарифы») и они сверху: «назад» закрывает тур, а не Настройки
+function tourOwnsTop() {
+    return !!(_tourEl && _tourSteps && _tourSteps[_tourIdx] && _tourSteps[_tourIdx].tab === 'settings'
+        && typeof appPageTop === 'function' && appPageTop() === 'settingsPage');
+}
 
 function _tourInjectStyle() {
     if (document.getElementById('tourStyle')) return;
@@ -653,7 +658,11 @@ function _tourRender() {
 function _tourGo(idx) {
     _tourIdx = idx;
     const s = _tourSteps[idx];
-    try { showTab(s.tab); } catch (e) { console.error(e); }
+    try {
+        // Шаг «Тарифы» показывает Настройки (плашка тарифа и счётчик заказов наверху); остальные шаги — вкладки
+        if (s.tab === 'settings' && typeof openSettingsModal === 'function') openSettingsModal();
+        else showTab(s.tab);
+    } catch (e) { console.error(e); }
     try { window.scrollTo(0, 0); } catch (e) {}
     _tourRender();
 }
