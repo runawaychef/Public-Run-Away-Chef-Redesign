@@ -144,6 +144,7 @@ function d2ShowDiag() {
 function docs2RenderHome() {
     const box = document.getElementById('docs2Home');
     if (!box) return;
+    if (window._tourDocsDemo && typeof tourRenderDocsDemo === 'function') { tourRenderDocsDemo(); return; } // тур: примерный экран без данных (demoData.js)
     const today = getLocalDateStr(0);
     const ym = _d2Months().cur;
     const docs = (typeof _docsAll !== 'undefined' && Array.isArray(_docsAll)) ? _docsAll : [];

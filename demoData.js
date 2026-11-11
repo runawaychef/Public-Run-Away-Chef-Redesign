@@ -820,6 +820,40 @@ function _tourPlanBox() {
     } catch (e) { return ''; }
 }
 
+// Шаг «Оплата и документы»: примерный экран «Документы» (режим «По счёту»). Данные выдуманные, в базу ничего не пишется,
+// карточки не нажимаются. Использует плитки и тексты настоящего раздела (documents2.js, _d2Tile).
+function tourRenderDocsDemo() {
+    const box = document.getElementById('docs2Home');
+    if (!box || typeof _d2Tile !== 'function') return;
+    const plain = c => formatMoney((c || 0) / 100);
+    const no = 'void 0';
+    const tiles = [
+        _d2Tile({ color: 'dash-c-day', icon: 'plus', label: t('docs2_todo_t'), value: '3', click: no, cap: t('docs2_todo_cap'), footL: t('docs2_todo_sum'), footR: plain(12600) }),
+        _d2Tile({ color: 'dash-c-day', icon: 'alert', label: t('docs2_tosend_t'), value: '2', click: no, cap: t('docs2_unsent_cap'), footL: t('docs2_todo_sum'), footR: plain(8400) }),
+        _d2Tile({ color: 'dash-c-tom', icon: 'clock', label: t('docs_tile_wait'), value: _d2Money(31500), pill: 4, click: no, mid: t('docs2_partial_line').replace('{n}', 1), footL: t('docs2_over_short'), footR: plain(9000) }),
+        _d2Tile({ color: 'dash-c-acc', icon: 'check', label: t('docs_tile_paid'), value: _d2Money(48200), pill: 6, click: no, footL: t('docs2_prev_month'), footR: plain(39000) }),
+        _d2Tile({ color: 'dash-c-stock', icon: 'dn', label: t('docs_type_dn'), value: '5', cap: t('docs2_this_month'), footL: t('docs2_dn_unsent').replace('{n}', 1), footR: '', click: no }),
+        _d2Tile({ color: 'dash-c-rev', icon: 'all', label: t('docs2_all'), value: '12', click: no, footL: t('docs2_all_foot').replace('{i}', 7).replace('{d}', 5) }),
+        _d2Tile({ color: 'dash-c-stock', icon: 'exp', label: t('docs2_export'), value: '&mdash;', footL: t('docs2_export_sub'), footR: t('docs2_soon'), cls: 'docs2-soon sth-wide' })
+    ].join('');
+    box.innerHTML = '<div class="dashboard-grid stats-home-grid docs2-grid">' + tiles +
+        '<div class="sth-info"><i>i</i><ul><li>' + _tourEsc(_tt('tour_docs_note', 'Пример: так выглядит раздел «Документы» в режиме «По счёту».')) + '</li></ul></div></div>';
+}
+function _tourSetDocsPage(on) {
+    try {
+        const open = typeof appPageTop === 'function' && appPageTop() === 'docs2HomePage';
+        if (on) {
+            window._tourDocsDemo = true;
+            if (!open) openAppPage('docs2HomePage');
+            tourRenderDocsDemo();
+        } else {
+            const was = !!window._tourDocsDemo;
+            window._tourDocsDemo = false;
+            if (was && open) closeAppPage();
+        }
+    } catch (e) { console.error(e); }
+}
+
 function _tourSetPlanPane(on) {
     const w = document.getElementById('tabsWrapper');
     let pane = document.getElementById('tourPlanPane');
@@ -855,6 +889,7 @@ function _tourRender() {
         '<div class="tour-btns">' + btns + '</div>';
     // Шаг «Тарифы»: в рабочем поле вместо экрана только блок тарифа из Настроек; шапка, нижнее меню и карточка на месте
     _tourSetPlanPane(!!s.plan && !demoEnd);
+    _tourSetDocsPage(s.id === 'pay' && !demoEnd);
     // Запас внизу страницы, чтобы карточка не закрывала последние строки при прокрутке
     if (_tourSpacer) _tourSpacer.style.height = (_tourEl.offsetHeight + 90) + 'px';
 }
@@ -900,6 +935,7 @@ function tourPrev() {
 // Просто убрать карточку (без вопросов)
 function tourClose() {
     _tourSetPlanPane(false);
+    _tourSetDocsPage(false);
     document.body.classList.remove('tour-on');
     if (_tourEl) { _tourEl.remove(); _tourEl = null; }
     if (_tourSpacer) { _tourSpacer.remove(); _tourSpacer = null; }

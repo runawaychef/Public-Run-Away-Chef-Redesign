@@ -1803,4 +1803,5 @@ I18N.lt = {
         tour_end_text: "Turą galima pakartoti bet kada: Nustatymai → Instrukcija.",
         tour_plans_hint: "Palieskite, kad pamatytumėte planus",
         plan_free_after_trial: "Pasibaigus 7 dienų bandomajam laikotarpiui",
+        tour_docs_note: "Pavyzdys: taip atrodo skyrius „Dokumentai“ režimu „Pagal sąskaitą“.",
 };
