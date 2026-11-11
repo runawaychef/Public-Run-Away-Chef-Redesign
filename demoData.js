@@ -169,6 +169,7 @@ function demoOrderPlan() {
 }
 
 async function createDemoData(orgId, employeeId) {
+    if (typeof _tourInvalidateDemo === 'function') _tourInvalidateDemo(); // кэш плашки «Здесь примеры» (тур, 11.11.2026)
     const lang = (typeof currentLang !== 'undefined' && currentLang === 'ru') ? 'ru' : 'en';
     const C = DEMO_CONTENT[lang];
     // Некритичные сбои (склад, оплаты, отдельные заказы, снимок себестоимости)
@@ -495,6 +496,7 @@ async function fillDemoDataFromSettings() {
 // складские движения), потом ингредиенты (история цен + партии + движения +
 // список покупок), второй демо-сотрудник, и только в конце — клиенты.
 async function clearDemoData() {
+    if (typeof _tourInvalidateDemo === 'function') _tourInvalidateDemo(); // кэш плашки «Здесь примеры» (тур, 11.11.2026)
     showLoading(t('demo_deleting'));
     try {
         const { data: demoOrders } = await db.from('orders').select('id').eq('org_id', currentOrgId).eq('is_demo', true);
@@ -583,29 +585,35 @@ async function refreshDeleteDemoDataVisibility() {
 }
 
 
-// ==================== ПОШАГОВОЕ РУКОВОДСТВО («ТУР») — ЧАСТЬ A, 11.11.2026 ====================
-// План и решения: claude/onboarding-tour-plan-2026-11-09.md. Часть A: карточка тура и запуск из
-// Настроек («Инструкция»). Карточка висит над нижним меню, экран не затемняет и не блокирует.
+// ==================== ПОШАГОВОЕ РУКОВОДСТВО («ТУР») — ЧАСТИ A И B, 11.11.2026 ====================
+// План и решения: claude/onboarding-tour-plan-2026-11-09.md. Карточка тура висит над нижним меню, экран не
+// затемняет и не блокирует. Часть B: предложение тура после «Welcome!», загрузка примеров, вопрос «Удалить
+// примеры?», плашка «Здесь примеры» на дашборде, ссылка на экране заказов, шаг «Оплата и документы».
 // Тексты пока по-русски (запасной вариант в _tt), полные EN/RU/UK/LT с ключами tour_* — часть C.
-// ОТКАТ: удалить этот блок, строку «Инструкция» (tourSettingsBtn) в index.html и две проверки tourIsActive() в _hasOpenOverlay/_closeTopOverlay.
+// ОТКАТ: удалить этот блок, строку «Инструкция» (tourSettingsBtn) в index.html, вызовы tour*/refreshDemoBanner/
+// refreshTourOrdersLink в index.html (_hasOpenOverlay/_closeTopOverlay), employees.js (saveOrgNameSetup),
+// orders.js (displayOrders), dashboard.js (renderDashboard), и строки _tourInvalidateDemo() в createDemoData/clearDemoData.
 const TOUR_STEPS = [
     { id: 'dash',   tab: 'dashboard',   title: 'Главный экран',   text: 'Весь день на одном экране: заказы, остатки на складе, оплаты и долги.' },
     { id: 'orders', tab: 'orders',      title: 'Заказы',          text: 'Дата и время выдачи, предупреждение о нехватке ингредиентов, счёт и накладная.' },
+    { id: 'pay',    tab: 'orders',      title: 'Оплата и документы', text: 'Оплату можно вносить прямо в заказ, это проще всего для частных клиентов. Если вы работаете с компаниями, переключите режим на «По счёту»: любая оплата будет идти только по выставленному счёту. Это меняется в Настройках → Информация о компании → Документы и оплата.' },
     { id: 'menu',   tab: 'products',    title: 'Меню',            text: 'Изделие с фото и ценой. Рецепт строится вокруг главного ингредиента, а себестоимость пересчитывается сама.' },
     { id: 'stock',  tab: 'ingredients', title: 'Склад',           text: 'Склад предупредит заранее и покажет, на сколько хватит каждого ингредиента.' },
     { id: 'cust',   tab: 'customers',   title: 'Клиенты',         text: 'Здесь видно, кто из клиентов сколько вам должен.' },
     { id: 'stats',  tab: 'stats',       title: 'Статистика',      text: 'Какие клиенты и изделия приносят больше всего.' },
-    { id: 'plans',  tab: 'dashboard', plan: true,   title: 'Тарифы',          text: 'Первые 7 дней доступны все функции. Дальше бесплатно до 50 заказов. Light снимает лимит и даёт всё для ежедневной работы: заказы, рецепты, склад, клиенты, документы. Для работы Light достаточно. Full добавляет полную статистику по изделиям и клиентам, анализ себестоимости и склада, журнал действий, уведомления и работу в команде.' },
+    { id: 'plans',  tab: 'dashboard', plan: true, title: 'Тарифы', text: 'Первые 7 дней доступны все функции. Дальше бесплатно до 50 заказов. Light снимает лимит и даёт всё для ежедневной работы: заказы, рецепты, склад, клиенты, документы. Для работы Light достаточно. Full добавляет полную статистику по изделиям и клиентам, анализ себестоимости и склада, журнал действий, уведомления и работу в команде.' },
     { id: 'end',    tab: 'dashboard',   title: 'Готово',          text: 'Тур можно повторить в любой момент: Настройки → Инструкция.' }
 ];
-let _tourSteps = null, _tourIdx = 0, _tourEl = null, _tourSpacer = null;
+let _tourSteps = null, _tourIdx = 0, _tourEl = null, _tourSpacer = null, _tourDemo = false;
 
 // Запасной русский текст, пока ключей tour_* нет в словарях (часть C).
 function _tt(key, ru) {
     try { if (typeof t === 'function') { const v = t(key); if (v && v !== key) return v; } } catch (e) {}
     return ru;
 }
+function _tourEsc(v) { return String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 function tourIsActive() { return !!_tourEl; }
+function _tourIsOwner() { return !!(typeof currentEmployee !== 'undefined' && currentEmployee && currentEmployee.is_owner); }
 
 function _tourInjectStyle() {
     if (document.getElementById('tourStyle')) return;
@@ -630,13 +638,169 @@ function _tourInjectStyle() {
 #tourCard .tour-plan-b { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 9999px; }
 #tourCard .tour-plan-u { font-size: 12px; color: #6b675d; margin-top: 3px; }
 #tourCard .tour-btns { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
-#tourCard .tour-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 20px; border: 0; border-radius: 12px; font-size: 15px; font-weight: 700; }
-#tourCard .tour-prev { background: none; color: #4f6349; padding: 0 14px; }
-#tourCard .tour-next { background: #5b7552; color: #fff; }
+.tour-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 20px; border: 0; border-radius: 12px; font-size: 15px; font-weight: 700; }
+.tour-btn.tour-prev { background: none; color: #4f6349; padding: 0 14px; }
+.tour-btn.tour-next { background: #5b7552; color: #fff; }
+#tourAsk { position: fixed; inset: 0; z-index: 170; background: rgba(47,61,42,.45); display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+#tourAsk .ta-box { width: 100%; max-width: 360px; background: #fff; border-radius: 20px; box-shadow: 0 16px 40px rgba(0,0,0,.28); padding: 24px 22px 14px; box-sizing: border-box; }
+#tourAsk .ta-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 23px; color: #2f3d2a; }
+#tourAsk .ta-text { font-size: 14.5px; line-height: 1.5; color: #4a463e; margin-top: 10px; white-space: pre-line; }
+#tourAsk .ta-btns { display: flex; flex-direction: column; gap: 6px; margin-top: 18px; }
+#tourAsk .tour-btn { width: 100%; }
+#tourDemoBanner { margin: 0 0 10px; background: #e3ebdf; border-radius: 12px; padding: 10px 12px; }
+#tourDemoBanner .tb-t { font-size: 14px; font-weight: 700; color: #2f3d2a; }
+#tourDemoBanner .tb-x { font-size: 12.5px; line-height: 1.4; color: #4a463e; margin-top: 2px; }
+#tourDemoBanner .tb-b { display: flex; gap: 6px; margin-top: 6px; }
+#tourDemoBanner .tour-btn { padding: 0 16px; font-size: 14px; }
+#tourOrdersLink { text-align: center; padding: 14px 0 8px; }
+#tourOrdersLink button { min-height: 44px; padding: 0 12px; border: 0; background: none; font-size: 14px; font-weight: 700; color: #4f6349; text-decoration: underline; }
 `;
     document.head.appendChild(st);
 }
 
+// ---- Окно-вопрос в стиле макета Г. Возвращает 'ok' | 'cancel' | 'back' (кнопка «Назад» в Android) ----
+let _tourAskEl = null, _tourAskResolve = null;
+function tourAskOpen() { return !!_tourAskEl; }
+function _tourAskDone(v) {
+    if (_tourAskEl) { _tourAskEl.remove(); _tourAskEl = null; }
+    const r = _tourAskResolve; _tourAskResolve = null;
+    if (r) r(v);
+}
+function tourAskBack() { _tourAskDone('back'); }
+function _tourAsk(o) {
+    _tourInjectStyle();
+    if (_tourAskEl) _tourAskDone('back');
+    return new Promise((resolve) => {
+        _tourAskResolve = resolve;
+        _tourAskEl = document.createElement('div');
+        _tourAskEl.id = 'tourAsk';
+        _tourAskEl.setAttribute('role', 'dialog');
+        _tourAskEl.innerHTML = '<div class="ta-box"><div class="ta-title">' + _tourEsc(o.title) + '</div><div class="ta-text">' + _tourEsc(o.text) + '</div>' +
+            '<div class="ta-btns"><button type="button" class="tour-btn tour-next" id="tourAskOk">' + _tourEsc(o.ok) + '</button>' +
+            '<button type="button" class="tour-btn tour-prev" id="tourAskNo">' + _tourEsc(o.cancel) + '</button></div></div>';
+        document.body.appendChild(_tourAskEl);
+        document.getElementById('tourAskOk').onclick = function () { _tourAskDone('ok'); };
+        document.getElementById('tourAskNo').onclick = function () { _tourAskDone('cancel'); };
+    });
+}
+
+// ---- Примеры (демо-данные): есть ли они в организации (кэш 15 с), загрузка, удаление ----
+let _demoCache = null;
+function _tourInvalidateDemo() {
+    _demoCache = null;
+    try { localStorage.removeItem('sb_demo_banner_hidden_' + currentOrgId); } catch (e) {}
+}
+async function tourHasDemo() {
+    const now = Date.now();
+    if (_demoCache && _demoCache.org === currentOrgId && now - _demoCache.t < 15000) return _demoCache.v;
+    let v = false;
+    try {
+        const { count } = await db.from('customers').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId).eq('is_demo', true);
+        v = !!count;
+    } catch (e) { console.error(e); }
+    _demoCache = { org: currentOrgId, v: v, t: now };
+    return v;
+}
+async function _tourOrgIsEmpty() {
+    try {
+        const { count } = await db.from('customers').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId);
+        return !count;
+    } catch (e) { console.error(e); return false; }
+}
+async function tourLoadDemo() {
+    if (!_tourIsOwner()) return false;
+    let err = null;
+    showLoading(_tt('tour_loading', 'Загружаем примеры…'));
+    try {
+        await createDemoData(currentOrgId, currentEmployee.id);
+        await loadAllData();
+        await loadInventory();
+        closeModal();
+    } catch (e) { err = e; console.error(e); }
+    hideLoading();
+    _tourInvalidateDemo();
+    if (err) {
+        await showInfo(t('fill_demo_error') + (err && err.message ? err.message : String(err)));
+        return false;
+    }
+    return true;
+}
+
+// ---- Точки входа ----
+// 1) Сразу после «Начать работу» на экране «Welcome!» (employees.js)
+async function tourOfferFirstRun() {
+    if (tourIsActive()) return;
+    const r = await _tourAsk({
+        title: _tt('tour_offer_title', 'Пройти короткий тур?'),
+        text: _tt('tour_offer_text', 'Покажем главное: заказы, меню, склад и клиентов. Для наглядности добавим примеры, потом их можно удалить одним нажатием.'),
+        ok: _tt('tour_offer_go', 'Пройти тур'), cancel: _tt('tour_offer_skip', 'Пропустить')
+    });
+    if (r !== 'ok') return;
+    const loaded = await tourLoadDemo();
+    tourStart({ demo: loaded });
+}
+// 2) Настройки → «Инструкция» и ссылка на экране заказов
+async function tourStartFromEntry() {
+    if (tourIsActive()) { _tourGo(0); return; }
+    if (await tourHasDemo()) { tourStart({ demo: true }); return; }
+    if (_tourIsOwner() && await _tourOrgIsEmpty()) {
+        const r = await _tourAsk({
+            title: _tt('tour_demo_title', 'Загрузить примеры?'),
+            text: _tt('tour_demo_text', 'С примерами тур наглядней: клиенты, изделия, склад и заказы. Их можно удалить одним нажатием.'),
+            ok: _tt('tour_demo_yes', 'Да'), cancel: _tt('tour_demo_no', 'Нет, только текст')
+        });
+        if (r === 'back') return;
+        if (r === 'ok') { tourStart({ demo: await tourLoadDemo() }); return; }
+    }
+    tourStart({ demo: false });
+}
+
+// ---- Плашка «Здесь примеры» на дашборде ----
+let _demoBannerToken = 0;
+async function refreshDemoBanner() {
+    const tok = ++_demoBannerToken;
+    const old = document.getElementById('tourDemoBanner');
+    const root = document.getElementById('dashboardRoot');
+    if (!root) return;
+    let show = false;
+    try {
+        show = !tourIsActive() && localStorage.getItem('sb_demo_banner_hidden_' + currentOrgId) !== '1' && await tourHasDemo();
+    } catch (e) { show = false; }
+    if (tok !== _demoBannerToken) return;
+    if (!show) { if (old) old.remove(); return; }
+    if (old) return;
+    _tourInjectStyle();
+    const b = document.createElement('div');
+    b.id = 'tourDemoBanner';
+    b.innerHTML = '<div class="tb-t">' + _tourEsc(_tt('tour_banner_title', 'Здесь примеры')) + '</div>' +
+        '<div class="tb-x">' + _tourEsc(_tt('tour_banner_text', 'Это учебные данные, их можно удалить в любой момент.')) + '</div>' +
+        '<div class="tb-b"><button type="button" class="tour-btn tour-next" onclick="confirmClearDemoData()">' + _tourEsc(_tt('tour_banner_delete', 'Удалить')) + '</button>' +
+        '<button type="button" class="tour-btn tour-prev" onclick="tourHideDemoBanner()">' + _tourEsc(_tt('tour_banner_hide', 'Скрыть')) + '</button></div>';
+    const strip = document.getElementById('dashStrip');
+    if (strip && strip.parentNode === root) strip.insertAdjacentElement('afterend', b);
+    else root.insertBefore(b, root.firstChild);
+}
+function tourHideDemoBanner() {
+    try { localStorage.setItem('sb_demo_banner_hidden_' + currentOrgId, '1'); } catch (e) {}
+    document.getElementById('tourDemoBanner')?.remove();
+}
+
+// ---- Ссылка «Пройти тур по приложению» внизу списка заказов, пока нет своих (не демо) заказов ----
+function refreshTourOrdersLink() {
+    const wrap = document.getElementById('orderCardsWrap');
+    if (!wrap) return;
+    let el = document.getElementById('tourOrdersLink');
+    const own = (typeof orders !== 'undefined' ? orders : []).some(o => !o.is_demo);
+    if (own) { if (el) el.remove(); return; }
+    if (el) return;
+    _tourInjectStyle();
+    el = document.createElement('div');
+    el.id = 'tourOrdersLink';
+    el.innerHTML = '<button type="button" onclick="tourStartFromEntry()">' + _tourEsc(_tt('tour_orders_link', 'Пройти тур по приложению')) + '</button>';
+    wrap.insertAdjacentElement('afterend', el);
+}
+
+// ---- Карточка тура ----
 // Шаг «Тарифы»: только блок тарифа организации (как в Настройках), без перехода в Настройки
 function _tourPlanBox() {
     try {
@@ -644,9 +808,8 @@ function _tourPlanBox() {
         const badge = document.getElementById('settingsPlanBadge');
         const usage = document.getElementById('settingsPlanUsage');
         if (!badge || !usage || !badge.textContent || badge.textContent === '—') return '';
-        const esc = (v) => String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        return '<div class="tour-plan"><div class="tour-plan-row"><span class="tour-plan-l">' + esc(_tt('settings_tariff', 'Тариф')) + '</span>' +
-            '<span class="tour-plan-b" style="' + esc(badge.style.cssText) + '">' + esc(badge.textContent) + '</span></div>' +
+        return '<div class="tour-plan"><div class="tour-plan-row"><span class="tour-plan-l">' + _tourEsc(_tt('settings_tariff', 'Тариф')) + '</span>' +
+            '<span class="tour-plan-b" style="' + _tourEsc(badge.style.cssText) + '">' + _tourEsc(badge.textContent) + '</span></div>' +
             '<div class="tour-plan-u">' + usage.innerHTML + '</div></div>';
     } catch (e) { return ''; }
 }
@@ -655,17 +818,26 @@ function _tourRender() {
     if (!_tourEl || !_tourSteps) return;
     const n = _tourSteps.length, s = _tourSteps[_tourIdx];
     const last = _tourIdx === n - 1;
+    const demoEnd = last && _tourDemo;
     let dots = '';
     for (let i = 0; i < n; i++) dots += '<span class="tour-dot' + (i < _tourIdx ? ' done' : (i === _tourIdx ? ' cur' : '')) + '"></span>';
-    const esc = (v) => String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const title = _tt('tour_' + s.id + '_title', s.title);
+    const text = demoEnd ? _tt('tour_end_demo_text', 'Это были примеры. Удалить их и начать со своей пекарни?') : _tt('tour_' + s.id + '_text', s.text);
+    let btns;
+    if (demoEnd) {
+        btns = '<button type="button" class="tour-btn tour-prev" onclick="tourKeepDemo()">' + _tourEsc(_tt('tour_keep', 'Оставить')) + '</button>' +
+            '<button type="button" class="tour-btn tour-next" onclick="tourDeleteDemo()">' + _tourEsc(_tt('tour_delete', 'Удалить примеры')) + '</button>';
+    } else {
+        btns = '<button type="button" class="tour-btn tour-prev" onclick="tourPrev()" style="visibility:' + (_tourIdx === 0 ? 'hidden' : 'visible') + '">' + _tourEsc(_tt('tour_prev', 'Назад')) + '</button>' +
+            '<button type="button" class="tour-btn tour-next" onclick="tourNext()">' + _tourEsc(last ? _tt('tour_done', 'Готово') : _tt('tour_next', 'Дальше')) + '</button>';
+    }
     _tourEl.innerHTML =
-        '<div class="tour-top"><div><div class="tour-count">' + esc(_tt('tour_step', 'Шаг')) + ' ' + (_tourIdx + 1) + ' ' + esc(_tt('tour_of', 'из')) + ' ' + n + '</div><div class="tour-dots">' + dots + '</div></div>' +
-        '<button type="button" class="tour-x" onclick="tourClose()" aria-label="' + esc(_tt('tour_close', 'Закрыть тур')) + '"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
-        '<div class="tour-title">' + esc(_tt('tour_' + s.id + '_title', s.title)) + '</div>' +
-        '<div class="tour-text">' + esc(_tt('tour_' + s.id + '_text', s.text)) + '</div>' +
+        '<div class="tour-top"><div><div class="tour-count">' + _tourEsc(_tt('tour_step', 'Шаг')) + ' ' + (_tourIdx + 1) + ' ' + _tourEsc(_tt('tour_of', 'из')) + ' ' + n + '</div><div class="tour-dots">' + dots + '</div></div>' +
+        '<button type="button" class="tour-x" onclick="tourCloseBtn()" aria-label="' + _tourEsc(_tt('tour_close', 'Закрыть тур')) + '"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
+        '<div class="tour-title">' + _tourEsc(title) + '</div>' +
+        '<div class="tour-text">' + _tourEsc(text) + '</div>' +
         (s.plan ? _tourPlanBox() : '') +
-        '<div class="tour-btns"><button type="button" class="tour-btn tour-prev" onclick="tourPrev()" style="visibility:' + (_tourIdx === 0 ? 'hidden' : 'visible') + '">' + esc(_tt('tour_prev', 'Назад')) + '</button>' +
-        '<button type="button" class="tour-btn tour-next" onclick="tourNext()">' + esc(last ? _tt('tour_done', 'Готово') : _tt('tour_next', 'Дальше')) + '</button></div>';
+        '<div class="tour-btns">' + btns + '</div>';
     // Запас внизу страницы, чтобы карточка не закрывала последние строки при прокрутке
     if (_tourSpacer) _tourSpacer.style.height = (_tourEl.offsetHeight + 90) + 'px';
 }
@@ -678,10 +850,12 @@ function _tourGo(idx) {
     _tourRender();
 }
 
-function tourStart() {
-    // Статистика доступна не всем сотрудникам: без права шаг пропускаем
+function tourStart(opts) {
+    _tourDemo = !!(opts && opts.demo);
+    // Статистика доступна не всем сотрудникам, режим оплаты меняет только владелец: без права шаг пропускаем
     const canStats = (typeof hasPermission !== 'function') || hasPermission('can_view_reports');
-    _tourSteps = TOUR_STEPS.filter(s => s.id !== 'stats' || canStats);
+    const canPay = _tourIsOwner();
+    _tourSteps = TOUR_STEPS.filter(s => (s.id !== 'stats' || canStats) && (s.id !== 'pay' || canPay));
     _tourInjectStyle();
     if (!_tourEl) {
         _tourEl = document.createElement('div');
@@ -693,6 +867,7 @@ function tourStart() {
         _tourSpacer.id = 'tourSpacer';
         document.body.appendChild(_tourSpacer);
     }
+    document.getElementById('tourDemoBanner')?.remove();
     _tourGo(0);
 }
 function tourNext() {
@@ -704,8 +879,30 @@ function tourPrev() {
     if (!_tourSteps || _tourIdx <= 0) return;
     _tourGo(_tourIdx - 1);
 }
+// Просто убрать карточку (без вопросов)
 function tourClose() {
     if (_tourEl) { _tourEl.remove(); _tourEl = null; }
     if (_tourSpacer) { _tourSpacer.remove(); _tourSpacer = null; }
-    _tourSteps = null; _tourIdx = 0;
+    _tourSteps = null; _tourIdx = 0; _tourDemo = false;
+    try { refreshDemoBanner(); } catch (e) {}
+}
+// Крестик и «назад» в Android: с примерами сначала спрашиваем, удалять ли их
+async function tourCloseBtn() {
+    if (!_tourEl) return;
+    if (!_tourDemo) { tourClose(); return; }
+    const r = await _tourAsk({
+        title: _tt('tour_del_title', 'Удалить примеры?'),
+        text: _tt('tour_del_text', 'Это были учебные данные. Удалить их и начать со своей пекарни? Ваши собственные данные не затрагиваются.'),
+        ok: _tt('tour_delete', 'Удалить примеры'), cancel: _tt('tour_keep', 'Оставить')
+    });
+    if (r === 'back') return; // остаёмся в туре
+    if (r === 'ok') { await tourDeleteDemo(); return; }
+    tourClose();
+}
+function tourKeepDemo() { tourClose(); }
+async function tourDeleteDemo() {
+    tourClose();
+    await clearDemoData();
+    try { showTab('dashboard'); } catch (e) {}
+    try { refreshDemoBanner(); } catch (e) {}
 }

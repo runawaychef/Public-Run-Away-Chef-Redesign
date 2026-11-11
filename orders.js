@@ -214,6 +214,8 @@ function displayOrders() {
     if (typeof positionOrdersViewToggle === 'function') {
         requestAnimationFrame(positionOrdersViewToggle);
     }
+    // Ссылка «Пройти тур по приложению», пока нет своих заказов (demoData.js, 11.11.2026)
+    if (typeof refreshTourOrdersLink === 'function') refreshTourOrdersLink();
 }
 
 // ==================== КАРТОЧНЫЙ ВИД СПИСКА ЗАКАЗОВ ====================

@@ -670,23 +670,14 @@ function openOrgNameSetupModal(owner) {
     // ввёл настоящее название своей пекарни.
     const isPlaceholder = !currentOrgName || currentOrgName === 'Моя пекарня' || currentOrgName === 'My Bakery';
     document.getElementById('orgNameSetupInput').value = isPlaceholder ? '' : currentOrgName;
-    const demoCheckbox = document.getElementById('orgNameSetupDemoCheckbox');
-    if (demoCheckbox) demoCheckbox.checked = false;
     document.getElementById('orgNameSetupModal').style.display = 'flex';
 }
 
 async function saveOrgNameSetup() {
     const name = document.getElementById('orgNameSetupInput').value.trim();
-    const wantsDemo = document.getElementById('orgNameSetupDemoCheckbox')?.checked;
-    // Режим оплаты, выбранный при регистрации (21.10); по умолчанию — «По заказу»
-    const payMode = document.querySelector('input[name="orgSetupPayMode"]:checked')?.value === 'invoice' ? 'invoice' : 'order';
-    if (payMode === 'invoice') {
-        try {
-            await updateChecked(db.from('organizations').update({ payment_mode: 'invoice', invoicing_from: getLocalDateStr(0) }).eq('id', currentOrgId));
-            currentOrgPaymentMode = 'invoice';
-            currentOrgInvoicingFrom = getLocalDateStr(0);
-        } catch (e) { console.error(e); }
-    }
+    // С 11.11.2026: вопрос «Как вы принимаете оплату?» убран с этого экрана (режим по умолчанию «По заказу»,
+    // меняется в Настройки → Информация о компании → Документы и оплата; о нём рассказывает тур),
+    // а примеры предлагаются в туре (tourOfferFirstRun в demoData.js), флажка демо здесь больше нет.
     if (name) {
         try {
             const { error } = await db.from('organizations').update({ name }).eq('id', currentOrgId);
@@ -699,20 +690,6 @@ async function saveOrgNameSetup() {
         }
     }
     const owner = _pendingOwnerForSetup;
-    if (wantsDemo && owner) {
-        showLoading(t('fill_demo_loading'));
-        try {
-            const warnings = await createDemoData(currentOrgId, owner.id);
-            if (warnings && warnings.length) {
-                showInfo(t('fill_demo_success') + '\n\n⚠️ ' + warnings.join('\n⚠️ '));
-            }
-        } catch (e) {
-            console.error(e);
-            showInfo(t('fill_demo_error') + (e && e.message ? e.message : String(e)));
-        } finally {
-            hideLoading();
-        }
-    }
     document.getElementById('orgNameSetupModal').style.display = 'none';
     _pendingOwnerForSetup = null;
     await selectEmployee(owner);
@@ -720,6 +697,8 @@ async function saveOrgNameSetup() {
     // скрыть сплэш, который до этого специально держали фоном под формой
     // приветствия (см. auth.js).
     revealAppReady();
+    // Предложение пройти короткий тур (demoData.js, 11.11.2026)
+    if (typeof tourOfferFirstRun === 'function') setTimeout(() => { tourOfferFirstRun().catch(e => console.error(e)); }, 600);
 }
 
 // Сохранение названия пекарни теперь происходит внутри карточки

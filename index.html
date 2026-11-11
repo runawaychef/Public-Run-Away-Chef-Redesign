@@ -3864,15 +3864,6 @@ function hideSplashScreen() {
                 <h2 class="text-sm font-semibold mb-1 text-gray-800" data-i18n="orders_welcome_title">Добро пожаловать!</h2>
                 <p class="text-xs text-gray-500 mb-3" data-i18n="orders_welcome_desc">Как называется ваша пекарня? Это название будет отображаться в шапке приложения. Изменить его можно позже в настройках.</p>
                 <input id="orgNameSetupInput" type="text" class="border p-1.5 rounded-xl text-sm w-full mb-3" placeholder="Например, Пекарня Анны" data-i18n-placeholder="company_name_placeholder">
-                <label class="flex items-start gap-2 text-xs text-gray-600 mb-3">
-                    <input id="orgNameSetupDemoCheckbox" type="checkbox" checked class="mt-0.5" style="accent-color:#7c9473;">
-                    <span data-i18n="orders_fill_demo_desc">Заполнить примером (6 клиентов, 6 изделий с рецептами, полуфабрикаты, склад с историей за несколько месяцев, около 50 заказов с разными статусами и оплатами) — чтобы сразу посмотреть, как всё выглядит и как считается склад. Позже можно удалить одной кнопкой в настройках.</span>
-                </label>
-                <!-- Режим оплаты (21.10): по умолчанию «По заказу» -->
-                <div class="text-xs font-semibold text-gray-700 mb-1" data-i18n="setup_pay_question">Как вы принимаете оплату?</div>
-                <label class="flex items-start gap-2 text-xs text-gray-600 mb-1.5"><input type="radio" name="orgSetupPayMode" value="order" checked class="mt-0.5" style="accent-color:#7c9473;"><span><b data-i18n="pay_mode_by_order">По заказу</b><span class="block text-[11px] text-gray-400" data-i18n="setup_pay_order_desc">Проще: подходит, если клиенты в основном частные</span></span></label>
-                <label class="flex items-start gap-2 text-xs text-gray-600 mb-1.5"><input type="radio" name="orgSetupPayMode" value="invoice" class="mt-0.5" style="accent-color:#7c9473;"><span><b data-i18n="pay_mode_by_invoice">По счёту</b><span class="block text-[11px] text-gray-400" data-i18n="setup_pay_invoice_desc">Для работы с компаниями: каждая оплата — по счёту</span></span></label>
-                <p class="text-[11px] text-gray-400 mb-3" data-i18n="setup_pay_later">Изменить можно позже в настройках</p>
                 <button onclick="saveOrgNameSetup()" class="pill-btn w-full justify-center" data-i18n="orders_start_working">Начать работу</button>
             </div>
         </div>
@@ -4715,7 +4706,7 @@ function hideSplashScreen() {
             </div>
             <div class="set-list">
                 <button id="settingsBankBtn" onclick="openBankSettings()" class="settings-row-btn set-row perm-owner-only hidden" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10l9-6 9 6M5 10v8m4.7-8v8m4.6-8v8M19 10v8M3 20h18"/></svg><span data-i18n="bank_set_title">Банк</span><svg id="settingsBankChevron" class="set-rchev w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></button>
-                <button type="button" id="tourSettingsBtn" onclick="tourStart()" class="settings-row-btn set-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.5C10.4 5.3 8.2 4.8 5 4.8v12.4c3.2 0 5.4.5 7 1.7m0-12.4c1.6-1.2 3.8-1.7 7-1.7v12.4c-3.2 0-5.4.5-7 1.7m0-12.4v12.4"/></svg><span>Инструкция</span><svg id="tourSettingsChevron" class="set-rchev w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></button>
+                <button type="button" id="tourSettingsBtn" onclick="tourStartFromEntry()" class="settings-row-btn set-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.5C10.4 5.3 8.2 4.8 5 4.8v12.4c3.2 0 5.4.5 7 1.7m0-12.4c1.6-1.2 3.8-1.7 7-1.7v12.4c-3.2 0-5.4.5-7 1.7m0-12.4v12.4"/></svg><span>Инструкция</span><svg id="tourSettingsChevron" class="set-rchev w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></button>
                 <div>
                     <button type="button" id="settingsDataGroupBtn" onclick="document.getElementById('settingsDataGroup').classList.toggle('hidden'); document.getElementById('settingsDataGroupChevron').classList.toggle('rotate-180'); document.getElementById('settingsDataGroupBtn').classList.toggle('active')" class="settings-row-btn set-row w-full justify-between">
                         <span class="flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125"/></svg><span data-i18n="settings_manage_data">Управление данными</span></span>
@@ -5106,7 +5097,7 @@ function hideSplashScreen() {
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=32"></script>
-    <script src="employees.js?v=69"></script>
+    <script src="employees.js?v=70"></script>
     <script src="company.js?v=28"></script>
     <script src="inventory.js?v=80"></script>
     <script src="billing.js?v=19"></script>
@@ -5117,8 +5108,8 @@ function hideSplashScreen() {
 <script src="products.js?v=52"></script>
 <script src="customers.js?v=73"></script>
 <script src="calendar.js?v=17"></script>
-<script src="orders.js?v=159"></script>
-<script src="dashboard.js?v=15"></script>
+<script src="orders.js?v=160"></script>
+<script src="dashboard.js?v=16"></script>
 <script src="invoice.js?v=54"></script>
 <script src="send-document.js?v=43"></script>
 <script src="confirmation.js?v=2"></script>
@@ -5129,7 +5120,7 @@ function hideSplashScreen() {
 <script src="stats.js?v=43"></script>
 <script src="history.js?v=9"></script>
 <script src="modals.js?v=21"></script>
-<script src="demoData.js?v=22"></script>
+<script src="demoData.js?v=23"></script>
 <script src="helpers.js?v=52"></script>
 <script>
 // SUPABASE_URL, SUPABASE_KEY, db перенесены в supabaseClient.js
@@ -6117,6 +6108,7 @@ function _isReallyVisible(el) {
 }
 
 function _hasOpenOverlay() {
+    if (typeof tourAskOpen === 'function' && tourAskOpen()) return true; // окно-вопрос тура (demoData.js)
     if (document.querySelector('.calendar-popup.open')) return true;
     if (_getOpenModalEl()) return true;
     if (_backHandledDetailScreens.some(s => {
@@ -6128,6 +6120,7 @@ function _hasOpenOverlay() {
 }
 
 function _closeTopOverlay() {
+    if (typeof tourAskOpen === 'function' && tourAskOpen()) { tourAskBack(); return; }
     if (document.querySelector('.calendar-popup.open')) {
         if (typeof closeAllCalendarPopups === 'function') closeAllCalendarPopups();
         return;
@@ -6138,7 +6131,7 @@ function _closeTopOverlay() {
         return el?.classList.contains('active') && _isReallyVisible(el);
     });
     if (openDetail) { openDetail.close(); return; }
-    if (typeof tourIsActive === 'function' && tourIsActive()) tourClose();
+    if (typeof tourIsActive === 'function' && tourIsActive()) tourCloseBtn();
 }
 
 // Резервируем большой запас записей в истории браузера сразу при старте — вместо

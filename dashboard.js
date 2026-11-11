@@ -391,6 +391,8 @@ function _dashSpark(r) {
 function renderDashboard() {
     if (!_dashEl('dashboard')) return;
     try { _dashRenderStrip(); } catch (e) { console.error('dashboard: strip', e); }
+    // Плашка «Здесь примеры», пока в организации есть демо-записи (demoData.js, 11.11.2026)
+    try { if (typeof refreshDemoBanner === 'function') refreshDemoBanner(); } catch (e) { console.error('dashboard: demo banner', e); }
     try {
         const saved = _dashSavedOrders();
         const today = getLocalDateStr(0), tomorrow = getLocalDateStr(1);
