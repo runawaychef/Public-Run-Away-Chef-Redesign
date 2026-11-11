@@ -581,3 +581,111 @@ async function refreshDeleteDemoDataVisibility() {
         btn.style.display = 'none'; // при ошибке — безопаснее спрятать, чем показать зря
     }
 }
+
+
+// ==================== ПОШАГОВОЕ РУКОВОДСТВО («ТУР») — ЧАСТЬ A, 11.11.2026 ====================
+// План и решения: claude/onboarding-tour-plan-2026-11-09.md. Часть A: карточка тура и запуск из
+// Настроек («Инструкция»). Карточка висит над нижним меню, экран не затемняет и не блокирует.
+// Тексты пока по-русски (запасной вариант в _tt), полные EN/RU/UK/LT с ключами tour_* — часть C.
+// ОТКАТ: удалить этот блок, строку «Инструкция» (tourSettingsBtn) в index.html и две проверки tourIsActive() в _hasOpenOverlay/_closeTopOverlay.
+const TOUR_STEPS = [
+    { id: 'dash',   tab: 'dashboard',   title: 'Главный экран',   text: 'Весь день на одном экране: заказы, остатки на складе, оплаты и долги.' },
+    { id: 'orders', tab: 'orders',      title: 'Заказы',          text: 'Дата и время выдачи, предупреждение о нехватке ингредиентов, счёт и накладная.' },
+    { id: 'menu',   tab: 'products',    title: 'Меню',            text: 'Изделие с фото и ценой. Рецепт строится вокруг главного ингредиента, а себестоимость пересчитывается сама.' },
+    { id: 'stock',  tab: 'ingredients', title: 'Склад',           text: 'Склад предупредит заранее и покажет, на сколько хватит каждого ингредиента.' },
+    { id: 'cust',   tab: 'customers',   title: 'Клиенты',         text: 'Здесь видно, кто из клиентов сколько вам должен.' },
+    { id: 'stats',  tab: 'stats',       title: 'Статистика',      text: 'Какие клиенты и изделия приносят больше всего.' },
+    { id: 'plans',  tab: 'dashboard',   title: 'Тарифы',          text: 'Первые 7 дней доступны все функции. Дальше бесплатно до 50 заказов. Light снимает лимит и даёт всё для ежедневной работы: заказы, рецепты, склад, клиенты, документы. Для работы Light достаточно. Full добавляет полную статистику по изделиям и клиентам, анализ себестоимости и склада, журнал действий, уведомления и работу в команде.' },
+    { id: 'end',    tab: 'dashboard',   title: 'Готово',          text: 'Тур можно повторить в любой момент: Настройки → Инструкция.' }
+];
+let _tourSteps = null, _tourIdx = 0, _tourEl = null, _tourSpacer = null;
+
+// Запасной русский текст, пока ключей tour_* нет в словарях (часть C).
+function _tt(key, ru) {
+    try { if (typeof t === 'function') { const v = t(key); if (v && v !== key) return v; } } catch (e) {}
+    return ru;
+}
+function tourIsActive() { return !!_tourEl; }
+
+function _tourInjectStyle() {
+    if (document.getElementById('tourStyle')) return;
+    const st = document.createElement('style');
+    st.id = 'tourStyle';
+    st.textContent = `
+#tourCard { position: fixed; left: 50%; transform: translateX(-50%); width: calc(100% - 24px); max-width: calc(42rem - 16px);
+  bottom: calc(max(8px, env(safe-area-inset-bottom)) + 74px); z-index: 160; background: #fff; border: 1px solid #dbe4d3; border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(47,61,42,.22); padding: 12px 8px 8px 18px; box-sizing: border-box; }
+#tourCard .tour-top { display: flex; justify-content: space-between; align-items: flex-start; }
+#tourCard .tour-count { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: #4f6349; padding-top: 4px; }
+#tourCard .tour-dots { display: flex; gap: 4px; margin-top: 6px; }
+#tourCard .tour-dot { height: 6px; width: 6px; border-radius: 3px; background: #d9d4c7; }
+#tourCard .tour-dot.done { background: #5b7552; }
+#tourCard .tour-dot.cur { width: 18px; background: #5b7552; }
+#tourCard .tour-x { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin-top: -6px; border: 0; background: none; border-radius: 12px; color: #6f695d; }
+#tourCard .tour-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 20px; color: #2f3d2a; margin-top: 4px; padding-right: 10px; }
+#tourCard .tour-text { font-size: 14px; line-height: 1.5; color: #4a463e; margin-top: 4px; padding-right: 10px; max-height: 32vh; overflow-y: auto; }
+#tourCard .tour-btns { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+#tourCard .tour-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 20px; border: 0; border-radius: 12px; font-size: 15px; font-weight: 700; }
+#tourCard .tour-prev { background: none; color: #4f6349; padding: 0 14px; }
+#tourCard .tour-next { background: #5b7552; color: #fff; }
+`;
+    document.head.appendChild(st);
+}
+
+function _tourRender() {
+    if (!_tourEl || !_tourSteps) return;
+    const n = _tourSteps.length, s = _tourSteps[_tourIdx];
+    const last = _tourIdx === n - 1;
+    let dots = '';
+    for (let i = 0; i < n; i++) dots += '<span class="tour-dot' + (i < _tourIdx ? ' done' : (i === _tourIdx ? ' cur' : '')) + '"></span>';
+    const esc = (v) => String(v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    _tourEl.innerHTML =
+        '<div class="tour-top"><div><div class="tour-count">' + esc(_tt('tour_step', 'Шаг')) + ' ' + (_tourIdx + 1) + ' ' + esc(_tt('tour_of', 'из')) + ' ' + n + '</div><div class="tour-dots">' + dots + '</div></div>' +
+        '<button type="button" class="tour-x" onclick="tourClose()" aria-label="' + esc(_tt('tour_close', 'Закрыть тур')) + '"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
+        '<div class="tour-title">' + esc(_tt('tour_' + s.id + '_title', s.title)) + '</div>' +
+        '<div class="tour-text">' + esc(_tt('tour_' + s.id + '_text', s.text)) + '</div>' +
+        '<div class="tour-btns"><button type="button" class="tour-btn tour-prev" onclick="tourPrev()" style="visibility:' + (_tourIdx === 0 ? 'hidden' : 'visible') + '">' + esc(_tt('tour_prev', 'Назад')) + '</button>' +
+        '<button type="button" class="tour-btn tour-next" onclick="tourNext()">' + esc(last ? _tt('tour_done', 'Готово') : _tt('tour_next', 'Дальше')) + '</button></div>';
+    // Запас внизу страницы, чтобы карточка не закрывала последние строки при прокрутке
+    if (_tourSpacer) _tourSpacer.style.height = (_tourEl.offsetHeight + 90) + 'px';
+}
+
+function _tourGo(idx) {
+    _tourIdx = idx;
+    const s = _tourSteps[idx];
+    try { showTab(s.tab); } catch (e) { console.error(e); }
+    try { window.scrollTo(0, 0); } catch (e) {}
+    _tourRender();
+}
+
+function tourStart() {
+    // Статистика доступна не всем сотрудникам: без права шаг пропускаем
+    const canStats = (typeof hasPermission !== 'function') || hasPermission('can_view_reports');
+    _tourSteps = TOUR_STEPS.filter(s => s.id !== 'stats' || canStats);
+    _tourInjectStyle();
+    if (!_tourEl) {
+        _tourEl = document.createElement('div');
+        _tourEl.id = 'tourCard';
+        _tourEl.setAttribute('role', 'dialog');
+        _tourEl.setAttribute('aria-label', _tt('tour_aria', 'Тур по приложению'));
+        document.body.appendChild(_tourEl);
+        _tourSpacer = document.createElement('div');
+        _tourSpacer.id = 'tourSpacer';
+        document.body.appendChild(_tourSpacer);
+    }
+    _tourGo(0);
+}
+function tourNext() {
+    if (!_tourSteps) return;
+    if (_tourIdx >= _tourSteps.length - 1) { tourClose(); return; }
+    _tourGo(_tourIdx + 1);
+}
+function tourPrev() {
+    if (!_tourSteps || _tourIdx <= 0) return;
+    _tourGo(_tourIdx - 1);
+}
+function tourClose() {
+    if (_tourEl) { _tourEl.remove(); _tourEl = null; }
+    if (_tourSpacer) { _tourSpacer.remove(); _tourSpacer = null; }
+    _tourSteps = null; _tourIdx = 0;
+}

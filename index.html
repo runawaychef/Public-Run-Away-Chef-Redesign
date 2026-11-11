@@ -4715,6 +4715,7 @@ function hideSplashScreen() {
             </div>
             <div class="set-list">
                 <button id="settingsBankBtn" onclick="openBankSettings()" class="settings-row-btn set-row perm-owner-only hidden" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10l9-6 9 6M5 10v8m4.7-8v8m4.6-8v8M19 10v8M3 20h18"/></svg><span data-i18n="bank_set_title">Банк</span><svg id="settingsBankChevron" class="set-rchev w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></button>
+                <button type="button" id="tourSettingsBtn" onclick="tourStart()" class="settings-row-btn set-row"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.5C10.4 5.3 8.2 4.8 5 4.8v12.4c3.2 0 5.4.5 7 1.7m0-12.4c1.6-1.2 3.8-1.7 7-1.7v12.4c-3.2 0-5.4.5-7 1.7m0-12.4v12.4"/></svg><span>Инструкция</span><svg class="set-rchev w-3.5 h-3.5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></button>
                 <div>
                     <button type="button" id="settingsDataGroupBtn" onclick="document.getElementById('settingsDataGroup').classList.toggle('hidden'); document.getElementById('settingsDataGroupChevron').classList.toggle('rotate-180'); document.getElementById('settingsDataGroupBtn').classList.toggle('active')" class="settings-row-btn set-row w-full justify-between">
                         <span class="flex items-center gap-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125"/></svg><span data-i18n="settings_manage_data">Управление данными</span></span>
@@ -5128,7 +5129,7 @@ function hideSplashScreen() {
 <script src="stats.js?v=43"></script>
 <script src="history.js?v=9"></script>
 <script src="modals.js?v=21"></script>
-<script src="demoData.js?v=19"></script>
+<script src="demoData.js?v=20"></script>
 <script src="helpers.js?v=52"></script>
 <script>
 // SUPABASE_URL, SUPABASE_KEY, db перенесены в supabaseClient.js
@@ -6118,10 +6119,12 @@ function _isReallyVisible(el) {
 function _hasOpenOverlay() {
     if (document.querySelector('.calendar-popup.open')) return true;
     if (_getOpenModalEl()) return true;
-    return _backHandledDetailScreens.some(s => {
+    if (_backHandledDetailScreens.some(s => {
         const el = document.getElementById(s.id);
         return el?.classList.contains('active') && _isReallyVisible(el);
-    });
+    })) return true;
+    // Тур (demoData.js, 11.11.2026): «назад» закрывает карточку тура последней
+    return typeof tourIsActive === 'function' && tourIsActive();
 }
 
 function _closeTopOverlay() {
@@ -6134,7 +6137,8 @@ function _closeTopOverlay() {
         const el = document.getElementById(s.id);
         return el?.classList.contains('active') && _isReallyVisible(el);
     });
-    if (openDetail) openDetail.close();
+    if (openDetail) { openDetail.close(); return; }
+    if (typeof tourIsActive === 'function' && tourIsActive()) tourClose();
 }
 
 // Резервируем большой запас записей в истории браузера сразу при старте — вместо
