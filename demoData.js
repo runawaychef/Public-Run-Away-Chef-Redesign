@@ -632,18 +632,17 @@ function _tourInjectStyle() {
 #tourCard .tour-x { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin-top: -6px; border: 0; background: none; border-radius: 12px; color: #6f695d; }
 #tourCard .tour-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 20px; color: #2f3d2a; margin-top: 4px; padding-right: 10px; }
 #tourCard .tour-text { font-size: 14px; line-height: 1.5; color: #4a463e; margin-top: 4px; padding-right: 10px; max-height: 32vh; overflow-y: auto; }
-#tourCard .tour-plan { margin: 8px 10px 0 0; padding: 8px 12px; background: #f4f1ea; border: 1px solid rgba(90,75,40,.10); border-radius: 12px; }
-#tourCard .tour-plan-row { display: flex; justify-content: space-between; align-items: center; }
-#tourCard .tour-plan-l { font-size: 12px; color: #6f695d; }
-#tourCard .tour-plan-b { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 9999px; }
-#tourCard .tour-plan-u { font-size: 12px; color: #6b675d; margin-top: 3px; }
+#tourPlanPane .tour-plan { padding: 12px 14px; background: #fff; border: 1px solid rgba(90,75,40,.10); border-radius: 14px; }
+#tourPlanPane .tour-plan-row { display: flex; justify-content: space-between; align-items: center; }
+#tourPlanPane .tour-plan-l { font-size: 13px; color: #6f695d; }
+#tourPlanPane .tour-plan-b { font-size: 13px; font-weight: 600; padding: 2px 8px; border-radius: 9999px; }
+#tourPlanPane .tour-plan-u { font-size: 13px; color: #6b675d; margin-top: 3px; }
 #tourCard .tour-btns { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
 .tour-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 20px; border: 0; border-radius: 12px; font-size: 15px; font-weight: 700; }
 .tour-btn.tour-prev { background: none; color: #4f6349; padding: 0 14px; }
 .tour-btn.tour-next { background: #5b7552; color: #fff; }
-#tourBackdrop { position: fixed; inset: 0; z-index: 158; background: #f4f1ea; }
-#tourCard.tour-center { bottom: auto; top: 50%; transform: translate(-50%, -50%); }
-#tourCard.tour-center .tour-text { max-height: 50vh; }
+#tabsWrapper.tour-plan-mode > .tab-content { display: none !important; }
+#tourPlanPane { padding: 4px 0; }
 #tourAsk { position: fixed; inset: 0; z-index: 170; background: rgba(47,61,42,.45); display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
 #tourAsk .ta-box { width: 100%; max-width: 360px; background: #fff; border-radius: 20px; box-shadow: 0 16px 40px rgba(0,0,0,.28); padding: 24px 22px 14px; box-sizing: border-box; }
 #tourAsk .ta-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 23px; color: #2f3d2a; }
@@ -817,6 +816,16 @@ function _tourPlanBox() {
     } catch (e) { return ''; }
 }
 
+function _tourSetPlanPane(on) {
+    const w = document.getElementById('tabsWrapper');
+    let pane = document.getElementById('tourPlanPane');
+    if (!on || !w) { if (pane) pane.remove(); if (w) w.classList.remove('tour-plan-mode'); return; }
+    const box = _tourPlanBox();
+    if (!pane) { pane = document.createElement('div'); pane.id = 'tourPlanPane'; w.insertBefore(pane, w.firstChild); }
+    pane.innerHTML = box;
+    w.classList.add('tour-plan-mode');
+}
+
 function _tourRender() {
     if (!_tourEl || !_tourSteps) return;
     const n = _tourSteps.length, s = _tourSteps[_tourIdx];
@@ -839,17 +848,9 @@ function _tourRender() {
         '<button type="button" class="tour-x" onclick="tourCloseBtn()" aria-label="' + _tourEsc(_tt('tour_close', 'Закрыть тур')) + '"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
         '<div class="tour-title">' + _tourEsc(title) + '</div>' +
         '<div class="tour-text">' + _tourEsc(text) + '</div>' +
-        (s.plan ? _tourPlanBox() : '') +
         '<div class="tour-btns">' + btns + '</div>';
-    // Шаг «Тарифы»: экран приложения не показываем, только карточка по центру на нейтральном фоне
-    let bd = document.getElementById('tourBackdrop');
-    if (s.plan && !demoEnd) {
-        if (!bd) { bd = document.createElement('div'); bd.id = 'tourBackdrop'; document.body.insertBefore(bd, _tourEl); }
-        _tourEl.classList.add('tour-center');
-    } else {
-        if (bd) bd.remove();
-        _tourEl.classList.remove('tour-center');
-    }
+    // Шаг «Тарифы»: в рабочем поле вместо экрана только блок тарифа из Настроек; шапка, нижнее меню и карточка на месте
+    _tourSetPlanPane(!!s.plan && !demoEnd);
     // Запас внизу страницы, чтобы карточка не закрывала последние строки при прокрутке
     if (_tourSpacer) _tourSpacer.style.height = (_tourEl.offsetHeight + 90) + 'px';
 }
@@ -893,7 +894,7 @@ function tourPrev() {
 }
 // Просто убрать карточку (без вопросов)
 function tourClose() {
-    document.getElementById('tourBackdrop')?.remove();
+    _tourSetPlanPane(false);
     if (_tourEl) { _tourEl.remove(); _tourEl = null; }
     if (_tourSpacer) { _tourSpacer.remove(); _tourSpacer = null; }
     _tourSteps = null; _tourIdx = 0; _tourDemo = false;
