@@ -1801,4 +1801,5 @@ I18N.lt = {
         tour_plans_text: "Pirmąsias 7 dienas veikia visos funkcijos. Toliau nemokamai iki 50 užsakymų. Light panaikina limitą ir suteikia viską kasdieniam darbui: užsakymus, receptus, sandėlį, klientus, dokumentus. Darbui pakanka Light. Full prideda pilną gaminių ir klientų statistiką, savikainos ir sandėlio analizę, veiksmų žurnalą, pranešimus ir darbą komandoje.",
         tour_end_title: "Baigta",
         tour_end_text: "Turą galima pakartoti bet kada: Nustatymai → Instrukcija.",
+        tour_plans_hint: "Palieskite, kad pamatytumėte planus",
 };

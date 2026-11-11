@@ -1804,4 +1804,5 @@ I18N.en = {
         tour_plans_text: "All features are available for the first 7 days. After that it is free up to 50 orders. Light removes the limit and covers everything for daily work: orders, recipes, stock, customers, documents. Light is enough to run your bakery. Full adds full statistics on products and customers, cost and stock analysis, an activity log, notifications and teamwork.",
         tour_end_title: "Done",
         tour_end_text: "You can repeat the tour at any time: Settings → Guide.",
+        tour_plans_hint: "Tap to see the plans",
 };

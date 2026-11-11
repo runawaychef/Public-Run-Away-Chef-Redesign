@@ -641,7 +641,10 @@ function _tourInjectStyle() {
 .tour-btn { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 0 20px; border: 0; border-radius: 12px; font-size: 15px; font-weight: 700; }
 .tour-btn.tour-prev { background: none; color: #4f6349; padding: 0 14px; }
 .tour-btn.tour-next { background: #5b7552; color: #fff; }
-#tabsWrapper.tour-plan-mode > .tab-content { display: none !important; }
+#tabsWrapper.tour-plan-mode .tab-content { display: none !important; }
+body.tour-on #planModal { z-index: 165; }
+#tourPlanPane button.tour-plan { display: block; width: 100%; text-align: left; font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+#tourPlanPane .tour-plan-hint { font-size: 12.5px; font-weight: 600; color: #4f6349; margin-top: 8px; }
 #tourPlanPane { padding: 4px 0; }
 #tourAsk { position: fixed; inset: 0; z-index: 170; background: rgba(47,61,42,.45); display: flex; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
 #tourAsk .ta-box { width: 100%; max-width: 360px; background: #fff; border-radius: 20px; box-shadow: 0 16px 40px rgba(0,0,0,.28); padding: 24px 22px 14px; box-sizing: border-box; }
@@ -810,9 +813,10 @@ function _tourPlanBox() {
         const badge = document.getElementById('settingsPlanBadge');
         const usage = document.getElementById('settingsPlanUsage');
         if (!badge || !usage || !badge.textContent || badge.textContent === '—') return '';
-        return '<div class="tour-plan"><div class="tour-plan-row"><span class="tour-plan-l">' + _tourEsc(_tt('settings_tariff', 'Тариф')) + '</span>' +
+        return '<button type="button" class="tour-plan" onclick="openPlanModal()"><div class="tour-plan-row"><span class="tour-plan-l">' + _tourEsc(_tt('settings_tariff', 'Тариф')) + '</span>' +
             '<span class="tour-plan-b" style="' + _tourEsc(badge.style.cssText) + '">' + _tourEsc(badge.textContent) + '</span></div>' +
-            '<div class="tour-plan-u">' + usage.innerHTML + '</div></div>';
+            '<div class="tour-plan-u">' + usage.innerHTML + '</div>' +
+            '<div class="tour-plan-hint">' + _tourEsc(_tt('tour_plans_hint', 'Нажмите, чтобы посмотреть тарифы')) + '</div></button>';
     } catch (e) { return ''; }
 }
 
@@ -870,6 +874,7 @@ function tourStart(opts) {
     const canPay = _tourIsOwner();
     _tourSteps = TOUR_STEPS.filter(s => (s.id !== 'stats' || canStats) && (s.id !== 'pay' || canPay));
     _tourInjectStyle();
+    document.body.classList.add('tour-on');
     if (!_tourEl) {
         _tourEl = document.createElement('div');
         _tourEl.id = 'tourCard';
@@ -895,6 +900,7 @@ function tourPrev() {
 // Просто убрать карточку (без вопросов)
 function tourClose() {
     _tourSetPlanPane(false);
+    document.body.classList.remove('tour-on');
     if (_tourEl) { _tourEl.remove(); _tourEl = null; }
     if (_tourSpacer) { _tourSpacer.remove(); _tourSpacer = null; }
     _tourSteps = null; _tourIdx = 0; _tourDemo = false;
