@@ -1807,4 +1807,6 @@ I18N.en = {
         tour_plans_hint: "Tap to see the plans",
         plan_free_after_trial: "After the 7-day trial",
         tour_docs_note: "Example: this is how the Documents section looks in \"By invoice\" mode.",
+        settings_version_short: "Version",
+        settings_data_sub: "Backups and trash",
 };

@@ -1804,4 +1804,6 @@ I18N.lt = {
         tour_plans_hint: "Palieskite, kad pamatytumėte planus",
         plan_free_after_trial: "Pasibaigus 7 dienų bandomajam laikotarpiui",
         tour_docs_note: "Pavyzdys: taip atrodo skyrius „Dokumentai“ režimu „Pagal sąskaitą“.",
+        settings_version_short: "Versija",
+        settings_data_sub: "Kopijos ir šiukšlinė",
 };
