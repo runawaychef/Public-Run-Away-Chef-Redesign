@@ -316,7 +316,8 @@ function planCardConfig() {
 function planFeatureRowsHtml(planKey) {
     const chk = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
     const dash = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" d="M7 12h10"/></svg>';
-    return planFeatureList().map(f => {
+    const note = planKey === 'free' ? `<div style="font-size:12px;font-weight:600;color:#4f6349;padding:2px 0 6px;">${escapeHtml(t('plan_free_after_trial'))}</div>` : '';
+    return note + planFeatureList().map(f => {
         const included = !!f[planKey];
         return `<div class="nv-fr${included ? '' : ' no'}"><i>${included ? chk : dash}</i><span>${escapeHtml(t(f.key))}</span></div>`;
     }).join('');

@@ -1805,4 +1805,5 @@ I18N.en = {
         tour_end_title: "Done",
         tour_end_text: "You can repeat the tour at any time: Settings → Guide.",
         tour_plans_hint: "Tap to see the plans",
+        plan_free_after_trial: "After the 7-day trial",
 };
