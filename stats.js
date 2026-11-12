@@ -337,6 +337,7 @@ function stclRender() {
         const r = 15, c = 2 * Math.PI * r;
         let off = 0, circles = '';
         parts.forEach(([v, col]) => {
+            if (!(v > 0.0001)) return;   // нулевой сегмент рисует артефакт на стыке
             const l = c * v / total;
             circles += `<circle cx="21" cy="21" r="${r}" fill="none" stroke="${col}" stroke-width="7" stroke-dasharray="${l.toFixed(2)} ${(c - l).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 21 21)"/>`;
             off += l;
@@ -546,6 +547,7 @@ function stpRender() {
     const r = 15, c = 2 * Math.PI * r;
     let off = 0, circles = '';
     parts.forEach(([v, col]) => {
+        if (!(v > 0.0001)) return;   // нулевой сегмент рисует артефакт на стыке
         const l = c * v / total;
         circles += `<circle cx="21" cy="21" r="${r}" fill="none" stroke="${col}" stroke-width="7" stroke-dasharray="${l.toFixed(2)} ${(c - l).toFixed(2)}" stroke-dashoffset="${(-off).toFixed(2)}" transform="rotate(-90 21 21)"/>`;
         off += l;
