@@ -95,7 +95,7 @@ async function probePlayApp() {
     } catch (e) { /* не Play-приложение */ }
 }
 
-// Оплата на сайте (Stripe) видна ТОЛЬКО когда глобальный рубильник
+// Оплата (на сайте Stripe и покупка Google Play) видна ТОЛЬКО когда глобальный рубильник
 // platform_settings.monetization_live = 'true' (или организация защищённая — для тестов
 // владельца). Пока рубильник выключен, кнопок/текстов про оплату на сайте нет ни у кого,
 // в том числе у проверяющих Google (шаг A, 06.11.2026). Любая ошибка чтения = скрыто.
@@ -370,7 +370,8 @@ function renderPlanModalCards() {
         } else if (card.sku && canManage && !overridden) {
             if (playApp) {
                 // Приложение из Google Play: только Google Play Billing (как раньше).
-                if (source !== 'stripe') {
+                // 11.11.2026: пока рубильник оплаты выключен (monetization_live), кнопки покупки Google Play тоже скрыты, как и кнопки сайта
+                if (source !== 'stripe' && webPayVisible()) {
                     actionHtml = `<button type="button" id="planBuyBtn_${card.key}" onclick="event.stopPropagation(); purchasePlan('${card.key}')" class="pill-btn text-xs px-3 py-1.5" disabled style="opacity:0.5;">${escapeHtml(t('plan_coming_soon'))}</button>`;
                 }
             } else if (!source && webPayVisible()) {
@@ -466,6 +467,7 @@ async function refreshPlanModalPrices() {
 async function purchasePlan(planKey) {
     const product = PLAN_PRODUCTS[planKey];
     if (!product) return;
+    if (!webPayVisible()) return; // рубильник оплаты выключен (11.11.2026)
 
     const service = await getBillingService();
     if (!service) {
