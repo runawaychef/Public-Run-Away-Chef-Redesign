@@ -1809,4 +1809,11 @@ I18N.en = {
         tour_docs_note: "Example: this is how the Documents section looks in \"By invoice\" mode.",
         settings_version_short: "Version",
         settings_data_sub: "Backups and trash",
+        stock_note_order: "Order",
+        stock_note_storno_item: "Order item reversal",
+        stock_note_storno_order: "Order reversal",
+        demo_note_purchase: "Demo: raw material purchase",
+        demo_note_consume: "Demo: consumed in production",
+        demo_note_production: "Demo: batch produced",
+        demo_note_shopping: "Demo: restock needed",
 };

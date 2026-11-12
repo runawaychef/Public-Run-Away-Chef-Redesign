@@ -640,7 +640,7 @@ async function loadSfPriceHistory(sf) {
             html += `<tr class="border-b ing-hist-row" ${dataAction('editSfInventoryRecord', [r.id, Number(r.quantity), r.notes || ''])}>
                 <td class="p-0.5">${date}</td>
                 <td class="p-0.5 text-right font-semibold" style="color:${color};">${sign}${Number(r.quantity).toFixed(2)} ${unitLabel}</td>
-                <td class="p-0.5 text-gray-500">${escapeHtml(r.notes || '')}</td>
+                <td class="p-0.5 text-gray-500">${escapeHtml(typeof stockNoteDisplay === 'function' ? stockNoteDisplay(r.notes || '') : (r.notes || ''))}</td>
             </tr>`;
         });
         html += '</tbody></table></div>';

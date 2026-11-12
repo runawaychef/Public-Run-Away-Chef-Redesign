@@ -1806,4 +1806,11 @@ I18N.lt = {
         tour_docs_note: "Pavyzdys: taip atrodo skyrius „Dokumentai“ režimu „Pagal sąskaitą“.",
         settings_version_short: "Versija",
         settings_data_sub: "Kopijos ir šiukšlinė",
+        stock_note_order: "Užsakymas",
+        stock_note_storno_item: "Užsakymo pozicijos atšaukimas",
+        stock_note_storno_order: "Užsakymo atšaukimas",
+        demo_note_purchase: "Pavyzdys: žaliavų pirkimas",
+        demo_note_consume: "Pavyzdys: sunaudota gamyboje",
+        demo_note_production: "Pavyzdys: pagaminta partija",
+        demo_note_shopping: "Pavyzdys: reikia papildyti",
 };

@@ -11,6 +11,19 @@ let ingredients = []; // [{id, name, package_price, package_size, unit}]
 // UNIT_LABELS заменён общей функцией unitAbbrev(code) из inventory.js — единицы
 // измерения переводятся под текущий язык через i18n.js вместо жёсткой русской карты.
 
+// Заметки к движениям склада хранятся в базе на языке записи (по-русски). При показе переводим известные шаблоны на язык интерфейса (11.11.2026).
+function stockNoteDisplay(raw) {
+    const s = String(raw || '');
+    let m;
+    if ((m = s.match(/^Заказ (.+)$/))) return t('stock_note_order') + ' ' + m[1];
+    if ((m = s.match(/^Сторно позиции заказа (.+)$/))) return t('stock_note_storno_item') + ' ' + m[1];
+    if ((m = s.match(/^Сторно заказа (.+)$/))) return t('stock_note_storno_order') + ' ' + m[1];
+    if ((m = s.match(/^Инвентаризация (.+)$/))) return t('ing_inventarization_note') + ' ' + m[1];
+    const demo = { 'Demo: raw material purchase': 'demo_note_purchase', 'Demo: consumed in production': 'demo_note_consume', 'Demo: batch produced': 'demo_note_production', 'Demo: restock needed': 'demo_note_shopping' };
+    if (demo[s]) return t(demo[s]);
+    return s;
+}
+
 function ingredientUnitPrice(ing) {
     if (!ing.package_size) return 0;
     return ing.package_price / ing.package_size;
@@ -979,7 +992,7 @@ async function renderIngredientStockBlock(ing) {
             const isStorno = r.type === 'сторно';
             const sign = isIn || isStorno ? '+' : '−';
             const color = isIn ? 'color:#4f6349;' : isStorno ? 'color:#7c9473;' : (cat === 'order' ? 'color:#96712a;' : 'color:#c0685c;');
-            const notes = escapeHtml(r.notes || '')
+            const notes = escapeHtml(stockNoteDisplay(r.notes || ''))
                 .replace('Корректировка: ', '').replace('Закупка ', '')
                 .replace(t('ing_adjustment_note') + ': ', '').replace(t('ing_purchase_note') + ' ', '');
             const rowCat = isStorno ? 'order' : cat; // сторно фильтруется вместе с заказами

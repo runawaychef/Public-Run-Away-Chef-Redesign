@@ -1808,4 +1808,11 @@ I18N.ru = {
         tour_docs_note: "Пример: так выглядит раздел «Документы» в режиме «По счёту».",
         settings_version_short: "Версия",
         settings_data_sub: "Копии и корзина",
+        stock_note_order: "Заказ",
+        stock_note_storno_item: "Сторно позиции заказа",
+        stock_note_storno_order: "Сторно заказа",
+        demo_note_purchase: "Пример: закупка сырья",
+        demo_note_consume: "Пример: расход в производстве",
+        demo_note_production: "Пример: партия произведена",
+        demo_note_shopping: "Пример: нужно докупить",
 };

@@ -1806,4 +1806,11 @@ I18N.uk = {
         tour_docs_note: "Приклад: так виглядає розділ «Документи» в режимі «За рахунком».",
         settings_version_short: "Версія",
         settings_data_sub: "Копії та кошик",
+        stock_note_order: "Замовлення",
+        stock_note_storno_item: "Сторно позиції замовлення",
+        stock_note_storno_order: "Сторно замовлення",
+        demo_note_purchase: "Приклад: закупівля сировини",
+        demo_note_consume: "Приклад: витрата у виробництві",
+        demo_note_production: "Приклад: партію вироблено",
+        demo_note_shopping: "Приклад: потрібно докупити",
 };
