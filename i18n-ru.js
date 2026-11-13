@@ -1734,7 +1734,7 @@ I18N.ru = {
         dash_profit: 'Прибыль: {sum}',
         dash_expiry: 'Срок годности',
         dash_soon: 'скоро',
-        dash_stock_title: 'Склад: внимание',
+        dash_stock_title: 'Склад: контроль',
         dash_short: 'Не хватает',
         dash_full_only: 'Доступно на тарифе Full',
         dash_acc_s: 'Принятые',
