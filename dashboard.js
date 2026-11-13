@@ -147,6 +147,12 @@ function _dashLoadDue(force) {
 function _dashStockFull() {
     try { return hasPlanFeature('cost_analytics'); } catch (e) { return false; }
 }
+// Плитка «Склад: контроль» на Free и Light (13.11.2026): нажатие — окно «доступно на Full» вместо перехода на «Склад»
+async function dashStockCardTap() {
+    if (_dashStockFull()) return;
+    const ok = await showConfirm(t('dash_stock_locked_text'), { ok: t('lock_btn_plans'), cancel: t('lock_btn_close') });
+    if (ok && typeof openPlanModal === 'function') openPlanModal();
+}
 function dashOpenIngredients() {
     stockLowOnlyIng = _dashStockFull();
     _dashEnteringStock = true;
@@ -530,6 +536,7 @@ function renderDashboard() {
         // Full: большая цифра «не хватает» + два счётчика; Light/Free: «—» и строка «Доступно на тарифе Full»
         ['dashRowIng', 'dashRowSemi'].forEach(id => { const el = _dashEl(id); if (el) el.style.display = full ? '' : 'none'; });
         const lock = _dashEl('dashStockLock'); if (lock) lock.style.display = full ? 'none' : '';
+        const stockCard = _dashEl('dashStockCard'); if (stockCard) stockCard.classList.toggle('dash-stock-locked', !full);
         if (full) {
             const s = _dashStock();
             const tot = s.ing + s.sf;

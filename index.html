@@ -1429,6 +1429,11 @@
         .dc-row .dash-sk { height: 14px; width: 22px; }
         .dc-row span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .dc-small { font-size: 11px; color: #8d887b; font-weight: 600; }
+        /* Плитка «Склад: контроль» на Free и Light (13.11.2026): приглушена, как закрытые плитки в Настройках */
+        #dashStockCard.dash-stock-locked { cursor: pointer; }
+        #dashStockCard.dash-stock-locked .dashboard-card__hd { --dc: #a29c8c; opacity: .75; }
+        #dashStockCard.dash-stock-locked .dc-val { opacity: .5; }
+        #dashStockCard.dash-stock-locked .dc-lock { display: flex; align-items: center; gap: 5px; color: #8d887b; background: #f1eee6; font-weight: 600; }
         .dc-lock { font-size: 10.5px; font-weight: 700; color: #4f6349; background: #eef2ea; border-radius: 9px; padding: 5px 6px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; -webkit-tap-highlight-color: transparent; }
         .dc-delta { font-size: 11.7px; font-weight: 600; color: #8d887b; white-space: nowrap; }
         .dc-delta b { color: #4f6349; font-weight: 700; } .dc-delta b.neg { color: #a3493d; }
@@ -2677,13 +2682,13 @@ function hideSplashScreen() {
                         <div class="dc-mid dc-today-mid"><div class="dc-leg" id="dashTodayLeg"></div><div class="dc-ring" id="dashTodayRing"></div></div>
                         <div class="dc-foot" id="dashTodaySub">&nbsp;</div>
                     </div>
-                    <div class="dashboard-card dc2 dashboard-card--stock">
+                    <div class="dashboard-card dc2 dashboard-card--stock" id="dashStockCard" onclick="dashStockCardTap()">
                         <div class="dashboard-card__hd dash-c-stock"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M4 7.5L12 12l8-4.5M12 12v9"/></svg><div class="dashboard-card__label" data-i18n="dash_stock_title">Склад: контроль</div></div>
                         <div class="dc-val"><span class="dashboard-card__value" id="dashStockTotal"><span class="dash-sk"></span></span></div>
                         <div class="dc-mid">
                             <div class="dc-row" id="dashRowIng" role="button" tabindex="0" onclick="dashOpenIngredients()"><span data-i18n="dash_ingredients">Ингредиенты</span><span class="dashboard-card__value" id="dashIngredients"><span class="dash-sk"></span></span></div>
                             <div class="dc-row" id="dashRowSemi" role="button" tabindex="0" onclick="dashOpenSemiFinished()"><span data-i18n="dash_semi">Полуфабрикаты</span><span class="dashboard-card__value" id="dashSemi"><span class="dash-sk"></span></span></div>
-                            <div class="dc-lock" id="dashStockLock" role="button" tabindex="0" onclick="dashOpenIngredients()" style="display:none" data-i18n="dash_full_only">Доступно на тарифе Full</div>
+                            <div class="dc-lock" id="dashStockLock" style="display:none"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><span data-i18n="dash_full_only">На тарифе Full</span></div>
                         </div>
                         <div class="dc-foot dc-foot--stub" id="dashExpiryFoot">&nbsp;</div>
                     </div>
@@ -5118,7 +5123,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=12"></script>
-    <script src="i18n-core.js?v=180"></script>
+    <script src="i18n-core.js?v=181"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=32"></script>
@@ -5134,7 +5139,7 @@ function hideSplashScreen() {
 <script src="customers.js?v=75"></script>
 <script src="calendar.js?v=17"></script>
 <script src="orders.js?v=165"></script>
-<script src="dashboard.js?v=23"></script>
+<script src="dashboard.js?v=24"></script>
 <script src="invoice.js?v=55"></script>
 <script src="send-document.js?v=44"></script>
 <script src="confirmation.js?v=2"></script>

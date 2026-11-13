@@ -1733,7 +1733,7 @@ I18N.lt = {
         dash_soon: 'netrukus',
         dash_stock_title: 'Sandėlis: dėmesio',
         dash_short: 'Trūksta',
-        dash_full_only: 'Galima Full plane',
+        dash_full_only: "Full plane",
         dash_acc_s: 'Priimti',
         dash_later: 'Vėliau',
         dash_more: 'dar {n}',
@@ -1831,4 +1831,5 @@ I18N.lt = {
         lock_btn_plans: "Peržiūrėti planus",
         lock_btn_close: "Uždaryti",
         plan_feat_memo: "Ypatingos klientų datos",
+        dash_stock_locked_text: "„Sandėlis: dėmesio“ galimas Full plane. Plytelė rodo, kokių ingredientų trūksta užsakymams ir kam netrukus baigsis tinkamumo laikas.",
 };

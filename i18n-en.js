@@ -1736,7 +1736,7 @@ I18N.en = {
         dash_soon: 'soon',
         dash_stock_title: 'Stock alerts',
         dash_short: 'Running low',
-        dash_full_only: 'Available on the Full plan',
+        dash_full_only: "On the Full plan",
         dash_acc_s: 'Accepted',
         dash_later: 'Later',
         dash_more: '+{n} more',
@@ -1834,4 +1834,5 @@ I18N.en = {
         lock_btn_plans: "View plans",
         lock_btn_close: "Close",
         plan_feat_memo: "Customer special dates",
+        dash_stock_locked_text: "\"Stock alerts\" is available on the Full plan. The tile shows which ingredients you are short of for orders and what is about to expire.",
 };

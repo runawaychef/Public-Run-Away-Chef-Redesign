@@ -1733,7 +1733,7 @@ I18N.uk = {
         dash_soon: 'скоро',
         dash_stock_title: 'Склад: увага',
         dash_short: 'Не вистачає',
-        dash_full_only: 'Доступно на тарифі Full',
+        dash_full_only: "На тарифі Full",
         dash_acc_s: 'Прийняті',
         dash_later: 'Пізніше',
         dash_more: 'ще {n}',
@@ -1831,4 +1831,5 @@ I18N.uk = {
         lock_btn_plans: "Переглянути тарифи",
         lock_btn_close: "Закрити",
         plan_feat_memo: "Особливі дати клієнтів",
+        dash_stock_locked_text: "«Склад: увага» доступний на тарифі Full. Плитка показує, яких інгредієнтів не вистачає для замовлень і в чого скоро спливає термін придатності.",
 };

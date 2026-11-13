@@ -1735,7 +1735,7 @@ I18N.ru = {
         dash_soon: 'скоро',
         dash_stock_title: 'Склад: контроль',
         dash_short: 'Не хватает',
-        dash_full_only: 'Доступно на тарифе Full',
+        dash_full_only: "На тарифе Full",
         dash_acc_s: 'Принятые',
         dash_later: 'Позже',
         dash_more: 'ещё {n}',
@@ -1833,4 +1833,5 @@ I18N.ru = {
         lock_btn_plans: "Посмотреть тарифы",
         lock_btn_close: "Закрыть",
         plan_feat_memo: "Особые даты клиентов",
+        dash_stock_locked_text: "«Склад: контроль» доступен на тарифе Full. Плитка показывает, каких ингредиентов не хватает для заказов и у чего скоро истекает срок годности.",
 };
