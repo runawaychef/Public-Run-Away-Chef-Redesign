@@ -1823,7 +1823,7 @@ I18N.lt = {
         dash_leg_accepted: "Priimta",
         dash_leg_progress: "Vykdoma",
         dash_leg_done: "Atlikta",
-        customers_payment_term_hint: "Pagal tai skaičiuojamas užsakymų apmokėjimo terminas: užsakymo data + atidėjimas. Tuščia — 7 dienos, 0 — apmokėti užsakymo dieną.",
+        customers_payment_term_hint: "Pagal tai skaičiuojamas užsakymų apmokėjimo terminas: užsakymo data + atidėjimas. Tuščia — 7 dienos (fiziniam asmeniui — užsakymo dieną), 0 — apmokėti užsakymo dieną.",
         cust_req_term_zero: "apmokėti užsakymo dieną",
         order_due_auto_n: "auto · {n} d.",
 };

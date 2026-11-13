@@ -849,7 +849,8 @@ function calcGroupTotals(allOrders, predicate) {
 // как при выставлении счёта). Ручное значение сильнее; сброс календарём («очистить») возвращает автоматический срок.
 function orderAutoTerm(o) {
     const cust = (typeof customers !== 'undefined' ? customers : []).find(c => c.id === (o && o.customer_id));
-    const term = (cust && cust.payment_term_days != null) ? Number(cust.payment_term_days) : 7;
+    // не задана у клиента: физлицо платит в день заказа (0), всё остальное — 7 дней (13.11.2026)
+    const term = (cust && cust.payment_term_days != null) ? Number(cust.payment_term_days) : ((cust && cust.entity_type === 'individual') ? 0 : 7);
     return isNaN(term) ? 7 : term;
 }
 function orderAutoDue(o) {

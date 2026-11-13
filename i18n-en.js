@@ -1826,7 +1826,7 @@ I18N.en = {
         dash_leg_accepted: "Accepted",
         dash_leg_progress: "In progress",
         dash_leg_done: "Done",
-        customers_payment_term_hint: "Order due date = order date + this term. Empty — 7 days, 0 — due on the order date.",
+        customers_payment_term_hint: "Order due date = order date + this term. Empty — 7 days (individuals: due on the order date), 0 — due on the order date.",
         cust_req_term_zero: "due on order date",
         order_due_auto_n: "auto · {n} d",
 };
