@@ -88,12 +88,55 @@ function dashOpenAccepted() {
 // «Заказы на сегодня» / «на завтра» → список за этот день (дата заказа, часовой пояс пекарни)
 function dashOpenToday() { _dashOpenDay(getLocalDateStr(0)); }
 function dashOpenTomorrow() { _dashOpenDay(getLocalDateStr(1)); }
-// «Ждут оплаты» → отдельная страница: итог, «Просрочено / Частично оплачены / В срок» (12.11.2026)
+// «Ждут оплаты» → отдельная страница: итог + неоплаченные заказы по клиентам (12.11.2026)
+let _dupOpen = new Set(), _dupAllOpen = false;
 function dashOpenUnpaid() {
+    _dupOpen = new Set(); _dupAllOpen = false;
     openAppPage('dashUnpaidPage');
     dashRenderUnpaid();
+    _dashLoadDue(true).then(ch => { if (ch) dashRenderUnpaid(); });
 }
 (window._appPageOnShow = window._appPageOnShow || {}).dashUnpaidPage = () => dashRenderUnpaid();
+
+// Срок оплаты заказа — как в «Документах»: срок сводного счёта, иначе срок счёта заказа, иначе срок, вписанный в заказе.
+// Сроки счетов в памяти приложения не лежат — берём лёгким запросом только по неоплаченным заказам (кэш на 30 с).
+let _dashDue = { map: {}, at: 0, busy: null };
+function _dashDueOf(o) { return (_dashDue.map[o.id] !== undefined ? _dashDue.map[o.id] : null) || o.due_date || null; }
+function _dashLoadDue(force) {
+    if (typeof db === 'undefined' || typeof currentOrgId === 'undefined' || !currentOrgId) return Promise.resolve(false);
+    if (_dashDue.busy) return _dashDue.busy;
+    if (!force && Date.now() - _dashDue.at < 30000) return Promise.resolve(false);
+    const unpaid = _dashSavedOrders().filter(o => getOrderPaymentStatus(o).status !== 'paid');
+    const chunk = (a, n) => { const r = []; for (let k = 0; k < a.length; k += n) r.push(a.slice(k, k + n)); return r; };
+    _dashDue.busy = (async () => {
+        try {
+            const map = {};
+            const ids = unpaid.map(o => o.id);
+            const invRows = [];
+            for (const part of chunk(ids, 150)) {
+                const { data, error } = await db.from('orders').select('id, inv_due_date, consolidated_invoice_id').eq('org_id', currentOrgId).in('id', part);
+                if (error) throw error;
+                (data || []).forEach(r => invRows.push(r));
+            }
+            const consIds = [...new Set(invRows.map(r => r.consolidated_invoice_id).filter(Boolean))];
+            const cons = {};
+            for (const part of chunk(consIds, 150)) {
+                const { data, error } = await db.from('consolidated_invoices').select('id, due_date, cancelled_at').eq('org_id', currentOrgId).in('id', part);
+                if (error) throw error;
+                (data || []).forEach(c => { if (!c.cancelled_at) cons[c.id] = c.due_date || null; });
+            }
+            invRows.forEach(r => { map[r.id] = (r.consolidated_invoice_id && cons[r.consolidated_invoice_id]) || r.inv_due_date || null; });
+            const prev = JSON.stringify(_dashDue.map);
+            _dashDue.map = map; _dashDue.at = Date.now();
+            return prev !== JSON.stringify(map);
+        } catch (e) {
+            console.error('dashboard: сроки счетов', e);
+            _dashDue.at = Date.now();
+            return false;
+        } finally { _dashDue.busy = null; }
+    })();
+    return _dashDue.busy;
+}
 
 function _dashDayDiff(fromIso, toIso) {
     const a = Date.parse(fromIso + 'T12:00:00'), b = Date.parse(toIso + 'T12:00:00');
@@ -105,10 +148,10 @@ function _dashUnpaidItems() {
     _dashSavedOrders().forEach(o => {
         const st = getOrderPaymentStatus(o);
         if (st.status === 'paid') return;
-        const remC = Math.max(0, Math.round(st.grandAmt * 100) - Math.round(st.paidAmt * 100));
-        out.push({ o, remC, grandC: Math.round(st.grandAmt * 100), paidC: Math.round(st.paidAmt * 100),
-            partial: st.status === 'partial', over: !!st.overdue, due: o.due_date || null,
-            overDays: st.overdue ? _dashDayDiff(o.due_date, today) : 0 });
+        const due = _dashDueOf(o);
+        const over = !!due && due < today;
+        out.push({ o, remC: Math.max(0, Math.round(st.grandAmt * 100) - Math.round(st.paidAmt * 100)), grandC: Math.round(st.grandAmt * 100),
+            paidC: Math.round(st.paidAmt * 100), partial: st.status === 'partial', over, due, overDays: over ? _dashDayDiff(due, today) : 0 });
     });
     return out;
 }
@@ -117,35 +160,53 @@ function dashUnpaidOpenOrder(id) {
     if (typeof showTab === 'function') showTab('orders');
     if (typeof openOrderDetail === 'function') openOrderDetail(id);
 }
+function dashUnpaidToggle(key) {
+    if (_dupOpen.has(key)) _dupOpen.delete(key); else _dupOpen.add(key);
+    dashRenderUnpaid();
+}
+function dashUnpaidToggleAll() { _dupAllOpen = !_dupAllOpen; _dupOpen = new Set(); dashRenderUnpaid(); }
 function dashRenderUnpaid() {
     const box = document.getElementById('dashUnpaidBody');
     if (!box) return;
     const all = _dashUnpaidItems();
+    if (!all.length) { box.innerHTML = `<p class="dup-empty">${escapeHtml(t('docs2_wait_empty'))}</p>`; return; }
     const sumC = a => a.reduce((s, u) => s + u.remC, 0);
     const money = c => escapeHtml(formatMoney(c / 100));
-    const over = all.filter(u => u.over).sort((a, b) => b.overDays - a.overDays);
-    const part = all.filter(u => u.partial && !u.over).sort((a, b) => b.remC - a.remC);
-    const wait = all.filter(u => !u.over && !u.partial).sort((a, b) => String(a.due || '9999').localeCompare(String(b.due || '9999')) || String(a.o.date).localeCompare(String(b.o.date)));
-    if (!all.length) { box.innerHTML = `<p class="dup-empty">${escapeHtml(t('docs2_wait_empty'))}</p>`; return; }
-    const partAll = all.filter(u => u.partial);
+    const over = all.filter(u => u.over), partAll = all.filter(u => u.partial);
     let html = `<div class="dup-sum"><div class="dup-sum__top"><b>${money(sumC(all))}</b><span>${all.length} ${escapeHtml(nWord(all.length, 'word_orders'))}</span></div>`
         + `<small>${escapeHtml(t('dash_up_rest'))}</small>`
         + (over.length ? `<div class="dup-sum__row red"><span>${escapeHtml(t('docs_tile_over'))}</span><b>${money(sumC(over))} · ${over.length}</b></div>` : '')
         + (partAll.length ? `<div class="dup-sum__row"><span>${escapeHtml(t('docs2_partial_t'))}</span><b>${money(sumC(partAll))} · ${partAll.length}</b></div>` : '')
         + `</div>`;
-    const card = (u, cls) => {
+    // Группы по клиентам: сначала те, у кого есть просроченные, затем по размеру долга
+    const groups = new Map();
+    all.forEach(u => {
+        const k = String(u.o.customer_id != null ? u.o.customer_id : ('n:' + (u.o.customer || '')));
+        if (!groups.has(k)) groups.set(k, { key: k, name: u.o.customer || t('orders_no_customer'), items: [], sumC: 0, over: 0 });
+        const g = groups.get(k); g.items.push(u); g.sumC += u.remC; if (u.over) g.over++;
+    });
+    const gl = [...groups.values()].sort((a, b) => (b.over > 0) - (a.over > 0) || b.sumC - a.sumC);
+    const order = (a, b) => (b.over - a.over) || String(a.due || '9999').localeCompare(String(b.due || '9999')) || String(a.o.date).localeCompare(String(b.o.date));
+    const row = u => {
         const o = u.o;
-        let note;
-        if (u.over) note = `<span class="red">${escapeHtml(t('docs_overdue_days').replace('{n}', u.overDays))}</span>`;
-        else if (u.partial) note = escapeHtml(t('dash_up_paid_of').replace('{a}', formatMoney(u.paidC / 100)).replace('{b}', formatMoney(u.grandC / 100)));
-        else if (u.due) { const p = String(u.due).split('-'); note = escapeHtml(t('docs_due_till').replace('{d}', p.length === 3 ? p[2] + '.' + p[1] : u.due)); }
-        else note = escapeHtml(t('dash_up_no_due'));
-        return `<div class="dup-card ${cls}" role="button" tabindex="0" onclick="dashUnpaidOpenOrder(${o.id})">`
-            + `<div class="dup-card__t"><b>${escapeHtml(o.customer || t('orders_no_customer'))}</b><b>${money(u.remC)}</b></div>`
-            + `<div class="dup-card__s"><span>${escapeHtml(t('docs2_order').replace('{n}', o.order_number || ('#' + o.id)))} · ${escapeHtml(formatDateDMY(o.date))}</span><span>${note}</span></div></div>`;
+        let due = '';
+        if (u.over) due = `<div class="red">${escapeHtml(t('docs_overdue_days').replace('{n}', u.overDays))}</div>`;
+        else if (u.due) { const p = String(u.due).split('-'); due = `<div>${escapeHtml(t('docs_due_till').replace('{d}', p.length === 3 ? p[2] + '.' + p[1] : u.due))}</div>`; }
+        const part = u.partial ? `<div class="c"><span class="d2gold">${escapeHtml(t('dash_up_paid_of').replace('{a}', formatMoney(u.paidC / 100)).replace('{b}', formatMoney(u.grandC / 100)))}</span></div>` : '';
+        return `<div class="d2o" onclick="dashUnpaidOpenOrder(${o.id})"><div class="l"><div class="a">${escapeHtml(t('docs2_order').replace('{n}', o.order_number || ('#' + o.id)))}</div>`
+            + `<div class="b">${escapeHtml(formatDateDMY(o.date))}</div>${part}</div><div class="r"><b>${escapeHtml(formatMoney(u.remC / 100))}</b>${due}</div></div>`;
     };
-    const sec = (arr, label, cls) => arr.length ? `<div class="dup-h ${cls}"><span>${escapeHtml(label)}</span><span>${money(sumC(arr))}</span></div>${arr.map(u => card(u, cls)).join('')}` : '';
-    html += sec(over, t('docs_tile_over'), 'red') + sec(part, t('docs2_partial_t'), 'gold') + sec(wait, t('docs2_in_term'), 'green');
+    const BTN = _dupAllOpen
+        ? '<path d="M5 15l7-7 7 7"/>' : '<path d="M5 9l7 7 7-7"/>';
+    html += `<div style="display:flex;justify-content:flex-end;margin:0 2px 8px"><button type="button" class="view-toggle-btn${_dupAllOpen ? ' active' : ''}" onclick="dashUnpaidToggleAll()" title="${escapeHtml(t(_dupAllOpen ? 'docs2_collapse' : 'docs2_expand'))}" style="width:40px;height:36px"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${BTN}</svg></button></div>`;
+    html += gl.map(g => {
+        const open = _dupAllOpen || _dupOpen.has(g.key);
+        const body = open ? g.items.slice().sort(order).map(row).join('') : '';
+        const sub = `${g.items.length} ${escapeHtml(nWord(g.items.length, 'word_orders'))}` + (g.over ? ` · <span class="dup-redtxt">${escapeHtml(t('docs_tile_over')).toLowerCase()} ${g.over}</span>` : '');
+        return `<div class="d2g"><div class="d2gh" data-k="${escapeHtml(g.key)}" onclick="dashUnpaidToggle(this.getAttribute('data-k'))">`
+            + `<span class="ch">${open ? '&#8964;' : '&rsaquo;'}</span><div class="nm"><b>${escapeHtml(g.name)}</b><small>${sub}</small></div>`
+            + `<span class="sm${g.over ? ' red' : ''}">${money(g.sumC)}</span></div>${body}</div>`;
+    }).join('');
     box.innerHTML = html;
 }
 
@@ -201,7 +262,7 @@ function _dashUnpaid(saved) {
         if (st.status === 'paid') return;
         n++;
         remC += Math.max(0, Math.round(st.grandAmt * 100) - Math.round(st.paidAmt * 100));
-        if (st.overdue) overdue++;
+        if (_dashDueOf(o) && _dashDueOf(o) < getLocalDateStr(0)) overdue++;
         if (byInvoice && !orderHasInvoice(o)) noInvoice++;
     });
     return { n, rem: remC / 100, overdue, noInvoice, byInvoice };
@@ -507,11 +568,12 @@ function renderDashboard() {
         _dashSet('dashUnpaid', String(u.n));
         _dashSet('dashUnpaidSub', u.n ? `${escapeHtml(t('dash_to_pay_s'))}<span> · ${_dashMoney(u.rem)}</span>` : '&nbsp;');
         let overSum = 0;
-        saved.forEach(o => { const st = getOrderPaymentStatus(o); if (st.status !== 'paid' && st.overdue) overSum += Math.max(0, st.grandAmt - st.paidAmt); });
+        saved.forEach(o => { const st = getOrderPaymentStatus(o); const dd = _dashDueOf(o); if (st.status !== 'paid' && dd && dd < getLocalDateStr(0)) overSum += Math.max(0, st.grandAmt - st.paidAmt); });
         _dashSet('dashOverLine', u.overdue ? `${escapeHtml(t('docs_tile_over'))} · ${_dashMoney(overSum)} · ${u.overdue}` : '');
         const debtor = u.n ? _dashTopDebtor(saved) : null;
         _dashSet('dashDebtLbl', debtor ? escapeHtml(t('dash_biggest')) : '&nbsp;');
         _dashSet('dashDebtName', debtor ? escapeHtml(debtor.name) : '&nbsp;');
+        if (u.n && !_dashDue.busy && Date.now() - _dashDue.at >= 30000) _dashLoadDue(false).then(ch => { if (ch) renderDashboard(); });
         _dashSet('dashDebtSum', debtor ? _dashMoney(debtor.rem) : '');
     } catch (e) {
         console.error('dashboard: orders', e);
