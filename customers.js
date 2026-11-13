@@ -748,7 +748,7 @@ function onCustomerCalDayPicked(iso) {
     const memos = memoDatesForDay(currentCustomerId, d.getFullYear(), d.getMonth() + 1, d.getDate());
     document.getElementById('customerDayMemo').innerHTML = memos.length
         ? `<div class="memo-day-box">${memos.map(x => _memoItemHtml(x.m, { past: x.past, onTap: `openMemoEdit(${x.m.id}, 'day')`, whenHtml: `<span style="color:#4f6349;font-weight:600;">${t('memo_edit')}</span>` })).join('')}</div>` : '';
-    document.getElementById('customerDayAddMemoBtn').style.display = memos.length ? 'none' : '';
+    document.getElementById('customerDayAddMemoBtn').style.display = (memos.length || !memoAllowed()) ? 'none' : '';
     const body = document.getElementById('customerDayBody');
     body.innerHTML = dayOrders.length ? _custOrdersTableHtml(dayOrders.map(_cdDayOrderHtml).join(''))
         : `<p class="text-xs text-gray-400" style="margin:4px 0 8px;">${t('cust_day_no_orders')}</p>`;
@@ -789,13 +789,47 @@ let _memoEditId = null;      // null — новая дата
 let _memoReturn = null;      // 'list' | 'day' — куда вернуться после сохранения
 let _memoYearly = true;
 
+// «Особые даты» — функция тарифа Full (13.11.2026). На Free и Light данные в базе остаются, но не загружаются
+// в память (memoDates пуст), поэтому метки, баннер Dashboard, календарь и список клиентов их не показывают.
+// ОТКАТ: убрать 'memo' из PLAN_FEATURES.full не нужно — вернуть memoAllowed() => true.
+function memoAllowed() {
+    try { return typeof hasPlanFeature !== 'function' || hasPlanFeature('memo'); } catch (e) { return true; }
+}
+async function memoShowLocked() {
+    const ok = await showConfirm(t('memo_locked_text'), { ok: t('lock_btn_plans'), cancel: t('lock_btn_close') });
+    if (ok && typeof openPlanModal === 'function') openPlanModal();
+}
+let _memoLoadedAllowed = null; // с каким тарифным доступом загружены даты
 async function loadMemoDates(force) {
     if (_memoLoaded === currentOrgId && !force) return;
-    const { data, error } = await db.from('customer_memo_dates').select('*').eq('org_id', currentOrgId);
-    if (error) { console.error(error); return; }
-    memoDates = data || [];
+    const allowed = memoAllowed();
+    let rows = [];
+    if (allowed) {
+        const { data, error } = await db.from('customer_memo_dates').select('*').eq('org_id', currentOrgId);
+        if (error) { console.error(error); return; }
+        rows = data || [];
+    }
+    memoDates = rows;
     _memoLoaded = currentOrgId;
+    _memoLoadedAllowed = allowed;
     memoRefreshViews();
+}
+// Вызывается из applyPlanGating(): замки на плитке и кнопке, перезагрузка дат при смене доступа
+function memoApplyGating() {
+    const ok = memoAllowed();
+    document.querySelectorAll('[onclick^="openCustomerMemoDates"]').forEach(b => b.classList.toggle('memo-locked', !ok));
+    const tile = document.getElementById('settingsMemoGroupBtn');
+    if (tile) tile.classList.toggle('memo-locked', !ok);
+    if (!ok) {
+        document.getElementById('settingsMemoGroup')?.classList.add('hidden');
+        tile?.classList.remove('active');
+    }
+    document.getElementById('memoRemindDaysShort')?.classList.toggle('hidden', !ok);
+    document.getElementById('memoLockedShort')?.classList.toggle('hidden', ok);
+    if (_memoLoaded !== null && _memoLoadedAllowed !== ok && typeof currentOrgId !== 'undefined' && currentOrgId) {
+        _memoLoaded = null;
+        loadMemoDates(true);
+    }
 }
 
 // ===== Напоминания (шаг 3, 17.10): метка в карточке клиента и баннер в «Заказах» =====
@@ -981,6 +1015,7 @@ function ordersDayMemoStripHtml() {
 
 // Список памятных дат клиента (кнопка на странице клиента)
 async function openCustomerMemoDates() {
+    if (!memoAllowed()) { memoShowLocked(); return; }
     const cust = customers.find(c => c.id === currentCustomerId);
     if (!cust) return;
     showLoading();
@@ -1011,6 +1046,7 @@ function closeMemoList() { document.getElementById('memoListModal').style.displa
 
 // Окно «Памятная дата»: preset — {day, month, year} для новой даты из календаря
 function openMemoEdit(id, ret, preset) {
+    if (!memoAllowed()) { memoShowLocked(); return; }
     const m = id != null ? memoDates.find(x => x.id === id) : null;
     // Из «Заказов» дата открывается без страницы клиента — клиента берём из самой даты
     const cust = customers.find(c => c.id === (m ? m.customer_id : currentCustomerId));

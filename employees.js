@@ -94,7 +94,7 @@ function hasVat() {
 const PLAN_FEATURES = {
     free: [],
     light: [],
-    full: ['stats', 'cost_analytics', 'activity_log', 'team', 'push'],
+    full: ['stats', 'cost_analytics', 'activity_log', 'team', 'push', 'memo'],
 };
 
 // Универсальная проверка фичи для мест, где интерфейс формируется через JS-шаблоны
@@ -129,6 +129,7 @@ function applyPlanGating() {
     applyCostVisibility();
     applyActivityLogVisibility();
     applyTeamVisibility();
+    if (typeof memoApplyGating === 'function') memoApplyGating(); // «Особые даты» — Full (13.11.2026)
     if (typeof refreshPushSettingsUI === 'function') refreshPushSettingsUI();
     // Вкладка "Статистика" зависит СРАЗУ от двух условий (права сотрудника И
     // тариф) — пересчитываем её через ту же функцию, что и права доступа.

@@ -16,6 +16,9 @@ const STOCK_LOW_DAYS = 7; // порог «критически мало» — м
 // Плитки «Настроек» (30.10): открыта может быть только одна. Нажатие на открытую закрывает её,
 // нажатие на другую закрывает прежнюю и открывает новую. С 11.11 так же работают плитки «Управление данными» и «О приложении».
 function toggleSettingsTile(name) {
+    // Закрытые по тарифу плитки (13.11.2026): вместо раскрытия — окно «доступно на Full»
+    if (name === 'Memo' && typeof memoAllowed === 'function' && !memoAllowed()) { memoShowLocked(); return; }
+    if (name === 'Push' && typeof pushAllowed === 'function' && !pushAllowed()) { pushShowLocked(); return; }
     const names = ['Team', 'Push', 'Memo', 'Data', 'About'];
     const target = document.getElementById('settings' + name + 'Group');
     if (!target) return;

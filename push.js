@@ -31,6 +31,13 @@ function urlBase64ToUint8Array(base64String) {
 // Обновляет вид блока в Настройках под текущее состояние: поддерживается ли
 // push вообще, есть ли уже активная подписка на этом устройстве, и какие
 // типы уведомлений включены у текущего сотрудника.
+function pushAllowed() {
+    try { return typeof hasPlanFeature !== 'function' || hasPlanFeature('push'); } catch (e) { return true; }
+}
+async function pushShowLocked() {
+    const ok = await showConfirm(t('push_locked_text'), { ok: t('lock_btn_plans'), cancel: t('lock_btn_close') });
+    if (ok && typeof openPlanModal === 'function') openPlanModal();
+}
 async function refreshPushSettingsUI() {
     const block = document.getElementById('pushSettingsBlock');
     if (!block) return;
@@ -38,12 +45,17 @@ async function refreshPushSettingsUI() {
     // Push-уведомления — Full-only фича (см. согласованный список фич-гейтинга).
     // Если тариф не позволяет — блок целиком скрыт, дальше даже не проверяем
     // поддержку браузера/статус подписки, чтобы не тратить время впустую.
-    if (typeof hasPlanFeature === 'function' && !hasPlanFeature('push')) {
-        block.classList.add('hidden');
+    // С 13.11.2026 плитка при этом не скрывается, а показывается под замком (нажатие — окно «доступно на Full»).
+    block.classList.remove('hidden');
+    const _pushOk = pushAllowed();
+    document.getElementById('settingsPushGroupBtn')?.classList.toggle('push-locked', !_pushOk);
+    document.getElementById('pushMasterToggleState')?.classList.toggle('hidden', !_pushOk);
+    document.getElementById('pushLockedShort')?.classList.toggle('hidden', _pushOk);
+    if (!_pushOk) {
+        document.getElementById('settingsPushGroup')?.classList.add('hidden');
+        document.getElementById('settingsPushGroupBtn')?.classList.remove('active');
         return;
     }
-
-    block.classList.remove('hidden');
 
     if (!_pushSupported()) {
         document.getElementById('pushMasterRow')?.classList.add('hidden');
