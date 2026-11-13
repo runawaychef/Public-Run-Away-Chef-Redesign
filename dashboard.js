@@ -468,16 +468,16 @@ function renderDashboard() {
             }
             const rg = _dashEl('dashTodayRing');
             if (rg) {
-                const R = 15, C = 2 * Math.PI * R;
+                const R = 15.8, SW = 4.4, C = 2 * Math.PI * R;   // тонкое кольцо (на ~27% тоньше прежнего), внешний диаметр прежний
                 const lbl = total ? done + '/' + total : '';
                 let off = 0, arcs = '';
                 [[nAcc, '#c0685c'], [nWork, '#d9a441'], [done, '#7c9473']].forEach(([n, col]) => {
                     if (!n || !total) return;
                     const l = C * n / total;
-                    arcs += '<circle cx="21" cy="21" r="' + R + '" fill="none" stroke="' + col + '" stroke-width="6" stroke-dasharray="' + l.toFixed(2) + ' ' + (C - l).toFixed(2) + '" stroke-dashoffset="' + (-off).toFixed(2) + '" transform="rotate(-90 21 21)"/>';
+                    arcs += '<circle cx="21" cy="21" r="' + R + '" fill="none" stroke="' + col + '" stroke-width="' + SW + '" stroke-dasharray="' + l.toFixed(2) + ' ' + (C - l).toFixed(2) + '" stroke-dashoffset="' + (-off).toFixed(2) + '" transform="rotate(-90 21 21)"/>';
                     off += l;
                 });
-                rg.innerHTML = '<svg viewBox="0 0 42 42" role="img" aria-label="' + lbl + '"><circle class="rt" cx="21" cy="21" r="' + R + '" fill="none" stroke-width="6"/>' + arcs
+                rg.innerHTML = '<svg viewBox="0 0 42 42" role="img" aria-label="' + lbl + '"><circle class="rt" cx="21" cy="21" r="' + R + '" fill="none" stroke-width="' + SW + '"/>' + arcs
                     + (lbl ? '<text x="21" y="24.5" text-anchor="middle" font-size="' + (lbl.length > 4 ? 8 : 9.5) + '">' + lbl + '</text>' : '') + '</svg>';
                 const tc = rg.closest('.dashboard-card'); if (tc) tc.classList.toggle('dc-alldone', total > 0 && done === total);
             }
