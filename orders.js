@@ -867,6 +867,7 @@ function refreshDetailDue(order) {
         btn.style.opacity = '0.75';
         const d = _detailInvDue[order.id];
         lbl.textContent = d ? formatDateDMY(d) + ' · ' + t('order_due_inv') : t('order_due_inv');
+        lbl.style.color = (d && d < getLocalDateStr(0) && getOrderPaymentStatus(order).status !== 'paid') ? '#a3493d' : '';   // просрочка — красным и у заказа со счётом
         if (d === undefined) _loadDetailInvDue(order);
         return;
     }
