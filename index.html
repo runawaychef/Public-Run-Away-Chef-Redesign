@@ -1548,6 +1548,20 @@
         .dc-ring text { fill: #6b6552; font-weight: 700; }
         .dashboard-card.dc-alldone .dc-ring text { fill: #5f7857; }
         .dashboard-card .dashboard-card__value.dc-zero { color: #cfc8b8; }
+        /* «Сегодня» (12.11.2026): слева легенда по статусам под цифрой, справа кольцо по статусам. ОТКАТ: вернуть dashboard-before-today.js и этот блок. */
+        .dc-mid.dc-today-mid { flex-direction: row; align-items: center; justify-content: space-between; gap: 6px; }
+        .dc-today-mid .dc-leg { font-size: 11.5px; line-height: 1.5; color: #4f4b42; font-weight: 600; min-width: 0; }
+        .dc-today-mid .dc-leg div { white-space: nowrap; }
+        .dc-today-mid .dc-leg i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+        .dc-today-mid .dc-leg b { font-weight: 800; color: #322f28; }
+        .dc-today-mid .dc-leg .z { color: #a29c8c; } .dc-today-mid .dc-leg .z i { opacity: .45; } .dc-today-mid .dc-leg .z b { color: #a29c8c; font-weight: 600; }
+        .dc-today-mid .dc-ring { flex: 0 0 auto; width: 62px; height: 62px; min-height: 0; }
+        .dc-today-mid .dc-ring svg, .dashboard.dash-compact .dc-today-mid .dc-ring svg, .dashboard.dash-compact2 .dc-today-mid .dc-ring svg { position: static; transform: none; width: 62px; height: 62px; }
+        .dashboard.dash-compact .dc-today-mid .dc-leg { font-size: 10.5px; line-height: 1.35; }
+        .dashboard.dash-compact .dc-today-mid .dc-ring, .dashboard.dash-compact .dc-today-mid .dc-ring svg { width: 52px; height: 52px; }
+        .dashboard.dash-compact2 .dc-today-mid .dc-leg { display: none; }
+        .dashboard.dash-compact2 .dc-today-mid { justify-content: flex-end; }
+        .dashboard.dash-compact2 .dc-today-mid .dc-ring, .dashboard.dash-compact2 .dc-today-mid .dc-ring svg { width: 44px; height: 44px; }
         /* «Завтра»: список клиентов (до 3 строк; на самых низких экранах — одна) */
         .dc-trow--more { color: #8d887b; font-weight: 500; }
         .dashboard.dash-compact2 .dc-trow:nth-child(n+2) { display: none; }
@@ -2651,7 +2665,7 @@ function hideSplashScreen() {
                     <div class="dashboard-card dc2 " role="button" tabindex="0" onclick="dashOpenToday()">
                         <div class="dashboard-card__hd dash-c-day"><svg class="dashboard-card__ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="3"/><path d="M8 3v4M16 3v4M4 10h16"/><circle cx="12" cy="15.5" r="1.3" fill="currentColor"/></svg><div class="dashboard-card__label" data-i18n="dash_today_s"></div><span class="dc-date" id="dashTodayDate"></span></div>
                         <div class="dc-val"><span class="dashboard-card__value" id="dashToday"><span class="dash-sk"></span></span></div>
-                        <div class="dc-mid"><div class="dc-ring" id="dashTodayRing"></div></div>
+                        <div class="dc-mid dc-today-mid"><div class="dc-leg" id="dashTodayLeg"></div><div class="dc-ring" id="dashTodayRing"></div></div>
                         <div class="dc-foot" id="dashTodaySub">&nbsp;</div>
                     </div>
                     <div class="dashboard-card dc2 dashboard-card--stock">
@@ -5094,7 +5108,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=12"></script>
-    <script src="i18n-core.js?v=172"></script>
+    <script src="i18n-core.js?v=173"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=32"></script>
@@ -5110,7 +5124,7 @@ function hideSplashScreen() {
 <script src="customers.js?v=73"></script>
 <script src="calendar.js?v=17"></script>
 <script src="orders.js?v=163"></script>
-<script src="dashboard.js?v=20"></script>
+<script src="dashboard.js?v=21"></script>
 <script src="invoice.js?v=54"></script>
 <script src="send-document.js?v=43"></script>
 <script src="confirmation.js?v=2"></script>

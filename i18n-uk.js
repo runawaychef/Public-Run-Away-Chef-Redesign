@@ -1820,4 +1820,7 @@ I18N.uk = {
         order_due_auto: "авто",
         order_due_inv: "за рахунком",
         order_due_inv_hint: "Термін оплати вказано в рахунку. Змінити його можна в самому рахунку.",
+        dash_leg_accepted: "Прийнято",
+        dash_leg_progress: "У роботі",
+        dash_leg_done: "Готово",
 };

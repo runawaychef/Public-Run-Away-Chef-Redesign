@@ -1820,4 +1820,7 @@ I18N.lt = {
         order_due_auto: "auto",
         order_due_inv: "pagal sąskaitą",
         order_due_inv_hint: "Terminas nurodytas sąskaitoje. Jį galima keisti pačioje sąskaitoje.",
+        dash_leg_accepted: "Priimta",
+        dash_leg_progress: "Vykdoma",
+        dash_leg_done: "Atlikta",
 };

@@ -1823,4 +1823,7 @@ I18N.en = {
         order_due_auto: "auto",
         order_due_inv: "per invoice",
         order_due_inv_hint: "The due date is set in the invoice. Change it in the invoice itself.",
+        dash_leg_accepted: "Accepted",
+        dash_leg_progress: "In progress",
+        dash_leg_done: "Done",
 };

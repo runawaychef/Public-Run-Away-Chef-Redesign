@@ -1822,4 +1822,7 @@ I18N.ru = {
         order_due_auto: "авто",
         order_due_inv: "по счёту",
         order_due_inv_hint: "Срок оплаты указан в счёте. Изменить его можно в самом счёте.",
+        dash_leg_accepted: "Принято",
+        dash_leg_progress: "В работе",
+        dash_leg_done: "Готово",
 };

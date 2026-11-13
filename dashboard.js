@@ -457,16 +457,29 @@ function renderDashboard() {
         const done = saved.filter(o => o.date === today && o.status === 'выполнен').length;
         _dashSet('dashToday', String(td.count));
         { const v = _dashEl('dashToday'); if (v) v.classList.toggle('dc-zero', !td.count); }
-        { // кольцо: выполнено / всего (на пустой день — пустое кольцо без цифр)
+        { // кольцо по статусам заказов дня (принят / в работе / выполнен); в центре «выполнено/всего»; под цифрой — легенда из трёх строк (12.11.2026)
+            const dayOrders = saved.filter(o => o.date === today);
+            const nAcc = dayOrders.filter(o => o.status === 'принят').length, nWork = dayOrders.filter(o => o.status === 'в работе').length;
+            const total = td.count;
+            const leg = _dashEl('dashTodayLeg');
+            if (leg) {
+                const row = (col, key, n) => '<div' + (n ? '' : ' class="z"') + '><i style="background:' + col + '"></i>' + escapeHtml(t(key)) + ' <b>' + n + '</b></div>';
+                leg.innerHTML = total ? row('#c0685c', 'dash_leg_accepted', nAcc) + row('#d9a441', 'dash_leg_progress', nWork) + row('#7c9473', 'dash_leg_done', done) : '';
+            }
             const rg = _dashEl('dashTodayRing');
             if (rg) {
-                const R = 34.5, C = 2 * Math.PI * R, p = td.count ? done / td.count : 0;
-                const lbl = td.count ? done + '/' + td.count : '';
-                const fs = lbl.length > 4 ? 15 : 19;
-                rg.innerHTML = '<svg viewBox="0 0 80 80" role="img" aria-label="' + lbl + '"><circle class="rt" cx="40" cy="40" r="' + R + '" fill="none" stroke-width="10"/>'
-                    + (p > 0 ? '<circle class="rp" cx="40" cy="40" r="' + R + '" fill="none" stroke-width="10" stroke-linecap="round" stroke-dasharray="' + (C * p).toFixed(1) + ' ' + C.toFixed(1) + '" transform="rotate(-90 40 40)"/>' : '')
-                    + (lbl ? '<text x="40" y="' + (40 + fs * 0.35).toFixed(1) + '" text-anchor="middle" font-size="' + fs + '">' + lbl + '</text>' : '') + '</svg>';
-                const tc = rg.closest('.dashboard-card'); if (tc) tc.classList.toggle('dc-alldone', td.count > 0 && done === td.count);
+                const R = 15, C = 2 * Math.PI * R;
+                const lbl = total ? done + '/' + total : '';
+                let off = 0, arcs = '';
+                [[nAcc, '#c0685c'], [nWork, '#d9a441'], [done, '#7c9473']].forEach(([n, col]) => {
+                    if (!n || !total) return;
+                    const l = C * n / total;
+                    arcs += '<circle cx="21" cy="21" r="' + R + '" fill="none" stroke="' + col + '" stroke-width="6" stroke-dasharray="' + l.toFixed(2) + ' ' + (C - l).toFixed(2) + '" stroke-dashoffset="' + (-off).toFixed(2) + '" transform="rotate(-90 21 21)"/>';
+                    off += l;
+                });
+                rg.innerHTML = '<svg viewBox="0 0 42 42" role="img" aria-label="' + lbl + '"><circle class="rt" cx="21" cy="21" r="' + R + '" fill="none" stroke-width="6"/>' + arcs
+                    + (lbl ? '<text x="21" y="24.5" text-anchor="middle" font-size="' + (lbl.length > 4 ? 8 : 9.5) + '">' + lbl + '</text>' : '') + '</svg>';
+                const tc = rg.closest('.dashboard-card'); if (tc) tc.classList.toggle('dc-alldone', total > 0 && done === total);
             }
         }
         _dashSet('dashTodaySub', _dashFoot(td));
