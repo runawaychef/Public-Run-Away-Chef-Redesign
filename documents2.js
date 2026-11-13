@@ -230,8 +230,9 @@ function _d2ApplyView(groupKeys) {
     if (_d2View() === 'expanded' || groupKeys.length === 1) groupKeys.forEach(k => _d2W.open.add(k));
 }
 
-async function openDocs2Wait(mode, part) {
-    if (!docs2Allowed()) return;
+async function openDocs2Wait(mode, part, fromDash) {
+    if (!fromDash && !docs2Allowed()) return;   // из Дашборда («Ждут оплаты») окно доступно и в режиме «оплата по заказу»
+    window._d2FromDash = !!fromDash;
     _d2W.mode = mode === 'over' ? 'over' : (mode === 'wait' ? 'wait' : 'all');
     _d2W.part = !!part;
     _d2W.cust = '';
@@ -273,6 +274,16 @@ function docs2OpenOrder(orderId) {
 async function returnToDocs2() {
     const r = _d2Return;
     _d2Return = null;
+    if (r && r.page === 'docs2WaitPage' && window._d2FromDash) {   // пришли из Дашборда — возвращаемся в то же окно без «Документов» под ним
+        showLoading();
+        try { if (docs2Allowed() && typeof _docsLoad === 'function') await _docsLoad(); }
+        catch (e) { console.error('Дашборд: ошибка загрузки при возврате', e); hideLoading(); showInfo(t('error_save_check_connection')); return true; }
+        hideLoading();
+        if (typeof showTab === 'function') showTab('dashboard');
+        openAppPage('docs2WaitPage');
+        docs2RenderWait(false);
+        return true;
+    }
     if (!r || !docs2Allowed()) return false;
     showLoading();
     try {
@@ -333,7 +344,8 @@ function docs2RenderWait(reapplyView) {
 
     const row = u => {
         const o = u.o;
-        const doc = u.cons ? t('docs2_in_cons').replace('{n}', u.cons.number) : (u.inv ? u.inv.number : t('docs2_no_inv'));
+        const byOrder = !(typeof docsEnabled === 'function' && docsEnabled());   // режим «оплата по заказу»: про счета не пишем, пока их нет
+        const doc = u.cons ? t('docs2_in_cons').replace('{n}', u.cons.number) : (u.inv ? u.inv.number : (byOrder ? '' : t('docs2_no_inv')));
         const d = u.cons || u.inv;
         const gold = x => `<span class="d2gold">${escapeHtml(x)}</span>`;
         let st = '';
@@ -344,7 +356,7 @@ function docs2RenderWait(reapplyView) {
         else if (u.due) due = `<div>${escapeHtml(t('docs_due_till').replace('{d}', _docsShortDate(u.due + 'T12:00:00')))}</div>`;
         return `<div class="d2o" onclick="docs2OpenOrder(${o.id})"><div class="l">
             <div class="a">${escapeHtml(t('docs2_order').replace('{n}', o.order_number || ('#' + o.id)))}</div>
-            <div class="b">${escapeHtml(formatDateDMY(o.date))} · ${escapeHtml(doc)}</div>
+            <div class="b">${escapeHtml(formatDateDMY(o.date))}${doc ? ' · ' + escapeHtml(doc) : ''}</div>
             ${st ? `<div class="c">${st}</div>` : ''}</div>
             <div class="r"><b>${escapeHtml(formatMoney(u.remC / 100))}</b>${due}</div></div>`;
     };

@@ -88,15 +88,20 @@ function dashOpenAccepted() {
 // «Заказы на сегодня» / «на завтра» → список за этот день (дата заказа, часовой пояс пекарни)
 function dashOpenToday() { _dashOpenDay(getLocalDateStr(0)); }
 function dashOpenTomorrow() { _dashOpenDay(getLocalDateStr(1)); }
-// «Ждут оплаты» → отдельная страница: итог + неоплаченные заказы по клиентам (12.11.2026)
-let _dupOpen = new Set(), _dupAllOpen = false;
-function dashOpenUnpaid() {
-    _dupOpen = new Set(); _dupAllOpen = false;
-    openAppPage('dashUnpaidPage');
-    dashRenderUnpaid();
-    _dashLoadDue(true).then(ch => { if (ch) dashRenderUnpaid(); });
+// «Ждут оплаты» → то же окно, что в «Документах» (documents2.js, openDocs2Wait): итог по группам клиентов (12.11.2026).
+// Работает и в режиме «оплата по заказу»: документов там нет, окно показывает заказы без слов про счета.
+async function dashOpenUnpaid() {
+    if (typeof openDocs2Wait !== 'function') return;
+    const haveDocs = typeof docs2Allowed === 'function' && docs2Allowed();
+    if (haveDocs && typeof _docsLoad === 'function') {
+        showLoading();
+        try { await _docsLoad(); }
+        catch (e) { console.error('Дашборд: ошибка загрузки документов', e); hideLoading(); showInfo(t('error_save_check_connection')); return; }
+        hideLoading();
+    }
+    window._d2FromDash = true;
+    openDocs2Wait('all', false, true);
 }
-(window._appPageOnShow = window._appPageOnShow || {}).dashUnpaidPage = () => dashRenderUnpaid();
 
 // Срок оплаты заказа — как в «Документах»: срок сводного счёта, иначе срок счёта заказа, иначе срок, вписанный в заказе.
 // Сроки счетов в памяти приложения не лежат — берём лёгким запросом только по неоплаченным заказам (кэш на 30 с).
@@ -136,78 +141,6 @@ function _dashLoadDue(force) {
         } finally { _dashDue.busy = null; }
     })();
     return _dashDue.busy;
-}
-
-function _dashDayDiff(fromIso, toIso) {
-    const a = Date.parse(fromIso + 'T12:00:00'), b = Date.parse(toIso + 'T12:00:00');
-    return (isNaN(a) || isNaN(b)) ? 0 : Math.max(0, Math.round((b - a) / 86400000));
-}
-function _dashUnpaidItems() {
-    const today = getLocalDateStr(0);
-    const out = [];
-    _dashSavedOrders().forEach(o => {
-        const st = getOrderPaymentStatus(o);
-        if (st.status === 'paid') return;
-        const due = _dashDueOf(o);
-        const over = !!due && due < today;
-        out.push({ o, remC: Math.max(0, Math.round(st.grandAmt * 100) - Math.round(st.paidAmt * 100)), grandC: Math.round(st.grandAmt * 100),
-            paidC: Math.round(st.paidAmt * 100), partial: st.status === 'partial', over, due, overDays: over ? _dashDayDiff(due, today) : 0 });
-    });
-    return out;
-}
-function dashUnpaidOpenOrder(id) {
-    if (typeof closeAllAppPages === 'function') closeAllAppPages();
-    if (typeof showTab === 'function') showTab('orders');
-    if (typeof openOrderDetail === 'function') openOrderDetail(id);
-}
-function dashUnpaidToggle(key) {
-    if (_dupOpen.has(key)) _dupOpen.delete(key); else _dupOpen.add(key);
-    dashRenderUnpaid();
-}
-function dashUnpaidToggleAll() { _dupAllOpen = !_dupAllOpen; _dupOpen = new Set(); dashRenderUnpaid(); }
-function dashRenderUnpaid() {
-    const box = document.getElementById('dashUnpaidBody');
-    if (!box) return;
-    const all = _dashUnpaidItems();
-    if (!all.length) { box.innerHTML = `<p class="dup-empty">${escapeHtml(t('docs2_wait_empty'))}</p>`; return; }
-    const sumC = a => a.reduce((s, u) => s + u.remC, 0);
-    const money = c => escapeHtml(formatMoney(c / 100));
-    const over = all.filter(u => u.over), partAll = all.filter(u => u.partial);
-    let html = `<div class="dup-sum"><div class="dup-sum__top"><b>${money(sumC(all))}</b><span>${all.length} ${escapeHtml(nWord(all.length, 'word_orders'))}</span></div>`
-        + `<small>${escapeHtml(t('dash_up_rest'))}</small>`
-        + (over.length ? `<div class="dup-sum__row red"><span>${escapeHtml(t('docs_tile_over'))}</span><b>${money(sumC(over))} · ${over.length}</b></div>` : '')
-        + (partAll.length ? `<div class="dup-sum__row"><span>${escapeHtml(t('docs2_partial_t'))}</span><b>${money(sumC(partAll))} · ${partAll.length}</b></div>` : '')
-        + `</div>`;
-    // Группы по клиентам: сначала те, у кого есть просроченные, затем по размеру долга
-    const groups = new Map();
-    all.forEach(u => {
-        const k = String(u.o.customer_id != null ? u.o.customer_id : ('n:' + (u.o.customer || '')));
-        if (!groups.has(k)) groups.set(k, { key: k, name: u.o.customer || t('orders_no_customer'), items: [], sumC: 0, over: 0 });
-        const g = groups.get(k); g.items.push(u); g.sumC += u.remC; if (u.over) g.over++;
-    });
-    const gl = [...groups.values()].sort((a, b) => (b.over > 0) - (a.over > 0) || b.sumC - a.sumC);
-    const order = (a, b) => (b.over - a.over) || String(a.due || '9999').localeCompare(String(b.due || '9999')) || String(a.o.date).localeCompare(String(b.o.date));
-    const row = u => {
-        const o = u.o;
-        let due = '';
-        if (u.over) due = `<div class="red">${escapeHtml(t('docs_overdue_days').replace('{n}', u.overDays))}</div>`;
-        else if (u.due) { const p = String(u.due).split('-'); due = `<div>${escapeHtml(t('docs_due_till').replace('{d}', p.length === 3 ? p[2] + '.' + p[1] : u.due))}</div>`; }
-        const part = u.partial ? `<div class="c"><span class="d2gold">${escapeHtml(t('dash_up_paid_of').replace('{a}', formatMoney(u.paidC / 100)).replace('{b}', formatMoney(u.grandC / 100)))}</span></div>` : '';
-        return `<div class="d2o" onclick="dashUnpaidOpenOrder(${o.id})"><div class="l"><div class="a">${escapeHtml(t('docs2_order').replace('{n}', o.order_number || ('#' + o.id)))}</div>`
-            + `<div class="b">${escapeHtml(formatDateDMY(o.date))}</div>${part}</div><div class="r"><b>${escapeHtml(formatMoney(u.remC / 100))}</b>${due}</div></div>`;
-    };
-    const BTN = _dupAllOpen
-        ? '<path d="M5 15l7-7 7 7"/>' : '<path d="M5 9l7 7 7-7"/>';
-    html += `<div style="display:flex;justify-content:flex-end;margin:0 2px 8px"><button type="button" class="view-toggle-btn${_dupAllOpen ? ' active' : ''}" onclick="dashUnpaidToggleAll()" title="${escapeHtml(t(_dupAllOpen ? 'docs2_collapse' : 'docs2_expand'))}" style="width:40px;height:36px"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${BTN}</svg></button></div>`;
-    html += gl.map(g => {
-        const open = _dupAllOpen || _dupOpen.has(g.key);
-        const body = open ? g.items.slice().sort(order).map(row).join('') : '';
-        const sub = `${g.items.length} ${escapeHtml(nWord(g.items.length, 'word_orders'))}` + (g.over ? ` · <span class="dup-redtxt">${escapeHtml(t('docs_tile_over')).toLowerCase()} ${g.over}</span>` : '');
-        return `<div class="d2g"><div class="d2gh" data-k="${escapeHtml(g.key)}" onclick="dashUnpaidToggle(this.getAttribute('data-k'))">`
-            + `<span class="ch">${open ? '&#8964;' : '&rsaquo;'}</span><div class="nm"><b>${escapeHtml(g.name)}</b><small>${sub}</small></div>`
-            + `<span class="sm${g.over ? ' red' : ''}">${money(g.sumC)}</span></div>${body}</div>`;
-    }).join('');
-    box.innerHTML = html;
 }
 
 // Строки плашки «Склад»: на Full (аналитика) — только позиции с критичным остатком; на Light/Free — список целиком
