@@ -106,7 +106,7 @@ async function dashOpenUnpaid() {
 // Срок оплаты заказа — как в «Документах»: срок сводного счёта, иначе срок счёта заказа, иначе срок, вписанный в заказе.
 // Сроки счетов в памяти приложения не лежат — берём лёгким запросом только по неоплаченным заказам (кэш на 30 с).
 let _dashDue = { map: {}, at: 0, busy: null };
-function _dashDueOf(o) { return (_dashDue.map[o.id] !== undefined ? _dashDue.map[o.id] : null) || o.due_date || null; }
+function _dashDueOf(o) { return (_dashDue.map[o.id] !== undefined ? _dashDue.map[o.id] : null) || o.due_date || (typeof orderAutoDue === 'function' ? orderAutoDue(o) : null) || null; }
 function _dashLoadDue(force) {
     if (typeof db === 'undefined' || typeof currentOrgId === 'undefined' || !currentOrgId) return Promise.resolve(false);
     if (_dashDue.busy) return _dashDue.busy;

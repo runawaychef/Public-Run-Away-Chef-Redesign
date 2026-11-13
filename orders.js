@@ -844,6 +844,59 @@ function calcGroupTotals(allOrders, predicate) {
 
 // Статус оплаты заказа — единая логика для цветной точки в списке и для фильтра "Оплата",
 // чтобы они никогда не расходились между собой.
+// ---- Срок оплаты заказа (12.11.2026) ----
+// Если срок не задан вручную (orders.due_date), он считается сам: дата заказа + отсрочка клиента (payment_term_days, по умолчанию 7 дн.,
+// как при выставлении счёта). Ручное значение сильнее; сброс календарём («очистить») возвращает автоматический срок.
+function orderAutoDue(o) {
+    if (!o || !o.date) return null;
+    const cust = (typeof customers !== 'undefined' ? customers : []).find(c => c.id === o.customer_id);
+    const term = (cust && cust.payment_term_days != null) ? Number(cust.payment_term_days) : 7;
+    const d = new Date(String(o.date).slice(0, 10) + 'T12:00:00');
+    if (isNaN(d.getTime())) return null;
+    d.setDate(d.getDate() + (isNaN(term) ? 7 : term));
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+// Поле «Оплатить до» в шапке карточки заказа. У заказа со счётом показывается срок счёта (меняется в самом счёте).
+let _detailInvDue = {};   // orderId -> срок счёта (кэш)
+function refreshDetailDue(order) {
+    const lbl = document.getElementById('detailDueBtnLabel'), inp = document.getElementById('detailDue'), btn = document.getElementById('detailDueBtn');
+    if (!lbl || !inp || !order) return;
+    const hasInv = typeof orderHasInvoice === 'function' && orderHasInvoice(order);
+    inp.value = order.due_date || '';
+    if (hasInv) {
+        btn.style.opacity = '0.75';
+        const d = _detailInvDue[order.id];
+        lbl.textContent = d ? formatDateDMY(d) + ' · ' + t('order_due_inv') : t('order_due_inv');
+        if (d === undefined) _loadDetailInvDue(order);
+        return;
+    }
+    btn.style.opacity = '';
+    const eff = order.due_date || orderAutoDue(order);
+    lbl.innerHTML = eff ? escapeHtml(formatDateDMY(eff)) + (order.due_date ? '' : ` <span style="font-size:11px;color:#9a9488;">${escapeHtml(t('order_due_auto'))}</span>`) : '—';
+    const today = getLocalDateStr(0);
+    const over = eff && eff < today && getOrderPaymentStatus(order).status !== 'paid';
+    lbl.style.color = over ? '#a3493d' : '';
+}
+async function _loadDetailInvDue(order) {
+    try {
+        const { data, error } = await db.from('orders').select('inv_due_date, consolidated_invoice_id').eq('id', order.id).single();
+        if (error) throw error;
+        let due = data.inv_due_date || null;
+        if (data.consolidated_invoice_id) {
+            const r = await db.from('consolidated_invoices').select('due_date, cancelled_at').eq('id', data.consolidated_invoice_id).single();
+            if (!r.error && r.data && !r.data.cancelled_at && r.data.due_date) due = r.data.due_date;
+        }
+        _detailInvDue[order.id] = due || null;
+    } catch (e) { console.error('срок счёта', e); _detailInvDue[order.id] = null; }
+    if (currentOrderId === order.id) refreshDetailDue(order);
+}
+function openDetailDueCalendar() {
+    const order = orders.find(o => o.id === currentOrderId);
+    if (!order) return;
+    if (typeof orderHasInvoice === 'function' && orderHasInvoice(order)) { showInfo(t('order_due_inv_hint')); return; }
+    toggleCustomCalendar('globalCalendarPopup', 'detailDue', 'detailDueBtnLabel', { onPick: function () { saveDueDate(); }, allowClear: true });
+}
+
 function getOrderPaymentStatus(order) {
     const paidAmt = _orderPaidTotals[order.id] || 0;
     const grandAmt = orderGrandTotal(order);
@@ -861,7 +914,8 @@ function getOrderPaymentStatus(order) {
         status = 'paid';
     }
     const today = getLocalDateStr(0);
-    const overdue = !!order.due_date && order.due_date < today && status !== 'paid';
+    const dueEff = order.due_date || orderAutoDue(order);   // срок заказа; если не задан — дата заказа + отсрочка клиента
+    const overdue = !!dueEff && dueEff < today && status !== 'paid';
     return { paidAmt, grandAmt, status, overdue };
 }
 
@@ -1593,6 +1647,7 @@ function openOrderDetail(orderId) {
     document.getElementById('detailVatExemptRow')?.classList.toggle('hidden', !currentOrgProtected);   // «Без НДС» в заказе — только у id1 (30.10.2026)
     document.getElementById('detailNotes').value = order.notes || '';
     fillDetailEmployeeSelect(order.employee_id);
+    refreshDetailDue(order);
     updateDetailSaveUi(order);
 
     renderDetailItems(order);
@@ -2145,6 +2200,7 @@ async function saveDetailHeader() {
     order.employee    = emp ? emp.name : '';
     order.notes       = notes;
     renderDetailItems(order); // пересчитывает и перерисовывает итоги/скидку/НДС
+    refreshDetailDue(order);   // автосрок зависит от даты заказа и клиента
 
     try {
         await updateChecked(db.from('orders').update({
@@ -2197,6 +2253,7 @@ async function saveDetailHeader() {
         document.getElementById('detailEmployee').value = old.employee_id || '';
         document.getElementById('detailEmployeeBtnLabel').textContent = old.employee || '—';
         renderDetailItems(order);
+        refreshDetailDue(order);
         showInfo(t('error_save_check_connection'));
     }
 }

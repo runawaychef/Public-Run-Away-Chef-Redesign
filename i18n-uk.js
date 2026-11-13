@@ -1816,4 +1816,8 @@ I18N.uk = {
         dash_up_rest: "залишок до сплати",
         dash_up_paid_of: "сплачено {a} із {b}",
         dash_up_no_due: "строк не вказано",
+        order_pay_until: "Сплатити до",
+        order_due_auto: "авто",
+        order_due_inv: "за рахунком",
+        order_due_inv_hint: "Термін оплати вказано в рахунку. Змінити його можна в самому рахунку.",
 };

@@ -3512,6 +3512,14 @@ function hideSplashScreen() {
                             </button>
                             <div class="status-dropdown" id="detailEmployeeDropdown"></div>
                         </div>
+                        <div style="position:relative;" onclick="event.stopPropagation();">
+                            <label class="table-text text-gray-500" for="detailDueBtn" data-i18n="order_pay_until">Оплатить до</label>
+                            <input id="detailDue" type="hidden">
+                            <button type="button" class="field-select-btn" id="detailDueBtn" onclick="openDetailDueCalendar()">
+                                <span id="detailDueBtnLabel">—</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/></svg>
+                            </button>
+                        </div>
                         <div class="col-span-2" id="detailVatExemptRow">
                             <label class="flex items-center gap-2 table-text text-gray-700">
                                 <input id="detailVatExempt" type="checkbox" onchange="saveDetailHeader()" class="w-4 h-4" style="accent-color:#7c9473;"> <span data-i18n="orders_vat_exempt_order">Без НДС для этого заказа</span>
@@ -3626,17 +3634,6 @@ function hideSplashScreen() {
                     <div><span data-i18n="orders_paid">Оплачено</span>: <span id="paymentPaidAmount" class="font-medium text-gray-800">0.00</span></div>
                     <div><span data-i18n="orders_remaining">Осталось</span>: <span id="paymentRemainingAmount" class="font-semibold text-gray-900">0.00</span></div>
                     <div id="paymentOverpaidRow" class="hidden"><span data-i18n="orders_overpaid">Переплата</span>: <span id="paymentOverpaidAmount" class="font-semibold" style="color:#4f6349;">0.00</span></div>
-                    <div class="flex items-center gap-1 pt-1">
-                        <span data-i18n="orders_pay_by">Оплатить до:</span>
-                        <div style="position:relative;" onclick="event.stopPropagation();">
-                            <input id="orderDueDate" type="hidden">
-                            <button type="button" class="field-select-btn" id="orderDueDateBtn" style="width:auto; background:#fff;" onclick="toggleCustomCalendar('globalCalendarPopup','orderDueDate','orderDueDateBtnLabel',{onPick:function(){saveDueDate();}, allowClear:true})">
-                                <span id="orderDueDateBtnLabel">—</span>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/></svg>
-                            </button>
-                        </div>
-                        <span id="dueDateOverdueTag" class="font-semibold hidden" style="color:#8b3a3a;"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg><span data-i18n="pay_status_overdue_lower">просрочено</span></span>
-                    </div>
                 </div>
 
                 <div id="paymentsListContent" class="mb-2"></div>
@@ -5097,7 +5094,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=12"></script>
-    <script src="i18n-core.js?v=171"></script>
+    <script src="i18n-core.js?v=172"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=32"></script>
@@ -5112,14 +5109,14 @@ function hideSplashScreen() {
 <script src="products.js?v=52"></script>
 <script src="customers.js?v=73"></script>
 <script src="calendar.js?v=17"></script>
-<script src="orders.js?v=161"></script>
-<script src="dashboard.js?v=19"></script>
+<script src="orders.js?v=162"></script>
+<script src="dashboard.js?v=20"></script>
 <script src="invoice.js?v=54"></script>
 <script src="send-document.js?v=43"></script>
 <script src="confirmation.js?v=2"></script>
-<script src="payments.js?v=36"></script>
+<script src="payments.js?v=37"></script>
 <script src="documents.js?v=16"></script>
-<script src="documents2.js?v=32"></script>
+<script src="documents2.js?v=33"></script>
 <script src="bank.js?v=13"></script>
 <script src="stats.js?v=44"></script>
 <script src="history.js?v=9"></script>

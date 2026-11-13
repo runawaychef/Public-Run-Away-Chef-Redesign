@@ -67,8 +67,7 @@ async function loadOrderPayments(orderId) {
     if (order && order.consolidated_invoice_id) consIds.add(order.consolidated_invoice_id);
     await _payLoadConsNumbers([...consIds]);
     _renderDetailConsBanner(order);
-    const dueInput = document.getElementById('orderDueDate');
-    if (dueInput) calSetFieldValue('orderDueDate', 'orderDueDateBtnLabel', order && order.due_date ? order.due_date : '');
+    if (order && typeof refreshDetailDue === 'function') refreshDetailDue(order);
 
     // Держим общую сводку по заказу в синхронизации со списком заказов
     // (до отрисовки — строка сводного счёта считает остатки по _orderPaidTotals)
@@ -148,15 +147,6 @@ function renderPayments() {
     const payRemainingBtn = document.getElementById('payRemainingBtn');
     if (payRemainingBtn) payRemainingBtn.classList.toggle('hidden', remaining <= 0);
 
-    // Просрочка: срок указан, прошёл, и заказ не оплачен полностью
-    const dueInput = document.getElementById('orderDueDate');
-    const overdueTag = document.getElementById('dueDateOverdueTag');
-    if (dueInput && overdueTag) {
-        const today = getLocalDateStr(0);
-        const overdue = dueInput.value && dueInput.value < today && !isFullyPaid;
-        overdueTag.classList.toggle('hidden', !overdue);
-    }
-
     const list = document.getElementById('paymentsListContent');
     if (!list) return;
     if (!_orderPayments.length) {
@@ -190,14 +180,18 @@ function openPaymentModal() {
 
 async function saveDueDate() {
     if (!currentOrderId) return;
-    const val = document.getElementById('orderDueDate').value || null;
+    const val = document.getElementById('detailDue').value || null;   // пусто = вернуть автоматический срок (дата заказа + отсрочка клиента)
+    const order = orders.find(o => o.id === currentOrderId);
+    const prev = order ? (order.due_date || null) : null;
     try {
         await updateChecked(db.from('orders').update({ due_date: val }).eq('id', currentOrderId));
-        const order = orders.find(o => o.id === currentOrderId);
         if (order) order.due_date = val;
-        renderPayments();
+        if (order) refreshDetailDue(order);
+        if (typeof displayOrders === 'function') displayOrders();
+        if (typeof showAutosaveToast === 'function') showAutosaveToast();
     } catch (e) {
         console.error(e);
+        if (order) { order.due_date = prev; refreshDetailDue(order); }
         showInfo(t('error_save_due_date'));
     }
 }

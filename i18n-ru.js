@@ -1818,4 +1818,8 @@ I18N.ru = {
         dash_up_rest: "остаток к оплате",
         dash_up_paid_of: "оплачено {a} из {b}",
         dash_up_no_due: "срок не указан",
+        order_pay_until: "Оплатить до",
+        order_due_auto: "авто",
+        order_due_inv: "по счёту",
+        order_due_inv_hint: "Срок оплаты указан в счёте. Изменить его можно в самом счёте.",
 };

@@ -126,7 +126,7 @@ function _d2Unpaid() {
         const cons = docs.find(x => x.kind === 'cons' && !x.cancelled && (x.memberIds || []).indexOf(o.id) >= 0) || null;
         const inv = cons ? null : (docs.find(x => x.kind === 'inv' && x.orderId === o.id && !x.cancelled) || null);
         // Срок оплаты: у выставленного счёта — срок из документа (сводного или обычного), иначе срок, заданный в заказе
-        const due = (cons && cons.due) || (inv && inv.due) || o.due_date || null;
+        const due = (cons && cons.due) || (inv && inv.due) || o.due_date || (typeof orderAutoDue === 'function' ? orderAutoDue(o) : null) || null;
         const over = !!due && due < today;
         out.push({ o, remC, paidC: Math.round(st.paidAmt * 100), partial: st.status === 'partial', over, due,
             overDays: over ? _docsDayDiff(due, today) : 0, cons, inv });

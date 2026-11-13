@@ -1819,4 +1819,8 @@ I18N.en = {
         dash_up_rest: "left to pay",
         dash_up_paid_of: "paid {a} of {b}",
         dash_up_no_due: "no due date",
+        order_pay_until: "Pay by",
+        order_due_auto: "auto",
+        order_due_inv: "per invoice",
+        order_due_inv_hint: "The due date is set in the invoice. Change it in the invoice itself.",
 };

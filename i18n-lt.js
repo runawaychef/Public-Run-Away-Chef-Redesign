@@ -1816,4 +1816,8 @@ I18N.lt = {
         dash_up_rest: "liko sumokėti",
         dash_up_paid_of: "apmokėta {a} iš {b}",
         dash_up_no_due: "terminas nenurodytas",
+        order_pay_until: "Apmokėti iki",
+        order_due_auto: "auto",
+        order_due_inv: "pagal sąskaitą",
+        order_due_inv_hint: "Terminas nurodytas sąskaitoje. Jį galima keisti pačioje sąskaitoje.",
 };
