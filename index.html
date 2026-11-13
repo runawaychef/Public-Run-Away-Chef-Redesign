@@ -5109,7 +5109,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=12"></script>
-    <script src="i18n-core.js?v=176"></script>
+    <script src="i18n-core.js?v=177"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=32"></script>
@@ -6137,6 +6137,8 @@ function _hasOpenOverlay() {
 
 function _closeTopOverlay() {
     if (typeof tourAskOpen === 'function' && tourAskOpen()) { tourAskBack(); return; }
+    // Шаг тура «Оплата и документы»: «назад» закрывает тур целиком, а не только демо-страницу (13.11.2026)
+    if (window._tourDocsDemo && typeof tourIsActive === 'function' && tourIsActive()) { tourCloseBtn(); return; }
     if (document.querySelector('.calendar-popup.open')) {
         if (typeof closeAllCalendarPopups === 'function') closeAllCalendarPopups();
         return;
