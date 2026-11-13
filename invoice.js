@@ -328,7 +328,7 @@ async function freezeDocumentSnapshot(order, docType, existing, opts) {
         issueDate = existing.issueDate;
         dueDate = existing.dueDate;
     } else {
-        const termDays = (cust && cust.payment_term_days != null) ? Number(cust.payment_term_days) : 7;
+        const termDays = (cust && cust.payment_term_days != null) ? Number(cust.payment_term_days) : ((cust && cust.entity_type === 'individual') ? 0 : 7);
         issueDate = (opts && opts.issueDate) || getLocalDateStr(0);
         dueDate = (opts && opts.dueDate) || getLocalDateStr(termDays);
     }
@@ -959,7 +959,7 @@ async function freezeConsolidatedInvoice(orderIds, custId, opts) {
         if (error) throw (/Year not allowed/i.test(String(error.message || '')) ? docYearError(_docYear) : error);
         number = data;
     }
-    const termDays = (cust && cust.payment_term_days != null) ? Number(cust.payment_term_days) : 7;
+    const termDays = (cust && cust.payment_term_days != null) ? Number(cust.payment_term_days) : ((cust && cust.entity_type === 'individual') ? 0 : 7);
     const issueDate = (existing && existing.issueDate) || (opts && opts.issueDate) || getLocalDateStr(0);
     const dueDate = (existing && existing.dueDate) || (opts && opts.dueDate) || getLocalDateStr(termDays);
 

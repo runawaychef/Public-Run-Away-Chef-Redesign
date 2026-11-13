@@ -711,7 +711,7 @@ function _isoAddDays(iso, n) {
 }
 // Отсрочка клиента в днях (как при выставлении: нет значения — 7)
 function _sendTermDays(cust) {
-    return (cust && cust.payment_term_days != null) ? Number(cust.payment_term_days) : 7;
+    return (cust && cust.payment_term_days != null) ? Number(cust.payment_term_days) : ((cust && cust.entity_type === 'individual') ? 0 : 7);
 }
 // key: 'inv_issue' | 'inv_due' | 'dn_issue'. Смена даты счёта пересчитывает срок, если его не правили вручную.
 function _sendSetDate(key, iso) {
