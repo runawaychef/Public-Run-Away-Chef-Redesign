@@ -1813,4 +1813,7 @@ I18N.uk = {
         demo_note_consume: "Приклад: витрата у виробництві",
         demo_note_production: "Приклад: партію вироблено",
         demo_note_shopping: "Приклад: потрібно докупити",
+        dash_up_rest: "залишок до сплати",
+        dash_up_paid_of: "сплачено {a} із {b}",
+        dash_up_no_due: "строк не вказано",
 };

@@ -1815,4 +1815,7 @@ I18N.ru = {
         demo_note_consume: "Пример: расход в производстве",
         demo_note_production: "Пример: партия произведена",
         demo_note_shopping: "Пример: нужно докупить",
+        dash_up_rest: "остаток к оплате",
+        dash_up_paid_of: "оплачено {a} из {b}",
+        dash_up_no_due: "срок не указан",
 };

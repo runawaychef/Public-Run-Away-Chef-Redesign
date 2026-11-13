@@ -88,12 +88,65 @@ function dashOpenAccepted() {
 // «Заказы на сегодня» / «на завтра» → список за этот день (дата заказа, часовой пояс пекарни)
 function dashOpenToday() { _dashOpenDay(getLocalDateStr(0)); }
 function dashOpenTomorrow() { _dashOpenDay(getLocalDateStr(1)); }
-// «Ждут оплаты» → заказы, оплаченные не полностью
+// «Ждут оплаты» → отдельная страница: итог, «Просрочено / Частично оплачены / В срок» (12.11.2026)
 function dashOpenUnpaid() {
-    _dashResetOrderFilters();
-    _dashUnpaidOnly = true;
-    _dashSavedOnly = true;
-    _dashGoOrders();
+    openAppPage('dashUnpaidPage');
+    dashRenderUnpaid();
+}
+(window._appPageOnShow = window._appPageOnShow || {}).dashUnpaidPage = () => dashRenderUnpaid();
+
+function _dashDayDiff(fromIso, toIso) {
+    const a = Date.parse(fromIso + 'T12:00:00'), b = Date.parse(toIso + 'T12:00:00');
+    return (isNaN(a) || isNaN(b)) ? 0 : Math.max(0, Math.round((b - a) / 86400000));
+}
+function _dashUnpaidItems() {
+    const today = getLocalDateStr(0);
+    const out = [];
+    _dashSavedOrders().forEach(o => {
+        const st = getOrderPaymentStatus(o);
+        if (st.status === 'paid') return;
+        const remC = Math.max(0, Math.round(st.grandAmt * 100) - Math.round(st.paidAmt * 100));
+        out.push({ o, remC, grandC: Math.round(st.grandAmt * 100), paidC: Math.round(st.paidAmt * 100),
+            partial: st.status === 'partial', over: !!st.overdue, due: o.due_date || null,
+            overDays: st.overdue ? _dashDayDiff(o.due_date, today) : 0 });
+    });
+    return out;
+}
+function dashUnpaidOpenOrder(id) {
+    if (typeof closeAllAppPages === 'function') closeAllAppPages();
+    if (typeof showTab === 'function') showTab('orders');
+    if (typeof openOrderDetail === 'function') openOrderDetail(id);
+}
+function dashRenderUnpaid() {
+    const box = document.getElementById('dashUnpaidBody');
+    if (!box) return;
+    const all = _dashUnpaidItems();
+    const sumC = a => a.reduce((s, u) => s + u.remC, 0);
+    const money = c => escapeHtml(formatMoney(c / 100));
+    const over = all.filter(u => u.over).sort((a, b) => b.overDays - a.overDays);
+    const part = all.filter(u => u.partial && !u.over).sort((a, b) => b.remC - a.remC);
+    const wait = all.filter(u => !u.over && !u.partial).sort((a, b) => String(a.due || '9999').localeCompare(String(b.due || '9999')) || String(a.o.date).localeCompare(String(b.o.date)));
+    if (!all.length) { box.innerHTML = `<p class="dup-empty">${escapeHtml(t('docs2_wait_empty'))}</p>`; return; }
+    const partAll = all.filter(u => u.partial);
+    let html = `<div class="dup-sum"><div class="dup-sum__top"><b>${money(sumC(all))}</b><span>${all.length} ${escapeHtml(nWord(all.length, 'word_orders'))}</span></div>`
+        + `<small>${escapeHtml(t('dash_up_rest'))}</small>`
+        + (over.length ? `<div class="dup-sum__row red"><span>${escapeHtml(t('docs_tile_over'))}</span><b>${money(sumC(over))} · ${over.length}</b></div>` : '')
+        + (partAll.length ? `<div class="dup-sum__row"><span>${escapeHtml(t('docs2_partial_t'))}</span><b>${money(sumC(partAll))} · ${partAll.length}</b></div>` : '')
+        + `</div>`;
+    const card = (u, cls) => {
+        const o = u.o;
+        let note;
+        if (u.over) note = `<span class="red">${escapeHtml(t('docs_overdue_days').replace('{n}', u.overDays))}</span>`;
+        else if (u.partial) note = escapeHtml(t('dash_up_paid_of').replace('{a}', formatMoney(u.paidC / 100)).replace('{b}', formatMoney(u.grandC / 100)));
+        else if (u.due) { const p = String(u.due).split('-'); note = escapeHtml(t('docs_due_till').replace('{d}', p.length === 3 ? p[2] + '.' + p[1] : u.due)); }
+        else note = escapeHtml(t('dash_up_no_due'));
+        return `<div class="dup-card ${cls}" role="button" tabindex="0" onclick="dashUnpaidOpenOrder(${o.id})">`
+            + `<div class="dup-card__t"><b>${escapeHtml(o.customer || t('orders_no_customer'))}</b><b>${money(u.remC)}</b></div>`
+            + `<div class="dup-card__s"><span>${escapeHtml(t('docs2_order').replace('{n}', o.order_number || ('#' + o.id)))} · ${escapeHtml(formatDateDMY(o.date))}</span><span>${note}</span></div></div>`;
+    };
+    const sec = (arr, label, cls) => arr.length ? `<div class="dup-h ${cls}"><span>${escapeHtml(label)}</span><span>${money(sumC(arr))}</span></div>${arr.map(u => card(u, cls)).join('')}` : '';
+    html += sec(over, t('docs_tile_over'), 'red') + sec(part, t('docs2_partial_t'), 'gold') + sec(wait, t('docs2_in_term'), 'green');
+    box.innerHTML = html;
 }
 
 // Строки плашки «Склад»: на Full (аналитика) — только позиции с критичным остатком; на Light/Free — список целиком
@@ -453,6 +506,9 @@ function renderDashboard() {
         const u = _dashUnpaid(saved);
         _dashSet('dashUnpaid', String(u.n));
         _dashSet('dashUnpaidSub', u.n ? `${escapeHtml(t('dash_to_pay_s'))}<span> · ${_dashMoney(u.rem)}</span>` : '&nbsp;');
+        let overSum = 0;
+        saved.forEach(o => { const st = getOrderPaymentStatus(o); if (st.status !== 'paid' && st.overdue) overSum += Math.max(0, st.grandAmt - st.paidAmt); });
+        _dashSet('dashOverLine', u.overdue ? `${escapeHtml(t('docs_tile_over'))} · ${_dashMoney(overSum)} · ${u.overdue}` : '');
         const debtor = u.n ? _dashTopDebtor(saved) : null;
         _dashSet('dashDebtLbl', debtor ? escapeHtml(t('dash_biggest')) : '&nbsp;');
         _dashSet('dashDebtName', debtor ? escapeHtml(debtor.name) : '&nbsp;');

@@ -1813,4 +1813,7 @@ I18N.lt = {
         demo_note_consume: "Pavyzdys: sunaudota gamyboje",
         demo_note_production: "Pavyzdys: pagaminta partija",
         demo_note_shopping: "Pavyzdys: reikia papildyti",
+        dash_up_rest: "liko sumokėti",
+        dash_up_paid_of: "apmokėta {a} iš {b}",
+        dash_up_no_due: "terminas nenurodytas",
 };

@@ -1816,4 +1816,7 @@ I18N.en = {
         demo_note_consume: "Demo: consumed in production",
         demo_note_production: "Demo: batch produced",
         demo_note_shopping: "Demo: restock needed",
+        dash_up_rest: "left to pay",
+        dash_up_paid_of: "paid {a} of {b}",
+        dash_up_no_due: "no due date",
 };
