@@ -631,7 +631,7 @@ function _tourInjectStyle() {
 #tourCard .tour-dot.cur { width: 18px; background: #5b7552; }
 #tourCard .tour-x { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin-top: -6px; border: 0; background: none; border-radius: 12px; color: #6f695d; }
 #tourCard .tour-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 20px; color: #2f3d2a; margin-top: 4px; padding-right: 10px; }
-#tourCard .tour-text { font-size: 14px; line-height: 1.5; color: #4a463e; margin-top: 4px; padding-right: 10px; max-height: 32vh; overflow-y: auto; }
+#tourCard .tour-text { white-space: pre-line; font-size: 14px; line-height: 1.5; color: #4a463e; margin-top: 4px; padding-right: 10px; max-height: 32vh; overflow-y: auto; }
 #tourPlanPane .tour-plan { padding: 12px 14px; background: #fff; border: 1px solid rgba(90,75,40,.10); border-radius: 14px; }
 #tourPlanPane .tour-plan-row { display: flex; justify-content: space-between; align-items: center; }
 #tourPlanPane .tour-plan-l { font-size: 13px; color: #6f695d; }
