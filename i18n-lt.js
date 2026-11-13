@@ -709,7 +709,7 @@ I18N.lt = {
         customers_apply_vat_all: 'Pritaikyti dabartinį PVM statusą visiems kliento užsakymams',
         customers_entity_type_label: 'Asmens tipas (sąskaitoms)',
         customers_vat_code_label: 'PVM kodas',
-        customers_payment_term_label: 'Mokėjimo atidėjimas, dienomis',
+        customers_payment_term_label: 'Apmokėjimo terminas (atidėjimas), dienomis',
         customers_payment_term_placeholder: '7 (numatytoji reikšmė)',
         customers_invoice_mode_label: 'Sąskaitos',
         customers_invoice_mode_per_order: 'Kiekvienam užsakymui',
@@ -1823,4 +1823,7 @@ I18N.lt = {
         dash_leg_accepted: "Priimta",
         dash_leg_progress: "Vykdoma",
         dash_leg_done: "Atlikta",
+        customers_payment_term_hint: "Pagal tai skaičiuojamas užsakymų apmokėjimo terminas: užsakymo data + atidėjimas. Tuščia — 7 dienos, 0 — apmokėti užsakymo dieną.",
+        cust_req_term_zero: "apmokėti užsakymo dieną",
+        order_due_auto_n: "auto · {n} d.",
 };

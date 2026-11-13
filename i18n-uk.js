@@ -709,7 +709,7 @@ I18N.uk = {
         customers_apply_vat_all: 'Застосувати поточний статус ПДВ до всіх замовлень клієнта',
         customers_entity_type_label: 'Тип особи (для рахунків)',
         customers_vat_code_label: 'Код ПДВ',
-        customers_payment_term_label: 'Відстрочення платежу, днів',
+        customers_payment_term_label: 'Термін оплати (відстрочка), днів',
         customers_payment_term_placeholder: '7 (за замовчуванням)',
         customers_invoice_mode_label: 'Рахунки',
         customers_invoice_mode_per_order: 'На кожне замовлення',
@@ -1823,4 +1823,7 @@ I18N.uk = {
         dash_leg_accepted: "Прийнято",
         dash_leg_progress: "У роботі",
         dash_leg_done: "Готово",
+        customers_payment_term_hint: "Від неї рахується термін оплати замовлень: дата замовлення + відстрочка. Порожньо — 7 днів, 0 — оплата в день замовлення.",
+        cust_req_term_zero: "оплата в день замовлення",
+        order_due_auto_n: "авто · {n} дн.",
 };

@@ -718,7 +718,7 @@ I18N.ru = {
         customers_apply_vat_all: 'Применить текущий статус НДС ко всем заказам клиента',
         customers_entity_type_label: 'Тип лица (для счетов)',
         customers_vat_code_label: 'Код НДС',
-        customers_payment_term_label: 'Отсрочка платежа, дней',
+        customers_payment_term_label: 'Срок оплаты (отсрочка), дней',
         customers_payment_term_placeholder: '7 (по умолчанию)',
         customers_invoice_mode_label: 'Счета',
         customers_invoice_mode_per_order: 'По каждому заказу',
@@ -1825,4 +1825,7 @@ I18N.ru = {
         dash_leg_accepted: "Принято",
         dash_leg_progress: "В работе",
         dash_leg_done: "Готово",
+        customers_payment_term_hint: "От неё считается срок оплаты заказов: дата заказа + отсрочка. Пусто — 7 дней, 0 — оплата в день заказа.",
+        cust_req_term_zero: "оплата в день заказа",
+        order_due_auto_n: "авто · {n} дн.",
 };

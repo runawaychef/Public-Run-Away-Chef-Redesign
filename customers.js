@@ -138,7 +138,7 @@ function renderCustomerCards() {
         const tagList = [];
         // Метки: только условия (скидка, отсрочка) → памятная дата → тревожные (красные) в конце. Тип лица и «Без НДС» в списке не показываем.
         if (Number(c.discount) > 0) tagList.push(`<span class="oc-tag">${t('cust_tag_discount').replace('{n}', Number(c.discount))}</span>`);
-        { const term = Number(c.payment_term_days) || 0; if (term > 0) { const s = t('cust_req_term').replace('{n}', term); tagList.push(`<span class="oc-tag">${escapeHtml(s.charAt(0).toUpperCase() + s.slice(1))}</span>`); } }
+        { const term = Number(c.payment_term_days) || 0; const s = term > 0 ? t('cust_req_term').replace('{n}', term) : (c.payment_term_days !== null && c.payment_term_days !== undefined && c.payment_term_days !== '' ? t('cust_req_term_zero') : ''); if (s) tagList.push(`<span class="oc-tag">${escapeHtml(s.charAt(0).toUpperCase() + s.slice(1))}</span>`); }   // 0 дней задан явно — «Оплата в день заказа» (13.11.2026)
         { const memoTag = memoCustomerTagHtml(c.id); if (memoTag) tagList.push(memoTag); } // памятная дата скоро — перед тревожными
         if (unpaidCnt > 0) tagList.push(`<button type="button" class="oc-tag oc-tag-red" onclick="event.stopPropagation(); openCustomerUnpaidModal(${c.id})">${unpaidOrdersLabel(unpaidCnt)}</button>`);
         html += `
@@ -687,6 +687,7 @@ function _cdRenderRequisitesSummary(cust) {
     if (disc > 0) parts.push(t('cust_tag_discount').replace('{n}', disc));
     const term = Number(cust.payment_term_days) || 0;
     if (term > 0) parts.push(t('cust_req_term').replace('{n}', term));
+    else if (cust.payment_term_days !== null && cust.payment_term_days !== undefined && cust.payment_term_days !== '') parts.push(t('cust_req_term_zero'));
     el.textContent = parts.join(' · ');
     el.classList.toggle('hidden', !parts.length);
 }

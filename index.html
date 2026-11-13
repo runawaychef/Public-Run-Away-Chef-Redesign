@@ -3235,6 +3235,7 @@ function hideSplashScreen() {
                         <div>
                             <label class="table-text text-gray-500" data-i18n="customers_payment_term_label">Отсрочка платежа, дней</label>
                             <input id="cdPaymentTermDays" type="number" inputmode="numeric" min="0" step="1" autocomplete="off" onblur="saveCdHeader()" class="border p-0.5 rounded-xl w-full table-text" placeholder="7" data-i18n-placeholder="customers_payment_term_placeholder">
+                            <p style="font-size:11.5px; color:#9a9488; margin:3px 2px 0; line-height:1.35;" data-i18n="customers_payment_term_hint">От неё считается срок оплаты заказов: дата заказа + отсрочка. Пусто — 7 дней, 0 — оплата в день заказа.</p>
                         </div>
                     </div>
                 </div>
@@ -5108,7 +5109,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=9"></script>
     <script src="money.js?v=12"></script>
-    <script src="i18n-core.js?v=174"></script>
+    <script src="i18n-core.js?v=175"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=19"></script>
     <script src="auth.js?v=32"></script>
@@ -5121,9 +5122,9 @@ function hideSplashScreen() {
 <script src="batches.js?v=17"></script>
 <script src="semifinished.js?v=69"></script>
 <script src="products.js?v=52"></script>
-<script src="customers.js?v=73"></script>
+<script src="customers.js?v=74"></script>
 <script src="calendar.js?v=17"></script>
-<script src="orders.js?v=163"></script>
+<script src="orders.js?v=164"></script>
 <script src="dashboard.js?v=23"></script>
 <script src="invoice.js?v=54"></script>
 <script src="send-document.js?v=43"></script>

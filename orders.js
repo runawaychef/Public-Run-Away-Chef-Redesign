@@ -847,13 +847,16 @@ function calcGroupTotals(allOrders, predicate) {
 // ---- Срок оплаты заказа (12.11.2026) ----
 // Если срок не задан вручную (orders.due_date), он считается сам: дата заказа + отсрочка клиента (payment_term_days, по умолчанию 7 дн.,
 // как при выставлении счёта). Ручное значение сильнее; сброс календарём («очистить») возвращает автоматический срок.
+function orderAutoTerm(o) {
+    const cust = (typeof customers !== 'undefined' ? customers : []).find(c => c.id === (o && o.customer_id));
+    const term = (cust && cust.payment_term_days != null) ? Number(cust.payment_term_days) : 7;
+    return isNaN(term) ? 7 : term;
+}
 function orderAutoDue(o) {
     if (!o || !o.date) return null;
-    const cust = (typeof customers !== 'undefined' ? customers : []).find(c => c.id === o.customer_id);
-    const term = (cust && cust.payment_term_days != null) ? Number(cust.payment_term_days) : 7;
     const d = new Date(String(o.date).slice(0, 10) + 'T12:00:00');
     if (isNaN(d.getTime())) return null;
-    d.setDate(d.getDate() + (isNaN(term) ? 7 : term));
+    d.setDate(d.getDate() + orderAutoTerm(o));
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 // Поле «Оплатить до» в шапке карточки заказа. У заказа со счётом показывается срок счёта (меняется в самом счёте).
@@ -873,7 +876,7 @@ function refreshDetailDue(order) {
     }
     btn.style.opacity = '';
     const eff = order.due_date || orderAutoDue(order);
-    lbl.innerHTML = eff ? escapeHtml(formatDateDMY(eff)) + (order.due_date ? '' : ` <span style="font-size:11px;color:#9a9488;">${escapeHtml(t('order_due_auto'))}</span>`) : '—';
+    lbl.innerHTML = eff ? escapeHtml(formatDateDMY(eff)) + (order.due_date ? '' : ` <span style="font-size:11px;color:#9a9488;">${escapeHtml(t('order_due_auto_n').replace('{n}', orderAutoTerm(order)))}</span>`) : '—';
     const today = getLocalDateStr(0);
     const over = eff && eff < today && getOrderPaymentStatus(order).status !== 'paid';
     lbl.style.color = over ? '#a3493d' : '';
