@@ -290,10 +290,11 @@ setTimeout(() => {
     try {
         const m = document.getElementById('orgNameSetupModal');
         const ph = !currentOrgName || ORG_NAME_PLACEHOLDERS.includes(String(currentOrgName).trim());
-        if (currentOrgId && ph && !welcomeDone() && (!m || m.style.display !== 'flex')) {
+        if (true) {
             const d = document.createElement('div');
             d.style.cssText = 'position:fixed;left:6px;right:6px;bottom:90px;z-index:99999;background:#fff;border:2px solid #c00;border-radius:10px;padding:8px;font:11px monospace;max-height:45vh;overflow:auto;white-space:pre-wrap;';
-            d.textContent = 'DIAG org=' + currentOrgId + ' emp=' + (employees || []).length + ' cur=' + (currentEmployee && currentEmployee.is_owner) + ' inst=' + (typeof _instantRestoreDone !== 'undefined' && _instantRestoreDone) + '\n' + window.__trail.join('\n');
+            const cs = m ? getComputedStyle(m) : null;
+            d.textContent = 'DIAG2 js=' + ((document.querySelector('script[src*="employees.js"]') || {}).src || '?').split('/').pop() + ' name=' + currentOrgName + ' ph=' + ph + ' done=' + welcomeDone() + ' modal=' + (m ? (m.style.display || '-') + '/' + cs.display + '/z' + cs.zIndex + '/vis' + cs.visibility : 'none') + ' role=' + (currentEmployee && currentEmployee.is_owner) + '\n' + 'org=' + currentOrgId + ' emp=' + (employees || []).length + ' cur=' + (currentEmployee && currentEmployee.is_owner) + ' inst=' + (typeof _instantRestoreDone !== 'undefined' && _instantRestoreDone) + '\n' + window.__trail.join('\n');
             d.onclick = () => d.remove();
             document.body.appendChild(d);
         }
