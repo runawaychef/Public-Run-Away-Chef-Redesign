@@ -89,11 +89,28 @@ async function getBillingService() {
 // Настоящая проверка Play-приложения: сервис Digital Goods реально создаётся
 // только внутри TWA из Google Play. Если создался — запоминаем флаг.
 async function probePlayApp() {
-    try {
-        const svc = await getBillingService();
-        if (svc) { try { sessionStorage.setItem('sb_play_app', '1'); } catch (e) { /* не страшно */ } }
-    } catch (e) { /* не Play-приложение */ }
+    // До 3 попыток: сервис Google иногда не поднимается с первого раза.
+    for (let i = 0; i < 3; i++) {
+        try {
+            const svc = await getBillingService();
+            if (svc) { markPlayApp(); return; }
+        } catch (e) { /* не Play-приложение */ }
+        // Если API вообще нет — это не Play-приложение, повторять незачем.
+        if (!('getDigitalGoodsService' in window)) return;
+        await new Promise(r => setTimeout(r, 400));
+        _digitalGoodsChecked = false; // разрешаем новую попытку
+    }
 }
+
+// Запоминаем «это Play-приложение»: на сеанс и надолго (первый запуск из Play
+// даёт признак, дальше он сохраняется и между перезапусками).
+function markPlayApp() {
+    try { sessionStorage.setItem('sb_play_app', '1'); } catch (e) { /* не страшно */ }
+    try { localStorage.setItem('sb_play_seen', '1'); } catch (e) { /* не страшно */ }
+}
+
+// Ранняя проверка сразу после загрузки страницы (не ждём открытия окна тарифов).
+setTimeout(() => { probePlayApp(); }, 800);
 
 // Оплата (на сайте Stripe и покупка Google Play) видна ТОЛЬКО когда глобальный рубильник
 // platform_settings.monetization_live = 'true' (или организация защищённая — для тестов
@@ -139,11 +156,12 @@ let _billingInfo = null;
 // считаем веб-пользователем (браузер / PWA / iPhone).
 function isPlayApp() {
     try { if (sessionStorage.getItem('sb_play_app') === '1') return true; } catch (e) { /* без хранилища — по признакам ниже */ }
+    try { if (localStorage.getItem('sb_play_seen') === '1') return true; } catch (e) { /* не страшно */ }
     const fromPlay = (document.referrer || '').startsWith('android-app://' + BILLING_PACKAGE_NAME);
     // Одного наличия window.getDigitalGoodsService мало (в обычном Chrome на Android
     // он тоже может быть) — настоящий сервис проверяет probePlayApp() ниже.
     const yes = fromPlay;
-    if (yes) { try { sessionStorage.setItem('sb_play_app', '1'); } catch (e) { /* не страшно */ } }
+    if (yes) markPlayApp();
     return yes;
 }
 
