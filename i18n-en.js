@@ -1835,4 +1835,5 @@ I18N.en = {
         lock_btn_close: "Close",
         plan_feat_memo: "Customer special dates",
         dash_stock_locked_text: "\"Stock alerts\" is available on the Full plan. The tile shows which ingredients you are short of for orders and what is about to expire.",
+        org_default_name: "My bakery",
 };

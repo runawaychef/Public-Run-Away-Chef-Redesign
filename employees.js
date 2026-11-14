@@ -136,6 +136,22 @@ function applyPlanGating() {
     if (typeof applyScreenAccessPermissions === 'function') applyScreenAccessPermissions();
 }
 
+// Технические названия по умолчанию (handle_new_user() в базе ставит «Моя пекарня» всем,
+// независимо от языка). Считаются «название ещё не задано» (13.11.2026).
+const ORG_NAME_PLACEHOLDERS = ['Моя пекарня', 'My Bakery', 'My bakery', 'Mano kepykla'];
+
+// Название по умолчанию на языке интерфейса (запасной — английский через t()); '' если словарь не загружен
+function defaultOrgName() {
+    const v = t('org_default_name');
+    return (v && v !== 'org_default_name') ? v : '';
+}
+
+// Если в базе осталась заглушка — показываем её на языке интерфейса (в базе не меняем)
+function localizedOrgName(name) {
+    if (name && ORG_NAME_PLACEHOLDERS.includes(String(name).trim())) return defaultOrgName() || name;
+    return name;
+}
+
 function updateHeaderOrgName() {
     const el = document.getElementById('orgNameHeader');
     if (el && currentOrgName) el.textContent = currentOrgName;
@@ -206,7 +222,7 @@ async function loadCurrentOrg() {
             .single();
         if (error) throw error;
         currentOrgId = data.org_id;
-        currentOrgName = (data.organizations && data.organizations.name) || '';
+        currentOrgName = localizedOrgName((data.organizations && data.organizations.name) || '');
         // plan_override (выставляется вручную из Simple Hub, см. admin_set_org_plan) —
         // "побеждает" реальный тариф по оплате. Нужен для тестовых организаций,
         // которые должны видеть полный функционал независимо от billing-статуса,
@@ -669,13 +685,16 @@ function openOrgNameSetupModal(owner) {
     // handle_new_user() всегда ставит технический дефолт "Моя пекарня"/"My
     // Bakery" — в этом случае, наоборот, оставляем поле пустым, чтобы человек
     // ввёл настоящее название своей пекарни.
-    const isPlaceholder = !currentOrgName || currentOrgName === 'Моя пекарня' || currentOrgName === 'My Bakery';
+    const isPlaceholder = !currentOrgName || ORG_NAME_PLACEHOLDERS.includes(String(currentOrgName).trim());
     document.getElementById('orgNameSetupInput').value = isPlaceholder ? '' : currentOrgName;
     document.getElementById('orgNameSetupModal').style.display = 'flex';
 }
 
 async function saveOrgNameSetup() {
-    const name = document.getElementById('orgNameSetupInput').value.trim();
+    let name = document.getElementById('orgNameSetupInput').value.trim();
+    // Поле можно оставить пустым: тогда название по умолчанию на языке интерфейса
+    // (запасной английский), а не русская заглушка из базы (13.11.2026)
+    if (!name) name = defaultOrgName();
     // С 11.11.2026: вопрос «Как вы принимаете оплату?» убран с этого экрана (режим по умолчанию «По заказу»,
     // меняется в Настройки → Информация о компании → Документы и оплата; о нём рассказывает тур),
     // а примеры предлагаются в туре (tourOfferFirstRun в demoData.js), флажка демо здесь больше нет.

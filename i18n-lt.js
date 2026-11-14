@@ -1832,4 +1832,5 @@ I18N.lt = {
         lock_btn_close: "Uždaryti",
         plan_feat_memo: "Ypatingos klientų datos",
         dash_stock_locked_text: "„Sandėlis: dėmesio“ galimas Full plane. Plytelė rodo, kokių ingredientų trūksta užsakymams ir kam netrukus baigsis tinkamumo laikas.",
+        org_default_name: "Mano kepykla",
 };
