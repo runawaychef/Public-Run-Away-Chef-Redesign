@@ -471,7 +471,7 @@ async function handleAuthSubmit(e) {
             await showAuthedApp();
         } else {
             btn.textContent = t('auth_registering');
-            const { data, error } = await db.auth.signUp({ email, password, options: { data: { signup_channel: detectSignupChannel() } } });
+            const { data, error } = await db.auth.signUp({ email, password, options: { emailRedirectTo: 'https://simple-bake.com/Public-Run-Away-Chef-Redesign/', data: { signup_channel: detectSignupChannel() } } });
             if (error) throw error;
             document.getElementById('authPassword').value = '';
             if (data && data.session) {
