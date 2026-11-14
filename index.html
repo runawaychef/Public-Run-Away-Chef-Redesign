@@ -2452,6 +2452,17 @@ function hideSplashScreen() {
      внутри #appContent и из-за display:none у app-locked открывался
      физически невидимым — кнопка "Сменить аккаунт" выглядела зависшей
      (поймано на живом тестировании 26.07.2026). -->
+<!-- Окно «Назовите вашу пекарню» — ВНЕ #appContent: пока приложение заблокировано (app-locked, display:none), внутри него окно было физически невидимым (14.11.2026) -->
+        <!-- Первый запуск: ввод названия пекарни -->
+        <div id="orgNameSetupModal" class="modal">
+            <div class="modal-content" style="max-width:320px;">
+                <h2 class="text-sm font-semibold mb-1 text-gray-800" data-i18n="orders_welcome_title">Добро пожаловать!</h2>
+                <p class="text-xs text-gray-500 mb-3" data-i18n="orders_welcome_desc">Как называется ваша пекарня? Это название будет отображаться в шапке приложения. Изменить его можно позже в настройках.</p>
+                <input id="orgNameSetupInput" type="text" class="border p-1.5 rounded-xl text-sm w-full mb-3" placeholder="Например, Пекарня Анны" data-i18n-placeholder="company_name_placeholder">
+                <button onclick="saveOrgNameSetup()" class="pill-btn w-full justify-center" data-i18n="orders_start_working">Начать работу</button>
+            </div>
+        </div>
+
 <div id="confirmModal" class="modal">
     <div class="modal-content text-center">
         <p id="confirmMessage" class="text-sm text-gray-800 mb-4" style="white-space: pre-line;"></p>
@@ -3890,16 +3901,6 @@ function hideSplashScreen() {
             </div>
         </div>
 
-        <!-- Первый запуск: ввод названия пекарни -->
-        <div id="orgNameSetupModal" class="modal">
-            <div class="modal-content" style="max-width:320px;">
-                <h2 class="text-sm font-semibold mb-1 text-gray-800" data-i18n="orders_welcome_title">Добро пожаловать!</h2>
-                <p class="text-xs text-gray-500 mb-3" data-i18n="orders_welcome_desc">Как называется ваша пекарня? Это название будет отображаться в шапке приложения. Изменить его можно позже в настройках.</p>
-                <input id="orgNameSetupInput" type="text" class="border p-1.5 rounded-xl text-sm w-full mb-3" placeholder="Например, Пекарня Анны" data-i18n-placeholder="company_name_placeholder">
-                <button onclick="saveOrgNameSetup()" class="pill-btn w-full justify-center" data-i18n="orders_start_working">Начать работу</button>
-            </div>
-        </div>
-
         <!-- Список сотрудников и их прав (только для владельца) -->
         <!-- Внесение / редактирование платежа по заказу -->
         <div id="addPaymentModal" class="modal">
@@ -5128,7 +5129,7 @@ function hideSplashScreen() {
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=20"></script>
     <script src="auth.js?v=33"></script>
-    <script src="employees.js?v=77"></script>
+    <script src="employees.js?v=78"></script>
     <script src="company.js?v=28"></script>
     <script src="inventory.js?v=82"></script>
     <script src="billing.js?v=23"></script>
