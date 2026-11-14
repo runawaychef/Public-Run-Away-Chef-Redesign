@@ -312,6 +312,15 @@ async function initLogin() {
             }
         }
 
+        // Экран «Welcome!» (название пекарни + предложение тура) не должен пропадать, если запись
+        // владельца уже создана, а форму человек так и не прошёл (сбой/перезапуск при первом входе,
+        // 14.11.2026). Признак «форма пройдена» — на этом устройстве, по организации.
+        if (myOwn && myOwn.is_owner && membership.role === 'owner' && employees.length === 1
+            && (!currentOrgName || ORG_NAME_PLACEHOLDERS.includes(String(currentOrgName).trim()))
+            && !welcomeDone()) {
+            openOrgNameSetupModal(myOwn);
+            return true;
+        }
         if (myOwn) { await selectEmployee(myOwn); return true; }
 
         if (!employees.length) {
@@ -677,6 +686,13 @@ async function cancelEmployeeSwitch() {
 
 let _pendingOwnerForSetup = null;
 
+function welcomeDone() {
+    try { return localStorage.getItem('sb_welcome_done_' + currentOrgId) === '1'; } catch (e) { return false; }
+}
+function markWelcomeDone() {
+    try { localStorage.setItem('sb_welcome_done_' + currentOrgId, '1'); } catch (e) { /* не страшно */ }
+}
+
 function openOrgNameSetupModal(owner) {
     _pendingOwnerForSetup = owner;
     // Если название уже осмысленно задано заранее (например, тестовая
@@ -709,6 +725,7 @@ async function saveOrgNameSetup() {
             showInfo(t('employees_name_save_delayed'));
         }
     }
+    markWelcomeDone();
     const owner = _pendingOwnerForSetup;
     document.getElementById('orgNameSetupModal').style.display = 'none';
     _pendingOwnerForSetup = null;
