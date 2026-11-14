@@ -272,7 +272,36 @@ async function loadCurrentOrg() {
 
 const EMPLOYEE_SELECT_FIELDS = 'id, name, is_owner, user_id, can_view_costs, can_delete, can_manage_inventory, can_view_reports, can_manage_team';
 
+// ВРЕМЕННАЯ диагностика (14.11.2026): след входа для поиска, почему не показывается «Welcome!»
+window.__trail = window.__trail || [];
+function _trail(m) { try { window.__trail.push(((Date.now() % 100000) / 1000).toFixed(1) + ' ' + m); } catch (e) {} }
+setTimeout(() => {
+    try {
+        const m = document.getElementById('orgNameSetupModal');
+        if (m) new MutationObserver(() => _trail('modal style=' + (m.style.display || '-'))).observe(m, { attributes: true, attributeFilter: ['style'] });
+        if (typeof closeModal === 'function' && !window.__cmWrapped) {
+            window.__cmWrapped = true;
+            const orig = closeModal;
+            window.closeModal = function () { _trail('closeModal from ' + String(new Error().stack).split('\n').slice(2, 4).join('|').replace(/https?:\/\/[^/]+\//g, '')); return orig.apply(this, arguments); };
+        }
+    } catch (e) {}
+}, 0);
+setTimeout(() => {
+    try {
+        const m = document.getElementById('orgNameSetupModal');
+        const ph = !currentOrgName || ORG_NAME_PLACEHOLDERS.includes(String(currentOrgName).trim());
+        if (currentOrgId && ph && !welcomeDone() && (!m || m.style.display !== 'flex')) {
+            const d = document.createElement('div');
+            d.style.cssText = 'position:fixed;left:6px;right:6px;bottom:90px;z-index:99999;background:#fff;border:2px solid #c00;border-radius:10px;padding:8px;font:11px monospace;max-height:45vh;overflow:auto;white-space:pre-wrap;';
+            d.textContent = 'DIAG org=' + currentOrgId + ' emp=' + (employees || []).length + ' cur=' + (currentEmployee && currentEmployee.is_owner) + ' inst=' + (typeof _instantRestoreDone !== 'undefined' && _instantRestoreDone) + '\n' + window.__trail.join('\n');
+            d.onclick = () => d.remove();
+            document.body.appendChild(d);
+        }
+    } catch (e) {}
+}, 9000);
+
 async function initLogin() {
+    _trail('initLogin start');
     document.getElementById('loginError').classList.add('hidden');
     document.getElementById('loginRetryBtn').classList.add('hidden');
     // Сначала загружаем организацию текущего пользователя
@@ -294,6 +323,7 @@ async function initLogin() {
             .order('name');
         if (error) throw error;
         employees = data || [];
+        _trail('employees=' + employees.length + ' role=' + membership.role + ' org=' + currentOrgName + ' done=' + welcomeDone());
 
         // Если у этого аккаунта уже есть личная привязанная запись — входим сразу под ней, без выбора
         let myOwn = myUserId ? employees.find(e => e.user_id === myUserId) : null;
@@ -318,10 +348,11 @@ async function initLogin() {
         if (myOwn && myOwn.is_owner && membership.role === 'owner' && employees.length === 1
             && (!currentOrgName || ORG_NAME_PLACEHOLDERS.includes(String(currentOrgName).trim()))
             && !welcomeDone()) {
+            _trail('branch: reopen welcome');
             openOrgNameSetupModal(myOwn);
             return true;
         }
-        if (myOwn) { await selectEmployee(myOwn); return true; }
+        if (myOwn) { _trail('branch: myOwn selectEmployee'); await selectEmployee(myOwn); return true; }
 
         if (!employees.length) {
             // Пекарня новая (или ещё нет ни одной записи) — создаём настоящую запись владельца с полными правами
@@ -336,6 +367,7 @@ async function initLogin() {
                 console.error('Ошибка создания владельца:', ownerErr);
                 await selectEmployee({ id: null, name: t('employees_role_owner'), is_owner: true });
             } else {
+                _trail('branch: new owner welcome');
                 openOrgNameSetupModal(owner);
             }
             return true;
@@ -690,6 +722,7 @@ let _pendingOwnerForSetup = null;
 // тихого обновления данных (cache.js): владелец, единственный сотрудник, название пекарни ещё по умолчанию,
 // форма на этом устройстве не пройдена (14.11.2026).
 function maybeShowWelcome() {
+    _trail('maybeShowWelcome');
     try {
         if (!currentEmployee || !currentEmployee.is_owner || !currentOrgId) return;
         if (!Array.isArray(employees) || employees.length !== 1) return;
