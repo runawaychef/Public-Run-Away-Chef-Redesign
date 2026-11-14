@@ -72,7 +72,7 @@ I18N.lt = {
         plan_past_due_warn: 'Nepavyko nuskaityti mokėjimo. Atnaujinkite mokėjimo būdą, kitaip planas bus išjungtas.',
         plan_note_google_play: 'Prenumerata sudaryta per Google Play. Ją galite valdyti Google Play programėlėje: „Mokėjimai ir prenumeratos“.',
         plan_note_owner_only: 'Planą keičia savininkas arba vadovas.',
-        plan_web_price_note: 'Kaina su mokesčiais. Mokėjimas per Stripe, atšaukti galima bet kada.',
+        plan_web_price_note: 'Mokestis įskaičiuotas į kainą. Prenumerata 1 mėnesiui, automatiškai atnaujinama kas mėnesį už tą pačią kainą, kol jos neatšauksite. Atšaukti galima bet kada: Planas → Prenumeratos valdymas. Mokėjimą priima ir pratęsimus nurašo Stripe (Link).',
         plan_manage_note: 'Atšaukimas, plano ar kortelės keitimas ir sąskaitos – prenumeratos valdyme.',
         plan_pay_success: 'Mokėjimas gautas, planas įjungtas.',
         plan_pay_pending: 'Tikriname mokėjimą… Planas įsijungs po kelių sekundžių.',
