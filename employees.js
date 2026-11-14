@@ -686,6 +686,21 @@ async function cancelEmployeeSwitch() {
 
 let _pendingOwnerForSetup = null;
 
+// Быстрый запуск из локального снимка обходит initLogin(), поэтому «Welcome!» проверяем и после
+// тихого обновления данных (cache.js): владелец, единственный сотрудник, название пекарни ещё по умолчанию,
+// форма на этом устройстве не пройдена (14.11.2026).
+function maybeShowWelcome() {
+    try {
+        if (!currentEmployee || !currentEmployee.is_owner || !currentOrgId) return;
+        if (!Array.isArray(employees) || employees.length !== 1) return;
+        if (currentOrgName && !ORG_NAME_PLACEHOLDERS.includes(String(currentOrgName).trim())) return;
+        if (welcomeDone()) return;
+        const m = document.getElementById('orgNameSetupModal');
+        if (!m || m.style.display === 'flex') return;
+        openOrgNameSetupModal(currentEmployee);
+    } catch (e) { console.error(e); }
+}
+
 function welcomeDone() {
     try { return localStorage.getItem('sb_welcome_done_' + currentOrgId) === '1'; } catch (e) { return false; }
 }

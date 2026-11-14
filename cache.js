@@ -182,6 +182,7 @@ async function backgroundRefreshAfterInstantRestore() {
         if (typeof cleanupAbandonedSemiFinishedDrafts === 'function') await cleanupAbandonedSemiFinishedDrafts();
         initRealtime();
         refreshFab();
+        if (typeof maybeShowWelcome === 'function') maybeShowWelcome();
     } catch (e) {
         // Плохая сеть при фоновом обновлении — не критично, пользователь пока
         // продолжает работать с уже показанными кэшированными данными.
