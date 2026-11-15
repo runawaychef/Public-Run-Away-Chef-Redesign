@@ -52,7 +52,7 @@ I18N.en = {
         plan_full_name: 'Full',
         plan_full_price: '€5.99 / month',
         plan_full_desc: 'Everything: staff, reports, statistics, push notifications, inventory analytics',
-        plan_upgrade_btn: 'Upgrade',
+        plan_upgrade_btn: 'Choose',
         plan_coming_soon: 'Coming soon',
         plan_processing: 'Processing…',
         plan_purchase_error: 'Something went wrong. Please try again.',

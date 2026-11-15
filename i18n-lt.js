@@ -58,7 +58,7 @@ I18N.lt = {
         plan_full_name: 'Full',
         plan_full_price: '5,99 € / mėn.',
         plan_full_desc: 'Viskas: darbuotojai, ataskaitos, statistika, push pranešimai, sandėlio analitika',
-        plan_upgrade_btn: 'Pagerinti',
+        plan_upgrade_btn: 'Pasirinkti',
         plan_coming_soon: 'Netrukus bus prieinama',
         plan_processing: 'Apdorojama…',
         plan_purchase_error: 'Kažkas nepavyko. Bandykite dar kartą.',

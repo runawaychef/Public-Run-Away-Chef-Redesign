@@ -58,7 +58,7 @@ I18N.uk = {
         plan_full_name: 'Full',
         plan_full_price: '5,99 € / міс',
         plan_full_desc: 'Все включено: співробітники, звіти, статистика, push-сповіщення, аналітика складу',
-        plan_upgrade_btn: 'Покращити',
+        plan_upgrade_btn: 'Обрати',
         plan_coming_soon: 'Скоро буде доступно',
         plan_processing: 'Обробка…',
         plan_purchase_error: 'Щось пішло не так. Спробуйте ще раз.',

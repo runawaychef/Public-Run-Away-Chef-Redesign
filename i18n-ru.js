@@ -51,7 +51,7 @@ I18N.ru = {
         plan_full_name: 'Full',
         plan_full_price: '5,99 € / мес',
         plan_full_desc: 'Всё включено: сотрудники, отчёты, статистика, push-уведомления, аналитика склада',
-        plan_upgrade_btn: 'Улучшить',
+        plan_upgrade_btn: 'Выбрать',
         plan_coming_soon: 'Скоро будет доступно',
         plan_processing: 'Обработка…',
         plan_purchase_error: 'Что-то пошло не так. Попробуйте ещё раз.',
