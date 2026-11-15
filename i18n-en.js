@@ -72,6 +72,7 @@ I18N.en = {
         plan_pay_pending: 'Checking the payment… The plan will be active in a few seconds.',
         plan_pay_cancelled: 'Payment cancelled. Nothing was charged.',
         plan_purchase_cancelled: 'Purchase cancelled.',
+        plan_downgrade_scheduled: 'Downgrade confirmed. Your plan will change at the next renewal.',
         plan_purchase_success: 'Purchase successful! Your plan has been updated.',
         plan_feat_orders: 'Orders — cards, calendar, filters',
         plan_feat_customers: 'Customer card — debt & order history',

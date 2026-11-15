@@ -29,21 +29,6 @@ const PLAN_PRODUCTS = {
 
 let _digitalGoodsService = null;
 let _digitalGoodsChecked = false;
-// ВРЕМЕННАЯ диагностика (14.11.2026, build 895): причина серых кнопок в Play-версии.
-let _bdiag = '';
-function showBillingDiag(msg) {
-    _bdiag = msg;
-    const wrap = document.getElementById('planModalCards');
-    if (!wrap || !wrap.parentNode) return;
-    let el = document.getElementById('planBillingDiag');
-    if (!el) {
-        el = document.createElement('div');
-        el.id = 'planBillingDiag';
-        el.style.cssText = 'font-size:10px;color:#999;margin:6px 2px 0;word-break:break-all';
-        wrap.parentNode.insertBefore(el, wrap.nextSibling);
-    }
-    el.textContent = msg;
-}
 
 // ── obfuscatedAccountId: связываем покупку с организацией на стороне Google ──
 // Google Play Billing позволяет передать при покупке произвольный "obfuscated
@@ -88,15 +73,12 @@ async function getBillingService() {
     _digitalGoodsChecked = true;
     if (!('getDigitalGoodsService' in window)) {
         _digitalGoodsService = null;
-        _bdiag = 'DG: no api';
         return null;
     }
     try {
         _digitalGoodsService = await window.getDigitalGoodsService(BILLING_METHOD);
-        _bdiag = 'DG: service ok';
     } catch (e) {
         _digitalGoodsService = null;
-        _bdiag = 'DG: service error ' + (e && (e.name + ' ' + e.message) || e);
     }
     return _digitalGoodsService;
 }
@@ -468,17 +450,15 @@ function renderPlanModalCards() {
 // Не блокирует открытие модалки — цены обновляются "тихо" по готовности.
 async function refreshPlanModalPrices() {
     const service = await getBillingService();
-    if (!service) { if (isPlayApp()) showBillingDiag(_bdiag || 'DG: no service'); return; } // API недоступен здесь — оставляем статичные цены, кнопки остаются disabled ("Скоро будет доступно")
+    if (!service) return; // API недоступен здесь — оставляем статичные цены, кнопки остаются disabled ("Скоро будет доступно")
 
     let details;
     try {
         details = await service.getDetails([PLAN_PRODUCTS.light.sku, PLAN_PRODUCTS.full.sku]);
     } catch (e) {
-        if (isPlayApp()) showBillingDiag('getDetails error ' + (e && (e.name + ' ' + e.message) || e));
         return;
     }
-    if (!details || !details.length) { if (isPlayApp()) showBillingDiag('getDetails empty (' + (details ? details.length : 'null') + ')'); return; }
-    if (isPlayApp()) showBillingDiag('getDetails ok: ' + details.map(d => d.itemId).join(','));
+    if (!details || !details.length) return;
 
     details.forEach(item => {
         const cardKey = Object.keys(PLAN_PRODUCTS).find(k => PLAN_PRODUCTS[k].sku === item.itemId);
@@ -501,6 +481,24 @@ async function refreshPlanModalPrices() {
     });
 }
 
+// Текущая действующая подписка Light/Full в Google Play: { sku, purchaseToken } или null.
+// Нужна для смены тарифа: Google считает апгрейд/понижение заменой только если ему
+// передать oldSku и purchaseToken старой подписки (иначе спишет полную цену и оставит
+// обе подписки). Токен берём у самого Google (Digital Goods API listPurchases).
+async function findCurrentPlayPurchase(service, currentPlan) {
+    try {
+        if (typeof service.listPurchases !== 'function') return null;
+        const list = await service.listPurchases();
+        const ours = (list || []).filter(p => Object.values(PLAN_PRODUCTS).some(pp => pp.sku === p.itemId));
+        if (!ours.length) return null;
+        const wanted = PLAN_PRODUCTS[currentPlan] ? PLAN_PRODUCTS[currentPlan].sku : null;
+        const pick = ours.find(p => p.itemId === wanted) || ours[0];
+        return { sku: pick.itemId, purchaseToken: pick.purchaseToken };
+    } catch (e) {
+        return null;
+    }
+}
+
 // Запускает покупку тарифа через системный экран Google Play.
 // planKey — 'light' | 'full'.
 async function purchasePlan(planKey) {
@@ -519,16 +517,46 @@ async function purchasePlan(planKey) {
     if (btn) { btn.disabled = true; btn.textContent = t('plan_processing'); }
 
     try {
+        // Уже есть подписка Google Play на другой тариф → это СМЕНА тарифа:
+        // Light→Full сразу, за остаток периода доплата разницы; Full→Light — со следующего
+        // продления (Full действует до конца оплаченного периода).
+        const purchaseData = { sku: product.sku, additionalData: buildBillingAdditionalData(currentOrgId) };
+        let isDeferredDowngrade = false;
+        const hasPlayPlan = _billingInfo && _billingInfo.plan_source === 'google_play'
+            && PLAN_PRODUCTS[currentOrgPlan] && currentOrgPlan !== planKey;
+        if (hasPlayPlan) {
+            const cur = await findCurrentPlayPurchase(service, currentOrgPlan);
+            if (!cur) {
+                // Токена текущей подписки нет — без него Google спишет полную цену
+                // и оставит две подписки. Лучше не начинать покупку.
+                if (btn) { btn.disabled = false; btn.textContent = originalLabel; }
+                showInfo(t('plan_purchase_error'));
+                return;
+            }
+            purchaseData.oldSku = cur.sku;
+            purchaseData.purchaseToken = cur.purchaseToken;
+            isDeferredDowngrade = !(currentOrgPlan === 'light' && planKey === 'full');
+            purchaseData.prorationMode = isDeferredDowngrade ? 'deferred' : 'immediateAndChargeProratedPrice';
+        }
+
         const request = new PaymentRequest(
             [{
                 supportedMethods: BILLING_METHOD,
-                data: { sku: product.sku, additionalData: buildBillingAdditionalData(currentOrgId) }
+                data: purchaseData
             }],
             { total: { label: product.sku, amount: { currency: 'EUR', value: '0' } } }
         );
 
         const response = await request.show();
         await response.complete('success');
+
+        if (isDeferredDowngrade) {
+            // Понижение вступит в силу при следующем продлении — тариф сейчас не меняем,
+            // его обновит уведомление Google (rtdn-handler) в момент продления.
+            showInfo(t('plan_downgrade_scheduled'));
+            document.getElementById('planModal').style.display = 'none';
+            return;
+        }
 
         // Отправляем purchaseToken на сервер для проверки через Google Play
         // Developer API и обновления тарифа в базе (Edge Function verify-purchase).

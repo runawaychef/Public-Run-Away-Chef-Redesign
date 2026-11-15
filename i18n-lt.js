@@ -78,6 +78,7 @@ I18N.lt = {
         plan_pay_pending: 'Tikriname mokėjimą… Planas įsijungs po kelių sekundžių.',
         plan_pay_cancelled: 'Mokėjimas atšauktas. Nieko nenuskaityta.',
         plan_purchase_cancelled: 'Pirkimas atšauktas.',
+        plan_downgrade_scheduled: 'Pakeitimas patvirtintas. Tarifas pasikeis kitą kartą pratęsus prenumeratą.',
         plan_purchase_success: 'Pirkimas sėkmingas! Jūsų planas atnaujintas.',
         plan_feat_orders: 'Užsakymai — kortelės, kalendorius, filtrai',
         plan_feat_customers: 'Kliento kortelė — skola ir užsakymų istorija',
