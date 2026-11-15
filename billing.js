@@ -29,6 +29,21 @@ const PLAN_PRODUCTS = {
 
 let _digitalGoodsService = null;
 let _digitalGoodsChecked = false;
+// ВРЕМЕННАЯ диагностика (14.11.2026, build 895): причина серых кнопок в Play-версии.
+let _bdiag = '';
+function showBillingDiag(msg) {
+    _bdiag = msg;
+    const wrap = document.getElementById('planModalCards');
+    if (!wrap || !wrap.parentNode) return;
+    let el = document.getElementById('planBillingDiag');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'planBillingDiag';
+        el.style.cssText = 'font-size:10px;color:#999;margin:6px 2px 0;word-break:break-all';
+        wrap.parentNode.insertBefore(el, wrap.nextSibling);
+    }
+    el.textContent = msg;
+}
 
 // ── obfuscatedAccountId: связываем покупку с организацией на стороне Google ──
 // Google Play Billing позволяет передать при покупке произвольный "obfuscated
@@ -73,12 +88,15 @@ async function getBillingService() {
     _digitalGoodsChecked = true;
     if (!('getDigitalGoodsService' in window)) {
         _digitalGoodsService = null;
+        _bdiag = 'DG: no api';
         return null;
     }
     try {
         _digitalGoodsService = await window.getDigitalGoodsService(BILLING_METHOD);
+        _bdiag = 'DG: service ok';
     } catch (e) {
         _digitalGoodsService = null;
+        _bdiag = 'DG: service error ' + (e && (e.name + ' ' + e.message) || e);
     }
     return _digitalGoodsService;
 }
@@ -450,15 +468,17 @@ function renderPlanModalCards() {
 // Не блокирует открытие модалки — цены обновляются "тихо" по готовности.
 async function refreshPlanModalPrices() {
     const service = await getBillingService();
-    if (!service) return; // API недоступен здесь — оставляем статичные цены, кнопки остаются disabled ("Скоро будет доступно")
+    if (!service) { if (isPlayApp()) showBillingDiag(_bdiag || 'DG: no service'); return; } // API недоступен здесь — оставляем статичные цены, кнопки остаются disabled ("Скоро будет доступно")
 
     let details;
     try {
         details = await service.getDetails([PLAN_PRODUCTS.light.sku, PLAN_PRODUCTS.full.sku]);
     } catch (e) {
+        if (isPlayApp()) showBillingDiag('getDetails error ' + (e && (e.name + ' ' + e.message) || e));
         return;
     }
-    if (!details || !details.length) return;
+    if (!details || !details.length) { if (isPlayApp()) showBillingDiag('getDetails empty (' + (details ? details.length : 'null') + ')'); return; }
+    if (isPlayApp()) showBillingDiag('getDetails ok: ' + details.map(d => d.itemId).join(','));
 
     details.forEach(item => {
         const cardKey = Object.keys(PLAN_PRODUCTS).find(k => PLAN_PRODUCTS[k].sku === item.itemId);
