@@ -660,7 +660,10 @@ function maybeShowOrderQuotaReminder() {
         const today = (typeof getLocalDateStr === 'function') ? getLocalDateStr(0) : new Date().toISOString().slice(0, 10);
         let stored = null;
         try { stored = JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) { stored = null; }
-        if (stored && stored.date === today && stored.level >= level) return;
+        // при остатке 5 заказов и меньше напоминаем при каждом сохранении заказа;
+        // выше — не чаще раза в сутки на уровень
+        const urgent = q.used >= q.limit - 5;
+        if (!urgent && stored && stored.date === today && stored.level >= level) return;
         try { localStorage.setItem(key, JSON.stringify({ date: today, level })); } catch (e) { /* без хранилища просто покажем */ }
 
         const left = Math.max(q.limit - q.used, 0);
