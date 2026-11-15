@@ -340,9 +340,9 @@ async function createDraftCustomerAndOpen() {
     suppressRealtimeFor3s();
     showLoading();
     try {
-        const { data, error } = await db.from('customers').insert({ org_id: currentOrgId, name: '', contact: '', discount: 0, vat_exempt: false }).select().single();
+        const { data, error } = await db.from('customers').insert({ org_id: currentOrgId, name: '', contact: '', discount: 0, vat_exempt: false, entity_type: 'individual' }).select().single();
         if (error) throw error;
-        const newCust = { id: data.id, name: '', contact: '', discount: 0, vat_exempt: false };
+        const newCust = { id: data.id, name: '', contact: '', discount: 0, vat_exempt: false, entity_type: 'individual' };
         customers.push(newCust);
         _draftCustomerIds.add(newCust.id);
         displayCustomers();

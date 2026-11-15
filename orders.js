@@ -2124,9 +2124,9 @@ async function createCustomerFromOrder(typedName) {
     showLoading();
     let newCust;
     try {
-        const { data, error } = await db.from('customers').insert({ org_id: currentOrgId, name, contact: '', discount: 0, vat_exempt: false }).select().single();
+        const { data, error } = await db.from('customers').insert({ org_id: currentOrgId, name, contact: '', discount: 0, vat_exempt: false, entity_type: 'individual' }).select().single();
         if (error) throw error;
-        newCust = { id: data.id, name, contact: '', discount: 0, vat_exempt: false };
+        newCust = { id: data.id, name, contact: '', discount: 0, vat_exempt: false, entity_type: 'individual' };
         customers.push(newCust);
         if (!name) _draftCustomerIds.add(newCust.id);
         logActivity('customer', `${t('log_customer_draft_created')} ${name ? '«' + name + '»' : '№' + newCust.id}`);
