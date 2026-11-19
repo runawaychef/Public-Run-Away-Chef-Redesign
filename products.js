@@ -1069,15 +1069,17 @@ function renderCostItemsEditor(boxId, kind) {
     const ent = _ciEnt(kind);
     if (!box || !ent) return;
     const items = costItemsOf(ent);
+    if (kind === 's') items.forEach(it => { it.p = 'b'; }); // у полуфабриката все статьи на партию
     const perU = _ciPerUnitLabel(ent, kind);
     const quick = ['other', 'packaging', 'label', 'energy', 'delivery'].map(k => `<option value="${escapeHtml(t('cost_item_' + k))}"></option>`).join('');
     const IN = 'border p-0.5 rounded-xl table-text';
     const W = { a: 'width:52px;flex:none;padding-left:4px;padding-right:4px;', p: 'width:84px;flex:none;padding-left:3px;padding-right:1px;font-size:12px;', x: 'width:62px;flex:none;' };
-    const perSel = (id, handler, isUnit) => `<select ${id ? `id="${id}"` : ''} ${handler ? `onchange="${handler}"` : ''} class="${IN}" style="${W.p}">
+    const showPer = kind === 'p'; // у полуфабриката «на единицу» (на г, на мл) не имеет смысла — только на партию
+    const perSel = (id, handler, isUnit) => !showPer ? '' : `<select ${id ? `id="${id}"` : ''} ${handler ? `onchange="${handler}"` : ''} class="${IN}" style="${W.p}">
                 <option value="u"${isUnit ? ' selected' : ''}>${escapeHtml(perU)}</option>
                 <option value="b"${isUnit ? '' : ' selected'}>${escapeHtml(t('cost_per_batch'))}</option></select>`;
     const hdr = `<div class="flex items-center gap-1 mb-1" style="background:#e3e8df;border-radius:12px;padding:5px 4px;font-size:10.5px;font-weight:600;color:#6b7a63;text-align:center;">
-            <div style="flex:1 1 0;min-width:0;">${escapeHtml(t('cost_col_name'))}</div><div style="width:52px;flex:none;">${escapeHtml(t('cost_col_sum'))}</div><div style="width:84px;flex:none;">${escapeHtml(t('cost_col_basis'))}</div><div style="width:62px;flex:none;">${escapeHtml(t('sf_col_actions'))}</div></div>`;
+            <div style="flex:1 1 0;min-width:0;">${escapeHtml(t('cost_col_name'))}</div><div style="width:52px;flex:none;">${escapeHtml(t('cost_col_sum'))}</div>${showPer ? `<div style="width:84px;flex:none;">${escapeHtml(t('cost_col_basis'))}</div>` : ''}<div style="width:62px;flex:none;">${escapeHtml(t('sf_col_actions'))}</div></div>`;
     const rows = items.map((it, i) => `
         <div class="flex items-center gap-1 mb-1">
             <input type="text" list="costItemNames" value="${escapeHtml(costItemName(it))}" placeholder="${escapeHtml(t('cost_item_name_ph'))}" autocomplete="off"
@@ -1100,7 +1102,7 @@ function ciAddFromRow(kind) {
     const ent = _ciEnt(kind); if (!ent) return;
     const name = (document.getElementById('ciNewName_' + kind)?.value || '').trim();
     const amt = Math.max(0, parseFloat(parseFloat(document.getElementById('ciNewAmt_' + kind)?.value || 0).toFixed(2)) || 0);
-    const per = document.getElementById('ciNewPer_' + kind)?.value === 'b' ? 'b' : 'u';
+    const per = (kind === 'p' && document.getElementById('ciNewPer_' + kind)?.value !== 'b') ? 'u' : 'b';
     if (!name && !amt) return;
     ent.cost_items = costItemsOf(ent).concat([{ n: name, a: amt, p: per }]);
     renderCostItemsEditor(kind === 'p' ? 'pdCostItemsBox' : 'sfdCostItemsBox', kind);
