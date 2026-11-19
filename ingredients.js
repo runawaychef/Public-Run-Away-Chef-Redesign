@@ -479,6 +479,7 @@ async function openIngredientDetail(ingId) {
     const ing = ingredients.find(i => i.id === ingId);
     if (!ing) return;
     stockMode = isMaterial(ing) ? 'mat' : 'ing';
+    _fillMaterialAutoBox(ing);
 
     document.getElementById('ingredientsList').classList.add('hidden');
     document.getElementById('ingredientDetail').classList.add('active');
@@ -616,6 +617,36 @@ async function saveStockAndPrice() {
 }
 
 // ── Редактирование названия и единицы ингредиента ───────────────────────────
+
+// Предустановка материала: галочка «Добавлять в новые изделия автоматически» + количество на штуку.
+// В базе: ingredients.auto_add_qty (null = выключено).
+function _fillMaterialAutoBox(ing) {
+    const box = document.getElementById('idAutoBox');
+    if (!box) return;
+    box.classList.toggle('hidden', !isMaterial(ing));
+    if (!isMaterial(ing)) return;
+    const on = Number(ing.auto_add_qty) > 0;
+    document.getElementById('idAutoChk').checked = on;
+    document.getElementById('idAutoQtyRow').classList.toggle('hidden', !on);
+    document.getElementById('idAutoQty').value = on ? ing.auto_add_qty : '';
+    document.getElementById('idAutoUnit').textContent = unitAbbrev(ing.unit);
+}
+async function saveMaterialAuto() {
+    const ing = ingredients.find(i => i.id === currentIngredientId);
+    if (!ing || !isMaterial(ing)) return;
+    const on = document.getElementById('idAutoChk').checked;
+    let qty = parseFloat(document.getElementById('idAutoQty').value);
+    if (on && !(qty > 0)) qty = 1;
+    const val = on ? qty : null;
+    suppressRealtimeFor3s();
+    try {
+        const { error } = await db.from('ingredients').update({ auto_add_qty: val }).eq('id', ing.id);
+        if (error) throw error;
+        ing.auto_add_qty = val;
+        _fillMaterialAutoBox(ing);
+        showAutosaveToast();
+    } catch (e) { console.error(e); showInfo(t('error_save_generic')); }
+}
 
 async function saveIngredientHeader() {
     if (_isNewIngredient) return; // новый ингредиент — сохраняем только через кнопку

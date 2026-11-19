@@ -2842,6 +2842,26 @@ function hideSplashScreen() {
                             <td class="p-1 text-center"><button type="button" onclick="addIngredientToRecipe()" class="pill-btn" style="font-size:11px;padding:4px 7px;line-height:1.15;white-space:normal;" data-i18n="sf_add_btn">+ Добавить</button></td>
                         </tr></tfoot>
                     </table>
+                    <div id="pdMatBox" class="mb-2" style="border-top:1px solid #ece7da; padding-top:12px; margin-top:6px;">
+                        <div class="table-text text-gray-700 font-semibold" data-i18n="mat_block_title">Материалы (на штуку)</div>
+                        <div class="text-[11px] text-gray-400 mb-1" data-i18n="mat_block_hint">Упаковка со склада. Списывается с каждой штукой.</div>
+                        <table class="w-full table-auto table-clean mb-1 recipe-entry-tbl">
+                            <thead><tr style="background-color:#e3e8df;">
+                                <th class="p-1 text-xs w-[36%]" data-i18n="mat_col_material">Материал</th>
+                                <th class="p-1 text-xs w-[22%]" data-i18n="inv_col_quantity">Кол-во</th>
+                                <th class="p-1 text-xs w-[18%]" data-i18n="sf_col_cost">Стоимость</th>
+                                <th class="p-1 text-xs w-[24%]" data-i18n="sf_col_actions">Действия</th>
+                            </tr><tr class="tbl-gap"><th colspan="4"></th></tr></thead>
+                            <tbody id="pdMatBody"></tbody>
+                            <tfoot><tr>
+                                <td class="p-1"><select id="pdNewMat" class="border p-1 rounded-xl table-text w-full"></select></td>
+                                <td class="p-1"><input id="pdNewMatQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="Кол-во" class="border p-1 rounded-xl table-text w-full" style="padding-left:4px;padding-right:4px;" data-i18n-placeholder="inv_col_qty"></td>
+                                <td class="p-1 text-center text-gray-400">—</td>
+                                <td class="p-1 text-center"><button type="button" onclick="addMaterialToProduct()" class="pill-btn" style="font-size:11px;padding:4px 7px;line-height:1.15;white-space:normal;" data-i18n="sf_add_btn">+ Добавить</button></td>
+                            </tr></tfoot>
+                        </table>
+                        <div id="pdMatNone" class="text-[11px] text-gray-400 hidden" data-i18n="mat_none_in_stock">Нужного материала нет? Заведите его на складе, вкладка «Материалы».</div>
+                    </div>
                     <div class="mb-2" style="border-top:1px solid #ece7da; padding-top:12px; margin-top:6px;">
                         <div class="table-text text-gray-700 font-semibold mb-1" data-i18n="prod_other_costs_short">Прочие расходы</div>
                         <div id="pdCostItemsBox"></div>
@@ -2945,6 +2965,11 @@ function hideSplashScreen() {
                                 <option value="gal" data-i18n="unit_gal">gal</option>
                             </select>
                         </div>
+                    </div>
+                    <div id="idAutoBox" class="hidden" style="border-top:1px solid #ece7da; padding-top:8px; margin-top:10px;">
+                        <label class="flex items-center gap-2 table-text" style="cursor:pointer;"><input type="checkbox" id="idAutoChk" onchange="saveMaterialAuto()"><span data-i18n="mat_auto_label">Добавлять в новые изделия автоматически</span></label>
+                        <div id="idAutoQtyRow" class="hidden"><div class="flex items-center gap-2 mt-1"><span class="table-text text-gray-500" data-i18n="mat_auto_qty">Количество на штуку</span><input id="idAutoQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" onchange="saveMaterialAuto()" class="border p-0.5 rounded-xl table-text" style="width:80px;"><span id="idAutoUnit" class="table-text text-gray-500"></span></div></div>
+                        <div class="text-[11px] text-gray-400 mt-1" data-i18n="mat_auto_hint">Новое изделие получит эту позицию в блоке «Материалы»; её можно изменить или удалить. В существующие изделия не добавляется.</div>
                     </div>
                     <button id="idSaveNewBtn" onclick="saveNewIngredient()" class="hidden pill-btn w-full justify-center mt-2" data-i18n="common_save">Сохранить</button>
                 </div>
@@ -5100,7 +5125,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=10"></script>
     <script src="money.js?v=14"></script>
-    <script src="i18n-core.js?v=195"></script>
+    <script src="i18n-core.js?v=196"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=21"></script>
     <script src="auth.js?v=34"></script>
@@ -5109,10 +5134,10 @@ function hideSplashScreen() {
     <script src="inventory.js?v=85"></script>
     <script src="billing.js?v=26"></script>
     <script src="push.js?v=12"></script>
-<script src="ingredients.js?v=77"></script>
+<script src="ingredients.js?v=78"></script>
 <script src="batches.js?v=18"></script>
 <script src="semifinished.js?v=73"></script>
-<script src="products.js?v=60"></script>
+<script src="products.js?v=61"></script>
 <script src="customers.js?v=78"></script>
 <script src="calendar.js?v=17"></script>
 <script src="orders.js?v=167"></script>
@@ -5225,7 +5250,7 @@ async function loadAllData(silent) {
             fetchAllRows(() => db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending, is_confirmed, is_demo, created_by, inv_no, dn_no, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via, invoice_sent_message_id, delivery_note_sent_message_id, invoice_delivery_status, delivery_note_delivery_status, consolidated_invoice_id, cons_excluded').eq('org_id', currentOrgId).is('deleted_at', null).order('id')),
             fetchAllRows(() => db.from('order_items').select('id, order_id, product_id, quantity, price, item_cost').eq('org_id', currentOrgId).order('id')),
             db.from('employees').select('id, name').eq('org_id', currentOrgId).order('name').limit(1000),
-            fetchAllRows(() => db.from('ingredients').select('id, name, package_price, package_size, unit, shelf_life_days, kind').eq('org_id', currentOrgId).order('name').order('id')),
+            fetchAllRows(() => db.from('ingredients').select('id, name, package_price, package_size, unit, shelf_life_days, kind, auto_add_qty').eq('org_id', currentOrgId).order('name').order('id')),
             fetchAllRows(() => db.from('product_ingredients').select('id, product_id, ingredient_id, semi_finished_id, quantity').eq('org_id', currentOrgId).order('id')),
             fetchAllRows(() => db.from('semi_finished').select('id, name, batch_size, unit, cost_items, recipe_confirmed, track_stock, shelf_life_days').eq('org_id', currentOrgId).order('name').order('id')),
             fetchAllRows(() => db.from('semi_finished_ingredients').select('id, semi_finished_id, ingredient_id, quantity, is_primary').eq('org_id', currentOrgId).order('id')),
@@ -5250,7 +5275,7 @@ async function loadAllData(silent) {
             if (p.bank_transaction_id) (_orderBankTx[p.order_id] = _orderBankTx[p.order_id] || []).push(p.bank_transaction_id);
         });
 
-        ingredients = (ingRes.data || []).map(i => ({ id: i.id, kind: i.kind === 'material' ? 'material' : 'ingredient', name: i.name, package_price: Number(i.package_price), package_size: Number(i.package_size), unit: i.unit, shelf_life_days: i.shelf_life_days == null ? null : Number(i.shelf_life_days) }));
+        ingredients = (ingRes.data || []).map(i => ({ id: i.id, kind: i.kind === 'material' ? 'material' : 'ingredient', auto_add_qty: i.auto_add_qty == null ? null : Number(i.auto_add_qty), name: i.name, package_price: Number(i.package_price), package_size: Number(i.package_size), unit: i.unit, shelf_life_days: i.shelf_life_days == null ? null : Number(i.shelf_life_days) }));
 
         const sfRecipeBySf = {};
         (sfiRes.data || []).forEach(ri => {
