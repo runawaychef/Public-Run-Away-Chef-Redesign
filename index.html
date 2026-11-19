@@ -3749,6 +3749,48 @@ function hideSplashScreen() {
             </div>
         </div>
 
+        <!-- Редактировать материал изделия -->
+        <div id="editMatModal" class="modal" onclick="if(event.target===this) closeModal();">
+            <div class="modal-content" style="max-width:420px;">
+                <h2 class="text-sm font-semibold text-gray-800 mb-2" data-i18n="mat_edit_title">Редактировать материал</h2>
+                <div class="mb-2">
+                    <label class="itm-lbl" data-i18n="mat_col_material">Материал</label>
+                    <div id="editMatName" class="border p-0.5 rounded-xl w-full table-text" style="background:#f4f1ea;"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="itm-lbl"><span data-i18n="mat_qty_per_unit">Количество на штуку</span>, <span id="editMatUnit"></span></label>
+                    <input id="editMatQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-0.5 rounded-xl w-full table-text">
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="closeModal()" class="pill-btn-secondary flex-1 justify-center" data-i18n="common_cancel">Отмена</button>
+                    <button onclick="saveMatEdit()" class="pill-btn flex-1 justify-center" data-i18n="common_save">Сохранить</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Редактировать статью прочих расходов -->
+        <div id="editCostItemModal" class="modal" onclick="if(event.target===this) closeModal();">
+            <div class="modal-content" style="max-width:420px;">
+                <h2 class="text-sm font-semibold text-gray-800 mb-2" data-i18n="cost_edit_title">Редактировать статью расходов</h2>
+                <div class="mb-2">
+                    <label class="itm-lbl" data-i18n="cost_col_name">Статья</label>
+                    <input id="editCiName" type="text" list="costItemNames" autocomplete="off" class="border p-0.5 rounded-xl w-full table-text">
+                </div>
+                <div class="mb-2">
+                    <label class="itm-lbl" data-i18n="cost_col_sum">Сумма</label>
+                    <input id="editCiAmt" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-0.5 rounded-xl w-full table-text">
+                </div>
+                <div id="editCiPerWrap" class="mb-3">
+                    <label class="itm-lbl" data-i18n="cost_col_basis">Учёт</label>
+                    <select id="editCiPer" class="border p-0.5 rounded-xl w-full table-text"></select>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="closeModal()" class="pill-btn-secondary flex-1 justify-center" data-i18n="common_cancel">Отмена</button>
+                    <button onclick="saveCiEdit()" class="pill-btn flex-1 justify-center" data-i18n="common_save">Сохранить</button>
+                </div>
+            </div>
+        </div>
+
         <!-- Редактировать позицию рецепта полуфабриката -->
         <div id="editSfRecipeItemModal" class="modal" onclick="if(event.target===this) closeModal();">
             <div class="modal-content" style="max-width:420px;">
@@ -5125,7 +5167,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=10"></script>
     <script src="money.js?v=14"></script>
-    <script src="i18n-core.js?v=196"></script>
+    <script src="i18n-core.js?v=197"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=21"></script>
     <script src="auth.js?v=34"></script>
@@ -5136,8 +5178,8 @@ function hideSplashScreen() {
     <script src="push.js?v=12"></script>
 <script src="ingredients.js?v=78"></script>
 <script src="batches.js?v=18"></script>
-<script src="semifinished.js?v=74"></script>
-<script src="products.js?v=63"></script>
+<script src="semifinished.js?v=75"></script>
+<script src="products.js?v=64"></script>
 <script src="customers.js?v=78"></script>
 <script src="calendar.js?v=17"></script>
 <script src="orders.js?v=167"></script>

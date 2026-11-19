@@ -659,13 +659,14 @@ function renderProductRecipe(prod) {
             const lineCost = unitPrice * ri.quantity;
             const row = document.createElement('tr');
             row.className = 'border-b';
+            row.style.cursor = 'pointer';
+            row.onclick = () => openEditRecipeItemModal(i); // строка кликабельна — окно правки, как в позициях заказа
             row.innerHTML = `
                 <td class="p-0.5 table-text">${escapeHtml(displayName)}</td>
                 <td class="p-0.5 table-text text-center">${ri.quantity} ${unitLabel}</td>
                 <td class="p-0.5 table-text text-center font-medium">${formatMoney(lineCost)}</td>
                 <td class="p-0.5 text-center">
-                    ${svgEdit(`openEditRecipeItemModal(${i})`)}
-                    ${hasPermission('can_delete') ? svgDelete(`deleteRecipeItem(${i})`) : ''}
+                    ${hasPermission('can_delete') ? svgDelete(`event.stopPropagation();deleteRecipeItem(${i})`) : ''}
                 </td>`;
             tbody.appendChild(row);
         });
@@ -711,19 +712,15 @@ function renderProductMaterials(prod) {
             const ing = ingredients.find(x => x.id === ri.ingredient_id);
             const qpu = _round6(Number(ri.quantity) / bs);
             const cost = ingredientUnitPrice(ing) * qpu;
-            const editing = _matEditIdx === i;
             const tr = document.createElement('tr');
             tr.className = 'border-b';
-            if (!editing) { tr.style.cursor = 'pointer'; tr.onclick = () => matEditStart(i); } // строка кликабельна — правка, как в позициях заказа
+            tr.style.cursor = 'pointer';
+            tr.onclick = () => matEditStart(i); // строка кликабельна — окно правки
             tr.innerHTML = `
                 <td class="p-0.5 table-text">${escapeHtml(ing.name)}</td>
-                <td class="p-0.5 table-text text-center">${editing
-                    ? `<input id="matEditQty" type="number" value="${qpu}" step="0.01" min="0" inputmode="decimal" autocomplete="off" class="border p-0.5 rounded-xl table-text w-full" style="padding-left:3px;padding-right:3px;text-align:center;">`
-                    : `${qpu} ${escapeHtml(unitAbbrev(ing.unit))}`}</td>
+                <td class="p-0.5 table-text text-center">${qpu} ${escapeHtml(unitAbbrev(ing.unit))}</td>
                 <td class="p-0.5 table-text text-center font-medium">${formatMoney(cost)}</td>
-                <td class="p-0.5 text-center">${editing
-                    ? `<button type="button" onclick="matEditSave(${i})" style="border:none;background:transparent;color:#4d7a45;font-size:20px;line-height:1;padding:0 6px;">✓</button><button type="button" onclick="matEditStart(null)" style="border:none;background:transparent;color:#a3493d;font-size:20px;line-height:1;padding:0 6px;">×</button>`
-                    : `${hasPermission('can_delete') ? svgDelete(`event.stopPropagation();deleteRecipeItem(${i})`) : ''}`}</td>`;
+                <td class="p-0.5 text-center">${hasPermission('can_delete') ? svgDelete(`event.stopPropagation();deleteRecipeItem(${i})`) : ''}</td>`;
             tbody.appendChild(tr);
         });
     }
@@ -736,14 +733,21 @@ function renderProductMaterials(prod) {
 }
 let _matEditIdx = null;
 function matEditStart(i) {
+    const prod = products.find(x => x.id === currentProductId);
+    const ri = prod && prod.ingredients[i];
+    const ing = ri && ingredients.find(x => x.id === ri.ingredient_id);
+    if (!ing) return;
     _matEditIdx = i;
-    const prod = products.find(p => p.id === currentProductId);
-    if (prod) renderProductMaterials(prod);
+    document.getElementById('editMatName').textContent = ing.name;
+    document.getElementById('editMatUnit').textContent = unitAbbrev(ing.unit);
+    document.getElementById('editMatQty').value = _round6(Number(ri.quantity) / (Number(prod.batch_size) || 1));
+    document.getElementById('editMatModal').style.display = 'flex';
 }
-function matEditSave(i) {
-    const v = document.getElementById('matEditQty')?.value;
-    _matEditIdx = null;
-    changeMaterialQty(i, v);
+async function saveMatEdit() {
+    const i = _matEditIdx;
+    const v = document.getElementById('editMatQty').value;
+    closeModal();
+    if (i !== null && i !== undefined) await changeMaterialQty(i, v);
 }
 
 async function addMaterialToProduct() {
@@ -1220,8 +1224,28 @@ function _ciPerUnitLabel(ent, kind) {
 }
 let _ciEditIdx = { p: null, s: null };
 function ciEdit(kind, i) {
-    _ciEditIdx[kind] = i;
+    const ent = _ciEnt(kind); if (!ent) return;
+    const it = costItemsOf(ent)[i]; if (!it) return;
+    _ciEditIdx = { p: null, s: null }; _ciEditIdx[kind] = i; _ciEditKind = kind;
+    document.getElementById('editCiName').value = costItemName(it);
+    document.getElementById('editCiAmt').value = (Number(it.a) || 0) ? Number(it.a) : '';
+    const wrap = document.getElementById('editCiPerWrap');
+    wrap.classList.toggle('hidden', kind !== 'p');
+    document.getElementById('editCiPer').innerHTML = `<option value="u"${it.p === 'u' ? ' selected' : ''}>${escapeHtml(_ciPerUnitLabel(ent, kind))}</option><option value="b"${it.p === 'u' ? '' : ' selected'}>${escapeHtml(t('cost_per_batch'))}</option>`;
+    document.getElementById('editCostItemModal').style.display = 'flex';
+}
+let _ciEditKind = 'p';
+async function saveCiEdit() {
+    const kind = _ciEditKind, i = _ciEditIdx[kind];
+    closeModal();
+    const ent = _ciEnt(kind); if (!ent || i === null || i === undefined) return;
+    const it = costItemsOf(ent)[i]; if (!it) return;
+    const nm = document.getElementById('editCiName').value.trim();
+    if (nm !== costItemName(it)) { it.n = nm; delete it.k; }
+    it.a = Math.max(0, parseFloat(parseFloat(document.getElementById('editCiAmt').value || 0).toFixed(2)) || 0);
+    if (kind === 'p') it.p = document.getElementById('editCiPer').value === 'u' ? 'u' : 'b';
     renderCostItemsEditor(kind === 'p' ? 'pdCostItemsBox' : 'sfdCostItemsBox', kind);
+    await ciSave(kind);
 }
 function renderCostItemsEditor(boxId, kind) {
     const box = document.getElementById(boxId);
@@ -1238,22 +1262,9 @@ function renderCostItemsEditor(boxId, kind) {
     const perSel = (id, handler, isUnit) => `<select ${id ? `id="${id}"` : ''} ${handler ? `onchange="${handler}"` : ''} class="${IN}" style="padding-left:3px;padding-right:1px;font-size:12px;">
                 <option value="u"${isUnit ? ' selected' : ''}>${escapeHtml(perU)}</option>
                 <option value="b"${isUnit ? '' : ' selected'}>${escapeHtml(t('cost_per_batch'))}</option></select>`;
-    const cur = _ciEditIdx[kind];
     const rows = items.map((it, i) => {
-        const editing = cur === i;
-        const nameCell = editing
-            ? `<input type="text" list="costItemNames" value="${escapeHtml(costItemName(it))}" placeholder="${escapeHtml(t('cost_item_name_ph'))}" autocomplete="off" onchange="ciChange('${kind}',${i},'n',this.value)" class="${IN}">`
-            : escapeHtml(costItemName(it));
-        const amtCell = editing
-            ? `<input type="number" value="${(Number(it.a) || 0) ? Number(it.a) : ''}" placeholder="0.00" autocomplete="off" inputmode="decimal" step="0.01" min="0" onchange="ciChange('${kind}',${i},'a',this.value)" class="${IN}" style="padding-left:3px;padding-right:3px;text-align:center;">`
-            : formatMoney(Number(it.a) || 0);
-        const perCell = !showPer ? '' : `<td class="p-0.5 table-text text-center">${editing
-            ? perSel('', `ciChange('${kind}',${i},'p',this.value)`, it.p === 'u')
-            : escapeHtml(it.p === 'u' ? perU : t('cost_per_batch'))}</td>`;
-        const act = editing
-            ? `<button type="button" onclick="ciEdit('${kind}',null)" style="border:none;background:transparent;color:#4d7a45;font-size:20px;line-height:1;padding:0 8px;">✓</button>`
-            : svgDelete(`event.stopPropagation();ciRemove('${kind}',${i})`);
-        return `<tr class="border-b"${editing ? '' : ` style="cursor:pointer" onclick="ciEdit('${kind}',${i})"`}><td class="p-0.5 table-text">${nameCell}</td><td class="p-0.5 table-text text-center">${amtCell}</td>${perCell}<td class="p-0.5 text-center">${act}</td></tr>`;
+        const perCell = !showPer ? '' : `<td class="p-0.5 table-text text-center">${escapeHtml(it.p === 'u' ? perU : t('cost_per_batch'))}</td>`;
+        return `<tr class="border-b" style="cursor:pointer" onclick="ciEdit('${kind}',${i})"><td class="p-0.5 table-text">${escapeHtml(costItemName(it))}</td><td class="p-0.5 table-text text-center">${formatMoney(Number(it.a) || 0)}</td>${perCell}<td class="p-0.5 text-center">${svgDelete(`event.stopPropagation();ciRemove('${kind}',${i})`)}</td></tr>`;
     }).join('');
     const entry = `<tr>
         <td class="p-1"><input id="ciNewName_${kind}" type="text" list="costItemNames" placeholder="${escapeHtml(t('cost_item_name_ph'))}" autocomplete="off" class="${IN}"></td>
