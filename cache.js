@@ -231,7 +231,7 @@ async function _doHandleInstantRestoreWrongAccount() {
 // невалидная/отозванная сессия) — мягко предупреждаем и переводим на экран входа,
 // вместо того чтобы молча выкинуть пользователя посреди работы.
 async function handleInstantRestoreSessionExpired() {
-    await showInfo('Сессия истекла. Пожалуйста, войдите снова.');
+    await showInfo(t('err_session_expired'));
     clearAppSnapshot();
     _instantRestoreDone = false;
     currentEmployee = null;

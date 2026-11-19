@@ -90,6 +90,15 @@ function orderVatExempt(order) {
     return false;
 }
 
+// Подпись «НДС (N%)» по ставке из настроек пекарни; ставка 0 — просто «НДС»
+function vatWordLabel() {
+    const rate = Number(typeof currentOrgVatRate !== 'undefined' ? currentOrgVatRate : 0) || 0;
+    const word = t('customers_vat_word');
+    if (rate <= 0) return word;
+    const pct = Math.round(rate * 10000) / 100;
+    return word + ' (' + String(pct) + '%)';
+}
+
 function _orderTotals(order) {
     const rate = typeof currentOrgVatRate !== 'undefined' ? currentOrgVatRate : 0;
     return calcTotals(order.items, order.discount, orderVatExempt(order), rate);

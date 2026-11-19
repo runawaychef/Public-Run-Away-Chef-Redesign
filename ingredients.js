@@ -594,14 +594,6 @@ async function saveStockAndPrice() {
 
 // ── Редактирование названия и единицы ингредиента ───────────────────────────
 
-function openEditIngredientHeaderModal() {
-    const ing = ingredients.find(i => i.id === currentIngredientId);
-    if (!ing) return;
-    document.getElementById('editIngName').value = ing.name;
-    document.getElementById('editIngUnit').value = ing.unit;
-    document.getElementById('editIngredientHeaderModal').style.display = 'flex';
-}
-
 async function saveIngredientHeader() {
     if (_isNewIngredient) return; // новый ингредиент — сохраняем только через кнопку
     suppressRealtimeFor3s();

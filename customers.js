@@ -109,7 +109,7 @@ function renderCustomerTiles(body) {
         const rows = (hasDebt ? `<div class="cva-r debt"><span>${escapeHtml(t('cust_tile_debt'))}</span>${escapeHtml(_custMoneyNum(debt))}</div>` : '')
             + (cur > 0 ? `<div class="cva-r cur"><span>${escapeHtml(t('cust_tile_work'))}</span>${_custInt(cur)}</div>` : '');
         return `<div class="pt-tile ctl-tile cva${hasName ? '' : ' noname'}" data-name="${escapeHtml((c.name || '').toLowerCase())}" onclick="openCustomerDetail(${c.id})">
-            <div class="cva-top"><div class="cva-name" style="${hasName ? '' : 'color:#a3493d;'}">${hasName ? escapeHtml(c.name) : '(имя не указано)'}</div><span class="cva-cnt">${orderCnt} ${t('cust_tile_orders')}</span></div>
+            <div class="cva-top"><div class="cva-name" style="${hasName ? '' : 'color:#a3493d;'}">${hasName ? escapeHtml(c.name) : t('customer_no_name')}</div><span class="cva-cnt">${orderCnt} ${t('cust_tile_orders')}</span></div>
             <div class="cva-bot"><div class="cva-l"><div class="cva-cap">${escapeHtml(t('cust_tile_all'))}</div><div class="cva-total${total.length > 6 ? ' sm' : ''}"><span>${total}</span><i>${cu}</i></div></div><div class="cva-side">${rows}</div></div>
             ${hasName ? '' : '<span class="pt-flag"></span>'}
         </div>`;
@@ -132,7 +132,7 @@ function renderCustomerCards() {
         const hasDebt = debt > 0.01;
         const unpaidCnt = hasDebt ? customerUnpaidOrders(c).length : 0;
         const stripe = !hasName || hasDebt ? `<div class="stripe" style="background:#c0685c;"></div>` : '';
-        const nameText = hasName ? escapeHtml(c.name) : '(имя не указано)';
+        const nameText = hasName ? escapeHtml(c.name) : t('customer_no_name');
         const contactText = c.contact && c.contact.trim() ? escapeHtml(c.contact) : '—';
         const orderCnt = orders.filter(o => o.customer_id != null ? o.customer_id === c.id : o.customer === c.name).length;
         const tagList = [];
@@ -515,7 +515,7 @@ function openCustomerReportPreview() {
             <table style="width:100%;border-collapse:separate;border-spacing:0;font-size:12px;margin-top:10px;">
                 <tr><td style="padding:2px 4px;color:#6b7280;">${t('customers_sum_by_items')}</td><td style="text-align:right;padding:2px 4px;">${formatMoney(totalSum)}</td></tr>
                 ${totalDiscount > 0 ? `<tr><td style="padding:2px 4px;color:#6b7280;">${t('customers_discount_word')}${discountLabel}</td><td style="text-align:right;padding:2px 4px;color:#c0685c;">−${formatMoney(totalDiscount)}</td></tr>` : ''}
-                <tr><td style="padding:2px 4px;color:#6b7280;">${t('customers_vat_word')} (21%)</td><td style="text-align:right;padding:2px 4px;color:#6b7280;">${formatMoney(totalVat)}</td></tr>
+                <tr><td style="padding:2px 4px;color:#6b7280;">${vatWordLabel()}</td><td style="text-align:right;padding:2px 4px;color:#6b7280;">${formatMoney(totalVat)}</td></tr>
                 <tr style="font-weight:700;"><td style="padding:4px;border-top:1px solid #e5e7eb;">${t('customers_total_due')}</td><td style="text-align:right;padding:4px;border-top:1px solid #e5e7eb;">${formatMoney(grandTotal)}</td></tr>
             </table>
             <p style="font-size:10px;color:#9ca3af;margin-top:10px;">${t('customers_orders_in_period')}: ${custOrders.length}. ${t('customers_report_footnote')}</p>
@@ -597,7 +597,7 @@ async function downloadCustomerReportPdf() {
         let y = pdf.lastAutoTable.finalY + 8;
         const summaryRows = [[t('customers_sum_by_items'), formatMoney(totalSum)]];
         if (totalDiscount > 0) summaryRows.push([`${t('customers_discount_word')}${discountLabel}`, '−' + formatMoney(totalDiscount)]);
-        summaryRows.push([`${t('customers_vat_word')} (21%)`, formatMoney(totalVat)]);
+        summaryRows.push([vatWordLabel(), formatMoney(totalVat)]);
 
         pdf.autoTable({
             startY: y,

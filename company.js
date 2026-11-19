@@ -336,7 +336,7 @@ async function saveVatPayerFrom(value) {
 function saveVatRatePercent(percentStr) {
     const pct = parseFloat(String(percentStr).replace(',', '.'));
     if (isNaN(pct) || pct < 0 || pct > 100) {
-        showInfo('Ставка НДС должна быть числом от 0 до 100.');
+        showInfo(t('vat_rate_invalid'));
         return;
     }
     saveCompanyInfo('vat_rate', pct / 100);
@@ -423,7 +423,7 @@ async function openCompanyInfoModal() {
         openAppPage('companyInfoPage'); // страница вместо окна (22.10)
     } catch (e) {
         console.error(e);
-        showInfo('Не удалось загрузить информацию о компании.');
+        showInfo(t('company_load_error'));
     } finally {
         hideLoading();
     }

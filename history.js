@@ -27,8 +27,8 @@ const ACTION_TYPE_LABELS = {
 
 function formatHistoryRow(entry) {
     const dt = new Date(entry.created_at);
-    const dateStr = dt.toLocaleDateString('ru-RU');
-    const timeStr = dt.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    const dateStr = dt.toLocaleDateString(dateLocale());
+    const timeStr = dt.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' });
 
     // Кликабельно только если есть order_id и такой заказ всё ещё существует
     const orderExists = entry.order_id && orders.some(o => o.id === entry.order_id);
@@ -53,7 +53,7 @@ async function loadHistory() {
     historyOffset = 0;
     historyHasMore = true;
     const tbody = document.getElementById('historyTableBody');
-    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-xs text-gray-400 py-2">Загрузка…</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-xs text-gray-400 py-2">${t('history_loading')}</td></tr>`;
     await fetchHistoryPage(true);
 }
 
@@ -81,7 +81,7 @@ async function fetchHistoryPage(replace) {
         if (replace) tbody.innerHTML = '';
 
         if (!data || data.length === 0) {
-            if (replace) tbody.innerHTML = `<tr><td colspan="4" class="text-center text-xs text-gray-400 py-2">Нет записей</td></tr>`;
+            if (replace) tbody.innerHTML = `<tr><td colspan="4" class="text-center text-xs text-gray-400 py-2">${t('history_empty')}</td></tr>`;
             historyHasMore = false;
         } else {
             tbody.insertAdjacentHTML('beforeend', data.map(formatHistoryRow).join(''));
@@ -93,6 +93,6 @@ async function fetchHistoryPage(replace) {
     } catch (e) {
         console.error(e);
         const tbody = document.getElementById('historyTableBody');
-        if (replace) tbody.innerHTML = `<tr><td colspan="4" class="text-center text-xs text-[#c0685c] py-2">Ошибка загрузки журнала</td></tr>`;
+        if (replace) tbody.innerHTML = `<tr><td colspan="4" class="text-center text-xs text-[#c0685c] py-2">${t('history_load_error')}</td></tr>`;
     }
 }

@@ -476,8 +476,6 @@ function setInventoryPageView(mode) {
 let _invViewFallback = null;
 function _invView() { return _invViewFallback || _invViewMode(); }
 
-// Старое имя — кнопка-тележка в шапке и прежние вызовы.
-async function openInventoryModal() { return openInventoryPage(); }
 
 // opts (при возврате из карточки позиции): { period, scrollY } — прежнее место.
 async function openInventoryPage(opts) {
@@ -881,7 +879,7 @@ async function saveInventarization() {
 // Запись — тем же способом, что и в окне: излишек — rpc_receive_stock по текущей цене
 // (новая партия), недостача — rpc_write_off_stock. Уход с заполненными полями — вопрос.
 let _sc = null; // { kind, items: [{id, name, unit, balance}] }
-function _scFmt(x) { return String(Math.round(Number(x) * 100) / 100).replace('.', ','); }
+function _scFmt(x) { return _decSep(String(Math.round(Number(x) * 100) / 100)); }
 function openStockCountPage(kind) {
     const isSf = kind === 'sf';
     const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
@@ -994,7 +992,7 @@ _scCanLeave.needed = _scDirty;
 function openInventoryAddModal(ingId) {
     const ing = ingredients.find(i => i.id === ingId);
     if (!ing) return;
-    document.getElementById('inventoryAddTitle').textContent = `Пополнить: ${ing.name}`;
+    document.getElementById('inventoryAddTitle').textContent = t('inv_add_title').replace('{name}', ing.name);
     document.getElementById('inventoryAddIngId').value = ingId;
     document.getElementById('inventoryAddUnit').textContent = unitAbbrev(ing.unit);
     document.getElementById('inventoryAddQty').value = '';

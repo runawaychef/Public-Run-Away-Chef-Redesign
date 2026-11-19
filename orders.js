@@ -2302,6 +2302,8 @@ function renderDetailItems(order) {
     document.getElementById('detailDiscountPct').textContent  = discPct;
     document.getElementById('detailDiscountAmount').textContent = '-' + formatMoney(discAmt);
     document.getElementById('detailVatAmount').textContent    = formatMoney(vatAmt);
+    const _vatLbl = document.getElementById('detailVatLabel');
+    if (_vatLbl) _vatLbl.textContent = vatWordLabel();
     document.getElementById('detailTotal').textContent        = formatMoney(grand);
 
     // Скрыть строку скидки если скидки нет

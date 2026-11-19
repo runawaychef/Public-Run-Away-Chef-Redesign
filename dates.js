@@ -45,3 +45,8 @@ const MONTH_NAMES_EN = [
 function monthName(monthIdx0) {
     return (typeof currentLang !== 'undefined' && currentLang === 'en') ? MONTH_NAMES_EN[monthIdx0] : MONTH_NAMES_RU[monthIdx0];
 }
+
+// Локаль для дат по языку интерфейса
+function dateLocale() {
+    return ({ ru: 'ru-RU', uk: 'uk-UA', lt: 'lt-LT', en: 'en-GB' })[typeof currentLang !== 'undefined' ? currentLang : 'ru'] || 'en-GB';
+}

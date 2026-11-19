@@ -788,7 +788,7 @@ async function reloadEmployeesList() {
 
 async function openEmployeesModal() {
     if (!hasPermission('can_manage_team')) { showInfo(t('employees_no_access')); return; }
-    if (!hasPlanFeature('team')) { showInfo('Управление командой доступно на тарифе Full.'); return; }
+    if (!hasPlanFeature('team')) { showInfo(t('team_full_only')); return; }
     closeModal();
     await reloadEmployeesList();
     const content = document.getElementById('employeesListContent');

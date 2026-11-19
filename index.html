@@ -3611,7 +3611,7 @@ function hideSplashScreen() {
                         <div><span data-i18n="orders_total_items">Всего изделий</span>: <span id="detailItemsCount" class="font-semibold text-gray-700">0</span> <span data-i18n="unit_pcs">шт</span>.</div>
                         <div><span data-i18n="orders_items_sum">Сумма позиций</span>: <span id="detailSubtotal" class="font-medium text-gray-800">0.00</span></div>
                         <div id="detailDiscountRow"><span data-i18n="customers_discount_word">Скидка</span> (<span id="detailDiscountPct">0</span>%): <span id="detailDiscountAmount" class="font-medium" style="color:#c0685c;">-0.00</span></div>
-                        <div><span data-i18n="customers_vat_word">НДС</span> (21%): <span id="detailVatAmount" class="font-medium text-gray-800">0.00</span></div>
+                        <div><span id="detailVatLabel">НДС</span>: <span id="detailVatAmount" class="font-medium text-gray-800">0.00</span></div>
                         <div class="text-xs font-semibold text-gray-900 pt-1 border-t mt-1"><span data-i18n="customers_total_due">Итого к оплате</span>: <span id="detailTotal">0.00</span></div>
                         <div class="perm-view-costs pt-1 border-t mt-1">
                             <div><span data-i18n="stats_cost_price">Себестоимость</span>: <span id="detailCost" class="font-medium text-gray-700">0.00</span></div>
@@ -3691,17 +3691,6 @@ function hideSplashScreen() {
         </div>
 
         <!-- ===== МОДАЛЬНЫЕ ОКНА ===== -->
-
-        <!-- Редактировать изделие -->
-        <div id="editProductModal" class="modal">
-            <div class="modal-content">
-                <h2 class="text-xs font-semibold mb-2 text-gray-800" data-i18n="prod_edit_title">Редактировать изделие</h2>
-                <input id="editProductName" type="text" placeholder="Название изделия" class="border p-0.5 rounded-xl mb-1 w-full text-xs" data-i18n-placeholder="prod_name_field_placeholder">
-                <input id="editProductPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="Продажная цена" class="border p-0.5 rounded-xl mb-2 w-full text-xs" data-i18n-placeholder="prod_sale_price">
-                <button onclick="saveProductEdit()" class="btn bg-[#7c9473] text-white p-0.5 rounded-xl hover:bg-[#6c8464] mr-1 text-xs" data-i18n="common_save">Сохранить</button>
-                <button onclick="closeModal()" class="btn bg-[#7c9473] text-white p-0.5 rounded-xl hover:bg-[#6c8464] text-xs" data-i18n="common_cancel">Отмена</button>
-            </div>
-        </div>
 
         <!-- Редактировать ингредиент -->
 
@@ -4236,31 +4225,6 @@ function hideSplashScreen() {
                 <div class="flex gap-2 mt-3">
                     <button onclick="saveInventarization()" class="pill-btn flex-1 justify-center" data-i18n="ing_save_inventarization">Сохранить инвентаризацию</button>
                     <button onclick="closeModal()" class="pill-btn-secondary" style="width:80px;" data-i18n="common_cancel">Отмена</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Модалка редактирования названия/единицы ингредиента -->
-        <div id="editIngredientHeaderModal" class="modal">
-            <div class="modal-content" style="max-width:480px;">
-                <h2 class="text-sm font-semibold mb-3 text-gray-800" data-i18n="ing_edit_title">Редактировать ингредиент</h2>
-                <label class="text-xs text-gray-500" data-i18n="inv_col_name">Название</label>
-                <input id="editIngName" type="text" class="border p-0.5 rounded-xl mb-2 w-full text-sm">
-                <label class="text-xs text-gray-500" data-i18n="ing_unit_of_measure">Единица измерения</label>
-                <select id="editIngUnit" class="border p-0.5 rounded-xl mb-3 w-full text-sm">
-                    <option value="g" data-i18n="unit_g_full">граммы (г)</option>
-                    <option value="kg" data-i18n="unit_kg_full">килограммы (кг)</option>
-                    <option value="ml" data-i18n="unit_ml_full">миллилитры (мл)</option>
-                    <option value="l" data-i18n="unit_l_full">литры (л)</option>
-                    <option value="pcs" data-i18n="unit_pcs_full">штуки (шт)</option>
-                    <option value="lb" data-i18n="unit_lb_full">фунты (lb)</option>
-                    <option value="oz" data-i18n="unit_oz_full">унции (oz)</option>
-                    <option value="fl_oz" data-i18n="unit_fl_oz_full">жидкие унции (fl oz)</option>
-                    <option value="gal" data-i18n="unit_gal_full">галлоны (gal)</option>
-                </select>
-                <div class="flex gap-2">
-                    <button onclick="saveIngredientHeader()" class="pill-btn flex-1 justify-center" data-i18n="common_save">Сохранить</button>
-                    <button onclick="closeModal()" class="pill-btn-secondary flex-1" data-i18n="common_cancel">Отмена</button>
                 </div>
             </div>
         </div>
@@ -5126,24 +5090,24 @@ function hideSplashScreen() {
     </div><!-- p-2 -->
 </div><!-- container -->
 
-<script src="dates.js?v=9"></script>
-    <script src="money.js?v=12"></script>
-    <script src="i18n-core.js?v=188"></script>
+<script src="dates.js?v=10"></script>
+    <script src="money.js?v=13"></script>
+    <script src="i18n-core.js?v=189"></script>
     <script src="supabaseClient.js?v=7"></script>
-    <script src="cache.js?v=20"></script>
+    <script src="cache.js?v=21"></script>
     <script src="auth.js?v=34"></script>
-    <script src="employees.js?v=78"></script>
-    <script src="company.js?v=28"></script>
-    <script src="inventory.js?v=83"></script>
+    <script src="employees.js?v=79"></script>
+    <script src="company.js?v=29"></script>
+    <script src="inventory.js?v=84"></script>
     <script src="billing.js?v=26"></script>
     <script src="push.js?v=12"></script>
-<script src="ingredients.js?v=73"></script>
-<script src="batches.js?v=17"></script>
-<script src="semifinished.js?v=69"></script>
-<script src="products.js?v=52"></script>
-<script src="customers.js?v=76"></script>
+<script src="ingredients.js?v=74"></script>
+<script src="batches.js?v=18"></script>
+<script src="semifinished.js?v=70"></script>
+<script src="products.js?v=53"></script>
+<script src="customers.js?v=77"></script>
 <script src="calendar.js?v=17"></script>
-<script src="orders.js?v=166"></script>
+<script src="orders.js?v=167"></script>
 <script src="dashboard.js?v=24"></script>
 <script src="invoice.js?v=55"></script>
 <script src="send-document.js?v=44"></script>
@@ -5153,7 +5117,7 @@ function hideSplashScreen() {
 <script src="documents2.js?v=33"></script>
 <script src="bank.js?v=13"></script>
 <script src="stats.js?v=44"></script>
-<script src="history.js?v=9"></script>
+<script src="history.js?v=10"></script>
 <script src="modals.js?v=21"></script>
 <script src="demoData.js?v=28"></script>
 <script src="helpers.js?v=52"></script>
@@ -5685,7 +5649,7 @@ function closeHistoryScreen() {
 }
 
 // ==================== ИЗДЕЛИЯ ====================
-// displayProducts, addProduct, openEditProductModal, saveProductEdit, copyProduct
+// displayProducts, addProduct, copyProduct
 // перенесены в products.js
 
 // ==================== КЛИЕНТЫ ====================

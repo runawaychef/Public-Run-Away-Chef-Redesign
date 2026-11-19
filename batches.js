@@ -124,7 +124,7 @@ function renderBatchesList(batches, unitLabel, itemType) {
     const withExp = expIsFull() && batches.some(x => x.expires_on);
     const colN = withExp ? 4 : 3;
     const renderRow = (b) => {
-        const dateStr = new Date(b.created_at).toLocaleDateString('ru-RU');
+        const dateStr = new Date(b.created_at).toLocaleDateString(dateLocale());
         const isActive = Number(b.qty_remaining) > 0;
         const rowStyle = isActive ? 'font-weight:600;color:#3d3a33;' : 'color:#a29c8c;';
         return `<tr class="border-b cursor-pointer" style="${rowStyle}" ${dataAction('openEditBatchModal', [b.id, itemType, unitLabel])}>
@@ -162,7 +162,7 @@ async function openEditBatchModal(batchId, itemType, unitLabel) {
     document.getElementById('editBatchId').value = data.id;
     document.getElementById('editBatchItemType').value = data.item_type;
     document.getElementById('editBatchDate').textContent =
-        `${t('batch_from_date_prefix')} ${new Date(data.created_at).toLocaleDateString('ru-RU')}`;
+        `${t('batch_from_date_prefix')} ${new Date(data.created_at).toLocaleDateString(dateLocale())}`;
     document.getElementById('editBatchUnit').textContent = unitLabel;
     document.getElementById('editBatchQty').value = Number(data.qty_remaining).toFixed(2);
     document.getElementById('editBatchPrice').value = Number(data.unit_price).toFixed(4);
