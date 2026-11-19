@@ -1071,24 +1071,40 @@ function renderCostItemsEditor(boxId, kind) {
     const items = costItemsOf(ent);
     const perU = _ciPerUnitLabel(ent, kind);
     const quick = ['other', 'packaging', 'label', 'energy', 'delivery'].map(k => `<option value="${escapeHtml(t('cost_item_' + k))}"></option>`).join('');
+    const IN = 'border p-0.5 rounded-xl table-text';
+    const W = { a: 'width:52px;flex:none;padding-left:4px;padding-right:4px;', p: 'width:84px;flex:none;padding-left:3px;padding-right:1px;font-size:12px;', x: 'width:62px;flex:none;' };
+    const perSel = (id, handler, isUnit) => `<select ${id ? `id="${id}"` : ''} ${handler ? `onchange="${handler}"` : ''} class="${IN}" style="${W.p}">
+                <option value="u"${isUnit ? ' selected' : ''}>${escapeHtml(perU)}</option>
+                <option value="b"${isUnit ? '' : ' selected'}>${escapeHtml(t('cost_per_batch'))}</option></select>`;
+    const hdr = `<div class="flex items-center gap-1 mb-1" style="background:#e3e8df;border-radius:12px;padding:5px 4px;font-size:10.5px;font-weight:600;color:#6b7a63;text-align:center;">
+            <div style="flex:1 1 0;min-width:0;">${escapeHtml(t('cost_col_name'))}</div><div style="width:52px;flex:none;">${escapeHtml(t('cost_col_sum'))}</div><div style="width:84px;flex:none;">${escapeHtml(t('cost_col_basis'))}</div><div style="width:62px;flex:none;">${escapeHtml(t('sf_col_actions'))}</div></div>`;
     const rows = items.map((it, i) => `
         <div class="flex items-center gap-1 mb-1">
             <input type="text" list="costItemNames" value="${escapeHtml(costItemName(it))}" placeholder="${escapeHtml(t('cost_item_name_ph'))}" autocomplete="off"
-                   onchange="ciChange('${kind}',${i},'n',this.value)" class="border p-0.5 rounded-xl table-text" style="flex:1 1 0;min-width:0;">
+                   onchange="ciChange('${kind}',${i},'n',this.value)" class="${IN}" style="flex:1 1 0;min-width:0;">
             <input type="number" value="${(Number(it.a) || 0) ? Number(it.a) : ''}" placeholder="0.00" autocomplete="off" inputmode="decimal" step="0.01" min="0"
-                   onchange="ciChange('${kind}',${i},'a',this.value)" class="border p-0.5 rounded-xl table-text" style="width:50px;flex:none;padding-left:4px;padding-right:4px;">
-            <select onchange="ciChange('${kind}',${i},'p',this.value)" class="border p-0.5 rounded-xl table-text" style="width:118px;flex:none;padding-left:4px;padding-right:2px;">
-                <option value="u"${it.p === 'u' ? ' selected' : ''}>${escapeHtml(perU)}</option>
-                <option value="b"${it.p === 'u' ? '' : ' selected'}>${escapeHtml(t('cost_per_batch'))}</option>
-            </select>
-            <button type="button" onclick="ciRemove('${kind}',${i})" aria-label="x" style="width:24px;height:24px;flex:none;border:none;background:transparent;color:#a3493d;font-size:18px;line-height:1;padding:0;">×</button>
+                   onchange="ciChange('${kind}',${i},'a',this.value)" class="${IN}" style="${W.a}">
+            ${perSel('', `ciChange('${kind}',${i},'p',this.value)`, it.p === 'u')}
+            <div style="${W.x}text-align:center;"><button type="button" onclick="ciRemove('${kind}',${i})" aria-label="x" style="border:none;background:transparent;color:#a3493d;font-size:20px;line-height:1;padding:0 8px;">×</button></div>
         </div>`).join('');
-    box.innerHTML = `<datalist id="costItemNames">${quick}</datalist>${rows}`;
+    const entry = `
+        <div class="flex items-center gap-1" style="padding-top:2px;">
+            <input id="ciNewName_${kind}" type="text" list="costItemNames" placeholder="${escapeHtml(t('cost_item_name_ph'))}" autocomplete="off" class="${IN}" style="flex:1 1 0;min-width:0;">
+            <input id="ciNewAmt_${kind}" type="number" placeholder="0.00" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="${IN}" style="${W.a}">
+            ${perSel('ciNewPer_' + kind, '', true)}
+            <div style="${W.x}text-align:center;"><button type="button" onclick="ciAddFromRow('${kind}')" class="pill-btn" style="font-size:11px;padding:4px 7px;line-height:1.15;white-space:normal;">${escapeHtml(t('cost_item_add'))}</button></div>
+        </div>`;
+    box.innerHTML = `<datalist id="costItemNames">${quick}</datalist>${hdr}${rows}${entry}`;
 }
-function ciAdd(kind) {
+function ciAddFromRow(kind) {
     const ent = _ciEnt(kind); if (!ent) return;
-    ent.cost_items = costItemsOf(ent).concat([{ n: '', a: 0, p: 'u' }]);
+    const name = (document.getElementById('ciNewName_' + kind)?.value || '').trim();
+    const amt = Math.max(0, parseFloat(parseFloat(document.getElementById('ciNewAmt_' + kind)?.value || 0).toFixed(2)) || 0);
+    const per = document.getElementById('ciNewPer_' + kind)?.value === 'b' ? 'b' : 'u';
+    if (!name && !amt) return;
+    ent.cost_items = costItemsOf(ent).concat([{ n: name, a: amt, p: per }]);
     renderCostItemsEditor(kind === 'p' ? 'pdCostItemsBox' : 'sfdCostItemsBox', kind);
+    ciSave(kind);
 }
 function ciRemove(kind, i) {
     const ent = _ciEnt(kind); if (!ent) return;
