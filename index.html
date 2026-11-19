@@ -2612,7 +2612,6 @@ function hideSplashScreen() {
             <button class="view-toggle-btn" id="ingredientsViewBtnTiles" onclick="setStockViewMode('ing','tiles')" title="Плитки"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></button>
         </div>
         <div class="view-toggle-pill sb-vt"><button type="button" class="view-toggle-btn stock-inv-btn" onclick="openInventarizationModal()" title="Инвентаризация" data-i18n-title="inv_inventarization" aria-label="Инвентаризация"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5l1.5 1.5l2.5-2.5"/><path d="M3.5 11.5l1.5 1.5l2.5-2.5"/><path d="M3.5 17.5l1.5 1.5l2.5-2.5"/><path d="M11 6h9M11 12h9M11 18h9"/></svg></button></div>
-        <button type="button" onclick="showHelpModal('help_stock_cards_title','help_stock_cards_text')" class="help-marker" data-i18n-title="help_marker_label" title="Подробнее об этом разделе" style="margin-left:0;flex:none;">?</button>
     </div>
 </div>
 
@@ -2629,7 +2628,6 @@ function hideSplashScreen() {
             <button class="view-toggle-btn" id="semiFinishedViewBtnTiles" onclick="setStockViewMode('sf','tiles')" title="Плитки"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></button>
         </div>
         <div class="view-toggle-pill sb-vt"><button type="button" class="view-toggle-btn stock-inv-btn" onclick="openSfInventarizationModal()" title="Инвентаризация" data-i18n-title="inv_inventarization" aria-label="Инвентаризация"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5l1.5 1.5l2.5-2.5"/><path d="M3.5 11.5l1.5 1.5l2.5-2.5"/><path d="M3.5 17.5l1.5 1.5l2.5-2.5"/><path d="M11 6h9M11 12h9M11 18h9"/></svg></button></div>
-        <button type="button" onclick="showHelpModal('help_stock_cards_title','help_stock_cards_text')" class="help-marker" data-i18n-title="help_marker_label" title="Подробнее об этом разделе" style="margin-left:0;flex:none;">?</button>
     </div>
 </div>
 
@@ -2821,16 +2819,12 @@ function hideSplashScreen() {
                 </div>
 
                 <div id="pdRecipeBlock" class="bg-white p-2 rounded-xl shadow-md mb-3">
-                    <h2 class="text-sm font-semibold text-gray-800 mb-2" data-i18n="sf_recipe_title">Рецептура (на партию)</h2>
-                    <div class="grid grid-cols-2 gap-1 mb-2">
-                        <div>
-                            <label class="table-text text-gray-500" data-i18n="sf_batch_size">Размер партии</label>
+                    <div class="flex items-start justify-between gap-2 mb-2">
+                        <h2 class="text-sm font-semibold text-gray-800" data-i18n="sf_recipe_title">Рецептура (на партию)</h2>
+                        <div style="width:96px;flex:none;">
+                            <label class="table-text text-gray-500 block text-right" data-i18n="sf_batch_size">Размер партии</label>
                             <input id="pdBatchSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" onchange="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
-                    </div>
-                    <div class="mb-2">
-                        <label class="table-text text-gray-500" data-i18n="prod_other_costs_short">Прочие расходы</label>
-                        <div id="pdCostItemsBox"></div>
                     </div>
                     <table class="w-full table-auto table-clean mb-2">
                         <thead><tr style="background-color:#e3e8df;">
@@ -2851,6 +2845,13 @@ function hideSplashScreen() {
                             <input id="newRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="Количество" class="border p-1 rounded-xl table-text flex-1" data-i18n-placeholder="inv_col_quantity">
                             <button onclick="addIngredientToRecipe()" class="pill-btn whitespace-nowrap" data-i18n="sf_add_btn">+ Добавить</button>
                         </div>
+                    </div>
+                    <div class="mb-2">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="table-text text-gray-500" data-i18n="prod_other_costs_short">Прочие расходы</label>
+                            <button type="button" onclick="ciAdd('p')" class="pill-btn" style="font-size:12px;padding:4px 12px;" data-i18n="cost_item_add">+ Добавить статью</button>
+                        </div>
+                        <div id="pdCostItemsBox"></div>
                     </div>
                     <button type="button" id="pdCopyToggle" class="pd-link" onclick="togglePdCopyBox()"><span data-i18n="prod_copy_recipe_label">Скопировать рецепт из другого изделия</span> ›</button>
                     <div id="pdCopyBox" class="hidden rounded-xl p-2 mb-2" style="background:#f4f1ea; border:1px dashed #d8d2c4;">
@@ -3079,10 +3080,6 @@ function hideSplashScreen() {
                                 <option value="gal" data-i18n="unit_gal_full">галлоны (gal)</option>
                             </select>
                         </div>
-                        <div class="col-span-2">
-                            <label class="table-text text-gray-500" data-i18n="prod_other_costs_short">Прочие расходы</label>
-                            <div id="sfdCostItemsBox"></div>
-                        </div>
                     </div>
                 </div>
 
@@ -3134,6 +3131,13 @@ function hideSplashScreen() {
                             <input id="newSfRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="Количество" class="border p-1 rounded-xl table-text flex-1" data-i18n-placeholder="inv_col_quantity">
                             <button onclick="addIngredientToSfRecipe()" class="pill-btn whitespace-nowrap" data-i18n="sf_add_btn">+ Добавить</button>
                         </div>
+                    </div>
+                    <div class="mb-2">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="table-text text-gray-500" data-i18n="prod_other_costs_short">Прочие расходы</label>
+                            <button type="button" onclick="ciAdd('s')" class="pill-btn" style="font-size:12px;padding:4px 12px;" data-i18n="cost_item_add">+ Добавить статью</button>
+                        </div>
+                        <div id="sfdCostItemsBox"></div>
                     </div>
                     <div class="rounded-xl p-2 mb-2" style="background:#f4f1ea; border:1px dashed #d8d2c4;">
                         <label class="table-text text-gray-500" data-i18n="sf_copy_recipe_label">Скопировать рецепт из другого полуфабриката</label>
@@ -5111,7 +5115,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=10"></script>
     <script src="money.js?v=14"></script>
-    <script src="i18n-core.js?v=192"></script>
+    <script src="i18n-core.js?v=193"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=21"></script>
     <script src="auth.js?v=34"></script>
@@ -5120,10 +5124,10 @@ function hideSplashScreen() {
     <script src="inventory.js?v=85"></script>
     <script src="billing.js?v=26"></script>
     <script src="push.js?v=12"></script>
-<script src="ingredients.js?v=76"></script>
+<script src="ingredients.js?v=77"></script>
 <script src="batches.js?v=18"></script>
 <script src="semifinished.js?v=73"></script>
-<script src="products.js?v=57"></script>
+<script src="products.js?v=58"></script>
 <script src="customers.js?v=78"></script>
 <script src="calendar.js?v=17"></script>
 <script src="orders.js?v=167"></script>
