@@ -160,7 +160,6 @@ async function createDraftProductAndOpen() {
     document.getElementById('pdUnit').value = 'pcs';
     document.getElementById('pdPrice').value = '0.00';
     document.getElementById('pdBatchSize').value = '1';
-    document.getElementById('pdOtherCosts').value = '0.00';
     document.getElementById('pdRecipeConfirmed').checked = false;
     document.getElementById('pdTrackStock').checked = false;
 
@@ -190,11 +189,11 @@ async function saveNewProduct() {
     showLoading();
     try {
         const { data, error } = await db.from('products').insert({
-            org_id: currentOrgId, name, price, unit, batch_size: 1, other_costs: 0
+            org_id: currentOrgId, name, price, unit, batch_size: 1
         }).select().single();
         if (error) throw error;
 
-        const newProd = { id: data.id, name, price, batch_size: 1, other_costs: 0, unit, recipe_confirmed: false, track_stock: false, ingredients: [] };
+        const newProd = { id: data.id, name, price, batch_size: 1, cost_items: [], unit, recipe_confirmed: false, track_stock: false, ingredients: [] };
         products.push(newProd);
         _isNewProduct = false;
 
@@ -236,12 +235,12 @@ async function copyProduct(i) {
     try {
         const { data, error } = await db.from('products').insert({
             org_id: currentOrgId, name: src.name + t('common_copy_suffix'), price: src.price, unit: src.unit || 'pcs',
-            batch_size: src.batch_size || 1, other_costs: src.other_costs || 0
+            batch_size: src.batch_size || 1, cost_items: costItemsOf(src)
         }).select().single();
         if (error) throw error;
         const newProd = {
             id: data.id, name: data.name, price: Number(data.price),
-            batch_size: Number(data.batch_size || 1), other_costs: Number(data.other_costs || 0),
+            batch_size: Number(data.batch_size || 1), cost_items: costItemsOf(data),
             unit: data.unit || '', recipe_confirmed: false, ingredients: []
         };
         products.push(newProd);
@@ -313,7 +312,7 @@ async function renderProductCostChart(prod) {
             if (up === null) return null; // нет данных для этого ингредиента на эту дату
             batchCost += up * Number(ri.quantity);
         }
-        batchCost += Number(prod.other_costs || 0);
+        batchCost += costItemsBatchTotal(prod);
         return batchCost / Number(prod.batch_size || 1);
     }
 
@@ -440,7 +439,7 @@ function openProductDetail(productId) {
     document.getElementById('pdUnit').value = prod.unit || '';
     document.getElementById('pdPrice').value = prod.price.toFixed(2);
     document.getElementById('pdBatchSize').value = prod.batch_size || 1;
-    document.getElementById('pdOtherCosts').value = (prod.other_costs || 0).toFixed(2);
+    renderCostItemsEditor('pdCostItemsBox', 'p');
     document.getElementById('pdRecipeConfirmed').checked = !!prod.recipe_confirmed;
     document.getElementById('pdTrackStock').checked = !!prod.track_stock;
     renderPdPhotoUI(prod.photo_url);
@@ -545,19 +544,18 @@ async function savePdHeader() {
     const unit = document.getElementById('pdUnit').value;
     const price = parseFloat(document.getElementById('pdPrice').value);
     const batchSize = parseFloat(document.getElementById('pdBatchSize').value) || 1;
-    const otherCosts = parseFloat(document.getElementById('pdOtherCosts').value) || 0;
     if (!name || isNaN(price)) { showInfo(t('prod_fill_name_price')); return; }
 
     suppressRealtimeFor3s();
     showLoading();
     try {
         const { error } = await db.from('products').update({
-            name, price: parseFloat(price.toFixed(2)), batch_size: batchSize, other_costs: parseFloat(otherCosts.toFixed(2)), unit
+            name, price: parseFloat(price.toFixed(2)), batch_size: batchSize, unit
         }).eq('id', prod.id);
         if (error) throw error;
         const unitChanged = prod.unit !== unit;
         prod.name = name; prod.price = parseFloat(price.toFixed(2));
-        prod.batch_size = batchSize; prod.other_costs = parseFloat(otherCosts.toFixed(2));
+        prod.batch_size = batchSize;
         prod.unit = unit;
         orders.forEach(o => o.items.forEach(it => { if (it.product_id === prod.id) it.product = name; }));
         updatePdUnitUI(unit);
@@ -1049,4 +1047,76 @@ async function applyProductPhotoCrop() {
     } finally {
         hideLoading();
     }
+}
+
+
+// ==================== СТАТЬИ РАСХОДОВ БЕЗ СКЛАДА (п. 12) ====================
+// Редактор списка «название / сумма / на единицу или на партию» в карточке изделия (kind 'p')
+// и полуфабриката (kind 's'). Сохраняется сразу при изменении, как остальные поля карточки.
+function _ciEnt(kind) {
+    return kind === 'p' ? products.find(p => p.id === currentProductId)
+                        : semiFinished.find(s => s.id === currentSemiFinishedId);
+}
+function _ciPerUnitLabel(ent, kind) {
+    if (kind === 'p') {
+        const u = ent.unit;
+        return (!u || u === 'pcs') ? t('cost_per_piece') : t('cost_per_unit_of') + ' ' + (unitAbbrev(u) || u);
+    }
+    return t('cost_per_unit_of') + ' ' + (unitAbbrev(ent.unit) || ent.unit);
+}
+function renderCostItemsEditor(boxId, kind) {
+    const box = document.getElementById(boxId);
+    const ent = _ciEnt(kind);
+    if (!box || !ent) return;
+    const items = costItemsOf(ent);
+    const perU = _ciPerUnitLabel(ent, kind);
+    const quick = ['other', 'packaging', 'label', 'energy', 'delivery'].map(k => `<option value="${escapeHtml(t('cost_item_' + k))}"></option>`).join('');
+    const rows = items.map((it, i) => `
+        <div class="flex items-center gap-1 mb-1">
+            <input type="text" list="costItemNames" value="${escapeHtml(costItemName(it))}" placeholder="${escapeHtml(t('cost_item_name_ph'))}" autocomplete="off"
+                   onchange="ciChange('${kind}',${i},'n',this.value)" class="border p-0.5 rounded-xl table-text" style="flex:1 1 0;min-width:0;">
+            <input type="number" value="${(Number(it.a) || 0) ? Number(it.a) : ''}" placeholder="0.00" autocomplete="off" inputmode="decimal" step="0.01" min="0"
+                   onchange="ciChange('${kind}',${i},'a',this.value)" class="border p-0.5 rounded-xl table-text" style="width:64px;flex:none;">
+            <select onchange="ciChange('${kind}',${i},'p',this.value)" class="border p-0.5 rounded-xl table-text" style="width:92px;flex:none;">
+                <option value="u"${it.p === 'u' ? ' selected' : ''}>${escapeHtml(perU)}</option>
+                <option value="b"${it.p === 'u' ? '' : ' selected'}>${escapeHtml(t('cost_per_batch'))}</option>
+            </select>
+            <button type="button" onclick="ciRemove('${kind}',${i})" aria-label="x" style="width:24px;height:24px;flex:none;border:none;background:transparent;color:#a3493d;font-size:18px;line-height:1;padding:0;">×</button>
+        </div>`).join('');
+    box.innerHTML = `<datalist id="costItemNames">${quick}</datalist>${rows}
+        <button type="button" onclick="ciAdd('${kind}')" class="pill-btn" style="font-size:12.5px;">${escapeHtml(t('cost_item_add'))}</button>`;
+}
+function ciAdd(kind) {
+    const ent = _ciEnt(kind); if (!ent) return;
+    ent.cost_items = costItemsOf(ent).concat([{ n: '', a: 0, p: 'u' }]);
+    renderCostItemsEditor(kind === 'p' ? 'pdCostItemsBox' : 'sfdCostItemsBox', kind);
+}
+function ciRemove(kind, i) {
+    const ent = _ciEnt(kind); if (!ent) return;
+    ent.cost_items = costItemsOf(ent).filter((_, j) => j !== i);
+    renderCostItemsEditor(kind === 'p' ? 'pdCostItemsBox' : 'sfdCostItemsBox', kind);
+    ciSave(kind);
+}
+function ciChange(kind, i, field, val) {
+    const ent = _ciEnt(kind); if (!ent) return;
+    const it = costItemsOf(ent)[i]; if (!it) return;
+    if (field === 'n') { it.n = String(val).trim(); delete it.k; }
+    else if (field === 'a') { it.a = Math.max(0, parseFloat(parseFloat(val || 0).toFixed(2)) || 0); }
+    else if (field === 'p') { it.p = val === 'u' ? 'u' : 'b'; }
+    ciSave(kind);
+}
+async function ciSave(kind) {
+    const ent = _ciEnt(kind); if (!ent) return;
+    const clean = costItemsOf(ent).filter(it => (it.k || it.n) || Number(it.a)).map(it => {
+        const o = { a: Number(it.a) || 0, p: it.p === 'u' ? 'u' : 'b' };
+        if (it.k) o.k = it.k; else o.n = it.n || '';
+        return o;
+    });
+    suppressRealtimeFor3s();
+    try {
+        const { error } = await db.from(kind === 'p' ? 'products' : 'semi_finished').update({ cost_items: clean }).eq('id', ent.id);
+        if (error) throw error;
+        if (kind === 'p') renderProductRecipe(ent); else renderSemiFinishedRecipe(ent);
+        showAutosaveToast();
+    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
 }

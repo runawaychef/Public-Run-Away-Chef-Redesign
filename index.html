@@ -2821,10 +2821,10 @@ function hideSplashScreen() {
                             <label class="table-text text-gray-500" data-i18n="sf_batch_size">Размер партии</label>
                             <input id="pdBatchSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" onchange="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
-                        <div>
-                            <label class="table-text text-gray-500" data-i18n="prod_other_costs_short">Прочие расходы</label>
-                            <div class="pd-money"><input id="pdOtherCosts" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" onchange="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text"><span class="pd-cur"></span></div>
-                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="table-text text-gray-500" data-i18n="prod_other_costs_short">Прочие расходы</label>
+                        <div id="pdCostItemsBox"></div>
                     </div>
                     <table class="w-full table-auto table-clean mb-2">
                         <thead><tr style="background-color:#e3e8df;">
@@ -3084,8 +3084,8 @@ function hideSplashScreen() {
                             </select>
                         </div>
                         <div class="col-span-2">
-                            <label class="table-text text-gray-500" data-i18n="sf_other_costs">Прочие расходы на партию</label>
-                            <input id="sfdOtherCosts" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" onchange="saveSfdHeader()" class="border p-0.5 rounded-xl w-full table-text">
+                            <label class="table-text text-gray-500" data-i18n="prod_other_costs_short">Прочие расходы</label>
+                            <div id="sfdCostItemsBox"></div>
                         </div>
                     </div>
                 </div>
@@ -5114,8 +5114,8 @@ function hideSplashScreen() {
 </div><!-- container -->
 
 <script src="dates.js?v=10"></script>
-    <script src="money.js?v=13"></script>
-    <script src="i18n-core.js?v=190"></script>
+    <script src="money.js?v=14"></script>
+    <script src="i18n-core.js?v=191"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=21"></script>
     <script src="auth.js?v=34"></script>
@@ -5126,8 +5126,8 @@ function hideSplashScreen() {
     <script src="push.js?v=12"></script>
 <script src="ingredients.js?v=75"></script>
 <script src="batches.js?v=18"></script>
-<script src="semifinished.js?v=71"></script>
-<script src="products.js?v=54"></script>
+<script src="semifinished.js?v=72"></script>
+<script src="products.js?v=55"></script>
 <script src="customers.js?v=78"></script>
 <script src="calendar.js?v=17"></script>
 <script src="orders.js?v=167"></script>
@@ -5142,7 +5142,7 @@ function hideSplashScreen() {
 <script src="stats.js?v=44"></script>
 <script src="history.js?v=10"></script>
 <script src="modals.js?v=22"></script>
-<script src="demoData.js?v=29"></script>
+<script src="demoData.js?v=30"></script>
 <script src="helpers.js?v=53"></script>
 <script>
 // SUPABASE_URL, SUPABASE_KEY, db перенесены в supabaseClient.js
@@ -5150,7 +5150,7 @@ function hideSplashScreen() {
 // VAT_RATE перенесён в money.js
 
 // ==================== ДАННЫЕ (кэш в памяти) ====================
-let products  = [];   // [{id, name, price, batch_size, other_costs, ingredients:[{id, ingredient_id, quantity}]}]
+let products  = [];   // [{id, name, price, batch_size, cost_items, ingredients:[{id, ingredient_id, quantity}]}]
 let customers = [];   // [{id, name, contact, discount}]
 let orders    = [];   // [{id, customer, customer_id, date, status, discount, items:[{id, product, product_id, quantity, price}]}]
 // employees, currentEmployee, logActivity, initLogin, selectEmployee, logoutEmployee
@@ -5233,7 +5233,7 @@ async function loadAllData(silent) {
     const _orderIdsAtStart = new Set((orders || []).map(o => o.id));
     try {
         const [pRes, cRes, oRes, oiRes, eRes, ingRes, piRes, sfRes, sfiRes, opRes] = await Promise.all([
-            fetchAllRows(() => db.from('products').select('id, name, price, batch_size, other_costs, unit, recipe_confirmed, track_stock, photo_url').eq('org_id', currentOrgId).order('name').order('id')),
+            fetchAllRows(() => db.from('products').select('id, name, price, batch_size, cost_items, unit, recipe_confirmed, track_stock, photo_url').eq('org_id', currentOrgId).order('name').order('id')),
             fetchAllRows(() => db.from('customers').select('id, name, contact, email, discount, vat_exempt, notes, address, reg_number, vat_code, personal_code, entity_type, payment_term_days, invoice_mode').eq('org_id', currentOrgId).order('name').order('id')),
             // invoice_snapshot / delivery_note_snapshot сюда НЕ входят: это копии документов с логотипом
             // (у большой пекарни ~15 МБ), в списке они не нужны — документы читают свой снимок из базы сами.
@@ -5242,7 +5242,7 @@ async function loadAllData(silent) {
             db.from('employees').select('id, name').eq('org_id', currentOrgId).order('name').limit(1000),
             fetchAllRows(() => db.from('ingredients').select('id, name, package_price, package_size, unit, shelf_life_days').eq('org_id', currentOrgId).order('name').order('id')),
             fetchAllRows(() => db.from('product_ingredients').select('id, product_id, ingredient_id, semi_finished_id, quantity').eq('org_id', currentOrgId).order('id')),
-            fetchAllRows(() => db.from('semi_finished').select('id, name, batch_size, unit, other_costs, recipe_confirmed, track_stock, shelf_life_days').eq('org_id', currentOrgId).order('name').order('id')),
+            fetchAllRows(() => db.from('semi_finished').select('id, name, batch_size, unit, cost_items, recipe_confirmed, track_stock, shelf_life_days').eq('org_id', currentOrgId).order('name').order('id')),
             fetchAllRows(() => db.from('semi_finished_ingredients').select('id, semi_finished_id, ingredient_id, quantity, is_primary').eq('org_id', currentOrgId).order('id')),
             fetchAllRows(() => db.from('order_payments').select('order_id, amount, bank_transaction_id').eq('org_id', currentOrgId).order('id'))
         ]);
@@ -5273,7 +5273,7 @@ async function loadAllData(silent) {
             sfRecipeBySf[ri.semi_finished_id].push({ id: ri.id, ingredient_id: ri.ingredient_id, quantity: Number(ri.quantity), is_primary: !!ri.is_primary });
         });
         semiFinished = (sfRes.data || []).map(sf => ({
-            id: sf.id, name: sf.name, batch_size: Number(sf.batch_size || 1), unit: sf.unit, other_costs: Number(sf.other_costs || 0),
+            id: sf.id, name: sf.name, batch_size: Number(sf.batch_size || 1), unit: sf.unit, cost_items: costItemsOf(sf),
             recipe_confirmed: !!sf.recipe_confirmed,
             track_stock: !!sf.track_stock,
             shelf_life_days: sf.shelf_life_days == null ? null : Number(sf.shelf_life_days),
@@ -5288,7 +5288,7 @@ async function loadAllData(silent) {
 
         products  = (pRes.data || []).map(p => ({
             id: p.id, name: p.name, price: Number(p.price),
-            batch_size: Number(p.batch_size || 1), other_costs: Number(p.other_costs || 0),
+            batch_size: Number(p.batch_size || 1), cost_items: costItemsOf(p),
             unit: p.unit || '',
             recipe_confirmed: !!p.recipe_confirmed,
             track_stock: !!p.track_stock,

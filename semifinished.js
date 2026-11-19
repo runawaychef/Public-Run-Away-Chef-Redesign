@@ -6,7 +6,7 @@
 // showLoading/hideLoading, logActivity (employees.js), svgEdit/svgDelete (helpers.js),
 // openDeleteModal, closeModal (modals.js), editIndex (главный скрипт).
 
-let semiFinished = []; // [{id, name, batch_size, unit, other_costs, ingredients:[{id, ingredient_id, quantity}]}]
+let semiFinished = []; // [{id, name, batch_size, unit, cost_items, ingredients:[{id, ingredient_id, quantity}]}]
 
 // SF_UNIT_LABELS заменён общей функцией unitAbbrev(code) из inventory.js.
 
@@ -17,7 +17,7 @@ function semiFinishedBatchCost(sf) {
         if (!ing) return sum;
         return sum + ingredientUnitPrice(ing) * ri.quantity;
     }, 0);
-    return ingredientsCost + (sf.other_costs || 0);
+    return ingredientsCost + costItemsBatchTotal(sf);
 }
 
 // Себестоимость за единицу полуфабриката (€/г, €/кг, €/мл, €/л — в зависимости от sf.unit)
@@ -168,9 +168,9 @@ async function createDraftSemiFinishedAndOpen() {
     suppressRealtimeFor3s();
     showLoading();
     try {
-        const { data, error } = await db.from('semi_finished').insert({ org_id: currentOrgId, name: '', batch_size: 1, unit: 'g', other_costs: 0 }).select().single();
+        const { data, error } = await db.from('semi_finished').insert({ org_id: currentOrgId, name: '', batch_size: 1, unit: 'g' }).select().single();
         if (error) throw error;
-        const newSf = { id: data.id, name: '', batch_size: 1, unit: 'g', other_costs: 0, recipe_confirmed: false, ingredients: [] };
+        const newSf = { id: data.id, name: '', batch_size: 1, unit: 'g', cost_items: [], recipe_confirmed: false, ingredients: [] };
         semiFinished.push(newSf);
         _draftSemiFinishedIds.add(newSf.id);
         displaySemiFinished();
@@ -188,7 +188,7 @@ function semiFinishedNewInfo() {
     if (!document.getElementById('semiFinishedDetail')?.classList.contains('active')) return null;
     const sf = semiFinished.find(s => s.id === id);
     const name = (document.getElementById('sfdName')?.value || '').trim();
-    const other = parseFloat(document.getElementById('sfdOtherCosts')?.value) || 0;
+    const other = costItemsOf(sf).length;
     const hasRecipe = !!(sf && sf.ingredients && sf.ingredients.length);
     return {
         hasData: !!name || other > 0 || hasRecipe,
@@ -263,12 +263,12 @@ async function copySemiFinished(i) {
     try {
         const { data, error } = await db.from('semi_finished').insert({
             org_id: currentOrgId, name: src.name + t('common_copy_suffix'), batch_size: src.batch_size || 1,
-            unit: src.unit || 'g', other_costs: src.other_costs || 0
+            unit: src.unit || 'g', cost_items: costItemsOf(src)
         }).select().single();
         if (error) throw error;
         const newSf = {
             id: data.id, name: data.name, batch_size: Number(data.batch_size || 1),
-            unit: data.unit || 'g', other_costs: Number(data.other_costs || 0),
+            unit: data.unit || 'g', cost_items: costItemsOf(data),
             recipe_confirmed: false, ingredients: []
         };
         semiFinished.push(newSf);
@@ -314,7 +314,7 @@ function openSemiFinishedDetail(sfId) {
     document.getElementById('sfHistSection')?.classList.remove('open');  // история — свёрнута
     document.getElementById('sfdBatchSize').value = sf.batch_size;
     document.getElementById('sfdUnit').value = sf.unit;
-    document.getElementById('sfdOtherCosts').value = (sf.other_costs || 0).toFixed(2);
+    renderCostItemsEditor('sfdCostItemsBox', 's');
     document.getElementById('sfdRecipeConfirmed').checked = !!sf.recipe_confirmed;
     document.getElementById('sfdTrackStock').checked = !!sf.track_stock;
     const _sfShelfEl = document.getElementById('sfdShelfDays');
@@ -357,17 +357,16 @@ async function saveSfdHeader() {
     const name = document.getElementById('sfdName').value.trim();
     const batchSize = parseFloat(document.getElementById('sfdBatchSize').value);
     const unit = document.getElementById('sfdUnit').value;
-    const otherCosts = parseFloat(document.getElementById('sfdOtherCosts').value) || 0;
     if (!name || isNaN(batchSize) || batchSize <= 0) { showInfo(t('sf_fill_name_batch_size')); return; }
 
     showLoading();
     try {
         suppressRealtimeFor3s();
         const { error } = await db.from('semi_finished').update({
-            name, batch_size: batchSize, unit, other_costs: parseFloat(otherCosts.toFixed(2))
+            name, batch_size: batchSize, unit
         }).eq('id', sf.id);
         if (error) throw error;
-        sf.name = name; sf.batch_size = batchSize; sf.unit = unit; sf.other_costs = parseFloat(otherCosts.toFixed(2));
+        sf.name = name; sf.batch_size = batchSize; sf.unit = unit;
         renderSemiFinishedRecipe(sf);
         logActivity('semiFinished', `${t('log_sf_changed')} «${sf.name}»`);
         showAutosaveToast();
@@ -846,7 +845,7 @@ async function confirmSfProduce() {
 
         // Фактическая себестоимость партии = фактически списанные ингредиенты (по FIFO)
         // + прочие расходы (масштабированы тем же коэффициентом, что и рецепт)
-        const totalBatchCost = actualIngredientsCost + (sf.other_costs || 0) * factor;
+        const totalBatchCost = actualIngredientsCost + costItemsBatchTotal(sf) * factor;
         const unitPrice = actualResult > 0 ? totalBatchCost / actualResult : 0;
         const { error: receiveError } = await db.rpc('rpc_receive_stock', {
             p_org_id: currentOrgId,
@@ -1072,7 +1071,7 @@ async function renderSfCostChart(sf) {
     for (const prod of productions) {
         const dateStr = prod.created_at.slice(0, 10); // YYYY-MM-DD
         const factor  = Number(prod.quantity) / Number(sf.batch_size || 1);
-        let cost = Number(sf.other_costs || 0) * factor;
+        let cost = costItemsBatchTotal(sf) * factor;
         let hasAllPrices = true;
 
         for (const ri of sf.ingredients || []) {

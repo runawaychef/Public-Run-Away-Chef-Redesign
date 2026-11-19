@@ -128,6 +128,17 @@ function orderGrandTotal(order) {
 // ==================== СЕБЕСТОИМОСТЬ ИЗДЕЛИЙ ====================
 // Зависит от: ingredients (ingredients.js), ingredientUnitPrice (ingredients.js).
 
+// Статьи расходов без склада (электричество, этикетка и т. п.): [{k?, n?, a, p}],
+// k — ключ готового названия (перевод через t('cost_item_'+k)), n — своё название,
+// a — сумма, p — 'u' на единицу изделия или 'b' на партию. Хранится в products/semi_finished.cost_items.
+function costItemsOf(x) { return (x && Array.isArray(x.cost_items)) ? x.cost_items : []; }
+function costItemName(it) { return it.k ? t('cost_item_' + it.k) : (it.n || ''); }
+// Сумма статей на всю партию: «на партию» как есть + «на единицу» × размер партии
+function costItemsBatchTotal(x) {
+    const bs = Number(x && x.batch_size) || 1;
+    return costItemsOf(x).reduce((s, it) => s + (Number(it.a) || 0) * (it.p === 'u' ? bs : 1), 0);
+}
+
 // Себестоимость партии изделия: сумма (расход ингредиента × цена за единицу) + прочие расходы
 function productBatchCost(prod) {
     const ingredientsCost = (prod.ingredients || []).reduce((sum, ri) => {
@@ -140,7 +151,7 @@ function productBatchCost(prod) {
         if (!ing) return sum;
         return sum + ingredientUnitPrice(ing) * ri.quantity;
     }, 0);
-    return ingredientsCost + (prod.other_costs || 0);
+    return ingredientsCost + costItemsBatchTotal(prod);
 }
 
 // Себестоимость одной единицы изделия = себестоимость партии / размер партии

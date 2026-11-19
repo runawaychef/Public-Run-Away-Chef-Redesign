@@ -215,7 +215,7 @@ async function createDemoData(orgId, employeeId) {
     // ---------- Полуфабрикаты ----------
     const sfKeys = Object.keys(C.semiFinished);
     const { data: sfData, error: sfErr } = await db.from('semi_finished').insert(
-        sfKeys.map(key => ({ org_id: orgId, name: C.semiFinished[key].name, unit: C.semiFinished[key].unit, batch_size: C.semiFinished[key].batch_size, other_costs: C.semiFinished[key].other_costs, recipe_confirmed: true, track_stock: true, is_demo: true }))
+        sfKeys.map(key => ({ org_id: orgId, name: C.semiFinished[key].name, unit: C.semiFinished[key].unit, batch_size: C.semiFinished[key].batch_size, cost_items: [{ k: 'other', a: C.semiFinished[key].other_costs, p: 'b' }], recipe_confirmed: true, track_stock: true, is_demo: true }))
     ).select();
     if (sfErr) throw sfErr;
     const sfByKey = {};
@@ -231,7 +231,7 @@ async function createDemoData(orgId, employeeId) {
     // ---------- Изделия ----------
     const prodKeys = Object.keys(C.products);
     const { data: prodData, error: prodErr } = await db.from('products').insert(
-        prodKeys.map(key => ({ org_id: orgId, name: C.products[key].name, price: C.products[key].price, unit: C.products[key].unit, batch_size: C.products[key].batch_size, other_costs: C.products[key].other_costs, recipe_confirmed: true, track_stock: true, is_demo: true, photo_url: DEMO_PRODUCT_PHOTOS[key] || null }))
+        prodKeys.map(key => ({ org_id: orgId, name: C.products[key].name, price: C.products[key].price, unit: C.products[key].unit, batch_size: C.products[key].batch_size, cost_items: [{ k: 'other', a: C.products[key].other_costs, p: 'b' }], recipe_confirmed: true, track_stock: true, is_demo: true, photo_url: DEMO_PRODUCT_PHOTOS[key] || null }))
     ).select();
     if (prodErr) throw prodErr;
     const prodByKey = {};
