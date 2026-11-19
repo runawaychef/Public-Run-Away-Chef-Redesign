@@ -162,6 +162,8 @@ async function createDraftProductAndOpen() {
     document.getElementById('pdBatchSize').value = '1';
     document.getElementById('pdRecipeConfirmed').checked = false;
     document.getElementById('pdTrackStock').checked = false;
+    _pdNewPhotoBlob = null;
+    renderPdPhotoUI(null); // в новой карточке не должно быть фото предыдущего изделия
 
     // Показываем кнопку Сохранить, скрываем удаление и рецепт
     const saveBtn = document.getElementById('pdSaveNewBtn');
@@ -196,6 +198,19 @@ async function saveNewProduct() {
         const newProd = { id: data.id, name, price, batch_size: 1, cost_items: [], unit, recipe_confirmed: false, track_stock: false, ingredients: [] };
         products.push(newProd);
         _isNewProduct = false;
+
+        // Фото, выбранное до сохранения новой карточки
+        if (_pdNewPhotoBlob) {
+            try {
+                const path = `${currentOrgId}/${data.id}-${Date.now()}.jpg`;
+                const up = await db.storage.from('product-photos').upload(path, _pdNewPhotoBlob, { contentType: 'image/jpeg', upsert: false });
+                if (up.error) throw up.error;
+                const url = db.storage.from('product-photos').getPublicUrl(path).data.publicUrl;
+                await updateChecked(db.from('products').update({ photo_url: url }).eq('id', data.id));
+                newProd.photo_url = url;
+            } catch (pe) { console.error('Фото нового изделия не загружено:', pe); }
+            _pdNewPhotoBlob = null;
+        }
 
         // Предустановка: материалы с галочкой «Добавлять в новые изделия автоматически»
         try {
@@ -699,6 +714,7 @@ function renderProductMaterials(prod) {
             const editing = _matEditIdx === i;
             const tr = document.createElement('tr');
             tr.className = 'border-b';
+            if (!editing) { tr.style.cursor = 'pointer'; tr.onclick = () => matEditStart(i); } // строка кликабельна — правка, как в позициях заказа
             tr.innerHTML = `
                 <td class="p-0.5 table-text">${escapeHtml(ing.name)}</td>
                 <td class="p-0.5 table-text text-center">${editing
@@ -707,7 +723,7 @@ function renderProductMaterials(prod) {
                 <td class="p-0.5 table-text text-center font-medium">${formatMoney(cost)}</td>
                 <td class="p-0.5 text-center">${editing
                     ? `<button type="button" onclick="matEditSave(${i})" style="border:none;background:transparent;color:#4d7a45;font-size:20px;line-height:1;padding:0 6px;">✓</button><button type="button" onclick="matEditStart(null)" style="border:none;background:transparent;color:#a3493d;font-size:20px;line-height:1;padding:0 6px;">×</button>`
-                    : `${svgEdit(`matEditStart(${i})`)}${hasPermission('can_delete') ? svgDelete(`deleteRecipeItem(${i})`) : ''}`}</td>`;
+                    : `${hasPermission('can_delete') ? svgDelete(`event.stopPropagation();deleteRecipeItem(${i})`) : ''}`}</td>`;
             tbody.appendChild(tr);
         });
     }
@@ -1013,6 +1029,7 @@ const PRODUCT_PHOTO_CROP_OUTPUT_SIZE = 800; // финальный размер �
 const PRODUCT_PHOTO_CROP_CANVAS_SIZE = 260; // размер видимой рамки кроп-инструмента, px
 const PRODUCT_PHOTO_MAX_UPLOAD_BYTES = 8 * 1024 * 1024; // 8 МБ — фото с телефона крупнее логотипа
 
+let _pdNewPhotoBlob = null; // фото нового (ещё не сохранённого) изделия — загружается при «Сохранить»
 let _pdPhotoCropImg = null;
 let _pdPhotoCropBaseScale = 1;
 let _pdPhotoCropOffsetX = 0;
@@ -1133,7 +1150,7 @@ function drawProductPhotoCropCanvas() {
 })();
 
 async function applyProductPhotoCrop() {
-    if (!_pdPhotoCropImg || !currentProductId) return;
+    if (!_pdPhotoCropImg || (!currentProductId && !_isNewProduct)) return;
     const out = document.createElement('canvas');
     out.width = PRODUCT_PHOTO_CROP_OUTPUT_SIZE;
     out.height = PRODUCT_PHOTO_CROP_OUTPUT_SIZE;
@@ -1146,6 +1163,11 @@ async function applyProductPhotoCrop() {
     showLoading();
     try {
         const blob = await new Promise(resolve => out.toBlob(resolve, 'image/jpeg', 0.85));
+        if (_isNewProduct && !currentProductId) { // новое изделие: держим фото в памяти до «Сохранить»
+            _pdNewPhotoBlob = blob;
+            renderPdPhotoUI(URL.createObjectURL(blob));
+            return;
+        }
         // Уникальное имя на каждое сохранение (не перезаписываем старый файл по тому
         // же пути) — иначе кэш браузера/CDN мог бы ещё долго показывать старое фото
         // после замены. Путь начинается с org_id — так работает RLS-политика Storage
@@ -1230,8 +1252,8 @@ function renderCostItemsEditor(boxId, kind) {
             : escapeHtml(it.p === 'u' ? perU : t('cost_per_batch'))}</td>`;
         const act = editing
             ? `<button type="button" onclick="ciEdit('${kind}',null)" style="border:none;background:transparent;color:#4d7a45;font-size:20px;line-height:1;padding:0 8px;">✓</button>`
-            : `${svgEdit(`ciEdit('${kind}',${i})`)}${svgDelete(`ciRemove('${kind}',${i})`)}`;
-        return `<tr class="border-b"><td class="p-0.5 table-text">${nameCell}</td><td class="p-0.5 table-text text-center">${amtCell}</td>${perCell}<td class="p-0.5 text-center">${act}</td></tr>`;
+            : svgDelete(`event.stopPropagation();ciRemove('${kind}',${i})`);
+        return `<tr class="border-b"${editing ? '' : ` style="cursor:pointer" onclick="ciEdit('${kind}',${i})"`}><td class="p-0.5 table-text">${nameCell}</td><td class="p-0.5 table-text text-center">${amtCell}</td>${perCell}<td class="p-0.5 text-center">${act}</td></tr>`;
     }).join('');
     const entry = `<tr>
         <td class="p-1"><input id="ciNewName_${kind}" type="text" list="costItemNames" placeholder="${escapeHtml(t('cost_item_name_ph'))}" autocomplete="off" class="${IN}"></td>
