@@ -309,7 +309,7 @@ function _orderShortMap() {
     if (_osMap && _osMap.ctx === ctx) return _osMap.map;
     const map = {};
     if (stockForecastEnabled()) {
-        smartStockRows(ctx).forEach(r => {
+        smartStockRows(ctx).concat(orderScopedRows(ctx)).forEach(r => {
             r.runout.orders.forEach(x => {
                 if (!x.short) return;
                 const need = x.need, have = x.before, buy = _r4(Math.max(0, need - have));
@@ -560,6 +560,35 @@ function smartStockRows(ctx) {
     });
     const rank = r => r.st.zone === 'critical' ? 0 : r.st.zone === 'warning' ? 1 : r.attention ? 2 : 3;
     return rows.sort((a, b) => (rank(a) - rank(b)) || (a.item.name || '').localeCompare(b.item.name || ''));
+}
+
+// Позиции склада, нужные ТОЛЬКО под невыполненные заказы разовых изделий (без галочки
+// «Отслеживать остатки постоянно»): в общий список «Склада» не попадают, но нехватку под заказ
+// считаем так же, как у отслеживаемых (резерв под другие заказы по датам — внутри stockRunout).
+// Состав берём из реальных списаний под позиции заказов (ctx.byItem): изделие без рецепта
+// ничего не списывает — по нему тишина; ингредиенты внутри полуфабриката отдельно не считаются.
+function orderScopedRows(ctx) {
+    const tracked = smartStockItemIds();
+    const keys = new Set();
+    (orders || []).forEach(o => {
+        if (o.status === 'выполнен') return;
+        (o.items || []).forEach(it => {
+            const m = it && ctx.byItem[it.id];
+            if (m) Object.keys(m).forEach(k => keys.add(k));
+        });
+    });
+    const rows = [];
+    keys.forEach(key => {
+        const isSf = key.startsWith('sf_');
+        const id = Number(key.slice(isSf ? 3 : 4));
+        if (!id || (isSf ? tracked.sf : tracked.ing).has(id)) return; // уже в общем списке — без дублей
+        const item = (isSf ? (semiFinished || []) : (ingredients || [])).find(x => x.id === id);
+        if (!item) return;
+        const kind = isSf ? 'sf' : 'ing';
+        const runout = stockRunout(kind, id, ctx);
+        rows.push({ kind, item, st: runout.st, runout, batchShort: [], attention: false });
+    });
+    return rows;
 }
 
 function _invName(r) {
