@@ -1588,6 +1588,8 @@
         #ingredientsList .stock-toprow .view-toggle-pill, #semiFinishedList .stock-toprow .view-toggle-pill { padding: 3px; gap: 1px; border: 1px solid rgba(90,75,40,0.06); box-shadow: 0 6px 12px -6px rgba(70,58,30,0.35), 0 1px 2px rgba(70,58,30,0.1); }
         #ingredientsList .stock-toprow-right, #semiFinishedList .stock-toprow-right { gap: 5px; }
         #ingredientsList .stock-tab, #semiFinishedList .stock-tab { height: 32px; font-size: 12.5px; }
+        .stk3 { flex: 1 1 auto; display: flex; } .stk3 .stock-tab { flex: 1 1 auto; padding: 0 6px !important; }
+        #ingredientsSearchBar .search-input-wrap, #semiFinishedSearchBar .search-input-wrap { min-width: 0; }
         #ingredientsList .stock-tab.active, #semiFinishedList .stock-tab.active { background: #e3ebdf; color: #4f6349; font-weight: 700; }
         #ingredientsList .stock-toprow .view-toggle-btn, #semiFinishedList .stock-toprow .view-toggle-btn { width: 32px; height: 32px; }
         #ingredientsList .dash-filter-chip, #semiFinishedList .dash-filter-chip { background: #fff; border: var(--sb-edge); border-radius: 14px; box-shadow: 0 6px 12px -6px rgba(70,58,30,0.35), 0 1px 2px rgba(70,58,30,0.1); margin: 3px 0 12px; }
@@ -2609,6 +2611,8 @@ function hideSplashScreen() {
             <button class="view-toggle-btn active" id="ingredientsViewBtnCards" onclick="setStockViewMode('ing','cards')" title="Карточки"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/></svg></button>
             <button class="view-toggle-btn" id="ingredientsViewBtnTiles" onclick="setStockViewMode('ing','tiles')" title="Плитки"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></button>
         </div>
+        <div class="view-toggle-pill sb-vt"><button type="button" class="view-toggle-btn stock-inv-btn" onclick="openInventarizationModal()" title="Инвентаризация" data-i18n-title="inv_inventarization" aria-label="Инвентаризация"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5l1.5 1.5l2.5-2.5"/><path d="M3.5 11.5l1.5 1.5l2.5-2.5"/><path d="M3.5 17.5l1.5 1.5l2.5-2.5"/><path d="M11 6h9M11 12h9M11 18h9"/></svg></button></div>
+        <button type="button" onclick="showHelpModal('help_stock_cards_title','help_stock_cards_text')" class="help-marker" data-i18n-title="help_marker_label" title="Подробнее об этом разделе" style="margin-left:0;flex:none;">?</button>
     </div>
 </div>
 
@@ -2624,6 +2628,8 @@ function hideSplashScreen() {
             <button class="view-toggle-btn active" id="semiFinishedViewBtnCards" onclick="setStockViewMode('sf','cards')" title="Карточки"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/></svg></button>
             <button class="view-toggle-btn" id="semiFinishedViewBtnTiles" onclick="setStockViewMode('sf','tiles')" title="Плитки"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></button>
         </div>
+        <div class="view-toggle-pill sb-vt"><button type="button" class="view-toggle-btn stock-inv-btn" onclick="openSfInventarizationModal()" title="Инвентаризация" data-i18n-title="inv_inventarization" aria-label="Инвентаризация"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5l1.5 1.5l2.5-2.5"/><path d="M3.5 11.5l1.5 1.5l2.5-2.5"/><path d="M3.5 17.5l1.5 1.5l2.5-2.5"/><path d="M11 6h9M11 12h9M11 18h9"/></svg></button></div>
+        <button type="button" onclick="showHelpModal('help_stock_cards_title','help_stock_cards_text')" class="help-marker" data-i18n-title="help_marker_label" title="Подробнее об этом разделе" style="margin-left:0;flex:none;">?</button>
     </div>
 </div>
 
@@ -2892,17 +2898,12 @@ function hideSplashScreen() {
         <!-- ===== ИНГРЕДИЕНТЫ ===== -->
         <div id="ingredients" class="tab-content hidden">
             <div id="ingredientsList">
-                <!-- onclick вкладок с «;» на конце — чтобы showTab() не принял их за кнопку нижнего меню (ищет точное onclick="showTab(...)") и не подсвечивал -->
+                <!-- Три вкладки склада (вариант 2, 19.11): onclick с «;» на конце — чтобы showTab() не принял их за кнопку нижнего меню -->
                 <div class="stock-toprow">
-                    <button type="button" onclick="showHelpModal('help_stock_cards_title','help_stock_cards_text')" class="help-marker" data-i18n-title="help_marker_label" title="Подробнее об этом разделе" style="margin-left:0;">?</button>
-                    <div class="stock-toprow-right">
-                        <div class="view-toggle-pill">
-                            <button type="button" class="stock-tab active" onclick="showTab('ingredients');" data-i18n="sf_back_to_ingredients">Ингредиенты</button>
-                            <button type="button" class="stock-tab" onclick="showTab('semiFinished');"><span data-i18n="ing_semifinished_link">Полуфабрикаты</span><i id="ingTabSfDot" class="stk-dot hidden"></i></button>
-                        </div>
-                        <div class="view-toggle-pill">
-                            <button type="button" class="view-toggle-btn stock-inv-btn" onclick="openInventarizationModal()" title="Инвентаризация" data-i18n-title="inv_inventarization" aria-label="Инвентаризация"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5l1.5 1.5l2.5-2.5"/><path d="M3.5 11.5l1.5 1.5l2.5-2.5"/><path d="M3.5 17.5l1.5 1.5l2.5-2.5"/><path d="M11 6h9M11 12h9M11 18h9"/></svg></button>
-                        </div>
+                    <div class="view-toggle-pill stk3">
+                        <button type="button" class="stock-tab" data-stk="ing" onclick="stockTabGo('ing');"><span data-i18n="sf_back_to_ingredients">Ингредиенты</span></button>
+                        <button type="button" class="stock-tab" data-stk="sf" onclick="stockTabGo('sf');"><span data-i18n="ing_semifinished_link">Полуфабрикаты</span><i id="ingTabSfDot" class="stk-dot hidden"></i></button>
+                        <button type="button" class="stock-tab" data-stk="mat" onclick="stockTabGo('mat');" data-i18n="stock_tab_materials">Материалы</button>
                     </div>
                 </div>
 
@@ -3024,15 +3025,10 @@ function hideSplashScreen() {
         <div id="semiFinished" class="tab-content hidden">
             <div id="semiFinishedList">
                 <div class="stock-toprow">
-                    <button type="button" onclick="showHelpModal('help_stock_cards_title','help_stock_cards_text')" class="help-marker" data-i18n-title="help_marker_label" title="Подробнее об этом разделе" style="margin-left:0;">?</button>
-                    <div class="stock-toprow-right">
-                        <div class="view-toggle-pill">
-                            <button type="button" class="stock-tab" onclick="showTab('ingredients');"><span data-i18n="sf_back_to_ingredients">Ингредиенты</span><i id="sfTabIngDot" class="stk-dot hidden"></i></button>
-                            <button type="button" class="stock-tab active" onclick="showTab('semiFinished');" data-i18n="ing_semifinished_link">Полуфабрикаты</button>
-                        </div>
-                        <div class="view-toggle-pill">
-                            <button type="button" class="view-toggle-btn stock-inv-btn" onclick="openSfInventarizationModal()" title="Инвентаризация" data-i18n-title="inv_inventarization" aria-label="Инвентаризация"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5l1.5 1.5l2.5-2.5"/><path d="M3.5 11.5l1.5 1.5l2.5-2.5"/><path d="M3.5 17.5l1.5 1.5l2.5-2.5"/><path d="M11 6h9M11 12h9M11 18h9"/></svg></button>
-                        </div>
+                    <div class="view-toggle-pill stk3">
+                        <button type="button" class="stock-tab" data-stk="ing" onclick="stockTabGo('ing');"><span data-i18n="sf_back_to_ingredients">Ингредиенты</span><i id="sfTabIngDot" class="stk-dot hidden"></i></button>
+                        <button type="button" class="stock-tab" data-stk="sf" onclick="stockTabGo('sf');"><span data-i18n="ing_semifinished_link">Полуфабрикаты</span></button>
+                        <button type="button" class="stock-tab" data-stk="mat" onclick="stockTabGo('mat');" data-i18n="stock_tab_materials">Материалы</button>
                     </div>
                 </div>
 
@@ -5115,19 +5111,19 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=10"></script>
     <script src="money.js?v=14"></script>
-    <script src="i18n-core.js?v=191"></script>
+    <script src="i18n-core.js?v=192"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=21"></script>
     <script src="auth.js?v=34"></script>
     <script src="employees.js?v=79"></script>
     <script src="company.js?v=29"></script>
-    <script src="inventory.js?v=84"></script>
+    <script src="inventory.js?v=85"></script>
     <script src="billing.js?v=26"></script>
     <script src="push.js?v=12"></script>
-<script src="ingredients.js?v=75"></script>
+<script src="ingredients.js?v=76"></script>
 <script src="batches.js?v=18"></script>
-<script src="semifinished.js?v=72"></script>
-<script src="products.js?v=55"></script>
+<script src="semifinished.js?v=73"></script>
+<script src="products.js?v=57"></script>
 <script src="customers.js?v=78"></script>
 <script src="calendar.js?v=17"></script>
 <script src="orders.js?v=167"></script>
@@ -5240,7 +5236,7 @@ async function loadAllData(silent) {
             fetchAllRows(() => db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending, is_confirmed, is_demo, created_by, inv_no, dn_no, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via, invoice_sent_message_id, delivery_note_sent_message_id, invoice_delivery_status, delivery_note_delivery_status, consolidated_invoice_id, cons_excluded').eq('org_id', currentOrgId).is('deleted_at', null).order('id')),
             fetchAllRows(() => db.from('order_items').select('id, order_id, product_id, quantity, price, item_cost').eq('org_id', currentOrgId).order('id')),
             db.from('employees').select('id, name').eq('org_id', currentOrgId).order('name').limit(1000),
-            fetchAllRows(() => db.from('ingredients').select('id, name, package_price, package_size, unit, shelf_life_days').eq('org_id', currentOrgId).order('name').order('id')),
+            fetchAllRows(() => db.from('ingredients').select('id, name, package_price, package_size, unit, shelf_life_days, kind').eq('org_id', currentOrgId).order('name').order('id')),
             fetchAllRows(() => db.from('product_ingredients').select('id, product_id, ingredient_id, semi_finished_id, quantity').eq('org_id', currentOrgId).order('id')),
             fetchAllRows(() => db.from('semi_finished').select('id, name, batch_size, unit, cost_items, recipe_confirmed, track_stock, shelf_life_days').eq('org_id', currentOrgId).order('name').order('id')),
             fetchAllRows(() => db.from('semi_finished_ingredients').select('id, semi_finished_id, ingredient_id, quantity, is_primary').eq('org_id', currentOrgId).order('id')),
@@ -5265,7 +5261,7 @@ async function loadAllData(silent) {
             if (p.bank_transaction_id) (_orderBankTx[p.order_id] = _orderBankTx[p.order_id] || []).push(p.bank_transaction_id);
         });
 
-        ingredients = (ingRes.data || []).map(i => ({ id: i.id, name: i.name, package_price: Number(i.package_price), package_size: Number(i.package_size), unit: i.unit, shelf_life_days: i.shelf_life_days == null ? null : Number(i.shelf_life_days) }));
+        ingredients = (ingRes.data || []).map(i => ({ id: i.id, kind: i.kind === 'material' ? 'material' : 'ingredient', name: i.name, package_price: Number(i.package_price), package_size: Number(i.package_size), unit: i.unit, shelf_life_days: i.shelf_life_days == null ? null : Number(i.shelf_life_days) }));
 
         const sfRecipeBySf = {};
         (sfiRes.data || []).forEach(ri => {

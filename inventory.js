@@ -883,12 +883,12 @@ function _scFmt(x) { return _decSep(String(Math.round(Number(x) * 100) / 100)); 
 function openStockCountPage(kind) {
     const isSf = kind === 'sf';
     const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
-    const src = (isSf ? semiFinished : ingredients).slice().sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    const src = (isSf ? semiFinished : ingredients.filter(i => (i.kind === 'material') === (stockMode === 'mat'))).slice().sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     _sc = { kind, items: src.map(x => ({
         id: x.id, name: x.name || '', unit: unitAbbrev(x.unit),
         balance: (isSf ? getSemiFinishedBalanceBeforeWriteoff(x.id, pendingMap) : getIngredientBalanceBeforeWriteoff(x.id, pendingMap)) || 0,
     })) };
-    document.getElementById('stockCountTitle').textContent = t(isSf ? 'inv_count_title_sf' : 'inv_count_title_ing');
+    document.getElementById('stockCountTitle').textContent = t(isSf ? 'inv_count_title_sf' : (stockMode === 'mat' ? 'inv_count_title_mat' : 'inv_count_title_ing'));
     const search = document.getElementById('stockCountSearch');
     if (search) search.value = '';
     document.getElementById('stockCountBody').innerHTML = _sc.items.map(it => `

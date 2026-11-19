@@ -568,7 +568,7 @@ async function savePdHeader() {
 
 function fillNewRecipeIngredientSelect() {
     setupSearchDropdown('newRecipeIngredient', 'newRecipeIngredientDropdown', () => {
-        const names = ingredients.slice().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).map(i => i.name);
+        const names = ingredientsOnly().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).map(i => i.name);
         const sfNames = (typeof semiFinished !== 'undefined')
             ? semiFinished.slice().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).map(s => s.name + t('prod_sf_suffix'))
             : [];
@@ -688,10 +688,10 @@ function openEditRecipeItemModal(i) {
 
     const sel = document.getElementById('editRecipeIngredient');
     sel.innerHTML = `<option value="">${t('prod_choose_ing_or_sf')}</option>`;
-    if (ingredients.length) {
+    if (ingredientsOnly().length) {
         const grpIng = document.createElement('optgroup');
         grpIng.label = t('prod_optgroup_ingredients');
-        ingredients.sort((a,b)=>(a.name||"").localeCompare(b.name||"")).forEach(ing => {
+        ingredientsOnly().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).forEach(ing => {
             const opt = document.createElement('option');
             opt.value = 'ing-' + ing.id; opt.textContent = ing.name;
             if (opt.value === currentValue) opt.selected = true;
@@ -1076,8 +1076,8 @@ function renderCostItemsEditor(boxId, kind) {
             <input type="text" list="costItemNames" value="${escapeHtml(costItemName(it))}" placeholder="${escapeHtml(t('cost_item_name_ph'))}" autocomplete="off"
                    onchange="ciChange('${kind}',${i},'n',this.value)" class="border p-0.5 rounded-xl table-text" style="flex:1 1 0;min-width:0;">
             <input type="number" value="${(Number(it.a) || 0) ? Number(it.a) : ''}" placeholder="0.00" autocomplete="off" inputmode="decimal" step="0.01" min="0"
-                   onchange="ciChange('${kind}',${i},'a',this.value)" class="border p-0.5 rounded-xl table-text" style="width:64px;flex:none;">
-            <select onchange="ciChange('${kind}',${i},'p',this.value)" class="border p-0.5 rounded-xl table-text" style="width:92px;flex:none;">
+                   onchange="ciChange('${kind}',${i},'a',this.value)" class="border p-0.5 rounded-xl table-text" style="width:50px;flex:none;padding-left:4px;padding-right:4px;">
+            <select onchange="ciChange('${kind}',${i},'p',this.value)" class="border p-0.5 rounded-xl table-text" style="width:118px;flex:none;padding-left:4px;padding-right:2px;">
                 <option value="u"${it.p === 'u' ? ' selected' : ''}>${escapeHtml(perU)}</option>
                 <option value="b"${it.p === 'u' ? '' : ' selected'}>${escapeHtml(t('cost_per_batch'))}</option>
             </select>

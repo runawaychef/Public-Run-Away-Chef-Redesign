@@ -54,6 +54,7 @@ function displaySemiFinished() {
     updateSemiFinishedSelects();
     renderSemiFinishedCards();
     filterSemiFinishedList();
+    if (typeof syncStockTabs === 'function') syncStockTabs();
 }
 
 // ---- Карточный вид (тот же принцип, что у ингредиентов) ----
@@ -376,7 +377,7 @@ async function saveSfdHeader() {
 
 function fillNewSfRecipeIngredientSelect() {
     setupSearchDropdown('newSfRecipeIngredient', 'newSfRecipeIngredientDropdown',
-        () => ingredients.slice().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).map(i => i.name),
+        () => ingredientsOnly().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).map(i => i.name),
         null, (text) => openQuickAddIngredientModal(text, 'semiFinished'));
 }
 
@@ -461,7 +462,7 @@ function openEditSfRecipeItemModal(i) {
 
     const sel = document.getElementById('editSfRecipeIngredient');
     sel.innerHTML = `<option value="">${t('sf_choose_ingredient')}</option>`;
-    ingredients.sort((a,b)=>(a.name||"").localeCompare(b.name||"")).forEach(ing => {
+    ingredientsOnly().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).forEach(ing => {
         const opt = document.createElement('option');
         opt.value = ing.id; opt.textContent = ing.name;
         if (ing.id === ri.ingredient_id) opt.selected = true;

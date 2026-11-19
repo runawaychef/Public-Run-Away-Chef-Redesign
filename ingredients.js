@@ -55,6 +55,21 @@ function _ingSeverityBase(ing, ctx) {
     return after !== null && after <= 0 ? 0 : 2;
 }
 
+// Склад: режим списка — 'ing' (ингредиенты) или 'mat' (материалы, п. 12). Позиции хранятся вместе, различаются полем kind.
+let stockMode = 'ing';
+function isMaterial(ing) { return !!ing && ing.kind === 'material'; }
+function ingredientsOnly() { return ingredients.filter(i => !isMaterial(i)); }
+function syncStockTabs() {
+    const cur = (typeof currentTabId !== 'undefined' && currentTabId === 'semiFinished') ? 'sf' : stockMode;
+    document.querySelectorAll('.stock-tab[data-stk]').forEach(b => b.classList.toggle('active', b.dataset.stk === cur));
+}
+function stockTabGo(k) {
+    if (k === 'sf') { showTab('semiFinished'); return; }
+    stockMode = k === 'mat' ? 'mat' : 'ing';
+    if (typeof currentTabId !== 'undefined' && currentTabId === 'ingredients') { displayIngredients(); } else { showTab('ingredients'); }
+    syncStockTabs();
+}
+
 function displayIngredients() {
     // Общий расчёт склада (inventory.js stockState, 21.10)
     const ctx = stockStateContext(stockUi.period);
@@ -68,6 +83,7 @@ function displayIngredients() {
 
     renderIngredientCards();
     filterIngredientsList();
+    syncStockTabs();
 }
 
 // Прогноз «хватит на N дней» — только на тарифе с аналитикой (Full).
@@ -236,6 +252,7 @@ function renderIngredientCards() {
 
     const htmlAttn = [], htmlOk = [];
     ingredients.forEach((ing, realIdx) => {
+        if (isMaterial(ing) !== (stockMode === 'mat')) return;
         const unitPrice = ingredientUnitPrice(ing);
         const unitLabel = unitAbbrev(ing.unit);
         const st        = stockState('ing', ing.id, ctx);
@@ -283,7 +300,9 @@ function renderIngredientCards() {
             </div>
         </div>`);
     });
-    body.innerHTML = stockGroupsHtml(htmlAttn, htmlOk);
+    body.innerHTML = (stockMode === 'mat' && !ingredients.some(isMaterial))
+        ? `<p class="text-xs text-gray-500 text-center py-4 px-3">${t('mat_empty_hint')}</p>`
+        : stockGroupsHtml(htmlAttn, htmlOk);
     initCopySwipeDelegation('ingredientCardsBody');
     if (typeof updateStockDots === 'function') updateStockDots();
 }
@@ -327,6 +346,7 @@ let _draftIngredientIds = new Set();
 
 // Флаг: карточка открыта для нового ингредиента (ещё не сохранён в БД)
 let _isNewIngredient = false;
+let _newIngKind = 'ingredient'; // тип позиции, создаваемой кнопкой «+» (по текущей вкладке склада)
 
 async function createDraftIngredientAndOpen() {
     // Если карточка уже открыта — закрываем без сохранения черновика
@@ -346,9 +366,10 @@ async function createDraftIngredientAndOpen() {
     const nameInput = document.getElementById('idNameInput');
     const unitInput = document.getElementById('idUnitInput');
     if (nameInput) nameInput.value = '';
-    if (unitInput) unitInput.value = 'g';
+    _newIngKind = stockMode === 'mat' ? 'material' : 'ingredient';
+    if (unitInput) unitInput.value = _newIngKind === 'material' ? 'pcs' : 'g';
     const titleEl = document.getElementById('idTitle');
-    if (titleEl) titleEl.textContent = t('ing_new_title');
+    if (titleEl) titleEl.textContent = t(_newIngKind === 'material' ? 'mat_new_title' : 'ing_new_title');
 
     // Сбрасываем поля склада
     calSetFieldValue('idNewPriceDate', 'idNewPriceDateBtnLabel', getLocalDateStr(0));
@@ -389,11 +410,11 @@ async function saveNewIngredient() {
     showLoading();
     try {
         const { data, error } = await db.from('ingredients').insert({
-            org_id: currentOrgId, name, package_price: 0, package_size: 1, unit
+            org_id: currentOrgId, name, package_price: 0, package_size: 1, unit, kind: _newIngKind
         }).select().single();
         if (error) throw error;
 
-        const newIng = { id: data.id, name, package_price: 0, package_size: 1, unit, priceHistory: [] };
+        const newIng = { id: data.id, kind: _newIngKind, name, package_price: 0, package_size: 1, unit, priceHistory: [] };
         ingredients.push(newIng);
         _isNewIngredient = false;
 
@@ -422,11 +443,11 @@ async function copyIngredient(i) {
     try {
         const { data, error } = await db.from('ingredients').insert({
             org_id: currentOrgId, name: src.name + t('common_copy_suffix'),
-            package_price: src.package_price || 0, package_size: src.package_size || 1, unit: src.unit || 'g'
+            package_price: src.package_price || 0, package_size: src.package_size || 1, unit: src.unit || 'g', kind: isMaterial(src) ? 'material' : 'ingredient'
         }).select().single();
         if (error) throw error;
         const newIng = {
-            id: data.id, name: data.name,
+            id: data.id, kind: isMaterial(src) ? 'material' : 'ingredient', name: data.name,
             package_price: Number(data.package_price || 0), package_size: Number(data.package_size || 1),
             unit: data.unit || 'g', priceHistory: []
         };
@@ -456,6 +477,7 @@ async function openIngredientDetail(ingId) {
     currentIngredientId = ingId;
     const ing = ingredients.find(i => i.id === ingId);
     if (!ing) return;
+    stockMode = isMaterial(ing) ? 'mat' : 'ing';
 
     document.getElementById('ingredientsList').classList.add('hidden');
     document.getElementById('ingredientDetail').classList.add('active');
