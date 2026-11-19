@@ -633,6 +633,7 @@ I18N.en = {
         ing_new_title: 'New ingredient',
         stock_tab_materials: 'Materials',
         mat_new_title: 'New material',
+        mat_name_placeholder: 'For example: Box 20×20 cm',
         mat_empty_hint: 'Packaging and anything that goes into a product and is deducted from stock: boxes, cake boards, stickers, ribbons. Tap “+” to add your first material. Gloves, baking paper and cleaning supplies do not belong here.',
         inv_count_title_mat: 'Stocktake · materials',
         inv_short_since: 'Short from',

@@ -623,6 +623,7 @@ I18N.lt = {
         ing_new_title: 'Naujas ingredientas',
         stock_tab_materials: 'Medžiagos',
         mat_new_title: 'Nauja medžiaga',
+        mat_name_placeholder: 'Pavyzdžiui: Dėžutė 20×20 cm',
         mat_empty_hint: 'Čia – pakuotė ir viskas, kas patenka į gaminį ir nurašoma iš sandėlio: dėžutės, padėklai, lipdukai, juostelės. Spauskite „+“, kad pridėtumėte pirmą medžiagą. Pirštinių, kepimo popieriaus ir valymo priemonių čia pridėti nereikia.',
         inv_count_title_mat: 'Inventorizacija · medžiagos',
         inv_short_since: 'Trūks nuo',

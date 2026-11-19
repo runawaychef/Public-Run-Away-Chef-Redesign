@@ -1083,8 +1083,7 @@ function renderCostItemsEditor(boxId, kind) {
             </select>
             <button type="button" onclick="ciRemove('${kind}',${i})" aria-label="x" style="width:24px;height:24px;flex:none;border:none;background:transparent;color:#a3493d;font-size:18px;line-height:1;padding:0;">×</button>
         </div>`).join('');
-    box.innerHTML = `<datalist id="costItemNames">${quick}</datalist>${rows}
-        <button type="button" onclick="ciAdd('${kind}')" class="pill-btn" style="font-size:12.5px;">${escapeHtml(t('cost_item_add'))}</button>`;
+    box.innerHTML = `<datalist id="costItemNames">${quick}</datalist>${rows}`;
 }
 function ciAdd(kind) {
     const ent = _ciEnt(kind); if (!ent) return;

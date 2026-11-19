@@ -367,6 +367,7 @@ async function createDraftIngredientAndOpen() {
     const unitInput = document.getElementById('idUnitInput');
     if (nameInput) nameInput.value = '';
     _newIngKind = stockMode === 'mat' ? 'material' : 'ingredient';
+    if (nameInput) nameInput.placeholder = t(_newIngKind === 'material' ? 'mat_name_placeholder' : 'ing_name_placeholder');
     if (unitInput) unitInput.value = _newIngKind === 'material' ? 'pcs' : 'g';
     const titleEl = document.getElementById('idTitle');
     if (titleEl) titleEl.textContent = t(_newIngKind === 'material' ? 'mat_new_title' : 'ing_new_title');
