@@ -315,6 +315,7 @@ function openSemiFinishedDetail(sfId) {
     document.getElementById('sfHistSection')?.classList.remove('open');  // история — свёрнута
     document.getElementById('sfdBatchSize').value = sf.batch_size;
     document.getElementById('sfdUnit').value = sf.unit;
+    if (typeof _ciEditIdx !== 'undefined') _ciEditIdx.s = null;
     renderCostItemsEditor('sfdCostItemsBox', 's');
     document.getElementById('sfdRecipeConfirmed').checked = !!sf.recipe_confirmed;
     document.getElementById('sfdTrackStock').checked = !!sf.track_stock;

@@ -2854,13 +2854,13 @@ function hideSplashScreen() {
                             </tr><tr class="tbl-gap"><th colspan="4"></th></tr></thead>
                             <tbody id="pdMatBody"></tbody>
                             <tfoot><tr>
-                                <td class="p-1"><select id="pdNewMat" class="border p-1 rounded-xl table-text w-full"></select></td>
+                                <td class="p-1"><div class="search-input-wrap"><input id="pdNewMat" placeholder="Материал" autocomplete="off" class="border p-1 rounded-xl table-text w-full" data-i18n-placeholder="mat_col_material"><div id="pdNewMatDropdown" class="search-dropdown hidden"></div></div></td>
                                 <td class="p-1"><input id="pdNewMatQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="Кол-во" class="border p-1 rounded-xl table-text w-full" style="padding-left:4px;padding-right:4px;" data-i18n-placeholder="inv_col_qty"></td>
                                 <td class="p-1 text-center text-gray-400">—</td>
                                 <td class="p-1 text-center"><button type="button" onclick="addMaterialToProduct()" class="pill-btn" style="font-size:11px;padding:4px 7px;line-height:1.15;white-space:normal;" data-i18n="sf_add_btn">+ Добавить</button></td>
                             </tr></tfoot>
                         </table>
-                        <div id="pdMatNone" class="text-[11px] text-gray-400 hidden" data-i18n="mat_none_in_stock">Нужного материала нет? Заведите его на складе, вкладка «Материалы».</div>
+                        <div id="pdMatNone" class="text-[11px] text-gray-400" data-i18n="mat_none_in_stock">Нужного материала нет? Заведите его на складе, вкладка «Материалы».</div>
                     </div>
                     <div class="mb-2" style="border-top:1px solid #ece7da; padding-top:12px; margin-top:6px;">
                         <div class="table-text text-gray-700 font-semibold mb-1" data-i18n="prod_other_costs_short">Прочие расходы</div>
@@ -5136,8 +5136,8 @@ function hideSplashScreen() {
     <script src="push.js?v=12"></script>
 <script src="ingredients.js?v=78"></script>
 <script src="batches.js?v=18"></script>
-<script src="semifinished.js?v=73"></script>
-<script src="products.js?v=61"></script>
+<script src="semifinished.js?v=74"></script>
+<script src="products.js?v=62"></script>
 <script src="customers.js?v=78"></script>
 <script src="calendar.js?v=17"></script>
 <script src="orders.js?v=167"></script>
