@@ -5,6 +5,16 @@
 //             showLoading, hideLoading, showInfo, showConfirm, closeModal, escapeHtml, logActivity (helpers.js/modals.js),
 //             formatDateDMY, getLocalDateStr (dates.js), hasPermission (employees.js).
 
+// Подпись способа оплаты для показа. В базе способ хранится русским словом
+// («наличные», «карта», «перевод») и менять это нельзя (SQL, банк, триггеры) — переводим только при показе.
+// Неизвестное значение или отсутствующий перевод — показываем исходное слово.
+function payMethodLabel(m) {
+    const keys = { 'наличные': 'orders_method_cash', 'карта': 'orders_method_card', 'перевод': 'orders_method_transfer' };
+    const k = keys[m];
+    if (!k) return m || '—';
+    const label = t(k);
+    return (label && label !== k) ? label : m;
+}
 let _orderPayments = [];
 let _orderPaidTotals = {}; // { orderId: сумма всех платежей } — для отметки статуса оплаты в списке заказов
 // Источник оплаты (16.10): значок «банк + молния» на плашке оплаты — только если оплату зачла
@@ -156,7 +166,7 @@ function renderPayments() {
     let html = '<div class="flex flex-col gap-1.5">';
     _orderPayments.forEach(p => {
         const emp = employees.find(e => e.id === p.created_by);
-        const parts = [formatDateDMY(p.paid_at), formatMoney(p.amount), escapeHtml(p.method || '—')];
+        const parts = [formatDateDMY(p.paid_at), formatMoney(p.amount), escapeHtml(payMethodLabel(p.method))];
         // Наличные без счёта в режиме «По счёту» — пометка (вычисляется, не хранится)
         if (_payByInvoice() && p.method === 'наличные' && !p.consolidated_invoice_id && !p.bank_transaction_id
             && !orderHasInvoice(orders.find(o => o.id === currentOrderId))) parts[2] += ' · ' + escapeHtml(t('pay_no_invoice'));
@@ -561,7 +571,7 @@ function _renderPaymentLastLine() {
     }
     const d = String(p.paid_at || '').slice(0, 10);
     const dateShort = d ? d.slice(8, 10) + '.' + d.slice(5, 7) : '';
-    el.innerHTML = escapeHtml(t('pay_last_line').replace('{date}', dateShort).replace('{method}', p.method || '—')) + src;
+    el.innerHTML = escapeHtml(t('pay_last_line').replace('{date}', dateShort).replace('{method}', payMethodLabel(p.method))) + src;
     el.classList.remove('hidden');
 }
 

@@ -1732,7 +1732,7 @@ I18N.lt = {
         dash_profit: 'Pelnas: {sum}',
         dash_expiry: 'Galiojimo laikas',
         dash_soon: 'netrukus',
-        dash_stock_title: 'Sandėlis: dėmesio',
+        dash_stock_title: 'Sandėlio kontrolė',
         dash_short: 'Trūksta',
         dash_full_only: "Full plane",
         dash_acc_s: 'Priimti',
@@ -1832,6 +1832,6 @@ I18N.lt = {
         lock_btn_plans: "Peržiūrėti planus",
         lock_btn_close: "Uždaryti",
         plan_feat_memo: "Ypatingos klientų datos",
-        dash_stock_locked_text: "„Sandėlis: dėmesio“ galimas Full plane. Plytelė rodo, kokių ingredientų trūksta užsakymams ir kam netrukus baigsis tinkamumo laikas.",
+        dash_stock_locked_text: "„Sandėlio kontrolė“ galima Full plane. Plytelė rodo, kokių ingredientų trūksta užsakymams ir kam netrukus baigsis tinkamumo laikas.",
         org_default_name: "Mano kepykla",
 };
