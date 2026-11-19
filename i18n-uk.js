@@ -968,7 +968,7 @@ I18N.uk = {
         cost_item_energy: 'Енергія',
         cost_item_delivery: 'Доставка',
         cost_item_name_ph: 'Назва',
-        cost_item_add: '+ Додати статтю',
+        cost_item_add: '+ Додати',
         sf_recipe_title: 'Рецептура (на партію)',
         sf_copy_recipe_label: 'Скопіювати рецепт з іншого напівфабриката',
         sf_choose_semifinished_placeholder: '— оберіть напівфабрикат —',

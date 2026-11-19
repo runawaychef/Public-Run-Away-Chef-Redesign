@@ -968,7 +968,7 @@ I18N.lt = {
         cost_item_energy: 'Energija',
         cost_item_delivery: 'Pristatymas',
         cost_item_name_ph: 'Pavadinimas',
-        cost_item_add: '+ Pridėti išlaidų eilutę',
+        cost_item_add: '+ Pridėti',
         sf_recipe_title: 'Receptūra (partijai)',
         sf_copy_recipe_label: 'Kopijuoti receptą iš kito pusgaminio',
         sf_choose_semifinished_placeholder: '— pasirinkite pusgaminį —',

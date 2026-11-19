@@ -978,7 +978,7 @@ I18N.en = {
         cost_item_energy: 'Energy',
         cost_item_delivery: 'Delivery',
         cost_item_name_ph: 'Name',
-        cost_item_add: '+ Add cost item',
+        cost_item_add: '+ Add',
         sf_recipe_title: 'Recipe (Per Batch)',
         sf_copy_recipe_label: 'Copy Recipe from Another Semi-finished Item',
         sf_choose_semifinished_placeholder: '— Select a Semi-finished Item —',

@@ -977,7 +977,7 @@ I18N.ru = {
         cost_item_energy: 'Энергия',
         cost_item_delivery: 'Доставка',
         cost_item_name_ph: 'Название',
-        cost_item_add: '+ Добавить статью',
+        cost_item_add: '+ Добавить',
         sf_recipe_title: 'Рецептура (на партию)',
         sf_copy_recipe_label: 'Скопировать рецепт из другого полуфабриката',
         sf_choose_semifinished_placeholder: '— выберите полуфабрикат —',
