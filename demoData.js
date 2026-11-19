@@ -828,8 +828,8 @@ function tourRenderDocsDemo() {
     const plain = c => formatMoney((c || 0) / 100);
     const no = 'void 0';
     const tiles = [
-        _d2Tile({ color: 'dash-c-day', icon: 'plus', label: t('docs2_todo_t'), value: '3', click: no, cap: t('docs2_todo_cap'), footL: t('docs2_todo_sum'), footR: plain(12600) }),
-        _d2Tile({ color: 'dash-c-day', icon: 'alert', label: t('docs2_tosend_t'), value: '2', click: no, cap: t('docs2_unsent_cap'), footL: t('docs2_todo_sum'), footR: plain(8400) }),
+        _d2Tile({ color: 'dash-c-day', icon: 'plus', label: t('docs2_todo_t'), value: '3', click: no, cap: nWord(3, 'word_orders'), footL: t('docs2_todo_sum'), footR: plain(12600) }),
+        _d2Tile({ color: 'dash-c-day', icon: 'alert', label: t('docs2_tosend_t'), value: '2', click: no, cap: nWord(2, 'word_orders'), footL: t('docs2_todo_sum'), footR: plain(8400) }),
         _d2Tile({ color: 'dash-c-tom', icon: 'clock', label: t('docs_tile_wait'), value: _d2Money(31500), pill: 4, click: no, mid: t('docs2_partial_line').replace('{n}', 1), footL: t('docs2_over_short'), footR: plain(9000) }),
         _d2Tile({ color: 'dash-c-acc', icon: 'check', label: t('docs_tile_paid'), value: _d2Money(48200), pill: 6, click: no, footL: t('docs2_prev_month'), footR: plain(39000) }),
         _d2Tile({ color: 'dash-c-stock', icon: 'dn', label: t('docs_type_dn'), value: '5', cap: t('docs2_this_month'), footL: t('docs2_dn_unsent').replace('{n}', 1), footR: '', click: no }),
