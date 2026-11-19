@@ -1843,4 +1843,8 @@ I18N.lt = {
         history_load_error: "Nepavyko įkelti žurnalo",
         inv_add_title: "Papildyti: {name}",
         customer_no_name: "(vardas nenurodytas)",
+        save_exit_text: "Ši nauja kortelė neišsaugota. Išsaugoti įvestus duomenis?",
+        save_exit_save: "Išsaugoti",
+        save_exit_discard: "Neišsaugoti",
+        save_exit_stay: "Pasilikti",
 };

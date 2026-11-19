@@ -50,6 +50,7 @@
         /* Просмотр документа: сверху — запас под кнопки шапки (корзина/статистика/шестерёнка, z 150) (22.10) */
         #orderDocumentModal { padding-top: 70px; }
         #confirmModal { z-index: 300; }
+        #saveExitModal { z-index: 300; }
         /* Маркер "?" — короткая подсказка про сложные разделы интерфейса.
            Открывается поверх любой другой модалки (см. #helpModal ниже). */
         .help-marker { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; min-width: 16px; border-radius: 50%; background: #e3e8df; color: #4f6349; border: none; font-size: 10px; font-weight: 700; line-height: 1; margin-left: 6px; padding: 0; cursor: pointer; }
@@ -2466,6 +2467,18 @@ function hideSplashScreen() {
             </div>
         </div>
 
+<!-- Вопрос при выходе из новой несохранённой карточки (заливка 4; helpers.js askSaveOnExit) -->
+<div id="saveExitModal" class="modal">
+    <div class="modal-content text-center" style="border-radius:20px;">
+        <p class="text-sm text-gray-800 mb-4" data-i18n="save_exit_text">Вы не сохранили новую карточку. Сохранить введённые данные?</p>
+        <div class="flex flex-col gap-2">
+            <button onclick="_saveExitDone('save')" class="btn bg-[#7c9473] text-white px-4 py-1.5 rounded-xl hover:bg-[#6c8464] text-sm" data-i18n="save_exit_save">Сохранить</button>
+            <button onclick="_saveExitDone('discard')" class="btn bg-[#c0685c] text-white px-4 py-1.5 rounded-xl text-sm" data-i18n="save_exit_discard">Не сохранять</button>
+            <button onclick="_saveExitDone('stay')" class="btn bg-gray-300 text-gray-800 px-4 py-1.5 rounded-xl hover:bg-gray-400 text-sm" data-i18n="save_exit_stay">Остаться</button>
+        </div>
+    </div>
+</div>
+
 <div id="confirmModal" class="modal">
     <div class="modal-content text-center">
         <p id="confirmMessage" class="text-sm text-gray-800 mb-4" style="white-space: pre-line;"></p>
@@ -3035,7 +3048,8 @@ function hideSplashScreen() {
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
                             <span data-i18n="common_back">Назад</span>
                         </button>
-                        <button onclick="deleteCurrentSemiFinished()" class="pill-btn-danger perm-delete" data-i18n="sf_delete_btn">Удалить полуфабрикат</button>
+                        <button id="sfdSaveNewBtn" onclick="saveNewSemiFinished()" class="hidden pill-btn" style="margin-left:auto;" data-i18n="common_save">Сохранить</button>
+                        <button onclick="deleteCurrentSemiFinished()" class="pill-btn-danger perm-delete" style="margin-left:6px;" data-i18n="sf_delete_btn">Удалить полуфабрикат</button>
                     </div>
                     <p class="text-[11px] text-gray-400 mb-1" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
                     <div id="sfdTitle" class="pd-title"></div>
@@ -3209,7 +3223,8 @@ function hideSplashScreen() {
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
                             <span data-i18n="common_back">Назад</span>
                         </button>
-                        <button onclick="deleteCurrentCustomer()" class="pill-btn-danger perm-delete" style="margin-left:auto;" data-i18n="customers_delete_btn">Удалить клиента</button>
+                        <button id="cdSaveNewBtn" onclick="saveNewCustomer()" class="hidden pill-btn" style="margin-left:auto;" data-i18n="common_save">Сохранить</button>
+                        <button onclick="deleteCurrentCustomer()" class="pill-btn-danger perm-delete" style="margin-left:6px;" data-i18n="customers_delete_btn">Удалить клиента</button>
                     </div>
                     <p class="text-[11px] text-gray-400 mb-1" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
                     <button type="button" class="cd-req-head" onclick="toggleCdRequisites()">
@@ -5092,7 +5107,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=10"></script>
     <script src="money.js?v=13"></script>
-    <script src="i18n-core.js?v=189"></script>
+    <script src="i18n-core.js?v=190"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=21"></script>
     <script src="auth.js?v=34"></script>
@@ -5101,11 +5116,11 @@ function hideSplashScreen() {
     <script src="inventory.js?v=84"></script>
     <script src="billing.js?v=26"></script>
     <script src="push.js?v=12"></script>
-<script src="ingredients.js?v=74"></script>
+<script src="ingredients.js?v=75"></script>
 <script src="batches.js?v=18"></script>
-<script src="semifinished.js?v=70"></script>
-<script src="products.js?v=53"></script>
-<script src="customers.js?v=77"></script>
+<script src="semifinished.js?v=71"></script>
+<script src="products.js?v=54"></script>
+<script src="customers.js?v=78"></script>
 <script src="calendar.js?v=17"></script>
 <script src="orders.js?v=167"></script>
 <script src="dashboard.js?v=24"></script>
@@ -5118,9 +5133,9 @@ function hideSplashScreen() {
 <script src="bank.js?v=13"></script>
 <script src="stats.js?v=44"></script>
 <script src="history.js?v=10"></script>
-<script src="modals.js?v=21"></script>
+<script src="modals.js?v=22"></script>
 <script src="demoData.js?v=29"></script>
-<script src="helpers.js?v=52"></script>
+<script src="helpers.js?v=53"></script>
 <script>
 // SUPABASE_URL, SUPABASE_KEY, db перенесены в supabaseClient.js
 
@@ -5381,6 +5396,8 @@ function renderAllScreens() {
 
 // ==================== ТАБЫ ====================
 function showTab(tabId) {
+    // Новая несохранённая карточка с данными: сначала вопрос «Сохранить?» (заливка 4, helpers.js)
+    if (typeof newCardGuardOnTab === 'function' && newCardGuardOnTab(tabId)) return;
     if (typeof orderDraftGuardOnTab === 'function' && orderDraftGuardOnTab(tabId)) return;
     // Открыта страница «Отправить документ»: уход по меню/иконкам закрывает её (с вопросом, если текст письма изменён)
     if (typeof appPagesLeaveGuard === 'function' && appPagesLeaveGuard(() => showTab(tabId))) return;
@@ -5580,6 +5597,7 @@ function refreshFab() {
 // Сброс детального вида полуфабриката без повторной перерисовки списка
 async function closeSemiFinishedDetailSilent() {
     const leavingId = currentSemiFinishedId;
+    document.getElementById('sfdSaveNewBtn')?.classList.add('hidden');
     currentSemiFinishedId = null;
     const list = document.getElementById('semiFinishedList');
     const detail = document.getElementById('semiFinishedDetail');
@@ -5592,6 +5610,7 @@ async function closeSemiFinishedDetailSilent() {
 // Сброс детального вида изделия без повторной перерисовки списка (избегаем двойного displayProducts)
 async function closeProductDetailSilent() {
     const leavingId = currentProductId;
+    _isNewProduct = false;
     currentProductId = null;
     const list = document.getElementById('productsList');
     const detail = document.getElementById('productDetail');
@@ -5604,6 +5623,7 @@ async function closeProductDetailSilent() {
 // Сброс детального вида клиента без повторной перерисовки списка
 async function closeCustomerDetailSilent() {
     const leavingId = currentCustomerId;
+    document.getElementById('cdSaveNewBtn')?.classList.add('hidden');
     currentCustomerId = null;
     const list = document.getElementById('customersList');
     const detail = document.getElementById('customerDetail');
@@ -5616,6 +5636,7 @@ async function closeCustomerDetailSilent() {
 // Сброс детального вида ингредиента без повторной перерисовки списка
 async function closeIngredientDetailSilent() {
     const leavingId = currentIngredientId;
+    _isNewIngredient = false;
     currentIngredientId = null;
     const list = document.getElementById('ingredientsList');
     const detail = document.getElementById('ingredientDetail');

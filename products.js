@@ -499,7 +499,16 @@ function updatePdUnitUI(unit) {
     if (hint) hint.textContent = unit ? t('prod_price_per_unit_hint').replace('{u}', unitAbbrev(unit)) : '';
 }
 
+// Новая несохранённая карточка изделия (для вопроса при выходе, helpers.js guardLeaveNew)
+function productNewInfo() {
+    if (!_isNewProduct || !document.getElementById('productDetail')?.classList.contains('active')) return null;
+    const name = (document.getElementById('pdName')?.value || '').trim();
+    const price = parseFloat(document.getElementById('pdPrice')?.value) || 0;
+    return { hasData: !!name || price > 0, save: async () => { await saveNewProduct(); return !_isNewProduct; }, discard: async () => { _isNewProduct = false; } };
+}
+
 async function closeProductDetail() {
+    if (typeof guardLeaveNew === 'function' && await guardLeaveNew(productNewInfo())) return;
     const leavingId = currentProductId;
     currentProductId = null;
     _isNewProduct = false;

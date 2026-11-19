@@ -1846,4 +1846,8 @@ I18N.en = {
         history_load_error: "Failed to load the log",
         inv_add_title: "Restock: {name}",
         customer_no_name: "(no name)",
+        save_exit_text: "This new card hasn't been saved. Save what you entered?",
+        save_exit_save: "Save",
+        save_exit_discard: "Don't save",
+        save_exit_stay: "Stay",
 };

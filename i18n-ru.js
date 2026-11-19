@@ -1845,4 +1845,8 @@ I18N.ru = {
         history_load_error: "Ошибка загрузки журнала",
         inv_add_title: "Пополнить: {name}",
         customer_no_name: "(имя не указано)",
+        save_exit_text: "Вы не сохранили новую карточку. Сохранить введённые данные?",
+        save_exit_save: "Сохранить",
+        save_exit_discard: "Не сохранять",
+        save_exit_stay: "Остаться",
 };

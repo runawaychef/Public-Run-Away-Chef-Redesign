@@ -68,6 +68,52 @@ function getWriteOffDate(orderDateStr) {
     return `${yy}-${mm}-${dd}`;
 }
 
+// ===== Единый стандарт сохранения (заливка 4, 19.11.2026) =====
+// Вопрос при выходе из НОВОЙ несохранённой карточки с введёнными данными:
+// 'save' | 'discard' | 'stay'. Окно #saveExitModal; закрытие окна кнопкой «назад» = 'stay'.
+let _saveExitResolve = null;
+function askSaveOnExit() {
+    return new Promise(resolve => {
+        const modal = document.getElementById('saveExitModal');
+        if (!modal) { resolve('stay'); return; }
+        _saveExitResolve = resolve;
+        modal.style.display = 'flex';
+    });
+}
+function _saveExitDone(result) {
+    const modal = document.getElementById('saveExitModal');
+    if (modal) modal.style.display = 'none';
+    const r = _saveExitResolve; _saveExitResolve = null;
+    if (r) r(result);
+}
+function _saveExitCancel() { if (_saveExitResolve) _saveExitDone('stay'); }
+
+// info = { hasData, save(): Promise<bool>, discard(): Promise } или null (карточка не новая).
+// Возвращает true, если нужно ОСТАТЬСЯ в карточке.
+async function guardLeaveNew(info) {
+    if (!info || !info.hasData) return false;
+    const r = await askSaveOnExit();
+    if (r === 'stay') return true;
+    if (r === 'save') { const ok = await info.save(); return !ok; }
+    await info.discard();
+    return false;
+}
+
+// Смена вкладки нижнего меню при открытой новой карточке с данными (вызывается в начале showTab).
+// true = переход перехвачен (вопрос показан), showTab повторится сам после ответа.
+function newCardGuardOnTab(tabId) {
+    const kinds = [['products', 'productNewInfo'], ['ingredients', 'ingredientNewInfo'], ['customers', 'customerNewInfo'], ['semiFinished', 'semiFinishedNewInfo']];
+    for (const [tab, fn] of kinds) {
+        if (tab === tabId || typeof window[fn] !== 'function') continue;
+        const info = window[fn]();
+        if (info && info.hasData) {
+            (async () => { const stay = await guardLeaveNew(info); if (!stay) showTab(tabId); })();
+            return true;
+        }
+    }
+    return false;
+}
+
 // Простое уведомление (замена системного alert()) — одна кнопка "ОК".
 // Переиспользует confirmModal, временно пряча кнопку "Отмена".
 function showInfo(message) {

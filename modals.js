@@ -180,6 +180,7 @@ async function confirmDelete() {
 }
 
 function closeModal() {
+    if (typeof _saveExitCancel === 'function') _saveExitCancel(); // окно «Сохранить?» закрыто «назад» = остаться
     document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
     editIndex = null; editItemIdx = null; deleteId = null; deleteType = null;
     // Подсветку тележки/шестерёнки держит страница (helpers.js _appPageShowTop): окно поверх

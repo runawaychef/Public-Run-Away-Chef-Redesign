@@ -347,9 +347,44 @@ async function createDraftCustomerAndOpen() {
         _draftCustomerIds.add(newCust.id);
         displayCustomers();
         openCustomerDetail(newCust.id);
+        document.getElementById('cdSaveNewBtn')?.classList.remove('hidden'); // новая карточка: кнопка «Сохранить»
         logActivity('customer', `${t('log_customer_draft_created')} №${newCust.id}`);
     } catch (e) { console.error(e); showDbError(e, 'Ошибка создания клиента. Проверьте подключение.'); }
     finally { hideLoading(); }
+}
+
+// Новая несохранённая карточка клиента (черновик в базе есть, но «Сохранить» не нажато)
+function customerNewInfo() {
+    const id = currentCustomerId;
+    if (id === null || !_draftCustomerIds.has(id)) return null;
+    if (!document.getElementById('customerDetail')?.classList.contains('active')) return null;
+    if ((orders || []).some(o => o.customer_id === id)) return null; // уже есть заказы — это не черновик
+    const v = k => (document.getElementById(k)?.value || '').trim();
+    const hasData = ['cdName', 'cdContact', 'cdEmail', 'cdNotes', 'cdAddress', 'cdRegNumber', 'cdPersonalCode', 'cdVatCode'].some(k => v(k)) || (parseFloat(v('cdDiscount')) || 0) > 0;
+    return {
+        hasData,
+        save: async () => {
+            await saveCdHeader();
+            const c = customers.find(x => x.id === id);
+            if (c && c.name && c.name.trim()) { _draftCustomerIds.delete(id); document.getElementById('cdSaveNewBtn')?.classList.add('hidden'); return true; }
+            return false;
+        },
+        discard: async () => {
+            _draftCustomerIds.delete(id);
+            const idx = customers.findIndex(x => x.id === id);
+            if (idx !== -1) customers.splice(idx, 1);
+            suppressRealtimeFor3s();
+            try { const { error } = await db.from('customers').delete().eq('id', id); if (error) throw error; }
+            catch (e) { console.error('Не удалось удалить черновик клиента:', e); }
+        }
+    };
+}
+
+// Кнопка «Сохранить» в шапке новой карточки клиента
+async function saveNewCustomer() {
+    const info = customerNewInfo();
+    if (!info) { document.getElementById('cdSaveNewBtn')?.classList.add('hidden'); return; }
+    if (await info.save()) displayCustomers();
 }
 
 async function cleanupCustomerDraftIfEmpty(custId) {
@@ -633,6 +668,7 @@ async function downloadCustomerReportPdf() {
 // ==================== КАРТОЧКА КЛИЕНТА ====================
 function openCustomerDetail(custId) {
     currentCustomerId = custId;
+    document.getElementById('cdSaveNewBtn')?.classList.add('hidden');
     _customerOpenedFromOrderId = null; // сбрасываем — goToCustomerFromOrder выставит заново, если переход именно оттуда
     const cust = customers.find(c => c.id === custId);
     if (!cust) return;
@@ -1155,6 +1191,8 @@ async function deleteMemoEdit() {
 }
 
 async function closeCustomerDetail() {
+    if (typeof guardLeaveNew === 'function' && await guardLeaveNew(customerNewInfo())) return;
+    document.getElementById('cdSaveNewBtn')?.classList.add('hidden');
     const leavingId = currentCustomerId;
     currentCustomerId = null;
     document.getElementById('customersList').classList.remove('hidden');

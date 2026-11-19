@@ -1843,4 +1843,8 @@ I18N.uk = {
         history_load_error: "Помилка завантаження журналу",
         inv_add_title: "Поповнити: {name}",
         customer_no_name: "(ім’я не вказано)",
+        save_exit_text: "Нову картку не збережено. Зберегти введені дані?",
+        save_exit_save: "Зберегти",
+        save_exit_discard: "Не зберігати",
+        save_exit_stay: "Залишитись",
 };

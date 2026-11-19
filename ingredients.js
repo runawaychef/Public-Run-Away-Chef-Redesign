@@ -725,7 +725,15 @@ async function saveIdNewPrice() {
     finally { hideLoading(); }
 }
 
+// Новая несохранённая карточка ингредиента (для вопроса при выходе, helpers.js guardLeaveNew)
+function ingredientNewInfo() {
+    if (!_isNewIngredient || !document.getElementById('ingredientDetail')?.classList.contains('active')) return null;
+    const name = (document.getElementById('idNameInput')?.value || '').trim();
+    return { hasData: !!name, save: async () => { await saveNewIngredient(); return !_isNewIngredient; }, discard: async () => { _isNewIngredient = false; } };
+}
+
 async function closeIngredientDetail() {
+    if (typeof guardLeaveNew === 'function' && await guardLeaveNew(ingredientNewInfo())) return;
     const leavingId = currentIngredientId;
     currentIngredientId = null;
     _isNewIngredient = false;

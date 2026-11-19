@@ -175,9 +175,45 @@ async function createDraftSemiFinishedAndOpen() {
         _draftSemiFinishedIds.add(newSf.id);
         displaySemiFinished();
         openSemiFinishedDetail(newSf.id);
+        document.getElementById('sfdSaveNewBtn')?.classList.remove('hidden'); // новая карточка: кнопка «Сохранить»
         logActivity('semiFinished', `${t('log_sf_draft_created')} №${newSf.id}`);
     } catch (e) { console.error(e); showInfo(t('sf_create_error')); }
     finally { hideLoading(); }
+}
+
+// Новая несохранённая карточка полуфабриката (черновик в базе есть, «Сохранить» не нажато)
+function semiFinishedNewInfo() {
+    const id = currentSemiFinishedId;
+    if (id === null || !_draftSemiFinishedIds.has(id)) return null;
+    if (!document.getElementById('semiFinishedDetail')?.classList.contains('active')) return null;
+    const sf = semiFinished.find(s => s.id === id);
+    const name = (document.getElementById('sfdName')?.value || '').trim();
+    const other = parseFloat(document.getElementById('sfdOtherCosts')?.value) || 0;
+    const hasRecipe = !!(sf && sf.ingredients && sf.ingredients.length);
+    return {
+        hasData: !!name || other > 0 || hasRecipe,
+        save: async () => {
+            await saveSfdHeader();
+            const s = semiFinished.find(x => x.id === id);
+            if (s && s.name && s.name.trim()) { _draftSemiFinishedIds.delete(id); document.getElementById('sfdSaveNewBtn')?.classList.add('hidden'); return true; }
+            return false;
+        },
+        discard: async () => {
+            _draftSemiFinishedIds.delete(id);
+            const idx = semiFinished.findIndex(x => x.id === id);
+            if (idx !== -1) semiFinished.splice(idx, 1);
+            suppressRealtimeFor3s();
+            try { const { error } = await db.from('semi_finished').delete().eq('id', id); if (error) throw error; }
+            catch (e) { console.error('Не удалось удалить черновик полуфабриката:', e); }
+        }
+    };
+}
+
+// Кнопка «Сохранить» в шапке новой карточки полуфабриката
+async function saveNewSemiFinished() {
+    const info = semiFinishedNewInfo();
+    if (!info) { document.getElementById('sfdSaveNewBtn')?.classList.add('hidden'); return; }
+    if (await info.save()) displaySemiFinished();
 }
 
 async function cleanupSemiFinishedDraftIfEmpty(sfId) {
@@ -248,6 +284,7 @@ async function copySemiFinished(i) {
 
 function openSemiFinishedDetail(sfId) {
     currentSemiFinishedId = sfId;
+    document.getElementById('sfdSaveNewBtn')?.classList.add('hidden');
     const sf = semiFinished.find(s => s.id === sfId);
     if (!sf) return;
 
@@ -292,6 +329,8 @@ function openSemiFinishedDetail(sfId) {
 }
 
 async function closeSemiFinishedDetail() {
+    if (typeof guardLeaveNew === 'function' && await guardLeaveNew(semiFinishedNewInfo())) return;
+    document.getElementById('sfdSaveNewBtn')?.classList.add('hidden');
     const leavingId = currentSemiFinishedId;
     currentSemiFinishedId = null;
     document.getElementById('semiFinishedList').classList.remove('hidden');
