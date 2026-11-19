@@ -434,6 +434,9 @@ function applyPermissions(emp) {
 function applyCostVisibility() {
     const allowed = hasPermission('can_view_costs') && hasPlanFeature('cost_analytics');
     document.querySelectorAll('.perm-view-costs').forEach(el => el.classList.toggle('hidden', !allowed));
+    // Итоги себестоимости (1 шт, партия) — на всех тарифах; скрываются только правом сотрудника «видеть себестоимость»
+    const baseAllowed = hasPermission('can_view_costs');
+    document.querySelectorAll('.perm-view-costs-base').forEach(el => el.classList.toggle('hidden', !baseAllowed));
 }
 
 // Показывает/скрывает кнопки «Склад» и «Статистика» согласно правам сотрудника,
