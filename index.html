@@ -364,6 +364,7 @@
         .search-input-wrap input { background: #fbfaf6; border-color: #e3ded0; box-shadow: 0 1px 3px rgba(120, 108, 76, 0.12); }
         .search-dropdown { position: absolute; top: 100%; left: 0; right: 0; z-index: 200; background: white; border: 1px solid #d1d5db; border-top: none; max-height: 180px; overflow-y: auto; box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
         .search-dropdown.hidden { display: none; }
+        .recipe-entry-tbl .search-dropdown { right: auto; min-width: 230px; }
         .search-dropdown-item { padding: 5px 6px; font-size: 12px; cursor: pointer; border-bottom: 1px solid #f3f4f6; }
         .search-dropdown-item:last-child { border-bottom: none; }
         .search-dropdown-item:hover, .search-dropdown-item.active { background: #eef2ff; }
@@ -2826,31 +2827,23 @@ function hideSplashScreen() {
                             <input id="pdBatchSize" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" onchange="savePdHeader()" class="border p-0.5 rounded-xl w-full table-text">
                         </div>
                     </div>
-                    <table class="w-full table-auto table-clean mb-2">
+                    <table class="w-full table-auto table-clean mb-2 recipe-entry-tbl">
                         <thead><tr style="background-color:#e3e8df;">
-                            <th class="p-1 text-xs w-[40%]" data-i18n="inv_col_ingredient">Ингредиент</th>
-                            <th class="p-1 text-xs w-[25%]" data-i18n="inv_col_quantity">Кол-во</th>
-                            <th class="p-1 text-xs w-[20%]" data-i18n="sf_col_cost">Стоимость</th>
-                            <th class="p-1 text-xs w-[15%]" data-i18n="sf_col_actions">Действия</th>
+                            <th class="p-1 text-xs w-[36%]" data-i18n="inv_col_ingredient">Ингредиент</th>
+                            <th class="p-1 text-xs w-[22%]" data-i18n="inv_col_quantity">Кол-во</th>
+                            <th class="p-1 text-xs w-[18%]" data-i18n="sf_col_cost">Стоимость</th>
+                            <th class="p-1 text-xs w-[24%]" data-i18n="sf_col_actions">Действия</th>
                         </tr><tr class="tbl-gap"><th colspan="4"></th></tr></thead>
                         <tbody id="recipeItemsBody"></tbody>
+                        <tfoot><tr>
+                            <td class="p-1"><div class="search-input-wrap"><input id="newRecipeIngredient" placeholder="Ингредиент" autocomplete="off" class="border p-1 rounded-xl table-text w-full" data-i18n-placeholder="inv_col_ingredient"><div id="newRecipeIngredientDropdown" class="search-dropdown hidden"></div></div></td>
+                            <td class="p-1"><input id="newRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="Кол-во" class="border p-1 rounded-xl table-text w-full" style="padding-left:4px;padding-right:4px;" data-i18n-placeholder="inv_col_quantity"></td>
+                            <td class="p-1 text-center text-gray-400">—</td>
+                            <td class="p-1 text-center"><button type="button" onclick="addIngredientToRecipe()" class="pill-btn" style="font-size:11px;padding:4px 7px;line-height:1.15;white-space:normal;" data-i18n="sf_add_btn">+ Добавить</button></td>
+                        </tr></tfoot>
                     </table>
-                    <div class="rounded-xl p-2 mb-2" style="background:#f4f1ea; border:1px solid #e2ddd0;">
-                        <label class="table-text text-gray-500" data-i18n="sf_add_to_recipe_label">Добавить в рецепт</label>
-                        <div class="search-input-wrap mb-1">
-                            <input id="newRecipeIngredient" placeholder="— ингредиент / полуфабрикат —" autocomplete="off" class="border p-1 rounded-xl table-text w-full" data-i18n-placeholder="prod_choose_ingredient_or_sf_placeholder">
-                            <div id="newRecipeIngredientDropdown" class="search-dropdown hidden"></div>
-                        </div>
-                        <div class="flex gap-2">
-                            <input id="newRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="Количество" class="border p-1 rounded-xl table-text flex-1" data-i18n-placeholder="inv_col_quantity">
-                            <button onclick="addIngredientToRecipe()" class="pill-btn whitespace-nowrap" data-i18n="sf_add_btn">+ Добавить</button>
-                        </div>
-                    </div>
-                    <div class="mb-2">
-                        <div class="flex items-center justify-between mb-1">
-                            <label class="table-text text-gray-500" data-i18n="prod_other_costs_short">Прочие расходы</label>
-                            <button type="button" onclick="ciAdd('p')" class="pill-btn" style="font-size:12px;padding:4px 12px;" data-i18n="cost_item_add">+ Добавить статью</button>
-                        </div>
+                    <div class="mb-2" style="border-top:1px solid #ece7da; padding-top:12px; margin-top:6px;">
+                        <div class="table-text text-gray-700 font-semibold mb-1" data-i18n="prod_other_costs_short">Прочие расходы</div>
                         <div id="pdCostItemsBox"></div>
                     </div>
                     <button type="button" id="pdCopyToggle" class="pd-link" onclick="togglePdCopyBox()"><span data-i18n="prod_copy_recipe_label">Скопировать рецепт из другого изделия</span> ›</button>
@@ -3112,31 +3105,23 @@ function hideSplashScreen() {
                     </div>
                     <div class="itm-sec-body">
                         <p class="table-text text-gray-400 mb-1" data-i18n="sf_star_hint">Нажмите на звёздочку, чтобы отметить основной ингредиент для расчёта производства.</p>
-                        <table class="w-full table-auto table-clean mb-2">
-                            <thead><tr style="background-color:#e3e8df;">
-                            <th class="p-1 text-xs w-[40%]" data-i18n="inv_col_ingredient">Ингредиент</th>
-                            <th class="p-1 text-xs w-[25%]" data-i18n="inv_col_quantity">Кол-во</th>
-                            <th class="p-1 text-xs w-[20%]" data-i18n="sf_col_cost">Стоимость</th>
-                            <th class="p-1 text-xs w-[15%]" data-i18n="sf_col_actions">Действия</th>
+                    <table class="w-full table-auto table-clean mb-2 recipe-entry-tbl">
+                        <thead><tr style="background-color:#e3e8df;">
+                            <th class="p-1 text-xs w-[36%]" data-i18n="inv_col_ingredient">Ингредиент</th>
+                            <th class="p-1 text-xs w-[22%]" data-i18n="inv_col_quantity">Кол-во</th>
+                            <th class="p-1 text-xs w-[18%]" data-i18n="sf_col_cost">Стоимость</th>
+                            <th class="p-1 text-xs w-[24%]" data-i18n="sf_col_actions">Действия</th>
                         </tr><tr class="tbl-gap"><th colspan="4"></th></tr></thead>
-                            <tbody id="sfRecipeItemsBody"></tbody>
-                        </table>
-                    <div class="rounded-xl p-2 mb-2" style="background:#f4f1ea; border:1px solid #e2ddd0;">
-                        <label class="table-text text-gray-500" data-i18n="sf_add_to_recipe_label">Добавить в рецепт</label>
-                        <div class="search-input-wrap mb-1">
-                            <input id="newSfRecipeIngredient" placeholder="— ингредиент —" autocomplete="off" class="border p-1 rounded-xl table-text w-full" data-i18n-placeholder="sf_choose_ingredient_placeholder">
-                            <div id="newSfRecipeIngredientDropdown" class="search-dropdown hidden"></div>
-                        </div>
-                        <div class="flex gap-2">
-                            <input id="newSfRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="Количество" class="border p-1 rounded-xl table-text flex-1" data-i18n-placeholder="inv_col_quantity">
-                            <button onclick="addIngredientToSfRecipe()" class="pill-btn whitespace-nowrap" data-i18n="sf_add_btn">+ Добавить</button>
-                        </div>
-                    </div>
-                    <div class="mb-2">
-                        <div class="flex items-center justify-between mb-1">
-                            <label class="table-text text-gray-500" data-i18n="prod_other_costs_short">Прочие расходы</label>
-                            <button type="button" onclick="ciAdd('s')" class="pill-btn" style="font-size:12px;padding:4px 12px;" data-i18n="cost_item_add">+ Добавить статью</button>
-                        </div>
+                        <tbody id="sfRecipeItemsBody"></tbody>
+                        <tfoot><tr>
+                            <td class="p-1"><div class="search-input-wrap"><input id="newSfRecipeIngredient" placeholder="Ингредиент" autocomplete="off" class="border p-1 rounded-xl table-text w-full" data-i18n-placeholder="inv_col_ingredient"><div id="newSfRecipeIngredientDropdown" class="search-dropdown hidden"></div></div></td>
+                            <td class="p-1"><input id="newSfRecipeQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" placeholder="Кол-во" class="border p-1 rounded-xl table-text w-full" style="padding-left:4px;padding-right:4px;" data-i18n-placeholder="inv_col_quantity"></td>
+                            <td class="p-1 text-center text-gray-400">—</td>
+                            <td class="p-1 text-center"><button type="button" onclick="addIngredientToSfRecipe()" class="pill-btn" style="font-size:11px;padding:4px 7px;line-height:1.15;white-space:normal;" data-i18n="sf_add_btn">+ Добавить</button></td>
+                        </tr></tfoot>
+                    </table>
+                    <div class="mb-2" style="border-top:1px solid #ece7da; padding-top:12px; margin-top:6px;">
+                        <div class="table-text text-gray-700 font-semibold mb-1" data-i18n="prod_other_costs_short">Прочие расходы</div>
                         <div id="sfdCostItemsBox"></div>
                     </div>
                     <div class="rounded-xl p-2 mb-2" style="background:#f4f1ea; border:1px dashed #d8d2c4;">
@@ -5115,7 +5100,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=10"></script>
     <script src="money.js?v=14"></script>
-    <script src="i18n-core.js?v=194"></script>
+    <script src="i18n-core.js?v=195"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=21"></script>
     <script src="auth.js?v=34"></script>
@@ -5127,7 +5112,7 @@ function hideSplashScreen() {
 <script src="ingredients.js?v=77"></script>
 <script src="batches.js?v=18"></script>
 <script src="semifinished.js?v=73"></script>
-<script src="products.js?v=58"></script>
+<script src="products.js?v=59"></script>
 <script src="customers.js?v=78"></script>
 <script src="calendar.js?v=17"></script>
 <script src="orders.js?v=167"></script>
