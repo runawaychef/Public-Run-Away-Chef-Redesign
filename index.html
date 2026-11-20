@@ -5618,7 +5618,7 @@ function positionStickySearchBar(barId, contentWrapId, detailId) {
 
     const isDetailOpen = detailId ? document.getElementById(detailId)?.classList.contains('active') : false;
     bar.classList.toggle('hidden', isDetailOpen);
-    if (isDetailOpen) return;
+    if (isDetailOpen) { document.getElementById(barId.replace('SearchBar', 'SubBar'))?.classList.add('hidden'); return; }
 
     const GAP = 40; // тот же зазор, что и у переключателя заказов
     const content = contentWrapId ? document.getElementById(contentWrapId) : null;
