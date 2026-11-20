@@ -2528,13 +2528,18 @@ async function openOrderCostBreakdown() {
     showLoading(t('orders_loading_breakdown'));
     try {
         const orderItemIds = (order.items || []).map(it => it.id);
-        if (!orderItemIds.length) { hideLoading(); await showInfo(t('orders_no_items_in_order')); return; }
+        const ordMats = (order.materials || []).filter(m => Number(m.quantity) > 0);
+        if (!orderItemIds.length && !ordMats.length) { hideLoading(); await showInfo(t('orders_no_items_in_order')); return; }
 
-        const { data, error } = await db
-            .from('order_item_ingredients')
-            .select('ingredient_name, quantity, unit, unit_price, total_cost')
-            .in('order_item_id', orderItemIds);
-        if (error) throw error;
+        let data = [];
+        if (orderItemIds.length) {
+            const res = await db
+                .from('order_item_ingredients')
+                .select('ingredient_name, quantity, unit, unit_price, total_cost')
+                .in('order_item_id', orderItemIds);
+            if (res.error) throw res.error;
+            data = res.data || [];
+        }
 
         // Объединяем одинаковые ингредиенты по всему заказу
         const merged = {}; // key = ingredient_name
@@ -2547,8 +2552,16 @@ async function openOrderCostBreakdown() {
             merged[key].total += Number(row.total_cost);
         });
 
+        // Упаковка заказа (order_materials): фактическая стоимость списания
+        ordMats.forEach(m => {
+            const ing = ingredients.find(x => x.id === m.ingredient_id);
+            const q = Number(m.quantity), c = Number(m.cost) || 0;
+            const key = '\u0000mat' + m.ingredient_id;
+            merged[key] = { name: ing ? ing.name : '', qty: q, unit: ing ? ing.unit : '', unit_price: q > 0 ? c / q : 0, total: c };
+        });
         const rows = Object.values(merged).sort((a, b) => b.total - a.total);
-        const grandCost = order.items.reduce((s, it) => s + (it.item_cost != null ? Number(it.item_cost) : 0), 0);
+        const matsCost = ordMats.reduce((s, m) => s + (Number(m.cost) || 0), 0);
+        const grandCost = (order.items || []).reduce((s, it) => s + (it.item_cost != null ? Number(it.item_cost) : 0), 0) + matsCost;
         const grandIngCost = rows.reduce((s, r) => s + r.total, 0);
 
         if (!rows.length) {
