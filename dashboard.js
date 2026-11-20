@@ -155,8 +155,16 @@ async function dashStockCardTap() {
 }
 function dashOpenIngredients() {
     stockLowOnlyIng = _dashStockFull();
+    if (typeof stockMode !== 'undefined') stockMode = 'ing';
     _dashEnteringStock = true;
     try { showTab('ingredients'); } finally { _dashEnteringStock = false; }
+}
+function dashOpenPackaging() {
+    stockLowOnlyIng = _dashStockFull();
+    if (typeof stockMode !== 'undefined') stockMode = 'mat';
+    _dashEnteringStock = true;
+    try { showTab('ingredients'); } finally { _dashEnteringStock = false; }
+    if (typeof displayIngredients === 'function') displayIngredients();
 }
 function dashOpenSemiFinished() {
     stockLowOnlySf = _dashStockFull();
@@ -212,6 +220,7 @@ function _dashStock() {
     const ctx = stockStateContext(30);
     let ing = 0, sf = 0;
     (typeof ingredients !== 'undefined' ? ingredients : []).forEach(i => {
+        if (i.kind === 'material') return; // упаковка считается отдельно: не хватит под заказы
         const a = stockState('ing', i.id, ctx).after;
         if ((a !== null && a <= 0) || (typeof expiryAttn === 'function' && expiryAttn('ing', i.id))) ing++;
     });
@@ -219,7 +228,8 @@ function _dashStock() {
         const a = stockState('sf', s.id, ctx).after;
         if ((a !== null && a <= 0) || (typeof expiryAttn === 'function' && expiryAttn('sf', s.id))) sf++;
     });
-    return { ing, sf };
+    const mat = typeof packagingShortCount === 'function' ? packagingShortCount(ctx) : 0;
+    return { ing, sf, mat };
 }
 
 function _dashSet(id, html, cls) {
@@ -534,15 +544,16 @@ function renderDashboard() {
     try {
         const full = _dashStockFull();
         // Full: большая цифра «не хватает» + два счётчика; Light/Free: «—» и строка «Доступно на тарифе Full»
-        ['dashRowIng', 'dashRowSemi'].forEach(id => { const el = _dashEl(id); if (el) el.style.display = full ? '' : 'none'; });
+        ['dashRowIng', 'dashRowSemi', 'dashRowMat'].forEach(id => { const el = _dashEl(id); if (el) el.style.display = full ? '' : 'none'; });
         const lock = _dashEl('dashStockLock'); if (lock) lock.style.display = full ? 'none' : '';
         const stockCard = _dashEl('dashStockCard'); if (stockCard) stockCard.classList.toggle('dash-stock-locked', !full);
         if (full) {
             const s = _dashStock();
-            const tot = s.ing + s.sf;
+            const tot = s.ing + s.sf + s.mat;
             _dashSet('dashStockTotal', String(tot), tot > 0 ? 'bad' : '');
             _dashSet('dashIngredients', String(s.ing), s.ing > 0 ? 'bad' : '');
             _dashSet('dashSemi', String(s.sf), s.sf > 0 ? 'bad' : '');
+            _dashSet('dashMat', String(s.mat), s.mat > 0 ? 'bad' : '');
         } else {
             // Light/Free: счётчиков нет
             _dashSet('dashStockTotal', '—', 'muted');
@@ -563,7 +574,7 @@ function renderDashboard() {
         }
     } catch (e) {
         console.error('dashboard: stock', e);
-        ['dashStockTotal', 'dashIngredients', 'dashSemi'].forEach(id => _dashSet(id, '—'));
+        ['dashStockTotal', 'dashIngredients', 'dashSemi', 'dashMat'].forEach(id => _dashSet(id, '—'));
     }
     dashFit();
     if (typeof requestAnimationFrame === 'function') requestAnimationFrame(dashFit);

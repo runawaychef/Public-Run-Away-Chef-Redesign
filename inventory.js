@@ -456,15 +456,36 @@ function avgDailyUsage(ingId, periodDays) {
 // Показывает/скрывает пульсирующую точку на иконке корзины
 // Красные точки «Склада» (30.10, только Full): на иконке «Склад» в нижнем меню и на вкладке-соседе
 // («Полуфабрикаты» на странице ингредиентов и наоборот). Тот же список «Требует внимания», что в «Умном складе».
+// Упаковка (kind='material'), которой не хватит под невыполненные заказы (только Full).
+// Упаковка не входит в рецепты и не отслеживается постоянно — считаем только по заказам, где она добавлена.
+function packagingShortCount(ctx) {
+    if (!stockForecastEnabled()) return 0;
+    ctx = ctx || stockStateContext(30);
+    let n = 0;
+    (ingredients || []).forEach(i => {
+        if (i.kind !== 'material') return;
+        const r = stockRunout('ing', i.id, ctx);
+        if (r.orders.length && (r.firstShort || r.st.shortage)) n++;
+    });
+    return n;
+}
+
 function updateStockDots() {
     const nav = document.getElementById('navStockDot'), a = document.getElementById('ingTabSfDot'), b = document.getElementById('sfTabIngDot');
-    let any = false, ing = false, sf = false;
+    const c = document.getElementById('ingTabIngDot'), d = document.getElementById('ingTabMatDot'), e = document.getElementById('sfTabMatDot');
+    let any = false, ing = false, sf = false, mat = false;
     if (stockForecastEnabled()) {
-        smartStockRows(stockStateContext(30)).forEach(r => { if (r.attention) { any = true; if (r.kind === 'sf') sf = true; else ing = true; } });
+        const ctx = stockStateContext(30);
+        smartStockRows(ctx).forEach(r => { if (r.attention) { any = true; if (r.kind === 'sf') sf = true; else ing = true; } });
+        if (packagingShortCount(ctx) > 0) { mat = true; any = true; }
     }
+    const inMat = typeof stockMode !== 'undefined' && stockMode === 'mat';
     if (nav) nav.classList.toggle('hidden', !any);
     if (a) a.classList.toggle('hidden', !sf);
     if (b) b.classList.toggle('hidden', !ing);
+    if (c) c.classList.toggle('hidden', !(ing && inMat)); // на вкладке «Упаковка» соседняя «Ингредиенты» тоже подсвечивается
+    if (d) d.classList.toggle('hidden', !mat);
+    if (e) e.classList.toggle('hidden', !mat);
 }
 
 function updateInventoryAlertDot() {

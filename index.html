@@ -2729,6 +2729,7 @@ function hideSplashScreen() {
                         <div class="dc-mid">
                             <div class="dc-row" id="dashRowIng" role="button" tabindex="0" onclick="dashOpenIngredients()"><span data-i18n="dash_ingredients">Ингредиенты</span><span class="dashboard-card__value" id="dashIngredients"><span class="dash-sk"></span></span></div>
                             <div class="dc-row" id="dashRowSemi" role="button" tabindex="0" onclick="dashOpenSemiFinished()"><span data-i18n="dash_semi">Полуфабрикаты</span><span class="dashboard-card__value" id="dashSemi"><span class="dash-sk"></span></span></div>
+                            <div class="dc-row" id="dashRowMat" role="button" tabindex="0" onclick="dashOpenPackaging()"><span data-i18n="stock_tab_materials">Упаковка</span><span class="dashboard-card__value" id="dashMat"><span class="dash-sk"></span></span></div>
                             <div class="dc-lock" id="dashStockLock" style="display:none"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg><span data-i18n="dash_full_only">На тарифе Full</span></div>
                         </div>
                         <div class="dc-foot dc-foot--stub" id="dashExpiryFoot">&nbsp;</div>
@@ -2895,9 +2896,9 @@ function hideSplashScreen() {
                 <!-- Три вкладки склада (вариант 2, 19.11): onclick с «;» на конце — чтобы showTab() не принял их за кнопку нижнего меню -->
                 <div class="stock-toprow">
                     <div class="view-toggle-pill stk3">
-                        <button type="button" class="stock-tab" data-stk="ing" onclick="stockTabGo('ing');"><span data-i18n="sf_back_to_ingredients">Ингредиенты</span></button>
+                        <button type="button" class="stock-tab" data-stk="ing" onclick="stockTabGo('ing');"><span data-i18n="sf_back_to_ingredients">Ингредиенты</span><i id="ingTabIngDot" class="stk-dot hidden"></i></button>
                         <button type="button" class="stock-tab" data-stk="sf" onclick="stockTabGo('sf');"><span data-i18n="ing_semifinished_link">Полуфабрикаты</span><i id="ingTabSfDot" class="stk-dot hidden"></i></button>
-                        <button type="button" class="stock-tab" data-stk="mat" onclick="stockTabGo('mat');" data-i18n="stock_tab_materials">Упаковка</button>
+                        <button type="button" class="stock-tab" data-stk="mat" onclick="stockTabGo('mat');"><span data-i18n="stock_tab_materials">Упаковка</span><i id="ingTabMatDot" class="stk-dot hidden"></i></button>
                     </div>
                 </div>
 
@@ -3027,7 +3028,7 @@ function hideSplashScreen() {
                     <div class="view-toggle-pill stk3">
                         <button type="button" class="stock-tab" data-stk="ing" onclick="stockTabGo('ing');"><span data-i18n="sf_back_to_ingredients">Ингредиенты</span><i id="sfTabIngDot" class="stk-dot hidden"></i></button>
                         <button type="button" class="stock-tab" data-stk="sf" onclick="stockTabGo('sf');"><span data-i18n="ing_semifinished_link">Полуфабрикаты</span></button>
-                        <button type="button" class="stock-tab" data-stk="mat" onclick="stockTabGo('mat');" data-i18n="stock_tab_materials">Упаковка</button>
+                        <button type="button" class="stock-tab" data-stk="mat" onclick="stockTabGo('mat');"><span data-i18n="stock_tab_materials">Упаковка</span><i id="sfTabMatDot" class="stk-dot hidden"></i></button>
                     </div>
                 </div>
 
@@ -5177,23 +5178,23 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=10"></script>
     <script src="money.js?v=17"></script>
-    <script src="i18n-core.js?v=203"></script>
+    <script src="i18n-core.js?v=204"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=21"></script>
     <script src="auth.js?v=34"></script>
     <script src="employees.js?v=80"></script>
     <script src="company.js?v=29"></script>
-    <script src="inventory.js?v=88"></script>
+    <script src="inventory.js?v=89"></script>
     <script src="billing.js?v=26"></script>
     <script src="push.js?v=12"></script>
-<script src="ingredients.js?v=80"></script>
+<script src="ingredients.js?v=81"></script>
 <script src="batches.js?v=18"></script>
 <script src="semifinished.js?v=76"></script>
 <script src="products.js?v=68"></script>
 <script src="customers.js?v=79"></script>
 <script src="calendar.js?v=17"></script>
 <script src="orders.js?v=172"></script>
-<script src="dashboard.js?v=24"></script>
+<script src="dashboard.js?v=25"></script>
 <script src="invoice.js?v=56"></script>
 <script src="send-document.js?v=44"></script>
 <script src="confirmation.js?v=3"></script>

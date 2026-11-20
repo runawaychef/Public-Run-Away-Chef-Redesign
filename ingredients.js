@@ -62,6 +62,7 @@ function ingredientsOnly() { return ingredients.filter(i => !isMaterial(i)); }
 function syncStockTabs() {
     const cur = (typeof currentTabId !== 'undefined' && currentTabId === 'semiFinished') ? 'sf' : stockMode;
     document.querySelectorAll('.stock-tab[data-stk]').forEach(b => b.classList.toggle('active', b.dataset.stk === cur));
+    if (typeof updateStockDots === 'function') updateStockDots();
 }
 function stockTabGo(k) {
     if (k === 'sf') { showTab('semiFinished'); return; }
