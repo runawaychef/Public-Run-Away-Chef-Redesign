@@ -346,6 +346,7 @@ let _draftIngredientIds = new Set();
 
 // Флаг: карточка открыта для нового ингредиента (ещё не сохранён в БД)
 let _isNewIngredient = false;
+let _ingCopyFrom = null; // при копировании: {package_price, package_size} исходной позиции
 let _newIngKind = 'ingredient'; // тип позиции, создаваемой кнопкой «+» (по текущей вкладке склада)
 
 async function createDraftIngredientAndOpen() {
@@ -358,6 +359,7 @@ async function createDraftIngredientAndOpen() {
 
     // Открываем пустую карточку локально — без записи в БД
     _isNewIngredient = true;
+    _ingCopyFrom = null;
 
     document.getElementById('ingredientsList').classList.add('hidden');
     document.getElementById('ingredientDetail').classList.add('active');
@@ -411,13 +413,14 @@ async function saveNewIngredient() {
     showLoading();
     try {
         const { data, error } = await db.from('ingredients').insert({
-            org_id: currentOrgId, name, package_price: 0, package_size: 1, unit, kind: _newIngKind
+            org_id: currentOrgId, name, package_price: _ingCopyFrom ? _ingCopyFrom.package_price : 0, package_size: _ingCopyFrom ? _ingCopyFrom.package_size : 1, unit, kind: _newIngKind
         }).select().single();
         if (error) throw error;
 
-        const newIng = { id: data.id, kind: _newIngKind, name, package_price: 0, package_size: 1, unit, priceHistory: [] };
+        const newIng = { id: data.id, kind: _newIngKind, name, package_price: Number(data.package_price || 0), package_size: Number(data.package_size || 1), unit, priceHistory: [] };
         ingredients.push(newIng);
         _isNewIngredient = false;
+        _ingCopyFrom = null;
 
         // Скрываем кнопку Сохранить, показываем удаление
         const saveBtn = document.getElementById('idSaveNewBtn');
@@ -439,25 +442,17 @@ async function saveNewIngredient() {
 // копии для донастройки. По тому же принципу, что и copyProduct() в products.js.
 async function copyIngredient(i) {
     const src = ingredients[i];
-    suppressRealtimeFor3s();
-    showLoading();
-    try {
-        const { data, error } = await db.from('ingredients').insert({
-            org_id: currentOrgId, name: src.name + t('common_copy_suffix'),
-            package_price: src.package_price || 0, package_size: src.package_size || 1, unit: src.unit || 'g', kind: isMaterial(src) ? 'material' : 'ingredient'
-        }).select().single();
-        if (error) throw error;
-        const newIng = {
-            id: data.id, kind: isMaterial(src) ? 'material' : 'ingredient', name: data.name,
-            package_price: Number(data.package_price || 0), package_size: Number(data.package_size || 1),
-            unit: data.unit || 'g', priceHistory: []
-        };
-        ingredients.push(newIng);
-        displayIngredients();
-        openIngredientDetail(newIng.id);
-        logActivity('ingredient', `${t('log_ingredient_copied')} «${src.name}» → «${newIng.name}»`);
-    } catch (e) { console.error(e); showInfo(t('ing_copy_error')); }
-    finally { hideLoading(); }
+    if (!src) return;
+    // Новая несохранённая карточка с данными исходной позиции: в БД ничего не пишется до «Сохранить»
+    await createDraftIngredientAndOpen();
+    _newIngKind = isMaterial(src) ? 'material' : 'ingredient';
+    _ingCopyFrom = { package_price: src.package_price || 0, package_size: src.package_size || 1 };
+    const nameInput = document.getElementById('idNameInput');
+    const unitInput = document.getElementById('idUnitInput');
+    if (nameInput) nameInput.value = src.name + t('common_copy_suffix');
+    if (unitInput) unitInput.value = src.unit || 'g';
+    const titleEl = document.getElementById('idTitle');
+    if (titleEl) titleEl.textContent = t(_newIngKind === 'material' ? 'mat_new_title' : 'ing_new_title');
 }
 
 async function cleanupIngredientDraftIfEmpty(ingId) {

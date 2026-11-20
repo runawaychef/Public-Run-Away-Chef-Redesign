@@ -165,18 +165,27 @@ function clearSemiFinishedSearch() {
 // Кнопка "+": сразу создаёт черновик полуфабриката и открывает его карточку
 let _draftSemiFinishedIds = new Set();
 
-async function createDraftSemiFinishedAndOpen() {
+async function createDraftSemiFinishedAndOpen(arg) {
+    // из кнопки «+» сюда приходит событие клика; при копировании — исходный полуфабрикат
+    const copySrc = (arg && arg.batch_size !== undefined && arg.id !== undefined) ? arg : null;
     suppressRealtimeFor3s();
     showLoading();
     try {
-        const { data, error } = await db.from('semi_finished').insert({ org_id: currentOrgId, name: '', batch_size: 1, unit: 'g' }).select().single();
+        const { data, error } = await db.from('semi_finished').insert({
+            org_id: currentOrgId, name: '', batch_size: copySrc ? (copySrc.batch_size || 1) : 1,
+            unit: copySrc ? (copySrc.unit || 'g') : 'g', cost_items: copySrc ? costItemsOf(copySrc) : []
+        }).select().single();
         if (error) throw error;
-        const newSf = { id: data.id, name: '', batch_size: 1, unit: 'g', cost_items: [], recipe_confirmed: false, ingredients: [] };
+        const newSf = { id: data.id, name: '', batch_size: Number(data.batch_size || 1), unit: data.unit || 'g', cost_items: costItemsOf(data), recipe_confirmed: false, ingredients: [] };
         semiFinished.push(newSf);
         _draftSemiFinishedIds.add(newSf.id);
         displaySemiFinished();
         openSemiFinishedDetail(newSf.id);
         document.getElementById('sfdSaveNewBtn')?.classList.remove('hidden'); // новая карточка: кнопка «Сохранить»
+        if (copySrc) { // копия: подставляем название, остальное уже в карточке; сохранится только по «Сохранить»
+            const nm = document.getElementById('sfdName');
+            if (nm) { nm.value = copySrc.name + t('common_copy_suffix'); nm.dispatchEvent(new Event('input')); }
+        }
         logActivity('semiFinished', `${t('log_sf_draft_created')} №${newSf.id}`);
     } catch (e) { console.error(e); showInfo(t('sf_create_error')); }
     finally { hideLoading(); }
@@ -259,25 +268,9 @@ async function cleanupAbandonedSemiFinishedDrafts() {
 // что и copyProduct() в products.js.
 async function copySemiFinished(i) {
     const src = semiFinished[i];
-    suppressRealtimeFor3s();
-    showLoading();
-    try {
-        const { data, error } = await db.from('semi_finished').insert({
-            org_id: currentOrgId, name: src.name + t('common_copy_suffix'), batch_size: src.batch_size || 1,
-            unit: src.unit || 'g', cost_items: costItemsOf(src)
-        }).select().single();
-        if (error) throw error;
-        const newSf = {
-            id: data.id, name: data.name, batch_size: Number(data.batch_size || 1),
-            unit: data.unit || 'g', cost_items: costItemsOf(data),
-            recipe_confirmed: false, ingredients: []
-        };
-        semiFinished.push(newSf);
-        displaySemiFinished();
-        openSemiFinishedDetail(newSf.id);
-        logActivity('semiFinished', `${t('log_sf_copied')} «${src.name}» → «${newSf.name}»`);
-    } catch (e) { console.error(e); showInfo(t('ing_copy_error')); }
-    finally { hideLoading(); }
+    if (!src) return;
+    // Новая карточка-черновик: пока не нажато «Сохранить», это пустое название (чистится как обычный черновик)
+    await createDraftSemiFinishedAndOpen(src);
 }
 
 // ==================== ДЕТАЛЬНЫЙ ВИД ПОЛУФАБРИКАТА / РЕЦЕПТУРА ====================

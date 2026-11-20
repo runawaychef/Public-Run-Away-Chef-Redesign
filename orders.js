@@ -1535,10 +1535,7 @@ async function copyOrder(i) {
     const employeeId = currentEmployee ? currentEmployee.id : null;
     showLoading();
     try {
-        const { data: orderNumberData, error: numErr } = await db.rpc('next_order_number', { p_org_id: currentOrgId });
-        if (numErr) throw numErr;
-        const orderNumber = orderNumberData;
-
+        // Копия — черновик: номер выдаётся только при нажатии «Сохранить заказ» (saveDraftOrder)
         const { data, error } = await db.from('orders').insert({
             org_id: currentOrgId,
             customer_id: o.customer_id,
@@ -1547,8 +1544,8 @@ async function copyOrder(i) {
             discount: o.discount || 0,
             vat_exempt: !!o.vat_exempt,
             employee_id: employeeId,
-            order_number: orderNumber,
-            is_confirmed: true,
+            order_number: null,
+            is_confirmed: false,
             created_by: employeeId,
             mat_excluded: Array.isArray(o.mat_excluded) ? o.mat_excluded : []
         }).select().single();
@@ -1560,10 +1557,12 @@ async function copyOrder(i) {
             date: data.order_date, status: data.status, discount: Number(data.discount || 0),
             vat_exempt: !!data.vat_exempt,
             employee_id: data.employee_id || null, employee: emp ? emp.name : '',
-            order_number: data.order_number || orderNumber,
+            order_number: null,
             due_date: null,
             inventory_pending: false,
-            is_confirmed: true,
+            is_confirmed: false,
+            created_by: employeeId,
+            _copyDraft: true,
             items: [],
             materials: [],
             mat_excluded: Array.isArray(o.mat_excluded) ? o.mat_excluded.slice() : []
@@ -1619,9 +1618,12 @@ async function copyOrder(i) {
             }
         }
 
+        _draftOrderIds.add(copy.id);
         displayOrders();
         openOrderDetail(copy.id);
-        logActivity('order', `${t('log_order_copied')} №${o.id} → ${t('log_new_order')} №${copy.id} (${t('delete_label_customer')} «${o.customer}»)`, copy.id);
+        logActivity('order', `${t('log_order_copied')} ${orderNumLabel(o)} → ${t('log_new_order')} (${t('delete_label_customer')} «${o.customer}»)`, copy.id);
+        if (typeof scheduleRefreshOrderQuota === 'function') scheduleRefreshOrderQuota();
+        showInfo(t('orders_copy_hint').replace('{n}', o.order_number || ''));
     } catch (e) { console.error(e); showDbError(e, t('orders_copy_error')); }
     finally { hideLoading(); }
 }
@@ -1833,6 +1835,7 @@ async function saveDraftOrder(order) {
             if (fresh && fresh.order_number) order.order_number = fresh.order_number;
         }
         order.is_confirmed = true;
+        delete order._copyDraft;
         _draftOrderIds.delete(order.id);
         if (order.id === currentOrderId) {
             const hdr = document.getElementById('detailOrderId');
@@ -1881,6 +1884,12 @@ async function resolveDraftOnLeave(order) {
     if (!order || isOrderSaved(order)) return true;
     const hasClient = !!order.customer_id;
     const hasItems = !!(order.items && order.items.length > 0);
+    // Копия заказа: не сохраняем молча — спрашиваем (сохранить / удалить копию)
+    if (order._copyDraft) {
+        const save = await showConfirm(t('orders_copy_leave_confirm'), { ok: t('orders_btn_save'), cancel: t('orders_btn_delete') });
+        if (save) return await saveDraftOrder(order);
+        return await discardDraftOrder(order);
+    }
     if (!hasClient && !hasItems) return true; // пустой черновик удалит cleanupOrderDraftIfEmpty
     if (hasClient && hasItems) return await saveDraftOrder(order);
     if (hasClient && !hasItems) {

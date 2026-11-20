@@ -146,10 +146,12 @@ function clearProductSearch() {
 let _draftProductIds = new Set();
 
 let _isNewProduct = false;
+let _pdCopyFrom = null; // при копировании: {batch_size, cost_items} исходного изделия (в новой карточке этих полей нет)
 
 async function createDraftProductAndOpen() {
     // Открываем пустую карточку локально — без записи в БД
     _isNewProduct = true;
+    _pdCopyFrom = null;
     currentProductId = null;
 
     document.getElementById('productsList').classList.add('hidden');
@@ -190,14 +192,16 @@ async function saveNewProduct() {
     suppressRealtimeFor3s();
     showLoading();
     try {
+        const cp = _pdCopyFrom; // копия изделия: размер партии и доп. расходы берём у исходного
         const { data, error } = await db.from('products').insert({
-            org_id: currentOrgId, name, price, unit, batch_size: 1
+            org_id: currentOrgId, name, price, unit, batch_size: cp ? cp.batch_size : 1, cost_items: cp ? cp.cost_items : []
         }).select().single();
         if (error) throw error;
 
-        const newProd = { id: data.id, name, price, batch_size: 1, cost_items: [], unit, recipe_confirmed: false, track_stock: false, ingredients: [] };
+        const newProd = { id: data.id, name, price, batch_size: cp ? cp.batch_size : 1, cost_items: cp ? cp.cost_items : [], unit, recipe_confirmed: false, track_stock: false, ingredients: [] };
         products.push(newProd);
         _isNewProduct = false;
+        _pdCopyFrom = null;
 
         // Фото, выбранное до сохранения новой карточки
         if (_pdNewPhotoBlob) {
@@ -214,7 +218,7 @@ async function saveNewProduct() {
 
         // Предустановка: материалы с галочкой «Добавлять в новые изделия автоматически»
         try {
-            const presets = ingredients.filter(g => isMaterial(g) && Number(g.auto_add_qty) > 0);
+            const presets = _pdCopyFrom ? [] : ingredients.filter(g => isMaterial(g) && Number(g.auto_add_qty) > 0);
             if (presets.length) {
                 const { data: pr, error: pe } = await db.from('product_ingredients').insert(presets.map(g => ({
                     org_id: currentOrgId, product_id: data.id, ingredient_id: g.id, semi_finished_id: null, quantity: Number(g.auto_add_qty)
@@ -257,25 +261,17 @@ async function cleanupProductDraftIfEmpty(prodId) {
 // и сразу открывает карточку копии для донастройки.
 async function copyProduct(i) {
     const src = products[i];
-    suppressRealtimeFor3s();
-    showLoading();
-    try {
-        const { data, error } = await db.from('products').insert({
-            org_id: currentOrgId, name: src.name + t('common_copy_suffix'), price: src.price, unit: src.unit || 'pcs',
-            batch_size: src.batch_size || 1, cost_items: costItemsOf(src)
-        }).select().single();
-        if (error) throw error;
-        const newProd = {
-            id: data.id, name: data.name, price: Number(data.price),
-            batch_size: Number(data.batch_size || 1), cost_items: costItemsOf(data),
-            unit: data.unit || '', recipe_confirmed: false, ingredients: []
-        };
-        products.push(newProd);
-        displayProducts();
-        openProductDetail(newProd.id);
-        logActivity('product', `${t('log_product_copied')} «${src.name}» → «${newProd.name}»`);
-    } catch (e) { console.error(e); showInfo(t('ing_copy_error')); }
-    finally { hideLoading(); }
+    if (!src) return;
+    // Новая несохранённая карточка с данными исходного изделия: в БД ничего не пишется до «Сохранить»
+    await createDraftProductAndOpen();
+    _pdCopyFrom = { batch_size: src.batch_size || 1, cost_items: costItemsOf(src) };
+    document.getElementById('pdName').value = src.name + t('common_copy_suffix');
+    document.getElementById('pdUnit').value = src.unit || 'pcs';
+    document.getElementById('pdPrice').value = Number(src.price || 0).toFixed(2);
+    document.getElementById('pdBatchSize').value = String(src.batch_size || 1);
+    updatePdUnitUI(src.unit || 'pcs');
+    pdTitleSync();
+    pdCurSync();
 }
 
 // ==================== ДЕТАЛЬНЫЙ ВИД ИЗДЕЛИЯ / РЕЦЕПТУРА ====================

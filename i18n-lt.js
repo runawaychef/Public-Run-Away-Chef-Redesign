@@ -639,6 +639,8 @@ I18N.lt = {
         ordmat_title: 'Užsakymo medžiagos',
         ordmat_add_link: '+ Medžiaga',
         ordmat_pick: '— medžiaga —',
+        orders_copy_hint: 'Tai užsakymo Nr. {n} kopija. Patikrinkite klientą ir datą, tada apačioje paspauskite „Išsaugoti užsakymą“ — kopija gaus numerį.',
+        orders_copy_leave_confirm: 'Išsaugoti šio užsakymo kopiją? Ištrynus kopija dings.',
         ordmat_off_label: 'Be gaminio medžiagų',
         ordmat_off_hint: 'Pakuotė iš receptūros nenurašoma ir neįtraukiama į savikainą',
         ordmat_off_tag: 'be medžiagų',
