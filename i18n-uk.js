@@ -999,6 +999,7 @@ I18N.uk = {
         cost_item_energy: 'Енергія',
         cost_item_delivery: 'Доставка',
         cost_item_name_ph: 'Назва',
+        cost_item_custom_named: '+ Своя стаття «{name}»',
         cost_item_add: '+ Додати',
         cost_col_name: 'Стаття',
         cost_col_sum: 'Сума',

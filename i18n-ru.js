@@ -1008,6 +1008,7 @@ I18N.ru = {
         cost_item_energy: 'Энергия',
         cost_item_delivery: 'Доставка',
         cost_item_name_ph: 'Название',
+        cost_item_custom_named: '+ Своя статья «{name}»',
         cost_item_add: '+ Добавить',
         cost_col_name: 'Статья',
         cost_col_sum: 'Сумма',

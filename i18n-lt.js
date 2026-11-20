@@ -999,6 +999,7 @@ I18N.lt = {
         cost_item_energy: 'Energija',
         cost_item_delivery: 'Pristatymas',
         cost_item_name_ph: 'Pavadinimas',
+        cost_item_custom_named: '+ Savo straipsnis „{name}“',
         cost_item_add: '+ Pridėti',
         cost_col_name: 'Eilutė',
         cost_col_sum: 'Suma',

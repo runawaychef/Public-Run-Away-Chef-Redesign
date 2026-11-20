@@ -1083,6 +1083,17 @@ function _ciPerUnitLabel(ent, kind) {
     }
     return t('cost_per_unit_of') + ' ' + (unitAbbrev(ent.unit) || ent.unit);
 }
+// Шаблоны названий статей: список всегда из 5 шаблонов, своё название вводится вручную
+// (строка «+ Своя статья «текст»» подставляет набранное в поле).
+function _ciPresetNames() {
+    return ['other', 'packaging', 'label', 'energy', 'delivery'].map(k => t('cost_item_' + k));
+}
+function _ciSetupNameDropdown(inputId, dropdownId, nextFocusId) {
+    const next = () => { const el = nextFocusId && document.getElementById(nextFocusId); if (el) el.focus(); };
+    setupSearchDropdown(inputId, dropdownId, _ciPresetNames, next,
+        (text) => { const el = document.getElementById(inputId); if (el) el.value = text; next(); },
+        { createLabel: (q) => t('cost_item_custom_named').replace('{name}', q) });
+}
 let _ciEditIdx = { p: null, s: null };
 function ciEdit(kind, i) {
     const ent = _ciEnt(kind); if (!ent) return;
@@ -1094,6 +1105,7 @@ function ciEdit(kind, i) {
     wrap.classList.toggle('hidden', kind !== 'p');
     document.getElementById('editCiPer').innerHTML = `<option value="u"${it.p === 'u' ? ' selected' : ''}>${escapeHtml(_ciPerUnitLabel(ent, kind))}</option><option value="b"${it.p === 'u' ? '' : ' selected'}>${escapeHtml(t('cost_per_batch'))}</option>`;
     document.getElementById('editCostItemModal').style.display = 'flex';
+    _ciSetupNameDropdown('editCiName', 'editCiNameDropdown', 'editCiAmt');
 }
 let _ciEditKind = 'p';
 async function saveCiEdit() {
@@ -1115,7 +1127,6 @@ function renderCostItemsEditor(boxId, kind) {
     const items = costItemsOf(ent);
     if (kind === 's') items.forEach(it => { it.p = 'b'; }); // у полуфабриката все статьи на партию
     const perU = _ciPerUnitLabel(ent, kind);
-    const quick = ['other', 'packaging', 'label', 'energy', 'delivery'].map(k => `<option value="${escapeHtml(t('cost_item_' + k))}"></option>`).join('');
     const IN = 'border p-0.5 rounded-xl table-text w-full';
     const showPer = kind === 'p'; // у полуфабриката «на единицу» (на г, на мл) не имеет смысла — только на партию
     const W = showPer ? [34, 18, 26, 22] : [46, 26, 28];
@@ -1128,15 +1139,15 @@ function renderCostItemsEditor(boxId, kind) {
         return `<tr class="border-b" style="cursor:pointer" onclick="ciEdit('${kind}',${i})"><td class="p-0.5 table-text">${escapeHtml(costItemName(it))}</td><td class="p-0.5 table-text text-center">${formatMoney(Number(it.a) || 0)}</td>${perCell}<td class="p-0.5 text-center">${svgDelete(`event.stopPropagation();ciRemove('${kind}',${i})`)}</td></tr>`;
     }).join('');
     const entry = `<tr>
-        <td class="p-1"><input id="ciNewName_${kind}" type="text" list="costItemNames" placeholder="${escapeHtml(t('cost_item_name_ph'))}" autocomplete="off" class="${IN}"></td>
+        <td class="p-1"><div class="search-input-wrap"><input id="ciNewName_${kind}" type="text" placeholder="${escapeHtml(t('cost_item_name_ph'))}" autocomplete="off" class="${IN}"><div id="ciNewNameDd_${kind}" class="search-dropdown hidden"></div></div></td>
         <td class="p-1"><input id="ciNewAmt_${kind}" type="number" placeholder="0.00" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="${IN}" style="padding-left:4px;padding-right:4px;"></td>
         ${showPer ? `<td class="p-1">${perSel('ciNewPer_' + kind, '', true)}</td>` : ''}
         <td class="p-1 text-center"><button type="button" onclick="ciAddFromRow('${kind}')" class="pill-btn" style="font-size:11px;padding:4px 7px;line-height:1.15;white-space:normal;">${escapeHtml(t('cost_item_add'))}</button></td></tr>`;
-    box.innerHTML = `<datalist id="costItemNames">${quick}</datalist>
-        <table class="w-full table-auto table-clean mb-1 recipe-entry-tbl">
+    box.innerHTML = `<table class="w-full table-auto table-clean mb-1 recipe-entry-tbl">
             <thead><tr style="background-color:#e3e8df;">${th(t('cost_col_name'), W[0])}${th(t('cost_col_sum'), W[1])}${showPer ? th(t('cost_col_basis'), W[2]) : ''}${th(t('sf_col_actions'), W[W.length - 1])}</tr><tr class="tbl-gap"><th colspan="${showPer ? 4 : 3}"></th></tr></thead>
             <tbody>${rows}</tbody><tfoot>${entry}</tfoot>
         </table>`;
+    _ciSetupNameDropdown('ciNewName_' + kind, 'ciNewNameDd_' + kind, 'ciNewAmt_' + kind);
 }
 function ciAddFromRow(kind) {
     const ent = _ciEnt(kind); if (!ent) return;

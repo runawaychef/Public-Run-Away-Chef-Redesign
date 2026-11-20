@@ -1009,6 +1009,7 @@ I18N.en = {
         cost_item_energy: 'Energy',
         cost_item_delivery: 'Delivery',
         cost_item_name_ph: 'Name',
+        cost_item_custom_named: '+ Custom item “{name}”',
         cost_item_add: '+ Add',
         cost_col_name: 'Item',
         cost_col_sum: 'Amount',
