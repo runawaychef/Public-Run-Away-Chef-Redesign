@@ -166,7 +166,8 @@
         body.app-page-open #productsSearchBar,
         body.app-page-open #customersSearchBar,
         body.app-page-open #ingredientsSearchBar,
-        body.app-page-open #semiFinishedSearchBar { display: none !important; }
+        body.app-page-open #semiFinishedSearchBar,
+        body.app-page-open .stock-subbar { display: none !important; }
         #orderDetail { display: none; }
         #orderDetail.active { display: block; }
         #ordersList.hidden-list { display: none; }
@@ -1585,6 +1586,15 @@
         #ingredientsList, #semiFinishedList { padding-top: 56px !important; }
         #ingredientsSearchBar > div, #semiFinishedSearchBar > div { padding: 23px 0 6px !important; }
         #ingredientsSearchBar .search-input-wrap input, #semiFinishedSearchBar .search-input-wrap input { height: 40px; background: #fff; border: var(--sb-edge); border-radius: 14px; box-shadow: 0 6px 12px -6px rgba(70,58,30,0.35), 0 1px 2px rgba(70,58,30,0.1); font-size: 13px; padding-left: 14px; }
+        /* v925: вкладки и фильтры склада закреплены под поиском (.stock-subbar), а не едут со списком */
+        .stock-subbar { position: fixed; left: 50%; transform: translateX(-50%); width: 100%; max-width: 42rem; z-index: 30; box-sizing: border-box; padding: 0 8px; }
+        .stock-subbar.hidden { display: none; }
+        .stock-subbar-in { background: #f4f1ea; padding: 2px 0 4px; }
+        .stock-subbar .stock-toprow { margin: 0 0 8px; }
+        .stock-subbar .stock-frow { margin: 0 0 4px; }
+        .stock-subbar .stock-toprow .view-toggle-pill { padding: 3px; gap: 1px; border: 1px solid rgba(90,75,40,0.06); box-shadow: 0 6px 12px -6px rgba(70,58,30,0.35), 0 1px 2px rgba(70,58,30,0.1); }
+        .stock-subbar .stock-tab { height: 32px; font-size: 12.5px; }
+        .stock-subbar .stock-tab.active { background: #e3ebdf; color: #4f6349; font-weight: 700; }
         #ingredientsList .stock-toprow, #semiFinishedList .stock-toprow { margin: 0 0 8px; }
         #ingredientsList .stock-toprow .view-toggle-pill, #semiFinishedList .stock-toprow .view-toggle-pill { padding: 3px; gap: 1px; border: 1px solid rgba(90,75,40,0.06); box-shadow: 0 6px 12px -6px rgba(70,58,30,0.35), 0 1px 2px rgba(70,58,30,0.1); }
         #ingredientsList .stock-toprow-right, #semiFinishedList .stock-toprow-right { gap: 5px; }
@@ -2616,6 +2626,21 @@ function hideSplashScreen() {
     </div>
 </div>
 
+<!-- Закреплённая часть склада (20.11, v925): вкладки + фильтры под поиском; позицию считает positionStickySearchBar -->
+<div id="ingredientsSubBar" class="stock-subbar hidden">
+    <div class="stock-subbar-in">
+<div class="stock-toprow">
+                    <div class="view-toggle-pill stk3">
+                        <button type="button" class="stock-tab" data-stk="ing" onclick="stockTabGo('ing');"><span data-i18n="sf_back_to_ingredients">Ингредиенты</span><i id="ingTabIngDot" class="stk-dot hidden"></i></button>
+                        <button type="button" class="stock-tab" data-stk="sf" onclick="stockTabGo('sf');"><span data-i18n="ing_semifinished_link">Полуфабрикаты</span><i id="ingTabSfDot" class="stk-dot hidden"></i></button>
+                        <button type="button" class="stock-tab" data-stk="mat" onclick="stockTabGo('mat');"><span data-i18n="stock_tab_materials">Упаковка</span><i id="ingTabMatDot" class="stk-dot hidden"></i></button>
+                    </div>
+                </div>
+
+                <div id="ingredientsFilterBar" class="stock-frow hidden"></div>
+    </div>
+</div>
+
 <!-- Поиск + переключатель вида для Полуфабрикатов -->
 <div id="semiFinishedSearchBar" class="hidden" style="position:fixed; left:50%; transform:translateX(-50%); width:100%; max-width:42rem; z-index:30; box-sizing:border-box; padding:0 8px;">
     <div class="flex gap-2 items-center" style="background:#f4f1ea; padding:6px 0;">
@@ -2629,6 +2654,21 @@ function hideSplashScreen() {
             <button class="view-toggle-btn" id="semiFinishedViewBtnTiles" onclick="setStockViewMode('sf','tiles')" title="Плитки"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></button>
         </div>
         <div class="view-toggle-pill sb-vt"><button type="button" class="view-toggle-btn stock-inv-btn" onclick="openSfInventarizationModal()" title="Инвентаризация" data-i18n-title="inv_inventarization" aria-label="Инвентаризация"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5l1.5 1.5l2.5-2.5"/><path d="M3.5 11.5l1.5 1.5l2.5-2.5"/><path d="M3.5 17.5l1.5 1.5l2.5-2.5"/><path d="M11 6h9M11 12h9M11 18h9"/></svg></button></div>
+    </div>
+</div>
+
+<!-- Закреплённая часть склада (20.11, v925): вкладки + фильтры под поиском; позицию считает positionStickySearchBar -->
+<div id="semiFinishedSubBar" class="stock-subbar hidden">
+    <div class="stock-subbar-in">
+<div class="stock-toprow">
+                    <div class="view-toggle-pill stk3">
+                        <button type="button" class="stock-tab" data-stk="ing" onclick="stockTabGo('ing');"><span data-i18n="sf_back_to_ingredients">Ингредиенты</span><i id="sfTabIngDot" class="stk-dot hidden"></i></button>
+                        <button type="button" class="stock-tab" data-stk="sf" onclick="stockTabGo('sf');"><span data-i18n="ing_semifinished_link">Полуфабрикаты</span></button>
+                        <button type="button" class="stock-tab" data-stk="mat" onclick="stockTabGo('mat');"><span data-i18n="stock_tab_materials">Упаковка</span><i id="sfTabMatDot" class="stk-dot hidden"></i></button>
+                    </div>
+                </div>
+
+                <div id="semiFinishedFilterBar" class="stock-frow hidden"></div>
     </div>
 </div>
 
@@ -2894,15 +2934,7 @@ function hideSplashScreen() {
         <div id="ingredients" class="tab-content hidden">
             <div id="ingredientsList">
                 <!-- Три вкладки склада (вариант 2, 19.11): onclick с «;» на конце — чтобы showTab() не принял их за кнопку нижнего меню -->
-                <div class="stock-toprow">
-                    <div class="view-toggle-pill stk3">
-                        <button type="button" class="stock-tab" data-stk="ing" onclick="stockTabGo('ing');"><span data-i18n="sf_back_to_ingredients">Ингредиенты</span><i id="ingTabIngDot" class="stk-dot hidden"></i></button>
-                        <button type="button" class="stock-tab" data-stk="sf" onclick="stockTabGo('sf');"><span data-i18n="ing_semifinished_link">Полуфабрикаты</span><i id="ingTabSfDot" class="stk-dot hidden"></i></button>
-                        <button type="button" class="stock-tab" data-stk="mat" onclick="stockTabGo('mat');"><span data-i18n="stock_tab_materials">Упаковка</span><i id="ingTabMatDot" class="stk-dot hidden"></i></button>
-                    </div>
-                </div>
-
-                <div id="ingredientsFilterBar" class="stock-frow hidden"></div>
+                
 
                 <!-- Карточный вид (по умолчанию) -->
                 <div id="ingredientCardsWrap">
@@ -3024,15 +3056,7 @@ function hideSplashScreen() {
         <!-- ===== ПОЛУФАБРИКАТЫ ===== -->
         <div id="semiFinished" class="tab-content hidden">
             <div id="semiFinishedList">
-                <div class="stock-toprow">
-                    <div class="view-toggle-pill stk3">
-                        <button type="button" class="stock-tab" data-stk="ing" onclick="stockTabGo('ing');"><span data-i18n="sf_back_to_ingredients">Ингредиенты</span><i id="sfTabIngDot" class="stk-dot hidden"></i></button>
-                        <button type="button" class="stock-tab" data-stk="sf" onclick="stockTabGo('sf');"><span data-i18n="ing_semifinished_link">Полуфабрикаты</span></button>
-                        <button type="button" class="stock-tab" data-stk="mat" onclick="stockTabGo('mat');"><span data-i18n="stock_tab_materials">Упаковка</span><i id="sfTabMatDot" class="stk-dot hidden"></i></button>
-                    </div>
-                </div>
-
-                <div id="semiFinishedFilterBar" class="stock-frow hidden"></div>
+                
 
                 <!-- Карточный вид (по умолчанию) -->
                 <div id="semiFinishedCardsWrap">
@@ -5497,6 +5521,8 @@ function showTab(tabId) {
     document.getElementById('customersSearchBar')?.classList.toggle('hidden', tabId !== 'customers');
     document.getElementById('ingredientsSearchBar')?.classList.toggle('hidden', tabId !== 'ingredients');
     document.getElementById('semiFinishedSearchBar')?.classList.toggle('hidden', tabId !== 'semiFinished');
+    document.getElementById('ingredientsSubBar')?.classList.toggle('hidden', tabId !== 'ingredients');
+    document.getElementById('semiFinishedSubBar')?.classList.toggle('hidden', tabId !== 'semiFinished');
 
     // Принудительно завершаем предыдущую анимацию если она ещё идёт
     const wrapper = document.getElementById('tabsWrapper');
@@ -5601,6 +5627,19 @@ function positionStickySearchBar(barId, contentWrapId, detailId) {
     const headerBottom = header.getBoundingClientRect().bottom;
     const barHeight = bar.offsetHeight;
     bar.style.top = Math.round(headerBottom + GAP / 2 - barHeight / 2 + 6) + 'px';
+
+    // Склад (v925): под поиском закреплена вторая панель (вкладки + фильтры); список начинается под ней.
+    const sub = document.getElementById(barId.replace('SearchBar', 'SubBar'));
+    if (sub) {
+        sub.classList.toggle('hidden', bar.classList.contains('hidden'));
+        if (!sub.classList.contains('hidden') && barHeight) {
+            sub.style.top = Math.round(bar.getBoundingClientRect().top + barHeight) + 'px';
+            if (content) {
+                const need = Math.round(sub.getBoundingClientRect().bottom - (content.getBoundingClientRect().top + window.scrollY)) + 6;
+                content.style.setProperty('padding-top', need + 'px', 'important');
+            }
+        }
+    }
 }
 
 // Пересчитывает панель поиска+переключателя ТЕКУЩЕЙ активной вкладки (если у неё
@@ -5630,6 +5669,7 @@ function initSearchBarHeaderWatcher() {
     if (!header) return;
     _searchBarHeaderObserver = new ResizeObserver(repositionCurrentTabSearchBar);
     _searchBarHeaderObserver.observe(header);
+    document.querySelectorAll('.stock-subbar').forEach(el => _searchBarHeaderObserver.observe(el)); // строка фильтров появляется/пропадает — высота меняется
 }
 
 // ==================== ПЛАВАЮЩАЯ КНОПКА "+" ====================
