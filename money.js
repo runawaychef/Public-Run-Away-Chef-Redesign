@@ -99,9 +99,22 @@ function vatWordLabel() {
     return word + ' (' + String(pct) + '%)';
 }
 
+// Строки заказа для денег и документов: позиции + материалы, добавленные в заказ вручную С ЦЕНОЙ
+// (выставляются в счёт отдельными строками после позиций; без цены материал только в себестоимости).
+// Материалы из рецептов в счёт не попадают никогда. Порядок: сначала order.items — индексы строк
+// расчёта (calcTotals().lines) для позиций не меняются.
+function orderBillItems(order) {
+    const base = (order && order.items) || [];
+    const mats = ((order && order.materials) || []).filter(m => Number(m.price) > 0 && Number(m.quantity) > 0).map(m => {
+        const ing = (typeof ingredients !== 'undefined') ? ingredients.find(i => i.id === m.ingredient_id) : null;
+        return { id: null, product_id: null, product: ing ? ing.name : '', quantity: Number(m.quantity), price: Number(m.price), unit: ing ? ing.unit : null, _mat: true };
+    });
+    return mats.length ? base.concat(mats) : base;
+}
+
 function _orderTotals(order) {
     const rate = typeof currentOrgVatRate !== 'undefined' ? currentOrgVatRate : 0;
-    return calcTotals(order.items, order.discount, orderVatExempt(order), rate);
+    return calcTotals(orderBillItems(order), order.discount, orderVatExempt(order), rate);
 }
 
 // Сумма позиций без скидки и НДС

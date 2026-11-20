@@ -216,18 +216,6 @@ async function saveNewProduct() {
             _pdNewPhotoBlob = null;
         }
 
-        // Предустановка: материалы с галочкой «Добавлять в новые изделия автоматически»
-        try {
-            const presets = _pdCopyFrom ? [] : ingredients.filter(g => isMaterial(g) && Number(g.auto_add_qty) > 0);
-            if (presets.length) {
-                const { data: pr, error: pe } = await db.from('product_ingredients').insert(presets.map(g => ({
-                    org_id: currentOrgId, product_id: data.id, ingredient_id: g.id, semi_finished_id: null, quantity: Number(g.auto_add_qty)
-                }))).select();
-                if (pe) throw pe;
-                pr.forEach(d => newProd.ingredients.push({ id: d.id, ingredient_id: d.ingredient_id, semi_finished_id: null, quantity: Number(d.quantity) }));
-            }
-        } catch (pe) { console.error('Предустановка материалов не добавлена:', pe); }
-
         // Восстанавливаем UI
         const saveBtn = document.getElementById('pdSaveNewBtn');
         if (saveBtn) saveBtn.classList.add('hidden');
@@ -578,17 +566,6 @@ async function savePdHeader() {
         }).eq('id', prod.id);
         if (error) throw error;
         const unitChanged = prod.unit !== unit;
-        const oldBs = Number(prod.batch_size) || 1;
-        if (oldBs !== batchSize) {
-            // количество материалов хранится на партию — пересчитываем под новый размер партии
-            const mats = (prod.ingredients || []).filter(_isMatRow);
-            await Promise.all(mats.map(async ri => {
-                const q = _round6(Number(ri.quantity) / oldBs * batchSize);
-                const r = await db.from('product_ingredients').update({ quantity: q }).eq('id', ri.id);
-                if (r.error) throw r.error;
-                ri.quantity = q;
-            }));
-        }
         prod.name = name; prod.price = parseFloat(price.toFixed(2));
         prod.batch_size = batchSize;
         prod.unit = unit;
@@ -633,13 +610,12 @@ function renderProductRecipe(prod) {
     const tbody = document.getElementById('recipeItemsBody');
     tbody.innerHTML = '';
     const list = prod.ingredients || [];
-    if (!list.some(ri => !_isMatRow(ri))) {
+    if (!list.length) {
         const row = document.createElement('tr');
         row.innerHTML = `<td colspan="4" class="text-center text-xs text-gray-400 py-2">${t('sf_no_ingredients_hint')}</td>`;
         tbody.appendChild(row);
     } else {
         list.forEach((ri, i) => {
-            if (_isMatRow(ri)) return; // материалы показываются в своём блоке
             let displayName, unitLabel, unitPrice;
             if (ri.semi_finished_id) {
                 const sf = (typeof semiFinished !== 'undefined') ? semiFinished.find(s => s.id === ri.semi_finished_id) : null;
@@ -677,117 +653,6 @@ function renderProductRecipe(prod) {
     document.getElementById('pdUnitCost').textContent  = formatMoney(unitCost);
     document.getElementById('pdProfit').textContent    = formatMoney(profit);
     document.getElementById('pdProfitPct').textContent = profitPct.toFixed(1) + '%';
-    renderProductMaterials(prod);
-}
-
-// ==================== МАТЕРИАЛЫ В ИЗДЕЛИИ (на штуку) ====================
-// Материал — складская позиция kind='material'. В рецепте хранится строкой product_ingredients
-// с ingredient_id = материал и quantity НА ПАРТИЮ (= количество на штуку × размер партии),
-// поэтому себестоимость, списание и нехватка работают тем же кодом, что и для ингредиентов.
-// В блоке показываем количество на штуку (quantity ÷ размер партии). При смене размера партии
-// количество материалов пересчитывается (savePdHeader).
-function _isMatRow(ri) {
-    if (!ri || !ri.ingredient_id) return false;
-    const ing = ingredients.find(x => x.id === ri.ingredient_id);
-    return isMaterial(ing);
-}
-const _round6 = x => Math.round(x * 1e6) / 1e6;
-
-function renderProductMaterials(prod) {
-    const tbody = document.getElementById('pdMatBody');
-    if (!tbody) return;
-    const bs = Number(prod.batch_size) || 1;
-    tbody.innerHTML = '';
-    const rows = (prod.ingredients || []).map((ri, i) => ({ ri, i })).filter(x => _isMatRow(x.ri));
-    if (!rows.length) {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td colspan="4" class="text-center text-xs text-gray-400 py-2">${t('mat_block_hint')}</td>`;
-        tbody.appendChild(tr);
-    } else {
-        rows.forEach(({ ri, i }) => {
-            const ing = ingredients.find(x => x.id === ri.ingredient_id);
-            const qpu = _round6(Number(ri.quantity) / bs);
-            const cost = ingredientUnitPrice(ing) * qpu;
-            const tr = document.createElement('tr');
-            tr.className = 'border-b';
-            tr.style.cursor = 'pointer';
-            tr.onclick = () => matEditStart(i); // строка кликабельна — окно правки
-            tr.innerHTML = `
-                <td class="p-0.5 table-text">${escapeHtml(ing.name)}</td>
-                <td class="p-0.5 table-text text-center">${qpu} ${escapeHtml(unitAbbrev(ing.unit))}</td>
-                <td class="p-0.5 table-text text-center font-medium">${formatMoney(cost)}</td>
-                <td class="p-0.5 text-center">${hasPermission('can_delete') ? svgDelete(`event.stopPropagation();deleteRecipeItem(${i})`) : ''}</td>`;
-            tbody.appendChild(tr);
-        });
-    }
-    // Выбор: только материалы со склада, которых ещё нет в изделии
-    setupSearchDropdown('pdNewMat', 'pdNewMatDropdown', () => {
-        const cur = products.find(x => x.id === currentProductId);
-        const used = new Set(((cur && cur.ingredients) || []).map(ri => ri.ingredient_id));
-        return ingredients.filter(m => isMaterial(m) && !used.has(m.id)).map(m => m.name).sort((x, y) => x.localeCompare(y));
-    });
-}
-let _matEditIdx = null;
-function matEditStart(i) {
-    const prod = products.find(x => x.id === currentProductId);
-    const ri = prod && prod.ingredients[i];
-    const ing = ri && ingredients.find(x => x.id === ri.ingredient_id);
-    if (!ing) return;
-    _matEditIdx = i;
-    document.getElementById('editMatName').textContent = ing.name;
-    document.getElementById('editMatUnit').textContent = unitAbbrev(ing.unit);
-    document.getElementById('editMatQty').value = _round6(Number(ri.quantity) / (Number(prod.batch_size) || 1));
-    document.getElementById('editMatModal').style.display = 'flex';
-}
-async function saveMatEdit() {
-    const i = _matEditIdx;
-    const v = document.getElementById('editMatQty').value;
-    closeModal();
-    if (i !== null && i !== undefined) await changeMaterialQty(i, v);
-}
-
-async function addMaterialToProduct() {
-    const prod = products.find(p => p.id === currentProductId);
-    if (!prod) return;
-    const matName = document.getElementById('pdNewMat').value.trim();
-    const qpu = parseFloat(document.getElementById('pdNewMatQty').value);
-    const usedIds = new Set((prod.ingredients || []).map(ri => ri.ingredient_id));
-    const ing = ingredients.find(x => isMaterial(x) && x.name === matName && !usedIds.has(x.id));
-    if (!ing || !(qpu > 0)) { showInfo(t('mat_choose_and_qty')); return; }
-    const bs = Number(prod.batch_size) || 1;
-    showLoading();
-    try {
-        suppressRealtimeFor3s();
-        const { data, error } = await db.from('product_ingredients').insert({
-            org_id: currentOrgId, product_id: prod.id, ingredient_id: ing.id, semi_finished_id: null, quantity: _round6(qpu * bs)
-        }).select().single();
-        if (error) throw error;
-        if (!prod.ingredients) prod.ingredients = [];
-        prod.ingredients.push({ id: data.id, ingredient_id: data.ingredient_id, semi_finished_id: null, quantity: Number(data.quantity) });
-        document.getElementById('pdNewMatQty').value = '';
-        document.getElementById('pdNewMat').value = '';
-        renderProductRecipe(prod);
-        logActivity('product', `${t('log_material_added')} «${prod.name}»: «${ing.name}» (${qpu})`);
-    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
-    finally { hideLoading(); }
-}
-
-async function changeMaterialQty(i, v) {
-    const prod = products.find(p => p.id === currentProductId);
-    if (!prod) return;
-    const ri = prod.ingredients[i];
-    const qpu = parseFloat(v);
-    if (!ri || !(qpu > 0)) { renderProductRecipe(prod); return; }
-    const bs = Number(prod.batch_size) || 1;
-    const q = _round6(qpu * bs);
-    suppressRealtimeFor3s();
-    try {
-        const { error } = await db.from('product_ingredients').update({ quantity: q }).eq('id', ri.id);
-        if (error) throw error;
-        ri.quantity = q;
-        renderProductRecipe(prod);
-        showAutosaveToast();
-    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); renderProductRecipe(prod); }
 }
 
 async function addIngredientToRecipe() {
@@ -986,7 +851,7 @@ async function copyRecipeFromProductByName(sourceName) {
     const prod = products.find(p => p.id === currentProductId);
     const src = products.find(p => p.name === sourceName);
     if (!prod || !src) return;
-    const srcItems = (src.ingredients || []).filter(ri => !_isMatRow(ri)); // материалы не копируем (количество зависит от размера партии)
+    const srcItems = (src.ingredients || []);
     if (!srcItems.length) { showInfo(t('prod_no_recipe_to_copy')); return; }
 
     const existingIngIds = new Set((prod.ingredients || []).filter(i => i.ingredient_id).map(i => i.ingredient_id));

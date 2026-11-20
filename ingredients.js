@@ -360,6 +360,7 @@ async function createDraftIngredientAndOpen() {
     // Открываем пустую карточку локально — без записи в БД
     _isNewIngredient = true;
     _ingCopyFrom = null;
+    { const sb = document.getElementById('idSaleBox'); if (sb) sb.classList.add('hidden'); }
 
     document.getElementById('ingredientsList').classList.add('hidden');
     document.getElementById('ingredientDetail').classList.add('active');
@@ -413,11 +414,12 @@ async function saveNewIngredient() {
     showLoading();
     try {
         const { data, error } = await db.from('ingredients').insert({
-            org_id: currentOrgId, name, package_price: _ingCopyFrom ? _ingCopyFrom.package_price : 0, package_size: _ingCopyFrom ? _ingCopyFrom.package_size : 1, unit, kind: _newIngKind
+            org_id: currentOrgId, name, package_price: _ingCopyFrom ? _ingCopyFrom.package_price : 0, package_size: _ingCopyFrom ? _ingCopyFrom.package_size : 1, unit, kind: _newIngKind,
+            sale_price: (_ingCopyFrom && _newIngKind === 'material') ? (_ingCopyFrom.sale_price || 0) : 0
         }).select().single();
         if (error) throw error;
 
-        const newIng = { id: data.id, kind: _newIngKind, name, package_price: Number(data.package_price || 0), package_size: Number(data.package_size || 1), unit, priceHistory: [] };
+        const newIng = { id: data.id, kind: _newIngKind, sale_price: Number(data.sale_price || 0), name, package_price: Number(data.package_price || 0), package_size: Number(data.package_size || 1), unit, priceHistory: [] };
         ingredients.push(newIng);
         _isNewIngredient = false;
         _ingCopyFrom = null;
@@ -446,7 +448,7 @@ async function copyIngredient(i) {
     // Новая несохранённая карточка с данными исходной позиции: в БД ничего не пишется до «Сохранить»
     await createDraftIngredientAndOpen();
     _newIngKind = isMaterial(src) ? 'material' : 'ingredient';
-    _ingCopyFrom = { package_price: src.package_price || 0, package_size: src.package_size || 1 };
+    _ingCopyFrom = { package_price: src.package_price || 0, package_size: src.package_size || 1, sale_price: src.sale_price || 0 };
     const nameInput = document.getElementById('idNameInput');
     const unitInput = document.getElementById('idUnitInput');
     if (nameInput) nameInput.value = src.name + t('common_copy_suffix');
@@ -474,7 +476,7 @@ async function openIngredientDetail(ingId) {
     const ing = ingredients.find(i => i.id === ingId);
     if (!ing) return;
     stockMode = isMaterial(ing) ? 'mat' : 'ing';
-    _fillMaterialAutoBox(ing);
+    _fillMaterialSaleBox(ing);
 
     document.getElementById('ingredientsList').classList.add('hidden');
     document.getElementById('ingredientDetail').classList.add('active');
@@ -613,32 +615,26 @@ async function saveStockAndPrice() {
 
 // ── Редактирование названия и единицы ингредиента ───────────────────────────
 
-// Предустановка материала: галочка «Добавлять в новые изделия автоматически» + количество на штуку.
-// В базе: ingredients.auto_add_qty (null = выключено).
-function _fillMaterialAutoBox(ing) {
-    const box = document.getElementById('idAutoBox');
+// Цена продажи материала (по умолчанию подставляется в заказ; 0 — в счёт не выставляется).
+// В базе: ingredients.sale_price (пусто = 0).
+function _fillMaterialSaleBox(ing) {
+    const box = document.getElementById('idSaleBox');
     if (!box) return;
     box.classList.toggle('hidden', !isMaterial(ing));
     if (!isMaterial(ing)) return;
-    const on = Number(ing.auto_add_qty) > 0;
-    document.getElementById('idAutoChk').checked = on;
-    document.getElementById('idAutoQtyRow').classList.toggle('hidden', !on);
-    document.getElementById('idAutoQty').value = on ? ing.auto_add_qty : '';
-    document.getElementById('idAutoUnit').textContent = unitAbbrev(ing.unit);
+    document.getElementById('idSalePrice').value = Number(ing.sale_price) > 0 ? ing.sale_price : '';
 }
-async function saveMaterialAuto() {
+async function saveMaterialSalePrice() {
     const ing = ingredients.find(i => i.id === currentIngredientId);
-    if (!ing || !isMaterial(ing)) return;
-    const on = document.getElementById('idAutoChk').checked;
-    let qty = parseFloat(document.getElementById('idAutoQty').value);
-    if (on && !(qty > 0)) qty = 1;
-    const val = on ? qty : null;
+    if (!ing || !isMaterial(ing) || _isNewIngredient) return;
+    const raw = parseFloat(document.getElementById('idSalePrice').value);
+    const val = raw > 0 ? parseFloat(raw.toFixed(2)) : 0;
     suppressRealtimeFor3s();
     try {
-        const { error } = await db.from('ingredients').update({ auto_add_qty: val }).eq('id', ing.id);
+        const { error } = await db.from('ingredients').update({ sale_price: val }).eq('id', ing.id);
         if (error) throw error;
-        ing.auto_add_qty = val;
-        _fillMaterialAutoBox(ing);
+        ing.sale_price = val;
+        _fillMaterialSaleBox(ing);
         showAutosaveToast();
     } catch (e) { console.error(e); showInfo(t('error_save_generic')); }
 }
