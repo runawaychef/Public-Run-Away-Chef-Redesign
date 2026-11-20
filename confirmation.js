@@ -46,7 +46,7 @@ function _confData() {
     const tot = _orderTotals(order);
     const paid = Number(_orderPaidTotals[order.id] || 0);
     const due = Math.max(0, Math.round((tot.grand - paid) * 100) / 100);
-    const items = (order.items || []).map((it, i) => ({
+    const items = orderBillItems(order).map((it, i) => ({
         product: it.product, quantity: it.quantity, price: it.price,
         sum: tot.lines[i] ? tot.lines[i].gross : (Number(it.quantity) || 0) * (Number(it.price) || 0),
     }));

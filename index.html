@@ -3644,19 +3644,21 @@ function hideSplashScreen() {
                         <h2 class="text-xs font-semibold text-gray-800 mb-1" data-i18n="ordmat_title">Материалы заказа</h2>
                         <table class="w-full table-auto table-clean mb-1">
                             <thead><tr style="background-color:#e3e8df;">
-                                <th class="p-1 text-xs w-[58%]" data-i18n="mat_col_material">Материал</th>
-                                <th class="p-1 text-xs w-[28%]" data-i18n="stats_col_qty">Кол-во</th>
-                                <th class="p-1 text-xs w-[14%]" data-i18n="sf_col_actions">Действия</th>
-                            </tr><tr class="tbl-gap"><th colspan="3"></th></tr></thead>
+                                <th class="p-1 text-xs w-[40%]" data-i18n="mat_col_material">Материал</th>
+                                <th class="p-1 text-xs w-[22%]" data-i18n="stats_col_qty">Кол-во</th>
+                                <th class="p-1 text-xs w-[22%]" data-i18n="stats_col_price">Цена</th>
+                                <th class="p-1 text-xs w-[16%]" data-i18n="sf_col_actions">Действия</th>
+                            </tr><tr class="tbl-gap"><th colspan="4"></th></tr></thead>
                             <tbody id="orderMatBody"></tbody>
                             <tbody>
-                                <tr class="tbl-gap"><td colspan="3"></td></tr>
+                                <tr class="tbl-gap"><td colspan="4"></td></tr>
                                 <tr class="new-item-row" style="background:#f4f1ea;">
                                     <td><div class="search-input-wrap">
                                         <input id="newOrdMat" placeholder="— материал —" autocomplete="off" class="table-text" data-i18n-placeholder="ordmat_pick">
                                         <div id="newOrdMatDropdown" class="search-dropdown hidden"></div>
                                     </div></td>
                                     <td><input id="newOrdMatQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" placeholder="1" class="table-text"></td>
+                                    <td><input id="newOrdMatPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" placeholder="—" class="table-text"></td>
                                     <td class="text-center"><button onpointerup="addOrderMaterial()" class="btn bg-[#7c9473] text-white px-2 py-0.5 rounded-xl text-xs hover:bg-[#6c8464]" data-i18n="sf_add_btn">+ Добавить</button></td>
                                 </tr>
                             </tbody>
@@ -3783,6 +3785,11 @@ function hideSplashScreen() {
                 <div class="mb-3">
                     <label class="itm-lbl"><span data-i18n="ordmat_qty_total">Количество на весь заказ</span>, <span id="editOrdMatUnit"></span></label>
                     <input id="editOrdMatQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-0.5 rounded-xl w-full table-text">
+                </div>
+                <div id="editOrdMatPriceWrap" class="mb-3">
+                    <label class="itm-lbl" data-i18n="ordmat_price_label">Цена в счёт за единицу (необязательно)</label>
+                    <input id="editOrdMatPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" placeholder="—" class="border p-0.5 rounded-xl w-full table-text">
+                    <div class="text-xs text-gray-400 mt-1" data-i18n="ordmat_price_hint">Пусто — материал только в себестоимости, в счёте его не будет</div>
                 </div>
                 <div class="flex gap-2">
                     <button onclick="closeModal()" class="pill-btn-secondary flex-1 justify-center" data-i18n="common_cancel">Отмена</button>
@@ -5207,8 +5214,8 @@ function hideSplashScreen() {
 </div><!-- container -->
 
 <script src="dates.js?v=10"></script>
-    <script src="money.js?v=15"></script>
-    <script src="i18n-core.js?v=199"></script>
+    <script src="money.js?v=16"></script>
+    <script src="i18n-core.js?v=200"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=21"></script>
     <script src="auth.js?v=34"></script>
@@ -5221,18 +5228,18 @@ function hideSplashScreen() {
 <script src="batches.js?v=18"></script>
 <script src="semifinished.js?v=76"></script>
 <script src="products.js?v=66"></script>
-<script src="customers.js?v=78"></script>
+<script src="customers.js?v=79"></script>
 <script src="calendar.js?v=17"></script>
-<script src="orders.js?v=170"></script>
+<script src="orders.js?v=171"></script>
 <script src="dashboard.js?v=24"></script>
-<script src="invoice.js?v=55"></script>
+<script src="invoice.js?v=56"></script>
 <script src="send-document.js?v=44"></script>
-<script src="confirmation.js?v=2"></script>
+<script src="confirmation.js?v=3"></script>
 <script src="payments.js?v=38"></script>
 <script src="documents.js?v=16"></script>
 <script src="documents2.js?v=34"></script>
 <script src="bank.js?v=13"></script>
-<script src="stats.js?v=44"></script>
+<script src="stats.js?v=45"></script>
 <script src="history.js?v=10"></script>
 <script src="modals.js?v=24"></script>
 <script src="demoData.js?v=30"></script>

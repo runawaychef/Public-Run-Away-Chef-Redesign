@@ -339,7 +339,7 @@ async function freezeDocumentSnapshot(order, docType, existing, opts) {
         dueDate,
         customerNameFallback: order.customer || '—',
         order: {
-            items: (order.items || []).map(it => ({ product: it.product, quantity: it.quantity, price: it.price, unit: it.product_id ? (unitById[it.product_id] || null) : null })),
+            items: orderBillItems(order).map(it => ({ product: it.product, quantity: it.quantity, price: it.price, unit: it._mat ? (it.unit || null) : (it.product_id ? (unitById[it.product_id] || null) : null) })),
             discount: order.discount,
             vat_exempt: orderVatExempt(order),
         },
@@ -923,10 +923,11 @@ async function freezeConsolidatedInvoice(orderIds, custId, opts) {
     const orderInfos = [];
     list.forEach(o => {
         const ex = orderVatExempt(o);
-        const tt = calcTotals(o.items, o.discount, ex, rate);
+        const billItems = orderBillItems(o);
+        const tt = calcTotals(billItems, o.discount, ex, rate);
         const pct = ex ? '0%' : (rate * 100).toFixed(0) + '%';
-        (o.items || []).forEach((it, i) => {
-            const unit = it.product_id ? (unitById[it.product_id] || null) : null;
+        billItems.forEach((it, i) => {
+            const unit = it._mat ? (it.unit || null) : (it.product_id ? (unitById[it.product_id] || null) : null);
             const price = Number(it.price) || 0;
             const key = (it.product || '') + '|' + (unit || '') + '|' + price + '|' + pct;
             const g = groups.get(key) || { product: it.product || '', unit, price, vatPct: pct, qty: 0, netC: 0, vatC: 0, grossC: 0 };

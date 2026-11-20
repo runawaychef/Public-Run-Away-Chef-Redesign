@@ -1294,7 +1294,7 @@ function openOrdersProductsModal() {
     const agg = {};
     orders_.forEach(o => {
         const tot = _orderTotals(o);
-        (o.items || []).forEach((it, i) => {
+        orderBillItems(o).forEach((it, i) => {
             const key = it.product || '—';
             const line = tot.lines[i] || { net: 0, vat: 0, gross: 0 };
             const a = agg[key] || (agg[key] = { qty: 0, gross: 0, vat: 0 });
@@ -1613,7 +1613,7 @@ async function copyOrder(i) {
             }
             // Материалы, добавленные в исходный заказ вручную, переносятся в копию
             for (const m of (o.materials || [])) {
-                try { await _setOrderMaterialQty(copy, m.ingredient_id, Number(m.quantity)); }
+                try { await _setOrderMaterialQty(copy, m.ingredient_id, Number(m.quantity), Number(m.price) > 0 ? Number(m.price) : null); }
                 catch (e) { console.error('Не удалось скопировать материал заказа:', e); }
             }
         }
@@ -2726,6 +2726,7 @@ function renderOrderMaterials(order) {
         tr.innerHTML = `
             <td class="p-0.5 table-text">${escapeHtml(ing ? ing.name : '')}${r.manual > 0 ? '' : ` <span class="text-gray-400" style="font-size:10px;">${escapeHtml(t('ordmat_from_recipe'))}</span>`}</td>
             <td class="p-0.5 table-text text-center whitespace-nowrap">${fmt(r.recipe + r.manual)} ${escapeHtml(ing ? unitAbbrev(ing.unit) : '')}</td>
+            <td class="p-0.5 table-text text-center whitespace-nowrap">${r.price > 0 ? formatMoney(r.price) : '—'}</td>
             <td class="p-0.5 text-center" onclick="event.stopPropagation()">${hasPermission('can_delete') ? svgDelete(`deleteOrderMat(${r.id})`) : ''}</td>`;
         body.appendChild(tr);
     });
@@ -2738,11 +2739,12 @@ function renderOrderMaterials(order) {
 function _orderMatRows(order) {
     const map = {};
     const rec = orderRecipeMaterials(order);
-    Object.keys(rec).forEach(id => { map[id] = { id: Number(id), recipe: rec[id], manual: 0 }; });
+    Object.keys(rec).forEach(id => { map[id] = { id: Number(id), recipe: rec[id], manual: 0, price: 0 }; });
     (order.materials || []).forEach(m => {
         const k = m.ingredient_id;
-        if (!map[k]) map[k] = { id: k, recipe: 0, manual: 0 };
+        if (!map[k]) map[k] = { id: k, recipe: 0, manual: 0, price: 0 };
         map[k].manual += Number(m.quantity);
+        map[k].price = Number(m.price) > 0 ? Number(m.price) : 0; // цена в счёт — только у добавленного вручную
     });
     return Object.keys(map).map(k => map[k]).sort((x, y) => {
         const ix = ingredients.find(i => i.id === x.id), iy = ingredients.find(i => i.id === y.id);
@@ -2751,7 +2753,8 @@ function _orderMatRows(order) {
 }
 
 // Записать количество материала в заказе: вернуть старое списание, списать новое, сохранить строку
-async function _setOrderMaterialQty(order, ingredientId, newQty) {
+// price: undefined — не менять, null — убрать цену (материал только в себестоимости), число — цена в счёт
+async function _setOrderMaterialQty(order, ingredientId, newQty, price) {
     if (!order.materials) order.materials = [];
     const cur = order.materials.find(m => m.ingredient_id === ingredientId);
     if (cur) await reverseOrderMaterialStock(order, ingredientId);
@@ -2764,14 +2767,17 @@ async function _setOrderMaterialQty(order, ingredientId, newQty) {
     }
     const cost = await writeOffOrderMaterialStock(order, ingredientId, newQty);
     if (cur) {
-        await dbMust(db.from('order_materials').update({ quantity: newQty, cost }).eq('id', cur.id));
+        const upd = { quantity: newQty, cost };
+        if (price !== undefined) upd.price = price;
+        await dbMust(db.from('order_materials').update(upd).eq('id', cur.id));
         cur.quantity = newQty; cur.cost = cost;
+        if (price !== undefined) cur.price = price;
     } else {
         const { data, error } = await db.from('order_materials')
-            .insert({ org_id: currentOrgId, order_id: order.id, ingredient_id: ingredientId, quantity: newQty, cost })
+            .insert({ org_id: currentOrgId, order_id: order.id, ingredient_id: ingredientId, quantity: newQty, cost, price: price != null ? price : null })
             .select().single();
         if (error) throw error;
-        order.materials.push({ id: data.id, ingredient_id: ingredientId, quantity: newQty, cost, price: null });
+        order.materials.push({ id: data.id, ingredient_id: ingredientId, quantity: newQty, cost, price: price != null ? price : null });
     }
 }
 
@@ -2780,15 +2786,18 @@ async function addOrderMaterial() {
     if (!order) return;
     const name = document.getElementById('newOrdMat').value.trim();
     const qty = parseFloat(document.getElementById('newOrdMatQty').value);
+    const priceRaw = parseFloat(document.getElementById('newOrdMatPrice').value);
+    const price = priceRaw > 0 ? parseFloat(priceRaw.toFixed(2)) : undefined; // пусто — не менять (у нового = без цены)
     const ing = ingredients.find(x => isMaterial(x) && x.name === name);
     if (!ing || !(qty > 0)) { showInfo(t('ordmat_choose_and_qty')); return; }
     const cur = (order.materials || []).find(m => m.ingredient_id === ing.id);
     suppressRealtimeFor3s();
     showLoading();
     try {
-        await _setOrderMaterialQty(order, ing.id, (cur ? Number(cur.quantity) : 0) + qty);
+        await _setOrderMaterialQty(order, ing.id, (cur ? Number(cur.quantity) : 0) + qty, price);
         document.getElementById('newOrdMat').value = '';
         document.getElementById('newOrdMatQty').value = '';
+        document.getElementById('newOrdMatPrice').value = '';
         renderOrderMaterials(order);
         renderDetailItems(order);
         logActivity('item', `${t('ordmat_log_added')} №${order.id}: «${ing.name}» × ${qty}`, order.id);
@@ -2806,6 +2815,10 @@ function openEditOrderMatModal(ingId) {
     document.getElementById('editOrdMatName').textContent = ing.name;
     document.getElementById('editOrdMatUnit').textContent = unitAbbrev(ing.unit);
     document.getElementById('editOrdMatQty').value = Math.round((row.recipe + row.manual) * 1e4) / 1e4;
+    // Цена в счёт — только у материала, добавленного вручную (рецептные в счёт не идут)
+    const pw = document.getElementById('editOrdMatPriceWrap');
+    if (pw) pw.style.display = row.recipe > 0 ? 'none' : '';
+    document.getElementById('editOrdMatPrice').value = row.price > 0 ? row.price : '';
     document.getElementById('editOrdMatModal').style.display = 'flex';
 }
 async function saveOrderMatEdit() {
@@ -2815,14 +2828,30 @@ async function saveOrderMatEdit() {
     const qty = parseFloat(document.getElementById('editOrdMatQty').value);
     if (!row) { closeModal(); return; }
     if (!(qty > 0)) { showInfo(t('common_fill_correctly')); return; }
+    const priceRaw = parseFloat(document.getElementById('editOrdMatPrice').value);
+    const newPrice = priceRaw > 0 ? parseFloat(priceRaw.toFixed(2)) : null;
+    const priceEditable = row.recipe <= 0;
+    const priceChanged = priceEditable && (newPrice || 0) !== (row.price || 0);
     closeModal();
-    if (Math.abs(qty - (row.recipe + row.manual)) < 1e-9) return; // не менялось
+    const qtyChanged = Math.abs(qty - (row.recipe + row.manual)) >= 1e-9;
+    if (!qtyChanged && !priceChanged) return; // не менялось
     suppressRealtimeFor3s();
     showLoading();
     try {
+        if (!qtyChanged) {
+            // Меняется только цена: склад не трогаем
+            const cur = (order.materials || []).find(m => m.ingredient_id === ingId);
+            if (cur) {
+                await updateChecked(db.from('order_materials').update({ price: newPrice }).eq('id', cur.id));
+                cur.price = newPrice;
+            }
+            renderOrderMaterials(order);
+            renderDetailItems(order);
+            return;
+        }
         // Строка становится «ручной» с фиксированным количеством: из рецептов материал убираем
         if (row.recipe > 0) await excludeRecipeMaterial(order, ingId);
-        await _setOrderMaterialQty(order, ingId, qty);
+        await _setOrderMaterialQty(order, ingId, qty, priceEditable ? newPrice : undefined);
         renderOrderMaterials(order);
         renderDetailItems(order);
     } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); renderOrderMaterials(order); }

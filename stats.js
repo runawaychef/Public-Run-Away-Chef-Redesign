@@ -35,7 +35,7 @@ function downloadBackup() {
         discount: o.discount,
         vat_exempt: o.vat_exempt,
         notes: o.notes,
-        items: o.items.map(it => ({ product: it.product, quantity: it.quantity, price: it.price }))
+        items: orderBillItems(o).map(it => ({ product: it.product, quantity: it.quantity, price: it.price }))
     }));
     const data = {
         products: products.map(p => ({ name: p.name, price: p.price })),

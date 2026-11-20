@@ -503,7 +503,7 @@ function openCustomerReportPreview() {
     // Сводим количество и сумму по каждому изделию за период
     const byProduct = {}; // name -> { qty, sum }
     custOrders.forEach(o => {
-        (o.items || []).forEach(it => {
+        orderBillItems(o).forEach(it => {
             if (!byProduct[it.product]) byProduct[it.product] = { qty: 0, sum: 0 };
             byProduct[it.product].qty += Number(it.quantity) || 0;
             byProduct[it.product].sum += (Number(it.quantity) || 0) * (Number(it.price) || 0);
@@ -589,7 +589,7 @@ async function downloadCustomerReportPdf() {
     // если пользователь успел что-то поменять в заказах, пока попап был открыт.
     const byProduct = {};
     custOrders.forEach(o => {
-        (o.items || []).forEach(it => {
+        orderBillItems(o).forEach(it => {
             if (!byProduct[it.product]) byProduct[it.product] = { qty: 0, sum: 0 };
             byProduct[it.product].qty += Number(it.quantity) || 0;
             byProduct[it.product].sum += (Number(it.quantity) || 0) * (Number(it.price) || 0);

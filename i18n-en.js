@@ -651,6 +651,8 @@ I18N.en = {
         ordmat_pick: '— material —',
         orders_copy_hint: 'This is a copy of order #{n}. Check the customer and date, then tap “Save order” at the bottom — the copy gets its number then.',
         orders_copy_leave_confirm: 'Save the copy of this order? If you delete it, the copy is discarded.',
+        ordmat_price_label: 'Invoice price per unit (optional)',
+        ordmat_price_hint: 'Empty — the material is only in the cost and will not appear on the invoice',
         ordmat_off_label: 'Without product materials',
         ordmat_off_hint: 'Packaging from the recipe is not deducted and is left out of the cost',
         ordmat_off_tag: 'no materials',
