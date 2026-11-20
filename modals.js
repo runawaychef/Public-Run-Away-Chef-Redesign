@@ -120,8 +120,7 @@ async function confirmDelete() {
             }
         } else if (deleteType === 'ordmat') {
             const order = orders.find(o => o.id === currentOrderId);
-            const m = order && (order.materials || [])[deleteId];
-            if (m) await removeOrderMaterial(order, m);
+            if (order) await removeOrderMaterial(order, deleteId);
         } else if (deleteType === 'ingredient') {
             const ing = ingredients[deleteId];
             const wasOpenInDetail = ing.id === currentIngredientId;

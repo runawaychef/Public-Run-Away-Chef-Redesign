@@ -3867,10 +3867,6 @@ function hideSplashScreen() {
                 <input id="editItemQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" class="border p-1 rounded-xl mb-2 w-full text-xs" style="background:#f4f1ea;">
                 <label class="text-xs text-gray-500">Цена</label>
                 <input id="editItemPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" class="border p-1 rounded-xl mb-3 w-full text-xs" style="background:#f4f1ea;">
-                <label id="editItemNoMatRow" class="flex items-start gap-2 mb-3 table-text text-gray-700" style="cursor:pointer;">
-                    <input id="editItemNoMat" type="checkbox" class="w-4 h-4" style="accent-color:#7c9473; margin-top:2px;">
-                    <span><span data-i18n="ordmat_off_label">Без материалов изделия</span><br><span class="text-gray-400" style="font-size:11px;" data-i18n="ordmat_off_hint">Упаковка из рецепта не списывается и не входит в себестоимость</span></span>
-                </label>
                 <div class="flex gap-2">
                     <button onclick="saveItemEdit()" class="pill-btn flex-1 justify-center">Сохранить</button>
                     <button onclick="closeModal()" class="pill-btn-secondary" style="width:90px;">Отмена</button>
@@ -5218,7 +5214,7 @@ function hideSplashScreen() {
     <script src="auth.js?v=34"></script>
     <script src="employees.js?v=80"></script>
     <script src="company.js?v=29"></script>
-    <script src="inventory.js?v=86"></script>
+    <script src="inventory.js?v=87"></script>
     <script src="billing.js?v=26"></script>
     <script src="push.js?v=12"></script>
 <script src="ingredients.js?v=78"></script>
@@ -5227,7 +5223,7 @@ function hideSplashScreen() {
 <script src="products.js?v=65"></script>
 <script src="customers.js?v=78"></script>
 <script src="calendar.js?v=17"></script>
-<script src="orders.js?v=168"></script>
+<script src="orders.js?v=169"></script>
 <script src="dashboard.js?v=24"></script>
 <script src="invoice.js?v=55"></script>
 <script src="send-document.js?v=44"></script>
@@ -5238,7 +5234,7 @@ function hideSplashScreen() {
 <script src="bank.js?v=13"></script>
 <script src="stats.js?v=44"></script>
 <script src="history.js?v=10"></script>
-<script src="modals.js?v=23"></script>
+<script src="modals.js?v=24"></script>
 <script src="demoData.js?v=30"></script>
 <script src="helpers.js?v=53"></script>
 <script>
@@ -5334,8 +5330,8 @@ async function loadAllData(silent) {
             fetchAllRows(() => db.from('customers').select('id, name, contact, email, discount, vat_exempt, notes, address, reg_number, vat_code, personal_code, entity_type, payment_term_days, invoice_mode').eq('org_id', currentOrgId).order('name').order('id')),
             // invoice_snapshot / delivery_note_snapshot сюда НЕ входят: это копии документов с логотипом
             // (у большой пекарни ~15 МБ), в списке они не нужны — документы читают свой снимок из базы сами.
-            fetchAllRows(() => db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending, is_confirmed, is_demo, created_by, inv_no, dn_no, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via, invoice_sent_message_id, delivery_note_sent_message_id, invoice_delivery_status, delivery_note_delivery_status, consolidated_invoice_id, cons_excluded').eq('org_id', currentOrgId).is('deleted_at', null).order('id')),
-            fetchAllRows(() => db.from('order_items').select('id, order_id, product_id, quantity, price, item_cost, no_materials').eq('org_id', currentOrgId).order('id')),
+            fetchAllRows(() => db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending, is_confirmed, is_demo, created_by, mat_excluded, inv_no, dn_no, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via, invoice_sent_message_id, delivery_note_sent_message_id, invoice_delivery_status, delivery_note_delivery_status, consolidated_invoice_id, cons_excluded').eq('org_id', currentOrgId).is('deleted_at', null).order('id')),
+            fetchAllRows(() => db.from('order_items').select('id, order_id, product_id, quantity, price, item_cost').eq('org_id', currentOrgId).order('id')),
             db.from('employees').select('id, name').eq('org_id', currentOrgId).order('name').limit(1000),
             fetchAllRows(() => db.from('ingredients').select('id, name, package_price, package_size, unit, shelf_life_days, kind, auto_add_qty').eq('org_id', currentOrgId).order('name').order('id')),
             fetchAllRows(() => db.from('product_ingredients').select('id, product_id, ingredient_id, semi_finished_id, quantity').eq('org_id', currentOrgId).order('id')),
@@ -5420,8 +5416,7 @@ async function loadAllData(silent) {
                 product: prod ? prod.name : '(удалённое изделие)',
                 quantity: Number(it.quantity),
                 price: Number(it.price),
-                item_cost: it.item_cost != null ? Number(it.item_cost) : null,
-                no_materials: !!it.no_materials
+                item_cost: it.item_cost != null ? Number(it.item_cost) : null
             });
         });
         if (omRes && omRes.error) console.error('order_materials:', omRes.error);
@@ -5464,7 +5459,8 @@ async function loadAllData(silent) {
                 invoice_delivery_status: o.invoice_delivery_status || null,
                 delivery_note_delivery_status: o.delivery_note_delivery_status || null,
                 items: itemsByOrder[o.id] || [],
-                materials: matsByOrder[o.id] || []
+                materials: matsByOrder[o.id] || [],
+                mat_excluded: Array.isArray(o.mat_excluded) ? o.mat_excluded.map(Number) : []
             };
         });
 

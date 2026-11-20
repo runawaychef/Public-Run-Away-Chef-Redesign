@@ -182,7 +182,7 @@ function _deferredNeedMap() {
             if (!prod || !prod.ingredients) return;
             const factor = 1 / Number(prod.batch_size || 1);
             prod.ingredients.forEach(ri => {
-                if (item.no_materials && typeof _isMatRow === 'function' && _isMatRow(ri)) return;
+                if (Array.isArray(o.mat_excluded) && o.mat_excluded.includes(ri.ingredient_id) && typeof _isMatRow === 'function' && _isMatRow(ri)) return;
                 const key = ri.semi_finished_id ? `sf_${ri.semi_finished_id}` : ri.ingredient_id ? `ing_${ri.ingredient_id}` : null;
                 if (!key) return;
                 map[key] = (map[key] || 0) + Number(ri.quantity) * Number(item.quantity) * factor;
