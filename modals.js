@@ -118,6 +118,10 @@ async function confirmDelete() {
                 renderDetailItems(order);
                 logActivity('item', `${t('log_position_deleted')} «${item.product}» × ${item.quantity} ${t('log_from_order')} №${order.id}`, order.id);
             }
+        } else if (deleteType === 'ordmat') {
+            const order = orders.find(o => o.id === currentOrderId);
+            const m = order && (order.materials || [])[deleteId];
+            if (m) await removeOrderMaterial(order, m);
         } else if (deleteType === 'ingredient') {
             const ing = ingredients[deleteId];
             const wasOpenInDetail = ing.id === currentIngredientId;

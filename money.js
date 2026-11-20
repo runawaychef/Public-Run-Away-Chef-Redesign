@@ -184,7 +184,10 @@ function orderItemCost(item) {
 
 // Полная себестоимость заказа (сумма себестоимости всех позиций)
 function orderCost(order) {
-    return (order.items || []).reduce((sum, it) => sum + orderItemCost(it), 0);
+    const items = (order.items || []).reduce((sum, it) => sum + orderItemCost(it), 0);
+    // Материалы, добавленные в заказ вручную (order_materials.cost — фактическое списание)
+    const mats = (order.materials || []).reduce((sum, m) => sum + (Number(m.cost) || 0), 0);
+    return items + mats;
 }
 
 // Прибыль по заказу (сумма после скидки и НДС минус себестоимость)

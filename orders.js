@@ -1057,7 +1057,7 @@ async function _processPendingInventoryOnce() {
         for (const it of (order.items || [])) {
             const prod = products.find(p => p.id === it.product_id);
             if (!prod) continue;
-            const actualCost = await writeOffInventoryForItem(prod, it.quantity, order.id, it.id);
+            const actualCost = await writeOffInventoryForItem(itemRecipeProd(prod, it), it.quantity, order.id, it.id);
             if (actualCost != null && Math.abs(actualCost - (it.item_cost || 0)) > 0.0001) {
                 try {
                     await dbMust(db.from('order_items').update({ item_cost: actualCost }).eq('id', it.id));
@@ -1563,7 +1563,8 @@ async function copyOrder(i) {
             due_date: null,
             inventory_pending: false,
             is_confirmed: true,
-            items: []
+            items: [],
+            materials: []
         };
 
         // orders.push(copy) — намеренно ДО цикла списания склада ниже: writeOffInventoryForItem()
@@ -1577,14 +1578,14 @@ async function copyOrder(i) {
         if (o.items.length) {
             const rows = o.items.map(it => {
                 const prod = products.find(p => p.id === it.product_id);
-                const itemCost = prod ? parseFloat((productUnitCost(prod) * it.quantity).toFixed(4)) : null;
-                return { org_id: currentOrgId, order_id: copy.id, product_id: it.product_id, quantity: it.quantity, price: it.price, item_cost: itemCost };
+                const itemCost = prod ? parseFloat((productUnitCost(itemRecipeProd(prod, it)) * it.quantity).toFixed(4)) : null;
+                return { org_id: currentOrgId, order_id: copy.id, product_id: it.product_id, quantity: it.quantity, price: it.price, item_cost: itemCost, no_materials: !!it.no_materials };
             });
             const { data: itemsData, error: itemsErr } = await db.from('order_items').insert(rows).select();
             if (itemsErr) throw itemsErr;
             copy.items = (itemsData || []).map(it => {
                 const prod = products.find(p => p.id === it.product_id);
-                return { id: it.id, product_id: it.product_id, product: prod ? prod.name : it.product_id, quantity: Number(it.quantity), price: Number(it.price), item_cost: it.item_cost != null ? Number(it.item_cost) : null };
+                return { id: it.id, product_id: it.product_id, product: prod ? prod.name : it.product_id, quantity: Number(it.quantity), price: Number(it.price), item_cost: it.item_cost != null ? Number(it.item_cost) : null, no_materials: !!it.no_materials };
             });
 
             // Снимок рецепта + списание склада для каждой скопированной позиции.
@@ -1594,9 +1595,10 @@ async function copyOrder(i) {
             for (const it of copy.items) {
                 const prod = products.find(p => p.id === it.product_id);
                 if (!prod) continue;
-                await saveOrderItemIngredients(it.id, prod, it.quantity);
+                const effProd = itemRecipeProd(prod, it);
+                await saveOrderItemIngredients(it.id, effProd, it.quantity);
                 if (shouldWriteOffNow(copy.date)) {
-                    const actualCost = await writeOffInventoryForItem(prod, it.quantity, copy.id, it.id);
+                    const actualCost = await writeOffInventoryForItem(effProd, it.quantity, copy.id, it.id);
                     if (actualCost != null && it.item_cost != null && Math.abs(actualCost - it.item_cost) > 0.0001) {
                         await dbMust(db.from('order_items').update({ item_cost: actualCost }).eq('id', it.id));
                         it.item_cost = actualCost;
@@ -1607,6 +1609,11 @@ async function copyOrder(i) {
                         copy.inventory_pending = true;
                     } catch (e) { console.error('Не удалось отметить inventory_pending:', e); }
                 }
+            }
+            // Материалы, добавленные в исходный заказ вручную, переносятся в копию
+            for (const m of (o.materials || [])) {
+                try { await _setOrderMaterialQty(copy, m.ingredient_id, Number(m.quantity)); }
+                catch (e) { console.error('Не удалось скопировать материал заказа:', e); }
             }
         }
 
@@ -2279,7 +2286,7 @@ function renderDetailItems(order) {
             row.className = 'border-b cursor-pointer';
             row.onclick = () => openEditItemModal(i);
             row.innerHTML = `
-                <td class="p-0.5 table-text">${escapeHtml(item.product)}</td>
+                <td class="p-0.5 table-text">${escapeHtml(item.product)}${item.no_materials ? ` <span class="text-gray-400" style="font-size:10px;">${escapeHtml(t('ordmat_off_tag'))}</span>` : ''}</td>
                 <td class="p-0.5 table-text text-center whitespace-nowrap">${item.quantity}${unitLabel ? ' ' + unitLabel : ''}</td>
                 <td class="p-0.5 table-text text-center whitespace-nowrap">${formatMoney(item.price)}</td>
                 <td class="p-0.5 table-text text-center font-medium whitespace-nowrap">${total}</td>
@@ -2289,6 +2296,7 @@ function renderDetailItems(order) {
             tbody.appendChild(row);
         });
     }
+    renderOrderMaterials(order);
     // Итого
     const totQty    = (order.items || []).reduce((s, it) => s + Number(it.quantity || 0), 0);
     const subtotal  = orderTotal(order);
@@ -2432,6 +2440,7 @@ function openEditItemModal(itemIdx) {
     sel.value = item.product;
     document.getElementById('editItemQty').value   = item.quantity;
     document.getElementById('editItemPrice').value = item.price.toFixed(2);
+    document.getElementById('editItemNoMat').checked = !!item.no_materials;
     document.getElementById('editItemModal').style.display = 'flex';
 }
 
@@ -2468,17 +2477,19 @@ async function saveItemEdit() {
         }
         await dbMust(db.from('order_item_ingredients').delete().eq('order_item_id', item.id));
 
-        const itemCost = parseFloat((productUnitCost(prod) * quantity).toFixed(4));
+        const noMat = !!document.getElementById('editItemNoMat').checked;
+        const effProd = itemRecipeProd(prod, { no_materials: noMat });
+        const itemCost = parseFloat((productUnitCost(effProd) * quantity).toFixed(4));
         await updateChecked(db.from('order_items').update({
-            product_id: prod.id, quantity, price: parseFloat(price.toFixed(2)), item_cost: itemCost
+            product_id: prod.id, quantity, price: parseFloat(price.toFixed(2)), item_cost: itemCost, no_materials: noMat
         }).eq('id', item.id));
-        order.items[editItemIdx] = { id: item.id, product_id: prod.id, product: prod.name, quantity, price: parseFloat(price.toFixed(2)), item_cost: itemCost };
+        order.items[editItemIdx] = { id: item.id, product_id: prod.id, product: prod.name, quantity, price: parseFloat(price.toFixed(2)), item_cost: itemCost, no_materials: noMat };
 
         // Новый снимок рецепта — нужен всегда, независимо от того, спишем ли склад сейчас
-        const snapPromise = saveOrderItemIngredients(item.id, prod, quantity);
+        const snapPromise = saveOrderItemIngredients(item.id, effProd, quantity);
         if (!order.inventory_pending) {
             const [actualCost] = await Promise.all([
-                writeOffInventoryForItem(prod, quantity, order.id, item.id),
+                writeOffInventoryForItem(effProd, quantity, order.id, item.id),
                 snapPromise
             ]);
             if (actualCost != null && Math.abs(actualCost - itemCost) > 0.0001) {
@@ -2608,6 +2619,175 @@ function collectIngredients(recipeItems, itemQty, qtyFactor, result) {
     });
 }
 
+// ==================== МАТЕРИАЛЫ ЗАКАЗА (заливка А, v917) ====================
+// Материалы изделия (упаковка из рецепта) идут вместе с позицией. У позиции есть переключатель
+// «Без материалов изделия» (order_items.no_materials): тогда они не списываются и не входят в
+// себестоимость. Дополнительно в заказ можно добавить материалы вручную (order_materials):
+// количество на весь заказ, списание со склада без привязки к позиции.
+
+// Изделие без материалов — для расчёта себестоимости, снимка рецепта и списания позиции
+function itemRecipeProd(prod, item) {
+    if (!prod || !item || !item.no_materials) return prod;
+    return Object.assign({}, prod, { ingredients: (prod.ingredients || []).filter(ri => !_isMatRow(ri)) });
+}
+
+// Материалы из рецептов позиций заказа (сумма по заказу), без позиций с «Без материалов»
+function orderRecipeMaterials(order) {
+    const map = {};
+    (order.items || []).forEach(it => {
+        if (it.no_materials) return;
+        const prod = products.find(p => p.id === it.product_id);
+        if (!prod) return;
+        const f = Number(it.quantity) / Number(prod.batch_size || 1);
+        (prod.ingredients || []).forEach(ri => {
+            if (!_isMatRow(ri)) return;
+            map[ri.ingredient_id] = (map[ri.ingredient_id] || 0) + Number(ri.quantity) * f;
+        });
+    });
+    return Object.keys(map).map(id => {
+        const ing = ingredients.find(x => x.id === Number(id));
+        return { ingredient_id: Number(id), name: ing ? ing.name : '', unit: ing ? ing.unit : '', qty: map[id] };
+    });
+}
+
+let _orderMatOpenFor = null; // заказ, у которого блок раскрыт ссылкой «+ Материал»
+function openOrderMatBlock() {
+    const order = orders.find(o => o.id === currentOrderId);
+    if (!order) return;
+    _orderMatOpenFor = order.id;
+    renderOrderMaterials(order);
+    const inp = document.getElementById('newOrdMat');
+    if (inp) inp.focus();
+}
+
+function renderOrderMaterials(order) {
+    const wrap = document.getElementById('orderMatWrap');
+    const link = document.getElementById('orderMatLinkRow');
+    const body = document.getElementById('orderMatBody');
+    if (!wrap || !link || !body) return;
+    const recipe = orderRecipeMaterials(order);
+    const manual = order.materials || [];
+    const show = recipe.length > 0 || manual.length > 0 || _orderMatOpenFor === order.id;
+    wrap.classList.toggle('hidden', !show);
+    link.classList.toggle('hidden', show);
+    body.innerHTML = '';
+    if (!show) return;
+    const fmt = q => String(Math.round(Number(q) * 100) / 100);
+    recipe.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b';
+        tr.innerHTML = `
+            <td class="p-0.5 table-text">${escapeHtml(r.name)} <span class="text-gray-400" style="font-size:10px;">${escapeHtml(t('ordmat_from_recipe'))}</span></td>
+            <td class="p-0.5 table-text text-center whitespace-nowrap">${fmt(r.qty)} ${escapeHtml(unitAbbrev(r.unit))}</td>
+            <td class="p-0.5 text-center"></td>`;
+        body.appendChild(tr);
+    });
+    manual.forEach((m, i) => {
+        const ing = ingredients.find(x => x.id === m.ingredient_id);
+        const tr = document.createElement('tr');
+        tr.className = 'border-b';
+        tr.style.cursor = 'pointer';
+        tr.onclick = () => openEditOrderMatModal(i);
+        tr.innerHTML = `
+            <td class="p-0.5 table-text">${escapeHtml(ing ? ing.name : '')}</td>
+            <td class="p-0.5 table-text text-center whitespace-nowrap">${fmt(m.quantity)} ${escapeHtml(ing ? unitAbbrev(ing.unit) : '')}</td>
+            <td class="p-0.5 text-center" onclick="event.stopPropagation()">${hasPermission('can_delete') ? svgDelete(`deleteOrderMat(${i})`) : ''}</td>`;
+        body.appendChild(tr);
+    });
+    // Выбор: только материалы со склада
+    setupSearchDropdown('newOrdMat', 'newOrdMatDropdown', () =>
+        ingredients.filter(m => isMaterial(m)).map(m => m.name).sort((x, y) => x.localeCompare(y)));
+}
+
+// Записать количество материала в заказе: вернуть старое списание, списать новое, сохранить строку
+async function _setOrderMaterialQty(order, ingredientId, newQty) {
+    if (!order.materials) order.materials = [];
+    const cur = order.materials.find(m => m.ingredient_id === ingredientId);
+    if (cur) await reverseOrderMaterialStock(order, ingredientId);
+    if (!(newQty > 0)) {
+        if (cur) {
+            await dbMust(db.from('order_materials').delete().eq('id', cur.id));
+            order.materials = order.materials.filter(m => m !== cur);
+        }
+        return;
+    }
+    const cost = await writeOffOrderMaterialStock(order, ingredientId, newQty);
+    if (cur) {
+        await dbMust(db.from('order_materials').update({ quantity: newQty, cost }).eq('id', cur.id));
+        cur.quantity = newQty; cur.cost = cost;
+    } else {
+        const { data, error } = await db.from('order_materials')
+            .insert({ org_id: currentOrgId, order_id: order.id, ingredient_id: ingredientId, quantity: newQty, cost })
+            .select().single();
+        if (error) throw error;
+        order.materials.push({ id: data.id, ingredient_id: ingredientId, quantity: newQty, cost, price: null });
+    }
+}
+
+async function addOrderMaterial() {
+    const order = orders.find(o => o.id === currentOrderId);
+    if (!order) return;
+    const name = document.getElementById('newOrdMat').value.trim();
+    const qty = parseFloat(document.getElementById('newOrdMatQty').value);
+    const ing = ingredients.find(x => isMaterial(x) && x.name === name);
+    if (!ing || !(qty > 0)) { showInfo(t('ordmat_choose_and_qty')); return; }
+    const cur = (order.materials || []).find(m => m.ingredient_id === ing.id);
+    suppressRealtimeFor3s();
+    showLoading();
+    try {
+        await _setOrderMaterialQty(order, ing.id, (cur ? Number(cur.quantity) : 0) + qty);
+        document.getElementById('newOrdMat').value = '';
+        document.getElementById('newOrdMatQty').value = '';
+        renderOrderMaterials(order);
+        renderDetailItems(order);
+        logActivity('item', `${t('ordmat_log_added')} №${order.id}: «${ing.name}» × ${qty}`, order.id);
+    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); renderOrderMaterials(order); }
+    finally { hideLoading(); }
+}
+
+let _editOrdMatIdx = null;
+function openEditOrderMatModal(i) {
+    const order = orders.find(o => o.id === currentOrderId);
+    const m = order && (order.materials || [])[i];
+    const ing = m && ingredients.find(x => x.id === m.ingredient_id);
+    if (!ing) return;
+    _editOrdMatIdx = i;
+    document.getElementById('editOrdMatName').textContent = ing.name;
+    document.getElementById('editOrdMatUnit').textContent = unitAbbrev(ing.unit);
+    document.getElementById('editOrdMatQty').value = Math.round(Number(m.quantity) * 1e4) / 1e4;
+    document.getElementById('editOrdMatModal').style.display = 'flex';
+}
+async function saveOrderMatEdit() {
+    const order = orders.find(o => o.id === currentOrderId);
+    const i = _editOrdMatIdx;
+    const m = order && i !== null ? (order.materials || [])[i] : null;
+    const qty = parseFloat(document.getElementById('editOrdMatQty').value);
+    if (!m) { closeModal(); return; }
+    if (!(qty > 0)) { showInfo(t('common_fill_correctly')); return; }
+    closeModal();
+    suppressRealtimeFor3s();
+    showLoading();
+    try {
+        await _setOrderMaterialQty(order, m.ingredient_id, qty);
+        renderOrderMaterials(order);
+        renderDetailItems(order);
+    } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); renderOrderMaterials(order); }
+    finally { hideLoading(); }
+}
+function deleteOrderMat(i) {
+    const order = orders.find(o => o.id === currentOrderId);
+    const m = order && (order.materials || [])[i];
+    const ing = m && ingredients.find(x => x.id === m.ingredient_id);
+    if (!ing) return;
+    openDeleteModal(i, 'ordmat', `«${ing.name}»`);
+}
+async function removeOrderMaterial(order, m) {
+    suppressRealtimeFor3s();
+    await _setOrderMaterialQty(order, m.ingredient_id, 0);
+    renderOrderMaterials(order);
+    renderDetailItems(order);
+}
+
 // Сохраняет снимок рецепта изделия с текущими ценами ингредиентов
 // для конкретной позиции заказа — используется при создании позиции.
 // Полуфабрикаты раскрываются рекурсивно до уровня прямых ингредиентов.
@@ -2653,14 +2833,14 @@ async function recalcOrderCostBreakdown() {
         // Сохраняем новый снимок по актуальному рецепту и текущим ценам
         for (const item of order.items) {
             const prod = products.find(p => p.id === item.product_id);
-            if (prod) await saveOrderItemIngredients(item.id, prod, item.quantity);
+            if (prod) await saveOrderItemIngredients(item.id, itemRecipeProd(prod, item), item.quantity);
         }
 
         // Также пересчитываем item_cost
         for (const item of order.items) {
             const prod = products.find(p => p.id === item.product_id);
             if (prod) {
-                const newCost = parseFloat((productUnitCost(prod) * item.quantity).toFixed(4));
+                const newCost = parseFloat((productUnitCost(itemRecipeProd(prod, item)) * item.quantity).toFixed(4));
                 try {
                     await updateChecked(db.from('order_items').update({ item_cost: newCost }).eq('id', item.id));
                     item.item_cost = newCost;

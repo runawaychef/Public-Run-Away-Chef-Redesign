@@ -3639,6 +3639,29 @@ function hideSplashScreen() {
                             </tr>
                         </tbody>
                     </table>
+                    <div id="orderMatLinkRow" class="hidden" style="margin:0 0 8px;"><span onclick="openOrderMatBlock()" style="color:#4f6349; font-size:12px; text-decoration:underline; cursor:pointer;" data-i18n="ordmat_add_link">+ Материал</span></div>
+                    <div id="orderMatWrap" class="hidden" style="margin:0 0 8px;">
+                        <h2 class="text-xs font-semibold text-gray-800 mb-1" data-i18n="ordmat_title">Материалы заказа</h2>
+                        <table class="w-full table-auto table-clean mb-1">
+                            <thead><tr style="background-color:#e3e8df;">
+                                <th class="p-1 text-xs w-[58%]" data-i18n="mat_col_material">Материал</th>
+                                <th class="p-1 text-xs w-[28%]" data-i18n="stats_col_qty">Кол-во</th>
+                                <th class="p-1 text-xs w-[14%]" data-i18n="sf_col_actions">Действия</th>
+                            </tr><tr class="tbl-gap"><th colspan="3"></th></tr></thead>
+                            <tbody id="orderMatBody"></tbody>
+                            <tbody>
+                                <tr class="tbl-gap"><td colspan="3"></td></tr>
+                                <tr class="new-item-row" style="background:#f4f1ea;">
+                                    <td><div class="search-input-wrap">
+                                        <input id="newOrdMat" placeholder="— материал —" autocomplete="off" class="table-text" data-i18n-placeholder="ordmat_pick">
+                                        <div id="newOrdMatDropdown" class="search-dropdown hidden"></div>
+                                    </div></td>
+                                    <td><input id="newOrdMatQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" placeholder="1" class="table-text"></td>
+                                    <td class="text-center"><button onpointerup="addOrderMaterial()" class="btn bg-[#7c9473] text-white px-2 py-0.5 rounded-xl text-xs hover:bg-[#6c8464]" data-i18n="sf_add_btn">+ Добавить</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                     <div id="detailStockWarn" class="inv-batch-warn hidden" style="margin:0 0 8px;"></div>
                     <div class="text-right text-xs text-gray-600 space-y-0.5">
                         <div><span data-i18n="orders_total_items">Всего изделий</span>: <span id="detailItemsCount" class="font-semibold text-gray-700">0</span> <span data-i18n="unit_pcs">шт</span>.</div>
@@ -3750,6 +3773,24 @@ function hideSplashScreen() {
         </div>
 
         <!-- Редактировать материал изделия -->
+        <div id="editOrdMatModal" class="modal" onclick="if(event.target===this) closeModal();">
+            <div class="modal-content" style="max-width:420px;">
+                <h2 class="text-sm font-semibold text-gray-800 mb-2" data-i18n="ordmat_edit_title">Материал заказа</h2>
+                <div class="mb-2">
+                    <label class="itm-lbl" data-i18n="mat_col_material">Материал</label>
+                    <div id="editOrdMatName" class="border p-0.5 rounded-xl w-full table-text" style="background:#f4f1ea;"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="itm-lbl"><span data-i18n="ordmat_qty_total">Количество на весь заказ</span>, <span id="editOrdMatUnit"></span></label>
+                    <input id="editOrdMatQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0" class="border p-0.5 rounded-xl w-full table-text">
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="closeModal()" class="pill-btn-secondary flex-1 justify-center" data-i18n="common_cancel">Отмена</button>
+                    <button onclick="saveOrderMatEdit()" class="pill-btn flex-1 justify-center" data-i18n="common_save">Сохранить</button>
+                </div>
+            </div>
+        </div>
+
         <div id="editMatModal" class="modal" onclick="if(event.target===this) closeModal();">
             <div class="modal-content" style="max-width:420px;">
                 <h2 class="text-sm font-semibold text-gray-800 mb-2" data-i18n="mat_edit_title">Редактировать материал</h2>
@@ -3826,6 +3867,10 @@ function hideSplashScreen() {
                 <input id="editItemQty" type="number" autocomplete="off" inputmode="decimal" step="0.01" min="0.01" class="border p-1 rounded-xl mb-2 w-full text-xs" style="background:#f4f1ea;">
                 <label class="text-xs text-gray-500">Цена</label>
                 <input id="editItemPrice" type="number" autocomplete="off" inputmode="decimal" step="0.01" class="border p-1 rounded-xl mb-3 w-full text-xs" style="background:#f4f1ea;">
+                <label id="editItemNoMatRow" class="flex items-start gap-2 mb-3 table-text text-gray-700" style="cursor:pointer;">
+                    <input id="editItemNoMat" type="checkbox" class="w-4 h-4" style="accent-color:#7c9473; margin-top:2px;">
+                    <span><span data-i18n="ordmat_off_label">Без материалов изделия</span><br><span class="text-gray-400" style="font-size:11px;" data-i18n="ordmat_off_hint">Упаковка из рецепта не списывается и не входит в себестоимость</span></span>
+                </label>
                 <div class="flex gap-2">
                     <button onclick="saveItemEdit()" class="pill-btn flex-1 justify-center">Сохранить</button>
                     <button onclick="closeModal()" class="pill-btn-secondary" style="width:90px;">Отмена</button>
@@ -5166,14 +5211,14 @@ function hideSplashScreen() {
 </div><!-- container -->
 
 <script src="dates.js?v=10"></script>
-    <script src="money.js?v=14"></script>
-    <script src="i18n-core.js?v=197"></script>
+    <script src="money.js?v=15"></script>
+    <script src="i18n-core.js?v=198"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=21"></script>
     <script src="auth.js?v=34"></script>
     <script src="employees.js?v=80"></script>
     <script src="company.js?v=29"></script>
-    <script src="inventory.js?v=85"></script>
+    <script src="inventory.js?v=86"></script>
     <script src="billing.js?v=26"></script>
     <script src="push.js?v=12"></script>
 <script src="ingredients.js?v=78"></script>
@@ -5182,7 +5227,7 @@ function hideSplashScreen() {
 <script src="products.js?v=65"></script>
 <script src="customers.js?v=78"></script>
 <script src="calendar.js?v=17"></script>
-<script src="orders.js?v=167"></script>
+<script src="orders.js?v=168"></script>
 <script src="dashboard.js?v=24"></script>
 <script src="invoice.js?v=55"></script>
 <script src="send-document.js?v=44"></script>
@@ -5193,7 +5238,7 @@ function hideSplashScreen() {
 <script src="bank.js?v=13"></script>
 <script src="stats.js?v=44"></script>
 <script src="history.js?v=10"></script>
-<script src="modals.js?v=22"></script>
+<script src="modals.js?v=23"></script>
 <script src="demoData.js?v=30"></script>
 <script src="helpers.js?v=53"></script>
 <script>
@@ -5284,19 +5329,20 @@ async function loadAllData(silent) {
     // и не должно затираться (см. ниже, после сборки orders).
     const _orderIdsAtStart = new Set((orders || []).map(o => o.id));
     try {
-        const [pRes, cRes, oRes, oiRes, eRes, ingRes, piRes, sfRes, sfiRes, opRes] = await Promise.all([
+        const [pRes, cRes, oRes, oiRes, eRes, ingRes, piRes, sfRes, sfiRes, opRes, omRes] = await Promise.all([
             fetchAllRows(() => db.from('products').select('id, name, price, batch_size, cost_items, unit, recipe_confirmed, track_stock, photo_url').eq('org_id', currentOrgId).order('name').order('id')),
             fetchAllRows(() => db.from('customers').select('id, name, contact, email, discount, vat_exempt, notes, address, reg_number, vat_code, personal_code, entity_type, payment_term_days, invoice_mode').eq('org_id', currentOrgId).order('name').order('id')),
             // invoice_snapshot / delivery_note_snapshot сюда НЕ входят: это копии документов с логотипом
             // (у большой пекарни ~15 МБ), в списке они не нужны — документы читают свой снимок из базы сами.
             fetchAllRows(() => db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending, is_confirmed, is_demo, created_by, inv_no, dn_no, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via, invoice_sent_message_id, delivery_note_sent_message_id, invoice_delivery_status, delivery_note_delivery_status, consolidated_invoice_id, cons_excluded').eq('org_id', currentOrgId).is('deleted_at', null).order('id')),
-            fetchAllRows(() => db.from('order_items').select('id, order_id, product_id, quantity, price, item_cost').eq('org_id', currentOrgId).order('id')),
+            fetchAllRows(() => db.from('order_items').select('id, order_id, product_id, quantity, price, item_cost, no_materials').eq('org_id', currentOrgId).order('id')),
             db.from('employees').select('id, name').eq('org_id', currentOrgId).order('name').limit(1000),
             fetchAllRows(() => db.from('ingredients').select('id, name, package_price, package_size, unit, shelf_life_days, kind, auto_add_qty').eq('org_id', currentOrgId).order('name').order('id')),
             fetchAllRows(() => db.from('product_ingredients').select('id, product_id, ingredient_id, semi_finished_id, quantity').eq('org_id', currentOrgId).order('id')),
             fetchAllRows(() => db.from('semi_finished').select('id, name, batch_size, unit, cost_items, recipe_confirmed, track_stock, shelf_life_days').eq('org_id', currentOrgId).order('name').order('id')),
             fetchAllRows(() => db.from('semi_finished_ingredients').select('id, semi_finished_id, ingredient_id, quantity, is_primary').eq('org_id', currentOrgId).order('id')),
-            fetchAllRows(() => db.from('order_payments').select('order_id, amount, bank_transaction_id').eq('org_id', currentOrgId).order('id'))
+            fetchAllRows(() => db.from('order_payments').select('order_id, amount, bank_transaction_id').eq('org_id', currentOrgId).order('id')),
+            fetchAllRows(() => db.from('order_materials').select('id, order_id, ingredient_id, quantity, cost, price').eq('org_id', currentOrgId).order('id'))
         ]);
         if (pRes.error) throw pRes.error;
         if (cRes.error) throw cRes.error;
@@ -5374,8 +5420,14 @@ async function loadAllData(silent) {
                 product: prod ? prod.name : '(удалённое изделие)',
                 quantity: Number(it.quantity),
                 price: Number(it.price),
-                item_cost: it.item_cost != null ? Number(it.item_cost) : null
+                item_cost: it.item_cost != null ? Number(it.item_cost) : null,
+                no_materials: !!it.no_materials
             });
+        });
+        if (omRes && omRes.error) console.error('order_materials:', omRes.error);
+        const matsByOrder = {};
+        ((omRes && omRes.data) || []).forEach(m => {
+            (matsByOrder[m.order_id] || (matsByOrder[m.order_id] = [])).push({ id: m.id, ingredient_id: m.ingredient_id, quantity: Number(m.quantity), cost: Number(m.cost || 0), price: m.price != null ? Number(m.price) : null });
         });
 
         const _ordersBeforeReplace = orders;
@@ -5411,7 +5463,8 @@ async function loadAllData(silent) {
                 delivery_note_sent_message_id: o.delivery_note_sent_message_id || null,
                 invoice_delivery_status: o.invoice_delivery_status || null,
                 delivery_note_delivery_status: o.delivery_note_delivery_status || null,
-                items: itemsByOrder[o.id] || []
+                items: itemsByOrder[o.id] || [],
+                materials: matsByOrder[o.id] || []
             };
         });
 

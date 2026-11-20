@@ -133,7 +133,7 @@ async function loadInventory() {
         // а остатки склада считаются суммой ВСЕХ движений — обрезка дала бы неверные остатки.
         const { data, error } = await fetchAllRows(() => db
             .from('inventory')
-            .select('ingredient_id, semi_finished_id, type, quantity, order_item_id, created_at')
+            .select('ingredient_id, semi_finished_id, type, quantity, order_item_id, order_id, created_at')
             .order('id'));
         if (error) throw error;
 
@@ -182,6 +182,7 @@ function _deferredNeedMap() {
             if (!prod || !prod.ingredients) return;
             const factor = 1 / Number(prod.batch_size || 1);
             prod.ingredients.forEach(ri => {
+                if (item.no_materials && typeof _isMatRow === 'function' && _isMatRow(ri)) return;
                 const key = ri.semi_finished_id ? `sf_${ri.semi_finished_id}` : ri.ingredient_id ? `ing_${ri.ingredient_id}` : null;
                 if (!key) return;
                 map[key] = (map[key] || 0) + Number(ri.quantity) * Number(item.quantity) * factor;
@@ -206,6 +207,11 @@ function stockStateContext(periodDays) {
         && _stockCtxMemo.sig === sig && nowMs - _stockCtxMemo.at < 1000) return _stockCtxMemo.ctx;
 
     const pendingIds = _pendingOrderItemIds();
+    const pendingMatOrders = {}; // order_id → Set(ingredient_id материалов, добавленных в невыполненный заказ вручную)
+    (orders || []).forEach(o => {
+        if (o.status === 'выполнен' || !o.materials || !o.materials.length) return;
+        pendingMatOrders[o.id] = new Set(o.materials.map(m => m.ingredient_id));
+    });
     const pending = {};
     const usage = {};
     const byItem = {}; // order_item_id → { key: списанное количество } (невыполненные заказы)
@@ -218,6 +224,13 @@ function stockStateContext(periodDays) {
         const ms = row.created_at ? Date.parse(row.created_at) : NaN;
         if (!isNaN(ms) && (firstMs === null || ms < firstMs)) firstMs = ms;
         if (!sign) return;
+        // Материал, добавленный в заказ вручную (order_materials): списание без позиции, но с заказом
+        if (row.order_item_id == null && row.order_id != null && pendingMatOrders[row.order_id] && row.ingredient_id != null && pendingMatOrders[row.order_id].has(row.ingredient_id)) {
+            pending[key] = (pending[key] || 0) + sign * q;
+            const bo = byItem['o' + row.order_id] || (byItem['o' + row.order_id] = {});
+            bo[key] = (bo[key] || 0) + sign * q;
+            return;
+        }
         if (row.order_item_id != null && pendingIds.has(row.order_item_id)) {
             pending[key] = (pending[key] || 0) + sign * q; // резерв под невыполненный заказ
             const bi = byItem[row.order_item_id] || (byItem[row.order_item_id] = {});
@@ -278,6 +291,7 @@ function stockRunout(kind, id, ctx) {
         .forEach(o => {
             let need = 0;
             (o.items || []).forEach(it => { const m = it && ctx.byItem[it.id]; if (m && m[key]) need += m[key]; });
+            { const mo = ctx.byItem['o' + o.id]; if (mo && mo[key]) need += mo[key]; }
             if (need <= 1e-9) return;
             const before = running;
             running = _r4(running - need);
@@ -574,6 +588,8 @@ function orderScopedRows(ctx) {
             const m = it && ctx.byItem[it.id];
             if (m) Object.keys(m).forEach(k => keys.add(k));
         });
+        const mo = ctx.byItem['o' + o.id];
+        if (mo) Object.keys(mo).forEach(k => keys.add(k));
     });
     const rows = [];
     keys.forEach(key => {
@@ -1117,6 +1133,45 @@ async function reverseInventoryForOrderItem(orderItemId) {
         }));
         scheduleLoadInventory();
     } catch (e) { console.error('Ошибка сторнирования позиции:', e); }
+}
+
+// ── Материалы, добавленные в заказ вручную (order_materials) ───────────────────
+// Списание идёт на весь заказ (без order_item_id) и возвращается точно по batch_breakdown.
+async function writeOffOrderMaterialStock(order, ingredientId, qty) {
+    const shortagePrice = typeof currentUnitPriceFor === 'function' ? currentUnitPriceFor('ingredient', ingredientId) : 0;
+    const { data, error } = await db.rpc('rpc_write_off_stock', {
+        p_org_id: currentOrgId,
+        p_item_type: 'ingredient',
+        p_item_id: ingredientId,
+        p_qty: parseFloat(Number(qty).toFixed(4)),
+        p_shortage_price: shortagePrice,
+        p_notes: `Заказ ${order.order_number ? '№' + order.order_number : '#' + order.id}`,
+        p_order_id: order.id
+    });
+    if (error) throw error;
+    scheduleLoadInventory();
+    return parseFloat((Number(data && data.totalCost) || 0).toFixed(4));
+}
+async function reverseOrderMaterialStock(order, ingredientId) {
+    const { data, error } = await db.from('inventory')
+        .select('id, quantity, batch_breakdown')
+        .eq('order_id', order.id).eq('ingredient_id', ingredientId)
+        .is('order_item_id', null).eq('type', 'расход');
+    if (error) throw error;
+    const oLabel = order.order_number ? '№' + order.order_number : '#' + order.id;
+    for (const r of (data || [])) {
+        if (!r.batch_breakdown) continue;
+        const { error: rpcError } = await db.rpc('rpc_restore_stock', {
+            p_org_id: currentOrgId,
+            p_item_type: 'ingredient',
+            p_item_id: ingredientId,
+            p_breakdown: r.batch_breakdown,
+            p_notes: `Сторно материала заказа ${oLabel}`,
+            p_order_id: order.id
+        });
+        if (rpcError) throw rpcError;
+    }
+    scheduleLoadInventory();
 }
 
 // Сторнирование при удалении заказа
