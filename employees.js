@@ -723,8 +723,32 @@ function openOrgNameSetupModal(owner) {
     document.getElementById('orgNameSetupInput').value = isPlaceholder ? '' : currentOrgName;
     document.getElementById('orgNameSetupModal').style.display = 'flex';
     _welcomeLog('opened');
+    _requestWelcomeEmail();
     const inp = document.getElementById('orgNameSetupInput');
     if (inp && !inp._wlBound) { inp._wlBound = true; inp.addEventListener('input', () => _welcomeLog('typing')); }
+}
+
+// Приветственное письмо (v929, 20.11.2026): при первом открытии экрана Welcome просим сервер отправить его.
+// Фоном: экран не ждёт, ошибки не показываем. Сервер сам отправляет письмо один раз на пекарню
+// (флаг organizations.welcome_email_sent_at), поэтому повтор с другого устройства безопасен.
+// ru → русское письмо, любой другой язык → английское. Для Google ждём запись канала регистрации (до 5 с),
+// чтобы фраза для Google Play не потерялась.
+let _welcomeEmailAsked = false;
+async function _requestWelcomeEmail() {
+    try {
+        if (_welcomeEmailAsked || !currentOrgId) return;
+        _welcomeEmailAsked = true;
+        const doneKey = 'sb_welcome_mail_' + currentOrgId;
+        try { if (localStorage.getItem(doneKey) === '1') return; } catch (e) {}
+        if (window._signupChannelReady) {
+            await Promise.race([window._signupChannelReady, new Promise(r => setTimeout(r, 5000))]);
+        }
+        const { data, error } = await db.functions.invoke('welcome-email', { body: { lang: currentLang === 'ru' ? 'ru' : 'en' } });
+        if (error) { _welcomeEmailAsked = false; console.warn('welcome-email:', error.message || error); return; }
+        if (data && (data.status === 'sent' || data.status === 'already' || data.status === 'skip')) {
+            try { localStorage.setItem(doneKey, '1'); } catch (e) {}
+        }
+    } catch (e) { _welcomeEmailAsked = false; console.warn('welcome-email:', e); }
 }
 
 // Что происходит на экране Welcome — для «Активности» в Simple Hub (20.11.2026): видно, открывал ли человек

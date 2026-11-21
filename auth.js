@@ -118,7 +118,8 @@ async function initAuth() {
                 sessionStorage.removeItem('sb_google_oauth_pending');
                 // В фоне и вне обработчика: вызов Supabase прямо внутри onAuthStateChange может зависнуть.
                 const _u = session.user;
-                setTimeout(() => saveGoogleSignupChannel(_u), 0);
+                // Промис нужен приветственному письму (employees.js): подождать запись канала, прежде чем просить сервер его прочитать (v929).
+                window._signupChannelReady = new Promise((res) => setTimeout(() => { saveGoogleSignupChannel(_u).then(res, res); }, 0));
             }
 
             if (_instantRestoreDone && session.user?.id && _snapshotAuthUserId !== session.user.id) {
