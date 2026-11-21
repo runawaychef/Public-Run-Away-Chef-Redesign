@@ -845,6 +845,31 @@ function openLegalModal(modalId) {
         termsModal: ['termsFrame', 'terms.html'],
         faqModal: ['faqFrame', 'faq.html']
     };
+    // FAQ живёт на сайте и открывается в этом же окне (режим embed=1: без шапки, языка и подвала).
+    // Язык берём из приложения; для языков без перевода FAQ (pl, de) — английский.
+    // Адрес задаём при КАЖДОМ открытии, чтобы язык совпадал с текущим языком приложения.
+    if (modalId === 'faqModal') {
+        const faqFrame = document.getElementById('faqFrame');
+        const faqOffline = document.getElementById('faqOffline');
+        const faqLang = ['ru', 'en', 'lt', 'uk'].includes(currentLang) ? currentLang : 'en';
+        if (navigator.onLine === false) {
+            // Cross-origin iframe не сообщает об ошибке загрузки, поэтому проверяем сеть заранее.
+            if (faqFrame) faqFrame.style.display = 'none';
+            if (faqOffline) faqOffline.style.display = 'flex';
+        } else {
+            if (faqOffline) faqOffline.style.display = 'none';
+            if (faqFrame) {
+                faqFrame.style.display = '';
+                const faqSrc = 'https://simple-bake.com/faq/?embed=1&lang=' + faqLang;
+                if (faqFrame.dataset.src !== faqSrc) {
+                    faqFrame.src = faqSrc;
+                    faqFrame.dataset.src = faqSrc;
+                }
+            }
+        }
+        document.getElementById(modalId).style.display = 'flex';
+        return;
+    }
     const [frameId, src] = map[modalId] || [];
     const frame = frameId ? document.getElementById(frameId) : null;
     // Не полагаемся на frame.src (у <iframe src=""> он не пустой, а равен

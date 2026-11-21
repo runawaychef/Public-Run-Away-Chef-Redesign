@@ -590,7 +590,7 @@ async function refreshDeleteDemoDataVisibility() {
 // затемняет и не блокирует. Часть B: предложение тура после «Welcome!», загрузка примеров, вопрос «Удалить
 // примеры?», плашка «Здесь примеры» на дашборде, ссылка на экране заказов, шаг «Оплата и документы».
 // Тексты пока по-русски (запасной вариант в _tt), полные EN/RU/UK/LT с ключами tour_* — часть C.
-// ОТКАТ: удалить этот блок, строку «Инструкция» (tourSettingsBtn) в index.html, вызовы tour*/refreshDemoBanner/
+// ОТКАТ: удалить этот блок, строку «Тур по приложению» (tourSettingsBtn) в index.html, вызовы tour*/refreshDemoBanner/
 // refreshTourOrdersLink в index.html (_hasOpenOverlay/_closeTopOverlay), employees.js (saveOrgNameSetup),
 // orders.js (displayOrders), dashboard.js (renderDashboard), и строки _tourInvalidateDemo() в createDemoData/clearDemoData.
 const TOUR_STEPS = [
@@ -602,7 +602,7 @@ const TOUR_STEPS = [
     { id: 'cust',   tab: 'customers',   title: 'Клиенты',         text: 'Здесь видно, кто из клиентов сколько вам должен.' },
     { id: 'stats',  tab: 'stats',       title: 'Статистика',      text: 'Какие клиенты и изделия приносят больше всего.' },
     { id: 'plans',  tab: 'dashboard', plan: true, title: 'Тарифы', text: 'Первые 7 дней доступны все функции. Дальше бесплатно до 50 заказов. Light снимает лимит и даёт всё для ежедневной работы: заказы, рецепты, склад, клиенты, документы. Для работы Light достаточно. Full добавляет полную статистику по изделиям и клиентам, анализ себестоимости и склада, журнал действий, уведомления и работу в команде.' },
-    { id: 'end',    tab: 'dashboard',   title: 'Готово',          text: 'Тур можно повторить в любой момент: Настройки → Инструкция.' }
+    { id: 'end',    tab: 'dashboard',   title: 'Готово',          text: 'Тур можно повторить в любой момент: Настройки → Тур по приложению.' }
 ];
 let _tourSteps = null, _tourIdx = 0, _tourEl = null, _tourSpacer = null, _tourDemo = false;
 
@@ -744,7 +744,7 @@ async function tourOfferFirstRun() {
     const loaded = await tourLoadDemo();
     tourStart({ demo: loaded });
 }
-// 2) Настройки → «Инструкция» и ссылка на экране заказов
+// 2) Настройки → «Тур по приложению» и ссылка на экране заказов
 async function tourStartFromEntry() {
     if (tourIsActive()) { _tourGo(0); return; }
     if (await tourHasDemo()) { tourStart({ demo: true }); return; }
