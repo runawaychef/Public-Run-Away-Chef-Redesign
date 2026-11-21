@@ -164,8 +164,8 @@ async function logActivity(actionType, description, orderId = null) {
     try {
         await dbMust(db.from('activity_log').insert({
             org_id: currentOrgId,
-            employee_id: currentEmployee ? currentEmployee.id : null,
-            employee_name: currentEmployee ? currentEmployee.name : '—',
+            employee_id: (currentEmployee || _pendingOwnerForSetup) ? (currentEmployee || _pendingOwnerForSetup).id : null,
+            employee_name: (currentEmployee || _pendingOwnerForSetup) ? (currentEmployee || _pendingOwnerForSetup).name : '—',
             action_type: actionType,
             description: description,
             order_id: orderId
@@ -722,6 +722,24 @@ function openOrgNameSetupModal(owner) {
     const isPlaceholder = !currentOrgName || ORG_NAME_PLACEHOLDERS.includes(String(currentOrgName).trim());
     document.getElementById('orgNameSetupInput').value = isPlaceholder ? '' : currentOrgName;
     document.getElementById('orgNameSetupModal').style.display = 'flex';
+    _welcomeLog('opened');
+    const inp = document.getElementById('orgNameSetupInput');
+    if (inp && !inp._wlBound) { inp._wlBound = true; inp.addEventListener('input', () => _welcomeLog('typing')); }
+}
+
+// Что происходит на экране Welcome — для «Активности» в Simple Hub (20.11.2026): видно, открывал ли человек
+// экран, начал ли вводить название, нажал ли «Начать работу» и не было ли ошибки. Открытие пишем не чаще
+// 5 раз на устройство, остальное по одному разу, чтобы не засорять ленту.
+function _welcomeLog(step, extra) {
+    try {
+        const k = 'sb_welcome_log_' + currentOrgId + '_' + step;
+        const n = Number(localStorage.getItem(k) || 0);
+        const max = step === 'opened' ? 5 : 1;
+        if (step !== 'name_failed' && n >= max) return;
+        if (step !== 'name_failed') localStorage.setItem(k, String(n + 1));
+        const label = t('log_welcome_' + step) + (step === 'opened' && n > 0 ? ' (' + (n + 1) + ')' : '') + (extra ? ': ' + extra : '');
+        logActivity('auth', label);
+    } catch (e) { /* журнал не должен мешать */ }
 }
 
 async function saveOrgNameSetup() {
@@ -729,6 +747,7 @@ async function saveOrgNameSetup() {
     // Поле можно оставить пустым: тогда название по умолчанию на языке интерфейса
     // (запасной английский), а не русская заглушка из базы (13.11.2026)
     if (!name) name = defaultOrgName();
+    _welcomeLog('tap');
     // С 11.11.2026: вопрос «Как вы принимаете оплату?» убран с этого экрана (режим по умолчанию «По заказу»,
     // меняется в Настройки → Информация о компании → Документы и оплата; о нём рассказывает тур),
     // а примеры предлагаются в туре (tourOfferFirstRun в demoData.js), флажка демо здесь больше нет.
@@ -740,6 +759,7 @@ async function saveOrgNameSetup() {
             updateHeaderOrgName();
         } catch (e) {
             console.error(e);
+            _welcomeLog('name_failed', String((e && e.message) || e).slice(0, 120));
             showInfo(t('employees_name_save_delayed'));
         }
     }
