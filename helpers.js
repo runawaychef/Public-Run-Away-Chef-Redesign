@@ -836,55 +836,41 @@ function orderStatusLabelCap(status) {
 }
 
 // Открывает Политику конфиденциальности / Условия использования поверх окна настроек
-// (через iframe на privacy.html/terms.html — те же файлы, что указаны в карточке Google Play),
+// (через iframe на simple-bake.com/privacy.html и /terms.html — те же страницы, что указаны в карточке Google Play),
 // без ухода со страницы приложения. src задаётся только при первом открытии — чтобы каждый
 // повторный клик не перезагружал iframe заново без необходимости.
 function openLegalModal(modalId) {
+    // FAQ, Политика и Условия живут на сайте simple-bake.com и открываются в этом же окне
+    // (одна копия текста — на сайте, расхождений с приложением нет).
+    // Адрес FAQ задаём при КАЖДОМ открытии, чтобы язык совпадал с текущим языком приложения
+    // (режим embed=1: без шапки, выбора языка и подвала; для языков без перевода FAQ — английский).
+    // Политика и Условия берут язык из общего localStorage (тот же домен), параметров не нужно.
+    const faqLang = ['ru', 'en', 'lt', 'uk'].includes(currentLang) ? currentLang : 'en';
     const map = {
-        privacyModal: ['privacyFrame', 'privacy.html'],
-        termsModal: ['termsFrame', 'terms.html'],
-        faqModal: ['faqFrame', 'faq.html']
+        privacyModal: ['privacyFrame', 'privacyOffline', 'https://simple-bake.com/privacy.html'],
+        termsModal: ['termsFrame', 'termsOffline', 'https://simple-bake.com/terms.html'],
+        faqModal: ['faqFrame', 'faqOffline', 'https://simple-bake.com/faq/?embed=1&lang=' + faqLang]
     };
-    // FAQ живёт на сайте и открывается в этом же окне (режим embed=1: без шапки, языка и подвала).
-    // Язык берём из приложения; для языков без перевода FAQ (pl, de) — английский.
-    // Адрес задаём при КАЖДОМ открытии, чтобы язык совпадал с текущим языком приложения.
-    if (modalId === 'faqModal') {
-        const faqFrame = document.getElementById('faqFrame');
-        const faqOffline = document.getElementById('faqOffline');
-        const faqLang = ['ru', 'en', 'lt', 'uk'].includes(currentLang) ? currentLang : 'en';
+    const [frameId, offlineId, src] = map[modalId] || [];
+    const frame = frameId ? document.getElementById(frameId) : null;
+    const offline = offlineId ? document.getElementById(offlineId) : null;
+    if (frame) {
         if (navigator.onLine === false) {
             // Cross-origin iframe не сообщает об ошибке загрузки, поэтому проверяем сеть заранее.
-            if (faqFrame) faqFrame.style.display = 'none';
-            if (faqOffline) faqOffline.style.display = 'flex';
+            frame.style.display = 'none';
+            if (offline) offline.style.display = 'flex';
         } else {
-            if (faqOffline) faqOffline.style.display = 'none';
-            if (faqFrame) {
-                faqFrame.style.display = '';
-                const faqSrc = 'https://simple-bake.com/faq/?embed=1&lang=' + faqLang;
-                if (faqFrame.dataset.src !== faqSrc) {
-                    faqFrame.src = faqSrc;
-                    faqFrame.dataset.src = faqSrc;
-                }
+            if (offline) offline.style.display = 'none';
+            frame.style.display = '';
+            if (frame.dataset.src !== src) {
+                frame.src = src;
+                frame.dataset.src = src;
             }
         }
-        document.getElementById(modalId).style.display = 'flex';
-        return;
-    }
-    const [frameId, src] = map[modalId] || [];
-    const frame = frameId ? document.getElementById(frameId) : null;
-    // Не полагаемся на frame.src (у <iframe src=""> он не пустой, а равен
-    // адресу текущей страницы — из-за этого проверка "уже загружено?" всегда
-    // была бы true, и реальный файл так и не подставлялся бы). Используем
-    // свой собственный флаг вместо этого.
-    if (frame && !frame.dataset.loaded) {
-        frame.src = src;
-        frame.dataset.loaded = '1';
     }
     document.getElementById(modalId).style.display = 'flex';
 }
 
-// Закрывает Политику/Условия/FAQ и возвращает окно настроек в том виде, в каком оно было
-// (те же разделы остаются раскрытыми — это тот же самый DOM, не перезагрузка страницы).
 function closeLegalModal(modalId) {
     document.getElementById(modalId).style.display = 'none';
     openSettingsModal();

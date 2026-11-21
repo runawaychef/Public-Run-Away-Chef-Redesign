@@ -1838,6 +1838,7 @@ I18N.lt = {
         tour_end_demo_text: "Tai buvo pavyzdžiai. Ištrinti juos ir pradėti nuo savo kepyklos?",
         tour_settings_btn: "Programos turas",
         faq_offline_msg: "Instrukcijai reikia interneto. Patikrinkite ryšį.",
+        legal_offline_msg: "Reikalingas interneto ryšys. Patikrinkite ryšį.",
         tour_dash_title: "Pagrindinis ekranas",
         tour_dash_text: "Viskas svarbiausia viename ekrane: užsakymai, atsargos sandėlyje, apmokėjimai, klientų skolos ir finansiniai rodikliai.",
         tour_orders_title: "Užsakymai",

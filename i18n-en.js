@@ -1841,6 +1841,7 @@ I18N.en = {
         tour_end_demo_text: "Those were examples. Delete them and start with your own bakery?",
         tour_settings_btn: "App tour",
         faq_offline_msg: "The guide needs an internet connection. Check your connection.",
+        legal_offline_msg: "An internet connection is required. Check your connection.",
         tour_dash_title: "Main screen",
         tour_dash_text: "Everything important on one screen: orders, stock levels, payments, customer debts and financial figures.",
         tour_orders_title: "Orders",
