@@ -65,6 +65,28 @@ function buildBillingAdditionalData(orgId) {
     return btoa(binary);
 }
 
+// ВРЕМЕННАЯ ДИАГНОСТИКА (сборка 930, 21.11.2026): строка в окне тарифов Play-приложения
+// показывает, что ответил Google Play. Убрать после выяснения причины серой кнопки.
+const _billingDiag = { svc: '', details: '' };
+function _diagErr(e) {
+    try { return String((e && (e.name || '')) + ': ' + (e && e.message ? e.message : e)).slice(0, 160); } catch (x) { return 'ошибка'; }
+}
+function _showBillingDiag() {
+    try {
+        if (!isPlayApp()) return;
+        const wrap = document.getElementById('planModalCards');
+        if (!wrap) return;
+        let el = document.getElementById('planBillingDiag');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'planBillingDiag';
+            el.style.cssText = 'margin-top:8px;font-size:10px;color:#8a8a80;line-height:1.3;word-break:break-word;';
+            wrap.appendChild(el);
+        }
+        el.textContent = 'Диагностика: ' + (_billingDiag.svc || '—') + ' | ' + (_billingDiag.details || 'getDetails ещё не вызывался');
+    } catch (e) { /* диагностика не должна ломать окно */ }
+}
+
 // Возвращает сервис Digital Goods, если он доступен в этом окружении (только
 // внутри TWA-сборки с включённым Play Billing), иначе null. Результат кешируется
 // на время сессии — сам факт доступности API не меняется на лету.
@@ -73,12 +95,15 @@ async function getBillingService() {
     _digitalGoodsChecked = true;
     if (!('getDigitalGoodsService' in window)) {
         _digitalGoodsService = null;
+        _billingDiag.svc = 'нет getDigitalGoodsService';
         return null;
     }
     try {
         _digitalGoodsService = await window.getDigitalGoodsService(BILLING_METHOD);
+        _billingDiag.svc = 'сервис создан';
     } catch (e) {
         _digitalGoodsService = null;
+        _billingDiag.svc = 'ошибка сервиса: ' + _diagErr(e);
     }
     return _digitalGoodsService;
 }
@@ -444,21 +469,39 @@ function renderPlanModalCards() {
     }
 
     wrap.innerHTML = topHtml + cardsHtml + bottomHtml;
+    _showBillingDiag();
 }
 
 // Пытается заменить статичные цены на реальные из Google Play (если доступно).
 // Не блокирует открытие модалки — цены обновляются "тихо" по готовности.
 async function refreshPlanModalPrices() {
     const service = await getBillingService();
-    if (!service) return; // API недоступен здесь — оставляем статичные цены, кнопки остаются disabled ("Скоро будет доступно")
+    if (!service) { _showBillingDiag(); return; } // API недоступен здесь — оставляем статичные цены, кнопки остаются disabled ("Скоро будет доступно")
 
     let details;
     try {
         details = await service.getDetails([PLAN_PRODUCTS.light.sku, PLAN_PRODUCTS.full.sku]);
     } catch (e) {
+        _billingDiag.details = 'getDetails ошибка: ' + _diagErr(e);
+        _showBillingDiag();
         return;
     }
-    if (!details || !details.length) return;
+    if (!details || !details.length) {
+        _billingDiag.details = 'getDetails пусто (' + (details ? details.length : 'null') + ')';
+        // По одному товару: видно, какой sku Google не отдаёт.
+        const parts = [];
+        for (const k of Object.keys(PLAN_PRODUCTS)) {
+            try {
+                const one = await service.getDetails([PLAN_PRODUCTS[k].sku]);
+                parts.push(PLAN_PRODUCTS[k].sku + '=' + (one ? one.length : 'null'));
+            } catch (e) { parts.push(PLAN_PRODUCTS[k].sku + ' ошибка ' + _diagErr(e)); }
+        }
+        _billingDiag.details += '; по одному: ' + parts.join(', ');
+        _showBillingDiag();
+        return;
+    }
+    _billingDiag.details = 'getDetails ок: ' + details.map(d => d.itemId).join(',');
+    _showBillingDiag();
 
     details.forEach(item => {
         const cardKey = Object.keys(PLAN_PRODUCTS).find(k => PLAN_PRODUCTS[k].sku === item.itemId);
