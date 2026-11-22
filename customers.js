@@ -517,6 +517,7 @@ function openCustomerReportPreview() {
     // заказу отдельно (у каждого может быть своя скидка/статус НДС) и суммируются.
     const totalDiscount = custOrders.reduce((s, o) => s + orderDiscountAmount(o), 0);
     const totalVat = custOrders.reduce((s, o) => s + orderVatAmount(o), 0);
+    const showVatRow = hasVat() && (currentOrgProtected || custOrders.some(o => !orderVatExempt(o)));   // v934: без НДС строку не показываем
     const grandTotal = custOrders.reduce((s, o) => s + orderGrandTotal(o), 0);
     const discountPercents = [...new Set(custOrders.map(o => o.discount || 0).filter(d => d > 0))];
     const discountLabel = discountPercents.length === 1 ? ` (${discountPercents[0]}%)` : discountPercents.length > 1 ? ` (${t('customers_discount_varies')})` : '';
@@ -550,7 +551,7 @@ function openCustomerReportPreview() {
             <table style="width:100%;border-collapse:separate;border-spacing:0;font-size:12px;margin-top:10px;">
                 <tr><td style="padding:2px 4px;color:#6b7280;">${t('customers_sum_by_items')}</td><td style="text-align:right;padding:2px 4px;">${formatMoney(totalSum)}</td></tr>
                 ${totalDiscount > 0 ? `<tr><td style="padding:2px 4px;color:#6b7280;">${t('customers_discount_word')}${discountLabel}</td><td style="text-align:right;padding:2px 4px;color:#c0685c;">−${formatMoney(totalDiscount)}</td></tr>` : ''}
-                <tr><td style="padding:2px 4px;color:#6b7280;">${vatWordLabel()}</td><td style="text-align:right;padding:2px 4px;color:#6b7280;">${formatMoney(totalVat)}</td></tr>
+                ${showVatRow ? `<tr><td style="padding:2px 4px;color:#6b7280;">${vatWordLabel()}</td><td style="text-align:right;padding:2px 4px;color:#6b7280;">${formatMoney(totalVat)}</td></tr>` : ''}
                 <tr style="font-weight:700;"><td style="padding:4px;border-top:1px solid #e5e7eb;">${t('customers_total_due')}</td><td style="text-align:right;padding:4px;border-top:1px solid #e5e7eb;">${formatMoney(grandTotal)}</td></tr>
             </table>
             <p style="font-size:10px;color:#9ca3af;margin-top:10px;">${t('customers_orders_in_period')}: ${custOrders.length}. ${t('customers_report_footnote')}</p>
@@ -600,6 +601,7 @@ async function downloadCustomerReportPdf() {
     const totalQty = rows.reduce((s, [, v]) => s + v.qty, 0);
     const totalDiscount = custOrders.reduce((s, o) => s + orderDiscountAmount(o), 0);
     const totalVat = custOrders.reduce((s, o) => s + orderVatAmount(o), 0);
+    const showVatRow = hasVat() && (currentOrgProtected || custOrders.some(o => !orderVatExempt(o)));   // v934: без НДС строку не показываем
     const grandTotal = custOrders.reduce((s, o) => s + orderGrandTotal(o), 0);
     const discountPercents = [...new Set(custOrders.map(o => o.discount || 0).filter(d => d > 0))];
     const discountLabel = discountPercents.length === 1 ? ` (${discountPercents[0]}%)` : discountPercents.length > 1 ? ` (${t('customers_discount_varies')})` : '';
@@ -632,7 +634,7 @@ async function downloadCustomerReportPdf() {
         let y = pdf.lastAutoTable.finalY + 8;
         const summaryRows = [[t('customers_sum_by_items'), formatMoney(totalSum)]];
         if (totalDiscount > 0) summaryRows.push([`${t('customers_discount_word')}${discountLabel}`, '−' + formatMoney(totalDiscount)]);
-        summaryRows.push([vatWordLabel(), formatMoney(totalVat)]);
+        if (showVatRow) summaryRows.push([vatWordLabel(), formatMoney(totalVat)]);
 
         pdf.autoTable({
             startY: y,

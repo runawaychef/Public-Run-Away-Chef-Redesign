@@ -2321,6 +2321,9 @@ function renderDetailItems(order) {
     document.getElementById('detailVatAmount').textContent    = formatMoney(vatAmt);
     const _vatLbl = document.getElementById('detailVatLabel');
     if (_vatLbl) _vatLbl.textContent = vatWordLabel();
+    // Строка НДС — только если к заказу применяется НДС (плательщик НДС и дата не раньше «с даты»); у id1 — по ставке, как раньше (v934)
+    const _vatRow = document.getElementById('detailVatRow');
+    if (_vatRow) _vatRow.style.display = (hasVat() && (currentOrgProtected || !orderVatExempt(order))) ? '' : 'none';
     document.getElementById('detailTotal').textContent        = formatMoney(grand);
 
     // Скрыть строку скидки если скидки нет

@@ -304,6 +304,7 @@ async function _saveVatPayerField(patch, onOk, onFail) {
     try {
         await updateChecked(db.from('organizations').update(patch).eq('id', currentOrgId));
         onOk();
+        if (typeof refreshVatLabels === 'function') refreshVatLabels();   // v934: подписи «с НДС» сразу после смены галки
         if (typeof saveAppSnapshot === 'function') saveAppSnapshot();
         logActivity('system', `${t('log_field_changed')} «${Object.keys(patch)[0]}» ${t('log_in_company_info')}`);
         showAutosaveToast();
@@ -478,6 +479,7 @@ async function saveCompanyInfo(field, value) {
         }
         if (field === 'vat_payer') currentOrgVatPayer = !!value;
         if (field === 'vat_payer_from') currentOrgVatPayerFrom = value || null;
+        if ((field === 'vat_rate' || field === 'vat_payer' || field === 'vat_payer_from') && typeof refreshVatLabels === 'function') refreshVatLabels();   // v934
         if (field === 'legal_name') {
             const other = document.getElementById('cmpLegalName').id === document.activeElement?.id ? 'cmpLegalNameIndividual' : 'cmpLegalName';
             const otherEl = document.getElementById(other);
