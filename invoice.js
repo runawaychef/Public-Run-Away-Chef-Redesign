@@ -338,6 +338,7 @@ async function freezeDocumentSnapshot(order, docType, existing, opts) {
         issueDate,
         dueDate,
         customerNameFallback: order.customer || '—',
+        orderDate: order.date || null,   // v943: дата заказа на момент выставления (для сравнения «заказ изменён»)
         order: {
             items: orderBillItems(order).map(it => ({ product: it.product, quantity: it.quantity, price: it.price, unit: it._mat ? (it.unit || null) : (it.product_id ? (unitById[it.product_id] || null) : null) })),
             discount: order.discount,

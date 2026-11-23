@@ -1665,6 +1665,7 @@ function openOrderDetail(orderId) {
     refreshDetailDue(order);
     updateDetailSaveUi(order);
 
+    if (typeof resetDocChangeState === 'function') resetDocChangeState(orderId);   // v943
     renderDetailItems(order);
     updateProductSelects();
     refreshFab();
@@ -2281,6 +2282,7 @@ async function saveDetailHeader() {
 }
 
 function renderDetailItems(order) {
+    if (order && order.id === currentOrderId && typeof renderDetailDocSummary === 'function') renderDetailDocSummary(order);   // v943: плашка «заказ изменён после документа»
     const tbody = document.getElementById('detailItemsBody');
     tbody.innerHTML = '';
     if (!order.items || !order.items.length) {

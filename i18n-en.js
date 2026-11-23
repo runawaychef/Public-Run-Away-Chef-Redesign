@@ -1238,6 +1238,8 @@ I18N.en = {
         send_doc_status_issued: '{number} dated {date}',
         send_doc_status_sent: ' · sent {date} ({via})',
         send_doc_changed_warn: 'Issued for {old}, the order is now {new} — an updated version will be sent',
+        doc_changed_plate: 'The order was changed after the document was sent: {docs}. Send it to the client again.',
+        doc_changed_once: 'This order has already been sent to the client: {docs}. After changes the document needs to be sent again — there is a line for it under the documents button.',
         send_view: 'Preview',
         send_preview_banner: 'Preview. The number is assigned on sending; nothing is saved.',
         send_share_btn: 'Share PDF',

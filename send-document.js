@@ -86,6 +86,82 @@ function showDocumentSentInfo(orderId) {
 const _docSumNumbers = {};   // { orderId: { inv, dn } } — сырые номера из снимков
 let _docSumSeq = 0;
 
+// ---- v943: «заказ изменён после отправленного документа» ----
+// Документ, выставленный (номер присвоен), хранит снимок. Повторная отправка/скачивание берёт СОХРАНЁННЫЙ снимок
+// и пересобирает его из заказа ТОЛЬКО если заказ изменился: количество, цена, скидка, итог или дата заказа.
+// Пересборка идёт под тем же номером. Заказ при этом можно править свободно; в карточке заказа висит плашка.
+function _docItemsSig(items) {
+    return (items || []).map(it => Math.round((Number(it.quantity) || 0) * 1000) + '|' + Math.round((Number(it.price) || 0) * 10000)).sort().join(';');
+}
+function _docContentChanged(order, snap) {
+    if (!snap || !snap.order) return false;
+    try {
+        if (_docItemsSig(orderBillItems(order)) !== _docItemsSig(snap.order.items)) return true;
+        if (Math.round((Number(order.discount) || 0) * 100) !== Math.round((Number(snap.order.discount) || 0) * 100)) return true;
+        if (snap.orderDate && order.date && String(order.date) !== String(snap.orderDate)) return true;
+        const tol = snap.calc === 2 ? 0.004 : 0.05;
+        return Math.abs(orderGrandTotal(order) - documentTotals(snap).grandAll) > tol;
+    } catch (e) { console.error(e); return false; }
+}
+// Сохранённый снимок целиком (с логотипом) — для отправки/просмотра без пересборки
+async function _loadStoredSnapshot(order, docType) {
+    const field = snapshotField(docType);
+    const { data, error } = await db.from('orders').select(field).eq('id', order.id).single();
+    if (error) throw error;
+    const s = data && data[field];
+    if (!s || !s.number) throw new Error(t('inv_unknown_error'));
+    return s;
+}
+const _docSumSnaps = {};     // { orderId: { inv, dn, cons } } — лёгкие копии для сравнения (без логотипа)
+const _docChgState = {};     // { orderId: { prev, warned } } — для одноразового окна
+function resetDocChangeState(orderId) { delete _docSumSnaps[orderId]; delete _docChgState[orderId]; }
+
+async function _loadDocSumSnaps(order) {
+    const sel = ['inv', 'dn'].map(pre => {
+        const col = pre === 'inv' ? 'invoice_snapshot' : 'delivery_note_snapshot';
+        return `${pre}_order:${col}->order, ${pre}_calc:${col}->calc, ${pre}_vat:${col}->vat_rate, ${pre}_od:${col}->>orderDate, ${pre}_num:${col}->>number`;
+    }).join(', ');
+    const { data, error } = await db.from('orders').select(sel).eq('id', order.id).single();
+    if (error) throw error;
+    const r = data || {};
+    const mk = pre => r[pre + '_num'] ? { number: r[pre + '_num'], calc: r[pre + '_calc'], vat_rate: r[pre + '_vat'], orderDate: r[pre + '_od'], order: r[pre + '_order'] || { items: [] } } : null;
+    const out = { inv: mk('inv'), dn: mk('dn'), cons: null };
+    if (order.consolidated_invoice_id) {
+        const c = await db.from('consolidated_invoices').select('orders:snapshot->consolidated->orders').eq('id', order.consolidated_invoice_id).single();
+        if (!c.error && c.data) out.cons = (c.data.orders || []).find(o => o.id === order.id) || null;
+    }
+    _docSumSnaps[order.id] = out;
+}
+
+// Список отправленных документов, которые не совпадают с текущим заказом: [{ num, oldTotal, curTotal }]
+function _docChangedList(order) {
+    const sn = _docSumSnaps[order.id];
+    if (!sn) return null;
+    const list = [];
+    const cur = orderGrandTotal(order);
+    const same = (a, b) => Math.abs(a - b) < 0.005;
+    if (order.consolidated_invoice_id) {
+        if (order.invoice_sent_at && sn.cons) {
+            const old = (Number(sn.cons.grossC) || 0) / 100;
+            if (!same(old, cur) || (sn.cons.date && order.date && sn.cons.date !== order.date)) {
+                const n = typeof _payConsNumber === 'function' ? _payConsNumber(order.consolidated_invoice_id) : t('orders_doc_invoice');
+                list.push({ num: n, oldTotal: old, curTotal: cur });
+            }
+        }
+    } else if (order.invoice_sent_at && sn.inv && _docContentChanged(order, sn.inv)) {
+        list.push({ num: _formatDocNumber('invoice', sn.inv.number), oldTotal: documentTotals(sn.inv).grandAll, curTotal: cur });
+    }
+    if (order.delivery_note_sent_at && sn.dn && _docContentChanged(order, sn.dn)) {
+        list.push({ num: _formatDocNumber('delivery_note', sn.dn.number), oldTotal: documentTotals(sn.dn).grandAll, curTotal: cur });
+    }
+    return list;
+}
+function _docChangedText(list) {
+    return list.map(d => Math.abs(d.oldTotal - d.curTotal) < 0.005
+        ? d.num
+        : `${d.num} (${formatMoney(d.oldTotal)} → ${formatMoney(d.curTotal)})`).join(', ');
+}
+
 function _docSumShortDT(iso) {
     if (!iso) return '';
     const d = new Date(iso);
@@ -131,6 +207,21 @@ function renderDetailDocSummary(order) {
         const num = _formatDocNumber('delivery_note', nums.dn) || t('orders_doc_delivery_note');
         rows.push(`<div class="doc-sum-row" onclick="openDocFromOrderSummary('dn')"><span class="ds-text"><b>${escapeHtml(num)}</b> · ${escapeHtml(_sentViaLabel(order.delivery_note_sent_via))} · ${_docSumShortDT(order.delivery_note_sent_at)}${_docSumStatusHtml(order.delivery_note_sent_via, order.delivery_note_delivery_status)}</span>${go}</div>`);
     }
+    let chgList = null;
+    try { chgList = _docChangedList(order); } catch (e) { console.error(e); }
+    if (chgList && chgList.length) {
+        rows.push(`<div class="doc-sum-row" onclick="openOrderDocAction(${order.id})" style="background:#f8efd9;color:#8a6a1f;"><span class="ds-text">${escapeHtml(t('doc_changed_plate').replace('{docs}', _docChangedText(chgList)))}</span>${go}</div>`);
+    }
+    if (chgList) {
+        const stt = _docChgState[order.id] || (_docChgState[order.id] = { prev: undefined, warned: false });
+        const isChg = chgList.length > 0;
+        if (isChg && stt.prev === false && !stt.warned) {
+            stt.warned = true;
+            showInfo(t('doc_changed_once').replace('{docs}', _docChangedText(chgList)));
+        }
+        if (!isChg) stt.warned = false;
+        stt.prev = isChg;
+    }
     box.innerHTML = rows.join('');
     box.classList.toggle('hidden', !rows.length);
     box.classList.toggle('ds-alarm', bad);
@@ -143,6 +234,11 @@ async function refreshDetailDocSummary(order, force) {
     renderDetailDocSummary(order);
     const needInv = order.invoice_sent_at && !order.consolidated_invoice_id;
     const needDn = !!order.delivery_note_sent_at;
+    if (order.invoice_sent_at || order.delivery_note_sent_at) {
+        if (force) delete _docChgState[order.id];
+        try { await _loadDocSumSnaps(order); } catch (e) { console.error('Сводка документов: снимки для сравнения не загрузились', e); }
+        if (order.id === currentOrderId) renderDetailDocSummary(order);
+    }
     if (!needInv && !needDn) return;
     const have = _docSumNumbers[order.id];
     if (have && !force && (!needInv || have.inv) && (!needDn || have.dn)) return;
@@ -295,14 +391,14 @@ async function _reserveDocSnapshot(order, docType, dateOverride) {
 const _SEND_SNAP_FIELDS = ['number', 'issueDate', 'dueDate'];
 async function _sendLoadRow(orderId) {
     const part = (col, pre) => _SEND_SNAP_FIELDS.map(f => `${pre}_${f}:${col}->>${f}`).join(', ')
-        + `, ${pre}_calc:${col}->calc, ${pre}_vat:${col}->vat_rate, ${pre}_order:${col}->order`;
+        + `, ${pre}_calc:${col}->calc, ${pre}_vat:${col}->vat_rate, ${pre}_od:${col}->>orderDate, ${pre}_order:${col}->order`;
     const { data, error } = await db.from('orders')
         .select(`${part('invoice_snapshot', 'inv')}, ${part('delivery_note_snapshot', 'dn')}, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via`)
         .eq('id', orderId).single();
     if (error) throw error;
     const r = data || {};
     const snap = pre => r[pre + '_number'] ? { number: r[pre + '_number'], issueDate: r[pre + '_issueDate'], dueDate: r[pre + '_dueDate'],
-        calc: r[pre + '_calc'], vat_rate: r[pre + '_vat'], order: r[pre + '_order'] || { items: [] } } : null;
+        calc: r[pre + '_calc'], vat_rate: r[pre + '_vat'], orderDate: r[pre + '_od'], order: r[pre + '_order'] || { items: [] } } : null;
     return { invoice_snapshot: snap('inv'), delivery_note_snapshot: snap('dn'),
         invoice_sent_at: r.invoice_sent_at, invoice_sent_via: r.invoice_sent_via,
         delivery_note_sent_at: r.delivery_note_sent_at, delivery_note_sent_via: r.delivery_note_sent_via };
@@ -317,8 +413,7 @@ function _sendBuildDocInfo(order, row) {
         if (issued) {
             try {
                 oldTotal = documentTotals(snap).grandAll;
-                const tol = snap.calc === 2 ? 0.004 : 0.05;
-                changed = Math.abs(orderGrandTotal(order) - oldTotal) > tol;
+                changed = _docContentChanged(order, snap);
             } catch (e) { console.error(e); }
         }
         info[dt] = {
@@ -1089,9 +1184,13 @@ async function openSendDocPreview(docType) {
             const row = await _sendLoadRow(st.orderId);
             const existing = row[snapshotField(docType)] || null;
             persisted = !!(existing && existing.number);
-            snap = await freezeDocumentSnapshot(order, docType, existing, {
-                preview: true, issueDate: st.dates[docType].issueDate, dueDate: st.dates[docType].dueDate,
-            });
+            if (persisted && !_docContentChanged(order, existing)) {
+                snap = await _loadStoredSnapshot(order, docType);   // v943: заказ не менялся — показываем сохранённый документ как есть
+            } else {
+                snap = await freezeDocumentSnapshot(order, docType, existing, {
+                    preview: true, issueDate: st.dates[docType].issueDate, dueDate: st.dates[docType].dueDate,
+                });
+            }
         }
         await ensureLangLoaded(st.emailLang);
         _docPreview = { docType, snapshot: snap, lang: st.emailLang, readOnly: true, persisted, orderId: st.orderId, consolidatedId };
@@ -1191,6 +1290,8 @@ async function _sendPrepareDocs(order, types, lang, noPdf) {
                 updated = false;
             }
             snap = st.consExisting.snapshot;
+        } else if (info && info.issued && !info.changed) {
+            snap = await _loadStoredSnapshot(order, dt);   // v943: заказ не менялся — отправляем сохранённый документ без пересборки
         } else {
             snap = await _reserveDocSnapshot(order, dt, st.dates[dt]);
         }

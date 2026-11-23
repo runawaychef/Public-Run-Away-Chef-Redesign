@@ -1236,6 +1236,8 @@ I18N.lt = {
         send_doc_status_issued: '{number} nuo {date}',
         send_doc_status_sent: ' · išsiųsta {date} ({via})',
         send_doc_changed_warn: 'Išrašyta {old} sumai, dabar pagal užsakymą {new} — bus išsiųsta atnaujinta versija',
+        doc_changed_plate: 'Užsakymas pakeistas po dokumento išsiuntimo: {docs}. Išsiųskite jį klientui iš naujo.',
+        doc_changed_once: 'Šis užsakymas jau išsiųstas klientui: {docs}. Po pakeitimų dokumentą reikia išsiųsti iš naujo — eilutė po dokumentų mygtuku.',
         send_view: 'Peržiūrėti',
         send_preview_banner: 'Peržiūra. Numeris suteikiamas siunčiant, niekas neišsaugota.',
         send_share_btn: 'Dalintis PDF',
