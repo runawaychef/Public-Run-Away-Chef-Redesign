@@ -9,6 +9,40 @@
 // deleteId/deleteType/editIndex/editItemIdx (главный скрипт).
 
 // ==================== УДАЛЕНИЕ ====================
+// Примечание в окне удаления изделия, ингредиента (упаковки), полуфабриката (v942): удаление необратимо,
+// перечислено, что исчезнет вместе с записью и где она используется (по данным в памяти; внешние ключи —
+// claude/delete-audit-and-trash-2026-11-23.md). id — индекс в соответствующем массиве.
+function deleteNoteFor(type, idx) {
+    const n = (key, num) => t(key).replace('{n}', String(num));
+    const parts = [];
+    if (type === 'product') {
+        const prod = products[idx];
+        if (!prod) return '';
+        const cnt = orders.filter(o => !o.deleted_at && (o.items || []).some(it => it.product_id === prod.id)).length;
+        parts.push(t('del_note_prod_head'));
+        if (cnt > 0) parts.push(n('del_note_prod_orders', cnt));
+    } else if (type === 'semiFinished') {
+        const sf = semiFinished[idx];
+        if (!sf) return '';
+        const cnt = products.filter(p => (p.ingredients || []).some(ri => ri.semi_finished_id === sf.id)).length;
+        parts.push(t('del_note_sf_head'));
+        if (cnt > 0) parts.push(n('del_note_in_products', cnt));
+    } else if (type === 'ingredient') {
+        const ing = ingredients[idx];
+        if (!ing) return '';
+        const inProducts = products.filter(p => (p.ingredients || []).some(ri => ri.ingredient_id === ing.id)).length;
+        const inSf = semiFinished.filter(s => (s.ingredients || []).some(ri => ri.ingredient_id === ing.id)).length;
+        const ordWith = orders.filter(o => !o.deleted_at && (o.materials || []).some(m => m.ingredient_id === ing.id));
+        const ordPriced = ordWith.filter(o => (o.materials || []).some(m => m.ingredient_id === ing.id && Number(m.quantity) > 0 && Number(m.price) > 0)).length;
+        parts.push(t(ing.kind === 'material' ? 'del_note_head_mat' : 'del_note_head_ing'));
+        if (inProducts > 0) parts.push(n('del_note_in_products', inProducts));
+        if (inSf > 0) parts.push(n('del_note_in_sf', inSf));
+        if (ordWith.length > 0) parts.push(n('del_note_in_orders', ordWith.length));
+        if (ordPriced > 0) parts.push(t('del_note_orders_sum'));
+    }
+    return parts.join('\n');
+}
+
 function openDeleteModal(id, type, label) {
     deleteId   = id;
     deleteType = type;
@@ -21,6 +55,8 @@ function openDeleteModal(id, type, label) {
         const cnote = customerDeleteNote(customers[id]);
         if (cnote) text += '\n\n' + cnote;
     }
+    const dnote = (type === 'product' || type === 'ingredient' || type === 'semiFinished') ? deleteNoteFor(type, id) : '';
+    if (dnote) text += '\n\n' + dnote;
     const textEl = document.getElementById('deleteModalText');
     textEl.style.whiteSpace = 'pre-line';
     textEl.textContent = text;
