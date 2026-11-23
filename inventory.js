@@ -326,6 +326,7 @@ function _orderShortMap() {
             r.runout.orders.forEach(x => {
                 if (!x.short) return;
                 const need = x.need, have = x.before, buy = _r4(Math.max(0, need - have));
+                if (Math.round(buy * 100) / 100 === 0) return; // недостача меньше 0,01 — не показываем строку «докупить 0»
                 (map[x.order.id] || (map[x.order.id] = [])).push({ kind: r.kind, item: r.item, name: r.item.name || '', need, have, buy, unit: unitAbbrev(r.item.unit) });
             });
         });
@@ -337,8 +338,13 @@ function _orderShortMap() {
 function orderStockShortList(order) {
     return (order && _orderShortMap()[order.id]) || [];
 }
+// Для строк нехватки малые количества (меньше 1) показываем с двумя знаками, чтобы не получилось «0 кг»
+function _invFmtShort(x) {
+    const n = Number(x) || 0;
+    return _decSep(String(Math.abs(n) < 1 ? Math.round(n * 100) / 100 : Math.round(n * 10) / 10));
+}
 function orderStockShortLinesText(list) {
-    return list.map(x => t('ord_short_line').replace('{name}', x.name).replace('{need}', `${_invFmt(x.need)} ${x.unit}`).replace('{have}', `${_invFmt(x.have)} ${x.unit}`).replace('{buy}', `${_invFmt(x.buy)} ${x.unit}`));
+    return list.map(x => t('ord_short_line').replace('{name}', x.name).replace('{need}', `${_invFmtShort(x.need)} ${x.unit}`).replace('{have}', `${_invFmtShort(x.have)} ${x.unit}`).replace('{buy}', `${_invFmtShort(x.buy)} ${x.unit}`));
 }
 // Красная капсула в списке заказов: «⚠ Не хватит: сливки, масло» (две позиции и «+N»)
 function orderStockShortCapsuleHtml(order) {

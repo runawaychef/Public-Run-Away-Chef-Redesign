@@ -2317,7 +2317,7 @@ function renderDetailItems(order) {
 
     document.getElementById('detailItemsCount').textContent   = totQty;
     const itemsSumEl = document.getElementById('orderItemsSummary');
-    if (itemsSumEl) itemsSumEl.textContent = (order.items || []).length + ' ' + t('ordmat_sum_pos') + ' · ' + totQty + ' ' + t('unit_pcs') + '.';
+    if (itemsSumEl) itemsSumEl.textContent = (order.items || []).length + ' ' + nWord((order.items || []).length, 'ordmat_item') + ' · ' + totQty + ' ' + t('unit_pcs') + '.';
     document.getElementById('detailSubtotal').textContent     = formatMoney(subtotal);
     document.getElementById('detailDiscountPct').textContent  = discPct;
     document.getElementById('detailDiscountAmount').textContent = '-' + formatMoney(discAmt);
@@ -2593,7 +2593,7 @@ async function openOrderCostBreakdown() {
         </tr></tfoot></table>`;
 
         document.getElementById('orderCostBreakdownSubtitle').textContent =
-            `${t('trash_order_word')} ${order.order_number || '#'+order.id} · ${formatDateDMY(order.date)} · ${escapeHtml(order.customer || t('orders_no_customer'))}`;
+            `${t('trash_order_word')} ${order.order_number || '#'+order.id} · ${formatDateDMY(order.date)} · ${order.customer || t('orders_no_customer')}`;
         const content = document.getElementById('orderCostBreakdownContent');
         content.innerHTML = html;
         content.style.cssText = 'max-height:60vh; overflow-y:auto; touch-action:pan-y; overscroll-behavior:contain;';
@@ -2687,7 +2687,7 @@ function renderOrderMaterials(order) {
     if (sumEl) {
         const billed = rows.reduce((s, m) => s + (Number(m.price) > 0 ? Number(m.quantity || 0) * Number(m.price) : 0), 0);
         sumEl.textContent = rows.length === 0 ? t('ordmat_sum_none')
-            : rows.length + ' ' + t('ordmat_sum_pos') + (billed > 0 ? ' · ' + formatMoney(billed) : '');
+            : rows.length + ' ' + nWord(rows.length, 'ordmat_item') + (billed > 0 ? ' · ' + formatMoney(billed) : '');
     }
     body.innerHTML = '';
     const qEl = document.getElementById('newOrdMatQty');

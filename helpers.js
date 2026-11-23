@@ -1007,3 +1007,35 @@ function appPagesLeaveGuard(cont) {
     _appPageCanLeave[asking[0]]().then(ok => { if (ok) { closeAllAppPages(); cont(); } });
     return true;
 }
+
+// ==================== ПОДСКАЗКА НОВОЙ КАРТОЧКИ (v939) ====================
+// У новой (несохранённой) карточки изделия, ингредиента, полуфабриката и клиента вместо
+// «Изменения сохраняются автоматически» показываем подсказку про «Сохранить», а у клиента и
+// полуфабриката прячем «Удалить». Состояние «новая карточка» = видна кнопка «Сохранить»
+// (её показывают и прячут существующие функции), поэтому следим за её классом.
+(function () {
+    function bindCardDraftNote(btnId, noteId, delSelector) {
+        const btn = document.getElementById(btnId), note = document.getElementById(noteId);
+        if (!btn || !note) return;
+        const del = delSelector ? document.querySelector(delSelector) : null;
+        const sync = () => {
+            const isNew = !btn.classList.contains('hidden');
+            const key = isNew ? 'card_draft_hint' : 'company_autosave';
+            if (note.getAttribute('data-i18n') !== key) {
+                note.setAttribute('data-i18n', key);
+                note.textContent = t(key);
+            }
+            if (del) del.classList.toggle('hidden', isNew);
+        };
+        new MutationObserver(sync).observe(btn, { attributes: true, attributeFilter: ['class'] });
+        sync();
+    }
+    function initCardDraftNotes() {
+        bindCardDraftNote('pdSaveNewBtn', 'productAutosaveNote');
+        bindCardDraftNote('idSaveNewBtn', 'ingredientAutosaveNote');
+        bindCardDraftNote('sfdSaveNewBtn', 'sfAutosaveNote', '#semiFinishedDetail button[onclick="deleteCurrentSemiFinished()"]');
+        bindCardDraftNote('cdSaveNewBtn', 'customerAutosaveNote', '#customerDetail button[onclick="deleteCurrentCustomer()"]');
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initCardDraftNotes);
+    else initCardDraftNotes();
+})();

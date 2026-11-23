@@ -2820,7 +2820,7 @@ function hideSplashScreen() {
                         </button>
                         <button onclick="deleteCurrentProduct()" class="pill-btn-danger perm-delete" data-i18n="prod_delete_btn">Удалить изделие</button>
                     </div>
-                    <p class="text-[11px] text-gray-400 mb-1" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
+                    <p id="productAutosaveNote" class="text-[11px] text-gray-400 mb-1" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
                     <div id="pdTitle" class="pd-title"></div>
                     <div class="pd-main-row">
                         <div id="pdPhotoWrap" class="pd-photo-wrap">
@@ -2957,7 +2957,7 @@ function hideSplashScreen() {
                         </button>
                         <button onclick="deleteCurrentIngredient()" class="pill-btn-danger perm-delete" data-i18n="ing_delete_btn">Удалить ингредиент</button>
                     </div>
-                    <p class="text-[11px] text-gray-400 mb-1" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
+                    <p id="ingredientAutosaveNote" class="text-[11px] text-gray-400 mb-1" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
                     <div id="idTitle" class="pd-title"></div>
                     <div class="ing-fields">
                         <div>
@@ -3079,7 +3079,7 @@ function hideSplashScreen() {
                         <button id="sfdSaveNewBtn" onclick="saveNewSemiFinished()" class="hidden pill-btn" style="margin-left:auto;" data-i18n="common_save">Сохранить</button>
                         <button onclick="deleteCurrentSemiFinished()" class="pill-btn-danger perm-delete" style="margin-left:6px;" data-i18n="sf_delete_btn">Удалить полуфабрикат</button>
                     </div>
-                    <p class="text-[11px] text-gray-400 mb-1" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
+                    <p id="sfAutosaveNote" class="text-[11px] text-gray-400 mb-1" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
                     <div id="sfdTitle" class="pd-title"></div>
                     <div class="grid grid-cols-2 gap-2">
                         <div class="col-span-2">
@@ -3249,7 +3249,7 @@ function hideSplashScreen() {
                         <button id="cdSaveNewBtn" onclick="saveNewCustomer()" class="hidden pill-btn" style="margin-left:auto;" data-i18n="common_save">Сохранить</button>
                         <button onclick="deleteCurrentCustomer()" class="pill-btn-danger perm-delete" style="margin-left:6px;" data-i18n="customers_delete_btn">Удалить клиента</button>
                     </div>
-                    <p class="text-[11px] text-gray-400 mb-1" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
+                    <p id="customerAutosaveNote" class="text-[11px] text-gray-400 mb-1" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
                     <button type="button" class="cd-req-head" onclick="toggleCdRequisites()">
                         <span style="flex:1; min-width:0; text-align:left;"><span id="cdTitle" class="cd-title"></span><span id="cdReqSummary" class="cd-req-sum"></span></span>
                         <svg id="cdReqChevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a6a196" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
@@ -5221,13 +5221,13 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=10"></script>
     <script src="money.js?v=17"></script>
-    <script src="i18n-core.js?v=208"></script>
+    <script src="i18n-core.js?v=209"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=21"></script>
     <script src="auth.js?v=35"></script>
     <script src="employees.js?v=82"></script>
     <script src="company.js?v=30"></script>
-    <script src="inventory.js?v=89"></script>
+    <script src="inventory.js?v=90"></script>
     <script src="billing.js?v=28"></script>
     <script src="push.js?v=12"></script>
 <script src="ingredients.js?v=81"></script>
@@ -5236,7 +5236,7 @@ function hideSplashScreen() {
 <script src="products.js?v=68"></script>
 <script src="customers.js?v=80"></script>
 <script src="calendar.js?v=17"></script>
-<script src="orders.js?v=177"></script>
+<script src="orders.js?v=178"></script>
 <script src="dashboard.js?v=25"></script>
 <script src="invoice.js?v=56"></script>
 <script src="send-document.js?v=44"></script>
@@ -5249,7 +5249,7 @@ function hideSplashScreen() {
 <script src="history.js?v=10"></script>
 <script src="modals.js?v=24"></script>
 <script src="demoData.js?v=31"></script>
-<script src="helpers.js?v=55"></script>
+<script src="helpers.js?v=56"></script>
 <script>
 // SUPABASE_URL, SUPABASE_KEY, db перенесены в supabaseClient.js
 
