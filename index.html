@@ -3615,8 +3615,12 @@ function hideSplashScreen() {
                 </div>
 
                 <div class="bg-white p-2 rounded-xl shadow-md mb-3">
-                    <div class="flex justify-between items-center mb-2">
-                        <h2 class="text-xs font-semibold text-gray-800" data-i18n="orders_positions_title">Позиции заказа</h2>
+                    <div class="flex justify-between items-center mb-2" style="gap:8px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4f6349" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a2 2 0 1 0 4 0a2 2 0 0 0 -4 0"/><path d="M5.001 8h13.999a2 2 0 0 1 1.977 2.304l-1.255 7.152a3 3 0 0 1 -2.966 2.544h-9.512a3 3 0 0 1 -2.965 -2.544l-1.255 -7.152a2 2 0 0 1 1.977 -2.304z"/><path d="M17 10l-2 -6"/><path d="M7 10l2 -6"/></svg>
+                            <h2 class="text-xs font-semibold text-gray-800" data-i18n="orders_positions_title">Позиции заказа</h2>
+                        </div>
+                        <span id="orderItemsSummary" class="text-xs text-gray-500"></span>
                     </div>
                     <table class="w-full table-auto table-clean mb-2">
                         <thead><tr style="background-color:#e3e8df;">
@@ -5230,7 +5234,7 @@ function hideSplashScreen() {
 <script src="products.js?v=68"></script>
 <script src="customers.js?v=80"></script>
 <script src="calendar.js?v=17"></script>
-<script src="orders.js?v=175"></script>
+<script src="orders.js?v=176"></script>
 <script src="dashboard.js?v=25"></script>
 <script src="invoice.js?v=56"></script>
 <script src="send-document.js?v=44"></script>

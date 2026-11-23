@@ -2316,6 +2316,8 @@ function renderDetailItems(order) {
     const grand     = orderGrandTotal(order);
 
     document.getElementById('detailItemsCount').textContent   = totQty;
+    const itemsSumEl = document.getElementById('orderItemsSummary');
+    if (itemsSumEl) itemsSumEl.textContent = (order.items || []).length + ' ' + t('ordmat_sum_pos') + ' · ' + totQty + ' ' + t('unit_pcs') + '.';
     document.getElementById('detailSubtotal').textContent     = formatMoney(subtotal);
     document.getElementById('detailDiscountPct').textContent  = discPct;
     document.getElementById('detailDiscountAmount').textContent = '-' + formatMoney(discAmt);
