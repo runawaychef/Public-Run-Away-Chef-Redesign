@@ -46,11 +46,17 @@ function _confData() {
     const tot = _orderTotals(order);
     const paid = Number(_orderPaidTotals[order.id] || 0);
     const due = Math.max(0, Math.round((tot.grand - paid) * 100) / 100);
-    const items = orderBillItems(order).map((it, i) => ({
+    // v940: сумма строки = количество × цена (до скидки и НДС) — читатель может проверить умножением;
+    // скидка, «Итого без НДС» и НДС показываются отдельными строками ниже (как в карточке заказа).
+    // Те же центы, что в calcTotals (money.js): сумма строк ровно равна tot.subtotal.
+    const items = orderBillItems(order).map(it => ({
         product: it.product, quantity: it.quantity, price: it.price,
-        sum: tot.lines[i] ? tot.lines[i].gross : (Number(it.quantity) || 0) * (Number(it.price) || 0),
+        sum: _roundCents(Math.max(0, (Number(it.quantity) || 0) * (Number(it.price) || 0)) * 100) / 100,
     }));
+    const vatRate = Number(typeof currentOrgVatRate !== 'undefined' ? currentOrgVatRate : 0) || 0;
+    const vatApplies = !orderVatExempt(order) && vatRate > 0;
     return {
+        vatApplies, vatPct: Math.round(vatRate * 10000) / 100,
         order, cust, items, tot, paid, due,
         num: _confOrderNum(order),
         date: order.date || order.order_date || '',
@@ -68,6 +74,22 @@ function _confStatusText(d, lang) {
     if (d.tot.grand <= 0.005) return '';
     if (d.due <= 0.005) return tDoc('conf_paid', lang);
     return d.paid > 0.005 ? `${tDoc('conf_paid', lang)}: ${d.paid.toFixed(2)} ${d.sym} · ${tDoc('conf_to_pay', lang)}: ${d.due.toFixed(2)} ${d.sym}` : `${tDoc('conf_to_pay', lang)}: ${d.due.toFixed(2)} ${d.sym}`;
+}
+
+// Строки под таблицей (экран и PDF): скидка → «Итого без НДС» → НДС; «Итого» печатается отдельно.
+// Скидка и НДС округлены ОДИН раз на весь заказ (calcTotals), поэтому:
+// сумма строк − скидка = итого без НДС, итого без НДС + НДС = итого — копейка в копейку.
+function _confSummaryRows(d, L, money) {
+    const rows = [];
+    if (d.tot.discount > 0) {
+        const pct = Number(d.order.discount) || 0;
+        rows.push({ label: tDoc('conf_discount', L) + (pct > 0 ? ` (${String(Math.round(pct * 100) / 100)}%)` : ''), value: '−' + money(d.tot.discount) });
+    }
+    if (d.vatApplies) {
+        rows.push({ label: tDoc('inv_total_no_vat', L), value: money(d.tot.net) });
+        rows.push({ label: tDoc('inv_vat_sum', L) + (d.vatPct > 0 ? ` (${String(d.vatPct)}%)` : ''), value: money(d.tot.vat) });
+    }
+    return rows;
 }
 
 function _renderOrderConf() {
@@ -90,8 +112,8 @@ function _renderOrderConf() {
             <div style="margin:16px 0 4px;font-size:16px;font-weight:700;text-align:center;">${esc(tDoc('conf_title', L))} № ${esc(d.num)}</div>
             <div style="text-align:center;color:#666;margin-bottom:12px;">${esc(tDoc('conf_order_date', L))}: ${esc(formatDateDMY(d.date))}</div>
             ${d.clientName ? `<div style="margin-bottom:10px;"><span style="color:#888;">${esc(tDoc('conf_client', L))}:</span> ${esc(d.clientName)}</div>` : ''}
-            <table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#e3e8df;"><th style="text-align:left;padding:5px 4px;">${esc(tDoc('inv_col_name', L))}</th><th>${esc(tDoc('inv_col_qty', L))}</th><th style="text-align:right;">${esc(tDoc('inv_col_price', L))}</th><th style="text-align:right;">${esc(tDoc('inv_col_sum', L))}</th></tr></thead><tbody>${rows}</tbody></table>
-            ${d.tot.discount > 0 ? `<div style="text-align:right;margin-top:8px;color:#666;">${esc(tDoc('conf_discount', L))}: −${money(d.tot.discount)}</div>` : ''}
+            <table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#e3e8df;"><th style="text-align:left;padding:5px 4px;">${esc(tDoc('inv_col_name', L))}</th><th>${esc(tDoc('inv_col_qty', L))}</th><th style="text-align:right;">${esc(tDoc(d.vatApplies ? 'inv_col_price_no_vat' : 'inv_col_price', L))}</th><th style="text-align:right;">${esc(tDoc(d.vatApplies ? 'inv_col_sum_no_vat' : 'inv_col_sum', L))}</th></tr></thead><tbody>${rows}</tbody></table>
+            ${_confSummaryRows(d, L, money).map((r, i) => `<div style="text-align:right;margin-top:${i === 0 ? 8 : 2}px;color:#666;">${esc(r.label)}: ${esc(r.value)}</div>`).join('')}
             <div style="text-align:right;margin-top:8px;font-size:14px;font-weight:700;">${esc(tDoc('conf_total', L))}: ${money(d.tot.grand)}</div>
             ${status ? `<div style="text-align:right;margin-top:2px;color:${unpaid ? '#a3493d' : '#4f6349'};">${esc(status)}</div>` : ''}
             <div style="margin-top:18px;font-size:10.5px;color:#999;border-top:1px solid #eee;padding-top:8px;">${esc(tDoc('conf_note', L))}</div>
@@ -137,7 +159,7 @@ async function _buildConfPdf(d) {
     pdf.autoTable({
         startY: y,
         margin: { left: mx, right: mx },
-        head: [[tDoc('inv_col_name', L), tDoc('inv_col_qty', L), tDoc('inv_col_price', L), tDoc('inv_col_sum', L)]],
+        head: [[tDoc('inv_col_name', L), tDoc('inv_col_qty', L), tDoc(d.vatApplies ? 'inv_col_price_no_vat' : 'inv_col_price', L), tDoc(d.vatApplies ? 'inv_col_sum_no_vat' : 'inv_col_sum', L)]],
         body: d.items.map(it => [it.product || '', String(it.quantity), it.price == null ? '—' : money(it.price), money(it.sum)]),
         headStyles: { ...PDF_TABLE_HEAD_STYLE, fontSize: 9 },
         columnStyles: { 1: { halign: 'center' }, 2: { halign: 'right' }, 3: { halign: 'right' } },
@@ -145,10 +167,8 @@ async function _buildConfPdf(d) {
     });
     y = pdf.lastAutoTable.finalY + 8;
     const right = pageW - mx;
-    if (d.tot.discount > 0) {
-        pdf.setFontSize(10); pdf.setFont('Roboto', 'normal'); pdf.setTextColor(...PDF_COLORS.textGray);
-        pdf.text(`${tDoc('conf_discount', L)}: −${money(d.tot.discount)}`, right, y, { align: 'right' }); y += 6;
-    }
+    pdf.setFontSize(10); pdf.setFont('Roboto', 'normal'); pdf.setTextColor(...PDF_COLORS.textGray);
+    _confSummaryRows(d, L, money).forEach(r => { pdf.text(`${r.label}: ${r.value}`, right, y, { align: 'right' }); y += 5.5; });
     pdf.setFontSize(13); pdf.setFont('Roboto', 'bold'); pdf.setTextColor(...PDF_COLORS.textDark);
     pdf.text(`${tDoc('conf_total', L)}: ${money(d.tot.grand)}`, right, y, { align: 'right' }); y += 6;
     const status = _confStatusText(d, L);
