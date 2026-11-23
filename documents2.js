@@ -62,11 +62,12 @@ async function _d2LoadPaid() {
     _d2Paid = null;
     try {
         const mm = _d2Months();
-        const { data, error } = await db.from('order_payments').select('amount, paid_at')
+        const { data, error } = await db.from('order_payments').select('amount, paid_at, kind')
             .eq('org_id', currentOrgId).gte('paid_at', mm.prev + '-01').limit(5000);
         if (error) throw error;
         let c = 0, n = 0, pc = 0;
         (data || []).forEach(p => {
+            if (p.kind === 'to_credit' || p.kind === 'from_credit') return;   // v946: переносы аванса — не реальные деньги
             const m = String(p.paid_at || '').slice(0, 7), cc = Math.round(Number(p.amount || 0) * 100);
             if (m === mm.cur) { c += cc; n++; } else if (m === mm.prev) { pc += cc; }
         });
@@ -386,10 +387,10 @@ let _d2PRows = [];
 let _d2P = { cust: '', period: '', open: new Set() };
 
 async function _d2FetchPaidRows() {
-    const { data, error } = await db.from('order_payments').select('id, order_id, amount, paid_at, consolidated_invoice_id')
+    const { data, error } = await db.from('order_payments').select('id, order_id, amount, paid_at, consolidated_invoice_id, kind')
         .eq('org_id', currentOrgId).order('paid_at', { ascending: false }).limit(5000);
     if (error) throw error;
-    _d2PRows = data || [];
+    _d2PRows = (data || []).filter(p => p.kind !== 'to_credit' && p.kind !== 'from_credit');   // v946: переносы аванса — не реальные деньги
 }
 async function openDocs2Paid() {
     if (!docs2Allowed()) return;

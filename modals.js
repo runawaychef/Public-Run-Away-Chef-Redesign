@@ -106,6 +106,14 @@ async function confirmDelete() {
         } else if (deleteType === 'customer') {
             const cust = customers[deleteId];
             const wasOpenInDetail = cust.id === currentCustomerId;
+            // v946: клиента с авансом удалять нельзя — сначала вернуть или зачесть
+            const credBal = typeof loadCustomerBalance === 'function' ? await loadCustomerBalance(cust.id) : 0;
+            if (Math.abs(credBal) > 0.004) {
+                hideLoading();
+                closeModal();
+                showInfo(t('credit_delete_blocked').replace('{sum}', formatMoney(credBal)));
+                return;
+            }
             const { error } = await db.from('customers').delete().eq('id', cust.id);
             if (error) throw error;
             customers.splice(deleteId, 1);

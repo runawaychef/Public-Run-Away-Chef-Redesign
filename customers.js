@@ -704,7 +704,38 @@ function openCustomerDetail(custId) {
 
     renderCustomerStats(cust);
     renderCustomerOrders();
+    renderCustomerCredit(cust);   // v946: аванс клиента
     refreshFab();
+}
+
+// v946: блок «Аванс клиента» в карточке: баланс, кнопка возврата, последние движения
+let _cdCreditSeq = 0;
+async function renderCustomerCredit(cust) {
+    const box = document.getElementById('cdCreditBlock');
+    if (!box || !cust) return;
+    const seq = ++_cdCreditSeq;
+    box.classList.add('hidden');
+    try {
+        const { data, error } = await db.from('customer_credits')
+            .select('id, amount, kind, order_id, method, op_date, created_at').eq('customer_id', cust.id)
+            .order('created_at', { ascending: false }).limit(200);
+        if (error) throw error;
+        if (seq !== _cdCreditSeq || currentCustomerId !== cust.id) return;
+        const rows = data || [];
+        const bal = Math.round(rows.reduce((s, r) => s + Number(r.amount), 0) * 100) / 100;
+        if (typeof _custBalance !== 'undefined') _custBalance[cust.id] = bal;
+        if (!rows.length) return;
+        document.getElementById('cdCreditAmount').textContent = formatMoney(bal);
+        document.getElementById('cdCreditRefundBtn').classList.toggle('hidden', bal <= 0.004);
+        const kindKey = { from_order: 'credit_hist_from_order', applied: 'credit_hist_applied', refund: 'credit_hist_refund' };
+        document.getElementById('cdCreditHistory').innerHTML = rows.slice(0, 10).map(r => {
+            const o = r.order_id ? orders.find(x => x.id === r.order_id) : null;
+            const ord = o ? ' · №' + escapeHtml(String(o.order_number || o.id)) : '';
+            const sign = Number(r.amount) > 0 ? '+' : '';
+            return `<div>${escapeHtml(formatDateDMY(r.op_date))} · ${sign}${escapeHtml(formatMoney(Number(r.amount)))} · ${escapeHtml(t(kindKey[r.kind] || 'credit_hist_refund'))}${ord}</div>`;
+        }).join('');
+        box.classList.remove('hidden');
+    } catch (e) { console.error('Аванс клиента: не загрузился', e); }
 }
 
 // ---- Страница клиента (16.10): блок «Реквизиты и НДС», сводка, заказы ----

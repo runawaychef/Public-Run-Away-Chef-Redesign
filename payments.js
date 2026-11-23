@@ -30,6 +30,17 @@ function _payOrderSnap(order) {
     } catch (e) { console.error(e); return null; }
 }
 let _orderPayments = [];
+// v946: аванс клиента (таблица customer_credits: сумма > 0 — пополнение, < 0 — списание/возврат)
+const _custBalance = {};   // { customerId: сумма аванса }
+async function loadCustomerBalance(custId) {
+    if (!custId) return 0;
+    try {
+        const { data, error } = await db.from('customer_credits').select('amount').eq('customer_id', custId);
+        if (error) throw error;
+        _custBalance[custId] = Math.round((data || []).reduce((s, r) => s + Number(r.amount), 0) * 100) / 100;
+    } catch (e) { console.error('Аванс клиента: не загрузился', e); }
+    return _custBalance[custId] || 0;
+}
 let _orderPaymentsFor = null;   // v945: id заказа, чьи оплаты сейчас в _orderPayments
 const _payChgState = {};        // v945: { orderId: { prev, warned } } — для одноразового окна «заказ изменён после оплаты»
 let _orderPaidTotals = {}; // { orderId: сумма всех платежей } — для отметки статуса оплаты в списке заказов
@@ -60,7 +71,7 @@ async function loadOrderPayments(orderId) {
     if (banner) banner.classList.add('hidden'); // не показываем плашку предыдущего заказа, пока грузится
     try {
         let res = await db.from('order_payments')
-            .select('id, amount, method, paid_at, note, created_by, created_at, consolidated_invoice_id, bank_transaction_id, order_snapshot')
+            .select('id, amount, method, paid_at, note, created_by, created_at, consolidated_invoice_id, bank_transaction_id, order_snapshot, kind')
             .eq('order_id', orderId)
             .order('paid_at', { ascending: false });
         if (res.error) { // запасной вариант: без пометки «из банка» список оплат всё равно должен открыться
@@ -90,6 +101,7 @@ async function loadOrderPayments(orderId) {
 
     // Подставляем срок оплаты из уже загруженного заказа
     const order = orders.find(o => o.id === orderId);
+    if (order && order.customer_id) await loadCustomerBalance(order.customer_id);   // v946
     // Номер сводного счёта (для строки «Входит в счёт …» и подписей оплат)
     const consIds = new Set(_orderPayments.map(p => p.consolidated_invoice_id).filter(Boolean));
     if (order && order.consolidated_invoice_id) consIds.add(order.consolidated_invoice_id);
@@ -150,6 +162,23 @@ function renderPayments() {
     _renderPaymentConsLine();
     _renderPaymentLastLine();
 
+    // v946: действия с переплатой и зачёт аванса клиента (каждое — через окно подтверждения)
+    const curOrder = orders.find(o => o.id === currentOrderId);
+    const bal = (curOrder && curOrder.customer_id) ? (_custBalance[curOrder.customer_id] || 0) : 0;
+    const actBox = document.getElementById('paymentCreditActions');
+    if (actBox) {
+        const btns = [];
+        const btnCls = 'pill-btn-secondary flex-1 justify-center';
+        if (overpaid > 0.004) {
+            if (curOrder && curOrder.customer_id) btns.push(`<button type="button" onclick="openCreditOp('to_credit')" class="${btnCls}" style="padding:8px 10px;">${escapeHtml(t('credit_btn_to_credit'))}</button>`);
+            btns.push(`<button type="button" onclick="openCreditOp('refund_order')" class="${btnCls}" style="padding:8px 10px;">${escapeHtml(t('credit_btn_refund'))}</button>`);
+        }
+        if (remaining > 0.004 && bal > 0.004) {
+            btns.push(`<button type="button" onclick="openCreditOp('from_credit')" class="${btnCls}" style="padding:8px 10px;">${escapeHtml(t('credit_btn_apply').replace('{sum}', formatMoney(bal)))}</button>`);
+        }
+        actBox.innerHTML = btns.join('');
+        actBox.classList.toggle('hidden', !btns.length);
+    }
     const overpaidRow = document.getElementById('paymentOverpaidRow');
     if (overpaidRow) {
         overpaidRow.classList.toggle('hidden', overpaid <= 0);
@@ -199,6 +228,10 @@ function renderPayments() {
     _orderPayments.forEach(p => {
         const emp = employees.find(e => e.id === p.created_by);
         const parts = [formatDateDMY(p.paid_at), formatMoney(p.amount), escapeHtml(payMethodLabel(p.method))];
+        const isOp = !!p.kind && p.kind !== 'payment';   // v946: возврат / перенос в аванс / зачёт аванса
+        if (p.kind === 'refund') parts[2] = escapeHtml(t('pay_kind_refund')) + ' · ' + parts[2];
+        else if (p.kind === 'to_credit') parts[2] = escapeHtml(t('pay_kind_to_credit'));
+        else if (p.kind === 'from_credit') parts[2] = escapeHtml(t('pay_kind_from_credit'));
         // Наличные без счёта в режиме «По счёту» — пометка (вычисляется, не хранится)
         if (_payByInvoice() && p.method === 'наличные' && !p.consolidated_invoice_id && !p.bank_transaction_id
             && !orderHasInvoice(orders.find(o => o.id === currentOrderId))) parts[2] += ' · ' + escapeHtml(t('pay_no_invoice'));
@@ -206,11 +239,11 @@ function renderPayments() {
         const snapTotal = p.order_snapshot && p.order_snapshot.total != null ? Number(p.order_snapshot.total) : null;
         const snapNote = (snapTotal != null && Math.abs(snapTotal - total) > 0.004)
             ? `<div style="font-size:12px; color:#8a6a1f;">${escapeHtml(t('pay_snap_note').replace('{sum}', formatMoney(snapTotal)))}</div>` : '';
-        html += `<div class="flex justify-between items-center bg-[#f4f1ea] hover:bg-[#e3e8df] active:bg-[#e3e8df] rounded-lg px-3 py-2.5 cursor-pointer" ${dataAction('openEditPaymentModal', [p.id])}>
+        html += `<div class="flex justify-between items-center bg-[#f4f1ea] hover:bg-[#e3e8df] active:bg-[#e3e8df] rounded-lg px-3 py-2.5 cursor-pointer" ${isOp ? dataAction('undoPaymentOp', [p.id]) : dataAction('openEditPaymentModal', [p.id])}>
             <div class="min-w-0" style="font-size:13px;"><div class="font-medium text-gray-800 truncate">${parts.join(' · ')}${p.note ? ' · ' + escapeHtml(p.note) : ''}</div>${p.consolidated_invoice_id ? `<div style="font-size:12px; color:#4f6349;">${escapeHtml(t(_consInvCancelled[p.consolidated_invoice_id] ? 'pay_cons_tag_cancelled' : 'pay_cons_tag').replace('{number}', _payConsNumber(p.consolidated_invoice_id)))}</div>` : ''}${snapNote}</div>
             ${p.bank_transaction_id
                 ? `<span class="shrink-0 ml-2" style="font-size:11px; background:#eef2ea; color:#4f6349; border-radius:6px; padding:2px 7px; white-space:nowrap; display:inline-flex; align-items:center; gap:3px;">${_payTxStatus[p.bank_transaction_id] === 'auto_matched' ? payAutoBankIconHtml(11) : ''}${escapeHtml(payBankSourceLabel(p))}</span>`
-                : `<span class="action-icon icon-edit shrink-0 ml-2">${icon('edit', 'w-4 h-4')}</span>`}
+                : `<span class="action-icon icon-edit shrink-0 ml-2">${icon(isOp ? 'trash' : 'edit', 'w-4 h-4')}</span>`}
         </div>`;
     });
     html += '</div>';
@@ -405,6 +438,158 @@ function openEditPaymentModal(paymentId) {
     document.getElementById('paymentMethod').value = p.method || 'наличные';
     document.getElementById('paymentNote').value = p.note || '';
     document.getElementById('addPaymentModal').style.display = 'flex';
+}
+
+// ==================== v946: АВАНС КЛИЕНТА, ЗАЧЁТ, ВОЗВРАТ ====================
+// Переплата по заказу → «в аванс клиента» (оплата −X вида to_credit + запись в customer_credits +X)
+//                     или «вернуть клиенту» (оплата −X вида refund).
+// Аванс на новый заказ → «зачесть» (оплата +X вида from_credit + запись в customer_credits −X).
+// Из карточки клиента → «вернуть аванс» (запись в customer_credits −X вида refund).
+// Каждое действие — через окно подтверждения. Статус и остаток заказа считаются как раньше (сумма всех оплат).
+let _creditOp = null;   // { kind, orderId, custId, max }
+
+function _creditOpOrderState() {
+    const order = orders.find(o => o.id === currentOrderId);
+    const total = getOrderTotalValue();
+    const paid = _orderPayments.reduce((s, p) => s + Number(p.amount), 0);
+    return { order, overpaid: Math.round(Math.max(0, paid - total) * 100) / 100, remaining: Math.round(Math.max(0, total - paid) * 100) / 100 };
+}
+
+function _creditOpOpen(st, title, sub) {
+    _creditOp = st;
+    document.getElementById('creditOpTitle').textContent = title;
+    document.getElementById('creditOpSub').textContent = sub;
+    document.getElementById('creditOpAmount').value = st.max.toFixed(2);
+    document.getElementById('creditOpDate').value = getLocalDateStr(0);
+    document.getElementById('creditOpMethodWrap').classList.toggle('hidden', !(st.kind === 'refund_order' || st.kind === 'refund_credit'));
+    document.getElementById('creditOpModal').style.display = 'flex';
+}
+
+function openCreditOp(kind) {
+    const s = _creditOpOrderState();
+    const order = s.order;
+    if (!order) return;
+    const custId = order.customer_id || null;
+    const name = order.customer || '';
+    const bal = custId ? (_custBalance[custId] || 0) : 0;
+    if (kind === 'to_credit') {
+        if (!custId) { showInfo(t('credit_op_need_customer')); return; }
+        if (s.overpaid <= 0.004) return;
+        _creditOpOpen({ kind, orderId: order.id, custId, max: s.overpaid }, t('credit_op_title_to_credit'), t('credit_op_sub_to_credit').replace('{name}', name));
+    } else if (kind === 'refund_order') {
+        if (s.overpaid <= 0.004) return;
+        _creditOpOpen({ kind, orderId: order.id, custId, max: s.overpaid }, t('credit_op_title_refund'), t('credit_op_sub_refund_order'));
+    } else if (kind === 'from_credit') {
+        const max = Math.round(Math.min(bal, s.remaining) * 100) / 100;
+        if (max <= 0.004) return;
+        _creditOpOpen({ kind, orderId: order.id, custId, max }, t('credit_op_title_apply'), t('credit_op_sub_apply').replace('{bal}', formatMoney(bal)).replace('{name}', name));
+    }
+}
+
+// Возврат аванса — из карточки клиента
+function openCustomerRefund() {
+    const custId = (typeof currentCustomerId !== 'undefined') ? currentCustomerId : null;
+    const bal = custId ? (_custBalance[custId] || 0) : 0;
+    if (!custId || bal <= 0.004) return;
+    _creditOpOpen({ kind: 'refund_credit', orderId: null, custId, max: bal }, t('credit_op_title_refund_credit'), t('credit_op_sub_refund_credit').replace('{bal}', formatMoney(bal)));
+}
+
+async function _creditInsPay(order, amount, kind, method, date) {
+    const { data, error } = await db.from('order_payments').insert({
+        org_id: currentOrgId, order_id: order.id, amount, method, paid_at: date, kind,
+        created_by: currentEmployee ? currentEmployee.id : null,
+        order_snapshot: _payOrderSnap(order),
+    }).select('id').single();
+    if (error) throw error;
+    return data.id;
+}
+async function _creditInsCredit(row) {
+    const { error } = await db.from('customer_credits').insert(Object.assign({
+        org_id: currentOrgId, created_by: currentEmployee ? currentEmployee.id : null,
+    }, row));
+    if (error) throw error;
+}
+
+async function submitCreditOp() {
+    const st = _creditOp;
+    if (!st) return;
+    const raw = parseFloat(document.getElementById('creditOpAmount').value);
+    const x = Math.round((raw || 0) * 100) / 100;
+    const date = document.getElementById('creditOpDate').value;
+    const method = document.getElementById('creditOpMethod').value;
+    if (!(x > 0) || x > st.max + 0.004) { showInfo(t('credit_op_amount_bad').replace('{max}', formatMoney(st.max))); return; }
+    if (!date) { showInfo(t('pay_date_required')); return; }
+    const order = st.orderId ? orders.find(o => o.id === st.orderId) : null;
+    showLoading(t('common_saving'));
+    try {
+        suppressRealtimeFor3s();
+        let label = '';
+        if (st.kind === 'to_credit') {
+            const payId = await _creditInsPay(order, -x, 'to_credit', 'аванс', date);
+            try {
+                await _creditInsCredit({ customer_id: st.custId, amount: x, kind: 'from_order', order_id: order.id, payment_id: payId, op_date: date });
+            } catch (e) { await db.from('order_payments').delete().eq('id', payId); throw e; }
+            label = t('pay_kind_to_credit');
+        } else if (st.kind === 'refund_order') {
+            await _creditInsPay(order, -x, 'refund', method, date);
+            label = t('pay_kind_refund');
+        } else if (st.kind === 'from_credit') {
+            const payId = await _creditInsPay(order, x, 'from_credit', 'аванс', date);
+            try {
+                await _creditInsCredit({ customer_id: st.custId, amount: -x, kind: 'applied', order_id: order.id, payment_id: payId, op_date: date });
+            } catch (e) { await db.from('order_payments').delete().eq('id', payId); throw e; }
+            label = t('pay_kind_from_credit');
+        } else if (st.kind === 'refund_credit') {
+            await _creditInsCredit({ customer_id: st.custId, amount: -x, kind: 'refund', method, op_date: date });
+            label = t('credit_hist_refund');
+        }
+        document.getElementById('creditOpModal').style.display = 'none';
+        _creditOp = null;
+        await loadCustomerBalance(st.custId);
+        if (order) {
+            logActivity('order', `${label}: ${formatMoney(x)}`, order.id);
+            await loadOrderPayments(order.id);
+        } else {
+            logActivity('customer', `${label}: ${formatMoney(x)}`);
+            const cust = customers.find(c => c.id === st.custId);
+            if (cust && typeof renderCustomerCredit === 'function') renderCustomerCredit(cust);
+        }
+    } catch (e) {
+        console.error(e);
+        showInfo(t('credit_op_error'));
+    } finally { hideLoading(); }
+}
+
+// Отмена операции (клик по строке «Возврат» / «Перенос в аванс» / «Зачёт аванса» в списке оплат)
+async function undoPaymentOp(paymentId) {
+    const p = _orderPayments.find(x => x.id === paymentId);
+    if (!p) return;
+    if (!(await showConfirm(t('credit_undo_confirm')))) return;
+    try {
+        suppressRealtimeFor3s();
+        const order = orders.find(o => o.id === currentOrderId);
+        const { data: cr, error: ce } = await db.from('customer_credits').select('id, customer_id').eq('payment_id', paymentId);
+        if (ce) throw ce;
+        const custId = (cr && cr[0]) ? cr[0].customer_id : (order ? order.customer_id : null);
+        if (p.kind === 'to_credit') {   // деньги из аванса уже могли быть использованы
+            const bal = custId ? await loadCustomerBalance(custId) : 0;
+            if (bal + 0.004 < Math.abs(Number(p.amount))) { showInfo(t('credit_undo_blocked')); return; }
+        }
+        showLoading(t('common_saving'));
+        const { error } = await db.from('order_payments').delete().eq('id', paymentId);
+        if (error) throw error;
+        const ids = (cr || []).map(r => r.id);
+        if (ids.length) {
+            const { error: de } = await db.from('customer_credits').delete().in('id', ids);
+            if (de) throw de;
+        }
+        if (custId) await loadCustomerBalance(custId);
+        logActivity('order', `${t('log_payment_deleted')}: ${formatMoney(p.amount)}`, currentOrderId);
+        await loadOrderPayments(currentOrderId);
+    } catch (e) {
+        console.error(e);
+        showInfo(t('credit_op_error'));
+    } finally { hideLoading(); }
 }
 
 async function savePayment() {

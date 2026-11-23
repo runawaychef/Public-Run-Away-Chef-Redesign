@@ -3321,6 +3321,13 @@ function hideSplashScreen() {
                     <div id="cdMemoStrip"></div>
                 </div>
 
+                <div id="cdCreditBlock" class="bg-white p-2 rounded-xl shadow-md mb-3 hidden">
+                    <div class="flex items-center justify-between gap-2">
+                        <div><div class="text-xs text-gray-500" data-i18n="credit_title">Аванс клиента</div><div id="cdCreditAmount" class="font-semibold text-gray-900" style="font-size:18px;"></div></div>
+                        <button id="cdCreditRefundBtn" type="button" onclick="openCustomerRefund()" class="pill-btn-secondary" data-i18n="credit_refund_btn">Вернуть аванс</button>
+                    </div>
+                    <div id="cdCreditHistory" style="margin-top:8px; font-size:12px; color:#6b675d; line-height:1.6;"></div>
+                </div>
                 <div id="cdOrdersBlock" class="bg-white p-2 rounded-xl shadow-md">
                     <div class="flex justify-between items-center mb-2">
                         <h2 class="text-sm font-semibold text-gray-800" data-i18n="customers_orders_title">Заказы клиента</h2>
@@ -3759,6 +3766,7 @@ function hideSplashScreen() {
                     <div id="paymentOverpaidRow" class="hidden"><span data-i18n="orders_overpaid">Переплата</span>: <span id="paymentOverpaidAmount" class="font-semibold" style="color:#4f6349;">0.00</span></div>
                 </div>
 
+                <div id="paymentCreditActions" class="flex gap-2 mb-2 hidden"></div>
                 <div id="paymentsListContent" class="mb-2"></div>
 
                 <div class="flex gap-2 mb-2">
@@ -4068,6 +4076,30 @@ function hideSplashScreen() {
                     <button id="paymentDeleteBtn" onclick="deletePayment()" class="pill-btn-danger hidden" style="background:#f3ded9; color:#a3493d; box-shadow:none; width:80px;" data-i18n="common_delete">Удалить</button>
                     <button id="paymentSaveBtn" onclick="savePayment()" class="pill-btn flex-1 justify-center" data-i18n="common_save">Сохранить</button>
                     <button onclick="document.getElementById('addPaymentModal').style.display='none'" class="pill-btn-secondary" style="width:80px;" data-i18n="common_cancel">Отмена</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- v946: аванс клиента / возврат / зачёт — одно окно подтверждения -->
+        <div id="creditOpModal" class="modal">
+            <div class="modal-content" style="max-width:320px;">
+                <h2 id="creditOpTitle" class="text-sm font-semibold text-gray-800"></h2>
+                <div id="creditOpSub" style="font-size:12px; color:#6b675d; margin:4px 0 10px; line-height:1.45;"></div>
+                <label class="text-xs text-gray-500" data-i18n="orders_amount">Сумма</label>
+                <input id="creditOpAmount" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-1 rounded-xl text-xs w-full mb-2" style="background:#f4f1ea;">
+                <label class="text-xs text-gray-500" data-i18n="history_col_date">Дата</label>
+                <input id="creditOpDate" type="date" class="border p-1 rounded-xl text-xs w-full mb-2" style="background:#f4f1ea;">
+                <div id="creditOpMethodWrap" class="hidden">
+                    <label class="text-xs text-gray-500" data-i18n="orders_payment_method">Способ оплаты</label>
+                    <select id="creditOpMethod" class="border p-1 rounded-xl text-xs w-full mb-2" style="background:#f4f1ea;">
+                        <option value="наличные" data-i18n="orders_method_cash">Наличные</option>
+                        <option value="карта" data-i18n="orders_method_card">Карта</option>
+                        <option value="перевод" data-i18n="orders_method_transfer">Перевод</option>
+                    </select>
+                </div>
+                <div class="flex gap-2" style="margin-top:6px;">
+                    <button onclick="submitCreditOp()" class="pill-btn flex-1 justify-center" data-i18n="credit_op_confirm">Подтвердить</button>
+                    <button onclick="document.getElementById('creditOpModal').style.display='none'" class="pill-btn-secondary" style="width:80px;" data-i18n="common_cancel">Отмена</button>
                 </div>
             </div>
         </div>
@@ -5221,7 +5253,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=10"></script>
     <script src="money.js?v=17"></script>
-    <script src="i18n-core.js?v=214"></script>
+    <script src="i18n-core.js?v=215"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=21"></script>
     <script src="auth.js?v=35"></script>
@@ -5234,20 +5266,20 @@ function hideSplashScreen() {
 <script src="batches.js?v=18"></script>
 <script src="semifinished.js?v=76"></script>
 <script src="products.js?v=68"></script>
-<script src="customers.js?v=81"></script>
+<script src="customers.js?v=82"></script>
 <script src="calendar.js?v=17"></script>
 <script src="orders.js?v=180"></script>
 <script src="dashboard.js?v=25"></script>
 <script src="invoice.js?v=57"></script>
 <script src="send-document.js?v=46"></script>
 <script src="confirmation.js?v=5"></script>
-<script src="payments.js?v=40"></script>
+<script src="payments.js?v=41"></script>
 <script src="documents.js?v=16"></script>
-<script src="documents2.js?v=34"></script>
+<script src="documents2.js?v=35"></script>
 <script src="bank.js?v=13"></script>
 <script src="stats.js?v=45"></script>
 <script src="history.js?v=10"></script>
-<script src="modals.js?v=26"></script>
+<script src="modals.js?v=27"></script>
 <script src="demoData.js?v=31"></script>
 <script src="helpers.js?v=56"></script>
 <script>
