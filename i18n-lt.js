@@ -658,7 +658,7 @@ I18N.lt = {
         ordmat_log_added: 'Į užsakymą pridėta pakuotė',
         mat_qty_per_unit: 'Kiekis vienam vienetui',
         cost_edit_title: 'Redaguoti išlaidų straipsnį',
-        mat_empty_hint: 'Čia – pakuotė ir viskas, kas patenka į gaminį ir nurašoma iš sandėlio: dėžutės, padėklai, lipdukai, juostelės. Spauskite „+“, kad pridėtumėte pirmą poziciją. Pirštinių, kepimo popieriaus ir valymo priemonių čia pridėti nereikia.',
+        mat_empty_hint: 'Čia – pakuotė, kurią pridedate prie užsakymo ir kuri nurašoma iš sandėlio: dėžutės, padėklai, lipdukai, juostelės. Spauskite „+“, kad pridėtumėte pirmą poziciją. Pirštinių, kepimo popieriaus ir valymo priemonių čia pridėti nereikia.',
         inv_count_title_mat: 'Inventorizacija · pakuotė',
         inv_short_since: 'Trūks nuo',
         inv_short_since_cell: 'Trūks nuo',
@@ -800,6 +800,8 @@ I18N.lt = {
         // Подтверждения удаления (общий шаблон deleteModal)
         delete_confirm_prefix: 'Ar tikrai norite ištrinti',
         delete_label_customer: 'klientą',
+        cust_delete_note_orders: 'Šio veiksmo atšaukti negalima. Kliento užsakymai (iš viso: {n}) liks sąraše, bet nebebus susieti su kliento kortele ir jo rekvizitais dokumentams. Kliento ypatingos datos bus ištrintos.',
+        cust_delete_note_none: 'Šio veiksmo atšaukti negalima. Kliento ypatingos datos (jei yra) bus ištrintos.',
         customers_no_name_fallback: '(be vardo)',
         delete_label_ingredient: 'ingredientą',
         delete_label_semifinished: 'pusgaminį',

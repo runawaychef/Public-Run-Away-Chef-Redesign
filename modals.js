@@ -17,6 +17,10 @@ function openDeleteModal(id, type, label) {
         const note = orderDeleteQuotaNote(orders[id]);
         if (note) text += '\n\n' + note;
     }
+    if (type === 'customer' && typeof customerDeleteNote === 'function') {
+        const cnote = customerDeleteNote(customers[id]);
+        if (cnote) text += '\n\n' + cnote;
+    }
     const textEl = document.getElementById('deleteModalText');
     textEl.style.whiteSpace = 'pre-line';
     textEl.textContent = text;

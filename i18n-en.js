@@ -668,7 +668,7 @@ I18N.en = {
         ordmat_log_added: 'Packaging added to order',
         mat_qty_per_unit: 'Quantity per unit',
         cost_edit_title: 'Edit cost item',
-        mat_empty_hint: 'Packaging and anything that goes into a product and is deducted from stock: boxes, cake boards, stickers, ribbons. Tap “+” to add your first item. Gloves, baking paper and cleaning supplies do not belong here.',
+        mat_empty_hint: 'Packaging that you add to an order and that is deducted from stock: boxes, cake boards, stickers, ribbons. Tap “+” to add your first item. Gloves, baking paper and cleaning supplies do not belong here.',
         inv_count_title_mat: 'Stocktake · packaging',
         inv_short_since: 'Short from',
         inv_short_since_cell: 'Short from',
@@ -810,6 +810,8 @@ I18N.en = {
         // Delete confirmations (shared deleteModal template)
         delete_confirm_prefix: 'Are you sure you want to delete',
         delete_label_customer: 'customer',
+        cust_delete_note_orders: 'This cannot be undone. The customer’s orders (total: {n}) will stay in the list but lose their link to the customer card and its details for documents. The customer’s special dates will be deleted.',
+        cust_delete_note_none: 'This cannot be undone. The customer’s special dates (if any) will be deleted.',
         customers_no_name_fallback: '(no name)',
         delete_label_ingredient: 'ingredient',
         delete_label_semifinished: 'semi-finished item',

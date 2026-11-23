@@ -1227,6 +1227,14 @@ async function closeCustomerDetail() {
     }
 }
 
+// Примечание в окне удаления клиента (v941): удаление необратимо; заказы остаются без связи с карточкой
+// (orders.customer_id → NULL), особые даты удаляются каскадом (на Free/Light в памяти их нет — пишем «если есть»).
+function customerDeleteNote(cust) {
+    if (!cust) return '';
+    const n = orders.filter(o => o.customer_id === cust.id && !o.deleted_at).length;
+    return n > 0 ? t('cust_delete_note_orders').replace('{n}', String(n)) : t('cust_delete_note_none');
+}
+
 // Удаление клиента прямо из его карточки (то же окно подтверждения, что и из списка)
 function deleteCurrentCustomer() {
     const idx = customers.findIndex(c => c.id === currentCustomerId);
