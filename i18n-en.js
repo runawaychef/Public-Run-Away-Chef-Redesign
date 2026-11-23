@@ -201,6 +201,7 @@ I18N.en = {
         pay_gate_cash_only: "Without an invoice — cash only. To pay by card or transfer, issue an invoice.",
         pay_issue_invoice: "Issue invoice",
         pay_no_invoice: "no invoice",
+        pay_snap_note: "At the time of payment the order was {sum}",
         setup_pay_question: "How do you accept payment?",
         setup_pay_order_desc: "Simpler: suits mostly private customers",
         setup_pay_invoice_desc: "For working with companies: every payment by invoice",

@@ -15,6 +15,20 @@ function payMethodLabel(m) {
     const label = t(k);
     return (label && label !== k) ? label : m;
 }
+// v944: снимок заказа на момент оплаты (order_payments.order_snapshot, jsonb): позиции, скидка, итог, дата.
+// Пишется при каждой оплате, внесённой в приложении (банковские автозачёты пишет сервер — у них снимка нет).
+function _payOrderSnap(order) {
+    if (!order) return null;
+    try {
+        return {
+            items: orderBillItems(order).map(it => ({ product: it.product, quantity: it.quantity, price: it.price })),
+            discount: order.discount || 0,
+            vat_exempt: orderVatExempt(order),
+            total: Math.round(orderGrandTotal(order) * 100) / 100,
+            date: order.date || null,
+        };
+    } catch (e) { console.error(e); return null; }
+}
 let _orderPayments = [];
 let _orderPaidTotals = {}; // { orderId: сумма всех платежей } — для отметки статуса оплаты в списке заказов
 // Источник оплаты (16.10): значок «банк + молния» на плашке оплаты — только если оплату зачла
@@ -43,7 +57,7 @@ async function loadOrderPayments(orderId) {
     if (banner) banner.classList.add('hidden'); // не показываем плашку предыдущего заказа, пока грузится
     try {
         let res = await db.from('order_payments')
-            .select('id, amount, method, paid_at, note, created_by, created_at, consolidated_invoice_id, bank_transaction_id')
+            .select('id, amount, method, paid_at, note, created_by, created_at, consolidated_invoice_id, bank_transaction_id, order_snapshot')
             .eq('order_id', orderId)
             .order('paid_at', { ascending: false });
         if (res.error) { // запасной вариант: без пометки «из банка» список оплат всё равно должен открыться
@@ -171,8 +185,11 @@ function renderPayments() {
         if (_payByInvoice() && p.method === 'наличные' && !p.consolidated_invoice_id && !p.bank_transaction_id
             && !orderHasInvoice(orders.find(o => o.id === currentOrderId))) parts[2] += ' · ' + escapeHtml(t('pay_no_invoice'));
         if (emp) parts.push(escapeHtml(emp.name));
+        const snapTotal = p.order_snapshot && p.order_snapshot.total != null ? Number(p.order_snapshot.total) : null;
+        const snapNote = (snapTotal != null && Math.abs(snapTotal - total) > 0.004)
+            ? `<div style="font-size:12px; color:#8a6a1f;">${escapeHtml(t('pay_snap_note').replace('{sum}', formatMoney(snapTotal)))}</div>` : '';
         html += `<div class="flex justify-between items-center bg-[#f4f1ea] hover:bg-[#e3e8df] active:bg-[#e3e8df] rounded-lg px-3 py-2.5 cursor-pointer" ${dataAction('openEditPaymentModal', [p.id])}>
-            <div class="min-w-0" style="font-size:13px;"><div class="font-medium text-gray-800 truncate">${parts.join(' · ')}${p.note ? ' · ' + escapeHtml(p.note) : ''}</div>${p.consolidated_invoice_id ? `<div style="font-size:12px; color:#4f6349;">${escapeHtml(t(_consInvCancelled[p.consolidated_invoice_id] ? 'pay_cons_tag_cancelled' : 'pay_cons_tag').replace('{number}', _payConsNumber(p.consolidated_invoice_id)))}</div>` : ''}</div>
+            <div class="min-w-0" style="font-size:13px;"><div class="font-medium text-gray-800 truncate">${parts.join(' · ')}${p.note ? ' · ' + escapeHtml(p.note) : ''}</div>${p.consolidated_invoice_id ? `<div style="font-size:12px; color:#4f6349;">${escapeHtml(t(_consInvCancelled[p.consolidated_invoice_id] ? 'pay_cons_tag_cancelled' : 'pay_cons_tag').replace('{number}', _payConsNumber(p.consolidated_invoice_id)))}</div>` : ''}${snapNote}</div>
             ${p.bank_transaction_id
                 ? `<span class="shrink-0 ml-2" style="font-size:11px; background:#eef2ea; color:#4f6349; border-radius:6px; padding:2px 7px; white-space:nowrap; display:inline-flex; align-items:center; gap:3px;">${_payTxStatus[p.bank_transaction_id] === 'auto_matched' ? payAutoBankIconHtml(11) : ''}${escapeHtml(payBankSourceLabel(p))}</span>`
                 : `<span class="action-icon icon-edit shrink-0 ml-2">${icon('edit', 'w-4 h-4')}</span>`}
@@ -394,7 +411,8 @@ async function savePayment() {
                 order_id: currentOrderId,
                 amount, method, paid_at: paidAt,
                 note: note || null,
-                created_by: currentEmployee ? currentEmployee.id : null
+                created_by: currentEmployee ? currentEmployee.id : null,
+                order_snapshot: _payOrderSnap(orders.find(o => o.id === currentOrderId))
             });
             if (error) throw error;
             logActivity('order', `${t('log_payment_added')} ${formatMoney(amount)} (${method})`, currentOrderId);
@@ -692,7 +710,8 @@ async function _saveConsPayment(amountC, paidAt, method, note) {
         method, paid_at: paidAt,
         note: note || null,
         created_by: createdBy,
-        consolidated_invoice_id: cons.id
+        consolidated_invoice_id: cons.id,
+        order_snapshot: _payOrderSnap(orders.find(o => o.id === a.id))
     }));
 
     showLoading(t('common_saving'));

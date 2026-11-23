@@ -206,6 +206,7 @@ I18N.lt = {
         pay_gate_cash_only: "Be sąskaitos – tik grynieji. Mokant kortele ar pavedimu, išrašykite sąskaitą.",
         pay_issue_invoice: "Išrašyti sąskaitą",
         pay_no_invoice: "be sąskaitos",
+        pay_snap_note: "Mokėjimo metu užsakymas buvo {sum}",
         setup_pay_question: "Kaip priimate apmokėjimą?",
         setup_pay_order_desc: "Paprasčiau: tinka, jei klientai daugiausia privatūs",
         setup_pay_invoice_desc: "Darbui su įmonėmis: kiekvienas mokėjimas – pagal sąskaitą",
