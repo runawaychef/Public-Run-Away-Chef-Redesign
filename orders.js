@@ -2704,6 +2704,7 @@ function renderOrderMaterials(order) {
             <td class="p-0.5 table-text"${gr}>${escapeHtml(ing ? ing.name : '')}</td>
             <td class="p-0.5 table-text text-center whitespace-nowrap"${gr}>${fmt(m.quantity)} ${escapeHtml(ing ? unitAbbrev(ing.unit) : '')}</td>
             <td class="p-0.5 table-text text-center whitespace-nowrap"${gr}>${Number(m.price) > 0 ? formatMoney(m.price) : '0'}</td>
+            <td class="p-0.5 table-text text-center font-medium whitespace-nowrap"${gr}>${Number(m.price) > 0 ? formatMoney(Math.round(Number(m.quantity || 0) * Number(m.price) * 100) / 100) : '0'}</td>
             <td class="p-0.5 text-center" onclick="event.stopPropagation()">${hasPermission('can_delete') ? svgDelete(`deleteOrderMat(${m.ingredient_id})`) : ''}</td>`;
         body.appendChild(tr);
     });
