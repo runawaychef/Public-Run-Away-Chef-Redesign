@@ -3644,9 +3644,18 @@ function hideSplashScreen() {
                             </tr>
                         </tbody>
                     </table>
-                    <div id="orderMatLinkRow" class="hidden" style="margin:0 0 8px;"><span onclick="openOrderMatBlock()" style="color:#4f6349; font-size:12px; text-decoration:underline; cursor:pointer;" data-i18n="ordmat_add_link">+ Упаковка</span></div>
                     <div id="orderMatWrap" class="hidden" style="margin:0 0 8px;">
-                        <h2 class="text-xs font-semibold text-gray-800 mb-1" data-i18n="ordmat_title">Упаковка заказа</h2>
+                        <div id="orderMatHead" onclick="toggleOrderMatBlock()" style="display:flex; justify-content:space-between; align-items:center; gap:8px; padding:8px 10px; border:1px solid #e3e0d6; border-radius:12px; background:#fff; cursor:pointer;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4f6349" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>
+                                <h2 class="text-xs font-semibold text-gray-800" data-i18n="ordmat_title">Упаковка заказа</h2>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <span id="orderMatSummary" class="text-xs text-gray-500"></span>
+                                <svg id="orderMatChev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9a978c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="transition:transform .15s;"><path d="M6 9l6 6 6-6"/></svg>
+                            </div>
+                        </div>
+                        <div id="orderMatPanel" class="hidden" style="margin-top:6px;">
                         <table class="w-full table-auto table-clean mb-1">
                             <thead><tr style="background-color:#e3e8df;">
                                 <th class="p-1 text-xs w-[40%]" data-i18n="mat_col_material">Упаковка</th>
@@ -3668,6 +3677,7 @@ function hideSplashScreen() {
                                 </tr>
                             </tbody>
                         </table>
+                        </div>
                     </div>
                     <div id="detailStockWarn" class="inv-batch-warn hidden" style="margin:0 0 8px;"></div>
                     <div class="text-right text-xs text-gray-600 space-y-0.5">
@@ -5205,7 +5215,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=10"></script>
     <script src="money.js?v=17"></script>
-    <script src="i18n-core.js?v=207"></script>
+    <script src="i18n-core.js?v=208"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=21"></script>
     <script src="auth.js?v=35"></script>
@@ -5220,7 +5230,7 @@ function hideSplashScreen() {
 <script src="products.js?v=68"></script>
 <script src="customers.js?v=80"></script>
 <script src="calendar.js?v=17"></script>
-<script src="orders.js?v=174"></script>
+<script src="orders.js?v=175"></script>
 <script src="dashboard.js?v=25"></script>
 <script src="invoice.js?v=56"></script>
 <script src="send-document.js?v=44"></script>

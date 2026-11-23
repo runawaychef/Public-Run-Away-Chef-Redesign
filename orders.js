@@ -1636,6 +1636,7 @@ async function copyOrder(i) {
 
 function openOrderDetail(orderId) {
     currentOrderId = orderId;
+    _orderMatOpenFor = null; // блок «Упаковка» при открытии заказа всегда свёрнут
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
 
@@ -2649,14 +2650,12 @@ function collectIngredients(recipeItems, itemQty, qtyFactor, result) {
 // её можно изменить: цена > 0 — строка идёт в счёт и выручку (orderBillItems), цена 0 — материал
 // списывается и входит в себестоимость заказа, но клиенту не выставляется.
 
-let _orderMatOpenFor = null; // заказ, у которого блок раскрыт ссылкой «+ Материал»
-function openOrderMatBlock() {
+let _orderMatOpenFor = null; // заказ, у которого блок «Упаковка» раскрыт (v935: по умолчанию свёрнут)
+function toggleOrderMatBlock() {
     const order = orders.find(o => o.id === currentOrderId);
     if (!order) return;
-    _orderMatOpenFor = order.id;
+    _orderMatOpenFor = (_orderMatOpenFor === order.id) ? null : order.id;
     renderOrderMaterials(order);
-    const inp = document.getElementById('newOrdMat');
-    if (inp) inp.focus();
 }
 
 // Подставить цену продажи выбранного материала в строку ввода
@@ -2670,18 +2669,25 @@ function _ordMatPrefillPrice() {
 
 function renderOrderMaterials(order) {
     const wrap = document.getElementById('orderMatWrap');
-    const link = document.getElementById('orderMatLinkRow');
+    const panel = document.getElementById('orderMatPanel');
     const body = document.getElementById('orderMatBody');
-    if (!wrap || !link || !body) return;
+    if (!wrap || !panel || !body) return;
     const rows = (order.materials || []).slice().sort((x, y) => {
         const ix = ingredients.find(i => i.id === x.ingredient_id), iy = ingredients.find(i => i.id === y.ingredient_id);
         return ((ix && ix.name) || '').localeCompare((iy && iy.name) || '');
     });
-    const show = rows.length > 0 || _orderMatOpenFor === order.id;
-    wrap.classList.toggle('hidden', !show);
-    link.classList.toggle('hidden', show);
+    const open = _orderMatOpenFor === order.id;
+    wrap.classList.remove('hidden');
+    panel.classList.toggle('hidden', !open);
+    const chev = document.getElementById('orderMatChev');
+    if (chev) chev.style.transform = open ? 'rotate(180deg)' : '';
+    const sumEl = document.getElementById('orderMatSummary');
+    if (sumEl) {
+        const billed = rows.reduce((s, m) => s + (Number(m.price) > 0 ? Number(m.quantity || 0) * Number(m.price) : 0), 0);
+        sumEl.textContent = rows.length === 0 ? t('ordmat_sum_none')
+            : rows.length + ' ' + t('ordmat_sum_pos') + (billed > 0 ? ' · ' + formatMoney(billed) : '');
+    }
     body.innerHTML = '';
-    if (!show) return;
     const qEl = document.getElementById('newOrdMatQty');
     if (qEl && (qEl.value === '0' || qEl.value === '0.00')) qEl.value = ''; // чтобы был виден серый «1»
     const fmt = q => String(Math.round(Number(q) * 100) / 100);
@@ -2691,10 +2697,11 @@ function renderOrderMaterials(order) {
         tr.className = 'border-b';
         tr.style.cursor = 'pointer';
         tr.onclick = () => openEditOrderMatModal(m.ingredient_id);
+        const gr = Number(m.price) > 0 ? '' : ' style="color:#9a978c;"'; // цена 0 — в счёт не выставляется
         tr.innerHTML = `
-            <td class="p-0.5 table-text">${escapeHtml(ing ? ing.name : '')}</td>
-            <td class="p-0.5 table-text text-center whitespace-nowrap">${fmt(m.quantity)} ${escapeHtml(ing ? unitAbbrev(ing.unit) : '')}</td>
-            <td class="p-0.5 table-text text-center whitespace-nowrap">${Number(m.price) > 0 ? formatMoney(m.price) : '0'}</td>
+            <td class="p-0.5 table-text"${gr}>${escapeHtml(ing ? ing.name : '')}</td>
+            <td class="p-0.5 table-text text-center whitespace-nowrap"${gr}>${fmt(m.quantity)} ${escapeHtml(ing ? unitAbbrev(ing.unit) : '')}</td>
+            <td class="p-0.5 table-text text-center whitespace-nowrap"${gr}>${Number(m.price) > 0 ? formatMoney(m.price) : '0'}</td>
             <td class="p-0.5 text-center" onclick="event.stopPropagation()">${hasPermission('can_delete') ? svgDelete(`deleteOrderMat(${m.ingredient_id})`) : ''}</td>`;
         body.appendChild(tr);
     });
