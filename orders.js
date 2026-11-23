@@ -2283,6 +2283,7 @@ async function saveDetailHeader() {
 
 function renderDetailItems(order) {
     if (order && order.id === currentOrderId && typeof renderDetailDocSummary === 'function') renderDetailDocSummary(order);   // v943: плашка «заказ изменён после документа»
+    if (order && order.id === currentOrderId && typeof renderPayments === 'function' && _orderPaymentsFor === order.id) renderPayments();   // v945: пересчёт блока оплаты и плашка «изменён после оплаты»
     const tbody = document.getElementById('detailItemsBody');
     tbody.innerHTML = '';
     if (!order.items || !order.items.length) {

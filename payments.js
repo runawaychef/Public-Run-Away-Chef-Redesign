@@ -30,6 +30,8 @@ function _payOrderSnap(order) {
     } catch (e) { console.error(e); return null; }
 }
 let _orderPayments = [];
+let _orderPaymentsFor = null;   // v945: id заказа, чьи оплаты сейчас в _orderPayments
+const _payChgState = {};        // v945: { orderId: { prev, warned } } — для одноразового окна «заказ изменён после оплаты»
 let _orderPaidTotals = {}; // { orderId: сумма всех платежей } — для отметки статуса оплаты в списке заказов
 // Источник оплаты (16.10): значок «банк + молния» на плашке оплаты — только если оплату зачла
 // программа АВТОМАТИЧЕСКИ (bank_transactions.match_status = 'auto_matched').
@@ -53,6 +55,7 @@ function payBankSourceLabel(p) {
 }
 
 async function loadOrderPayments(orderId) {
+    delete _payChgState[orderId];
     const banner = document.getElementById('detailConsBanner');
     if (banner) banner.classList.add('hidden'); // не показываем плашку предыдущего заказа, пока грузится
     try {
@@ -68,6 +71,7 @@ async function loadOrderPayments(orderId) {
         }
         if (res.error) throw res.error;
         _orderPayments = res.data || [];
+        _orderPaymentsFor = orderId;
         // Статусы поступлений банка для оплат этого заказа (авто / вручную). Читать их может
         // только менеджер (RLS) — у остальных подпись останется «из банка».
         const txIds = [...new Set(_orderPayments.map(p => p.bank_transaction_id).filter(Boolean))];
@@ -109,6 +113,20 @@ function getOrderTotalValue() {
     const raw = (el.textContent || '').replace(/[^\d.,-]/g, '').replace(',', '.');
     const n = parseFloat(raw);
     return isNaN(n) ? 0 : n;
+}
+
+// v945: заказ изменился после последней оплаты, у которой есть снимок → { old, cur, paid } или null
+function _payChangedInfo(order, total, paid) {
+    const p = _orderPayments.find(x => x.order_snapshot);
+    if (!p || !order) return null;
+    const s = p.order_snapshot;
+    try {
+        let chg = Math.abs(Number(s.total) - total) > 0.004;
+        if (!chg) chg = _docItemsSig(orderBillItems(order)) !== _docItemsSig(s.items)
+            || Math.round((Number(order.discount) || 0) * 100) !== Math.round((Number(s.discount) || 0) * 100)
+            || !!(s.date && order.date && String(s.date) !== String(order.date));
+        return chg ? { old: Number(s.total), cur: total, paid } : null;
+    } catch (e) { console.error(e); return null; }
 }
 
 function renderPayments() {
@@ -196,6 +214,17 @@ function renderPayments() {
         </div>`;
     });
     html += '</div>';
+    const chg = _payChangedInfo(orders.find(o => o.id === currentOrderId), total, paid);
+    if (chg) {
+        html = `<div style="background:#f8efd9; color:#8a6a1f; border-radius:8px; padding:8px 10px; margin-bottom:6px; font-size:13px;">${escapeHtml(t('pay_changed_plate').replace('{old}', formatMoney(chg.old)).replace('{new}', formatMoney(chg.cur)).replace('{paid}', formatMoney(chg.paid)))}</div>` + html;
+    }
+    const stt = _payChgState[currentOrderId] || (_payChgState[currentOrderId] = { prev: undefined, warned: false });
+    if (chg && stt.prev === false && !stt.warned) {
+        stt.warned = true;
+        setTimeout(() => showInfo(t('pay_changed_once').replace('{old}', formatMoney(chg.old)).replace('{new}', formatMoney(chg.cur)).replace('{paid}', formatMoney(chg.paid))), 0);
+    }
+    if (!chg) stt.warned = false;
+    stt.prev = !!chg;
     list.innerHTML = html;
 }
 

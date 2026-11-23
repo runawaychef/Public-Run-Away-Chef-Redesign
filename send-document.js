@@ -130,7 +130,24 @@ async function _loadDocSumSnaps(order) {
         const c = await db.from('consolidated_invoices').select('orders:snapshot->consolidated->orders').eq('id', order.consolidated_invoice_id).single();
         if (!c.error && c.data) out.cons = (c.data.orders || []).find(o => o.id === order.id) || null;
     }
+    // v945: режим «По заказу» — подтверждение заказа тоже запоминается при отправке (orders.confirmation_*)
+    if (typeof docsEnabled === 'function' && !docsEnabled()) {
+        try {
+            const c = await db.from('orders').select('confirmation_sent_at, confirmation_snapshot').eq('id', order.id).single();
+            if (!c.error && c.data && c.data.confirmation_sent_at && c.data.confirmation_snapshot) out.conf = { at: c.data.confirmation_sent_at, snap: c.data.confirmation_snapshot };
+        } catch (e) { console.error(e); }
+    }
     _docSumSnaps[order.id] = out;
+}
+// Заказ изменился после отправленного подтверждения (снимок — payments.js `_payOrderSnap`)
+function _confChanged(order, s) {
+    if (!s) return false;
+    try {
+        return Math.abs(Number(s.total) - orderGrandTotal(order)) > 0.004
+            || _docItemsSig(orderBillItems(order)) !== _docItemsSig(s.items)
+            || Math.round((Number(order.discount) || 0) * 100) !== Math.round((Number(s.discount) || 0) * 100)
+            || !!(s.date && order.date && String(s.date) !== String(order.date));
+    } catch (e) { console.error(e); return false; }
 }
 
 // Список отправленных документов, которые не совпадают с текущим заказом: [{ num, oldTotal, curTotal }]
@@ -150,6 +167,9 @@ function _docChangedList(order) {
         }
     } else if (order.invoice_sent_at && sn.inv && _docContentChanged(order, sn.inv)) {
         list.push({ num: _formatDocNumber('invoice', sn.inv.number), oldTotal: documentTotals(sn.inv).grandAll, curTotal: cur });
+    }
+    if (sn.conf && typeof docsEnabled === 'function' && !docsEnabled() && _confChanged(order, sn.conf.snap)) {
+        list.push({ num: t('conf_sum_label').replace('{n}', _confOrderNum(order)), oldTotal: Number(sn.conf.snap.total), curTotal: cur });
     }
     if (order.delivery_note_sent_at && sn.dn && _docContentChanged(order, sn.dn)) {
         list.push({ num: _formatDocNumber('delivery_note', sn.dn.number), oldTotal: documentTotals(sn.dn).grandAll, curTotal: cur });
@@ -183,9 +203,10 @@ function renderDetailDocSummary(order) {
     if (!btn || !box) return;
     if (!order || order.id !== currentOrderId) return;
     const invSent = !!order.invoice_sent_at, dnSent = !!order.delivery_note_sent_at;
+    const confInfo = (typeof docsEnabled === 'function' && !docsEnabled() && _docSumSnaps[order.id]) ? _docSumSnaps[order.id].conf : null;
     const bad = (invSent && order.invoice_sent_via === 'email' && _docSumIsBad(order.invoice_delivery_status))
              || (dnSent && order.delivery_note_sent_via === 'email' && _docSumIsBad(order.delivery_note_delivery_status));
-    const solid = (!invSent && !dnSent) || bad;
+    const solid = (!invSent && !dnSent && !confInfo) || bad;
     btn.classList.toggle('pill-btn', solid);
     btn.classList.toggle('pill-btn-secondary', !solid);
 
@@ -206,6 +227,9 @@ function renderDetailDocSummary(order) {
     if (dnSent) {
         const num = _formatDocNumber('delivery_note', nums.dn) || t('orders_doc_delivery_note');
         rows.push(`<div class="doc-sum-row" onclick="openDocFromOrderSummary('dn')"><span class="ds-text"><b>${escapeHtml(num)}</b> · ${escapeHtml(_sentViaLabel(order.delivery_note_sent_via))} · ${_docSumShortDT(order.delivery_note_sent_at)}${_docSumStatusHtml(order.delivery_note_sent_via, order.delivery_note_delivery_status)}</span>${go}</div>`);
+    }
+    if (confInfo) {
+        rows.push(`<div class="doc-sum-row" onclick="openOrderDocAction(${order.id})"><span class="ds-text"><b>${escapeHtml(t('conf_sum_label').replace('{n}', _confOrderNum(order)))}</b> · ${escapeHtml(_sentViaLabel(confInfo.snap.via))} · ${_docSumShortDT(confInfo.at)}</span>${go}</div>`);
     }
     let chgList = null;
     try { chgList = _docChangedList(order); } catch (e) { console.error(e); }
@@ -234,7 +258,7 @@ async function refreshDetailDocSummary(order, force) {
     renderDetailDocSummary(order);
     const needInv = order.invoice_sent_at && !order.consolidated_invoice_id;
     const needDn = !!order.delivery_note_sent_at;
-    if (order.invoice_sent_at || order.delivery_note_sent_at) {
+    if (order.invoice_sent_at || order.delivery_note_sent_at || (typeof docsEnabled === 'function' && !docsEnabled())) {
         if (force) delete _docChgState[order.id];
         try { await _loadDocSumSnaps(order); } catch (e) { console.error('Сводка документов: снимки для сравнения не загрузились', e); }
         if (order.id === currentOrderId) renderDetailDocSummary(order);

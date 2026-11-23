@@ -1,7 +1,8 @@
 // ==================== «ПОДТВЕРЖДЕНИЕ ЗАКАЗА» (31.10.2026) ====================
 // Режим пекарни «По заказу»: вместо счетов и накладных — простая бумага для клиента.
-// НЕ налоговый документ: номер и дата — от самого заказа, без НДС и реквизитов оплаты, ничего не хранится
-// (строится по текущим данным заказа). Просмотр → «Поделиться (PDF)» / «Отправить на почту».
+// НЕ налоговый документ: номер и дата — от самого заказа, без НДС и реквизитов оплаты, сам документ не хранится
+// (строится по текущим данным заказа). С v945 при отправке запоминается ФАКТ отправки и снимок заказа
+// (orders.confirmation_sent_at / confirmation_snapshot) — чтобы показать плашку «заказ изменён после отправки», как у счёта. Просмотр → «Поделиться (PDF)» / «Отправить на почту».
 // Зависит от: orders, customers, _orderPaidTotals, calcTotals/_orderTotals (money.js), createPdfDoc/pdfSaveOrShare (helpers.js),
 // tDoc (invoice.js), edge function send-document-email.
 
@@ -184,6 +185,18 @@ async function _buildConfPdf(d) {
     return pdf;
 }
 
+// v945: запоминаем отправку подтверждения и состояние заказа на этот момент (ошибка записи отправку не ломает)
+async function _confMarkSent(order, via) {
+    try {
+        const snap = Object.assign({ via }, (typeof _payOrderSnap === 'function' ? _payOrderSnap(order) : null) || {});
+        const at = new Date().toISOString();
+        await updateChecked(db.from('orders').update({ confirmation_sent_at: at, confirmation_snapshot: snap }).eq('id', order.id));
+        _docSumSnaps[order.id] = Object.assign(_docSumSnaps[order.id] || {}, { conf: { at, snap } });
+        delete _docChgState[order.id];
+        if (order.id === currentOrderId && typeof renderDetailDocSummary === 'function') renderDetailDocSummary(order);
+    } catch (e) { console.error('Подтверждение: факт отправки не записан', e); }
+}
+
 function _confFilename(d) { return `order_confirmation_${d.num}.pdf`; }
 
 async function shareOrderConfirmation() {
@@ -194,7 +207,10 @@ async function shareOrderConfirmation() {
     try {
         const pdf = await _buildConfPdf(d);
         const shared = await pdfSaveOrShare(pdf, _confFilename(d));
-        if (shared) logActivity('order', `${tDoc('conf_title', d.lang)} №${d.num} ${t('log_doc_shared')}`, d.order.id);
+        if (shared) {
+            logActivity('order', `${tDoc('conf_title', d.lang)} №${d.num} ${t('log_doc_shared')}`, d.order.id);
+            await _confMarkSent(d.order, 'share');
+        }
     } catch (e) {
         console.error(e);
         showInfo(t('inv_doc_error_prefix') + (e && e.message ? e.message : t('inv_unknown_error')) + t('customers_pdf_error_suffix'));
@@ -225,6 +241,7 @@ async function emailOrderConfirmation() {
         if (result && !result.success && result.code) { showInfo(typeof _sendLimitMessage === 'function' ? _sendLimitMessage(result) : t('send_error_prefix')); return; }
         if (!result || !result.success) throw new Error((result && result.error) || 'send failed');
         logActivity('order', `${tDoc('conf_title', d.lang)} №${d.num} ${t('log_doc_email_sent')} (${d.cust.email})`, d.order.id);
+        await _confMarkSent(d.order, 'email');
         showInfo(t('send_success'));
     } catch (e) {
         console.error(e);
