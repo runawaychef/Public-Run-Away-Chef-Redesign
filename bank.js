@@ -31,7 +31,9 @@ function bankErrText(code) {
     return t(map[code] || 'bank_err_generic');
 }
 
-// ---------- состояние и кнопка в «Заказах» ----------
+// ---------- состояние, иконка в шапке и события для полоски Дашборда ----------
+// v958: иконка банка — в шапке (левее «Статистики»); красная цифра = платежи на разбор + автозачёты, которые ещё не просмотрены
+// (отметка «просмотрено до» хранится в bank_connections.auto_seen_at и общая для всех устройств).
 async function bankRefreshState() {
     try {
         const { data: au } = await db.auth.getUser();
@@ -40,24 +42,47 @@ async function bankRefreshState() {
         const [, m, c] = await Promise.all([
             bankLoadProtected(),
             db.from('memberships').select('role').eq('org_id', currentOrgId).eq('user_id', uid).maybeSingle(),
-            db.from('bank_connections').select('id, bank_name, bank_country, account_iban, valid_until, status, last_sync_at, last_error, psu_type, auto_apply').eq('org_id', currentOrgId).order('created_at', { ascending: false }).limit(1),
+            db.from('bank_connections').select('id, bank_name, bank_country, account_iban, valid_until, status, last_sync_at, last_error, psu_type, auto_apply, auto_seen_at').eq('org_id', currentOrgId).order('created_at', { ascending: false }).limit(1),
         ]);
         bankState.role = m && m.data ? m.data.role : null;
         bankState.conn = c && c.data && c.data[0] ? c.data[0] : null;
+        bankState.rv = { n: 0, sumC: 0 };
+        bankState.au = { n: 0, sumC: 0, name: '' };
         if (bankState.conn && ['owner', 'manager'].includes(bankState.role)) {
-            const { count } = await db.from('bank_transactions').select('id', { count: 'exact', head: true })
-                .eq('org_id', currentOrgId).in('match_status', ['new', 'needs_review']);
-            bankState.counts.review = count || 0;
+            // Платежи, ждущие разбора (new / needs_review): число и сумма
+            const rvRes = await fetchAllRows(() => db.from('bank_transactions').select('id, amount')
+                .eq('org_id', currentOrgId).in('match_status', ['new', 'needs_review']).order('id'));
+            if (!rvRes.error) {
+                bankState.counts.review = (rvRes.data || []).length;
+                bankState.rv = { n: bankState.counts.review, sumC: (rvRes.data || []).reduce((s, r) => s + Math.round(Number(r.amount) * 100), 0) };
+            }
             // Автозачтённые поступления — для значка «банк + молния» на плашках оплаты (16.10)
-            const autoRes = await fetchAllRows(() => db.from('bank_transactions').select('id')
+            const autoRes = await fetchAllRows(() => db.from('bank_transactions').select('id, amount, payer_name, created_at')
                 .eq('org_id', currentOrgId).eq('match_status', 'auto_matched').order('id'));
-            if (!autoRes.error && typeof _bankAutoTxIds !== 'undefined') {
-                const before = _bankAutoTxIds.size;
-                _bankAutoTxIds = new Set((autoRes.data || []).map(r => r.id));
-                if ((before || _bankAutoTxIds.size) && typeof displayOrders === 'function') displayOrders();
+            if (!autoRes.error) {
+                const rows = autoRes.data || [];
+                if (typeof _bankAutoTxIds !== 'undefined') {
+                    const before = _bankAutoTxIds.size;
+                    _bankAutoTxIds = new Set(rows.map(r => r.id));
+                    if ((before || _bankAutoTxIds.size) && typeof displayOrders === 'function') displayOrders();
+                }
+                // v958: автозачёты, пришедшие после отметки «просмотрено»
+                const seen = bankState.conn.auto_seen_at ? new Date(bankState.conn.auto_seen_at).getTime() : Date.now();
+                const fresh = rows.filter(r => r.created_at && new Date(r.created_at).getTime() > seen);
+                let name = '';
+                if (fresh.length === 1) {
+                    name = fresh[0].payer_name || '';
+                    try {
+                        const { data: pm } = await db.from('order_payments').select('order_id').eq('bank_transaction_id', fresh[0].id).limit(1);
+                        const o = pm && pm[0] ? (typeof orders !== 'undefined' ? orders : []).find(x => x.id === pm[0].order_id) : null;
+                        if (o && o.customer) name = o.customer;
+                    } catch (e) { /* имя плательщика из банка остаётся запасным */ }
+                }
+                bankState.au = { n: fresh.length, sumC: fresh.reduce((s, r) => s + Math.round(Number(r.amount) * 100), 0), name };
             }
         }
         bankState.fresh = true;
+        bankState.lastRefresh = Date.now();
         try {
             const res = localStorage.getItem('bank_sync_result');
             if (res) { localStorage.removeItem('bank_sync_result'); setTimeout(() => showInfo(bankErrText(res)), 400); }
@@ -76,56 +101,83 @@ function bankApplySettingsRow() {
 }
 function bankApplyButton() {
     if (bankState.fresh) bankApplySettingsRow();
-    // До первого ответа сервера берём запомненное состояние, чтобы кнопка появлялась сразу
-    let show, n, until = null, owner = false;
+    // До первого ответа сервера берём запомненное состояние, чтобы иконка появлялась сразу
+    let show, until = null, owner = false, rv = { n: 0, sumC: 0 }, au = { n: 0, sumC: 0, name: '' };
     if (bankState.fresh) {
         show = !!bankState.conn && bankState.conn.status !== 'revoked' && ['owner', 'manager'].includes(bankState.role);
-        n = bankState.counts.review;
+        rv = bankState.rv || rv; au = bankState.au || au;
         until = show && bankState.conn.valid_until ? bankState.conn.valid_until : null;
         owner = bankState.role === 'owner';
-        try { localStorage.setItem('bank_ui_cache', JSON.stringify({ show, n, until, owner })); } catch (e) { /* без хранилища */ }
+        try { localStorage.setItem('bank_ui_cache', JSON.stringify({ show, until, owner, rv, au })); } catch (e) { /* без хранилища */ }
     } else {
-        try { const c = JSON.parse(localStorage.getItem('bank_ui_cache') || 'null'); show = !!(c && c.show); n = (c && c.n) || 0; until = c && c.until || null; owner = !!(c && c.owner); } catch (e) { show = false; n = 0; }
+        try {
+            const c = JSON.parse(localStorage.getItem('bank_ui_cache') || 'null');
+            show = !!(c && c.show); until = c && c.until || null; owner = !!(c && c.owner);
+            rv = (c && c.rv) || rv; au = (c && c.au) || au;
+        } catch (e) { show = false; }
     }
-    const pill = document.getElementById('ordersBankWrap');
-    if (pill) pill.classList.toggle('hidden', !show);
-    const badge = document.getElementById('ordersBankBadge');
+    const n = show ? (rv.n || 0) + (au.n || 0) : 0;
+    const left = show && until ? Math.ceil((new Date(until).getTime() - Date.now()) / 86400000) : null;
+    bankState.ev = { show, owner, left, rv, au };
+    const btn = document.getElementById('bankBtn');
+    if (btn) btn.classList.toggle('hidden', !show);
+    const badge = document.getElementById('bankBtnBadge');
     if (badge) {
         badge.textContent = n > 99 ? '99+' : String(n);
         badge.classList.toggle('hidden', !(show && n > 0));
     }
-    // Срок доступа: точка на кнопке и плашка на экране «Заказы» за 7 дней и меньше
-    const left = show && until ? Math.ceil((new Date(until).getTime() - Date.now()) / 86400000) : null;
+    // Срок доступа: точка на иконке за 7 дней и меньше (само предупреждение — в полоске Дашборда)
     const warn = left != null && left <= 7;
-    const dot = document.getElementById('ordersBankDot');
+    const dot = document.getElementById('bankBtnDot');
     if (dot) { dot.classList.toggle('hidden', !warn); dot.style.background = left != null && left <= 0 ? '#c0654f' : '#d9a441'; }
-    bankRenderNotice(warn && !!bankState.fresh, left, owner); // текст нужен переводам: только после ответа сервера
+    try { if (typeof _dashRenderStrip === 'function') _dashRenderStrip(); } catch (e) { /* Дашборд ещё не готов */ }
 }
-function bankTodayKey() { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; }
-function bankRenderNotice(warn, left, owner) {
-    const box = document.getElementById('ordersBankNotice');
-    if (!box) return;
-    let hidden = false;
-    try { hidden = localStorage.getItem('bank_notice_hidden') === bankTodayKey(); } catch (e) { /* без хранилища */ }
-    if (!warn || hidden) { box.innerHTML = ''; return; }
-    const expired = left <= 0;
-    const msg = expired ? t('bank_notice_expired') : t('bank_expiring').replace('{n}', left);
-    const stripe = expired ? '#c0654f' : '#d9a441';
-    const action = owner
-        ? `<button type="button" onclick="openBankSettings()" style="${_bk.btn1} margin-top:8px;">${escapeHtml(t('bank_notice_extend'))}</button>`
-        : `<div style="font-size:12px; color:#6b675d; margin-top:2px;">${escapeHtml(t('bank_notice_ask_owner'))}</div>`;
-    box.innerHTML = bankCard(stripe, `<div style="display:flex; gap:8px; justify-content:space-between;"><div style="font-size:13px; font-weight:700; color:#3c3a34; line-height:1.35;">${escapeHtml(msg)}</div><button type="button" aria-label="×" onclick="bankHideNotice()" style="border:0; background:transparent; color:#a29c8c; font-size:18px; line-height:1; padding:0 2px;">×</button></div>${action}`, 8);
+
+// События банка для полоски Дашборда, по важности: доступ закончился → платёж на проверку → пришли автозачёты → доступ скоро закончится
+function bankDashEvents() {
+    const ev = bankState.ev;
+    if (!ev || !ev.show) return [];
+    const money = c => formatMoney((c || 0) / 100);
+    const out = [];
+    const accessRun = () => { if (ev.owner) openBankSettings(); else showInfo(t('bank_notice_ask_owner')); };
+    if (ev.left != null && ev.left <= 0) {
+        out.push({ sev: 'red', ch: '!', run: accessRun,
+            text: t('bank_ev_expired') + (ev.owner ? ' · ' + String(t('bank_notice_extend')).toLowerCase() : '') });
+    }
+    if (ev.rv && ev.rv.n > 0) {
+        out.push({ sev: 'gold', ch: '!', run: () => openBankSection('review'),
+            text: ev.rv.n === 1 ? t('bank_ev_review_one').replace('{sum}', money(ev.rv.sumC))
+                : t('bank_ev_review_n').replace('{n}', ev.rv.n).replace('{sum}', money(ev.rv.sumC)) });
+    }
+    if (ev.au && ev.au.n > 0) {
+        out.push({ sev: 'grn', ch: '€', run: () => openBankSection('closed'),
+            text: ev.au.n === 1
+                ? (ev.au.name ? t('bank_ev_auto_one').replace('{sum}', money(ev.au.sumC)).replace('{name}', ev.au.name) : t('bank_ev_auto_one_noname').replace('{sum}', money(ev.au.sumC)))
+                : t('bank_ev_auto_n').replace('{n}', ev.au.n).replace('{sum}', money(ev.au.sumC)) });
+    }
+    if (ev.left != null && ev.left > 0 && ev.left <= 7) {
+        out.push({ sev: 'gold', ch: '!', run: accessRun, text: t('bank_ev_expiring').replace('{n}', ev.left) });
+    }
+    return out;
 }
-function bankHideNotice() {
-    try { localStorage.setItem('bank_notice_hidden', bankTodayKey()); } catch (e) { /* без хранилища */ }
-    const box = document.getElementById('ordersBankNotice');
-    if (box) box.innerHTML = '';
+
+// Автозачёты просмотрены: отметка в базе (общая для устройств). upTo — самое позднее поступление, показанное на экране.
+async function bankMarkAutoSeen(upTo) {
+    try {
+        const { error } = await db.rpc('bank_mark_auto_seen', { p_org_id: currentOrgId, p_seen_up_to: upTo });
+        if (error) throw error;
+        await bankRefreshState();
+    } catch (e) {
+        console.error('Банк: не удалось отметить автозачёты просмотренными', e);
+    }
 }
 
 // ---------- раздел ----------
-async function openBankSection() {
+async function openBankSection(tab) {
     if (!bankState.conn || bankState.conn.status === 'revoked') return;
-    bankState.tab = bankState.counts.review > 0 ? 'review' : 'other';
+    // tab — вкладка из полоски Дашборда; иначе: разбор, если есть что разбирать, потом новые автозачёты, иначе «Прочие»
+    bankState.tab = (typeof tab === 'string' && tab) ? tab
+        : bankState.counts.review > 0 ? 'review' : ((bankState.au && bankState.au.n > 0) ? 'closed' : 'other');
     bankState.reopen = null;
     openAppPage('bankPage'); // страница поверх раздела (helpers.js)
     await bankLoadTab();
@@ -150,6 +202,16 @@ async function bankSetTab(tab) {
 async function bankLoadTab() {
     const body = document.getElementById('bankBody');
     if (!body) return;
+    // v958: на вкладке «Закрытые» запоминаем самое позднее автозачтённое поступление ДО загрузки списка:
+    // то, что придёт позже, останется непросмотренным
+    let seenUp = null;
+    if (bankState.tab === 'closed' && bankState.au && bankState.au.n > 0) {
+        try {
+            const { data: lastAuto } = await db.from('bank_transactions').select('created_at')
+                .eq('org_id', currentOrgId).eq('match_status', 'auto_matched').order('created_at', { ascending: false }).limit(1);
+            seenUp = lastAuto && lastAuto[0] ? lastAuto[0].created_at : null;
+        } catch (e) { seenUp = null; }
+    }
     bankRender(true);
     const r = await bankCall({ action: 'list', tab: bankState.tab });
     if (!r.ok) {
@@ -158,8 +220,13 @@ async function bankLoadTab() {
     }
     bankState.rows = r.rows || [];
     bankState.counts = r.counts || bankState.counts;
+    if (bankState.rv && typeof bankState.counts.review === 'number') {   // число на разборе — по свежему ответу сервера (сумма уточнится при закрытии экрана)
+        bankState.rv.n = bankState.counts.review;
+        if (!bankState.rv.n) bankState.rv.sumC = 0;
+    }
     bankApplyButton();
     bankRender(false);
+    if (seenUp) bankMarkAutoSeen(seenUp);
 }
 
 // ---------- отрисовка ----------
@@ -743,3 +810,12 @@ async function bankDisconnect() {
 
 // Сразу показать кнопку по запомненному состоянию (до ответа сервера)
 try { bankApplyButton(); } catch (e) { /* DOM ещё не готов */ }
+
+// v958: вернулись в приложение — обновить состояние банка (не чаще раза в 5 минут)
+try {
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState !== 'visible' || !bankState.fresh || !bankState.conn) return;
+        if (Date.now() - (bankState.lastRefresh || 0) < 300000) return;
+        bankRefreshState();
+    });
+} catch (e) { /* без document */ }

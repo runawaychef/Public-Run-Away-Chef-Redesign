@@ -14,6 +14,7 @@ let _dashEnteringOrders = false; // true только в момент перех
 let _dashDayFilter = false;      // фильтр «один день» поставлен Dashboard (а не пользователем)
 let _dashEnteringStock = false;  // true только в момент перехода на «Склад» с Dashboard
 let _dashMemoList = [];          // ближайшие памятные даты, показанные в полоске
+let _dashBankEv = [];            // v958: события банка в полоске (по важности), см. bankDashEvents() в bank.js
 
 function _dashEl(id) { return document.getElementById(id); }
 
@@ -267,7 +268,15 @@ function _dashRenderStrip() {
         if (typeof memoBannerEnabled === 'function' && memoBannerEnabled() && typeof memoDates !== 'undefined' && memoDates.length) list = memoUpcoming(null);
     } catch (e) { console.error('dashboard: memo', e); list = []; }
     _dashMemoList = list;
-    if (list.length) {
+    // v958: важные события банка — выше памятных дат и приветствия; «+N» — сколько ещё событий за ними
+    try { _dashBankEv = typeof bankDashEvents === 'function' ? bankDashEvents() : []; } catch (e) { console.error('dashboard: bank', e); _dashBankEv = []; }
+    if (_dashBankEv.length) {
+        const x = _dashBankEv[0];
+        const rest = _dashBankEv.length - 1 + list.length;
+        el.className = 'dashboard-strip';
+        el.innerHTML = `<span class="dashboard-strip__ic"><span class="dash-evic dash-evic--${x.sev}">${escapeHtml(x.ch)}</span></span>`
+            + `<span class="dashboard-strip__t">${escapeHtml(x.text)}</span>${rest > 0 ? `<span class="dashboard-strip__more">+${rest}</span>` : ''}`;
+    } else if (list.length) {
         const x = list[0];
         const c = (typeof customers !== 'undefined' ? customers : []).find(cc => cc.id === x.m.customer_id);
         const gold = typeof MEMO_GOLD !== 'undefined' ? MEMO_GOLD : '#c9973a';
@@ -282,19 +291,31 @@ function _dashRenderStrip() {
     }
 }
 
-// Нажатие на полоску: одна дата — сразу клиент; несколько — список
+// Нажатие на полоску: одно событие — сразу действие; несколько — список (события банка, затем памятные даты)
 function dashStripTap() {
-    if (!_dashMemoList.length) return;
-    if (_dashMemoList.length === 1) { memoBannerOpenCustomer(_dashMemoList[0].m.customer_id); return; }
+    const total = _dashBankEv.length + _dashMemoList.length;
+    if (!total) return;
+    if (total === 1) {
+        if (_dashBankEv.length) _dashBankEv[0].run();
+        else memoBannerOpenCustomer(_dashMemoList[0].m.customer_id);
+        return;
+    }
     const body = _dashEl('dashMemoBody');
     if (!body) return;
-    body.innerHTML = _dashMemoList.map(x => {
+    const title = _dashEl('dashMemoTitle');
+    if (title) title.textContent = t(_dashBankEv.length ? 'dash_events_title' : 'memo_banner_title');
+    const bankRows = _dashBankEv.map((e, i) => `<div class="memo-item" onclick="dashEvPick(${i})">
+        <div class="memo-item-ic" style="background:#f4f1ea;"><span class="dash-evic dash-evic--${e.sev}">${escapeHtml(e.ch)}</span></div>
+        <div style="min-width:0;"><div class="memo-item-t" style="white-space:normal;">${escapeHtml(e.text)}</div></div></div>`).join('');
+    const memoRows = _dashMemoList.map(x => {
         const c = customers.find(cc => cc.id === x.m.customer_id);
         return _memoItemHtml(x.m, { onTap: `dashMemoPick(${x.m.customer_id})`, soon: true, whenHtml: escapeHtml(_memoWhenText(x.n)) })
             .replace('</div>\n        <div class="memo-item-when', () => `${c && c.name ? `<div class="memo-item-s">${escapeHtml(c.name)}</div>` : ''}</div>\n        <div class="memo-item-when`);
     }).join('');
+    body.innerHTML = bankRows + memoRows;
     _dashEl('dashMemoModal').style.display = 'flex';
 }
+function dashEvPick(i) { dashMemoClose(); if (_dashBankEv[i]) _dashBankEv[i].run(); }
 function dashMemoClose() { const m = _dashEl('dashMemoModal'); if (m) m.style.display = 'none'; }
 function dashMemoPick(custId) { dashMemoClose(); memoBannerOpenCustomer(custId); }
 
