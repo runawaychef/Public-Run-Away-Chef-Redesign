@@ -46,7 +46,7 @@ function openSettingsModal() {
     const _cmpTile = document.getElementById('settingsCompanyTileName');
     if (_cmpTile) _cmpTile.textContent = (typeof currentOrgName !== 'undefined' && currentOrgName) ? currentOrgName : '—';
     const _teamCnt = document.getElementById('settingsTeamCount');
-    if (_teamCnt) _teamCnt.textContent = (typeof employees !== 'undefined' && employees && employees.length) ? String(employees.length) : '—';
+    if (_teamCnt) _teamCnt.textContent = (typeof activeEmployees === 'function' && activeEmployees().length) ? String(activeEmployees().length) : '—';
     renderPlanInfo();
     if (typeof scheduleRefreshOrderQuota === 'function') scheduleRefreshOrderQuota();
     if (typeof refreshDeleteDemoDataVisibility === 'function') refreshDeleteDemoDataVisibility();

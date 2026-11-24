@@ -270,7 +270,15 @@ async function loadCurrentOrg() {
 
 // ==================== ЭКРАН ВЫБОРА СОТРУДНИКА ====================
 
-const EMPLOYEE_SELECT_FIELDS = 'id, name, is_owner, user_id, can_view_costs, can_delete, can_manage_inventory, can_view_reports, can_manage_team';
+const EMPLOYEE_SELECT_FIELDS = 'id, name, is_owner, user_id, can_view_costs, can_delete, can_manage_inventory, can_view_reports, can_manage_team, archived_at';
+
+// v962: архив сотрудников. Массив employees хранит ВСЕХ (имена в заказах/документах берутся из него), а в выборе — только активные
+function activeEmployees() { return (typeof employees !== 'undefined' && employees ? employees : []).filter(e => !e.archived_at); }
+function employeeTraces(emp) {
+    const id = String(emp && emp.id);
+    const list = (typeof orders !== 'undefined' && orders) ? orders : [];
+    return { master: list.filter(o => o.employee_id != null && String(o.employee_id) === id).length, created: list.filter(o => o.created_by != null && String(o.created_by) === id).length };
+}
 
 async function initLogin() {
     document.getElementById('loginError').classList.add('hidden');
@@ -362,7 +370,7 @@ function renderEmployeePickerList() {
     const list = document.getElementById('employeeList');
     if (!list) return;
     list.innerHTML = '';
-    employees.forEach(emp => {
+    activeEmployees().forEach(emp => {
         const btn = document.createElement('button');
         btn.className = 'nv-emp';
         const initial = (emp.name || '?').trim().charAt(0).toUpperCase();
@@ -841,7 +849,7 @@ async function openEmployeesModal() {
     const content = document.getElementById('employeesListContent');
     content.innerHTML = '';
 
-    employees.forEach(emp => {
+    activeEmployees().forEach(emp => {
         const row = document.createElement('button');
         row.className = 'nv-emp';
         const badge = emp.is_owner ? t('employees_role_owner') : (emp.user_id ? t('employees_role_personal_login') : t('employees_role_shared_device'));
@@ -879,6 +887,29 @@ async function openEmployeesModal() {
         content.appendChild(row);
     });
 
+    // v962: архив сотрудников
+    const arch = (employees || []).filter(e => e.archived_at);
+    if (arch.length) {
+        const h = document.createElement('div');
+        h.style.cssText = 'font-size:12px;font-weight:700;color:#8d887b;margin:8px 2px 0;';
+        h.textContent = t('employees_archive_title').replace('{n}', arch.length);
+        content.appendChild(h);
+        arch.forEach(emp => {
+            const row = document.createElement('div');
+            row.className = 'nv-inv';
+            row.innerHTML = `<div class="nv-inv-top"><span class="nv-ava" style="opacity:.6;">${escapeHtml((emp.name || '?').trim().charAt(0).toUpperCase())}</span><span class="nv-en"><span class="nv-inv-name">${escapeHtml(emp.name || '')}</span></span></div>`;
+            const act = document.createElement('div');
+            act.className = 'nv-inv-act';
+            const rb = document.createElement('button');
+            rb.className = 'invite-share-btn';
+            rb.textContent = t('employees_restore_btn');
+            rb.onclick = (e) => { e.stopPropagation(); restoreEmployee(emp.id); };
+            act.appendChild(rb);
+            row.appendChild(act);
+            content.appendChild(row);
+        });
+    }
+
     // Страница вместо окна (22.10). Если сверху страница сотрудника — openAppPage вернёт к списку
     // (после «Сохранить» / «Удалить» / отмены приглашения вопрос о несохранённом не нужен).
     if (appPageTop() !== 'employeesPage') openAppPage('employeesPage');
@@ -914,7 +945,13 @@ function openEmployeeEditModal(emp) {
     // повторно на другом устройстве.
     document.getElementById(PERMISSION_CHECKBOX_IDS.can_manage_team).disabled = permissionsLocked || !viewerIsOwner;
     document.getElementById('employeePermissionsLockedNote')?.classList.toggle('hidden', !permissionsLocked);
-    document.getElementById('employeeDeleteBtn').classList.toggle('hidden', !emp || isOwnerRow);
+    // v962: есть следы (мастер в заказах / создал заказы) — вместо «Удалить» кнопка «В архив»; сам себя и владельца — нельзя
+    const _tr = emp ? employeeTraces(emp) : { master: 0, created: 0 };
+    const _hasTraces = (_tr.master + _tr.created) > 0;
+    const _isSelf = !!(emp && currentEmployee && String(currentEmployee.id) === String(emp.id));
+    document.getElementById('employeeDeleteBtn').classList.toggle('hidden', !emp || isOwnerRow || _hasTraces);
+    const _archBtn = document.getElementById('employeeArchiveBtn');
+    if (_archBtn) _archBtn.classList.toggle('hidden', !emp || isOwnerRow || !_hasTraces || _isSelf);
 
     openAppPage('employeePage'); // страница вместо окна (22.10)
     _empFormSnapshot = _empFormState();
@@ -1024,7 +1061,57 @@ async function deleteEmployee() {
         openEmployeesModal();
     } catch (e) {
         console.error(e);
+        hideLoading();
+        if (e && e.code === '23503') {   // v962: база не даёт удалить — с сотрудником связаны документы; предлагаем архив
+            if (await showConfirm(t('employees_delete_has_records'), { ok: t('employees_archive_btn'), cancel: t('common_cancel') })) archiveEmployee();
+            return;
+        }
         showInfo(t('employees_delete_error'));
+    } finally { hideLoading(); }
+}
+
+// v962: в архив — имя остаётся в истории, личный вход и push отзываются, из выбора сотрудник пропадает
+async function archiveEmployee() {
+    const id = document.getElementById('employeeEditId').value;
+    const userId = document.getElementById('employeeEditUserId').value;
+    if (!id) return;
+    const emp = (employees || []).find(e => String(e.id) === String(id));
+    if (!emp || emp.is_owner || (currentEmployee && String(currentEmployee.id) === String(id))) return;
+    const tr = employeeTraces(emp);
+    let msg = t('employees_archive_confirm');
+    if (tr.master + tr.created > 0) msg += '\n\n' + t('employees_archive_stats').replace('{m}', tr.master).replace('{c}', tr.created);
+    if (userId) msg += '\n' + t('employees_archive_login_note');
+    if (!(await showConfirm(msg, { ok: t('employees_archive_btn'), cancel: t('common_cancel') }))) return;
+    showLoading(t('common_saving'));
+    try {
+        suppressRealtimeFor3s();
+        const { error } = await db.from('employees').update({ archived_at: new Date().toISOString() }).eq('id', id);
+        if (error) throw error;
+        try { await db.from('push_subscriptions').delete().eq('employee_id', id); } catch (e2) { console.error('push архивного сотрудника не снят', e2); }
+        if (userId) {
+            const { error: memErr } = await db.from('memberships').delete().eq('user_id', userId).eq('org_id', currentOrgId);
+            if (memErr) { console.error(memErr); showInfo(t('employees_delete_membership_error')); }
+        }
+        _empFormSnapshot = null;
+        await reloadEmployeesList();
+        openEmployeesModal();
+    } catch (e) {
+        console.error(e);
+        showInfo(t('employees_archive_error'));
+    } finally { hideLoading(); }
+}
+
+async function restoreEmployee(id) {
+    showLoading(t('common_saving'));
+    try {
+        suppressRealtimeFor3s();
+        const { error } = await db.from('employees').update({ archived_at: null }).eq('id', id);
+        if (error) throw error;
+        await reloadEmployeesList();
+        openEmployeesModal();
+    } catch (e) {
+        console.error(e);
+        showInfo(t('employees_restore_error'));
     } finally { hideLoading(); }
 }
 

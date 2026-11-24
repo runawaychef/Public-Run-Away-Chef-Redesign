@@ -15,7 +15,7 @@ function updateHistoryEmployeeFilter() {
     sel.innerHTML = `<option value="">${t('history_all_employees')}</option>`;
     employees.forEach(e => {
         const opt = document.createElement('option');
-        opt.value = e.id; opt.textContent = e.name;
+        opt.value = e.id; opt.textContent = e.name + (e.archived_at ? ' · ' + t('employees_archived_tag') : '');
         if (String(e.id) === prev) opt.selected = true;
         sel.appendChild(opt);
     });

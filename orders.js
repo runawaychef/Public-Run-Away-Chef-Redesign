@@ -1129,7 +1129,7 @@ function updateOrderEmployeeFilter() {
     sel.innerHTML = `<option value="">${t('orders_filter_all_staff')}</option>`;
     employees.forEach(e => {
         const opt = document.createElement('option');
-        opt.value = e.id; opt.textContent = e.name;
+        opt.value = e.id; opt.textContent = e.name + (e.archived_at ? ' · ' + t('employees_archived_tag') : '');
         if (String(e.id) === prev) opt.selected = true;
         sel.appendChild(opt);
     });
@@ -1142,7 +1142,7 @@ function renderOrderEmployeeFilterList() {
     const current = document.getElementById('orderEmployeeFilter').value;
     let html = `<div class="status-option${current === '' ? ' selected' : ''}" onclick="setOrderEmployeeFilter('')"><span>${t('orders_filter_all_staff')}</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>`;
     employees.forEach(e => {
-        html += `<div class="status-option${String(e.id) === current ? ' selected' : ''}" onclick="setOrderEmployeeFilter('${e.id}')"><span>${escapeHtml(e.name)}</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>`;
+        html += `<div class="status-option${String(e.id) === current ? ' selected' : ''}" onclick="setOrderEmployeeFilter('${e.id}')"><span>${escapeHtml(e.name + (e.archived_at ? ' · ' + t('employees_archived_tag') : ''))}</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>`;
     });
     list.innerHTML = html;
 }
@@ -1493,7 +1493,7 @@ function orderDraftGuardOnTab(tabId) {
 
 // Есть ли в пекарне другие сотрудники, которым уйдёт уведомление о сохранённом заказе
 function orderTeamHasOthers() {
-    return employees.some(e => !currentEmployee || e.id !== currentEmployee.id);
+    return activeEmployees().some(e => !currentEmployee || e.id !== currentEmployee.id);
 }
 
 // ---- Создание и копирование заказа ----
@@ -1688,7 +1688,7 @@ function fillDetailEmployeeSelect(selectedId) {
     const sel = document.getElementById('detailEmployee');
     if (!sel) return;
     sel.innerHTML = '<option value="">—</option>';
-    employees.forEach(e => {
+    employees.filter(e => !e.archived_at || String(e.id) === String(selectedId)).forEach(e => {
         const opt = document.createElement('option');
         opt.value = e.id; opt.textContent = e.name;
         if (selectedId && String(e.id) === String(selectedId)) opt.selected = true;
@@ -1732,7 +1732,7 @@ function renderDetailEmployeeDropdownList(selectedId) {
     const list = document.getElementById('detailEmployeeDropdown');
     if (!list) return;
     let html = `<div class="status-option${!selectedId ? ' selected' : ''}" onclick="setDetailEmployee('')"><span>—</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>`;
-    employees.forEach(e => {
+    employees.filter(e => !e.archived_at || String(e.id) === String(selectedId)).forEach(e => {
         html += `<div class="status-option${String(e.id) === String(selectedId) ? ' selected' : ''}" onclick="setDetailEmployee('${e.id}')"><span>${escapeHtml(e.name)}</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>`;
     });
     list.innerHTML = html;
