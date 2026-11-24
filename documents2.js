@@ -136,6 +136,50 @@ function _d2Unpaid() {
     return out;
 }
 
+
+// v956: режим «по счёту» — единица учёта в «Ждут оплаты» (Документы) — неоплаченный счёт (обычный или сводный).
+// Заказы без счёта сюда не входят (они в карточке «Без счёта»). Дашборд по-прежнему считает заказы.
+function _d2ByInv() { return !window._d2FromDash && typeof docsEnabled === 'function' && docsEnabled(); }
+function _d2UnpaidInvoices() {
+    const today = getLocalDateStr(0);
+    const map = new Map();
+    const byCons = new Map();   // состав сводных счетов одним проходом (без перебора всех заказов для каждого счёта)
+    (typeof orders !== 'undefined' ? orders : []).forEach(o => {
+        if (o.consolidated_invoice_id && isOrderSaved(o)) { const a = byCons.get(o.consolidated_invoice_id); if (a) a.push(o); else byCons.set(o.consolidated_invoice_id, [o]); }
+    });
+    _d2Unpaid().forEach(u => {
+        const d = u.cons || u.inv;
+        if (!d) return;
+        const key = u.cons ? 'c' + u.cons.consId : 'i' + u.inv.orderId;
+        let g = map.get(key);
+        if (!g) {
+            const raw = u.cons ? (byCons.get(u.cons.consId) || [u.o]) : [u.o];
+            const members = raw.map(o => {
+                const st = getOrderPaymentStatus(o);
+                const grandC = Math.round(st.grandAmt * 100);
+                const paidC = Math.min(Math.round(st.paidAmt * 100), grandC);
+                return { o, grandC, paidC, remC: Math.max(0, grandC - paidC) };
+            }).sort((a, b) => String(a.o.date || '').localeCompare(String(b.o.date || ''))
+                || String(a.o.order_number || '').localeCompare(String(b.o.order_number || '')) || (a.o.id - b.o.id));
+            g = { key, d, cons: !!u.cons, members, due: null, sentAt: d.sentAt || null, date: d.date || '', number: d.number || '',
+                  oid: u.cons ? (d.liveMemberId || u.o.id) : d.orderId, custKey: _d2GroupKey(u), custName: u.o.customer || t('orders_no_customer') };
+            map.set(key, g);
+        }
+        if (u.due && (!g.due || u.due < g.due)) g.due = u.due;
+    });
+    const out = [];
+    map.forEach(g => {
+        g.totalC = g.members.reduce((s, m) => s + m.grandC, 0);
+        g.remC = g.members.reduce((s, m) => s + m.remC, 0);
+        g.paidC = g.totalC - g.remC;
+        g.partial = g.paidC > 0 && g.remC > 0;
+        g.over = !!g.due && g.due < today;
+        g.overDays = g.over ? _docsDayDiff(g.due, today) : 0;
+        if (g.remC > 0) out.push(g);
+    });
+    return out;
+}
+
 // ВРЕМЕННО: диагностика скорости — нажатие на нижнюю справочную панель показывает замеры последнего открытия раздела
 function d2ShowDiag() {
     const a = window._d2Diag, b = window._docsDiag;
@@ -155,7 +199,8 @@ function docs2RenderHome() {
     const over = { n: 0, c: 0, maxDays: 0 };
     const wait = { n: 0, c: 0 };
     const part = { n: 0, c: 0, paidC: 0 };
-    _d2Unpaid().forEach(u => {
+    // v956: в режиме «по счёту» считаем неоплаченные счета (один сводный счёт = одна единица), иначе заказы
+    ((typeof docsEnabled === 'function' && docsEnabled()) ? _d2UnpaidInvoices() : _d2Unpaid()).forEach(u => {
         if (u.over) { over.n++; over.c += u.remC; over.maxDays = Math.max(over.maxDays, u.overDays); }
         else { wait.n++; wait.c += u.remC; }
         if (u.partial) { part.n++; part.c += u.remC; part.paidC += u.paidC; }
@@ -222,7 +267,7 @@ const _D2_BAR_ICONS = {
     half: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg>',
     col:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4l5 5 5-5M7 20l5-5 5 5"/></svg>'
 };
-let _d2W = { mode: 'all', part: false, cust: '', period: '', open: new Set() };
+let _d2W = { mode: 'all', part: false, cust: '', period: '', open: new Set(), invOpen: new Set() };
 function _d2View() { try { return localStorage.getItem('docs2_wait_view') === 'expanded' ? 'expanded' : 'collapsed'; } catch (e) { return 'collapsed'; } }
 function _d2SetView(v) { try { localStorage.setItem('docs2_wait_view', v); } catch (e) {} }
 
@@ -241,6 +286,7 @@ async function openDocs2Wait(mode, part, fromDash) {
     _d2W.part = !!part;
     _d2W.cust = '';
     _d2W.period = '';
+    _d2W.invOpen = new Set();
     openAppPage('docs2WaitPage');
     docs2RenderWait(true);
 }
@@ -312,6 +358,7 @@ async function returnToDocs2() {
 function docs2RenderWait(reapplyView) {
     const box = document.getElementById('docs2Wait');
     if (!box) return;
+    if (_d2ByInv()) { docs2RenderWaitInv(reapplyView); return; }   // v956: режим «по счёту» — список счетов
     const today = getLocalDateStr(0);
     const all = _d2Unpaid();
     // Фильтры клиент/период действуют на плитки-переключатели и на список; статус выбирается переключателем
@@ -382,6 +429,94 @@ function docs2RenderWait(reapplyView) {
             <button type="button" class="view-toggle-btn${_d2W.part ? ' active' : ''}" onclick="docs2WaitSet('part', !_d2W.part)" title="${escapeHtml(t('docs2_partial_t'))}">${_D2_BAR_ICONS.half}</button></div>
             <div class="view-toggle-pill"><button type="button" class="view-toggle-btn${expanded ? ' active' : ''}" onclick="docs2WaitToggleAll()" title="${escapeHtml(t(expanded ? 'docs2_collapse' : 'docs2_expand'))}">${expanded ? _D2_BAR_ICONS.col : _D2_BAR_ICONS.exp}</button></div></div>
         ${gl.length ? groupHtml : `<p style="font-size:13px; color:#9a9488; margin:24px 0; text-align:center;">${escapeHtml(t('docs2_wait_empty'))}</p>`}`;
+}
+
+// ---- v956: «Ждут оплаты» по счетам (режим «по счёту»). Группы по клиентам → счета → заказы счёта ----
+function docs2WaitInvToggle(key) {
+    if (_d2W.invOpen.has(key)) _d2W.invOpen.delete(key); else _d2W.invOpen.add(key);
+    docs2RenderWait(false);
+}
+function docs2InvOpenDoc(orderId, cons) {
+    if (typeof openSendDocumentSheet === 'function') openSendDocumentSheet(orderId, 'invoice', cons ? { preferCons: true } : undefined);
+}
+function docs2RenderWaitInv(reapplyView) {
+    const box = document.getElementById('docs2Wait');
+    if (!box) return;
+    const all = _d2UnpaidInvoices();
+    const ymOf = g => String(g.date || '').slice(0, 7);
+    const base = all.filter(g => (!_d2W.cust || g.custKey === _d2W.cust) && (!_d2W.period || ymOf(g) === _d2W.period) && (!_d2W.part || g.partial));
+    const wait = base.filter(g => !g.over), over = base.filter(g => g.over);
+    const sum = a => a.reduce((s, g) => s + g.remC, 0);
+    const list = _d2W.mode === 'over' ? over : (_d2W.mode === 'wait' ? wait : base);
+
+    const groups = new Map();
+    list.forEach(g => {
+        if (!groups.has(g.custKey)) groups.set(g.custKey, { key: g.custKey, name: g.custName, items: [], sumC: 0 });
+        const x = groups.get(g.custKey); x.items.push(g); x.sumC += g.remC;
+    });
+    const gl = [...groups.values()].sort((a, b) => b.sumC - a.sumC);
+    if (reapplyView) _d2ApplyView(gl.map(g => g.key));
+
+    const custMap = new Map();
+    all.forEach(g => custMap.set(g.custKey, g.custName));
+    const CHK = '<svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>';
+    const opt = (field, v, label, sel) => `<div class="status-option${sel ? ' selected' : ''}" data-v="${escapeHtml(v)}" onclick="docs2WaitPick('${field}', this.getAttribute('data-v'))"><span>${escapeHtml(label)}</span>${CHK}</div>`;
+    const ddC = document.getElementById('docs2DdCust'), ddP = document.getElementById('docs2DdPer');
+    if (ddC) ddC.innerHTML = opt('cust', '', t('docs_customer_all'), !_d2W.cust)
+        + [...custMap.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([k, n]) => opt('cust', k, n, k === _d2W.cust)).join('');
+    const yms = [...new Set(all.map(ymOf).filter(y => /^\d{4}-\d{2}$/.test(y)))].sort().reverse();
+    if (ddP) ddP.innerHTML = opt('per', '', t('docs_period_all'), !_d2W.period)
+        + yms.map(ym => opt('per', ym, _docsMonthLabel(ym), ym === _d2W.period)).join('');
+
+    const chip = (mode, label, arr, red) => `<button type="button" class="d2chip${_d2W.mode === mode ? ' on' : ''}${red ? ' red' : ''}" onclick="docs2WaitSet('mode','${mode}')">
+        <small>${escapeHtml(label)}</small><b>${arr.length}</b><span>${escapeHtml(formatMoney(sum(arr) / 100))}</span></button>`;
+    const expanded = _d2View() === 'expanded';
+    const gold = x => `<span class="d2gold">${escapeHtml(x)}</span>`;
+
+    const memberRow = m => {
+        const o = m.o;
+        const right = m.remC <= 0
+            ? `<div class="ok">${escapeHtml(t('docs2_inv_paid'))}</div>`
+            : (m.paidC > 0 ? `<div class="red">${escapeHtml(t('docs2_inv_left').replace('{s}', formatMoney(m.remC / 100)))}</div>` : '');
+        return `<div class="d2o d2sub" onclick="docs2OpenOrder(${o.id})"><div class="l">
+            <div class="a">${escapeHtml(t('docs2_order').replace('{n}', o.order_number || ('#' + o.id)))}</div>
+            <div class="b">${escapeHtml(formatDateDMY(o.date))}</div></div>
+            <div class="r"><b>${escapeHtml(formatMoney(m.grandC / 100))}</b>${right}</div></div>`;
+    };
+    const invRow = g => {
+        const open = _d2W.invOpen.has(g.key);
+        const n = g.members.length;
+        const line2 = `${n} ${nWord(n, 'word_orders')} · ${formatDateDMY(g.date)}`;
+        let st = g.sentAt ? escapeHtml(t('docs_sent_on').replace('{d}', _docsShortDate(g.sentAt))) : gold(t('docs_not_sent_cap'));
+        if (g.partial) st += ' · ' + gold(t('docs2_inv_paid_of').replace('{a}', formatMoney(g.paidC / 100)).replace('{b}', formatMoney(g.totalC / 100)));
+        let due = '';
+        if (g.over) due = `<div class="red">${escapeHtml(t('docs_overdue_days').replace('{n}', g.overDays))}</div>`;
+        else if (g.due) due = `<div>${escapeHtml(t('docs_due_till').replace('{d}', _docsShortDate(g.due + 'T12:00:00')))}</div>`;
+        const head = `<div class="d2o" data-k="${escapeHtml(g.key)}" onclick="docs2WaitInvToggle(this.getAttribute('data-k'))"><span class="d2ch">${open ? '&#8964;' : '&rsaquo;'}</span><div class="l">
+            <div class="a">${escapeHtml(g.number || '')}${g.cons ? ' · ' + escapeHtml(t('docs_cons_short')) : ''}</div>
+            <div class="b">${escapeHtml(line2)}</div><div class="c">${st}</div></div>
+            <div class="r"><b>${escapeHtml(formatMoney(g.remC / 100))}</b>${due}</div></div>`;
+        if (!open) return head;
+        return head + g.members.map(memberRow).join('')
+            + `<div class="d2o d2sub" style="justify-content:center;"><button type="button" class="d2btn" onclick="docs2InvOpenDoc(${g.oid}, ${g.cons ? 'true' : 'false'})">${escapeHtml(t('docs2_inv_open'))}</button></div>`;
+    };
+    const order = (a, b) => String(a.due || '9999').localeCompare(String(b.due || '9999')) || String(a.date).localeCompare(String(b.date));
+    const groupHtml = gl.map(g => {
+        const open = _d2W.open.has(g.key);
+        const body = open ? g.items.slice().sort(order).map(invRow).join('') : '';
+        return `<div class="d2g"><div class="d2gh" onclick="docs2WaitToggle(this.getAttribute('data-k'))" data-k="${escapeHtml(g.key)}">
+            <span class="ch">${open ? '&#8964;' : '&rsaquo;'}</span>
+            <div class="nm"><b>${escapeHtml(g.name)}</b><small>${g.items.length} ${escapeHtml(nWord(g.items.length, 'word_invoices'))}</small></div>
+            <span class="sm${_d2W.mode === 'over' ? ' red' : ''}">${escapeHtml(formatMoney(g.sumC / 100))}</span></div>${body}</div>`;
+    }).join('');
+
+    box.innerHTML = `<div class="d2chips">${chip('all', t('docs2_chip_all'), base, false)}${chip('wait', t('docs2_in_term'), wait, false)}${chip('over', t('docs_tile_over'), over, true)}</div>
+        <div id="docs2WaitBar"><div class="view-toggle-pill">
+            <button type="button" class="view-toggle-btn${_d2W.cust ? ' active' : ''}" onclick="toggleFilterDropdown('docs2DdCust')" title="${escapeHtml(t('stats_all_customers_short'))}">${_D2_BAR_ICONS.cust}</button>
+            <button type="button" class="view-toggle-btn${_d2W.period ? ' active' : ''}" onclick="toggleFilterDropdown('docs2DdPer')" title="${escapeHtml(t('orders_period'))}">${_D2_BAR_ICONS.per}</button>
+            <button type="button" class="view-toggle-btn${_d2W.part ? ' active' : ''}" onclick="docs2WaitSet('part', !_d2W.part)" title="${escapeHtml(t('docs2_partial_t'))}">${_D2_BAR_ICONS.half}</button></div>
+            <div class="view-toggle-pill"><button type="button" class="view-toggle-btn${expanded ? ' active' : ''}" onclick="docs2WaitToggleAll()" title="${escapeHtml(t(expanded ? 'docs2_collapse' : 'docs2_expand'))}">${expanded ? _D2_BAR_ICONS.col : _D2_BAR_ICONS.exp}</button></div></div>
+        ${gl.length ? groupHtml : `<p style="font-size:13px; color:#9a9488; margin:24px 0; text-align:center;">${escapeHtml(t('docs2_inv_empty'))}</p>`}`;
 }
 
 // ==================== Страница «Оплачены» (1.11.2026) ====================
