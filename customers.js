@@ -65,7 +65,8 @@ function displayCustomers() {
         return debtDiff !== 0 ? debtDiff : (a.name||"").localeCompare(b.name||"");
     });
     let warningCount = 0;
-    customers.forEach(c => { if (!(c.name && c.name.trim())) warningCount++; });
+    customers.forEach(c => { if (!c.archived_at && !(c.name && c.name.trim())) warningCount++; });
+    _custArchiveRowUpdate();   // v950
     const warningEl = document.getElementById('customersNameWarning');
     if (warningEl) warningEl.classList.toggle('hidden', warningCount === 0);
     updateCustomerSelects();
@@ -99,7 +100,7 @@ function _custCur() { return (formatMoney(0).replace(/\d[\d\s.,]*/, '').trim()) 
 function renderCustomerTiles(body) {
     const cu = escapeHtml(_custCur());
     body.classList.add('cust-grid');
-    body.innerHTML = customers.map(c => {
+    body.innerHTML = _custListSource().map(c => {
         const hasName = !!(c.name && c.name.trim());
         const debt = customerDebt(c);
         const hasDebt = debt > 0.01;
@@ -129,7 +130,7 @@ function renderCustomerCards() {
     if (tiles) { renderCustomerTiles(body); return; }
     body.classList.remove('cust-grid');
     let html = '';
-    customers.forEach(c => {
+    _custListSource().forEach(c => {
         const hasName = !!(c.name && c.name.trim());
         const debt = customerDebt(c);
         const hasDebt = debt > 0.01;
@@ -709,6 +710,7 @@ function openCustomerDetail(custId) {
     renderCustomerStats(cust);
     renderCustomerOrders();
     renderCustomerCredit(cust);   // v946: аванс клиента
+    updateCustomerDetailButtons(cust);   // v950: «В архив» / «Восстановить» / «Удалить»
     refreshFab();
 }
 
@@ -1340,7 +1342,7 @@ async function saveCdHeader() {
     // Защита от дубликатов: имя нового или переименованного клиента не должно совпадать с чужим
     const dupCust = findCustomerByName(name, cust.id);
     if (dupCust) {
-        showInfo(t('customers_duplicate_name').replace('{name}', dupCust.name));
+        showInfo(t(dupCust.archived_at ? 'cust_archived_dup_info' : 'customers_duplicate_name').replace('{name}', dupCust.name));
         document.getElementById('cdName').focus();
         return;
     }
@@ -1480,3 +1482,108 @@ function renderCustomerOrders() {
         if (h > 0) container.style.maxHeight = h + 'px';
     }
 }
+
+
+// ==================== v950: АРХИВ КЛИЕНТОВ ====================
+// Клиент не удаляется, а уходит в архив (customers.archived_at): заказы, документы, долги и аванс остаются.
+// Архивные скрыты из списка (переключатель «Архив»), из выбора клиента в заказе и из банка; в массиве customers они есть,
+// чтобы документы и отчёты по старым заказам находили реквизиты. «Удалить навсегда» — только для пустого клиента.
+let _custShowArchive = false;
+function _custListSource() { return customers.filter(c => _custShowArchive ? !!c.archived_at : !c.archived_at); }
+function toggleCustomersArchive() { _custShowArchive = !_custShowArchive; displayCustomers(); }
+function _custArchiveRowUpdate() {
+    const n = customers.filter(c => c.archived_at).length;
+    if (n === 0) _custShowArchive = false;
+    const row = document.getElementById('customersArchiveRow');
+    const btn = document.getElementById('customersArchiveBtn');
+    if (row) row.classList.toggle('hidden', n === 0);
+    if (btn) btn.textContent = _custShowArchive ? t('cust_archive_back') : t('cust_archive_open').replace('{n}', String(n));
+}
+
+// Кнопки в шапке карточки: пустой клиент (нет заказов и аванса) — «Удалить»; с историей — «В архив»; архивный — «Восстановить»
+function updateCustomerDetailButtons(cust) {
+    if (!cust) return;
+    const hasOrders = orders.some(o => o.customer_id === cust.id);
+    const hasCredit = Math.abs(_custBalance[cust.id] || 0) > 0.004;
+    const empty = !hasOrders && !hasCredit;
+    document.getElementById('cdDeleteBtn')?.classList.toggle('hidden', !empty);
+    document.getElementById('cdArchiveBtn')?.classList.toggle('hidden', empty || !!cust.archived_at);
+    document.getElementById('cdRestoreBtn')?.classList.toggle('hidden', !cust.archived_at);
+}
+
+// Есть ли у клиента история, из-за которой удалять нельзя (проверка на сервере: включая заказы в корзине)
+async function customerHasHistory(custId) {
+    const q = (tbl) => db.from(tbl).select('id', { count: 'exact', head: true }).eq('customer_id', custId);
+    const [a, b, c] = await Promise.all([q('orders'), q('customer_credits'), q('consolidated_invoices')]);
+    if (a.error) throw a.error; if (b.error) throw b.error; if (c.error) throw c.error;
+    return (a.count || 0) + (b.count || 0) + (c.count || 0) > 0;
+}
+
+let _custArchiveId = null;
+let _custArchiveSum = null;
+// Сводка по клиенту перед архивацией: пользователь сам решает — архивировать как есть или сначала закрыть вопросы
+async function openCustomerArchive() {
+    const cust = customers.find(c => c.id === currentCustomerId);
+    if (!cust) return;
+    showLoading();
+    let bal = 0;
+    try { bal = await loadCustomerBalance(cust.id); } finally { hideLoading(); }
+    const mine = orders.filter(o => !o.deleted_at && (o.customer_id != null ? o.customer_id === cust.id : o.customer === cust.name));
+    const today = getLocalDateStr(0);
+    const debt = customerDebt(cust);
+    const unpaid = customerUnpaidOrders(cust).length;
+    const open = mine.filter(o => o.status !== 'выполнен');
+    const future = open.filter(o => o.date && o.date > today);
+    const noDoc = docsEnabled() ? mine.filter(o => o.is_confirmed && o.status === 'выполнен' && !o.inv_no && !o.consolidated_invoice_id && !o.cons_excluded) : [];
+    const lines = [];
+    if (debt > 0.01) lines.push(t('cust_arch_debt').replace('{sum}', formatMoney(debt)).replace('{label}', unpaidOrdersLabel(unpaid)));
+    if (bal > 0.004) lines.push(t('cust_arch_credit').replace('{sum}', formatMoney(bal)));
+    if (open.length) lines.push(t('cust_arch_open').replace('{n}', String(open.length)) + (future.length ? t('cust_arch_future').replace('{n}', String(future.length)) : ''));
+    if (noDoc.length) lines.push(t('cust_arch_nodoc').replace('{n}', String(noDoc.length)));
+    _custArchiveId = cust.id;
+    _custArchiveSum = { unpaid, hasIssues: lines.length > 0 };
+    document.getElementById('custArchiveTitle').textContent = t('cust_archive_title').replace('{name}', cust.name || t('customers_no_name_fallback'));
+    const body = document.getElementById('custArchiveBody');
+    body.innerHTML = (lines.length
+        ? lines.map(x => `<div style="margin-bottom:5px; padding-left:14px; text-indent:-14px;"><span style="color:#c0685c; font-weight:700;">•</span> ${escapeHtml(x)}</div>`).join('')
+        : `<div style="margin-bottom:5px; color:#4f6349; font-weight:600;">${escapeHtml(t('cust_arch_clean'))}</div>`)
+        + `<div style="margin-top:8px; font-size:11.5px; color:#6b675d;">${escapeHtml(t('cust_arch_foot'))}</div>`;
+    document.getElementById('custArchiveModal').style.display = 'flex';
+}
+function custArchiveFixIssues() {
+    document.getElementById('custArchiveModal').style.display = 'none';
+    const id = _custArchiveId;
+    if (_custArchiveSum && _custArchiveSum.unpaid > 0 && id != null) openCustomerUnpaidModal(id);
+    else document.getElementById('cdOrdersBlock')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+async function _setCustomerArchived(cust, archived) {
+    suppressRealtimeFor3s();
+    const stamp = archived ? new Date().toISOString() : null;
+    await updateChecked(db.from('customers').update({ archived_at: stamp }).eq('id', cust.id));
+    cust.archived_at = stamp;
+    logActivity('customer', `${t(archived ? 'log_customer_archived' : 'log_customer_restored')} «${cust.name}»`);
+}
+async function confirmCustomerArchive() {
+    document.getElementById('custArchiveModal').style.display = 'none';
+    const cust = customers.find(c => c.id === _custArchiveId);
+    if (!cust) return;
+    showLoading();
+    try {
+        await _setCustomerArchived(cust, true);
+        closeCustomerDetail();
+        displayCustomers();
+    } catch (e) { console.error(e); showDbError(e, t('cust_archive_error')); }
+    finally { hideLoading(); }
+}
+async function restoreCustomerById(id) {
+    const cust = customers.find(c => c.id === id);
+    if (!cust) return;
+    showLoading();
+    try {
+        await _setCustomerArchived(cust, false);
+        displayCustomers();
+        if (currentCustomerId === id) updateCustomerDetailButtons(cust);
+    } catch (e) { console.error(e); showDbError(e, t('cust_archive_error')); }
+    finally { hideLoading(); }
+}
+function restoreCurrentCustomer() { if (currentCustomerId != null) restoreCustomerById(currentCustomerId); }

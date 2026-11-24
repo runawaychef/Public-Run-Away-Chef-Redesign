@@ -367,7 +367,7 @@ function updateCustomerSelects() {
         if (o.customer_id) orderCount[o.customer_id] = (orderCount[o.customer_id] || 0) + 1;
     });
     const byPopularityThenAlpha = () => {
-        const sorted = customers.slice().sort((a, b) => (orderCount[b.id] || 0) - (orderCount[a.id] || 0));
+        const sorted = customers.filter(c => !c.archived_at).sort((a, b) => (orderCount[b.id] || 0) - (orderCount[a.id] || 0));   // v950: архивные не предлагаем
         const top = sorted.slice(0, 6);
         const rest = sorted.slice(6).sort((a, b) => (a.name||"").localeCompare(b.name||""));
         return [...top, ...rest].map(c => c.name);

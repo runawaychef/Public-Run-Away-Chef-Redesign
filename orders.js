@@ -1530,8 +1530,10 @@ async function createDraftOrderAndOpen() {
 }
 
 async function copyOrder(i) {
-    suppressRealtimeFor3s();
     const o = orders[i];
+    const _cc = o && o.customer_id ? customers.find(c => c.id === o.customer_id) : null;
+    if (_cc && _cc.archived_at) { showInfo(t('cust_archived_pick').replace('{name}', _cc.name)); return; }   // v950
+    suppressRealtimeFor3s();
     const employeeId = currentEmployee ? currentEmployee.id : null;
     showLoading();
     try {
@@ -2130,6 +2132,13 @@ async function createCustomerFromOrder(typedName) {
     const name = String(typedName || '').replace(/\s+/g, ' ').trim();
     if (name) {
         const dup = findCustomerByName(name);
+        if (dup && dup.archived_at) {   // v950: такой клиент есть в архиве — предлагаем восстановить
+            const restore = await showConfirm(t('cust_archived_dup_confirm').replace('{name}', dup.name),
+                { ok: t('cust_restore_btn'), cancel: t('customers_change_name') });
+            if (restore) { await restoreCustomerById(dup.id); await attachCustomerToOrder(dup); }
+            else if (input) { input.value = name; input.focus(); }
+            return;
+        }
         if (dup) {
             const useExisting = await showConfirm(
                 t('customers_duplicate_confirm').replace('{name}', dup.name),
@@ -2196,6 +2205,11 @@ async function saveDetailHeader() {
         const cust = _pendingCustomerPickId != null
             ? customers.find(c => c.id === _pendingCustomerPickId)
             : customers.find(c => c.name === customerName);
+        if (cust && cust.archived_at && cust.id !== order.customer_id) {   // v950: клиент в архиве — выбрать нельзя
+            showInfo(t('cust_archived_pick').replace('{name}', cust.name));
+            document.getElementById('detailCustomer').value = order.customer || '';
+            return;
+        }
         if (!cust) {
             showInfo(t('orders_customer_not_found').replace('{name}', customerName));
             document.getElementById('detailCustomer').value = order.customer || ''; // откатываем поле

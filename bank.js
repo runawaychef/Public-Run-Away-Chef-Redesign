@@ -385,7 +385,7 @@ function bankOpenSettings() {
 
 // ---------- окно «Другой счёт» ----------
 function _bankSortedCustomers() {
-    return (typeof customers !== 'undefined' ? customers : []).filter((c) => c && c.name).slice()
+    return (typeof customers !== 'undefined' ? customers : []).filter((c) => c && c.name && !c.archived_at).slice()
         .sort((a, b) => String(a.name).localeCompare(String(b.name)));
 }
 

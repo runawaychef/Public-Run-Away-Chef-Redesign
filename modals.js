@@ -114,6 +114,13 @@ async function confirmDelete() {
                 showInfo(t('credit_delete_blocked').replace('{sum}', formatMoney(credBal)));
                 return;
             }
+            // v950: удалить навсегда можно только пустого клиента (без заказов, в т.ч. из корзины, аванса и сводных счетов)
+            if (await customerHasHistory(cust.id)) {
+                hideLoading();
+                closeModal();
+                showInfo(t('cust_delete_has_history'));
+                return;
+            }
             const { error } = await db.from('customers').delete().eq('id', cust.id);
             if (error) throw error;
             customers.splice(deleteId, 1);

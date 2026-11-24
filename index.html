@@ -3229,6 +3229,9 @@ function hideSplashScreen() {
                 <div class="p-2 rounded-xl shadow-md" style="background:#f4f1ea;">
                     <p id="customersNameWarning" class="text-xs mb-2 hidden" style="color:#a3493d; background:#f3ded9; border:1px solid #e8c4bb; border-radius:12px; padding:6px;"><svg class="w-3.5 h-3.5 inline-block align-[-2px] mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg>У некоторых клиентов не указано имя. Откройте их карточку и заполните имя — без этого их заказы будут отображаться некорректно.</p>
 
+                    <!-- v950: переключатель «Архив» (виден, если есть архивные клиенты) -->
+                    <div id="customersArchiveRow" class="hidden" style="margin:0 0 8px;"><button type="button" id="customersArchiveBtn" onclick="toggleCustomersArchive()" class="pill-btn-secondary" style="padding:6px 12px; font-size:12px;"></button></div>
+
                     <!-- Карточный вид (по умолчанию) -->
                     <div id="customerCardsWrap">
                         <div id="customerCardsBody"></div>
@@ -3248,7 +3251,9 @@ function hideSplashScreen() {
                             <span data-i18n="common_back">Назад</span>
                         </button>
                         <button id="cdSaveNewBtn" onclick="saveNewCustomer()" class="hidden pill-btn" style="margin-left:auto;" data-i18n="common_save">Сохранить</button>
-                        <button onclick="deleteCurrentCustomer()" class="pill-btn-danger perm-delete" style="margin-left:6px;" data-i18n="customers_delete_btn">Удалить клиента</button>
+                        <button id="cdArchiveBtn" onclick="openCustomerArchive()" class="hidden pill-btn-secondary" style="margin-left:6px;" data-i18n="cust_archive_btn">В архив</button>
+                        <button id="cdRestoreBtn" onclick="restoreCurrentCustomer()" class="hidden pill-btn" style="margin-left:6px;" data-i18n="cust_restore_btn">Восстановить</button>
+                        <button id="cdDeleteBtn" onclick="deleteCurrentCustomer()" class="pill-btn-danger perm-delete" style="margin-left:6px;" data-i18n="customers_delete_btn">Удалить клиента</button>
                     </div>
                     <p id="customerAutosaveNote" class="text-[11px] text-gray-400 mb-1" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
                     <button type="button" class="cd-req-head" onclick="toggleCdRequisites()">
@@ -3897,6 +3902,18 @@ function hideSplashScreen() {
         </div>
 
         <!-- Подтверждение удаления -->
+        <!-- v950: сводка по клиенту перед отправкой в архив -->
+        <div id="custArchiveModal" class="modal">
+            <div class="modal-content" style="max-width:340px;">
+                <h2 id="custArchiveTitle" class="text-sm font-semibold text-gray-800"></h2>
+                <div id="custArchiveBody" style="font-size:12.5px; color:#3c3a34; margin:8px 0 12px; line-height:1.5;"></div>
+                <div class="flex flex-col gap-2">
+                    <button id="custArchiveOkBtn" onclick="confirmCustomerArchive()" class="pill-btn justify-center" data-i18n="cust_archive_anyway">Всё равно в архив</button>
+                    <button onclick="custArchiveFixIssues()" class="pill-btn-secondary justify-center" data-i18n="cust_archive_fix">Закрыть вопросы</button>
+                </div>
+            </div>
+        </div>
+
         <div id="deleteModal" class="modal">
             <div class="modal-content">
                 <p id="deleteModalText" class="mb-3 text-sm text-gray-800" data-i18n="common_delete_confirm_default">Вы уверены, что хотите удалить этот элемент?</p>
@@ -5270,7 +5287,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=10"></script>
     <script src="money.js?v=17"></script>
-    <script src="i18n-core.js?v=218"></script>
+    <script src="i18n-core.js?v=219"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=21"></script>
     <script src="auth.js?v=35"></script>
@@ -5283,9 +5300,9 @@ function hideSplashScreen() {
 <script src="batches.js?v=18"></script>
 <script src="semifinished.js?v=76"></script>
 <script src="products.js?v=68"></script>
-<script src="customers.js?v=83"></script>
+<script src="customers.js?v=84"></script>
 <script src="calendar.js?v=17"></script>
-<script src="orders.js?v=181"></script>
+<script src="orders.js?v=182"></script>
 <script src="dashboard.js?v=25"></script>
 <script src="invoice.js?v=57"></script>
 <script src="send-document.js?v=46"></script>
@@ -5293,12 +5310,12 @@ function hideSplashScreen() {
 <script src="payments.js?v=44"></script>
 <script src="documents.js?v=16"></script>
 <script src="documents2.js?v=35"></script>
-<script src="bank.js?v=13"></script>
+<script src="bank.js?v=14"></script>
 <script src="stats.js?v=45"></script>
 <script src="history.js?v=10"></script>
-<script src="modals.js?v=27"></script>
+<script src="modals.js?v=28"></script>
 <script src="demoData.js?v=31"></script>
-<script src="helpers.js?v=56"></script>
+<script src="helpers.js?v=57"></script>
 <script>
 // SUPABASE_URL, SUPABASE_KEY, db перенесены в supabaseClient.js
 
@@ -5389,7 +5406,7 @@ async function loadAllData(silent) {
     try {
         const [pRes, cRes, oRes, oiRes, eRes, ingRes, piRes, sfRes, sfiRes, opRes, omRes] = await Promise.all([
             fetchAllRows(() => db.from('products').select('id, name, price, batch_size, cost_items, unit, recipe_confirmed, track_stock, photo_url').eq('org_id', currentOrgId).order('name').order('id')),
-            fetchAllRows(() => db.from('customers').select('id, name, contact, email, discount, vat_exempt, notes, address, reg_number, vat_code, personal_code, entity_type, payment_term_days, invoice_mode').eq('org_id', currentOrgId).order('name').order('id')),
+            fetchAllRows(() => db.from('customers').select('id, name, contact, email, discount, vat_exempt, notes, address, reg_number, vat_code, personal_code, entity_type, payment_term_days, invoice_mode, archived_at').eq('org_id', currentOrgId).order('name').order('id')),
             // invoice_snapshot / delivery_note_snapshot сюда НЕ входят: это копии документов с логотипом
             // (у большой пекарни ~15 МБ), в списке они не нужны — документы читают свой снимок из базы сами.
             fetchAllRows(() => db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending, is_confirmed, is_demo, created_by, inv_no, dn_no, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via, invoice_sent_message_id, delivery_note_sent_message_id, invoice_delivery_status, delivery_note_delivery_status, consolidated_invoice_id, cons_excluded').eq('org_id', currentOrgId).is('deleted_at', null).order('id')),
@@ -5457,7 +5474,8 @@ async function loadAllData(silent) {
             address: c.address || '', reg_number: c.reg_number || '', vat_code: c.vat_code || '',
             personal_code: c.personal_code || '', entity_type: c.entity_type || '',
             payment_term_days: c.payment_term_days != null ? c.payment_term_days : null,
-            invoice_mode: c.invoice_mode === 'consolidated' ? 'consolidated' : 'per_order'
+            invoice_mode: c.invoice_mode === 'consolidated' ? 'consolidated' : 'per_order',
+            archived_at: c.archived_at || null   // v950: клиент в архиве
         }));
         employees = (eRes.data || []).map(e => ({ id: e.id, name: e.name }));
 
