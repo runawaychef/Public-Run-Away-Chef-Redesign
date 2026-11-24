@@ -189,6 +189,7 @@ I18N.en = {
         conf_frozen_changed: "This confirmation was sent to the customer on {dt}. The order has changed since: it was {old}, now {new}.",
         conf_update_btn: "Update confirmation",
         conf_updated_note: "Showing the updated version. The customer has not received it yet — send it.",
+        conf_sent_banner: "Sent to the customer · {via} · {dt}",
         conf_updated_log: "Confirmation #{n} updated: was {old}, now {new}",
         conf_share_btn: "Share (PDF)",
         conf_email_subject: "Order confirmation #{n} — {org}",

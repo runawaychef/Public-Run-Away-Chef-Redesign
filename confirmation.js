@@ -134,7 +134,8 @@ function _renderOrderConf() {
     const _bannerCss = 'background:#f8efd9;color:#8a6a1f;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:13px;';
     if (_confState.sent && !_confState.live) {
         const chg = _confChangedInfo(d.order, _confState.sent.snap);
-        if (chg) banner = `<div style="${_bannerCss}">${esc(t('conf_frozen_changed').replace('{dt}', typeof _docSumShortDT === 'function' ? _docSumShortDT(_confState.sent.at) : '').replace('{old}', formatMoney(chg.old)).replace('{new}', formatMoney(chg.cur)))}<button type="button" class="pill-btn-secondary w-full justify-center" style="margin-top:8px;" onclick="confRefresh()"><span>${esc(t('conf_update_btn'))}</span></button></div>`;
+        if (!chg) banner = `<div style="background:#e3e8df;color:#4f6349;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:13px;">✓ ${esc(t('conf_sent_banner').replace('{via}', typeof _sentViaLabel === 'function' ? _sentViaLabel(_confState.sent.snap && _confState.sent.snap.via) : '').replace('{dt}', typeof _docSumShortDT === 'function' ? _docSumShortDT(_confState.sent.at) : ''))}</div>`;
+        else banner = `<div style="${_bannerCss}">${esc(t('conf_frozen_changed').replace('{dt}', typeof _docSumShortDT === 'function' ? _docSumShortDT(_confState.sent.at) : '').replace('{old}', formatMoney(chg.old)).replace('{new}', formatMoney(chg.cur)))}<button type="button" class="pill-btn-secondary w-full justify-center" style="margin-top:8px;" onclick="confRefresh()"><span>${esc(t('conf_update_btn'))}</span></button></div>`;
     } else if (_confState.sent && _confState.live) {
         banner = `<div style="${_bannerCss}">${esc(t('conf_updated_note'))}</div>`;
     }

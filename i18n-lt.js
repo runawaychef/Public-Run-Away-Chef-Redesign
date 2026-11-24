@@ -194,6 +194,7 @@ I18N.lt = {
         conf_frozen_changed: "Šis patvirtinimas klientui išsiųstas {dt}. Nuo to laiko užsakymas pakeistas: buvo {old}, dabar {new}.",
         conf_update_btn: "Atnaujinti patvirtinimą",
         conf_updated_note: "Rodoma atnaujinta versija. Klientas jos dar negavo — išsiųskite.",
+        conf_sent_banner: "Išsiųsta klientui · {via} · {dt}",
         conf_updated_log: "Patvirtinimas Nr. {n} atnaujintas: buvo {old}, tapo {new}",
         conf_share_btn: "Dalintis (PDF)",
         conf_email_subject: "Užsakymo Nr. {n} patvirtinimas — {org}",
