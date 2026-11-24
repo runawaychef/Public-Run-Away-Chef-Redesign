@@ -33,8 +33,14 @@ async function openOrderConfirmation(orderId) {
     }
     const lang = currentLang;
     try { if (typeof ensureLangLoaded === 'function') await ensureLangLoaded(lang); } catch (e) { console.error(e); }
+    // v954: что реально отправлено клиенту (снимок v945): после отправки подтверждение открывается ровно таким
+    let sent = null;
+    try {
+        const r = await db.from('orders').select('confirmation_sent_at, confirmation_snapshot').eq('id', orderId).single();
+        if (!r.error && r.data && r.data.confirmation_snapshot && Array.isArray(r.data.confirmation_snapshot.items)) sent = { at: r.data.confirmation_sent_at, snap: r.data.confirmation_snapshot };
+    } catch (e) { console.error(e); }
     hideLoading();
-    _confState = { orderId, org, lang };
+    _confState = { orderId, org, lang, sent, live: false };
     openAppPage('orderConfPage');
     _renderOrderConf(); // _appPageOnShow срабатывает только при возврате на страницу, при открытии рисуем сами
 }
@@ -44,23 +50,39 @@ function _confData() {
     const order = orders.find(o => o.id === st.orderId);
     if (!order) return null;
     const cust = order.customer_id ? customers.find(c => c.id === order.customer_id) : null;
-    const tot = _orderTotals(order);
+    // v954: после отправки позиции, цены, скидка, НДС и итог берутся из снимка отправленного (не меняются);
+    // «оплачено / осталось» всегда на сегодня. Пока пользователь не нажал «Обновить подтверждение».
+    const snap = (st.sent && !st.live) ? st.sent.snap : null;
+    const vatRateNow = Number(typeof currentOrgVatRate !== 'undefined' ? currentOrgVatRate : 0) || 0;
+    let tot, srcItems, discountPct, vatExempt, vatRate;
+    if (snap) {
+        srcItems = snap.items;
+        discountPct = Number(snap.discount) || 0;
+        vatExempt = !!snap.vat_exempt;
+        vatRate = snap.vat_rate != null ? (Number(snap.vat_rate) || 0) : vatRateNow;   // снимки v945 без ставки — текущая ставка
+        tot = calcTotals(srcItems, snap.discount || 0, vatExempt, vatRate);
+    } else {
+        srcItems = orderBillItems(order);
+        discountPct = Number(order.discount) || 0;
+        vatExempt = orderVatExempt(order);
+        vatRate = vatRateNow;
+        tot = _orderTotals(order);
+    }
     const paid = Number(_orderPaidTotals[order.id] || 0);
     const due = Math.max(0, Math.round((tot.grand - paid) * 100) / 100);
     // v940: сумма строки = количество × цена (до скидки и НДС) — читатель может проверить умножением;
     // скидка, «Итого без НДС» и НДС показываются отдельными строками ниже (как в карточке заказа).
     // Те же центы, что в calcTotals (money.js): сумма строк ровно равна tot.subtotal.
-    const items = orderBillItems(order).map(it => ({
+    const items = srcItems.map(it => ({
         product: it.product, quantity: it.quantity, price: it.price,
         sum: _roundCents(Math.max(0, (Number(it.quantity) || 0) * (Number(it.price) || 0)) * 100) / 100,
     }));
-    const vatRate = Number(typeof currentOrgVatRate !== 'undefined' ? currentOrgVatRate : 0) || 0;
-    const vatApplies = !orderVatExempt(order) && vatRate > 0;
+    const vatApplies = !vatExempt && vatRate > 0;
     return {
-        vatApplies, vatPct: Math.round(vatRate * 10000) / 100,
+        vatApplies, vatPct: Math.round(vatRate * 10000) / 100, discountPct, snapUsed: !!snap,
         order, cust, items, tot, paid, due,
         num: _confOrderNum(order),
-        date: order.date || order.order_date || '',
+        date: (snap && snap.date) || order.date || order.order_date || '',
         clientName: cust ? cust.name : (order.customer || ''),
         sym: CURRENCY_SYMBOLS[st.org.currency_code] || st.org.currency_code || '€',
         org: st.org, lang: st.lang,
@@ -73,8 +95,10 @@ function _confOrgLines(org) {
 
 function _confStatusText(d, lang) {
     if (d.tot.grand <= 0.005) return '';
-    if (d.due <= 0.005) return tDoc('conf_paid', lang);
-    return d.paid > 0.005 ? `${tDoc('conf_paid', lang)}: ${d.paid.toFixed(2)} ${d.sym} · ${tDoc('conf_to_pay', lang)}: ${d.due.toFixed(2)} ${d.sym}` : `${tDoc('conf_to_pay', lang)}: ${d.due.toFixed(2)} ${d.sym}`;
+    // v954: остаток считается на сегодня — подписываем датой, чтобы читатель понимал, на какой день цифра
+    const asOf = ' (' + tDoc('conf_as_of', lang).replace('{date}', formatDateDMY(getLocalDateStr(0))) + ')';
+    if (d.due <= 0.005) return tDoc('conf_paid', lang) + asOf;
+    return (d.paid > 0.005 ? `${tDoc('conf_paid', lang)}: ${d.paid.toFixed(2)} ${d.sym} · ${tDoc('conf_to_pay', lang)}: ${d.due.toFixed(2)} ${d.sym}` : `${tDoc('conf_to_pay', lang)}: ${d.due.toFixed(2)} ${d.sym}`) + asOf;
 }
 
 // Строки под таблицей (экран и PDF): скидка → «Итого без НДС» → НДС; «Итого» печатается отдельно.
@@ -83,7 +107,7 @@ function _confStatusText(d, lang) {
 function _confSummaryRows(d, L, money) {
     const rows = [];
     if (d.tot.discount > 0) {
-        const pct = Number(d.order.discount) || 0;
+        const pct = d.discountPct || 0;
         rows.push({ label: tDoc('conf_discount', L) + (pct > 0 ? ` (${String(Math.round(pct * 100) / 100)}%)` : ''), value: '−' + money(d.tot.discount) });
     }
     if (d.vatApplies) {
@@ -105,7 +129,16 @@ function _renderOrderConf() {
     const status = _confStatusText(d, L);
     const unpaid = d.due > 0.005 && d.tot.grand > 0.005;
     const canMail = !!(d.cust && d.cust.email);
-    body.innerHTML = `
+    // v954: плашка — отправленное подтверждение устарело (заказ изменён) / показана обновлённая версия
+    let banner = '';
+    const _bannerCss = 'background:#f8efd9;color:#8a6a1f;border-radius:8px;padding:8px 10px;margin-bottom:10px;font-size:13px;';
+    if (_confState.sent && !_confState.live) {
+        const chg = _confChangedInfo(d.order, _confState.sent.snap);
+        if (chg) banner = `<div style="${_bannerCss}">${esc(t('conf_frozen_changed').replace('{dt}', typeof _docSumShortDT === 'function' ? _docSumShortDT(_confState.sent.at) : '').replace('{old}', formatMoney(chg.old)).replace('{new}', formatMoney(chg.cur)))}<button type="button" class="pill-btn-secondary w-full justify-center" style="margin-top:8px;" onclick="confRefresh()"><span>${esc(t('conf_update_btn'))}</span></button></div>`;
+    } else if (_confState.sent && _confState.live) {
+        banner = `<div style="${_bannerCss}">${esc(t('conf_updated_note'))}</div>`;
+    }
+    body.innerHTML = banner + `
         <div style="background:#fff;border-radius:6px;box-shadow:0 2px 10px rgba(0,0,0,.15);padding:18px 16px;font-size:12px;color:#333;">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
                 <div><div style="font-size:15px;font-weight:700;">${esc(org.legal_name || org.name || '')}</div><div style="color:#666;margin-top:2px;">${_confOrgLines(org).map(esc).join('<br>')}</div></div>${logo}
@@ -121,7 +154,30 @@ function _renderOrderConf() {
         </div>
         <button id="orderConfShareBtn" class="pill-btn w-full justify-center" style="margin-top:12px;" onclick="shareOrderConfirmation()"><span>${esc(t('conf_share_btn'))}</span></button>
         ${canMail ? `<button id="orderConfMailBtn" class="pill-btn-secondary w-full justify-center" style="margin-top:8px;" onclick="emailOrderConfirmation()"><span>${esc(t('send_email_btn'))}</span></button>
-        <div style="font-size:12px;color:#888;text-align:center;margin-top:6px;">${esc(d.cust.email)}</div>` : ''}`;
+        <div style="font-size:12px;color:#888;text-align:center;margin-top:6px;">${esc(d.cust.email)}</div>` : ''}
+        <button id="orderConfSaveBtn" class="pill-btn-secondary w-full justify-center" style="margin-top:${canMail ? 12 : 8}px;" onclick="saveOrderConfirmationPdf()"><span>${esc(t('conf_save_btn'))}</span></button>`;
+}
+
+// v954: изменился ли заказ с момента отправки подтверждения → { old, cur } или null (те же признаки, что у плашки оплаты)
+function _confChangedInfo(order, snap) {
+    try {
+        const cur = orderGrandTotal(order);
+        let chg = Math.abs(Number(snap.total) - cur) > 0.004;
+        if (!chg) chg = _docItemsSig(orderBillItems(order)) !== _docItemsSig(snap.items)
+            || Math.round((Number(order.discount) || 0) * 100) !== Math.round((Number(snap.discount) || 0) * 100)
+            || !!(snap.date && order.date && String(snap.date) !== String(order.date));
+        return chg ? { old: Number(snap.total), cur } : null;
+    } catch (e) { console.error(e); return null; }
+}
+
+// v954: «Обновить подтверждение» — показать версию по текущему заказу (номер прежний); клиенту она уйдёт только при отправке
+function confRefresh() {
+    const st = _confState; if (!st || !st.sent) return;
+    const order = orders.find(o => o.id === st.orderId); if (!order) return;
+    const chg = _confChangedInfo(order, st.sent.snap);
+    st.live = true;
+    logActivity('order', t('conf_updated_log').replace('{n}', _confOrderNum(order)).replace('{old}', formatMoney(chg ? chg.old : Number(st.sent.snap.total))).replace('{new}', formatMoney(orderGrandTotal(order))), order.id);
+    _renderOrderConf();
 }
 (window._appPageOnShow = window._appPageOnShow || {}).orderConfPage = () => _renderOrderConf();
 
@@ -186,18 +242,64 @@ async function _buildConfPdf(d) {
 }
 
 // v945: запоминаем отправку подтверждения и состояние заказа на этот момент (ошибка записи отправку не ломает)
-async function _confMarkSent(order, via) {
+// v954: в снимок добавлена ставка НДС (vat_rate) — чтобы отправленное подтверждение не менялось при смене ставки;
+// snapOverride — если клиенту ушла прежняя (замороженная) версия, запоминаем именно её, а не текущий заказ
+function _confSnapNow(order) {
+    const s = (typeof _payOrderSnap === 'function' ? _payOrderSnap(order) : null) || {};
+    s.vat_rate = Number(typeof currentOrgVatRate !== 'undefined' ? currentOrgVatRate : 0) || 0;
+    return s;
+}
+async function _confMarkSent(order, via, snapOverride) {
     try {
-        const snap = Object.assign({ via }, (typeof _payOrderSnap === 'function' ? _payOrderSnap(order) : null) || {});
+        const snap = Object.assign({}, snapOverride || _confSnapNow(order), { via });
         const at = new Date().toISOString();
         await updateChecked(db.from('orders').update({ confirmation_sent_at: at, confirmation_snapshot: snap }).eq('id', order.id));
         _docSumSnaps[order.id] = Object.assign(_docSumSnaps[order.id] || {}, { conf: { at, snap } });
+        if (_confState && _confState.orderId === order.id) { _confState.sent = { at, snap }; _confState.live = false; }
         delete _docChgState[order.id];
         if (order.id === currentOrderId && typeof renderDetailDocSummary === 'function') renderDetailDocSummary(order);
     } catch (e) { console.error('Подтверждение: факт отправки не записан', e); }
 }
 
 function _confFilename(d) { return `order_confirmation_${d.num}.pdf`; }
+
+// v954: меню «Поделиться». Закрыл меню, ничего не выбрав, — ничего не происходит (раньше файл молча скачивался).
+// Меню недоступно (например, компьютер) — файл сохраняется, но отправкой это НЕ считается.
+async function _confSharePdf(pdf, filename) {
+    const blob = pdf.output('blob');
+    const file = new File([blob], filename, { type: 'application/pdf' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+            await navigator.share({ files: [file], title: filename });
+            return true;
+        } catch (e) {
+            if (e && e.name === 'AbortError') return false;
+        }
+    }
+    pdf.save(filename);
+    await showInfo(`${t('common_done')}: ${t('backup_file_saved_prefix')} «${filename}» ${t('backup_file_saved_suffix')}.`);
+    return false;
+}
+
+// v954: «Сохранить PDF» — файл на устройство, БЕЗ отметки «отправлено»
+async function saveOrderConfirmationPdf() {
+    const d = _confData(); if (!d) return;
+    const btn = document.getElementById('orderConfSaveBtn');
+    if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+    showLoading(t('customers_pdf_generating'));
+    try {
+        const pdf = await _buildConfPdf(d);
+        pdf.save(_confFilename(d));
+        hideLoading();
+        await showInfo(`${t('common_done')}: ${t('backup_file_saved_prefix')} «${_confFilename(d)}» ${t('backup_file_saved_suffix')}.`);
+    } catch (e) {
+        console.error(e);
+        showInfo(t('inv_doc_error_prefix') + (e && e.message ? e.message : t('inv_unknown_error')) + t('customers_pdf_error_suffix'));
+    } finally {
+        hideLoading();
+        if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+    }
+}
 
 async function shareOrderConfirmation() {
     const d = _confData(); if (!d) return;
@@ -206,10 +308,11 @@ async function shareOrderConfirmation() {
     showLoading(t('customers_pdf_generating'));
     try {
         const pdf = await _buildConfPdf(d);
-        const shared = await pdfSaveOrShare(pdf, _confFilename(d));
+        const shared = await _confSharePdf(pdf, _confFilename(d));
         if (shared) {
             logActivity('order', `${tDoc('conf_title', d.lang)} №${d.num} ${t('log_doc_shared')}`, d.order.id);
-            await _confMarkSent(d.order, 'share');
+            await _confMarkSent(d.order, 'share', d.snapUsed ? _confState.sent.snap : null);
+            if (typeof _renderOrderConf === 'function') _renderOrderConf();
         }
     } catch (e) {
         console.error(e);
@@ -241,7 +344,8 @@ async function emailOrderConfirmation() {
         if (result && !result.success && result.code) { showInfo(typeof _sendLimitMessage === 'function' ? _sendLimitMessage(result) : t('send_error_prefix')); return; }
         if (!result || !result.success) throw new Error((result && result.error) || 'send failed');
         logActivity('order', `${tDoc('conf_title', d.lang)} №${d.num} ${t('log_doc_email_sent')} (${d.cust.email})`, d.order.id);
-        await _confMarkSent(d.order, 'email');
+        await _confMarkSent(d.order, 'email', d.snapUsed ? _confState.sent.snap : null);
+        if (typeof _renderOrderConf === 'function') _renderOrderConf();
         showInfo(t('send_success'));
     } catch (e) {
         console.error(e);
