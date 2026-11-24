@@ -962,11 +962,20 @@ async function restoreIngredient(id) {
     } finally { hideLoading(); }
 }
 
+// Архив по умолчанию свёрнут; раскрывается по нажатию на разделитель
+let _ingArchiveOpen = false;
+function toggleIngredientArchive() {
+    _ingArchiveOpen = !_ingArchiveOpen;
+    renderIngredientCards();
+    if (typeof filterIngredientsList === 'function') filterIngredientsList();
+}
+
 function ingredientArchiveBlockHtml(ctx) {
     const mat = stockMode === 'mat';
     const arch = ingredients.filter(i => i.archived_at && isMaterial(i) === mat).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     if (!arch.length) return '';
-    let h = `<div class="oc-section-divider stock-divider"><span class="label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8M10 12h4"/></svg>${escapeHtml(t('ing_archive_title').replace('{n}', arch.length))}</span></div>`;
+    let h = `<div class="oc-section-divider stock-divider" style="cursor:pointer;" onclick="toggleIngredientArchive()"><span class="label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8M10 12h4"/></svg>${escapeHtml(t('ing_archive_title').replace('{n}', arch.length))}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;transition:transform .2s;${_ingArchiveOpen ? 'transform:rotate(180deg);' : ''}"><path d="M6 9l6 6 6-6"/></svg></span></div>`;
+    if (!_ingArchiveOpen) return h;
     arch.forEach(ing => {
         const st = stockState('ing', ing.id, ctx);
         const bal = st.now !== null ? `${_n1(st.now)} ${unitAbbrev(ing.unit)}` : '—';
