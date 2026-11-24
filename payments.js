@@ -34,12 +34,66 @@ let _orderPayments = [];
 const _custBalance = {};   // { customerId: сумма аванса }
 async function loadCustomerBalance(custId) {
     if (!custId) return 0;
+    const before = _custBalance[custId] || 0;
     try {
         const { data, error } = await db.from('customer_credits').select('amount').eq('customer_id', custId);
         if (error) throw error;
         _custBalance[custId] = Math.round((data || []).reduce((s, r) => s + Number(r.amount), 0) * 100) / 100;
     } catch (e) { console.error('Аванс клиента: не загрузился', e); }
-    return _custBalance[custId] || 0;
+    const now = _custBalance[custId] || 0;
+    if (Math.abs(now - before) > 0.004) _onCustBalancesChanged();   // v949: баланс изменился — обновить пометки
+    return now;
+}
+// v949: балансы всех клиентов одним запросом (для пометок «Аванс» в списке клиентов)
+let _custBalAllAt = 0;
+async function loadAllCustomerBalances(force) {
+    if (!force && Date.now() - _custBalAllAt < 20000) return;
+    _custBalAllAt = Date.now();
+    try {
+        const { data, error } = await db.from('customer_credits').select('customer_id, amount');
+        if (error) throw error;
+        const sums = {};
+        (data || []).forEach(r => { sums[r.customer_id] = (sums[r.customer_id] || 0) + Number(r.amount); });
+        let changed = false;
+        const ids = new Set([...Object.keys(sums), ...Object.keys(_custBalance)]);
+        ids.forEach(id => {
+            const v = Math.round((sums[id] || 0) * 100) / 100;
+            if (Math.abs(v - (_custBalance[id] || 0)) > 0.004) changed = true;
+            _custBalance[id] = v;
+        });
+        if (changed) _onCustBalancesChanged();
+    } catch (e) { console.error('Авансы клиентов: не загрузились', e); }
+}
+// v949: после изменения баланса перерисовываем строку в заказе и пометки в списке клиентов
+function _onCustBalancesChanged() {
+    try { renderOrderCreditHint(); } catch (e) { console.error(e); }
+    try {
+        if (typeof renderCustomerCards === 'function' && document.getElementById('customerCardsBody')) {
+            renderCustomerCards();
+            if (typeof filterCustomersList === 'function') filterCustomersList();
+        }
+    } catch (e) { console.error(e); }
+}
+// v949: строка «У клиента аванс X €» под полем «Клиент» в заказе
+function renderOrderCreditHint() {
+    const box = document.getElementById('detailCreditHint');
+    if (!box) return;
+    const order = (typeof currentOrderId !== 'undefined' && currentOrderId != null) ? orders.find(o => o.id === currentOrderId) : null;
+    const bal = (order && order.customer_id) ? (_custBalance[order.customer_id] || 0) : 0;
+    if (bal > 0.004) box.textContent = t('credit_hint_order').replace('{sum}', formatMoney(bal));
+    box.classList.toggle('hidden', !(bal > 0.004));
+}
+// v949: при открытии заказа и смене клиента — подгрузить баланс и показать строку; блок «Оплата» пересчитать
+async function refreshOrderCreditHint() {
+    renderOrderCreditHint();
+    const order = (typeof currentOrderId !== 'undefined' && currentOrderId != null) ? orders.find(o => o.id === currentOrderId) : null;
+    if (!order || !order.customer_id) return;
+    const forOrder = order.id;
+    await loadCustomerBalance(order.customer_id);
+    if (currentOrderId === forOrder) {
+        renderOrderCreditHint();
+        if (_orderPaymentsFor === forOrder) renderPayments();
+    }
 }
 let _orderPaymentsFor = null;   // v945: id заказа, чьи оплаты сейчас в _orderPayments
 const _payChgState = {};        // v945: { orderId: { prev, warned } } — для одноразового окна «заказ изменён после оплаты»

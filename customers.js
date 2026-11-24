@@ -72,6 +72,7 @@ function displayCustomers() {
     updateOrderCustomerFilter();
     renderCustomerCards();
     filterCustomersList();
+    if (typeof loadAllCustomerBalances === 'function') loadAllCustomerBalances();   // v949: авансы одним запросом, при изменении список перерисуется
 }
 
 // ---- Вид списка: карточки / плитки (запоминается на устройстве) ----
@@ -106,7 +107,9 @@ function renderCustomerTiles(body) {
         const total = _custInt(customerTotalSpent(c));
         const cur = Math.round(customerCurrentOrdersSum(c));
         // Плитка 2 в ряд (31.10.2026, вариант В1): название + «N зак.» сверху; внизу слева «ВСЕГО» и сумма, справа подписанные строки «Долг» (красная) и «В работе» (зелёная, заказы не выполнены)
+        const credit = _custBalance[c.id] || 0;   // v949: аванс клиента
         const rows = (hasDebt ? `<div class="cva-r debt"><span>${escapeHtml(t('cust_tile_debt'))}</span>${escapeHtml(_custMoneyNum(debt))}</div>` : '')
+            + (credit > 0.004 ? `<div class="cva-r cred"><span>${escapeHtml(t('cust_tile_credit'))}</span>${escapeHtml(_custMoneyNum(credit))}</div>` : '')
             + (cur > 0 ? `<div class="cva-r cur"><span>${escapeHtml(t('cust_tile_work'))}</span>${_custInt(cur)}</div>` : '');
         return `<div class="pt-tile ctl-tile cva${hasName ? '' : ' noname'}" data-name="${escapeHtml((c.name || '').toLowerCase())}" onclick="openCustomerDetail(${c.id})">
             <div class="cva-top"><div class="cva-name" style="${hasName ? '' : 'color:#a3493d;'}">${hasName ? escapeHtml(c.name) : t('customer_no_name')}</div><span class="cva-cnt">${orderCnt} ${t('cust_tile_orders')}</span></div>
@@ -140,6 +143,7 @@ function renderCustomerCards() {
         if (Number(c.discount) > 0) tagList.push(`<span class="oc-tag">${t('cust_tag_discount').replace('{n}', Number(c.discount))}</span>`);
         { const term = Number(c.payment_term_days) || 0; const s = term > 0 ? t('cust_req_term').replace('{n}', term) : (c.payment_term_days !== null && c.payment_term_days !== undefined && c.payment_term_days !== '' ? t('cust_req_term_zero') : ''); if (s) tagList.push(`<span class="oc-tag">${escapeHtml(s.charAt(0).toUpperCase() + s.slice(1))}</span>`); }   // 0 дней задан явно — «Оплата в день заказа» (13.11.2026)
         { const memoTag = memoCustomerTagHtml(c.id); if (memoTag) tagList.push(memoTag); } // памятная дата скоро — перед тревожными
+        { const cr = _custBalance[c.id] || 0; if (cr > 0.004) tagList.push(`<span class="oc-tag oc-tag-credit">${escapeHtml(t('cust_tag_credit').replace('{sum}', formatMoney(cr)))}</span>`); }   // v949: аванс клиента
         if (unpaidCnt > 0) tagList.push(`<button type="button" class="oc-tag oc-tag-red" onclick="event.stopPropagation(); openCustomerUnpaidModal(${c.id})">${unpaidOrdersLabel(unpaidCnt)}</button>`);
         html += `
         <div class="order-card" data-name="${escapeHtml((c.name || '').toLowerCase())}" style="cursor:pointer;" onclick="openCustomerDetail(${c.id})">
@@ -723,7 +727,11 @@ async function renderCustomerCredit(cust) {
         if (seq !== _cdCreditSeq || currentCustomerId !== cust.id) return;
         const rows = data || [];
         const bal = Math.round(rows.reduce((s, r) => s + Number(r.amount), 0) * 100) / 100;
-        if (typeof _custBalance !== 'undefined') _custBalance[cust.id] = bal;
+        if (typeof _custBalance !== 'undefined') {
+            const was = _custBalance[cust.id] || 0;
+            _custBalance[cust.id] = bal;
+            if (Math.abs(bal - was) > 0.004 && typeof _onCustBalancesChanged === 'function') _onCustBalancesChanged();   // v949: пометка в списке
+        }
         if (!rows.length) return;
         document.getElementById('cdCreditAmount').textContent = formatMoney(bal);
         document.getElementById('cdCreditRefundBtn').classList.toggle('hidden', bal <= 0.004);

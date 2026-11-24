@@ -1653,6 +1653,7 @@ function openOrderDetail(orderId) {
 
     // Заполнить шапку
     fillDetailCustomerSelect(order.customer);
+    if (typeof refreshOrderCreditHint === 'function') refreshOrderCreditHint();   // v949: строка «У клиента аванс …»
     document.getElementById('detailDate').value = order.date || '';
     document.getElementById('detailDateBtnLabel').textContent = order.date ? formatDateDMY(order.date) : '—';
     document.getElementById('detailStatus').value   = order.status;
@@ -2224,6 +2225,7 @@ async function saveDetailHeader() {
     order.notes       = notes;
     renderDetailItems(order); // пересчитывает и перерисовывает итоги/скидку/НДС
     refreshDetailDue(order);   // автосрок зависит от даты заказа и клиента
+    if (old.customer_id !== order.customer_id && typeof refreshOrderCreditHint === 'function') refreshOrderCreditHint();   // v949: аванс нового клиента
 
     try {
         await updateChecked(db.from('orders').update({

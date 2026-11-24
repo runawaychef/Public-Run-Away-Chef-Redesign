@@ -1751,7 +1751,8 @@
         .cva-side { display: flex; flex-direction: column; gap: 1px; flex-shrink: 0; }
         .cva-r { display: flex; justify-content: space-between; gap: 5px; font-size: 10px; font-weight: 700; line-height: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; }
         .cva-r span { color: #8d887b; font-weight: 600; }
-        .cva-r.debt { color: #a3493d; } .cva-r.cur { color: #4f6349; }
+        .cva-r.debt { color: #a3493d; } .cva-r.cur { color: #4f6349; } .cva-r.cred { color: #4f6349; }
+        .order-card .oc-tag-credit { background: #e6eddf; color: #4f6349; font-weight: 700; }
         /* ===== /THEME-UNIFIED-TILES-CUST2 ===== */
         /* ===== THEME-UNIFIED-TILES-MENU (31.10.2026): плитки «Меню» — 2 в ряд, размер как у плиток «Настроек» (вариант B: название сверху, цена и фото снизу) =====
            Первая строка названия — на всю ширину плитки; со 2-й строки текст обтекает фото (shape-outside), до 3 строк.
@@ -3566,6 +3567,7 @@ function hideSplashScreen() {
                                 <input id="detailCustomer" placeholder="Выберите" autocomplete="off" class="border p-0.5 rounded-xl w-full table-text" data-i18n-placeholder="orders_choose_placeholder">
                                 <div id="detailCustomerDropdown" class="search-dropdown hidden"></div>
                             </div>
+                            <div id="detailCreditHint" class="hidden" style="margin-top:3px; font-size:11.5px; font-weight:600; color:#4f6349;"></div>
                         </div>
                         <div style="position:relative;" onclick="event.stopPropagation();">
                             <label class="table-text text-gray-500" data-i18n="history_col_date">Дата</label>
@@ -5268,7 +5270,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=10"></script>
     <script src="money.js?v=17"></script>
-    <script src="i18n-core.js?v=217"></script>
+    <script src="i18n-core.js?v=218"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=21"></script>
     <script src="auth.js?v=35"></script>
@@ -5281,14 +5283,14 @@ function hideSplashScreen() {
 <script src="batches.js?v=18"></script>
 <script src="semifinished.js?v=76"></script>
 <script src="products.js?v=68"></script>
-<script src="customers.js?v=82"></script>
+<script src="customers.js?v=83"></script>
 <script src="calendar.js?v=17"></script>
-<script src="orders.js?v=180"></script>
+<script src="orders.js?v=181"></script>
 <script src="dashboard.js?v=25"></script>
 <script src="invoice.js?v=57"></script>
 <script src="send-document.js?v=46"></script>
 <script src="confirmation.js?v=5"></script>
-<script src="payments.js?v=43"></script>
+<script src="payments.js?v=44"></script>
 <script src="documents.js?v=16"></script>
 <script src="documents2.js?v=35"></script>
 <script src="bank.js?v=13"></script>
