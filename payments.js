@@ -176,6 +176,12 @@ async function loadOrderPayments(orderId) {
 // Итог заказа берём из уже отрисованной карточки (там учтены скидка и НДС) —
 // чтобы не дублировать расчёт в двух местах и не разойтись с тем, что видит пользователь.
 function getOrderTotalValue() {
+    // v953: сумму берём из данных заказа, а не из текста «Итого к оплате»: renderDetailItems вызывает renderPayments
+    // РАНЬШЕ, чем обновляет этот текст, и блок оплаты отставал на одну правку (после добавления упаковки остаток считался по старой сумме)
+    try {
+        const cur = (typeof orders !== 'undefined' && typeof currentOrderId !== 'undefined' && currentOrderId != null) ? orders.find(o => o.id === currentOrderId) : null;
+        if (cur) { const g = orderGrandTotal(cur); if (isFinite(g)) return g; }
+    } catch (e) { console.error(e); }
     const el = document.getElementById('detailTotal');
     if (!el) return 0;
     const raw = (el.textContent || '').replace(/[^\d.,-]/g, '').replace(',', '.');
@@ -185,9 +191,9 @@ function getOrderTotalValue() {
 
 // v945: заказ изменился после последней оплаты, у которой есть снимок → { old, cur, paid } или null
 function _payChangedInfo(order, total, paid) {
-    // v952: эталон — ПЕРВАЯ реальная оплата со снимком (самая ранняя по дате, при равных датах — по времени записи);
-    // перенос в аванс, зачёт аванса и возврат эталон не сбивают
-    const real = _orderPayments.filter(x => x.order_snapshot && (!x.kind || x.kind === 'payment'));
+    // v952: эталон — ПЕРВАЯ оплата заказа со снимком (самая ранняя по дате, при равных датах — по времени записи);
+    // v953: зачёт аванса (from_credit) — тоже оплата заказа; перенос в аванс (to_credit) и возврат эталон не сбивают
+    const real = _orderPayments.filter(x => x.order_snapshot && (!x.kind || x.kind === 'payment' || x.kind === 'from_credit'));
     real.sort((a, b) => String(a.paid_at || '').localeCompare(String(b.paid_at || '')) || String(a.created_at || '').localeCompare(String(b.created_at || '')));
     const p = real[0];
     if (!p || !order) return null;
