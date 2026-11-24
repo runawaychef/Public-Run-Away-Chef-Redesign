@@ -1364,7 +1364,7 @@
         #orderDetail label.table-text.text-gray-500 { font-size: 11.5px; font-weight: 600; color: #8d887b; }
         #orderDetail #paymentTilePaid { font-size: 20px; font-weight: 800; }
         #orderDetail #paymentTileRestValue { font-size: 20px; font-weight: 800; }
-        #orderDetail #paymentTileRestLabel, #orderDetail [data-i18n="orders_paid"] { font-size: 12px; }
+        #orderDetail #paymentTileRestLabel, #orderDetail #paymentTilePaidLabel { font-size: 12px; }
         #orderDetail [style*="grid-template-columns:minmax(0,1fr) minmax(0,1fr)"] > div:first-child { background: #fff !important; border-radius: 14px !important; padding: 10px 12px !important; box-shadow: 0 6px 12px -8px rgba(70,58,30,0.3), 0 1px 2px rgba(70,58,30,0.08); border: 1px solid rgba(90,75,40,0.05); }
         #orderDetail [style*="grid-template-columns:minmax(0,1fr) minmax(0,1fr)"] > div:last-child { border-radius: 14px !important; padding: 10px 12px !important; box-shadow: 0 6px 12px -8px rgba(70,58,30,0.3), 0 1px 2px rgba(70,58,30,0.08); }
         #orderDetail button.pill-btn.w-full, #orderDetail #detailSendDocBtn {
@@ -3730,8 +3730,9 @@ function hideSplashScreen() {
                     </div>
                     <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px;">
                         <div style="background:#f6f4ec; border-radius:12px; padding:8px 10px;">
-                            <div style="font-size:11px; color:#6b675d;" data-i18n="orders_paid">Оплачено</div>
+                            <div id="paymentTilePaidLabel" style="font-size:11px; color:#6b675d;">Оплачено</div>
                             <div id="paymentTilePaid" style="font-size:16px; font-weight:700; color:#3c3a34;">0.00</div>
+                            <div id="paymentTileCredit" class="hidden" style="font-size:11px; color:#6b675d; margin-top:2px;"></div>
                         </div>
                         <div id="paymentTileRest" style="background:#f8e9e5; border-radius:12px; padding:8px 10px;">
                             <div id="paymentTileRestLabel" style="font-size:11px; color:#a3493d;">—</div>
@@ -3771,7 +3772,8 @@ function hideSplashScreen() {
                 </div>
 
                 <div class="text-gray-600 space-y-0.5 mb-2" style="font-size:13px;">
-                    <div><span data-i18n="orders_paid">Оплачено</span>: <span id="paymentPaidAmount" class="font-medium text-gray-800">0.00</span></div>
+                    <div><span id="paymentPaidLabel">Оплачено</span>: <span id="paymentPaidAmount" class="font-medium text-gray-800">0.00</span></div>
+                    <div id="paymentCreditRow" class="hidden"><span data-i18n="pay_credit_row_lbl">Закрыто авансом</span>: <span id="paymentCreditAmount" class="font-medium text-gray-800">0.00</span></div>
                     <div><span data-i18n="orders_remaining">Осталось</span>: <span id="paymentRemainingAmount" class="font-semibold text-gray-900">0.00</span></div>
                     <div id="paymentOverpaidRow" class="hidden"><span data-i18n="orders_overpaid">Переплата</span>: <span id="paymentOverpaidAmount" class="font-semibold" style="color:#4f6349;">0.00</span></div>
                 </div>
@@ -5287,9 +5289,9 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=10"></script>
     <script src="money.js?v=17"></script>
-    <script src="i18n-core.js?v=220"></script>
+    <script src="i18n-core.js?v=221"></script>
     <script src="supabaseClient.js?v=7"></script>
-    <script src="cache.js?v=21"></script>
+    <script src="cache.js?v=22"></script>
     <script src="auth.js?v=35"></script>
     <script src="employees.js?v=82"></script>
     <script src="company.js?v=30"></script>
@@ -5302,12 +5304,12 @@ function hideSplashScreen() {
 <script src="products.js?v=68"></script>
 <script src="customers.js?v=87"></script>
 <script src="calendar.js?v=17"></script>
-<script src="orders.js?v=182"></script>
+<script src="orders.js?v=183"></script>
 <script src="dashboard.js?v=25"></script>
 <script src="invoice.js?v=57"></script>
 <script src="send-document.js?v=46"></script>
 <script src="confirmation.js?v=5"></script>
-<script src="payments.js?v=44"></script>
+<script src="payments.js?v=45"></script>
 <script src="documents.js?v=16"></script>
 <script src="documents2.js?v=35"></script>
 <script src="bank.js?v=14"></script>
@@ -5416,7 +5418,7 @@ async function loadAllData(silent) {
             fetchAllRows(() => db.from('product_ingredients').select('id, product_id, ingredient_id, semi_finished_id, quantity').eq('org_id', currentOrgId).order('id')),
             fetchAllRows(() => db.from('semi_finished').select('id, name, batch_size, unit, cost_items, recipe_confirmed, track_stock, shelf_life_days').eq('org_id', currentOrgId).order('name').order('id')),
             fetchAllRows(() => db.from('semi_finished_ingredients').select('id, semi_finished_id, ingredient_id, quantity, is_primary').eq('org_id', currentOrgId).order('id')),
-            fetchAllRows(() => db.from('order_payments').select('order_id, amount, bank_transaction_id').eq('org_id', currentOrgId).order('id')),
+            fetchAllRows(() => db.from('order_payments').select('order_id, amount, bank_transaction_id, kind').eq('org_id', currentOrgId).order('id')),
             fetchAllRows(() => db.from('order_materials').select('id, order_id, ingredient_id, quantity, cost, price').eq('org_id', currentOrgId).order('id'))
         ]);
         if (pRes.error) throw pRes.error;
@@ -5432,9 +5434,11 @@ async function loadAllData(silent) {
 
         // Суммы платежей по каждому заказу — для отметки статуса оплаты в списке
         _orderPaidTotals = {};
+        _orderCreditTotals = {};   // v952: часть оплаты, закрытая авансом клиента
         _orderBankTx = {};
         (opRes.data || []).forEach(p => {
             _orderPaidTotals[p.order_id] = (_orderPaidTotals[p.order_id] || 0) + Number(p.amount);
+            if (p.kind === 'from_credit') _orderCreditTotals[p.order_id] = Math.round(((_orderCreditTotals[p.order_id] || 0) + Number(p.amount)) * 100) / 100;
             if (p.bank_transaction_id) (_orderBankTx[p.order_id] = _orderBankTx[p.order_id] || []).push(p.bank_transaction_id);
         });
 

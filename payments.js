@@ -98,6 +98,7 @@ async function refreshOrderCreditHint() {
 let _orderPaymentsFor = null;   // v945: id заказа, чьи оплаты сейчас в _orderPayments
 const _payChgState = {};        // v945: { orderId: { prev, warned } } — для одноразового окна «заказ изменён после оплаты»
 let _orderPaidTotals = {}; // { orderId: сумма всех платежей } — для отметки статуса оплаты в списке заказов
+let _orderCreditTotals = {}; // v952: { orderId: сумма, закрытая авансом клиента (kind='from_credit') } — часть _orderPaidTotals; деньгами получено = _orderPaidTotals − _orderCreditTotals
 // Источник оплаты (16.10): значок «банк + молния» на плашке оплаты — только если оплату зачла
 // программа АВТОМАТИЧЕСКИ (bank_transactions.match_status = 'auto_matched').
 let _orderBankTx = {};          // { orderId: [bank_transaction_id, …] } — из загрузки всех оплат при запуске
@@ -166,6 +167,7 @@ async function loadOrderPayments(orderId) {
     // Держим общую сводку по заказу в синхронизации со списком заказов
     // (до отрисовки — строка сводного счёта считает остатки по _orderPaidTotals)
     _orderPaidTotals[orderId] = _orderPayments.reduce((s, p) => s + Number(p.amount), 0);
+    _orderCreditTotals[orderId] = Math.round(_orderPayments.filter(p => p.kind === 'from_credit').reduce((s, p) => s + Number(p.amount) * 100, 0)) / 100;   // v952
 
     renderPayments();
     if (typeof displayOrders === 'function') displayOrders();
@@ -183,7 +185,11 @@ function getOrderTotalValue() {
 
 // v945: заказ изменился после последней оплаты, у которой есть снимок → { old, cur, paid } или null
 function _payChangedInfo(order, total, paid) {
-    const p = _orderPayments.find(x => x.order_snapshot);
+    // v952: эталон — ПЕРВАЯ реальная оплата со снимком (самая ранняя по дате, при равных датах — по времени записи);
+    // перенос в аванс, зачёт аванса и возврат эталон не сбивают
+    const real = _orderPayments.filter(x => x.order_snapshot && (!x.kind || x.kind === 'payment'));
+    real.sort((a, b) => String(a.paid_at || '').localeCompare(String(b.paid_at || '')) || String(a.created_at || '').localeCompare(String(b.created_at || '')));
+    const p = real[0];
     if (!p || !order) return null;
     const s = p.order_snapshot;
     try {
@@ -209,7 +215,16 @@ function renderPayments() {
 
     const paidEl = document.getElementById('paymentPaidAmount');
     const remEl = document.getElementById('paymentRemainingAmount');
-    if (paidEl) paidEl.textContent = formatMoney(paid);
+    const _credC = Math.max(0, Math.round((_orderCreditTotals[currentOrderId] || 0) * 100));
+    if (paidEl) paidEl.textContent = formatMoney(_credC > 0 ? (Math.round(paid * 100) - _credC) / 100 : paid);   // v952
+    const paidRowLbl = document.getElementById('paymentPaidLabel');
+    if (paidRowLbl) paidRowLbl.textContent = t(_credC > 0 ? 'pay_tile_money' : 'orders_paid');
+    const credRow = document.getElementById('paymentCreditRow');
+    if (credRow) {
+        credRow.classList.toggle('hidden', _credC <= 0);
+        const credRowEl = document.getElementById('paymentCreditAmount');
+        if (credRowEl) credRowEl.textContent = formatMoney(_credC / 100);
+    }
     if (remEl) remEl.textContent = formatMoney(remaining);
 
     _renderPaymentTiles(paidCents, totalCents);
@@ -299,7 +314,7 @@ function renderPayments() {
             && !orderHasInvoice(orders.find(o => o.id === currentOrderId))) parts[2] += ' · ' + escapeHtml(t('pay_no_invoice'));
         if (emp) parts.push(escapeHtml(emp.name));
         const snapTotal = p.order_snapshot && p.order_snapshot.total != null ? Number(p.order_snapshot.total) : null;
-        const snapNote = (snapTotal != null && Math.abs(snapTotal - total) > 0.004)
+        const snapNote = (!isOp && snapTotal != null && Math.abs(snapTotal - total) > 0.004)
             ? `<div style="font-size:12px; color:#8a6a1f;">${escapeHtml(t('pay_snap_note').replace('{sum}', formatMoney(snapTotal)))}</div>` : '';
         html += `<div class="flex justify-between items-center bg-[#f4f1ea] hover:bg-[#e3e8df] active:bg-[#e3e8df] rounded-lg px-3 py-2.5 cursor-pointer" ${isOp ? dataAction('undoPaymentOp', [p.id]) : dataAction('openEditPaymentModal', [p.id])}>
             <div class="min-w-0" style="font-size:13px;"><div class="font-medium text-gray-800 truncate">${parts.join(' · ')}${p.note ? ' · ' + escapeHtml(p.note) : ''}</div>${p.consolidated_invoice_id ? `<div style="font-size:12px; color:#4f6349;">${escapeHtml(t(_consInvCancelled[p.consolidated_invoice_id] ? 'pay_cons_tag_cancelled' : 'pay_cons_tag').replace('{number}', _payConsNumber(p.consolidated_invoice_id)))}</div>` : ''}${snapNote}</div>
@@ -842,8 +857,18 @@ function _payConsState(order) {
 
 // Плитки «Оплачено» / «Остаток» (или «Переплата») и ссылка «История (n)» в блоке заказа
 function _renderPaymentTiles(paidCents, totalCents) {
+    // v952: «получено деньгами» и «закрыто авансом» — два разных числа; аванса нет — как раньше, «Оплачено»
+    const credC = Math.max(0, Math.round((_orderCreditTotals[currentOrderId] || 0) * 100));
+    const moneyC = paidCents - credC;
     const paidEl = document.getElementById('paymentTilePaid');
-    if (paidEl) paidEl.textContent = formatMoney(paidCents / 100);
+    if (paidEl) paidEl.textContent = formatMoney((credC > 0 ? moneyC : paidCents) / 100);
+    const paidLbl = document.getElementById('paymentTilePaidLabel');
+    if (paidLbl) paidLbl.textContent = t(credC > 0 ? 'pay_tile_money' : 'orders_paid');
+    const credEl = document.getElementById('paymentTileCredit');
+    if (credEl) {
+        credEl.textContent = credC > 0 ? t('pay_tile_by_credit').replace('{sum}', formatMoney(credC / 100)) : '';
+        credEl.classList.toggle('hidden', credC <= 0);
+    }
     const tile = document.getElementById('paymentTileRest');
     const lbl = document.getElementById('paymentTileRestLabel');
     const val = document.getElementById('paymentTileRestValue');

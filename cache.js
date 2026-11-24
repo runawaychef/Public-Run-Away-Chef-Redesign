@@ -67,7 +67,7 @@ async function saveAppSnapshot() {
 
         const snapshot = {
             orders, customers, products, ingredients, semiFinished, employees,
-            _orderPaidTotals,
+            _orderPaidTotals, _orderCreditTotals,
             _inventoryCache,
             currentOrgId, currentOrgName, currentOrgPlan, currentOrgPlanIsOverridden, currentOrgCreatedAt,
             currentOrgCustomersUsed, currentOrgOrdersUsed,
@@ -114,6 +114,7 @@ function restoreAppFromSnapshot(snapshot) {
     semiFinished = snapshot.semiFinished || [];
     employees = snapshot.employees || [];
     _orderPaidTotals = snapshot._orderPaidTotals || {};
+    _orderCreditTotals = snapshot._orderCreditTotals || {};   // v952
     _inventoryCache = snapshot._inventoryCache || {};
     currentOrgId = snapshot.currentOrgId;
     currentOrgName = snapshot.currentOrgName || '';

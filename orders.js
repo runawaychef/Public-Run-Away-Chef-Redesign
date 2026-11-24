@@ -254,7 +254,7 @@ function renderOrderCard(order) {
     let payLine = '';
     if (payInfo.status === 'partial' || payInfo.overdue) {
         const pending = Math.max(0, payInfo.grandAmt - payInfo.paidAmt);
-        payLine = `<div class="oc-pay-line"><span style="color:#4f6349">${formatMoney(payInfo.paidAmt)} ${t('orders_paid_lower')}</span> · <span style="color:#c0685c">${formatMoney(pending)} ${t('orders_remaining_lower')}</span></div>`;
+        payLine = `<div class="oc-pay-line">${orderPaidPartsHtml(payInfo)} · <span style="color:#c0685c">${formatMoney(pending)} ${t('orders_remaining_lower')}</span></div>`;
     }
     const overdueLine = payInfo.overdue ? `<div class="oc-pay-line" style="color:#8b3a3a; font-weight:700;">${t('orders_payment_overdue')}</div>` : '';
 
@@ -513,7 +513,7 @@ function renderDoneOrderCard(order, opts) {
     let payLine = '';
     if (payInfo.status === 'partial' || payInfo.overdue) {
         const pending = Math.max(0, payInfo.grandAmt - payInfo.paidAmt);
-        payLine = `<div class="oc-pay-line"><span style="color:#4f6349">${formatMoney(payInfo.paidAmt)} ${t('orders_paid_lower')}</span> · <span style="color:#c0685c">${formatMoney(pending)} ${t('orders_remaining_lower')}</span></div>`;
+        payLine = `<div class="oc-pay-line">${orderPaidPartsHtml(payInfo)} · <span style="color:#c0685c">${formatMoney(pending)} ${t('orders_remaining_lower')}</span></div>`;
     }
     const overdueLine = payInfo.overdue ? `<div class="oc-pay-line" style="color:#8b3a3a; font-weight:700;">${t('orders_payment_overdue')}</div>` : '';
 
@@ -902,8 +902,16 @@ function openDetailDueCalendar() {
     toggleCustomCalendar('globalCalendarPopup', 'detailDue', 'detailDueBtnLabel', { onPick: function () { saveDueDate(); }, allowClear: true });
 }
 
+// v952: «получено» и «авансом» — отдельно (аванса нет — одно число «оплачено», как раньше)
+function orderPaidPartsHtml(payInfo) {
+    const credit = Math.max(0, Math.round((payInfo.creditAmt || 0) * 100)) / 100;
+    if (credit <= 0.004) return `<span style="color:#4f6349">${formatMoney(payInfo.paidAmt)} ${t('orders_paid_lower')}</span>`;
+    const money = Math.round((payInfo.paidAmt - credit) * 100) / 100;
+    return `<span style="color:#4f6349">${formatMoney(money)} + ${formatMoney(credit)} ${t('orders_credit_short')}</span>`;
+}
 function getOrderPaymentStatus(order) {
     const paidAmt = _orderPaidTotals[order.id] || 0;
+    const creditAmt = (typeof _orderCreditTotals !== 'undefined' && _orderCreditTotals[order.id]) || 0;   // v952: часть paidAmt, закрытая авансом
     const grandAmt = orderGrandTotal(order);
     // Допуск в 1 цент — иначе копеечное расхождение при округлении (JS vs заранее
     // посчитанные суммы, например при переносе данных) ошибочно показывало
@@ -921,7 +929,7 @@ function getOrderPaymentStatus(order) {
     const today = getLocalDateStr(0);
     const dueEff = order.due_date || orderAutoDue(order);   // срок заказа; если не задан — дата заказа + отсрочка клиента
     const overdue = !!dueEff && dueEff < today && status !== 'paid';
-    return { paidAmt, grandAmt, status, overdue };
+    return { paidAmt, creditAmt, grandAmt, status, overdue };
 }
 
 // ---- Фильтры списка заказов ----
