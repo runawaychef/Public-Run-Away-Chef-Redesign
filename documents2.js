@@ -110,7 +110,7 @@ function _d2Tile(o) {
     return `<div class="dashboard-card dc2 d2t${o.cls ? ' ' + o.cls : ''}" role="button" tabindex="0" onclick="${o.click || 'docs2Soon()'}">
         <div class="dashboard-card__hd ${o.color}">${_d2Icon(o.icon)}<span class="dashboard-card__label">${escapeHtml(o.label)}</span>${pill}</div>
         <div class="dc-val${mid ? ' d2col' : ''}"><span class="dashboard-card__value">${o.value}</span>${cap}${mid}</div>
-        <div class="dc-foot"><span>${escapeHtml(o.footL || '')}</span><em>${escapeHtml(o.footR || '')}</em></div>
+        <div class="dc-foot${o.footRed ? ' d2foot-red' : ''}"><span>${escapeHtml(o.footL || '')}</span><em>${escapeHtml(o.footR || '')}</em></div>
     </div>`;
 }
 
@@ -241,7 +241,7 @@ function docs2RenderHome() {
                   footL: unsent ? t('docs2_todo_sum') : '', footR: unsent ? plain(unsentC) : '' }),
         _d2Tile({ color: 'dash-c-tom', icon: 'clock', label: t('docs_tile_wait'), value: _d2Money(wait.c + over.c), pill: wait.n + over.n, click: "openDocs2Wait('all')",
                   mid: part.n ? t('docs2_partial_line').replace('{n}', part.n) : '',
-                  footL: over.n ? t('docs2_over_short') : '', footR: over.n ? plain(over.c) : '' }),
+                  footL: over.n ? t('docs2_over_short') : '', footR: over.n ? plain(over.c) : '', footRed: over.n > 0 }),
         _d2Tile({ color: 'dash-c-acc', icon: 'check', label: t('docs_tile_paid'), value: _d2Paid ? _d2Money(_d2Paid.c) : '&mdash;', pill: _d2Paid ? _d2Paid.n : '', click: "openDocs2Paid()",
                   footL: _d2Paid ? t('docs2_prev_month') : '', footR: _d2Paid ? plain(_d2Paid.pc) : '' }),
         _d2Tile({ color: 'dash-c-stock', icon: 'dn', label: t('docs_type_dn'), value: String(dnMonth), cap: t('docs2_this_month'),
