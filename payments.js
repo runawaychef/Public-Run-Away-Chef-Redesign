@@ -190,21 +190,28 @@ function getOrderTotalValue() {
 }
 
 // v945: заказ изменился после последней оплаты, у которой есть снимок → { old, cur, paid } или null
-function _payChangedInfo(order, total, paid) {
+// v955: эталон «оплаты» — снимок ПЕРВОЙ оплаты заказа (общий для карточки заказа и экрана «Расхождения»)
+function _payRefSnapshot(list) {
     // v952: эталон — ПЕРВАЯ оплата заказа со снимком (самая ранняя по дате, при равных датах — по времени записи);
     // v953: зачёт аванса (from_credit) — тоже оплата заказа; перенос в аванс (to_credit) и возврат эталон не сбивают
-    const real = _orderPayments.filter(x => x.order_snapshot && (!x.kind || x.kind === 'payment' || x.kind === 'from_credit'));
+    const real = (list || []).filter(x => x.order_snapshot && (!x.kind || x.kind === 'payment' || x.kind === 'from_credit'));
     real.sort((a, b) => String(a.paid_at || '').localeCompare(String(b.paid_at || '')) || String(a.created_at || '').localeCompare(String(b.created_at || '')));
-    const p = real[0];
-    if (!p || !order) return null;
-    const s = p.order_snapshot;
+    return real[0] ? real[0].order_snapshot : null;
+}
+function _payChangedVs(order, total, s) {
+    if (!s || !order) return false;
     try {
         let chg = Math.abs(Number(s.total) - total) > 0.004;
         if (!chg) chg = _docItemsSig(orderBillItems(order)) !== _docItemsSig(s.items)
             || Math.round((Number(order.discount) || 0) * 100) !== Math.round((Number(s.discount) || 0) * 100)
             || !!(s.date && order.date && String(s.date) !== String(order.date));
-        return chg ? { old: Number(s.total), cur: total, paid } : null;
-    } catch (e) { console.error(e); return null; }
+        return chg;
+    } catch (e) { console.error(e); return false; }
+}
+function _payChangedInfo(order, total, paid) {
+    const s = _payRefSnapshot(_orderPayments);
+    if (!s || !order) return null;
+    return _payChangedVs(order, total, s) ? { old: Number(s.total), cur: total, paid } : null;
 }
 
 function renderPayments() {

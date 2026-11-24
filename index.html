@@ -2136,6 +2136,8 @@
         .d2chip small { display: block; font-size: 11.5px; color: #6b675d; }
         .d2chip b { font-size: 20px; font-weight: 800; color: #3c3a34; }
         .d2chip.red b { color: #a3493d; }
+        .d2chips.wrap { flex-wrap: wrap; }
+        .d2chips.wrap .d2chip { flex: 1 1 30%; }
         .d2chip span { font-size: 12px; color: #6b665a; margin-left: 4px; white-space: nowrap; }
         #docs2WaitBar { --tb: 34px; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
         #docs2WaitBar .view-toggle-pill { padding: 3px; gap: 1px; border: 1px solid rgba(90,75,40,0.06); box-shadow: 0 6px 12px -6px rgba(70,58,30,0.35), 0 1px 2px rgba(70,58,30,0.1); }
@@ -4684,6 +4686,21 @@ function hideSplashScreen() {
                 <div id="docs2UdPer" class="filter-dropdown hidden" style="left:0; right:auto; min-width:200px;"></div>
             </div>
         </div>
+        <!-- ===== НОВЫЙ РАЗДЕЛ «Документы» — страница «Расхождения» (v955, documents2.js) ===== -->
+        <div id="docs2DiffPage" class="app-page">
+            <div style="padding:0 2px;">
+                <div class="flex items-center gap-2 mb-2">
+                    <button onclick="closeAppPage()" class="pill-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        <span data-i18n="common_back">Назад</span>
+                    </button>
+                    <h2 class="text-gray-800" style="font-size:15px; font-weight:600; margin:0 0 0 auto;" data-i18n="docs2_diff_t">Расхождения</h2>
+                </div>
+                <div id="docs2Diff" style="padding-top:2px; padding-bottom:24px;"></div>
+                <div id="docs2XdCust" class="filter-dropdown hidden" style="left:0; right:auto; min-width:230px;"></div>
+                <div id="docs2XdPer" class="filter-dropdown hidden" style="left:0; right:auto; min-width:200px;"></div>
+            </div>
+        </div>
         <!-- ===== НОВЫЙ РАЗДЕЛ «Документы» — страница «Накладные» (1.11.2026, documents2.js) ===== -->
         <div id="docs2DnPage" class="app-page">
             <div style="padding:0 2px;">
@@ -5289,7 +5306,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=10"></script>
     <script src="money.js?v=17"></script>
-    <script src="i18n-core.js?v=222"></script>
+    <script src="i18n-core.js?v=223"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=22"></script>
     <script src="auth.js?v=35"></script>
@@ -5307,11 +5324,11 @@ function hideSplashScreen() {
 <script src="orders.js?v=183"></script>
 <script src="dashboard.js?v=25"></script>
 <script src="invoice.js?v=57"></script>
-<script src="send-document.js?v=46"></script>
+<script src="send-document.js?v=47"></script>
 <script src="confirmation.js?v=6"></script>
-<script src="payments.js?v=47"></script>
+<script src="payments.js?v=48"></script>
 <script src="documents.js?v=16"></script>
-<script src="documents2.js?v=35"></script>
+<script src="documents2.js?v=36"></script>
 <script src="bank.js?v=14"></script>
 <script src="stats.js?v=45"></script>
 <script src="history.js?v=10"></script>
@@ -6304,6 +6321,7 @@ const _backHandledDetailScreens = [
     { id: 'docs2UnsentPage',      close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'docs2DnPage',      close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'docs2AllPage',      close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
+    { id: 'docs2DiffPage',      close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'bankPage',           close: () => { if (typeof closeBankSection === 'function') closeBankSection(); } },
     { id: 'bankSettingsPage',   close: () => { if (typeof closeBankSettings === 'function') closeBankSettings(); } },
     { id: 'inventoryPage',      close: () => { if (typeof closeInventoryPage === 'function') closeInventoryPage(); } },

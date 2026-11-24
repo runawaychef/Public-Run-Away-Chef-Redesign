@@ -62,8 +62,9 @@ async function _d2LoadPaid() {
     _d2Paid = null;
     try {
         const mm = _d2Months();
-        const { data, error } = await db.from('order_payments').select('amount, paid_at, kind')
-            .eq('org_id', currentOrgId).gte('paid_at', mm.prev + '-01').limit(5000);
+        // v955: без потолка в 5000 строк — страницы по 1000 до конца
+        const { data, error } = await fetchAllRows(() => db.from('order_payments').select('amount, paid_at, kind')
+            .eq('org_id', currentOrgId).gte('paid_at', mm.prev + '-01').order('id'));
         if (error) throw error;
         let c = 0, n = 0, pc = 0;
         (data || []).forEach(p => {
@@ -201,6 +202,8 @@ function docs2RenderHome() {
         _d2Tile({ color: 'dash-c-stock', icon: 'dn', label: t('docs_type_dn'), value: String(dnMonth), cap: t('docs2_this_month'),
                   footL: dnUnsent ? t('docs2_dn_unsent').replace('{n}', dnUnsent) : (lastDn ? t('docs2_last') : ''), footR: dnUnsent ? '' : lastDn, click: "openDocs2Dn()" }),
         _d2Tile({ color: 'dash-c-rev', icon: 'all', label: t('docs2_all'), value: String(total), click: "openDocs2All()", footL: total ? t('docs2_all_foot').replace('{i}', totInv).replace('{d}', totDn) : '' }),
+        _d2Tile({ color: 'dash-c-day', icon: 'alert', label: t('docs2_diff_t'), value: _d2X.count === null ? '&mdash;' : String(_d2X.count), click: "openDocs2Diff()",
+                  cap: _d2X.count ? nWord(_d2X.count, 'word_orders') : '', footL: t('docs2_diff_sub'), cls: 'sth-wide' }),
         _d2Tile({ color: 'dash-c-stock', icon: 'exp', label: t('docs2_export'), value: '&mdash;', footL: t('docs2_export_sub'), footR: t('docs2_soon'), cls: 'docs2-soon sth-wide' })
     ].join('');
 
@@ -260,7 +263,7 @@ function docs2WaitToggleAll() {
     docs2RenderWait(true);
 }
 // Возврат из заказа в ту страницу «Документов», откуда его открыли (по образцу возврата в просмотр документа / карточку позиции)
-const _D2_SUB_PAGES = ['docs2WaitPage', 'docs2PaidPage', 'docs2TodoPage', 'docs2UnsentPage', 'docs2DnPage', 'docs2AllPage'];
+const _D2_SUB_PAGES = ['docs2WaitPage', 'docs2PaidPage', 'docs2TodoPage', 'docs2UnsentPage', 'docs2DnPage', 'docs2AllPage', 'docs2DiffPage'];
 let _d2Return = null;
 function docs2ReturnPending() { return !!_d2Return; }
 function forgetDocs2Return() { _d2Return = null; }
@@ -301,6 +304,7 @@ async function returnToDocs2() {
     openAppPage(r.page);
     const rr = { docs2WaitPage: docs2RenderWait, docs2PaidPage: docs2RenderPaid, docs2TodoPage: docs2RenderTodo,
         docs2UnsentPage: docs2RenderUnsent, docs2DnPage: docs2RenderDn, docs2AllPage: docs2RenderAll }[r.page];
+    if (r.page === 'docs2DiffPage') { await docs2DiffReload(); return true; }
     if (rr) rr(false);
     return true;
 }
@@ -387,8 +391,8 @@ let _d2PRows = [];
 let _d2P = { cust: '', period: '', open: new Set() };
 
 async function _d2FetchPaidRows() {
-    const { data, error } = await db.from('order_payments').select('id, order_id, amount, paid_at, consolidated_invoice_id, kind')
-        .eq('org_id', currentOrgId).order('paid_at', { ascending: false }).limit(5000);
+    const { data, error } = await fetchAllRows(() => db.from('order_payments').select('id, order_id, amount, paid_at, consolidated_invoice_id, kind')
+        .eq('org_id', currentOrgId).order('paid_at', { ascending: false }).order('id'));   // v955: без потолка в 5000 строк
     if (error) throw error;
     _d2PRows = (data || []).filter(p => p.kind !== 'to_credit' && p.kind !== 'from_credit');   // v946: переносы аванса — не реальные деньги
 }
@@ -992,4 +996,122 @@ async function openDocs2Customer(custId) {
     _d2A = { q: '', cust: String(custId), period: '', type: '', st: '', open: new Set(), cons: new Set() };
     openAppPage('docs2AllPage');
     docs2RenderAll(true);
+}
+
+
+// ==================== Страница «Расхождения» (v955, 23.11.2026) ====================
+// Сверка по каждому заказу: деньги (оплаты + зачёт аванса) ↔ заказ «сейчас» ↔ отправленные документы.
+// Типы: short «не хватает» (заказ вырос после оплаты), over «переплата», inv «изменён после отправки»,
+// pay «изменён после оплаты», noinv «оплата без счёта». «Счёт выставлен, оплаты нет» — не расхождение (это «Ждут оплаты»).
+// Страница только читает. Строка исчезает сама, когда цифры сошлись.
+let _d2X = { type: 'all', cust: '', period: '2m', rows: [], count: null, open: new Set() };
+
+function _d2DiffScope(period) {
+    const m = _d2Months();
+    return (typeof orders !== 'undefined' ? orders : []).filter(o => {
+        if (!isOrderSaved(o)) return false;
+        const ym = String(o.date || '').slice(0, 7);
+        return period === 'all' ? true : (period === '2m' ? (ym === m.cur || ym === m.prev) : ym === period);
+    });
+}
+function _d2DiffCalc(o, pays) {
+    const curC = Math.round(orderGrandTotal(o) * 100);
+    const paidC = pays.reduce((s, p) => s + Math.round(Number(p.amount || 0) * 100), 0);   // как в заказе: все записи (деньги + зачёт аванса)
+    const hasPay = pays.some(p => !p.kind || p.kind === 'payment' || p.kind === 'from_credit');
+    const ref = _payRefSnapshot(pays);
+    const chgPay = hasPay && !!ref && _payChangedVs(o, curC / 100, ref);
+    const chgList = _docChangedList(o) || [];
+    const m = c => formatMoney(c / 100);
+    const types = [], lines = [];
+    let delta = 0;
+    if (hasPay && paidC < curC && chgPay) { types.push('short'); delta = curC - paidC; lines.push(t('docs2_diff_l_short').replace('{p}', m(paidC)).replace('{c}', m(curC)).replace('{d}', m(curC - paidC))); }
+    if (paidC > curC) { types.push('over'); delta = paidC - curC; lines.push(t('docs2_diff_l_over').replace('{p}', m(paidC)).replace('{c}', m(curC)).replace('{d}', m(paidC - curC))); }
+    if (chgList.length) { types.push('inv'); lines.push(t('docs2_diff_l_inv').replace('{docs}', _docChangedText(chgList))); }
+    if (chgPay) { types.push('pay'); lines.push(t('docs2_diff_l_pay').replace('{old}', formatMoney(Number(ref.total))).replace('{cur}', m(curC))); }
+    if (hasPay && typeof docsEnabled === 'function' && docsEnabled() && typeof orderNeedsInvoice === 'function' && orderNeedsInvoice(o)) { types.push('noinv'); lines.push(t('docs2_diff_l_noinv')); }
+    return types.length ? { o, types, lines, delta, cons: !!o.consolidated_invoice_id } : null;
+}
+async function _d2DiffLoad() {
+    const scope = _d2DiffScope(_d2X.period);
+    const byOrder = {};
+    const ids = scope.map(o => o.id);
+    for (let i = 0; i < ids.length; i += 100) {
+        const part = ids.slice(i, i + 100);
+        const { data, error } = await fetchAllRows(() => db.from('order_payments').select('id, order_id, amount, kind, paid_at, created_at, order_snapshot').in('order_id', part).order('id'));
+        if (error) throw error;
+        (data || []).forEach(p => { (byOrder[p.order_id] = byOrder[p.order_id] || []).push(p); });
+    }
+    await _loadDocSumSnapsBulk(scope);
+    _d2X.rows = scope.map(o => _d2DiffCalc(o, byOrder[o.id] || [])).filter(Boolean);
+    if (_d2X.period === '2m') _d2X.count = _d2X.rows.length;
+}
+async function docs2DiffReload() {
+    showLoading();
+    try { await _d2DiffLoad(); }
+    catch (e) { console.error('Расхождения: ошибка загрузки', e); hideLoading(); showInfo(t('error_save_check_connection')); return; }
+    hideLoading();
+    docs2RenderDiff();
+}
+async function openDocs2Diff() {
+    if (!docs2Allowed()) return;
+    _d2X.type = 'all'; _d2X.cust = ''; _d2X.period = '2m';
+    showLoading();
+    try { await _d2DiffLoad(); }
+    catch (e) { console.error('Расхождения: ошибка загрузки', e); hideLoading(); showInfo(t('error_save_check_connection')); return; }
+    hideLoading();
+    openAppPage('docs2DiffPage');
+    docs2RenderDiff();
+}
+(window._appPageOnShow = window._appPageOnShow || {}).docs2DiffPage = () => docs2RenderDiff();
+
+function docs2DiffType(v) { _d2X.type = v; docs2RenderDiff(); }
+async function docs2DiffPick(field, v) {
+    if (typeof closeAllFilterDropdowns === 'function') closeAllFilterDropdowns();
+    if (field === 'cust') { _d2X.cust = v; docs2RenderDiff(); return; }
+    _d2X.period = v || '2m'; _d2X.cust = '';
+    showLoading();
+    try { await _d2DiffLoad(); }
+    catch (e) { console.error('Расхождения: ошибка загрузки', e); hideLoading(); showInfo(t('error_save_check_connection')); return; }
+    hideLoading();
+    docs2RenderDiff();
+}
+
+function docs2RenderDiff() {
+    const box = document.getElementById('docs2Diff');
+    if (!box) return;
+    const custKey = r => String(r.o.customer_id || ('n:' + (r.o.customer || '')));
+    const inCust = _d2X.rows.filter(r => !_d2X.cust || custKey(r) === _d2X.cust);
+    const cnt = ty => inCust.filter(r => ty === 'all' || r.types.indexOf(ty) >= 0).length;
+    const list = inCust.filter(r => _d2X.type === 'all' || r.types.indexOf(_d2X.type) >= 0)
+        .sort((a, b) => String(b.o.date || '').localeCompare(String(a.o.date || '')) || (b.o.id - a.o.id));
+
+    const CHK = '<svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>';
+    const opt = (field, v, label, sel) => `<div class="status-option${sel ? ' selected' : ''}" data-v="${escapeHtml(v)}" onclick="docs2DiffPick('${field}', this.getAttribute('data-v'))"><span>${escapeHtml(label)}</span>${CHK}</div>`;
+    const custMap = new Map();
+    _d2X.rows.forEach(r => custMap.set(custKey(r), r.o.customer || t('orders_no_customer')));
+    const ddC = document.getElementById('docs2XdCust'), ddP = document.getElementById('docs2XdPer');
+    if (ddC) ddC.innerHTML = opt('cust', '', t('docs_customer_all'), !_d2X.cust)
+        + [...custMap.entries()].sort((a, b) => a[1].localeCompare(b[1])).map(([k, n]) => opt('cust', k, n, k === _d2X.cust)).join('');
+    const yms = [...new Set((typeof orders !== 'undefined' ? orders : []).filter(isOrderSaved).map(o => String(o.date || '').slice(0, 7)).filter(y => /^\d{4}-\d{2}$/.test(y)))].sort().reverse();
+    if (ddP) ddP.innerHTML = opt('per', '2m', t('docs2_diff_2m'), _d2X.period === '2m')
+        + yms.map(ym => opt('per', ym, _docsMonthLabel(ym), ym === _d2X.period)).join('')
+        + opt('per', 'all', t('docs_period_all'), _d2X.period === 'all');
+
+    const chip = (ty, label) => `<button type="button" class="d2chip${_d2X.type === ty ? ' on' : ''}${ty !== 'all' && ty !== 'noinv' && cnt(ty) ? ' red' : ''}" onclick="docs2DiffType('${ty}')"><small>${escapeHtml(label)}</small><b>${cnt(ty)}</b></button>`;
+    const row = r => {
+        const o = r.o;
+        const action = r.types.indexOf('noinv') >= 0
+            ? `<button type="button" class="d2btn" onclick="docs2TodoIssue(${o.id}, ${r.cons ? 'true' : 'false'})">${escapeHtml(t('docs2_diff_issue'))}</button>`
+            : (r.types.indexOf('inv') >= 0 ? `<button type="button" class="d2btn" onclick="openOrderDocAction(${o.id})">${escapeHtml(t('docs2_diff_resend'))}</button>` : '');
+        return `<div class="d2o"><div class="l" onclick="docs2OpenOrder(${o.id})">
+            <div class="a">${escapeHtml((o.customer || t('orders_no_customer')) + ' · ' + t('docs2_order').replace('{n}', o.order_number || ('#' + o.id)))}</div>
+            <div class="b">${escapeHtml(formatDateDMY(o.date))}</div>
+            ${r.lines.map(x => `<div class="c">${escapeHtml(x)}</div>`).join('')}</div>
+            ${r.delta ? `<div class="r"><b>${escapeHtml(formatMoney(r.delta / 100))}</b></div>` : ''}${action}</div>`;
+    };
+    box.innerHTML = `<div class="d2chips wrap">${chip('all', t('docs2_diff_all'))}${chip('short', t('docs2_diff_short'))}${chip('over', t('docs2_diff_over'))}${chip('inv', t('docs2_diff_inv'))}${chip('pay', t('docs2_diff_pay'))}${chip('noinv', t('docs2_diff_noinv'))}</div>
+        <div id="docs2WaitBar"><div class="view-toggle-pill">
+            <button type="button" class="view-toggle-btn${_d2X.cust ? ' active' : ''}" onclick="toggleFilterDropdown('docs2XdCust')" title="${escapeHtml(t('stats_all_customers_short'))}">${_D2_BAR_ICONS.cust}</button>
+            <button type="button" class="view-toggle-btn${_d2X.period !== '2m' ? ' active' : ''}" onclick="toggleFilterDropdown('docs2XdPer')" title="${escapeHtml(t('orders_period'))}">${_D2_BAR_ICONS.per}</button></div></div>
+        ${list.length ? `<div class="d2g">${list.map(row).join('')}</div>` : `<p style="font-size:13px; color:#9a9488; margin:24px 0; text-align:center;">${escapeHtml(t('docs2_diff_empty'))}</p>`}`;
 }

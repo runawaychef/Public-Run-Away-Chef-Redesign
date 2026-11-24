@@ -139,6 +139,36 @@ async function _loadDocSumSnaps(order) {
     }
     _docSumSnaps[order.id] = out;
 }
+// v955: то же самое для списка заказов сразу (экран «Расхождения»): пачками по 100 заказов, без логотипов
+async function _loadDocSumSnapsBulk(list) {
+    const noDocs = typeof docsEnabled === 'function' && !docsEnabled();
+    const sel = ['id', 'consolidated_invoice_id'].concat(['inv', 'dn'].map(pre => {
+        const col = pre === 'inv' ? 'invoice_snapshot' : 'delivery_note_snapshot';
+        return `${pre}_order:${col}->order, ${pre}_calc:${col}->calc, ${pre}_vat:${col}->vat_rate, ${pre}_od:${col}->>orderDate, ${pre}_num:${col}->>number`;
+    })).concat(noDocs ? ['confirmation_sent_at', 'confirmation_snapshot'] : []).join(', ');
+    const ids = (list || []).map(o => o.id);
+    const consIds = new Set();
+    const rows = [];
+    for (let i = 0; i < ids.length; i += 100) {
+        const { data, error } = await db.from('orders').select(sel).in('id', ids.slice(i, i + 100));
+        if (error) throw error;
+        (data || []).forEach(r => { rows.push(r); if (r.consolidated_invoice_id) consIds.add(r.consolidated_invoice_id); });
+    }
+    const consById = {};
+    const cl = [...consIds];
+    for (let i = 0; i < cl.length; i += 50) {
+        const c = await db.from('consolidated_invoices').select('id, orders:snapshot->consolidated->orders').in('id', cl.slice(i, i + 50));
+        if (c.error) throw c.error;
+        (c.data || []).forEach(x => { consById[x.id] = x.orders || []; });
+    }
+    rows.forEach(r => {
+        const mk = pre => r[pre + '_num'] ? { number: r[pre + '_num'], calc: r[pre + '_calc'], vat_rate: r[pre + '_vat'], orderDate: r[pre + '_od'], order: r[pre + '_order'] || { items: [] } } : null;
+        const out = { inv: mk('inv'), dn: mk('dn'), cons: null };
+        if (r.consolidated_invoice_id) out.cons = (consById[r.consolidated_invoice_id] || []).find(o => o.id === r.id) || null;
+        if (noDocs && r.confirmation_sent_at && r.confirmation_snapshot) out.conf = { at: r.confirmation_sent_at, snap: r.confirmation_snapshot };
+        _docSumSnaps[r.id] = out;
+    });
+}
 // Заказ изменился после отправленного подтверждения (снимок — payments.js `_payOrderSnap`)
 function _confChanged(order, s) {
     if (!s) return false;
