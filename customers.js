@@ -1510,9 +1510,11 @@ function updateCustomerDetailButtons(cust) {
     const empty = !hasOrders && !hasCredit;
     // Право «удаление» (can_delete) сохраняем: кнопка без класса perm-delete, иначе applyPermissions() у владельца снимает hidden
     const canDel = typeof hasPermission === 'function' ? hasPermission('can_delete') : true;
-    document.getElementById('cdDeleteBtn')?.classList.toggle('hidden', !empty || !canDel);
-    document.getElementById('cdArchiveBtn')?.classList.toggle('hidden', empty || !!cust.archived_at || !canDel);
-    document.getElementById('cdRestoreBtn')?.classList.toggle('hidden', !cust.archived_at || !canDel);
+    // у новой несохранённой карточки (виден «Сохранить») кнопок нет — как и раньше
+    const isNew = !document.getElementById('cdSaveNewBtn')?.classList.contains('hidden');
+    document.getElementById('cdDeleteBtn')?.classList.toggle('hidden', isNew || !empty || !canDel);
+    document.getElementById('cdArchiveBtn')?.classList.toggle('hidden', isNew || empty || !!cust.archived_at || !canDel);
+    document.getElementById('cdRestoreBtn')?.classList.toggle('hidden', isNew || !cust.archived_at || !canDel);
 }
 
 // Есть ли у клиента история, из-за которой удалять нельзя (проверка на сервере: включая заказы в корзине)
@@ -1604,3 +1606,13 @@ async function restoreCustomerById(id) {
     finally { hideLoading(); }
 }
 function restoreCurrentCustomer() { if (currentCustomerId != null) restoreCustomerById(currentCustomerId); }
+
+// Кнопка «Сохранить» у новой карточки показывается/скрывается после открытия карточки — пересчитываем кнопки шапки
+(function () {
+    const b = document.getElementById('cdSaveNewBtn');
+    if (!b) return;
+    new MutationObserver(() => {
+        const c = customers.find(x => x.id === currentCustomerId);
+        if (c) updateCustomerDetailButtons(c);
+    }).observe(b, { attributes: true, attributeFilter: ['class'] });
+})();

@@ -1034,7 +1034,7 @@ function appPagesLeaveGuard(cont) {
         bindCardDraftNote('pdSaveNewBtn', 'productAutosaveNote');
         bindCardDraftNote('idSaveNewBtn', 'ingredientAutosaveNote');
         bindCardDraftNote('sfdSaveNewBtn', 'sfAutosaveNote', '#semiFinishedDetail button[onclick="deleteCurrentSemiFinished()"]');
-        bindCardDraftNote('cdSaveNewBtn', 'customerAutosaveNote', '#customerDetail button[onclick="deleteCurrentCustomer()"]');
+        bindCardDraftNote('cdSaveNewBtn', 'customerAutosaveNote');   // v950: кнопками шапки клиента (удалить/в архив/восстановить) управляет updateCustomerDetailButtons
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initCardDraftNotes);
     else initCardDraftNotes();
