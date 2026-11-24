@@ -3733,6 +3733,9 @@ function hideSplashScreen() {
                     </div>
                     <div id="paymentConsLine" class="hidden" style="font-size:12px; color:#4f6349; margin-top:8px;"></div>
                     <div id="paymentLastLine" class="hidden" style="font-size:12px; color:#6b675d; margin-top:8px; line-height:1.6;"></div>
+                    <!-- v947: переплата / аванс клиента — прямо в кратком блоке оплаты -->
+                    <div id="paymentCreditNote" class="hidden" style="font-size:12px; background:#f8efd9; color:#8a6a1f; border-radius:10px; padding:8px 10px; margin-top:8px; line-height:1.45;"></div>
+                    <div id="paymentCreditActions" class="flex gap-2 hidden" style="margin-top:8px;"></div>
                     <button onclick="openAddPaymentModal(true)" class="pill-btn w-full justify-center" style="margin-top:10px; padding:8px 12px;" data-i18n="pay_add_btn">+ Внести оплату</button>
                 </div>
 
@@ -3766,7 +3769,6 @@ function hideSplashScreen() {
                     <div id="paymentOverpaidRow" class="hidden"><span data-i18n="orders_overpaid">Переплата</span>: <span id="paymentOverpaidAmount" class="font-semibold" style="color:#4f6349;">0.00</span></div>
                 </div>
 
-                <div id="paymentCreditActions" class="flex gap-2 mb-2 hidden"></div>
                 <div id="paymentsListContent" class="mb-2"></div>
 
                 <div class="flex gap-2 mb-2">
@@ -5253,7 +5255,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=10"></script>
     <script src="money.js?v=17"></script>
-    <script src="i18n-core.js?v=215"></script>
+    <script src="i18n-core.js?v=216"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=21"></script>
     <script src="auth.js?v=35"></script>
@@ -5273,7 +5275,7 @@ function hideSplashScreen() {
 <script src="invoice.js?v=57"></script>
 <script src="send-document.js?v=46"></script>
 <script src="confirmation.js?v=5"></script>
-<script src="payments.js?v=41"></script>
+<script src="payments.js?v=42"></script>
 <script src="documents.js?v=16"></script>
 <script src="documents2.js?v=35"></script>
 <script src="bank.js?v=13"></script>

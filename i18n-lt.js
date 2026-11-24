@@ -235,6 +235,8 @@ I18N.lt = {
         credit_hist_from_order: 'Iš užsakymo permokos',
         credit_hist_applied: 'Įskaityta į užsakymą',
         credit_hist_refund: 'Grąžinta klientui',
+        credit_note_overpaid: 'Permoka {sum}. Nuspręskite, ką su ja daryti.',
+        credit_note_has_advance: 'Klientas turi avansą {sum}. Galite įskaityti jį į šį užsakymą.',
         setup_pay_question: "Kaip priimate apmokėjimą?",
         setup_pay_order_desc: "Paprasčiau: tinka, jei klientai daugiausia privatūs",
         setup_pay_invoice_desc: "Darbui su įmonėmis: kiekvienas mokėjimas – pagal sąskaitą",

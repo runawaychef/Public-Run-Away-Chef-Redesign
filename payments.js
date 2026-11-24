@@ -179,6 +179,14 @@ function renderPayments() {
         actBox.innerHTML = btns.join('');
         actBox.classList.toggle('hidden', !btns.length);
     }
+    const noteBox = document.getElementById('paymentCreditNote');
+    if (noteBox) {
+        let nt = '';
+        if (overpaid > 0.004) nt = t('credit_note_overpaid').replace('{sum}', formatMoney(overpaid));
+        else if (remaining > 0.004 && bal > 0.004) nt = t('credit_note_has_advance').replace('{sum}', formatMoney(bal));
+        noteBox.textContent = nt;
+        noteBox.classList.toggle('hidden', !nt);
+    }
     const overpaidRow = document.getElementById('paymentOverpaidRow');
     if (overpaidRow) {
         overpaidRow.classList.toggle('hidden', overpaid <= 0);

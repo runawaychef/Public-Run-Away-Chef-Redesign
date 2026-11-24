@@ -230,6 +230,8 @@ I18N.en = {
         credit_hist_from_order: 'From order overpayment',
         credit_hist_applied: 'Applied to an order',
         credit_hist_refund: 'Refund to client',
+        credit_note_overpaid: 'Overpaid by {sum}. Decide what to do with it.',
+        credit_note_has_advance: 'The client has an advance of {sum}. You can apply it to this order.',
         setup_pay_question: "How do you accept payment?",
         setup_pay_order_desc: "Simpler: suits mostly private customers",
         setup_pay_invoice_desc: "For working with companies: every payment by invoice",

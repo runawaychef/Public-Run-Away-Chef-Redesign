@@ -229,6 +229,8 @@ I18N.ru = {
         credit_hist_from_order: 'Из переплаты заказа',
         credit_hist_applied: 'Зачтено в заказ',
         credit_hist_refund: 'Возврат клиенту',
+        credit_note_overpaid: 'Переплата {sum}. Решите, что с ней делать.',
+        credit_note_has_advance: 'У клиента есть аванс {sum}. Можно зачесть его в этот заказ.',
         setup_pay_question: "Как вы принимаете оплату?",
         setup_pay_order_desc: "Проще: подходит, если клиенты в основном частные",
         setup_pay_invoice_desc: "Для работы с компаниями: каждая оплата — по счёту",

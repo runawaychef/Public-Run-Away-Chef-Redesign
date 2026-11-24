@@ -235,6 +235,8 @@ I18N.uk = {
         credit_hist_from_order: 'З переплати замовлення',
         credit_hist_applied: 'Зараховано в замовлення',
         credit_hist_refund: 'Повернення клієнту',
+        credit_note_overpaid: 'Переплата {sum}. Вирішіть, що з нею робити.',
+        credit_note_has_advance: 'У клієнта є аванс {sum}. Можна зарахувати його в це замовлення.',
         setup_pay_question: "Як ви приймаєте оплату?",
         setup_pay_order_desc: "Простіше: підходить, якщо клієнти переважно приватні",
         setup_pay_invoice_desc: "Для роботи з компаніями: кожна оплата — за рахунком",
