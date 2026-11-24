@@ -221,7 +221,7 @@ function _dashStock() {
     const ctx = stockStateContext(30);
     let ing = 0, sf = 0;
     (typeof ingredients !== 'undefined' ? ingredients : []).forEach(i => {
-        if (i.kind === 'material') return; // упаковка считается отдельно: не хватит под заказы
+        if (i.kind === 'material' || i.archived_at) return; // упаковка считается отдельно: не хватит под заказы
         const a = stockState('ing', i.id, ctx).after;
         if ((a !== null && a <= 0) || (typeof expiryAttn === 'function' && expiryAttn('ing', i.id))) ing++;
     });

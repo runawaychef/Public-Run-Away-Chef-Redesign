@@ -599,7 +599,7 @@ function resolveRecipeIngredientInput(text) {
         const sf = (typeof semiFinished !== 'undefined') ? semiFinished.find(s => s.name === name) : null;
         return sf ? { type: 'sf', id: sf.id } : null;
     }
-    const ing = ingredients.find(i => i.name === raw);
+    const ing = ingredientsOnly().find(i => i.name === raw);
     if (ing) return { type: 'ing', id: ing.id };
     // На случай если ввели название п/ф без суффикса
     const sf = (typeof semiFinished !== 'undefined') ? semiFinished.find(s => s.name === raw) : null;

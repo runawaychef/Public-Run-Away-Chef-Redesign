@@ -469,7 +469,7 @@ function packagingShortCount(ctx) {
     ctx = ctx || stockStateContext(30);
     let n = 0;
     (ingredients || []).forEach(i => {
-        if (i.kind !== 'material') return;
+        if (i.kind !== 'material' || i.archived_at) return;
         const r = stockRunout('ing', i.id, ctx);
         if (r.orders.length && (r.firstShort || r.st.shortage)) n++;
     });
@@ -925,7 +925,7 @@ function _scFmt(x) { return _decSep(String(Math.round(Number(x) * 100) / 100)); 
 function openStockCountPage(kind) {
     const isSf = kind === 'sf';
     const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
-    const src = (isSf ? semiFinished : ingredients.filter(i => (i.kind === 'material') === (stockMode === 'mat'))).slice().sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    const src = (isSf ? semiFinished : ingredients.filter(i => !i.archived_at && (i.kind === 'material') === (stockMode === 'mat'))).slice().sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     _sc = { kind, items: src.map(x => ({
         id: x.id, name: x.name || '', unit: unitAbbrev(x.unit),
         balance: (isSf ? getSemiFinishedBalanceBeforeWriteoff(x.id, pendingMap) : getIngredientBalanceBeforeWriteoff(x.id, pendingMap)) || 0,

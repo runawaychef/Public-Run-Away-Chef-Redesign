@@ -58,7 +58,10 @@ function _ingSeverityBase(ing, ctx) {
 // Склад: режим списка — 'ing' (ингредиенты) или 'mat' (материалы, п. 12). Позиции хранятся вместе, различаются полем kind.
 let stockMode = 'ing';
 function isMaterial(ing) { return !!ing && ing.kind === 'material'; }
-function ingredientsOnly() { return ingredients.filter(i => !isMaterial(i)); }
+function ingredientsOnly() { return ingredients.filter(i => !isMaterial(i) && !i.archived_at); }
+// v963: архивные позиции остаются в массиве (названия, цены в старых рецептах/заказах), но не попадают в списки выбора
+function activeIngredients() { return ingredients.filter(i => !i.archived_at); }
+function activeMaterials() { return ingredients.filter(i => isMaterial(i) && !i.archived_at); }
 function syncStockTabs() {
     const cur = (typeof currentTabId !== 'undefined' && currentTabId === 'semiFinished') ? 'sf' : stockMode;
     document.querySelectorAll('.stock-tab[data-stk]').forEach(b => b.classList.toggle('active', b.dataset.stk === cur));
@@ -253,6 +256,7 @@ function renderIngredientCards() {
 
     const htmlAttn = [], htmlOk = [];
     ingredients.forEach((ing, realIdx) => {
+        if (ing.archived_at) return; // v963: архив показывается отдельным блоком ниже
         if (isMaterial(ing) !== (stockMode === 'mat')) return;
         const unitPrice = ingredientUnitPrice(ing);
         const unitLabel = unitAbbrev(ing.unit);
@@ -301,9 +305,10 @@ function renderIngredientCards() {
             </div>
         </div>`);
     });
-    body.innerHTML = (stockMode === 'mat' && !ingredients.some(isMaterial))
+    body.innerHTML = (stockMode === 'mat' && !ingredients.some(i => isMaterial(i) && !i.archived_at) && !ingredients.some(i => isMaterial(i)))
         ? `<p class="text-xs text-gray-500 text-center py-4 px-3">${t('mat_empty_hint')}</p>`
         : stockGroupsHtml(htmlAttn, htmlOk);
+    body.insertAdjacentHTML('beforeend', ingredientArchiveBlockHtml(ctx));
     initCopySwipeDelegation('ingredientCardsBody');
     if (typeof updateStockDots === 'function') updateStockDots();
 }
@@ -422,6 +427,7 @@ async function saveNewIngredient() {
 
         const newIng = { id: data.id, kind: _newIngKind, sale_price: Number(data.sale_price || 0), name, package_price: Number(data.package_price || 0), package_size: Number(data.package_size || 1), unit, priceHistory: [] };
         ingredients.push(newIng);
+        refreshIngredientDelBtn(newIng);
         _isNewIngredient = false;
         _ingCopyFrom = null;
 
@@ -477,6 +483,7 @@ async function openIngredientDetail(ingId) {
     const ing = ingredients.find(i => i.id === ingId);
     if (!ing) return;
     stockMode = isMaterial(ing) ? 'mat' : 'ing';
+    refreshIngredientDelBtn(ing);
     _fillMaterialSaleBox(ing);
 
     document.getElementById('ingredientsList').classList.add('hidden');
@@ -857,7 +864,118 @@ function deleteCurrentIngredient() {
     const idx = ingredients.findIndex(i => i.id === currentIngredientId);
     if (idx === -1) return;
     const ing = ingredients[idx];
+    if (ingredientUsage(ing).hasTraces) { archiveIngredient(); return; } // v963: уже в работе — только архив
     openDeleteModal(idx, 'ingredient', `${t('delete_label_ingredient')} «${ing.name}»`);
+}
+
+// ==================== АРХИВ ИНГРЕДИЕНТОВ И УПАКОВКИ (v963) ====================
+// Позиция «в работе» (есть в рецептах, заказах или по ней есть движения склада) не удаляется — только в архив.
+// Строго: пока позиция есть в рецептах изделий/полуфабрикатов (упаковка — в незавершённых заказах), в архив нельзя.
+function ingredientUsage(ing) {
+    const recipes = [];
+    (products || []).forEach(p => { if ((p.ingredients || []).some(ri => ri.ingredient_id === ing.id)) recipes.push({ type: 'product', id: p.id, name: p.name || '' }); });
+    (semiFinished || []).forEach(s => { if ((s.ingredients || []).some(ri => ri.ingredient_id === ing.id)) recipes.push({ type: 'sf', id: s.id, name: s.name || '' }); });
+    const ordersAll = (orders || []).filter(o => !o.deleted_at && (o.materials || []).some(m => m.ingredient_id === ing.id));
+    const ordersOpen = ordersAll.filter(o => o.status !== 'выполнен');
+    const c = (typeof _inventoryCache !== 'undefined' && _inventoryCache) ? _inventoryCache['ing_' + ing.id] : null;
+    const balance = c ? _r4(c.in - c.out) : 0;
+    const hasTraces = recipes.length > 0 || ordersAll.length > 0 || !!c;
+    return { recipes, ordersAll, ordersOpen, balance, hasTraces };
+}
+
+function refreshIngredientDelBtn(ing) {
+    const b = document.querySelector('#ingredientDetail button[onclick="deleteCurrentIngredient()"]');
+    if (!b || !ing) return;
+    if (ingredientUsage(ing).hasTraces) { b.removeAttribute('data-i18n'); b.textContent = t('ing_archive_btn'); }
+    else { b.setAttribute('data-i18n', 'ing_delete_btn'); b.textContent = t('ing_delete_btn'); }
+}
+
+async function archiveIngredient() {
+    const ing = ingredients.find(i => i.id === currentIngredientId);
+    if (!ing) return;
+    const u = ingredientUsage(ing);
+    const mat = isMaterial(ing);
+    const blockers = mat
+        ? u.ordersOpen.map(o => ({ type: 'order', id: o.id, name: orderNumLabel(o) }))
+        : u.recipes;
+    if (blockers.length) {
+        const shown = blockers.slice(0, 8).map(b => '• ' + (b.name || t('semifinished_no_name_fallback'))).join('\n');
+        const more = blockers.length > 8 ? '\n' + t('ing_archive_more').replace('{n}', blockers.length - 8) : '';
+        const msg = t(mat ? 'ing_archive_blocked_orders' : 'ing_archive_blocked_recipes') + '\n\n' + shown + more;
+        if (await showConfirm(msg, { ok: t('ing_archive_goto'), cancel: t('ing_archive_close') })) {
+            const b = blockers[0];
+            await closeIngredientDetail();
+            if (b.type === 'order') { showTab('orders'); openOrderDetail(b.id); }
+            else if (b.type === 'sf') { showTab('semiFinished'); openSemiFinishedDetail(b.id); }
+            else { showTab('products'); openProductDetail(b.id); }
+        }
+        return;
+    }
+    const unitLabel = unitAbbrev(ing.unit);
+    const qTxt = `${_n1(u.balance)} ${unitLabel}`;
+    let writeOff = false;
+    if (u.balance > 0) {
+        if (await showConfirm(t('ing_archive_stock_ask').replace('{q}', qTxt), { ok: t('ing_archive_writeoff_btn'), cancel: t('ing_archive_keep_btn') })) writeOff = true;
+        else if (!(await showConfirm(t('ing_archive_keep_confirm').replace('{q}', qTxt), { ok: t('ing_archive_btn'), cancel: t('common_cancel') }))) return;
+    } else if (!(await showConfirm(t('ing_archive_confirm').replace('{name}', ing.name || ''), { ok: t('ing_archive_btn'), cancel: t('common_cancel') }))) return;
+    showLoading(t('common_saving'));
+    try {
+        suppressRealtimeFor3s();
+        if (writeOff) {
+            const { error: woErr } = await db.rpc('rpc_write_off_stock', {
+                p_org_id: currentOrgId, p_item_type: 'ingredient', p_item_id: ing.id,
+                p_qty: u.balance, p_shortage_price: ingredientUnitPrice(ing), p_notes: t('ing_archive_writeoff_note')
+            });
+            if (woErr) throw woErr;
+        }
+        const ts = new Date().toISOString();
+        const { error } = await db.from('ingredients').update({ archived_at: ts }).eq('id', ing.id);
+        if (error) throw error;
+        ing.archived_at = ts;
+        if (writeOff && typeof loadInventory === 'function') await loadInventory();
+        currentIngredientId = null;
+        document.getElementById('ingredientsList').classList.remove('hidden');
+        document.getElementById('ingredientDetail').classList.remove('active');
+        if (typeof refreshFab === 'function') refreshFab();
+        displayIngredients();
+        logActivity('ingredient', `${t('log_ingredient_archived')} «${ing.name}»`);
+    } catch (e) {
+        console.error(e);
+        showInfo(t('ing_archive_error'));
+    } finally { hideLoading(); }
+}
+
+async function restoreIngredient(id) {
+    const ing = ingredients.find(i => i.id === id);
+    if (!ing) return;
+    showLoading(t('common_saving'));
+    try {
+        suppressRealtimeFor3s();
+        const { error } = await db.from('ingredients').update({ archived_at: null }).eq('id', id);
+        if (error) throw error;
+        ing.archived_at = null;
+        displayIngredients();
+        logActivity('ingredient', `${t('log_ingredient_restored')} «${ing.name}»`);
+    } catch (e) {
+        console.error(e);
+        showInfo(t('ing_restore_error'));
+    } finally { hideLoading(); }
+}
+
+function ingredientArchiveBlockHtml(ctx) {
+    const mat = stockMode === 'mat';
+    const arch = ingredients.filter(i => i.archived_at && isMaterial(i) === mat).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    if (!arch.length) return '';
+    let h = `<div class="ing-archive-title" style="font-size:12px;font-weight:700;color:#8d887b;margin:14px 2px 6px;">${escapeHtml(t('ing_archive_title').replace('{n}', arch.length))}</div>`;
+    arch.forEach(ing => {
+        const st = stockState('ing', ing.id, ctx);
+        const bal = st.now !== null ? `${_n1(st.now)} ${unitAbbrev(ing.unit)}` : '—';
+        h += `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:6px;border:1px solid #e8e2d4;border-radius:12px;background:#fff;opacity:.85;">
+            <div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(ing.name || '')}</div>
+            <div style="font-size:12px;color:#8d887b;">${escapeHtml(t('ing_archive_stock_label'))}: ${escapeHtml(bal)}</div></div>
+            <button class="invite-share-btn" onclick="restoreIngredient(${ing.id})">${escapeHtml(t('ing_restore_btn'))}</button></div>`;
+    });
+    return h;
 }
 
 // ==================== ИСТОРИЯ ЦЕН ИНГРЕДИЕНТА ====================

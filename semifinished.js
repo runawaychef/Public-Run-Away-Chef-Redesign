@@ -423,7 +423,7 @@ async function addIngredientToSfRecipe() {
     if (!sf) return;
     const inputEl = document.getElementById('newSfRecipeIngredient');
     const quantity = parseFloat(document.getElementById('newSfRecipeQty').value);
-    const ing = ingredients.find(i => i.name === inputEl.value.trim());
+    const ing = ingredientsOnly().find(i => i.name === inputEl.value.trim());
     if (!ing || isNaN(quantity) || quantity <= 0) {
         showInfo(t('sf_choose_ingredient_and_qty')); return;
     }

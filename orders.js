@@ -2692,7 +2692,7 @@ function _ordMatPrefillPrice() {
     const inp = document.getElementById('newOrdMat');
     const pr = document.getElementById('newOrdMatPrice');
     if (!inp || !pr) return;
-    const ing = ingredients.find(x => isMaterial(x) && x.name === inp.value.trim());
+    const ing = activeMaterials().find(x => x.name === inp.value.trim());
     if (ing) pr.value = Number(ing.sale_price) > 0 ? ing.sale_price : '';
 }
 
@@ -2737,7 +2737,7 @@ function renderOrderMaterials(order) {
     });
     // Выбор: только материалы со склада; при выборе подставляется цена продажи
     setupSearchDropdown('newOrdMat', 'newOrdMatDropdown', () =>
-        ingredients.filter(m => isMaterial(m)).map(m => m.name).sort((x, y) => x.localeCompare(y)));
+        activeMaterials().map(m => m.name).sort((x, y) => x.localeCompare(y)));
     const nm = document.getElementById('newOrdMat');
     if (nm) { nm.oninput = _ordMatPrefillPrice; nm.onchange = _ordMatPrefillPrice; nm.onblur = () => setTimeout(_ordMatPrefillPrice, 150); }
 }
@@ -2777,7 +2777,7 @@ async function addOrderMaterial() {
     if (!order) return;
     const name = document.getElementById('newOrdMat').value.trim();
     const qty = parseFloat(document.getElementById('newOrdMatQty').value);
-    const ing = ingredients.find(x => isMaterial(x) && x.name === name);
+    const ing = activeMaterials().find(x => x.name === name);
     if (!ing || !(qty > 0)) { showInfo(t('ordmat_choose_and_qty')); return; }
     // Пусто — цена продажи со склада (если не задана — 0); можно ввести свою, в том числе 0
     const priceRaw = parseFloat(document.getElementById('newOrdMatPrice').value);
