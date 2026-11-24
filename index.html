@@ -4135,7 +4135,13 @@ function hideSplashScreen() {
                 <label class="text-xs text-gray-500" data-i18n="orders_amount">Сумма</label>
                 <input id="creditOpAmount" type="number" inputmode="decimal" step="0.01" min="0.01" class="border p-1 rounded-xl text-xs w-full mb-2" style="background:#f4f1ea;">
                 <label class="text-xs text-gray-500" data-i18n="history_col_date">Дата</label>
-                <input id="creditOpDate" type="date" class="border p-1 rounded-xl text-xs w-full mb-2" style="background:#f4f1ea;">
+                <div style="position:relative; margin-bottom:8px;" onclick="event.stopPropagation();">
+                    <input id="creditOpDate" type="hidden">
+                    <button type="button" class="field-select-btn" id="creditOpDateBtn" onclick="toggleCustomCalendar('globalCalendarPopup','creditOpDate','creditOpDateBtnLabel',{onPick:function(){}})">
+                        <span id="creditOpDateBtnLabel">—</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path stroke-linecap="round" d="M3 10h18M8 3v4M16 3v4"/></svg>
+                    </button>
+                </div>
                 <div id="creditOpMethodWrap" class="hidden">
                     <label class="text-xs text-gray-500" data-i18n="orders_payment_method">Способ оплаты</label>
                     <select id="creditOpMethod" class="border p-1 rounded-xl text-xs w-full mb-2" style="background:#f4f1ea;">
@@ -5335,7 +5341,7 @@ function hideSplashScreen() {
 <script src="invoice.js?v=57"></script>
 <script src="send-document.js?v=47"></script>
 <script src="confirmation.js?v=6"></script>
-<script src="payments.js?v=49"></script>
+<script src="payments.js?v=50"></script>
 <script src="documents.js?v=16"></script>
 <script src="documents2.js?v=38"></script>
 <script src="bank.js?v=15"></script>

@@ -550,7 +550,7 @@ function _creditOpOpen(st, title, sub) {
     document.getElementById('creditOpTitle').textContent = title;
     document.getElementById('creditOpSub').textContent = sub;
     document.getElementById('creditOpAmount').value = st.max.toFixed(2);
-    document.getElementById('creditOpDate').value = getLocalDateStr(0);
+    calSetFieldValue('creditOpDate', 'creditOpDateBtnLabel', getLocalDateStr(0));
     document.getElementById('creditOpMethodWrap').classList.toggle('hidden', !(st.kind === 'refund_order' || st.kind === 'refund_credit'));
     document.getElementById('creditOpModal').style.display = 'flex';
 }
