@@ -4082,6 +4082,19 @@ function hideSplashScreen() {
             </div>
         </div>
 
+        <!-- v948: выбор сразу после оплаты, если образовалась переплата -->
+        <div id="overpayChoiceModal" class="modal">
+            <div class="modal-content" style="max-width:320px;">
+                <h2 id="overpayChoiceTitle" class="text-sm font-semibold text-gray-800"></h2>
+                <div style="font-size:12px; color:#6b675d; margin:6px 0 12px; line-height:1.45;" data-i18n="credit_choice_text">Клиент заплатил больше, чем нужно. Что сделать с переплатой?</div>
+                <div class="flex flex-col gap-2">
+                    <button id="overpayChoiceToCreditBtn" onclick="overpayChoice('to_credit')" class="pill-btn justify-center" data-i18n="credit_btn_to_credit">Оставить в авансе клиента</button>
+                    <button onclick="overpayChoice('refund_order')" class="pill-btn-secondary justify-center" data-i18n="credit_btn_refund">Вернуть клиенту</button>
+                    <button onclick="overpayChoice(null)" class="pill-btn-secondary justify-center" data-i18n="credit_choice_later">Решить позже</button>
+                </div>
+            </div>
+        </div>
+
         <!-- v946: аванс клиента / возврат / зачёт — одно окно подтверждения -->
         <div id="creditOpModal" class="modal">
             <div class="modal-content" style="max-width:320px;">
@@ -5255,7 +5268,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=10"></script>
     <script src="money.js?v=17"></script>
-    <script src="i18n-core.js?v=216"></script>
+    <script src="i18n-core.js?v=217"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=21"></script>
     <script src="auth.js?v=35"></script>
@@ -5275,7 +5288,7 @@ function hideSplashScreen() {
 <script src="invoice.js?v=57"></script>
 <script src="send-document.js?v=46"></script>
 <script src="confirmation.js?v=5"></script>
-<script src="payments.js?v=42"></script>
+<script src="payments.js?v=43"></script>
 <script src="documents.js?v=16"></script>
 <script src="documents2.js?v=35"></script>
 <script src="bank.js?v=13"></script>

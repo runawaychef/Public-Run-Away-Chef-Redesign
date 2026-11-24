@@ -641,10 +641,24 @@ async function savePayment() {
         }
         document.getElementById('addPaymentModal').style.display = 'none';
         await loadOrderPayments(currentOrderId);
+        _offerOverpayChoice();   // v948: если после оплаты образовалась переплата — сразу предлагаем решение
     } catch (e) {
         console.error(e);
         showInfo(t('error_save_payment'));
     } finally { hideLoading(); }
+}
+
+// v948: окно выбора сразу после оплаты, если она больше суммы заказа. Выбор ведёт в окно подтверждения (openCreditOp).
+function _offerOverpayChoice() {
+    const s = _creditOpOrderState();
+    if (!s.order || s.overpaid <= 0.004) return;
+    document.getElementById('overpayChoiceTitle').textContent = t('credit_choice_title').replace('{sum}', formatMoney(s.overpaid));
+    document.getElementById('overpayChoiceToCreditBtn').classList.toggle('hidden', !s.order.customer_id);
+    document.getElementById('overpayChoiceModal').style.display = 'flex';
+}
+function overpayChoice(kind) {
+    document.getElementById('overpayChoiceModal').style.display = 'none';
+    if (kind) openCreditOp(kind);
 }
 
 async function deletePayment() {
