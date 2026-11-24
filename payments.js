@@ -722,8 +722,14 @@ async function savePayment() {
             logActivity('order', `${t('log_payment_added')} ${formatMoney(amount)} (${method})`, currentOrderId);
         }
         document.getElementById('addPaymentModal').style.display = 'none';
-        await loadOrderPayments(currentOrderId);
-        _offerOverpayChoice();   // v948: если после оплаты образовалась переплата — сразу предлагаем решение
+        try {   // v959 (диагностика): оплата уже записана — сбой обновления экрана не должен выглядеть как «ошибка сохранения»
+            await loadOrderPayments(currentOrderId);
+            _offerOverpayChoice();   // v948: если после оплаты образовалась переплата — сразу предлагаем решение
+        } catch (e2) {
+            console.error('После сохранения оплаты не обновился экран:', e2);
+            hideLoading();
+            showInfo('Оплата записана, но экран не обновился:\n' + ((e2 && e2.message) || e2) + '\n' + String((e2 && e2.stack) || '').split('\n').slice(0, 3).join('\n'));
+        }
     } catch (e) {
         console.error(e);
         showInfo(t('error_save_payment'));
