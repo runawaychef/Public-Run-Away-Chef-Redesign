@@ -966,11 +966,11 @@ function ingredientArchiveBlockHtml(ctx) {
     const mat = stockMode === 'mat';
     const arch = ingredients.filter(i => i.archived_at && isMaterial(i) === mat).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     if (!arch.length) return '';
-    let h = `<div class="ing-archive-title" style="font-size:12px;font-weight:700;color:#8d887b;margin:14px 2px 6px;">${escapeHtml(t('ing_archive_title').replace('{n}', arch.length))}</div>`;
+    let h = `<div class="oc-section-divider stock-divider"><span class="label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8M10 12h4"/></svg>${escapeHtml(t('ing_archive_title').replace('{n}', arch.length))}</span></div>`;
     arch.forEach(ing => {
         const st = stockState('ing', ing.id, ctx);
         const bal = st.now !== null ? `${_n1(st.now)} ${unitAbbrev(ing.unit)}` : '—';
-        h += `<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:6px;border:1px solid #e8e2d4;border-radius:12px;background:#fff;opacity:.85;">
+        h += `<div style="grid-column:1 / -1;display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:6px;border:1px solid #e8e2d4;border-radius:12px;background:#fff;opacity:.85;">
             <div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(ing.name || '')}</div>
             <div style="font-size:12px;color:#8d887b;">${escapeHtml(t('ing_archive_stock_label'))}: ${escapeHtml(bal)}</div></div>
             <button class="invite-share-btn" onclick="restoreIngredient(${ing.id})">${escapeHtml(t('ing_restore_btn'))}</button></div>`;
