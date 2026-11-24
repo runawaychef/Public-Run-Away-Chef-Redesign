@@ -1281,6 +1281,8 @@ function deleteCurrentCustomer() {
     const idx = customers.findIndex(c => c.id === currentCustomerId);
     if (idx === -1) return;
     const cust = customers[idx];
+    // v950: клиента с заказами или авансом не удаляем — предлагаем архив
+    if (orders.some(o => o.customer_id === cust.id) || Math.abs(_custBalance[cust.id] || 0) > 0.004) { openCustomerArchive(); return; }
     openDeleteModal(idx, 'customer', `${t('delete_label_customer')} «${cust.name || t('customers_no_name_fallback')}»`);
 }
 
@@ -1506,9 +1508,11 @@ function updateCustomerDetailButtons(cust) {
     const hasOrders = orders.some(o => o.customer_id === cust.id);
     const hasCredit = Math.abs(_custBalance[cust.id] || 0) > 0.004;
     const empty = !hasOrders && !hasCredit;
-    document.getElementById('cdDeleteBtn')?.classList.toggle('hidden', !empty);
-    document.getElementById('cdArchiveBtn')?.classList.toggle('hidden', empty || !!cust.archived_at);
-    document.getElementById('cdRestoreBtn')?.classList.toggle('hidden', !cust.archived_at);
+    // Право «удаление» (can_delete) сохраняем: кнопка без класса perm-delete, иначе applyPermissions() у владельца снимает hidden
+    const canDel = typeof hasPermission === 'function' ? hasPermission('can_delete') : true;
+    document.getElementById('cdDeleteBtn')?.classList.toggle('hidden', !empty || !canDel);
+    document.getElementById('cdArchiveBtn')?.classList.toggle('hidden', empty || !!cust.archived_at || !canDel);
+    document.getElementById('cdRestoreBtn')?.classList.toggle('hidden', !cust.archived_at || !canDel);
 }
 
 // Есть ли у клиента история, из-за которой удалять нельзя (проверка на сервере: включая заказы в корзине)
@@ -1520,14 +1524,8 @@ async function customerHasHistory(custId) {
 }
 
 let _custArchiveId = null;
-let _custArchiveSum = null;
-// Сводка по клиенту перед архивацией: пользователь сам решает — архивировать как есть или сначала закрыть вопросы
-async function openCustomerArchive() {
-    const cust = customers.find(c => c.id === currentCustomerId);
-    if (!cust) return;
-    showLoading();
-    let bal = 0;
-    try { bal = await loadCustomerBalance(cust.id); } finally { hideLoading(); }
+// Хвосты клиента, из-за которых архивация запрещена: долг, аванс, не выполненные заказы, выполненные без счёта
+function _custArchiveIssues(cust, bal) {
     const mine = orders.filter(o => !o.deleted_at && (o.customer_id != null ? o.customer_id === cust.id : o.customer === cust.name));
     const today = getLocalDateStr(0);
     const debt = customerDebt(cust);
@@ -1535,26 +1533,42 @@ async function openCustomerArchive() {
     const open = mine.filter(o => o.status !== 'выполнен');
     const future = open.filter(o => o.date && o.date > today);
     const noDoc = docsEnabled() ? mine.filter(o => o.is_confirmed && o.status === 'выполнен' && !o.inv_no && !o.consolidated_invoice_id && !o.cons_excluded) : [];
-    const lines = [];
-    if (debt > 0.01) lines.push(t('cust_arch_debt').replace('{sum}', formatMoney(debt)).replace('{label}', unpaidOrdersLabel(unpaid)));
-    if (bal > 0.004) lines.push(t('cust_arch_credit').replace('{sum}', formatMoney(bal)));
-    if (open.length) lines.push(t('cust_arch_open').replace('{n}', String(open.length)) + (future.length ? t('cust_arch_future').replace('{n}', String(future.length)) : ''));
-    if (noDoc.length) lines.push(t('cust_arch_nodoc').replace('{n}', String(noDoc.length)));
+    const list = [];
+    if (debt > 0.01) list.push({ go: 'debt', text: t('cust_arch_debt').replace('{sum}', formatMoney(debt)).replace('{label}', unpaidOrdersLabel(unpaid)) });
+    if (bal > 0.004) list.push({ go: 'credit', text: t('cust_arch_credit').replace('{sum}', formatMoney(bal)) });
+    if (open.length) list.push({ go: 'orders', text: t('cust_arch_open').replace('{n}', String(open.length)) + (future.length ? t('cust_arch_future').replace('{n}', String(future.length)) : '') });
+    if (noDoc.length) list.push({ go: 'orders', text: t('cust_arch_nodoc').replace('{n}', String(noDoc.length)) });
+    return list;
+}
+// Окно архивации: если хвостов нет — подтверждение; если есть — список «что мешает» с переходами, без кнопки «В архив»
+async function openCustomerArchive() {
+    const cust = customers.find(c => c.id === currentCustomerId);
+    if (!cust) return;
+    showLoading();
+    let bal = 0;
+    try { bal = await loadCustomerBalance(cust.id); } finally { hideLoading(); }
+    const issues = _custArchiveIssues(cust, bal);
+    const nm = cust.name || t('customers_no_name_fallback');
     _custArchiveId = cust.id;
-    _custArchiveSum = { unpaid, hasIssues: lines.length > 0 };
-    document.getElementById('custArchiveTitle').textContent = t('cust_archive_title').replace('{name}', cust.name || t('customers_no_name_fallback'));
+    document.getElementById('custArchiveTitle').textContent = t(issues.length ? 'cust_archive_blocked_title' : 'cust_archive_title').replace('{name}', nm);
     const body = document.getElementById('custArchiveBody');
-    body.innerHTML = (lines.length
-        ? lines.map(x => `<div style="margin-bottom:5px; padding-left:14px; text-indent:-14px;"><span style="color:#c0685c; font-weight:700;">•</span> ${escapeHtml(x)}</div>`).join('')
-        : `<div style="margin-bottom:5px; color:#4f6349; font-weight:600;">${escapeHtml(t('cust_arch_clean'))}</div>`)
-        + `<div style="margin-top:8px; font-size:11.5px; color:#6b675d;">${escapeHtml(t('cust_arch_foot'))}</div>`;
+    if (issues.length) {
+        body.innerHTML = `<div style="margin-bottom:6px; font-weight:600;">${escapeHtml(t('cust_archive_blocked_head'))}</div>`
+            + issues.map(x => `<div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px;"><span><span style="color:#c0685c; font-weight:700;">•</span> ${escapeHtml(x.text)}</span><button type="button" onclick="custArchiveGo('${x.go}')" class="pill-btn-secondary" style="padding:3px 10px; font-size:11.5px; flex-shrink:0;">${escapeHtml(t('cust_arch_go'))}</button></div>`).join('');
+    } else {
+        body.innerHTML = `<div style="margin-bottom:5px; color:#4f6349; font-weight:600;">${escapeHtml(t('cust_arch_clean'))}</div>`
+            + `<div style="margin-top:8px; font-size:11.5px; color:#6b675d;">${escapeHtml(t('cust_arch_foot'))}</div>`;
+    }
+    document.getElementById('custArchiveOkBtn').classList.toggle('hidden', issues.length > 0);
     document.getElementById('custArchiveModal').style.display = 'flex';
 }
-function custArchiveFixIssues() {
-    document.getElementById('custArchiveModal').style.display = 'none';
+function closeCustomerArchive() { document.getElementById('custArchiveModal').style.display = 'none'; }
+function custArchiveGo(where) {
+    closeCustomerArchive();
     const id = _custArchiveId;
-    if (_custArchiveSum && _custArchiveSum.unpaid > 0 && id != null) openCustomerUnpaidModal(id);
-    else document.getElementById('cdOrdersBlock')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (where === 'debt' && id != null) { openCustomerUnpaidModal(id); return; }
+    const blockId = where === 'credit' ? 'cdCreditBlock' : 'cdOrdersBlock';
+    document.getElementById(blockId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 async function _setCustomerArchived(cust, archived) {
     suppressRealtimeFor3s();
@@ -1564,11 +1578,14 @@ async function _setCustomerArchived(cust, archived) {
     logActivity('customer', `${t(archived ? 'log_customer_archived' : 'log_customer_restored')} «${cust.name}»`);
 }
 async function confirmCustomerArchive() {
-    document.getElementById('custArchiveModal').style.display = 'none';
+    closeCustomerArchive();
     const cust = customers.find(c => c.id === _custArchiveId);
     if (!cust) return;
     showLoading();
     try {
+        // страховка: за время открытого окна хвосты могли появиться
+        const bal = await loadCustomerBalance(cust.id);
+        if (_custArchiveIssues(cust, bal).length) { hideLoading(); openCustomerArchive(); return; }
         await _setCustomerArchived(cust, true);
         closeCustomerDetail();
         displayCustomers();

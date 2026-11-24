@@ -3253,7 +3253,7 @@ function hideSplashScreen() {
                         <button id="cdSaveNewBtn" onclick="saveNewCustomer()" class="hidden pill-btn" style="margin-left:auto;" data-i18n="common_save">Сохранить</button>
                         <button id="cdArchiveBtn" onclick="openCustomerArchive()" class="hidden pill-btn-secondary" style="margin-left:6px;" data-i18n="cust_archive_btn">В архив</button>
                         <button id="cdRestoreBtn" onclick="restoreCurrentCustomer()" class="hidden pill-btn" style="margin-left:6px;" data-i18n="cust_restore_btn">Восстановить</button>
-                        <button id="cdDeleteBtn" onclick="deleteCurrentCustomer()" class="pill-btn-danger perm-delete" style="margin-left:6px;" data-i18n="customers_delete_btn">Удалить клиента</button>
+                        <button id="cdDeleteBtn" onclick="deleteCurrentCustomer()" class="pill-btn-danger" style="margin-left:6px;" data-i18n="customers_delete_btn">Удалить клиента</button>
                     </div>
                     <p id="customerAutosaveNote" class="text-[11px] text-gray-400 mb-1" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
                     <button type="button" class="cd-req-head" onclick="toggleCdRequisites()">
@@ -3908,8 +3908,8 @@ function hideSplashScreen() {
                 <h2 id="custArchiveTitle" class="text-sm font-semibold text-gray-800"></h2>
                 <div id="custArchiveBody" style="font-size:12.5px; color:#3c3a34; margin:8px 0 12px; line-height:1.5;"></div>
                 <div class="flex flex-col gap-2">
-                    <button id="custArchiveOkBtn" onclick="confirmCustomerArchive()" class="pill-btn justify-center" data-i18n="cust_archive_anyway">Всё равно в архив</button>
-                    <button onclick="custArchiveFixIssues()" class="pill-btn-secondary justify-center" data-i18n="cust_archive_fix">Закрыть вопросы</button>
+                    <button id="custArchiveOkBtn" onclick="confirmCustomerArchive()" class="pill-btn justify-center" data-i18n="cust_archive_btn">В архив</button>
+                    <button onclick="closeCustomerArchive()" class="pill-btn-secondary justify-center" data-i18n="common_cancel">Отмена</button>
                 </div>
             </div>
         </div>
@@ -5287,7 +5287,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=10"></script>
     <script src="money.js?v=17"></script>
-    <script src="i18n-core.js?v=219"></script>
+    <script src="i18n-core.js?v=220"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=21"></script>
     <script src="auth.js?v=35"></script>
@@ -5300,7 +5300,7 @@ function hideSplashScreen() {
 <script src="batches.js?v=18"></script>
 <script src="semifinished.js?v=76"></script>
 <script src="products.js?v=68"></script>
-<script src="customers.js?v=84"></script>
+<script src="customers.js?v=86"></script>
 <script src="calendar.js?v=17"></script>
 <script src="orders.js?v=182"></script>
 <script src="dashboard.js?v=25"></script>
