@@ -2398,7 +2398,7 @@ async function addItemToOrder() {
     if (!productName || isNaN(quantity) || quantity <= 0 || isNaN(price)) {
         showInfo(t('orders_fill_product_qty_price')); return;
     }
-    const prod = products.find(p => p.name === productName);
+    const prod = products.find(p => p.name === productName && !p.archived_at);
     if (!prod) { showInfo(t('orders_product_not_found')); return; }
     const effProd = prod;
     const itemCost = parseFloat((productUnitCost(effProd) * quantity).toFixed(4));
@@ -2461,7 +2461,7 @@ async function addItemToOrder() {
 
 function autoFillNewItemPrice() {
     const name = document.getElementById('newItemProduct').value;
-    const p = products.find(pr => pr.name === name);
+    const p = products.find(pr => pr.name === name && !pr.archived_at);
     if (p) {
         document.getElementById('newItemPrice').value = p.price.toFixed(2);
         const qtyField = document.getElementById('newItemQty');
@@ -2488,7 +2488,7 @@ function openEditItemModal(itemIdx) {
 
 function autoFillEditItemPrice() {
     const name = document.getElementById('editItemProduct').value;
-    const p = products.find(pr => pr.name === name);
+    const p = products.find(pr => pr.name === name && !pr.archived_at);
     if (p) document.getElementById('editItemPrice').value = p.price.toFixed(2);
 }
 
@@ -2502,7 +2502,7 @@ async function saveItemEdit() {
     if (!productName || isNaN(quantity) || quantity <= 0 || isNaN(price)) {
         showInfo(t('common_fill_correctly')); return;
     }
-    const prod = products.find(p => p.name === productName);
+    const prod = products.find(p => p.name === productName && !p.archived_at);
     if (!prod) { showInfo(t('orders_product_not_found')); return; }
     const item = order.items[editItemIdx];
     const oldDesc = `«${item.product}» × ${item.quantity}`;

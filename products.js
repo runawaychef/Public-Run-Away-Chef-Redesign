@@ -38,7 +38,7 @@ function productsViewToggleSync() {
 function renderProductTiles() {
     const body = document.getElementById('productCardsBody');
     body.classList.add('pc-grid');
-    body.innerHTML = products.map(p => {
+    body.innerHTML = activeProducts().map(p => {
         const photoSrc = p.photo_url ? escapeHtml(p.photo_url) : PRODUCT_PLACEHOLDER_SRC;
         const warn = p.recipe_confirmed ? '' : '<span class="pt-flag"></span>';
         const ps = formatMoney(p.price);
@@ -51,7 +51,7 @@ function renderProductTiles() {
             <img class="ptm-photo" src="${photoSrc}" loading="lazy">
             ${warn}
         </div>`;
-    }).join('');
+    }).join('') + productArchiveBlockHtml();
 }
 
 function renderProductCards() {
@@ -62,6 +62,7 @@ function renderProductCards() {
     body.classList.remove('pc-grid');
     let html = '';
     products.forEach((p, realIdx) => {
+        if (p.archived_at) return; // v966: архив — отдельным блоком
         const hasUnit = !!p.unit;
         const recipeOk = !!p.recipe_confirmed;
         const unitLabel = hasUnit ? unitAbbrev(p.unit) : '';
@@ -109,7 +110,7 @@ function renderProductCards() {
             </div>
         </div>`;
     });
-    body.innerHTML = html;
+    body.innerHTML = html + productArchiveBlockHtml();
     initCopySwipeDelegation('productCardsBody');
 }
 
@@ -440,6 +441,7 @@ function openProductDetail(productId) {
     currentProductId = productId;
     const prod = products.find(p => p.id === productId);
     if (!prod) return;
+    refreshProductDelBtn(prod);
 
     document.getElementById('productsList').classList.add('hidden');
     document.getElementById('productDetail').classList.add('active');
@@ -540,11 +542,105 @@ async function closeProductDetail() {
     refreshFab();
 }
 
+// ==================== АРХИВ ИЗДЕЛИЙ (v966) ====================
+// Изделие в заказах не удаляется, а уходит в архив. Строго: пока есть хоть один незакрытый заказ с изделием — нельзя.
+function activeProducts() { return products.filter(p => !p.archived_at); }
+function productUsage(prod) {
+    const ordersAll = (orders || []).filter(o => !o.deleted_at && (o.items || []).some(it => it.product_id === prod.id));
+    const ordersOpen = ordersAll.filter(o => o.status !== 'выполнен');
+    return { ordersAll, ordersOpen, hasTraces: ordersAll.length > 0 };
+}
+function refreshProductDelBtn(prod) {
+    const b = document.querySelector('#productDetail button[onclick="deleteCurrentProduct()"]');
+    if (!b || !prod) return;
+    if (productUsage(prod).hasTraces) { b.removeAttribute('data-i18n'); b.textContent = t('prod_archive_btn'); }
+    else { b.setAttribute('data-i18n', 'prod_delete_btn'); b.textContent = t('prod_delete_btn'); }
+}
+// Компоненты рецепта, которые сами в архиве (нужны для восстановления)
+function archivedRecipeParts(item) {
+    const parts = [];
+    (item.ingredients || []).forEach(ri => {
+        if (ri.ingredient_id) { const i = ingredients.find(x => x.id === ri.ingredient_id); if (i && i.archived_at) parts.push({ type: 'ing', id: i.id, name: i.name }); }
+        else if (ri.semi_finished_id) { const s = semiFinished.find(x => x.id === ri.semi_finished_id); if (s && s.archived_at) parts.push({ type: 'sf', id: s.id, name: s.name }); }
+    });
+    return parts;
+}
+async function restoreArchivedParts(parts) {
+    for (const p of parts) {
+        const tbl = p.type === 'ing' ? 'ingredients' : 'semi_finished';
+        const { error } = await db.from(tbl).update({ archived_at: null }).eq('id', p.id);
+        if (error) throw error;
+        const arr = p.type === 'ing' ? ingredients : semiFinished;
+        const o = arr.find(x => x.id === p.id); if (o) o.archived_at = null;
+    }
+}
+async function archiveProduct() {
+    const prod = products.find(p => p.id === currentProductId);
+    if (!prod) return;
+    const u = productUsage(prod);
+    if (u.ordersOpen.length) {
+        const shown = u.ordersOpen.slice(0, 8).map(o => '• ' + orderNumLabel(o)).join('\n');
+        const more = u.ordersOpen.length > 8 ? '\n' + t('ing_archive_more').replace('{n}', u.ordersOpen.length - 8) : '';
+        if (await showConfirm(t('prod_archive_blocked_orders') + '\n\n' + shown + more, { ok: t('ing_archive_goto'), cancel: t('ing_archive_close') })) {
+            closeProductDetailSilent();
+            showTab('orders'); openOrderDetail(u.ordersOpen[0].id);
+        }
+        return;
+    }
+    if (!(await showConfirm(t('prod_archive_confirm').replace('{name}', prod.name || ''), { ok: t('prod_archive_btn'), cancel: t('common_cancel') }))) return;
+    showLoading(t('common_saving'));
+    try {
+        suppressRealtimeFor3s();
+        const ts = new Date().toISOString();
+        const { error } = await db.from('products').update({ archived_at: ts }).eq('id', prod.id);
+        if (error) throw error;
+        prod.archived_at = ts;
+        currentProductId = null;
+        document.getElementById('productsList').classList.remove('hidden');
+        document.getElementById('productDetail').classList.remove('active');
+        if (typeof refreshFab === 'function') refreshFab();
+        displayProducts();
+        logActivity('product', `${t('log_product_archived')} «${prod.name}»`);
+    } catch (e) {
+        console.error(e);
+        showInfo(t('ing_archive_error'));
+    } finally { hideLoading(); }
+}
+async function restoreProduct(id) {
+    const prod = products.find(p => p.id === id);
+    if (!prod) return;
+    const parts = archivedRecipeParts(prod);
+    if (parts.length && !(await showConfirm(t('archive_restore_parts').replace('{list}', parts.map(x => '• ' + x.name).join('\n')), { ok: t('archive_restore_all'), cancel: t('common_cancel') }))) return;
+    showLoading(t('common_saving'));
+    try {
+        suppressRealtimeFor3s();
+        await restoreArchivedParts(parts);
+        const { error } = await db.from('products').update({ archived_at: null }).eq('id', id);
+        if (error) throw error;
+        prod.archived_at = null;
+        displayProducts();
+        logActivity('product', `${t('log_product_restored')} «${prod.name}»`);
+    } catch (e) {
+        console.error(e);
+        showInfo(t('ing_restore_error'));
+    } finally { hideLoading(); }
+}
+let _prodArchiveOpen = false;
+function toggleProductArchive() { _prodArchiveOpen = !_prodArchiveOpen; renderProductCards(); filterProductsList(); }
+function productArchiveBlockHtml() {
+    const arch = products.filter(p => p.archived_at).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    if (!arch.length) return '';
+    let h = archDividerHtml(t('ing_archive_title').replace('{n}', arch.length), _prodArchiveOpen, 'toggleProductArchive');
+    if (_prodArchiveOpen) arch.forEach(p => { h += archRowHtml(p.name || t('semifinished_no_name_fallback'), formatMoney(p.price), `restoreProduct(${p.id})`); });
+    return h;
+}
+
 // Удаление изделия прямо из его карточки
 function deleteCurrentProduct() {
     const idx = products.findIndex(p => p.id === currentProductId);
     if (idx === -1) return;
     const prod = products[idx];
+    if (productUsage(prod).hasTraces) { archiveProduct(); return; } // v966: уже в заказах — только архив
     openDeleteModal(idx, 'product', `${t('delete_label_product')} «${prod.name}»`);
 }
 
@@ -582,7 +678,7 @@ function fillNewRecipeIngredientSelect() {
     setupSearchDropdown('newRecipeIngredient', 'newRecipeIngredientDropdown', () => {
         const names = ingredientsOnly().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).map(i => i.name);
         const sfNames = (typeof semiFinished !== 'undefined')
-            ? semiFinished.slice().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).map(s => s.name + t('prod_sf_suffix'))
+            ? activeSemiFinished().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).map(s => s.name + t('prod_sf_suffix'))
             : [];
         return names.concat(sfNames);
     }, null, (text) => openQuickAddIngredientModal(text, 'product'));
@@ -596,13 +692,13 @@ function resolveRecipeIngredientInput(text) {
     const sfSuffix = t('prod_sf_suffix');
     if (raw.endsWith(sfSuffix)) {
         const name = raw.slice(0, -sfSuffix.length);
-        const sf = (typeof semiFinished !== 'undefined') ? semiFinished.find(s => s.name === name) : null;
+        const sf = (typeof semiFinished !== 'undefined') ? activeSemiFinished().find(s => s.name === name) : null;
         return sf ? { type: 'sf', id: sf.id } : null;
     }
     const ing = ingredientsOnly().find(i => i.name === raw);
     if (ing) return { type: 'ing', id: ing.id };
     // На случай если ввели название п/ф без суффикса
-    const sf = (typeof semiFinished !== 'undefined') ? semiFinished.find(s => s.name === raw) : null;
+    const sf = (typeof semiFinished !== 'undefined') ? activeSemiFinished().find(s => s.name === raw) : null;
     return sf ? { type: 'sf', id: sf.id } : null;
 }
 
@@ -712,10 +808,10 @@ function openEditRecipeItemModal(i) {
         });
         sel.appendChild(grpIng);
     }
-    if (typeof semiFinished !== 'undefined' && semiFinished.length) {
+    if (typeof semiFinished !== 'undefined' && activeSemiFinished().length) {
         const grpSf = document.createElement('optgroup');
         grpSf.label = t('prod_optgroup_semifinished');
-        semiFinished.sort((a,b)=>(a.name||"").localeCompare(b.name||"")).forEach(sf => {
+        activeSemiFinished().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).forEach(sf => {
             const opt = document.createElement('option');
             opt.value = 'sf-' + sf.id; opt.textContent = sf.name;
             if (opt.value === currentValue) opt.selected = true;

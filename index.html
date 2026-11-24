@@ -5322,23 +5322,23 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=10"></script>
     <script src="money.js?v=17"></script>
-    <script src="i18n-core.js?v=228"></script>
+    <script src="i18n-core.js?v=229"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=22"></script>
     <script src="auth.js?v=35"></script>
     <script src="employees.js?v=83"></script>
     <script src="company.js?v=30"></script>
-    <script src="inventory.js?v=92"></script>
+    <script src="inventory.js?v=93"></script>
     <script src="billing.js?v=28"></script>
     <script src="push.js?v=12"></script>
-<script src="ingredients.js?v=84"></script>
+<script src="ingredients.js?v=85"></script>
 <script src="batches.js?v=18"></script>
-<script src="semifinished.js?v=77"></script>
-<script src="products.js?v=69"></script>
+<script src="semifinished.js?v=78"></script>
+<script src="products.js?v=70"></script>
 <script src="customers.js?v=87"></script>
 <script src="calendar.js?v=17"></script>
-<script src="orders.js?v=185"></script>
-<script src="dashboard.js?v=27"></script>
+<script src="orders.js?v=186"></script>
+<script src="dashboard.js?v=28"></script>
 <script src="invoice.js?v=57"></script>
 <script src="send-document.js?v=47"></script>
 <script src="confirmation.js?v=7"></script>
@@ -5346,11 +5346,11 @@ function hideSplashScreen() {
 <script src="documents.js?v=16"></script>
 <script src="documents2.js?v=38"></script>
 <script src="bank.js?v=15"></script>
-<script src="stats.js?v=45"></script>
+<script src="stats.js?v=46"></script>
 <script src="history.js?v=11"></script>
 <script src="modals.js?v=28"></script>
 <script src="demoData.js?v=31"></script>
-<script src="helpers.js?v=58"></script>
+<script src="helpers.js?v=59"></script>
 <script>
 // SUPABASE_URL, SUPABASE_KEY, db перенесены в supabaseClient.js
 
@@ -5440,7 +5440,7 @@ async function loadAllData(silent) {
     const _orderIdsAtStart = new Set((orders || []).map(o => o.id));
     try {
         const [pRes, cRes, oRes, oiRes, eRes, ingRes, piRes, sfRes, sfiRes, opRes, omRes] = await Promise.all([
-            fetchAllRows(() => db.from('products').select('id, name, price, batch_size, cost_items, unit, recipe_confirmed, track_stock, photo_url').eq('org_id', currentOrgId).order('name').order('id')),
+            fetchAllRows(() => db.from('products').select('id, name, price, batch_size, cost_items, unit, recipe_confirmed, track_stock, photo_url, archived_at').eq('org_id', currentOrgId).order('name').order('id')),
             fetchAllRows(() => db.from('customers').select('id, name, contact, email, discount, vat_exempt, notes, address, reg_number, vat_code, personal_code, entity_type, payment_term_days, invoice_mode, archived_at').eq('org_id', currentOrgId).order('name').order('id')),
             // invoice_snapshot / delivery_note_snapshot сюда НЕ входят: это копии документов с логотипом
             // (у большой пекарни ~15 МБ), в списке они не нужны — документы читают свой снимок из базы сами.
@@ -5449,7 +5449,7 @@ async function loadAllData(silent) {
             db.from('employees').select('id, name').eq('org_id', currentOrgId).order('name').limit(1000),
             fetchAllRows(() => db.from('ingredients').select('id, name, package_price, package_size, unit, shelf_life_days, kind, sale_price, archived_at').eq('org_id', currentOrgId).order('name').order('id')),
             fetchAllRows(() => db.from('product_ingredients').select('id, product_id, ingredient_id, semi_finished_id, quantity').eq('org_id', currentOrgId).order('id')),
-            fetchAllRows(() => db.from('semi_finished').select('id, name, batch_size, unit, cost_items, recipe_confirmed, track_stock, shelf_life_days').eq('org_id', currentOrgId).order('name').order('id')),
+            fetchAllRows(() => db.from('semi_finished').select('id, name, batch_size, unit, cost_items, recipe_confirmed, track_stock, shelf_life_days, archived_at').eq('org_id', currentOrgId).order('name').order('id')),
             fetchAllRows(() => db.from('semi_finished_ingredients').select('id, semi_finished_id, ingredient_id, quantity, is_primary').eq('org_id', currentOrgId).order('id')),
             fetchAllRows(() => db.from('order_payments').select('order_id, amount, bank_transaction_id, kind').eq('org_id', currentOrgId).order('id')),
             fetchAllRows(() => db.from('order_materials').select('id, order_id, ingredient_id, quantity, cost, price').eq('org_id', currentOrgId).order('id'))
@@ -5487,6 +5487,7 @@ async function loadAllData(silent) {
             recipe_confirmed: !!sf.recipe_confirmed,
             track_stock: !!sf.track_stock,
             shelf_life_days: sf.shelf_life_days == null ? null : Number(sf.shelf_life_days),
+            archived_at: sf.archived_at || null,
             ingredients: sfRecipeBySf[sf.id] || []
         }));
 
@@ -5503,6 +5504,7 @@ async function loadAllData(silent) {
             recipe_confirmed: !!p.recipe_confirmed,
             track_stock: !!p.track_stock,
             photo_url: p.photo_url || null,
+            archived_at: p.archived_at || null,
             ingredients: recipeByProduct[p.id] || []
         }));
         customers = (cRes.data || []).map(c => ({

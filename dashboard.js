@@ -226,6 +226,7 @@ function _dashStock() {
         if ((a !== null && a <= 0) || (typeof expiryAttn === 'function' && expiryAttn('ing', i.id))) ing++;
     });
     (typeof semiFinished !== 'undefined' ? semiFinished : []).forEach(s => {
+        if (s.archived_at) return;
         const a = stockState('sf', s.id, ctx).after;
         if ((a !== null && a <= 0) || (typeof expiryAttn === 'function' && expiryAttn('sf', s.id))) sf++;
     });

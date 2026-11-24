@@ -553,8 +553,8 @@ const INV_WARN_ICON = '<svg class="inv-warn-icon" viewBox="0 0 24 24" fill="none
 //     (ингредиенты, которые есть лишь внутри полуфабрикатов, отдельно не показываем).
 function smartStockItemIds() {
     const sf = new Set(), ing = new Set();
-    (semiFinished || []).forEach(x => { if (x.track_stock) sf.add(x.id); });
-    (products || []).filter(p => p.track_stock).forEach(prod => {
+    (semiFinished || []).forEach(x => { if (x.track_stock && !x.archived_at) sf.add(x.id); });
+    (products || []).filter(p => p.track_stock && !p.archived_at).forEach(prod => {
         (prod.ingredients || []).forEach(ri => {
             if (ri.semi_finished_id) sf.add(ri.semi_finished_id);
             else if (ri.ingredient_id) ing.add(ri.ingredient_id);
@@ -925,7 +925,7 @@ function _scFmt(x) { return _decSep(String(Math.round(Number(x) * 100) / 100)); 
 function openStockCountPage(kind) {
     const isSf = kind === 'sf';
     const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
-    const src = (isSf ? semiFinished : ingredients.filter(i => !i.archived_at && (i.kind === 'material') === (stockMode === 'mat'))).slice().sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    const src = (isSf ? semiFinished.filter(s => !s.archived_at) : ingredients.filter(i => !i.archived_at && (i.kind === 'material') === (stockMode === 'mat'))).slice().sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     _sc = { kind, items: src.map(x => ({
         id: x.id, name: x.name || '', unit: unitAbbrev(x.unit),
         balance: (isSf ? getSemiFinishedBalanceBeforeWriteoff(x.id, pendingMap) : getIngredientBalanceBeforeWriteoff(x.id, pendingMap)) || 0,

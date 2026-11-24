@@ -599,7 +599,7 @@ function _smTotals(bd) {
 function _smFmt2(v) { try { return Number(v).toLocaleString(typeof currentLang !== 'undefined' ? currentLang : undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } catch (e) { return Number(v).toFixed(2); } }
 function _smColor(p) { return p >= 50 ? '#4f6349' : (p >= 25 ? '#a07a22' : '#c0685c'); }
 function _smRows() {
-    const list = (typeof products !== 'undefined' ? products : []).filter(p => (p.ingredients || []).length > 0 && p.price);
+    const list = (typeof products !== 'undefined' ? products : []).filter(p => !p.archived_at && (p.ingredients || []).length > 0 && p.price);
     list.sort((a, b) => _sm.sort === 'worst' ? productProfitPct(a) - productProfitPct(b) : productProfitPct(b) - productProfitPct(a));
     return list;
 }

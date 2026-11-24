@@ -72,6 +72,7 @@ function renderSemiFinishedCards() {
 
     const htmlAttn = [], htmlOk = [];
     semiFinished.forEach((sf, realIdx) => {
+        if (sf.archived_at) return; // v966: архив — отдельным блоком
         const unitLabel = unitAbbrev(sf.unit);
         const unitCost  = semiFinishedUnitCost(sf);
         const st        = stockState('sf', sf.id, ctx);
@@ -124,7 +125,7 @@ function renderSemiFinishedCards() {
             </div>
         </div>`);
     });
-    body.innerHTML = stockGroupsHtml(htmlAttn, htmlOk);
+    body.innerHTML = stockGroupsHtml(htmlAttn, htmlOk) + sfArchiveBlockHtml(ctx);
     initCopySwipeDelegation('semiFinishedCardsBody');
     if (typeof updateStockDots === 'function') updateStockDots();
 }
@@ -281,6 +282,7 @@ function openSemiFinishedDetail(sfId) {
     document.getElementById('sfdSaveNewBtn')?.classList.add('hidden');
     const sf = semiFinished.find(s => s.id === sfId);
     if (!sf) return;
+    refreshSfDelBtn(sf);
 
     document.getElementById('semiFinishedList').classList.add('hidden');
     document.getElementById('semiFinishedDetail').classList.add('active');
@@ -338,11 +340,106 @@ async function closeSemiFinishedDetail() {
     if (typeof smartStockReturnPending === 'function' && smartStockReturnPending()) await returnToSmartStock();
 }
 
+// ==================== АРХИВ ПОЛУФАБРИКАТОВ (v966) ====================
+// Полуфабрикат в рецептах изделий (не архивных) не архивируется; в работе (рецепты, движения склада) — не удаляется.
+function activeSemiFinished() { return semiFinished.filter(s => !s.archived_at); }
+function sfUsage(sf) {
+    const recipes = [];
+    let recipesAll = 0;
+    (products || []).forEach(p => { if ((p.ingredients || []).some(ri => ri.semi_finished_id === sf.id)) { recipesAll++; if (!p.archived_at) recipes.push({ type: 'product', id: p.id, name: p.name || '' }); } });
+    const c = (typeof _inventoryCache !== 'undefined' && _inventoryCache) ? _inventoryCache['sf_' + sf.id] : null;
+    const balance = c ? _r4(c.in - c.out) : 0;
+    return { recipes, balance, hasTraces: recipesAll > 0 || !!c };
+}
+function refreshSfDelBtn(sf) {
+    const b = document.querySelector('#semiFinishedDetail button[onclick="deleteCurrentSemiFinished()"]');
+    if (!b || !sf) return;
+    if (sfUsage(sf).hasTraces) { b.removeAttribute('data-i18n'); b.textContent = t('sf_archive_btn'); }
+    else { b.setAttribute('data-i18n', 'sf_delete_btn'); b.textContent = t('sf_delete_btn'); }
+}
+async function archiveSemiFinished() {
+    const sf = semiFinished.find(s => s.id === currentSemiFinishedId);
+    if (!sf) return;
+    const u = sfUsage(sf);
+    if (u.recipes.length) {
+        const shown = u.recipes.slice(0, 8).map(b => '• ' + (b.name || t('semifinished_no_name_fallback'))).join('\n');
+        const more = u.recipes.length > 8 ? '\n' + t('ing_archive_more').replace('{n}', u.recipes.length - 8) : '';
+        if (await showConfirm(t('sf_archive_blocked_recipes') + '\n\n' + shown + more, { ok: t('ing_archive_goto'), cancel: t('ing_archive_close') })) {
+            closeSemiFinishedDetailSilent();
+            showTab('products'); openProductDetail(u.recipes[0].id);
+        }
+        return;
+    }
+    const qTxt = `${_n1(u.balance)} ${unitAbbrev(sf.unit)}`;
+    let writeOff = false;
+    if (u.balance > 0) {
+        if (await showConfirm(t('ing_archive_stock_ask').replace('{q}', qTxt), { ok: t('ing_archive_writeoff_btn'), cancel: t('ing_archive_keep_btn') })) writeOff = true;
+        else if (!(await showConfirm(t('ing_archive_keep_confirm').replace('{q}', qTxt), { ok: t('sf_archive_btn'), cancel: t('common_cancel') }))) return;
+    } else if (!(await showConfirm(t('sf_archive_confirm').replace('{name}', sf.name || ''), { ok: t('sf_archive_btn'), cancel: t('common_cancel') }))) return;
+    showLoading(t('common_saving'));
+    try {
+        suppressRealtimeFor3s();
+        if (writeOff) {
+            const { error: woErr } = await db.rpc('rpc_write_off_stock', {
+                p_org_id: currentOrgId, p_item_type: 'semi_finished', p_item_id: sf.id,
+                p_qty: u.balance, p_shortage_price: semiFinishedUnitCost(sf), p_notes: t('ing_archive_writeoff_note')
+            });
+            if (woErr) throw woErr;
+        }
+        const ts = new Date().toISOString();
+        const { error } = await db.from('semi_finished').update({ archived_at: ts }).eq('id', sf.id);
+        if (error) throw error;
+        sf.archived_at = ts;
+        if (writeOff && typeof loadInventory === 'function') await loadInventory();
+        currentSemiFinishedId = null;
+        document.getElementById('semiFinishedList').classList.remove('hidden');
+        document.getElementById('semiFinishedDetail').classList.remove('active');
+        if (typeof refreshFab === 'function') refreshFab();
+        displaySemiFinished();
+        logActivity('semiFinished', `${t('log_sf_archived')} «${sf.name}»`);
+    } catch (e) {
+        console.error(e);
+        showInfo(t('ing_archive_error'));
+    } finally { hideLoading(); }
+}
+async function restoreSemiFinished(id) {
+    const sf = semiFinished.find(s => s.id === id);
+    if (!sf) return;
+    const parts = archivedRecipeParts(sf);
+    if (parts.length && !(await showConfirm(t('archive_restore_parts').replace('{list}', parts.map(x => '• ' + x.name).join('\n')), { ok: t('archive_restore_all'), cancel: t('common_cancel') }))) return;
+    showLoading(t('common_saving'));
+    try {
+        suppressRealtimeFor3s();
+        await restoreArchivedParts(parts);
+        const { error } = await db.from('semi_finished').update({ archived_at: null }).eq('id', id);
+        if (error) throw error;
+        sf.archived_at = null;
+        displaySemiFinished();
+        logActivity('semiFinished', `${t('log_sf_restored')} «${sf.name}»`);
+    } catch (e) {
+        console.error(e);
+        showInfo(t('ing_restore_error'));
+    } finally { hideLoading(); }
+}
+let _sfArchiveOpen = false;
+function toggleSfArchive() { _sfArchiveOpen = !_sfArchiveOpen; renderSemiFinishedCards(); filterSemiFinishedList(); }
+function sfArchiveBlockHtml(ctx) {
+    const arch = semiFinished.filter(s => s.archived_at).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    if (!arch.length) return '';
+    let h = archDividerHtml(t('ing_archive_title').replace('{n}', arch.length), _sfArchiveOpen, 'toggleSfArchive');
+    if (_sfArchiveOpen) arch.forEach(sf => {
+        const st = stockState('sf', sf.id, ctx);
+        h += archRowHtml(sf.name || t('semifinished_no_name_fallback'), `${t('ing_archive_stock_label')}: ${st.now !== null ? _n1(st.now) + ' ' + unitAbbrev(sf.unit) : '—'}`, `restoreSemiFinished(${sf.id})`);
+    });
+    return h;
+}
+
 // Удаление полуфабриката прямо из его карточки (то же окно подтверждения, что и из списка)
 function deleteCurrentSemiFinished() {
     const idx = semiFinished.findIndex(s => s.id === currentSemiFinishedId);
     if (idx === -1) return;
     const sf = semiFinished[idx];
+    if (sfUsage(sf).hasTraces) { archiveSemiFinished(); return; } // v966: в работе — только архив
     openDeleteModal(idx, 'semiFinished', `${t('delete_label_semifinished')} «${sf.name || t('semifinished_no_name_fallback')}»`);
 }
 
@@ -551,7 +648,7 @@ async function resetSfRecipeConfirmed(sf) {
 // ==================== КОПИРОВАНИЕ РЕЦЕПТА ИЗ ДРУГОГО ПОЛУФАБРИКАТА ====================
 function setupCopySfRecipeControl(sf) {
     setupSearchDropdown('copySfRecipeFromInput', 'copySfRecipeFromDropdown',
-        () => semiFinished
+        () => activeSemiFinished()
             .filter(s => s.id !== currentSemiFinishedId && (s.ingredients || []).length)
             .sort((a,b) => (a.name||"").localeCompare(b.name||""))
             .map(s => s.name),
@@ -563,7 +660,7 @@ function setupCopySfRecipeControl(sf) {
 
 async function copySfRecipeFromByName(sourceName) {
     const sf = semiFinished.find(s => s.id === currentSemiFinishedId);
-    const src = semiFinished.find(s => s.name === sourceName);
+    const src = activeSemiFinished().find(s => s.name === sourceName);
     if (!sf || !src) return;
     const srcItems = src.ingredients || [];
     if (!srcItems.length) { showInfo(t('sf_no_recipe_to_copy')); return; }
@@ -912,7 +1009,7 @@ function openSfInventarizationModal(singleSfId) {
     // Весь список — страница (22.10, inventory.js openStockCountPage); одна позиция — окно
     if (singleSfId == null && typeof openStockCountPage === 'function') { openStockCountPage('sf'); return; }
     const pendingMap = typeof computePendingWriteoffMap === 'function' ? computePendingWriteoffMap() : {};
-    let list = semiFinished.slice();
+    let list = activeSemiFinished();
     if (singleSfId != null) list = list.filter(sf => sf.id === singleSfId);
     const sorted = list.sort((a, b) => (a.name||'').localeCompare(b.name||''));
     let html = '<table class="w-full table-text table-clean">';

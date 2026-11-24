@@ -347,7 +347,7 @@ function setupSearchDropdown(inputId, dropdownId, getItems, onPick, onCreate, op
 function updateProductSelects() {
     // Для строки добавления / редактирования позиции в детальном виде заказа
     setupSearchDropdown('newItemProduct', 'newItemProductDropdown',
-        () => products.slice().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).map(p => p.name),
+        () => products.filter(p => !p.archived_at).sort((a,b)=>(a.name||"").localeCompare(b.name||"")).map(p => p.name),
         () => {
             autoFillNewItemPrice();
             // Убираем фокус: клавиатура закрывается сразу, макет успокаивается ДО нажатия
@@ -356,7 +356,7 @@ function updateProductSelects() {
             if (inp) inp.blur();
         });
     setupSearchDropdown('editItemProduct', 'editItemProductDropdown',
-        () => products.slice().sort((a,b)=>(a.name||"").localeCompare(b.name||"")).map(p => p.name),
+        () => products.filter(p => !p.archived_at).sort((a,b)=>(a.name||"").localeCompare(b.name||"")).map(p => p.name),
         () => autoFillEditItemPrice());
 }
 

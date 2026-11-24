@@ -873,13 +873,14 @@ function deleteCurrentIngredient() {
 // Строго: пока позиция есть в рецептах изделий/полуфабрикатов (упаковка — в незавершённых заказах), в архив нельзя.
 function ingredientUsage(ing) {
     const recipes = [];
-    (products || []).forEach(p => { if ((p.ingredients || []).some(ri => ri.ingredient_id === ing.id)) recipes.push({ type: 'product', id: p.id, name: p.name || '' }); });
-    (semiFinished || []).forEach(s => { if ((s.ingredients || []).some(ri => ri.ingredient_id === ing.id)) recipes.push({ type: 'sf', id: s.id, name: s.name || '' }); });
+    let recipesAll = 0; // v966: рецепты архивных изделий/полуфабрикатов не блокируют архив, но считаются «следом»
+    (products || []).forEach(p => { if ((p.ingredients || []).some(ri => ri.ingredient_id === ing.id)) { recipesAll++; if (!p.archived_at) recipes.push({ type: 'product', id: p.id, name: p.name || '' }); } });
+    (semiFinished || []).forEach(s => { if ((s.ingredients || []).some(ri => ri.ingredient_id === ing.id)) { recipesAll++; if (!s.archived_at) recipes.push({ type: 'sf', id: s.id, name: s.name || '' }); } });
     const ordersAll = (orders || []).filter(o => !o.deleted_at && (o.materials || []).some(m => m.ingredient_id === ing.id));
     const ordersOpen = ordersAll.filter(o => o.status !== 'выполнен');
     const c = (typeof _inventoryCache !== 'undefined' && _inventoryCache) ? _inventoryCache['ing_' + ing.id] : null;
     const balance = c ? _r4(c.in - c.out) : 0;
-    const hasTraces = recipes.length > 0 || ordersAll.length > 0 || !!c;
+    const hasTraces = recipesAll > 0 || ordersAll.length > 0 || !!c;
     return { recipes, ordersAll, ordersOpen, balance, hasTraces };
 }
 
@@ -962,6 +963,16 @@ async function restoreIngredient(id) {
     } finally { hideLoading(); }
 }
 
+// v966: общие кусочки блока «Архив» (изделия, полуфабрикаты)
+function archDividerHtml(title, open, toggleFn) {
+    return `<div class="oc-section-divider stock-divider" style="grid-column:1 / -1;cursor:pointer;" onclick="${toggleFn}()"><span class="label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8M10 12h4"/></svg>${escapeHtml(title)}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-left:4px;transition:transform .2s;${open ? 'transform:rotate(180deg);' : ''}"><path d="M6 9l6 6 6-6"/></svg></span></div>`;
+}
+function archRowHtml(name, sub, restoreCall) {
+    return `<div style="grid-column:1 / -1;display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:6px;border:1px solid #e8e2d4;border-radius:12px;background:#fff;opacity:.85;">
+        <div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(name || '')}</div>
+        <div style="font-size:12px;color:#8d887b;">${escapeHtml(sub || '')}</div></div>
+        <button class="invite-share-btn" onclick="${restoreCall}">${escapeHtml(t('ing_restore_btn'))}</button></div>`;
+}
 // Архив по умолчанию свёрнут; раскрывается по нажатию на разделитель
 let _ingArchiveOpen = false;
 function toggleIngredientArchive() {
