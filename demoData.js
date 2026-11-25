@@ -587,6 +587,8 @@ async function clearDemoData() {
         closeModal();
         await loadAllData();
         await loadInventory();
+        _demoCache = null; // v975: кэш «демо есть» мог устареть в ходе удаления — без этого плашка «Здесь примеры» оставалась
+        try { await refreshDemoBanner(); } catch (e) {}
         logActivity('auth', t('demo_activity_deleted'));
         await showInfo((keptUsed ? t('demo_deleted_kept').replace('{n}', keptUsed) : t('demo_deleted_success')) + (keptUsed ? '' : '\n\n' + t('reset_hint_after_demo')));
     } catch (e) {
@@ -841,7 +843,7 @@ function refreshTourOrdersLink() {
     if (!wrap) return;
     let el = document.getElementById('tourOrdersLink');
     const own = (typeof orders !== 'undefined' ? orders : []).some(o => !o.is_demo);
-    if (own) { if (el) el.remove(); return; }
+    if (own || tourIsActive()) { if (el) el.remove(); return; } // v975: во время тура ссылки нет
     if (el) return;
     _tourInjectStyle();
     el = document.createElement('div');
@@ -969,6 +971,7 @@ function tourStart(opts) {
     }
     document.getElementById('tourDemoBanner')?.remove();
     _tourCanLoadDemo = false;
+    _tourRefreshLinks();
     _tourGo(0);
     if (!_tourDemo && _tourIsOwner()) {
         _tourOrgIsEmpty().then(empty => { _tourCanLoadDemo = !!empty; if (_tourEl) _tourRender(); });
@@ -999,6 +1002,7 @@ function tourClose() {
     if (_tourEl) { _tourEl.remove(); _tourEl = null; }
     if (_tourSpacer) { _tourSpacer.remove(); _tourSpacer = null; }
     _tourSteps = null; _tourIdx = 0; _tourDemo = false; _tourCanLoadDemo = false;
+    _tourRefreshLinks();
     try { refreshDemoBanner(); } catch (e) {}
 }
 // Крестик и «назад» в Android: с примерами сначала спрашиваем, удалять ли их
@@ -1094,6 +1098,7 @@ async function resetOrgRun() {
 // ===== v974: подсказки пустых разделов + ссылка «Пройти тур» в каждом разделе =====
 // Подсказка висит, пока в разделе нет ни одной позиции (архивные тоже считаются позицией). Ссылка на тур — под ней, пока нет своих (не демо) заказов.
 function _tourLinkWanted() {
+    if (tourIsActive()) return false; // v975: во время тура ссылку «Пройти тур» не показываем
     return !(typeof orders !== 'undefined' ? orders : []).some(o => !o.is_demo);
 }
 function _sectionHintCfg(kind) {
@@ -1133,6 +1138,10 @@ function refreshSectionHints(kind) {
             l.firstChild.textContent = _tt('tour_orders_link', 'Пройти тур по приложению');
         } else if (l) l.remove();
     } catch (e) { console.error(e); }
+}
+function _tourRefreshLinks() {
+    try { ['ing', 'sf', 'prod', 'cust'].forEach(k => refreshSectionHints(k)); } catch (e) {}
+    try { refreshTourOrdersLink(); } catch (e) {}
 }
 // Для списка заказов: пока нет ни одного сохранённого заказа, вместо «Заказов не найдено» показываем подсказку
 function ordersEmptyHtml() {
