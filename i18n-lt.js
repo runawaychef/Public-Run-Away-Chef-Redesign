@@ -386,6 +386,13 @@ I18N.lt = {
         demo_not_found: 'Demonstracinių duomenų nerasta — greičiausiai jie jau buvo pašalinti arba niekada nebuvo sukurti.',
         demo_delete_confirm: 'Pašalinti visą demonstracinį rinkinį (demo klientus, gaminius, pusgaminius, ingredientus ir demo užsakymą)? Jūsų asmeniniai duomenys nebus paliesti. Demo pozicijos, jau naudojamos jūsų receptuose ar užsakymuose, bus palikti.',
         del_has_db_links: 'Ištrinti negalima: pozicija yra užsakymuose (įskaitant šiukšlinę) arba sandėlio įrašuose. Perkelkite ją į archyvą.',
+        order_del_blocked_head: 'Šio užsakymo ištrinti negalima: jame jau yra darbo ar pinigų.',
+        order_blk_status: 'būsena „{s}“ (užsakymas vykdomas). Jei sukurtas per klaidą, grąžinkite būseną „Priimtas“',
+        order_blk_pay: 'yra apmokėjimo įrašų: {n}. Pirmiausia ištrinkite juos užsakyme',
+        order_blk_docs: 'išrašyti dokumentai: {list}. Išrašyti dokumentai netrinami',
+        order_blk_doc_inv: 'sąskaita Nr. {n}',
+        order_blk_doc_dn: 'važtaraštis Nr. {n}',
+        order_blk_doc_cons: 'suvestinė sąskaita',
 
         // Общие (дополнительно)
         common_save: 'Išsaugoti',

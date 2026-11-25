@@ -56,7 +56,19 @@ async function dbEntityHasRefs(type, id) {
     } catch (e) { console.error(e); return true; }
 }
 
+let _orderDeleteVerified = false;
 function openDeleteModal(id, type, label) {
+    // v968: заказ с работой/оплатой/документами не удаляется — сначала проверка по базе
+    if (type === 'order' && !_orderDeleteVerified) {
+        const o = orders[id];
+        if (!o) return;
+        orderDeleteGuard(o.id).then(ok => {
+            if (!ok) return;
+            _orderDeleteVerified = true;
+            try { openDeleteModal(id, type, label); } finally { _orderDeleteVerified = false; }
+        });
+        return;
+    }
     deleteId   = id;
     deleteType = type;
     let text = `${t('delete_confirm_prefix')} ${label}?`;

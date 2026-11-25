@@ -381,6 +381,13 @@ I18N.en = {
         demo_not_found: 'No demo data found — it looks like it was already deleted or never created.',
         demo_delete_confirm: 'Delete the entire demo set (demo customers, products, semi-finished products, ingredients, and demo order)? Your own data will not be affected. Demo items already used in your recipes or orders will be kept.',
         del_has_db_links: 'Can’t delete: this item is used in orders (including the trash) or in stock records. Send it to the archive instead.',
+        order_del_blocked_head: 'This order can’t be deleted: there is already work or money on it.',
+        order_blk_status: 'status “{s}” (order is in progress). If it was created by mistake, set it back to “Accepted”',
+        order_blk_pay: 'there are payment records: {n}. Delete them in the order first',
+        order_blk_docs: 'documents issued: {list}. Issued documents can’t be deleted',
+        order_blk_doc_inv: 'invoice №{n}',
+        order_blk_doc_dn: 'delivery note №{n}',
+        order_blk_doc_cons: 'consolidated invoice',
 
         // Common (additional)
         common_save: 'Save',

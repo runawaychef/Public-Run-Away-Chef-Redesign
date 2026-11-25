@@ -1988,11 +1988,21 @@ async function loadOrdersTrash(withCleanup) {
         if (withCleanup) {
             const cutoff = new Date();
             cutoff.setDate(cutoff.getDate() - TRASH_KEEP_DAYS);
+            // v968: стираем только заказы типа А (принят, без оплат и документов); остальные остаются в корзине навсегда
             try {
-                await dbMust(db.from('orders')
-                    .delete()
-                    .not('deleted_at', 'is', null)
-                    .lt('deleted_at', cutoff.toISOString()));
+                const { data: old, error: oe } = await db.from('orders').select('id')
+                    .not('deleted_at', 'is', null).lt('deleted_at', cutoff.toISOString())
+                    .eq('status', 'принят').is('inv_no', null).is('dn_no', null).is('consolidated_invoice_id', null);
+                if (oe) throw oe;
+                let ids = (old || []).map(r => r.id);
+                for (let i = 0; i < ids.length; i += 100) {
+                    const part = ids.slice(i, i + 100);
+                    const { data: paid, error: pe } = await db.from('order_payments').select('order_id').in('order_id', part);
+                    if (pe) throw pe;
+                    const paidSet = new Set((paid || []).map(r => r.order_id));
+                    const free = part.filter(x => !paidSet.has(x));
+                    if (free.length) await dbMust(db.from('orders').delete().in('id', free));
+                }
             } catch (e) { console.error('Не удалось очистить старые заказы из корзины:', e); }
         }
 
@@ -2092,6 +2102,39 @@ async function restoreOrder(orderId, orderNum) {
     finally { hideLoading(); }
 }
 
+// ==================== ПРАВИЛА УДАЛЕНИЯ ЗАКАЗА (v968) ====================
+// А. Ничего не было (статус «принят», нет оплат, нет выставленных документов) — в корзину на 30 дней.
+// Б. Есть следы работы (в работе / выполнен, оплата, документ) — не удаляется вообще.
+// Проверка идёт по базе, а не по памяти. null — не удалось проверить (считаем «нельзя»).
+async function orderDeleteBlockers(orderId) {
+    try {
+        const [o, p] = await Promise.all([
+            db.from('orders').select('status, inv_no, dn_no, consolidated_invoice_id').eq('id', orderId).single(),
+            db.from('order_payments').select('id', { count: 'exact', head: true }).eq('order_id', orderId)
+        ]);
+        if (o.error || p.error || !o.data) return null;
+        const r = [];
+        if (o.data.status && o.data.status !== 'принят') r.push(t('order_blk_status').replace('{s}', orderStatusLabel(o.data.status)));
+        if ((p.count || 0) > 0) r.push(t('order_blk_pay').replace('{n}', String(p.count)));
+        const docs = [];
+        if (o.data.inv_no) docs.push(t('order_blk_doc_inv').replace('{n}', String(o.data.inv_no)));
+        if (o.data.dn_no) docs.push(t('order_blk_doc_dn').replace('{n}', String(o.data.dn_no)));
+        if (o.data.consolidated_invoice_id) docs.push(t('order_blk_doc_cons'));
+        if (docs.length) r.push(t('order_blk_docs').replace('{list}', docs.join(', ')));
+        return r;
+    } catch (e) { console.error(e); return null; }
+}
+
+// true — удалять можно; иначе показывает причину и возвращает false
+async function orderDeleteGuard(orderId) {
+    showLoading();
+    let bl;
+    try { bl = await orderDeleteBlockers(orderId); } finally { hideLoading(); }
+    if (bl === null) { await showInfo(t('error_save_check_connection')); return false; }
+    if (bl.length) { await showInfo(t('order_del_blocked_head') + '\n\n' + bl.map(x => '• ' + x).join('\n')); return false; }
+    return true;
+}
+
 async function permanentDeleteOrder(orderId, orderNum) {
     const num = orderNum || `#${orderId}`;
     if (!hasPermission('can_delete')) {
@@ -2099,6 +2142,7 @@ async function permanentDeleteOrder(orderId, orderNum) {
         showInfo(t('ing_no_delete_permission'));
         return;
     }
+    if (!(await orderDeleteGuard(orderId))) return; // v968: заказ с оплатами/документами/работой навсегда не удаляем
     suppressRealtimeFor3s();
     showLoading();
     try {
