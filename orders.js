@@ -1480,7 +1480,9 @@ function renderDraftBar() {
 // Переключение нижней вкладки из открытого несохранённого заказа: так же, как «Назад»,
 // сначала сохраняем или спрашиваем (resolveDraftOnLeave), и только потом уходим.
 // true — переход отложен (showTab вызовется снова после решения).
+let _draftGuardBypass = false; // v973: программный переход в карточку клиента из заказа не должен вызывать вопрос «сохранить/удалить»
 function orderDraftGuardOnTab(tabId) {
+    if (_draftGuardBypass) return false;
     if (tabId === 'orders' || currentOrderId === null) return false;
     const detail = document.getElementById('orderDetail');
     if (!detail || !detail.classList.contains('active')) return false;
@@ -2263,7 +2265,7 @@ async function createCustomerFromOrder(typedName) {
 
     // Пустой черновик заказа не должен удалиться при уходе в карточку клиента
     _draftOrderIds.delete(order.id);
-    showTab('customers');
+    _draftGuardBypass = true; try { showTab('customers'); } finally { _draftGuardBypass = false; }
     openCustomerDetail(newCust.id);
     if (!name) document.getElementById('cdSaveNewBtn')?.classList.remove('hidden'); // v972: новая карточка — «Сохранить», а не «Удалить» (как при создании из вкладки «Клиенты»)
     _customerOpenedFromOrderId = order.id;
@@ -2273,7 +2275,7 @@ async function createCustomerFromOrder(typedName) {
 function goToCustomerFromOrder() {
     const order = orders.find(o => o.id === currentOrderId);
     if (!order || !order.customer_id) { showInfo(t('orders_no_customer_specified')); return; }
-    showTab('customers');
+    _draftGuardBypass = true; try { showTab('customers'); } finally { _draftGuardBypass = false; }
     openCustomerDetail(order.customer_id);
     // Запоминаем ПОСЛЕ openCustomerDetail — та сама сбрасывает этот флаг в начале
     // (см. customers.js), чтобы не унаследовать чужой "хвост" от прошлого перехода.
