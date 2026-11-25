@@ -329,6 +329,7 @@ function filterCustomersList() {
         if (match) visibleCards++;
     });
     document.getElementById('customerCardsEmpty')?.classList.toggle('hidden', visibleCards !== 0);
+    if (typeof refreshSectionHints === 'function') refreshSectionHints('cust');
 
 }
 

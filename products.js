@@ -133,6 +133,7 @@ function filterProductsList() {
         if (match) visibleCards++;
     });
     document.getElementById('productCardsEmpty')?.classList.toggle('hidden', visibleCards !== 0);
+    if (typeof refreshSectionHints === 'function') refreshSectionHints('prod');
 
 }
 

@@ -305,9 +305,7 @@ function renderIngredientCards() {
             </div>
         </div>`);
     });
-    body.innerHTML = (stockMode === 'mat' && !ingredients.some(i => isMaterial(i) && !i.archived_at) && !ingredients.some(i => isMaterial(i)))
-        ? `<p class="text-xs text-gray-500 text-center py-4 px-3">${t('mat_empty_hint')}</p>`
-        : stockGroupsHtml(htmlAttn, htmlOk);
+    body.innerHTML = stockGroupsHtml(htmlAttn, htmlOk); // v974: подсказка пустого раздела — refreshSectionHints (demoData.js)
     body.insertAdjacentHTML('beforeend', ingredientArchiveBlockHtml(ctx));
     initCopySwipeDelegation('ingredientCardsBody');
     if (typeof updateStockDots === 'function') updateStockDots();
@@ -335,6 +333,7 @@ function filterIngredientsList() {
         if (match) visibleCards++;
     });
     document.getElementById('ingredientCardsEmpty')?.classList.toggle('hidden', visibleCards !== 0);
+    if (typeof refreshSectionHints === 'function') refreshSectionHints('ing');
     document.getElementById('ingredientsDashFilter')?.classList.toggle('hidden', !stockLowOnlyIng);
     toggleStockDividers('ingredientCardsBody', !!q || stockLowOnlyIng);
 

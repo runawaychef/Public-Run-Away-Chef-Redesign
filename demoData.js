@@ -698,8 +698,8 @@ body.tour-on #planModal { z-index: 165; }
 #tourDemoBanner .tb-x { font-size: 12.5px; line-height: 1.4; color: #4a463e; margin-top: 2px; }
 #tourDemoBanner .tb-b { display: flex; gap: 6px; margin-top: 6px; }
 #tourDemoBanner .tour-btn { padding: 0 16px; font-size: 14px; }
-#tourOrdersLink { text-align: center; padding: 14px 0 8px; }
-#tourOrdersLink button { min-height: 44px; padding: 0 12px; border: 0; background: none; font-size: 14px; font-weight: 700; color: #4f6349; text-decoration: underline; }
+#tourOrdersLink, .tour-entry-link { text-align: center; padding: 26px 0 8px; }
+#tourOrdersLink button, .tour-entry-link button { min-height: 44px; padding: 0 12px; border: 0; background: none; font-size: 14px; font-weight: 700; color: #4f6349; text-decoration: underline; }
 `;
     document.head.appendChild(st);
 }
@@ -1070,4 +1070,54 @@ async function resetOrgRun() {
         const m = String(e && e.message || '');
         showInfo(t(m.includes('RESET_BANK_CONNECTED') ? 'reset_bank' : m.includes('RESET_PROTECTED') ? 'reset_protected' : 'reset_error') + ' [' + m.slice(0, 200) + ']');
     }
+}
+
+
+// ===== v974: подсказки пустых разделов + ссылка «Пройти тур» в каждом разделе =====
+// Подсказка висит, пока в разделе нет ни одной позиции (архивные тоже считаются позицией). Ссылка на тур — под ней, пока нет своих (не демо) заказов.
+function _tourLinkWanted() {
+    return !(typeof orders !== 'undefined' ? orders : []).some(o => !o.is_demo);
+}
+function _sectionHintCfg(kind) {
+    const A = (typeof products !== 'undefined' && Array.isArray(products)) ? products : [];
+    const C = (typeof customers !== 'undefined' && Array.isArray(customers)) ? customers : [];
+    if (kind === 'ing') {
+        const mat = (typeof stockMode !== 'undefined' && stockMode === 'mat');
+        const none = mat ? !ingredients.some(i => isMaterial(i)) : !ingredients.some(i => !isMaterial(i));
+        return { empty: 'ingredientCardsEmpty', key: mat ? 'mat_empty_hint' : 'hint_ing_empty', none };
+    }
+    if (kind === 'sf') return { empty: 'semiFinishedCardsEmpty', key: 'hint_sf_empty', none: !semiFinished.length };
+    if (kind === 'prod') return { empty: 'productCardsEmpty', key: 'hint_prod_empty', none: !A.length };
+    if (kind === 'cust') return { empty: 'customerCardsEmpty', key: 'hint_cust_empty', none: !C.length };
+    return null;
+}
+function refreshSectionHints(kind) {
+    try {
+        const cfg = _sectionHintCfg(kind); if (!cfg) return;
+        const emptyEl = document.getElementById(cfg.empty); if (!emptyEl) return;
+        const hid = 'sectionHint_' + kind, lid = 'sectionTourLink_' + kind;
+        let h = document.getElementById(hid), l = document.getElementById(lid);
+        if (cfg.none) {
+            if (!h) { h = document.createElement('p'); h.id = hid; h.className = 'text-xs text-gray-500 text-center py-4 px-3'; emptyEl.insertAdjacentElement('beforebegin', h); }
+            h.textContent = t(cfg.key);
+            emptyEl.style.display = 'none';
+        } else {
+            if (h) h.remove();
+            emptyEl.style.display = '';
+        }
+        if (_tourLinkWanted() && typeof tourStartFromEntry === 'function') {
+            _tourInjectStyle();
+            if (!l) {
+                l = document.createElement('div'); l.id = lid; l.className = 'tour-entry-link';
+                l.innerHTML = '<button type="button" onclick="tourStartFromEntry()"></button>';
+                emptyEl.insertAdjacentElement('afterend', l);
+            }
+            l.firstChild.textContent = _tt('tour_orders_link', 'Пройти тур по приложению');
+        } else if (l) l.remove();
+    } catch (e) { console.error(e); }
+}
+// Для списка заказов: пока нет ни одного сохранённого заказа, вместо «Заказов не найдено» показываем подсказку
+function ordersEmptyHtml() {
+    const none = !(typeof orders !== 'undefined' ? orders : []).some(o => typeof isOrderSaved === 'function' ? isOrderSaved(o) : true);
+    return `<p class="text-xs ${none ? 'text-gray-500 px-3' : 'text-gray-400'} text-center py-4">${t(none ? 'hint_orders_empty' : 'orders_none_found')}</p>`;
 }

@@ -148,7 +148,7 @@ function displayOrders() {
         else { _ordersMoreObserver.unobserve(sentinel); _ordersMoreObserver.observe(sentinel); }
     };
     const _memoStrip = typeof ordersDayMemoStripHtml === 'function' ? ordersDayMemoStripHtml() : '';
-    tbody.innerHTML = _memoStrip + (tableHtml || `<p class="text-xs text-gray-400 text-center py-4">${t('orders_none_found')}</p>`);
+    tbody.innerHTML = _memoStrip + (tableHtml || (typeof ordersEmptyHtml === 'function' ? ordersEmptyHtml() : `<p class="text-xs text-gray-400 text-center py-4">${t('orders_none_found')}</p>`));
 
     { const sn = document.getElementById('otMoreSentinel'); if (sn) _ordersMoreObserver.observe(sn); }
 
@@ -201,7 +201,7 @@ function displayOrders() {
             };
         }
 
-        cardsBody.innerHTML = _memoStrip + (cardsHtml || `<p class="text-xs text-gray-400 text-center py-4">${t('orders_none_found')}</p>`);
+        cardsBody.innerHTML = _memoStrip + (cardsHtml || (typeof ordersEmptyHtml === 'function' ? ordersEmptyHtml() : `<p class="text-xs text-gray-400 text-center py-4">${t('orders_none_found')}</p>`));
         initOrderCardSwipeDelegation();
         { const sn = document.getElementById('ocMoreSentinel'); if (sn) _ordersMoreObserver.observe(sn); }
     }

@@ -152,6 +152,7 @@ function filterSemiFinishedList() {
         if (match) visibleCards++;
     });
     document.getElementById('semiFinishedCardsEmpty')?.classList.toggle('hidden', visibleCards !== 0);
+    if (typeof refreshSectionHints === 'function') refreshSectionHints('sf');
     document.getElementById('semiFinishedDashFilter')?.classList.toggle('hidden', !stockLowOnlySf);
     toggleStockDividers('semiFinishedCardsBody', !!q || stockLowOnlySf);
 
