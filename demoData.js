@@ -1048,7 +1048,7 @@ async function openResetOrgModal() {
         document.getElementById('resetOrgModal').style.display = 'flex';
     } catch (e) {
         hideLoading(); console.error(e);
-        showInfo(t(String(e && e.message || '').includes('RESET_PROTECTED') ? 'reset_protected' : 'reset_error'));
+        showInfo(t(String(e && e.message || '').includes('RESET_PROTECTED') ? 'reset_protected' : 'reset_error') + ' [' + String(e && (e.message || e.details) || '').slice(0, 200) + ']');
     }
 }
 async function resetOrgRun() {
@@ -1068,6 +1068,6 @@ async function resetOrgRun() {
     } catch (e) {
         hideLoading(); console.error(e);
         const m = String(e && e.message || '');
-        showInfo(t(m.includes('RESET_BANK_CONNECTED') ? 'reset_bank' : m.includes('RESET_PROTECTED') ? 'reset_protected' : 'reset_error'));
+        showInfo(t(m.includes('RESET_BANK_CONNECTED') ? 'reset_bank' : m.includes('RESET_PROTECTED') ? 'reset_protected' : 'reset_error') + ' [' + m.slice(0, 200) + ']');
     }
 }
