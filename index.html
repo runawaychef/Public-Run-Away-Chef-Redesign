@@ -2011,13 +2011,13 @@
         #employeePage .cmp-card label.flex.items-start > input[type="checkbox"] { align-self: center; }
         /* ===== /THEME-UNIFIED-TEAM ===== */
         /* ===== THEME-UNIFIED-DIALOGS (30.10.2026): мелкие окна в общем стиле ===== */
-        #confirmModal .modal-content, #langPickerModal .modal-content, #contactModal .modal-content, #deleteAccountModal .modal-content, #privacyModal .modal-content, #termsModal .modal-content, #faqModal .modal-content { border-radius: 20px; padding: 18px 16px 16px; box-shadow: 0 22px 44px -14px rgba(40,32,12,0.45), 0 4px 10px -4px rgba(40,32,12,0.18); border: var(--sb-edge); }
-        #langPickerModal .modal-content h2, #contactModal .modal-content h2, #deleteAccountModal .modal-content h2 { font-size: 16px; font-weight: 700; color: #322f28; margin: 0 2px 8px; }
-        #contactModal .modal-content p.text-xs, #deleteAccountModal .modal-content p.text-xs { font-size: 12.5px; color: #6b675d; line-height: 1.45; margin: 0 2px 12px; }
+        #confirmModal .modal-content, #langPickerModal .modal-content, #contactModal .modal-content, #deleteAccountModal .modal-content, #resetOrgModal .modal-content, #privacyModal .modal-content, #termsModal .modal-content, #faqModal .modal-content { border-radius: 20px; padding: 18px 16px 16px; box-shadow: 0 22px 44px -14px rgba(40,32,12,0.45), 0 4px 10px -4px rgba(40,32,12,0.18); border: var(--sb-edge); }
+        #langPickerModal .modal-content h2, #contactModal .modal-content h2, #deleteAccountModal .modal-content h2, #resetOrgModal .modal-content h2 { font-size: 16px; font-weight: 700; color: #322f28; margin: 0 2px 8px; }
+        #contactModal .modal-content p.text-xs, #deleteAccountModal .modal-content p.text-xs, #resetOrgModal .modal-content p.text-xs { font-size: 12.5px; color: #6b675d; line-height: 1.45; margin: 0 2px 12px; }
         #contactModal textarea { min-height: 110px; padding: 10px 12px; border: 1px solid rgba(90,75,40,0.08); border-radius: 12px; background: #f4f1ea; box-shadow: inset 0 1px 2px rgba(70,58,30,0.08); font-size: 13.5px; color: #322f28; font-family: inherit; }
         #confirmMessage { font-size: 14px; line-height: 1.45; color: #322f28; margin: 4px 6px 16px; }
         #confirmModal .modal-content > div { gap: 10px; }
-        #confirmModal .modal-content .btn, #langPickerModal .pill-btn-secondary, #contactModal .pill-btn, #contactModal .pill-btn-secondary, #deleteAccountModal .pill-btn-danger, #deleteAccountModal .pill-btn-secondary { min-height: 42px; border-radius: 13px; font-size: 13px; font-weight: 700; font-family: inherit; }
+        #confirmModal .modal-content .btn, #langPickerModal .pill-btn-secondary, #contactModal .pill-btn, #contactModal .pill-btn-secondary, #deleteAccountModal .pill-btn-danger, #resetOrgModal .pill-btn-danger, #resetOrgModal .pill-btn-secondary, #deleteAccountModal .pill-btn-secondary, #resetOrgModal .pill-btn-secondary { min-height: 42px; border-radius: 13px; font-size: 13px; font-weight: 700; font-family: inherit; }
         #confirmModal .modal-content .btn { flex: 1; padding: 0 12px; border: 1px solid rgba(90,75,40,0.06); }
         /* Окно «Сохранить?» при выходе из новой карточки (заливка 4): тот же вид, что у #confirmModal */
         #saveExitModal .modal-content { border-radius: 20px; padding: 18px 16px 16px; box-shadow: 0 22px 44px -14px rgba(40,32,12,0.45), 0 4px 10px -4px rgba(40,32,12,0.18); border: var(--sb-edge); }
@@ -2031,7 +2031,7 @@
         #confirmOkBtn { background: linear-gradient(180deg,#8aa380,#7c9473) !important; color: #fff !important; border-color: transparent !important; box-shadow: 0 8px 14px -8px rgba(70,58,30,0.4), inset 0 1px 0 rgba(255,255,255,0.35); }
         #contactModal .pill-btn { background: linear-gradient(180deg,#8aa380,#7c9473); box-shadow: 0 8px 14px -8px rgba(70,58,30,0.4), inset 0 1px 0 rgba(255,255,255,0.35); }
         #langPickerModal .pill-btn-secondary, #contactModal .pill-btn-secondary, #deleteAccountModal .pill-btn-secondary { background: #f4f1ea; color: #4f6349; border: 1px solid rgba(90,75,40,0.06); box-shadow: inset 0 1px 2px rgba(70,58,30,0.08); }
-        #deleteAccountModal .pill-btn-danger { box-shadow: 0 8px 14px -8px rgba(120,40,30,0.4), inset 0 1px 0 rgba(255,255,255,0.25); }
+        #deleteAccountModal .pill-btn-danger, #resetOrgModal .pill-btn-danger { box-shadow: 0 8px 14px -8px rgba(120,40,30,0.4), inset 0 1px 0 rgba(255,255,255,0.25); }
         #langPickerList { background: transparent !important; display: flex; flex-direction: column; gap: 10px; padding: 4px 4px 10px; margin: 0; }
         #langPickerList .lang-list-item { min-height: 48px; padding: 8px 12px; border: var(--sb-edge); border-radius: 14px; background: #fff; box-shadow: var(--sb-shadow); font-size: 14.5px; font-weight: 600; }
         #langPickerList .lang-list-item.selected { box-shadow: 0 0 0 2px rgba(124,148,115,0.6), var(--sb-shadow); color: #4f6349; }
@@ -4016,6 +4016,29 @@ function hideSplashScreen() {
             </div>
         </div>
 
+        <!-- v970: полный сброс данных пекарни (3 шага: предупреждение → что будет стёрто → ввод названия) -->
+        <div id="resetOrgModal" class="modal">
+            <div class="modal-content" style="max-width:360px;">
+                <h2 class="text-sm font-semibold mb-1" style="color:#b3261e;" data-i18n="reset_title">Сброс всех данных пекарни</h2>
+                <div id="resetStep1">
+                    <p class="text-xs mb-3" style="color:#b3261e;font-weight:600;" data-i18n="reset_warn1">Это действие окончательное. После сброса восстановить данные будет невозможно — ни вам, ни нам.</p>
+                    <p class="text-xs text-gray-500 mb-3" data-i18n="reset_warn2">Будет стёрто всё: заказы, оплаты, документы, клиенты, изделия, полуфабрикаты, ингредиенты, упаковка, склад и архив. Номера документов начнутся с 1. Останутся только настройки, реквизиты, команда и подписка.</p>
+                    <button onclick="resetOrgStep(2)" class="pill-btn-danger w-full justify-center mb-2" data-i18n="reset_continue">Продолжить</button>
+                </div>
+                <div id="resetStep2" style="display:none;">
+                    <p class="text-xs text-gray-500 mb-2" data-i18n="reset_will_delete">Будет безвозвратно стёрто:</p>
+                    <div id="resetCounts" class="text-xs mb-3" style="line-height:1.7;color:#322f28;"></div>
+                    <button onclick="resetOrgStep(3)" class="pill-btn-danger w-full justify-center mb-2" data-i18n="reset_continue">Продолжить</button>
+                </div>
+                <div id="resetStep3" style="display:none;">
+                    <p class="text-xs text-gray-500 mb-2"><span data-i18n="reset_type_name">Для подтверждения введите название пекарни:</span> <b id="resetOrgNameHint"></b></p>
+                    <input id="resetOrgNameInput" type="text" autocomplete="off" oninput="resetOrgCheckName()" class="w-full mb-3" style="padding:10px 12px;border:1px solid #d9d4c7;border-radius:10px;font-size:14px;">
+                    <button id="resetOrgFinalBtn" onclick="resetOrgRun()" disabled class="pill-btn-danger w-full justify-center mb-2" style="opacity:.45;" data-i18n="reset_final_btn">Стереть всё безвозвратно</button>
+                </div>
+                <button onclick="closeResetOrgModal()" class="pill-btn-secondary w-full justify-center" data-i18n="common_cancel">Отмена</button>
+            </div>
+        </div>
+
         <!-- Информация о компании -->
         <!-- Кроп-инструмент для фото товара — тот же принцип, что и logoCropModal
              (перетаскивание + зум на canvas), но отдельная модалка: другой размер
@@ -4944,6 +4967,7 @@ function hideSplashScreen() {
                         <!-- ВРЕМЕННО — убрать вместе с fillDemoDataFromSettings()/refreshFillDemoDataVisibility() в demoData.js и ключами fill_demo_* в i18n-ru.js/i18n-en.js -->
                         <button id="fillDemoDataBtn" onclick="fillDemoDataFromSettings()" class="settings-row-btn perm-owner-only" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg><span data-i18n="fill_demo_btn">Заполнить демо-данными</span></button>
                         <button id="deleteDemoDataBtn" onclick="confirmClearDemoData()" class="settings-row-btn danger perm-owner-only" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M9.53 16.122a3 3 0 00-5.78 1.128 2.25 2.25 0 01-2.4 2.245 4.5 4.5 0 008.4-2.245c0-.399-.078-.78-.22-1.128zm0 0a15.998 15.998 0 003.388-1.62m-5.043-.025a15.994 15.994 0 011.622-3.395m3.42 3.42a15.995 15.995 0 004.764-4.648l3.876-5.814a1.151 1.151 0 00-1.597-1.597L14.146 6.32a15.996 15.996 0 00-4.649 4.763m3.42 3.42a6.776 6.776 0 00-3.42-3.42"/></svg><span data-i18n="settings_delete_demo">Удалить демо-данные и начать заново</span></button>
+                        <button id="resetOrgBtn" onclick="openResetOrgModal()" class="settings-row-btn danger perm-owner-only" style="display:none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg><span data-i18n="reset_btn">Сбросить все данные пекарни</span></button>
                     </div>
                 </div>
                 <div>
@@ -5322,7 +5346,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=10"></script>
     <script src="money.js?v=17"></script>
-    <script src="i18n-core.js?v=232"></script>
+    <script src="i18n-core.js?v=233"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=22"></script>
     <script src="auth.js?v=35"></script>
@@ -5335,9 +5359,9 @@ function hideSplashScreen() {
 <script src="batches.js?v=18"></script>
 <script src="semifinished.js?v=78"></script>
 <script src="products.js?v=70"></script>
-<script src="customers.js?v=87"></script>
+<script src="customers.js?v=88"></script>
 <script src="calendar.js?v=17"></script>
-<script src="orders.js?v=189"></script>
+<script src="orders.js?v=190"></script>
 <script src="dashboard.js?v=28"></script>
 <script src="invoice.js?v=57"></script>
 <script src="send-document.js?v=47"></script>
@@ -5349,7 +5373,7 @@ function hideSplashScreen() {
 <script src="stats.js?v=46"></script>
 <script src="history.js?v=11"></script>
 <script src="modals.js?v=30"></script>
-<script src="demoData.js?v=32"></script>
+<script src="demoData.js?v=33"></script>
 <script src="helpers.js?v=59"></script>
 <script>
 // SUPABASE_URL, SUPABASE_KEY, db перенесены в supabaseClient.js

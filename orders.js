@@ -1531,7 +1531,7 @@ async function createDraftOrderAndOpen() {
         _draftOrderIds.add(newOrder.id);
         displayOrders();
         openOrderDetail(newOrder.id);
-        logActivity('order', `${t('log_order_draft_created')} №${newOrder.id}`, newOrder.id);
+        logActivity('order', t('log_order_draft_created'), newOrder.id);
         if (typeof scheduleRefreshOrderQuota === 'function') scheduleRefreshOrderQuota();
     } catch (e) { console.error(e); showDbError(e, t('orders_create_error')); }
     finally { hideLoading(); }

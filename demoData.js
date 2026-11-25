@@ -525,11 +525,14 @@ async function demoKeepUsed(demoOrderIds) {
         (await sel(db.from('order_materials').select('order_id, ingredient_id').in('ingredient_id', ing)))
             .forEach(r => { if (!isDemoOrder.has(r.order_id)) keep.ingredients.add(r.ingredient_id); });
     }
+    let kept = 0;
     for (const [tbl, set] of Object.entries(keep)) {
         if (!set.size) continue;
         const { error } = await db.from(tbl).update({ is_demo: false }).in('id', [...set]);
         if (error) throw error;
+        kept += set.size;
     }
+    return kept;
 }
 
 async function clearDemoData() {
@@ -538,7 +541,7 @@ async function clearDemoData() {
     try {
         const { data: demoOrders } = await db.from('orders').select('id').eq('org_id', currentOrgId).eq('is_demo', true);
         const orderIds = (demoOrders || []).map(o => o.id);
-        await demoKeepUsed(orderIds); // v967: демо-позиции, уже занятые вашими данными, остаются (без пометки «демо»)
+        const keptUsed = await demoKeepUsed(orderIds); // v967: демо-позиции, уже занятые вашими данными, остаются (без пометки «демо»)
         if (orderIds.length) {
             const { data: demoItems } = await db.from('order_items').select('id').in('order_id', orderIds);
             const itemIds = (demoItems || []).map(i => i.id);
@@ -586,7 +589,7 @@ async function clearDemoData() {
         await loadAllData();
         await loadInventory();
         logActivity('auth', t('demo_activity_deleted'));
-        await showInfo(t('demo_deleted_success'));
+        await showInfo(keptUsed ? t('demo_deleted_kept').replace('{n}', keptUsed) : t('demo_deleted_success'));
     } catch (e) {
         hideLoading();
         console.error(e);
@@ -611,6 +614,7 @@ async function confirmClearDemoData() {
 // "hidden" (им отдельно управляет система прав доступа perm-owner-only —
 // см. employees.js), чтобы обе проверки не конфликтовали друг с другом.
 async function refreshDeleteDemoDataVisibility() {
+    refreshResetOrgVisibility();
     const btn = document.getElementById('deleteDemoDataBtn');
     if (!btn) return;
     try {
@@ -999,4 +1003,71 @@ async function tourDeleteDemo() {
     await clearDemoData();
     try { showTab('dashboard'); } catch (e) {}
     try { refreshDemoBanner(); } catch (e) {}
+}
+
+
+// ===== v970: полный сброс данных пекарни =====
+// Серверная функция rpc_reset_org_data отказывает для id1 и пекарен с is_protected; кнопка для них не показывается.
+function resetOrgAllowed() {
+    return currentOrgId != null && Number(currentOrgId) !== 1 && !(typeof currentOrgProtected !== 'undefined' && currentOrgProtected);
+}
+function refreshResetOrgVisibility() {
+    const btn = document.getElementById('resetOrgBtn');
+    if (btn) btn.style.display = resetOrgAllowed() ? '' : 'none';
+}
+let _resetCounts = null;
+function resetOrgStep(n) {
+    [1, 2, 3].forEach(i => { const el = document.getElementById('resetStep' + i); if (el) el.style.display = (i === n) ? '' : 'none'; });
+    if (n === 3) {
+        document.getElementById('resetOrgNameHint').textContent = currentOrgName || '';
+        const inp = document.getElementById('resetOrgNameInput'); inp.value = '';
+        resetOrgCheckName();
+    }
+}
+function resetOrgCheckName() {
+    const inp = document.getElementById('resetOrgNameInput'), btn = document.getElementById('resetOrgFinalBtn');
+    if (!inp || !btn) return;
+    const ok = inp.value.trim().toLowerCase() === String(currentOrgName || '').trim().toLowerCase() && !!String(currentOrgName || '').trim();
+    btn.disabled = !ok; btn.style.opacity = ok ? '1' : '.45';
+}
+function closeResetOrgModal() {
+    document.getElementById('resetOrgModal').style.display = 'none';
+}
+async function openResetOrgModal() {
+    if (!resetOrgAllowed()) return;
+    showLoading(t('reset_loading'));
+    try {
+        const { data, error } = await db.rpc('rpc_reset_org_preview', { p_org_id: currentOrgId });
+        hideLoading();
+        if (error) throw error;
+        _resetCounts = data || {};
+        const rows = [['orders', 'reset_c_orders'], ['payments', 'reset_c_payments'], ['customers', 'reset_c_customers'], ['products', 'reset_c_products'],
+                      ['semi_finished', 'reset_c_sf'], ['ingredients', 'reset_c_ing'], ['batches', 'reset_c_batches']];
+        document.getElementById('resetCounts').innerHTML = rows.map(([k, key]) => `<div style="display:flex;justify-content:space-between;"><span>${t(key)}</span><b>${Number(_resetCounts[k] || 0)}</b></div>`).join('');
+        resetOrgStep(1);
+        document.getElementById('resetOrgModal').style.display = 'flex';
+    } catch (e) {
+        hideLoading(); console.error(e);
+        showInfo(t(String(e && e.message || '').includes('RESET_PROTECTED') ? 'reset_protected' : 'reset_error'));
+    }
+}
+async function resetOrgRun() {
+    const inp = document.getElementById('resetOrgNameInput');
+    if (!inp || inp.value.trim().toLowerCase() !== String(currentOrgName || '').trim().toLowerCase()) return;
+    closeResetOrgModal();
+    showLoading(t('reset_running'));
+    try {
+        const { error } = await db.rpc('rpc_reset_org_data', { p_org_id: currentOrgId, p_confirm: 'RESET' });
+        if (error) throw error;
+        if (typeof _tourInvalidateDemo === 'function') _tourInvalidateDemo();
+        await loadAllData();
+        await loadInventory();
+        hideLoading();
+        logActivity('auth', t('reset_activity'));
+        await showInfo(t('reset_done'));
+    } catch (e) {
+        hideLoading(); console.error(e);
+        const m = String(e && e.message || '');
+        showInfo(t(m.includes('RESET_BANK_CONNECTED') ? 'reset_bank' : m.includes('RESET_PROTECTED') ? 'reset_protected' : 'reset_error'));
+    }
 }

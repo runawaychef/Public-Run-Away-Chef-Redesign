@@ -353,7 +353,7 @@ async function createDraftCustomerAndOpen() {
         displayCustomers();
         openCustomerDetail(newCust.id);
         document.getElementById('cdSaveNewBtn')?.classList.remove('hidden'); // новая карточка: кнопка «Сохранить»
-        logActivity('customer', `${t('log_customer_draft_created')} №${newCust.id}`);
+        logActivity('customer', t('log_customer_draft_created'));
     } catch (e) { console.error(e); showDbError(e, 'Ошибка создания клиента. Проверьте подключение.'); }
     finally { hideLoading(); }
 }
