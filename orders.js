@@ -2080,6 +2080,42 @@ function openTrashOrderActions(orderId, custName, orderDate, orderNum) {
     modal.style.display = 'flex';
 }
 
+// v969: после восстановления из корзины заново списывает склад (позиции + упаковка), чтобы остатки совпали.
+// Не делает ничего, если списание отложено (inventory_pending — подхватит штатный механизм) или если по заказу
+// остались несторнированные «расход»-строки (значит, склад не возвращали — повторно списывать нельзя).
+async function rewriteOffRestoredOrder(orderId) {
+    try {
+        const order = orders.find(o => o.id === orderId);
+        if (!order || order.inventory_pending) return;
+        const { data: rows, error } = await db.from('inventory')
+            .select('id, type, ingredient_id, semi_finished_id, order_item_id')
+            .eq('order_id', orderId).in('type', ['расход', 'сторно']);
+        if (error) throw error;
+        if (openExpenseRows(rows).length) return;
+        for (const it of (order.items || [])) {
+            const prod = products.find(p => p.id === it.product_id);
+            if (!prod) continue;
+            const actualCost = await writeOffInventoryForItem(prod, it.quantity, order.id, it.id);
+            if (actualCost != null && Math.abs(actualCost - (it.item_cost || 0)) > 0.0001) {
+                await dbMust(db.from('order_items').update({ item_cost: actualCost }).eq('id', it.id));
+                it.item_cost = actualCost;
+            }
+        }
+        for (const m of (order.materials || [])) {
+            if (!(Number(m.quantity) > 0)) continue;
+            const cost = await writeOffOrderMaterialStock(order, m.ingredient_id, m.quantity);
+            if (Math.abs(cost - (Number(m.cost) || 0)) > 0.0001) {
+                await dbMust(db.from('order_materials').update({ cost }).eq('id', m.id));
+                m.cost = cost;
+            }
+        }
+        if (typeof loadInventory === 'function') await loadInventory();
+    } catch (e) {
+        console.error('Не удалось заново списать склад восстановленного заказа:', e);
+        showInfo(t('trash_restore_stock_error'));
+    }
+}
+
 async function restoreOrder(orderId, orderNum) {
     const num = orderNum || `#${orderId}`;
     if (!hasPermission('can_delete')) {
@@ -2093,6 +2129,7 @@ async function restoreOrder(orderId, orderNum) {
         await updateChecked(db.from('orders').update({ deleted_at: null }).eq('id', orderId));
         closeModal();
         await loadAllData();
+        await rewriteOffRestoredOrder(orderId); // v969: при удалении склад был сторнирован — списываем заново
         logActivity('order', `${t('trash_order_word')} ${num} ${t('log_restored_from_trash')}`);
         if (typeof scheduleRefreshOrderQuota === 'function') scheduleRefreshOrderQuota();
         hideLoading();
@@ -2554,7 +2591,9 @@ async function saveItemEdit() {
     if (!productName || isNaN(quantity) || quantity <= 0 || isNaN(price)) {
         showInfo(t('common_fill_correctly')); return;
     }
-    const prod = products.find(p => p.name === productName && !p.archived_at);
+    const _curItem = order.items[editItemIdx];
+    // v969: изделие, уже стоящее в позиции, можно править, даже если оно позже ушло в архив
+    const prod = products.find(p => p.name === productName && (!p.archived_at || (_curItem && p.id === _curItem.product_id)));
     if (!prod) { showInfo(t('orders_product_not_found')); return; }
     const item = order.items[editItemIdx];
     const oldDesc = `«${item.product}» × ${item.quantity}`;

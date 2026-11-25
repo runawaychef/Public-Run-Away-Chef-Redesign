@@ -1134,11 +1134,13 @@ async function writeOffInventoryForItem(prod, itemQty, orderId, orderItemId = nu
 // изделия с тех пор.
 async function reverseInventoryForOrderItem(orderItemId) {
     try {
-        const { data, error } = await db.from('inventory')
-            .select('id, ingredient_id, semi_finished_id, quantity, order_id, batch_breakdown')
+        const { data: allRows, error } = await db.from('inventory')
+            .select('id, type, ingredient_id, semi_finished_id, order_item_id, quantity, order_id, batch_breakdown')
             .eq('order_item_id', orderItemId)
-            .eq('type', 'расход');
-        if (error || !data || !data.length) return;
+            .in('type', ['расход', 'сторно']);
+        if (error || !allRows || !allRows.length) return;
+        const data = openExpenseRows(allRows); // v969: повторная правка позиции не возвращает старое списание дважды
+        if (!data.length) return;
 
         await Promise.all(data.map(async r => {
             if (!r.batch_breakdown) return;
@@ -1178,12 +1180,35 @@ async function writeOffOrderMaterialStock(order, ingredientId, qty) {
     scheduleLoadInventory();
     return parseFloat((Number(data && data.totalCost) || 0).toFixed(4));
 }
+// v969: «расход»-строки, по которым сторно ещё НЕ делали. rpc_restore_stock старые строки не помечает, а каждое
+// сторно — отдельная строка «сторно» с бóльшим id. Раньше при повторной правке позиции/упаковки или удалении
+// заказа возвращались и уже сторнированные строки (остаток склада завышался). Строка «закрыта», если после неё
+// есть сторно по тому же ингредиенту/п/ф: либо по той же позиции заказа, либо без позиции (сторно всего заказа).
+function openExpenseRows(rows) {
+    const ing = r => r.semi_finished_id ? 's' + r.semi_finished_id : 'i' + r.ingredient_id;
+    const lastNull = {}, lastItem = {};
+    (rows || []).forEach(r => {
+        if (r.type !== 'сторно') return;
+        const id = Number(r.id);
+        if (r.order_item_id) { const k = r.order_item_id + '|' + ing(r); if (!(lastItem[k] >= id)) lastItem[k] = id; }
+        else { const k = ing(r); if (!(lastNull[k] >= id)) lastNull[k] = id; }
+    });
+    return (rows || []).filter(r => {
+        if (r.type !== 'расход') return false;
+        const id = Number(r.id);
+        if (lastNull[ing(r)] > id) return false;
+        if (r.order_item_id && lastItem[r.order_item_id + '|' + ing(r)] > id) return false;
+        return true;
+    });
+}
+
 async function reverseOrderMaterialStock(order, ingredientId) {
-    const { data, error } = await db.from('inventory')
-        .select('id, quantity, batch_breakdown')
+    const { data: allRows, error } = await db.from('inventory')
+        .select('id, type, ingredient_id, semi_finished_id, order_item_id, quantity, batch_breakdown')
         .eq('order_id', order.id).eq('ingredient_id', ingredientId)
-        .is('order_item_id', null).eq('type', 'расход');
+        .is('order_item_id', null).in('type', ['расход', 'сторно']);
     if (error) throw error;
+    const data = openExpenseRows(allRows);
     const oLabel = order.order_number ? '№' + order.order_number : '#' + order.id;
     for (const r of (data || [])) {
         if (!r.batch_breakdown) continue;
@@ -1203,11 +1228,13 @@ async function reverseOrderMaterialStock(order, ingredientId) {
 // Сторнирование при удалении заказа
 async function reverseInventoryForOrder(orderId) {
     try {
-        const { data, error } = await db.from('inventory')
-            .select('id, ingredient_id, semi_finished_id, quantity, batch_breakdown')
+        const { data: allRows, error } = await db.from('inventory')
+            .select('id, type, ingredient_id, semi_finished_id, order_item_id, quantity, batch_breakdown')
             .eq('order_id', orderId)
-            .eq('type', 'расход');
-        if (error || !data || !data.length) return;
+            .in('type', ['расход', 'сторно']);
+        if (error || !allRows || !allRows.length) return;
+        const data = openExpenseRows(allRows); // v969: уже сторнированные строки не возвращаем второй раз
+        if (!data.length) return;
 
         const o = orders.find(x => x.id === orderId);
         const oLabel = o && o.order_number ? '№' + o.order_number : '#' + orderId;
@@ -1222,7 +1249,8 @@ async function reverseInventoryForOrder(orderId) {
                 p_item_id: itemId,
                 p_breakdown: r.batch_breakdown,
                 p_notes: `Сторно заказа ${oLabel}`,
-                p_order_id: orderId
+                p_order_id: orderId,
+                p_order_item_id: r.order_item_id || null
             });
             if (rpcError) console.error('Ошибка сторнирования (RPC):', rpcError);
         }
