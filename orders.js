@@ -1455,7 +1455,7 @@ function updateDetailSaveUi(order) {
     }
 }
 
-function orderNumLabel(o) { return o.order_number ? ('№' + o.order_number) : t('orders_draft_label'); }
+function orderNumLabel(o) { return o.order_number ? ('№' + o.order_number) : (o.is_demo ? t('order_demo_label') : t('orders_draft_label')); }
 
 // Подпись в карточке списка: номер у сохранённого заказа, заметная плашка у несохранённого
 // (черновик виден только автору: другие сотрудники его не видят, push не уходит).
@@ -1659,7 +1659,7 @@ function openOrderDetail(orderId) {
 
     document.getElementById('detailOrderId').textContent = order.order_number
         ? `${t('trash_order_word')} ${order.order_number}`
-        : t('orders_new_order_title');
+        : (order.is_demo ? `${t('trash_order_word')} ${t('order_demo_label')}` : t('orders_new_order_title'));
 
     // Заполнить шапку
     fillDetailCustomerSelect(order.customer);

@@ -277,12 +277,11 @@ async function createDemoData(orgId, employeeId) {
             if (!chosenKeys.includes(key)) chosenKeys.push(key);
         }
 
-        const { data: orderNumberData, error: numErr } = await db.rpc('next_order_number', { p_org_id: orgId });
-        if (numErr) throw numErr;
+        // v971: демо-заказы НЕ берут номер из счётчика (иначе настоящие заказы начинались бы не с 0001); в списке показывается метка «Демо»
         const { data: orderData, error: orderErr } = await db.from('orders').insert({
             org_id: orgId, customer_id: customer.id, order_date: orderDate, due_date: dueDate,
             status: o.status, discount: 0, vat_exempt: false, employee_id: employeeId || null,
-            order_number: orderNumberData, notes: C.orderNote, is_demo: true
+            order_number: null, is_confirmed: true, notes: C.orderNote, is_demo: true
         }).select().single();
         if (orderErr) throw orderErr;
 
@@ -589,7 +588,7 @@ async function clearDemoData() {
         await loadAllData();
         await loadInventory();
         logActivity('auth', t('demo_activity_deleted'));
-        await showInfo(keptUsed ? t('demo_deleted_kept').replace('{n}', keptUsed) : t('demo_deleted_success'));
+        await showInfo((keptUsed ? t('demo_deleted_kept').replace('{n}', keptUsed) : t('demo_deleted_success')) + (keptUsed ? '' : '\n\n' + t('reset_hint_after_demo')));
     } catch (e) {
         hideLoading();
         console.error(e);
@@ -820,7 +819,7 @@ async function refreshDemoBanner() {
     const b = document.createElement('div');
     b.id = 'tourDemoBanner';
     b.innerHTML = '<div class="tb-t">' + _tourEsc(_tt('tour_banner_title', 'Здесь примеры')) + '</div>' +
-        '<div class="tb-x">' + _tourEsc(_tt('tour_banner_text', 'Это учебные данные, их можно удалить в любой момент.')) + '</div>' +
+        '<div class="tb-x">' + _tourEsc(_tt('tour_banner_text', 'Это учебные данные, их можно удалить в любой момент.') + ' ' + _tt('tour_banner_reset_hint', 'Закончили тестировать? Чтобы начать с чистого листа и номера 0001, используйте «Сбросить все данные пекарни» в Настройках.')) + '</div>' +
         '<div class="tb-b"><button type="button" class="tour-btn tour-next" onclick="confirmClearDemoData()">' + _tourEsc(_tt('tour_banner_delete', 'Удалить')) + '</button>' +
         '<button type="button" class="tour-btn tour-prev" onclick="tourHideDemoBanner()">' + _tourEsc(_tt('tour_banner_hide', 'Скрыть')) + '</button></div>';
     const strip = document.getElementById('dashStrip');
@@ -1014,6 +1013,7 @@ function resetOrgAllowed() {
 function refreshResetOrgVisibility() {
     const btn = document.getElementById('resetOrgBtn');
     if (btn) btn.style.display = resetOrgAllowed() ? '' : 'none';
+    const hint = document.getElementById('resetOrgHint'); if (hint) hint.style.display = resetOrgAllowed() ? '' : 'none';
 }
 let _resetCounts = null;
 function resetOrgStep(n) {

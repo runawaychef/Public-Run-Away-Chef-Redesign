@@ -1356,6 +1356,22 @@ async function _sendPrepareDocs(order, types, lang, noPdf) {
     return out;
 }
 
+// v971: пока в пекарне не выставлено ни одного документа, перед первым выставлением предупреждаем:
+// номер присваивается навсегда; если пользователь ещё тренируется — сначала «Сбросить все данные пекарни».
+// Любая ошибка проверки НЕ блокирует выставление.
+async function _firstDocumentGate() {
+    try {
+        const [a, b, c] = await Promise.all([
+            db.from('orders').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId).not('inv_no', 'is', null),
+            db.from('orders').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId).not('dn_no', 'is', null),
+            db.from('consolidated_invoices').select('id', { count: 'exact', head: true }).eq('org_id', currentOrgId)
+        ]);
+        if (a.error || b.error || c.error) return true;
+        if ((a.count || 0) + (b.count || 0) + (c.count || 0) > 0) return true;
+    } catch (e) { return true; }
+    return await showConfirm(t('first_doc_confirm'), { ok: t('first_doc_ok'), cancel: t('common_cancel') });
+}
+
 async function submitSendDocument() {
     const st = _sendSheetState;
     if (!st) return;
@@ -1364,6 +1380,7 @@ async function submitSendDocument() {
     if (!order) return;
     const types = _sendCheckedTypes();
     if (!types.length) { showInfo(t('send_need_one_doc')); return; }
+    if (!(await _firstDocumentGate())) return; // v971: первый документ в пекарне — предупреждение про нумерацию
     if (st.via === 'none') return _sendIssueOnly(order, types);
     if (st.via === 'share') return _sendByShare(order, types);
     if (!cust || !cust.email) return;
