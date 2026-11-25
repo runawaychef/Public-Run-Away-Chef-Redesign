@@ -468,7 +468,7 @@ async function applyVatExemptToAllOrders() {
 // (тот же фильтр, что используется для списка заказов клиента).
 function getCustomerOrdersForRange(cust) {
     const range = document.getElementById('cdDateRange').value;
-    let custOrders = orders.filter(o => o.customer_id === cust.id);
+    let custOrders = orders.filter(o => o.customer_id === cust.id && isOrderSaved(o));
     if (range === 'week' || range === 'month' || range === 'year') {
         const today = orgNowDate();
         let start;
@@ -1282,7 +1282,7 @@ function deleteCurrentCustomer() {
     if (idx === -1) return;
     const cust = customers[idx];
     // v950: клиента с заказами или авансом не удаляем — предлагаем архив
-    if (orders.some(o => o.customer_id === cust.id) || Math.abs(_custBalance[cust.id] || 0) > 0.004) { openCustomerArchive(); return; }
+    if (orders.some(o => o.customer_id === cust.id && isOrderSaved(o)) || Math.abs(_custBalance[cust.id] || 0) > 0.004) { openCustomerArchive(); return; }
     openDeleteModal(idx, 'customer', `${t('delete_label_customer')} «${cust.name || t('customers_no_name_fallback')}»`);
 }
 
@@ -1434,7 +1434,7 @@ function renderCustomerOrders() {
     if (!cust || !container) return;
 
     const range = document.getElementById('cdDateRange').value;
-    let custOrders = orders.filter(o => o.customer_id === cust.id);
+    let custOrders = orders.filter(o => o.customer_id === cust.id && isOrderSaved(o));
 
     if (range === 'week' || range === 'month' || range === 'year') {
         const today = orgNowDate();
@@ -1505,7 +1505,7 @@ function _custArchiveRowUpdate() {
 // Кнопки в шапке карточки: пустой клиент (нет заказов и аванса) — «Удалить»; с историей — «В архив»; архивный — «Восстановить»
 function updateCustomerDetailButtons(cust) {
     if (!cust) return;
-    const hasOrders = orders.some(o => o.customer_id === cust.id);
+    const hasOrders = orders.some(o => o.customer_id === cust.id && isOrderSaved(o));
     const hasCredit = Math.abs(_custBalance[cust.id] || 0) > 0.004;
     const empty = !hasOrders && !hasCredit;
     // Право «удаление» (can_delete) сохраняем: кнопка без класса perm-delete, иначе applyPermissions() у владельца снимает hidden
