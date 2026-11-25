@@ -2068,6 +2068,8 @@ I18N.ru = {
         tour_plans_hint: "Нажмите, чтобы посмотреть тарифы",
         plan_free_after_trial: "После 7 дней пробного периода",
         tour_docs_note: "Пример: так выглядит раздел «Документы» в режиме «По счёту».",
+        tour_offer_empty: "Экран пуст: примеры не загружены.",
+        tour_offer_load: "Загрузить примеры",
         tour_docs_badge: "ПРИМЕР · данные выдуманные",
         settings_version_short: "Версия",
         settings_data_sub: "Копии и корзина",

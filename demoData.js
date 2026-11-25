@@ -646,6 +646,7 @@ const TOUR_STEPS = [
     { id: 'end',    tab: 'dashboard',   title: 'Готово',          text: 'Тур можно повторить в любой момент: Настройки → Тур по приложению.' }
 ];
 let _tourSteps = null, _tourIdx = 0, _tourEl = null, _tourSpacer = null, _tourDemo = false;
+let _tourCanLoadDemo = false; // v975: тур без примеров в пустой пекарне — в карточке кнопка «Загрузить примеры»
 
 // Запасной русский текст, пока ключей tour_* нет в словарях (часть C).
 function _tt(key, ru) {
@@ -672,6 +673,8 @@ function _tourInjectStyle() {
 #tourCard .tour-dot.cur { width: 18px; background: #5b7552; }
 #tourCard .tour-x { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin-top: -6px; border: 0; background: none; border-radius: 12px; color: #6f695d; }
 #tourCard .tour-title { font-family: 'Fraunces', serif; font-weight: 600; font-size: 20px; color: #2f3d2a; margin-top: 4px; padding-right: 10px; }
+#tourCard .tour-offer { margin-top: 8px; padding: 8px 10px; background: #f4f1ea; border-radius: 12px; font-size: 13px; line-height: 1.4; color: #4a463e; display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+#tourCard .tour-offer button { flex: none; min-height: 36px; padding: 0 12px; border: 0; border-radius: 10px; background: #5b7552; color: #fff; font-size: 13px; font-weight: 700; }
 #tourCard .tour-text { white-space: pre-line; font-size: 14px; line-height: 1.5; color: #4a463e; margin-top: 4px; padding-right: 10px; max-height: 32vh; overflow-y: auto; }
 #tourPlanPane .tour-plan { padding: 12px 14px; background: #fff; border: 1px solid rgba(90,75,40,.10); border-radius: 14px; }
 #tourPlanPane .tour-plan-row { display: flex; justify-content: space-between; align-items: center; }
@@ -928,6 +931,8 @@ function _tourRender() {
         '<button type="button" class="tour-x" onclick="tourCloseBtn()" aria-label="' + _tourEsc(_tt('tour_close', 'Закрыть тур')) + '"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
         '<div class="tour-title">' + _tourEsc(title) + '</div>' +
         '<div class="tour-text">' + _tourEsc(text) + '</div>' +
+        ((_tourCanLoadDemo && !_tourDemo && ['dash', 'orders', 'menu', 'stock', 'cust', 'stats'].includes(s.id))
+            ? '<div class="tour-offer"><span>' + _tourEsc(_tt('tour_offer_empty', 'Экран пуст: примеры не загружены.')) + '</span><button type="button" onclick="tourLoadDemoInTour()">' + _tourEsc(_tt('tour_offer_load', 'Загрузить примеры')) + '</button></div>' : '') +
         '<div class="tour-btns">' + btns + '</div>';
     // Шаг «Тарифы»: в рабочем поле вместо экрана только блок тарифа из Настроек; шапка, нижнее меню и карточка на месте
     _tourSetPlanPane(!!s.plan && !demoEnd);
@@ -963,7 +968,19 @@ function tourStart(opts) {
         document.body.appendChild(_tourSpacer);
     }
     document.getElementById('tourDemoBanner')?.remove();
+    _tourCanLoadDemo = false;
     _tourGo(0);
+    if (!_tourDemo && _tourIsOwner()) {
+        _tourOrgIsEmpty().then(empty => { _tourCanLoadDemo = !!empty; if (_tourEl) _tourRender(); });
+    }
+}
+// v975: загрузить примеры прямо из карточки тура (владелец, пустая пекарня)
+async function tourLoadDemoInTour() {
+    if (!_tourEl || _tourDemo) return;
+    const ok = await tourLoadDemo();
+    if (!ok) return;
+    _tourCanLoadDemo = false; _tourDemo = true;
+    if (_tourEl && _tourSteps) _tourGo(_tourIdx);
 }
 function tourNext() {
     if (!_tourSteps) return;
@@ -981,7 +998,7 @@ function tourClose() {
     document.body.classList.remove('tour-on');
     if (_tourEl) { _tourEl.remove(); _tourEl = null; }
     if (_tourSpacer) { _tourSpacer.remove(); _tourSpacer = null; }
-    _tourSteps = null; _tourIdx = 0; _tourDemo = false;
+    _tourSteps = null; _tourIdx = 0; _tourDemo = false; _tourCanLoadDemo = false;
     try { refreshDemoBanner(); } catch (e) {}
 }
 // Крестик и «назад» в Android: с примерами сначала спрашиваем, удалять ли их
