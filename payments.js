@@ -465,13 +465,13 @@ async function setPaymentMode(mode) {
     if (want === (_payByInvoice() ? 'invoice' : 'order')) return;
     // Переход на «По счёту» (31.10): подтверждение с датой учёта; защищённую id1 не трогаем
     if (want === 'invoice' && !currentOrgProtected) {
-        const d = currentOrgInvoicingFrom || getLocalDateStr(0);
+        const d = getLocalDateStr(0); // v972: показываем и ставим сегодняшнюю дату; другую можно выбрать в поле «Вести учёт с»
         const ok = await showConfirm(t('pay_switch_confirm').replace('{d}', d), { ok: t('pay_switch_ok'), cancel: t('common_cancel') });
         if (!ok) { refreshPaymentModeUI(); return; }
     }
     const fields = { payment_mode: mode === 'invoice' ? 'invoice' : 'order' };
     // При переходе на «По счёту» дата учёта по умолчанию — сегодня (защищённую пекарню id1 не трогаем)
-    if (fields.payment_mode === 'invoice' && !currentOrgInvoicingFrom && !currentOrgProtected) fields.invoicing_from = getLocalDateStr(0);
+    if (fields.payment_mode === 'invoice' && !currentOrgProtected) fields.invoicing_from = getLocalDateStr(0);
     await _saveOrgPayment(fields);
     // Реквизиты для документов: название и банковский счёт (подсказка, без запрета)
     if (want === 'invoice' && !currentOrgProtected) {

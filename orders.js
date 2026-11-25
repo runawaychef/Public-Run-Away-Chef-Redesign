@@ -2265,6 +2265,7 @@ async function createCustomerFromOrder(typedName) {
     _draftOrderIds.delete(order.id);
     showTab('customers');
     openCustomerDetail(newCust.id);
+    if (!name) document.getElementById('cdSaveNewBtn')?.classList.remove('hidden'); // v972: новая карточка — «Сохранить», а не «Удалить» (как при создании из вкладки «Клиенты»)
     _customerOpenedFromOrderId = order.id;
     displayCustomers();
 }
