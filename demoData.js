@@ -698,6 +698,7 @@ body.tour-on #planModal { z-index: 165; }
 #tourDemoBanner .tb-x { font-size: 12.5px; line-height: 1.4; color: #4a463e; margin-top: 2px; }
 #tourDemoBanner .tb-b { display: flex; gap: 6px; margin-top: 6px; }
 #tourDemoBanner .tour-btn { padding: 0 16px; font-size: 14px; }
+.tour-sample-badge { margin: 0 0 10px; padding: 9px 12px; border-radius: 12px; background: #fff3d6; color: #8a5a00; font-size: 13px; font-weight: 800; letter-spacing: .04em; text-align: center; border: 1px dashed #d9a441; }
 #tourOrdersLink, .tour-entry-link { text-align: center; padding: 26px 0 8px; }
 #tourOrdersLink button, .tour-entry-link button { min-height: 44px; padding: 0 12px; border: 0; background: none; font-size: 14px; font-weight: 700; color: #4f6349; text-decoration: underline; }
 `;
@@ -877,7 +878,7 @@ function tourRenderDocsDemo() {
         _d2Tile({ color: 'dash-c-rev', icon: 'all', label: t('docs2_all'), value: '12', click: no, footL: t('docs2_all_foot').replace('{i}', 7).replace('{d}', 5) }),
         _d2Tile({ color: 'dash-c-stock', icon: 'exp', label: t('docs2_export'), value: '&mdash;', footL: t('docs2_export_sub'), footR: t('docs2_soon'), cls: 'docs2-soon sth-wide' })
     ].join('');
-    box.innerHTML = '<div class="dashboard-grid stats-home-grid docs2-grid">' + tiles +
+    box.innerHTML = '<div class="tour-sample-badge">' + _tourEsc(_tt('tour_docs_badge', 'ПРИМЕР · данные выдуманные')) + '</div><div class="dashboard-grid stats-home-grid docs2-grid">' + tiles +
         '<div class="sth-info"><i>i</i><ul><li>' + _tourEsc(_tt('tour_docs_note', 'Пример: так выглядит раздел «Документы» в режиме «По счёту».')) + '</li></ul></div></div>';
 }
 function _tourSetDocsPage(on) {

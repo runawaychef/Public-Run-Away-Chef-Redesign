@@ -2066,6 +2066,7 @@ I18N.uk = {
         tour_plans_hint: "Натисніть, щоб переглянути тарифи",
         plan_free_after_trial: "Після 7 днів пробного періоду",
         tour_docs_note: "Приклад: так виглядає розділ «Документи» в режимі «За рахунком».",
+        tour_docs_badge: "ПРИКЛАД · вигадані дані",
         settings_version_short: "Версія",
         settings_data_sub: "Копії та кошик",
         stock_note_order: "Замовлення",
