@@ -495,12 +495,50 @@ async function fillDemoDataFromSettings() {
 // потом изделия (и их рецепты), потом полуфабрикаты (рецепт + партии +
 // складские движения), потом ингредиенты (история цен + партии + движения +
 // список покупок), второй демо-сотрудник, и только в конце — клиенты.
+// v967: демо-позиции, на которые ссылаются НЕ демо-данные (ваши заказы, рецепты, упаковка в заказах), не удаляем:
+// снимаем с них пометку «демо». Любая ошибка — бросаем исключение, и ничего не удаляется.
+async function demoKeepUsed(demoOrderIds) {
+    const isDemoOrder = new Set(demoOrderIds);
+    const sel = async (q) => { const { data, error } = await q; if (error) throw error; return data || []; };
+    const ids = async (tbl) => (await sel(db.from(tbl).select('id').eq('org_id', currentOrgId).eq('is_demo', true))).map(r => r.id);
+    const [cust, prod, sf, ing] = await Promise.all([ids('customers'), ids('products'), ids('semi_finished'), ids('ingredients')]);
+    const keep = { customers: new Set(), products: new Set(), semi_finished: new Set(), ingredients: new Set() };
+    if (cust.length) {
+        (await sel(db.from('orders').select('id, customer_id').in('customer_id', cust))).forEach(o => { if (!isDemoOrder.has(o.id)) keep.customers.add(o.customer_id); });
+        (await sel(db.from('customer_credits').select('customer_id').in('customer_id', cust))).forEach(r => keep.customers.add(r.customer_id));
+        (await sel(db.from('consolidated_invoices').select('customer_id').in('customer_id', cust))).forEach(r => keep.customers.add(r.customer_id));
+    }
+    if (prod.length) (await sel(db.from('order_items').select('order_id, product_id').in('product_id', prod))).forEach(r => { if (!isDemoOrder.has(r.order_id)) keep.products.add(r.product_id); });
+    const prodSet = new Set(prod), sfSet = new Set(sf);
+    const pi = [];
+    if (ing.length) pi.push(...await sel(db.from('product_ingredients').select('product_id, ingredient_id, semi_finished_id').in('ingredient_id', ing)));
+    if (sf.length) pi.push(...await sel(db.from('product_ingredients').select('product_id, ingredient_id, semi_finished_id').in('semi_finished_id', sf)));
+    pi.forEach(r => {
+        if (!prodSet.has(r.product_id) || keep.products.has(r.product_id)) {
+            if (r.ingredient_id) keep.ingredients.add(r.ingredient_id);
+            if (r.semi_finished_id) keep.semi_finished.add(r.semi_finished_id);
+        }
+    });
+    if (ing.length) {
+        (await sel(db.from('semi_finished_ingredients').select('semi_finished_id, ingredient_id').in('ingredient_id', ing)))
+            .forEach(r => { if (!sfSet.has(r.semi_finished_id) || keep.semi_finished.has(r.semi_finished_id)) keep.ingredients.add(r.ingredient_id); });
+        (await sel(db.from('order_materials').select('order_id, ingredient_id').in('ingredient_id', ing)))
+            .forEach(r => { if (!isDemoOrder.has(r.order_id)) keep.ingredients.add(r.ingredient_id); });
+    }
+    for (const [tbl, set] of Object.entries(keep)) {
+        if (!set.size) continue;
+        const { error } = await db.from(tbl).update({ is_demo: false }).in('id', [...set]);
+        if (error) throw error;
+    }
+}
+
 async function clearDemoData() {
     if (typeof _tourInvalidateDemo === 'function') _tourInvalidateDemo(); // кэш плашки «Здесь примеры» (тур, 11.11.2026)
     showLoading(t('demo_deleting'));
     try {
         const { data: demoOrders } = await db.from('orders').select('id').eq('org_id', currentOrgId).eq('is_demo', true);
         const orderIds = (demoOrders || []).map(o => o.id);
+        await demoKeepUsed(orderIds); // v967: демо-позиции, уже занятые вашими данными, остаются (без пометки «демо»)
         if (orderIds.length) {
             const { data: demoItems } = await db.from('order_items').select('id').in('order_id', orderIds);
             const itemIds = (demoItems || []).map(i => i.id);

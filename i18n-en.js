@@ -379,7 +379,8 @@ I18N.en = {
         demo_deleted_success: 'Demo data has been removed. You can now start entering your own data.',
         demo_deleted_error: 'Failed to delete demo data. Check your connection and try again.',
         demo_not_found: 'No demo data found — it looks like it was already deleted or never created.',
-        demo_delete_confirm: 'Delete the entire demo set (demo customers, products, semi-finished products, ingredients, and demo order)? Your own data will not be affected.',
+        demo_delete_confirm: 'Delete the entire demo set (demo customers, products, semi-finished products, ingredients, and demo order)? Your own data will not be affected. Demo items already used in your recipes or orders will be kept.',
+        del_has_db_links: 'Can’t delete: this item is used in orders (including the trash) or in stock records. Send it to the archive instead.',
 
         // Common (additional)
         common_save: 'Save',

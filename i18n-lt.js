@@ -384,7 +384,8 @@ I18N.lt = {
         demo_deleted_success: 'Demonstraciniai duomenys pašalinti. Dabar galite pradėti įvesti savo duomenis.',
         demo_deleted_error: 'Nepavyko pašalinti demonstracinių duomenų. Patikrinkite interneto ryšį ir bandykite dar kartą.',
         demo_not_found: 'Demonstracinių duomenų nerasta — greičiausiai jie jau buvo pašalinti arba niekada nebuvo sukurti.',
-        demo_delete_confirm: 'Pašalinti visą demonstracinį rinkinį (demo klientus, gaminius, pusgaminius, ingredientus ir demo užsakymą)? Jūsų asmeniniai duomenys nebus paliesti.',
+        demo_delete_confirm: 'Pašalinti visą demonstracinį rinkinį (demo klientus, gaminius, pusgaminius, ingredientus ir demo užsakymą)? Jūsų asmeniniai duomenys nebus paliesti. Demo pozicijos, jau naudojamos jūsų receptuose ar užsakymuose, bus palikti.',
+        del_has_db_links: 'Ištrinti negalima: pozicija yra užsakymuose (įskaitant šiukšlinę) arba sandėlio įrašuose. Perkelkite ją į archyvą.',
 
         // Общие (дополнительно)
         common_save: 'Išsaugoti',

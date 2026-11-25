@@ -1781,10 +1781,18 @@ async function cleanupAbandonedDrafts() {
     try {
         const myId = currentEmployee ? currentEmployee.id : null;
         if (!myId) return;
-        const stale = orders.filter(o =>
+        let stale = orders.filter(o =>
             !o.is_confirmed && o.created_by === myId &&
             (!o.items || o.items.length === 0) &&
+            !o.customer_id && !(o.notes && String(o.notes).trim()) && !(o.materials && o.materials.length) &&
             o.id !== currentOrderId && !_draftOrderIds.has(o.id));
+        // v967: заказ с внесённой оплатой не трогаем (и при ошибке проверки — тоже)
+        if (stale.length) {
+            const { data: paid, error: pe } = await db.from('order_payments').select('order_id').in('order_id', stale.map(o => o.id));
+            if (pe) { console.error('cleanupAbandonedDrafts: оплаты не проверены, чистку пропускаем', pe); return; }
+            const paidIds = new Set((paid || []).map(r => r.order_id));
+            stale = stale.filter(o => !paidIds.has(o.id));
+        }
         for (const o of stale) {
             const { error } = await db.from('orders').delete().eq('id', o.id);
             if (error) { console.error('Не удалось удалить брошенный черновик:', error); continue; }

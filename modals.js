@@ -43,6 +43,19 @@ function deleteNoteFor(type, idx) {
     return parts.join('\n');
 }
 
+// v967: есть ли у позиции связи в базе (все заказы, включая корзину). Ошибка запроса = «есть» (безопаснее архив).
+async function dbEntityHasRefs(type, id) {
+    const checks = type === 'product'
+        ? [['order_items', 'product_id']]
+        : type === 'ingredient'
+            ? [['product_ingredients', 'ingredient_id'], ['semi_finished_ingredients', 'ingredient_id'], ['order_materials', 'ingredient_id'], ['order_item_ingredients', 'ingredient_id'], ['inventory', 'ingredient_id']]
+            : [['product_ingredients', 'semi_finished_id'], ['inventory', 'semi_finished_id']];
+    try {
+        const res = await Promise.all(checks.map(([tb, col]) => db.from(tb).select('*', { count: 'exact', head: true }).eq(col, id)));
+        return res.some(r => r.error || (r.count || 0) > 0);
+    } catch (e) { console.error(e); return true; }
+}
+
 function openDeleteModal(id, type, label) {
     deleteId   = id;
     deleteType = type;
@@ -89,6 +102,19 @@ async function confirmDelete() {
     // обратно и вызывает лишнюю перезагрузку данных.
     suppressRealtimeFor3s();
     try {
+        // v967: окончательно удаляем только позицию без связей в БАЗЕ (в памяти нет заказов из корзины) — иначе архив
+        if (deleteType === 'product' || deleteType === 'ingredient' || deleteType === 'semiFinished') {
+            const _src = deleteType === 'product' ? products[deleteId] : deleteType === 'ingredient' ? ingredients[deleteId] : semiFinished[deleteId];
+            if (_src && await dbEntityHasRefs(deleteType, _src.id)) {
+                hideLoading();
+                closeModal();
+                await showInfo(t('del_has_db_links'));
+                if (deleteType === 'product' && typeof archiveProduct === 'function') archiveProduct();
+                else if (deleteType === 'ingredient' && typeof archiveIngredient === 'function') archiveIngredient();
+                else if (deleteType === 'semiFinished' && typeof archiveSemiFinished === 'function') archiveSemiFinished();
+                return;
+            }
+        }
         if (deleteType === 'product') {
             const prod = products[deleteId];
             const wasOpenInDetail = prod.id === currentProductId;
