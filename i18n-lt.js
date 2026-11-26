@@ -439,10 +439,17 @@ I18N.lt = {
         chg_warn_doc_note: 'Išrašytas dokumentas pats nepasikeis.',
         order_del_blocked_head: 'Šio užsakymo ištrinti negalima:',
         order_blk_pay: 'yra apmokėjimo įrašų: {n}. Pirmiausia ištrinkite juos užsakyme',
-        order_blk_docs: 'išrašyti dokumentai: {list}. Išrašyti dokumentai netrinami',
+        order_blk_docs: 'išrašyti dokumentai: {list}. Toks užsakymas negali būti ištrintas visam laikui',
         order_blk_doc_inv: 'sąskaita Nr. {n}',
         order_blk_doc_dn: 'važtaraštis Nr. {n}',
         order_blk_doc_cons: 'suvestinė sąskaita',
+        order_blk_cons_first: 'užsakymas įtrauktas į suvestinę sąskaitą {n}. Pirmiausia atšaukite šią sąskaitą: „Dokumentai“ → „Visi dokumentai“ → paspauskite sąskaitą → „Atidaryti sąskaitą“ → atšaukite ją',
+        order_del_docs_note: 'Išrašyti dokumentai: {list}.\nUžsakymą galima perkelti į šiukšlinę ir atkurti, bet negalima ištrinti visam laikui. Dokumentai lieka skiltyje „Dokumentai“ su žyma „Užsakymas ištrintas“ ir neįskaičiuojami į skolas bei statistiką. Klientui niekas nesiunčiama.',
+        trash_kept: 'saugomas',
+        trash_kept_docs: 'Saugomas. Dokumentai: {list}. Visam laikui netrinamas.',
+        trash_kept_pay: 'Saugomas: yra mokėjimo įrašų. Visam laikui netrinamas.',
+        docs2_order_deleted: 'Užsakymas ištrintas',
+        docs2_open_cons: 'Atidaryti sąskaitą',
 
         // Общие (дополнительно)
         common_save: 'Išsaugoti',

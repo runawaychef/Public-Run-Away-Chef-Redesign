@@ -2011,7 +2011,7 @@ async function loadOrdersTrash(withCleanup) {
 
         // Загружаем оставшиеся удалённые заказы
         const { data, error } = await db.from('orders')
-            .select('id, customer_id, order_date, status, notes, deleted_at, order_number')
+            .select('id, customer_id, order_date, status, notes, deleted_at, order_number, inv_no, dn_no, consolidated_invoice_id')
             .not('deleted_at', 'is', null)
             .order('deleted_at', { ascending: false });
         if (error) throw error;
@@ -2020,6 +2020,15 @@ async function loadOrdersTrash(withCleanup) {
             content.innerHTML = `<p class="text-xs text-gray-400 text-center py-4">${t('trash_empty')}</p>`;
             return;
         }
+        // v981: заказы с оплатой или документом не стираются — вместо оставшихся дней пишем «хранится»
+        const paidIds = new Set();
+        for (let i = 0; i < data.length; i += 100) {
+            const { data: paid, error: pe } = await db.from('order_payments').select('order_id').in('order_id', data.slice(i, i + 100).map(r => r.id));
+            if (pe) throw pe;
+            (paid || []).forEach(r => paidIds.add(r.order_id));
+        }
+        const consIds = [...new Set(data.map(r => r.consolidated_invoice_id).filter(Boolean))];
+        if (consIds.length && typeof _payLoadConsNumbers === 'function') await _payLoadConsNumbers(consIds);
         const thisYear = String(new Date().getFullYear());
         const dayMs = 24 * 3600 * 1000;
         let html = `<div class="st-head trash-grid"><span>${escapeHtml(t('trash_col_date'))}</span><span>${escapeHtml(t('trash_col_num'))}</span><span>${escapeHtml(t('trash_col_customer'))}</span><span>${escapeHtml(t('trash_col_left'))}</span></div><div class="ot-island">`;
@@ -2031,11 +2040,14 @@ async function loadOrdersTrash(withCleanup) {
             const orderDate = formatDateDMY(o.order_date || o.date);
             const orderNum = o.order_number || `#${o.id}`;
             const left = Math.max(0, Math.ceil((new Date(o.deleted_at).getTime() + TRASH_KEEP_DAYS * dayMs - Date.now()) / dayMs));
-            html += `<div class="st-row trash-grid" ${dataAction('openTrashOrderActions', [o.id, custName, orderDate, orderNum])}>
+            const docs = orderDocLabels(o);
+            if (o.consolidated_invoice_id) docs.push(t('order_blk_doc_cons') + ' ' + (typeof _payConsNumber === 'function' ? _payConsNumber(o.consolidated_invoice_id) : ''));
+            const keptNote = docs.length ? t('trash_kept_docs').replace('{list}', docs.join(', ')) : (paidIds.has(o.id) ? t('trash_kept_pay') : '');
+            html += `<div class="st-row trash-grid" ${dataAction('openTrashOrderActions', [o.id, custName, orderDate, orderNum, keptNote])}>
                 <span class="st-num">${dateShort}</span>
                 <span class="st-num">${escapeHtml(orderNum)}</span>
                 <span class="st-name">${escapeHtml(custName)}</span>
-                <span class="st-num${left <= 3 ? ' trash-left-warn' : ''}">${escapeHtml(t('trash_days_left').replace('{n}', left))}</span>
+                <span class="st-num${!keptNote && left <= 3 ? ' trash-left-warn' : ''}">${escapeHtml(keptNote ? t('trash_kept') : t('trash_days_left').replace('{n}', left))}</span>
             </div>`;
         });
         html += '</div>';
@@ -2059,7 +2071,7 @@ function _trashNote(text) {
     if (text) _trashNoteTimer = setTimeout(() => el.classList.add('hidden'), 5000);
 }
 
-function openTrashOrderActions(orderId, custName, orderDate, orderNum) {
+function openTrashOrderActions(orderId, custName, orderDate, orderNum, keptNote) {
     const modal = document.getElementById('trashOrderActionsModal');
     const title = document.getElementById('trashOrderActionsTitle');
     const restoreBtn = document.getElementById('trashRestoreBtn');
@@ -2067,6 +2079,9 @@ function openTrashOrderActions(orderId, custName, orderDate, orderNum) {
     if (!modal) return;
 
     title.textContent = `${t('trash_order_word')} ${orderNum} · ${custName} · ${orderDate}`;
+    const note = document.getElementById('trashKeptNote');
+    if (note) { note.textContent = keptNote || ''; note.classList.toggle('hidden', !keptNote); }
+    deleteBtn.classList.toggle('hidden', !!keptNote);
 
     // Переназначаем обработчики каждый раз (избегаем накопления listener-ов)
     restoreBtn.onclick = async () => {
@@ -2267,11 +2282,12 @@ async function saveOrderLoss(order) {
     return amount;
 }
 
-// ==================== ПРАВИЛА УДАЛЕНИЯ ЗАКАЗА (v968, изменены в v977) ====================
+// ==================== ПРАВИЛА УДАЛЕНИЯ ЗАКАЗА (v968, изменены в v977 и v981) ====================
 // Граница — оплата: заказ без записей об оплате удаляется (в корзину) в любом статусе.
-// Заказы с выставленными документами пока не удаляются (изменится на этапе 3).
+// v981: счёт и накладная не мешают убрать заказ в корзину, но не дают стереть его навсегда (forever).
+// Заказ из сводного счёта — сначала отменить этот счёт.
 // Проверка идёт по базе, а не по памяти. null — не удалось проверить (считаем «нельзя»).
-async function orderDeleteBlockers(orderId) {
+async function orderDeleteBlockers(orderId, forever) {
     try {
         const [o, p] = await Promise.all([
             db.from('orders').select('inv_no, dn_no, consolidated_invoice_id').eq('id', orderId).single(),
@@ -2280,20 +2296,33 @@ async function orderDeleteBlockers(orderId) {
         if (o.error || p.error || !o.data) return null;
         const r = [];
         if ((p.count || 0) > 0) r.push(t('order_blk_pay').replace('{n}', String(p.count)));
-        const docs = [];
-        if (o.data.inv_no) docs.push(t('order_blk_doc_inv').replace('{n}', String(o.data.inv_no)));
-        if (o.data.dn_no) docs.push(t('order_blk_doc_dn').replace('{n}', String(o.data.dn_no)));
-        if (o.data.consolidated_invoice_id) docs.push(t('order_blk_doc_cons'));
-        if (docs.length) r.push(t('order_blk_docs').replace('{list}', docs.join(', ')));
+        const cid = o.data.consolidated_invoice_id;
+        if (cid) {
+            if (typeof _payLoadConsNumbers === 'function') await _payLoadConsNumbers([cid]);
+            const num = typeof _payConsNumber === 'function' ? _payConsNumber(cid) : '…';
+            r.push(t('order_blk_cons_first').replace('{n}', num));
+        }
+        if (forever) {
+            const docs = orderDocLabels(o.data);
+            if (docs.length) r.push(t('order_blk_docs').replace('{list}', docs.join(', ')));
+        }
         return r;
     } catch (e) { console.error(e); return null; }
 }
 
+// Подписи выставленных документов заказа (без сводного)
+function orderDocLabels(o) {
+    const docs = [];
+    if (o.inv_no) docs.push(t('order_blk_doc_inv').replace('{n}', String(o.inv_no)));
+    if (o.dn_no) docs.push(t('order_blk_doc_dn').replace('{n}', String(o.dn_no)));
+    return docs;
+}
+
 // true — удалять можно; иначе показывает причину и возвращает false
-async function orderDeleteGuard(orderId) {
+async function orderDeleteGuard(orderId, forever) {
     showLoading();
     let bl;
-    try { bl = await orderDeleteBlockers(orderId); } finally { hideLoading(); }
+    try { bl = await orderDeleteBlockers(orderId, forever); } finally { hideLoading(); }
     if (bl === null) { await showInfo(t('error_save_check_connection')); return false; }
     if (bl.length) { await showInfo(t('order_del_blocked_head') + '\n\n' + bl.map(x => '• ' + x).join('\n')); return false; }
     return true;
@@ -2306,7 +2335,7 @@ async function permanentDeleteOrder(orderId, orderNum) {
         showInfo(t('ing_no_delete_permission'));
         return;
     }
-    if (!(await orderDeleteGuard(orderId))) return; // v968: заказ с оплатами/документами/работой навсегда не удаляем
+    if (!(await orderDeleteGuard(orderId, true))) return; // заказ с оплатой или документом навсегда не стираем
     suppressRealtimeFor3s();
     showLoading();
     try {

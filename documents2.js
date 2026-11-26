@@ -1002,7 +1002,8 @@ function docs2RenderAll(reapplyView, keepFocus) {
     const inCons = new Set();
     docs.forEach(d => { if (d.kind === 'cons' && !d.cancelled) (d.memberIds || []).forEach(id => inCons.add(id)); });
     const norm = typeof _docsNorm === 'function' ? _docsNorm : (x => String(x || '').toLowerCase());
-    const all = docs.filter(d => !d.cancelled && !d.deleted && !(d.kind === 'inv' && inCons.has(d.orderId))).map(d => ({
+    // v981: документы удалённых заказов видны с пометкой, но в суммы не входят
+    const all = docs.filter(d => !d.cancelled && !(d.kind === 'inv' && inCons.has(d.orderId))).map(d => ({
         d, key: String(d.custId || ('n:' + (d.custName || ''))), name: d.custName || t('orders_no_customer'),
         ym: String(d.date || '').slice(0, 7), c: d.sumC || 0,
         oid: d.kind === 'cons' ? d.liveMemberId : d.orderId }));
@@ -1010,6 +1011,7 @@ function docs2RenderAll(reapplyView, keepFocus) {
     const stOk = x => {
         const d = x.d;
         if (!_d2A.st) return true;
+        if (d.deleted) return false;
         if (_d2A.st === 'unsent') return !d.sentAt;
         if (d.kind === 'dn') return false;
         if (_d2A.st === 'paid') return d.pay === 'paid';
@@ -1020,12 +1022,12 @@ function docs2RenderAll(reapplyView, keepFocus) {
         && (q || !_d2A.period || x.ym === _d2A.period)
         && (!_d2A.type || (_d2A.type === 'dn' ? x.d.kind === 'dn' : x.d.kind !== 'dn'))
         && stOk(x));
-    const sumC = base.reduce((s, x) => s + x.c, 0);
+    const sumC = base.reduce((s, x) => s + (x.d.deleted ? 0 : x.c), 0);
 
     const groups = new Map();
     base.forEach(x => {
         if (!groups.has(x.key)) groups.set(x.key, { key: x.key, name: x.name, items: [], sumC: 0 });
-        const g = groups.get(x.key); g.items.push(x); g.sumC += x.c;
+        const g = groups.get(x.key); g.items.push(x); if (!x.d.deleted) g.sumC += x.c;
     });
     const gl = [...groups.values()].sort((a, b) => b.sumC - a.sumC);
     if (reapplyView) {
@@ -1058,10 +1060,13 @@ function docs2RenderAll(reapplyView, keepFocus) {
             else if (d.pay === 'partial') st.push(gold(t('docs_partial')));
             else if (d.pay === 'unpaid') st.push(escapeHtml(t('docs2_st_unpaid')));
         }
-        if (!d.sentAt) st.push(gold(t('docs_not_sent_cap')));
+        if (d.deleted) st = [escapeHtml(t('docs2_order_deleted'))];
+        else if (!d.sentAt) st.push(gold(t('docs_not_sent_cap')));
         const isCons = d.kind === 'cons';
         const cOpen = isCons && _d2A.cons.has(d.key);
-        const main = `<div class="d2o" onclick="${isCons ? "docs2AllCons(\'" + escapeHtml(d.key) + "\')" : 'docs2AllOpen(' + (x.oid || 0) + ')'}"><div class="l">
+        // Документ удалённого заказа открывается сам (заказа в списке нет)
+        const click = isCons ? "docs2AllCons(\'" + escapeHtml(d.key) + "\')" : (d.deleted ? "docs2OpenDoc(\'" + escapeHtml(d.key) + "\')" : 'docs2AllOpen(' + (x.oid || 0) + ')');
+        const main = `<div class="d2o"${d.deleted ? ' style="opacity:.55;"' : ''} onclick="${click}"><div class="l">
             <div class="a">${escapeHtml(d.number || '')}</div>
             <div class="b">${escapeHtml(formatDateDMY(d.date))} \u00b7 ${escapeHtml(what)}</div>
             ${st.length ? `<div class="c">${st.join(' \u00b7 ')}</div>` : ''}</div>
@@ -1082,7 +1087,8 @@ function docs2RenderAll(reapplyView, keepFocus) {
                 <div class="c">${inv} \u00b7 ${dn}</div></div>
                 <div class="r"><b>${escapeHtml(formatMoney(orderGrandTotal(o)))}</b></div></div>`;
         }).join('');
-        return main + subs;
+        const openDoc = `<div class="d2o d2sub" onclick="docs2OpenDoc('${escapeHtml(d.key)}')"><div class="l"><div class="a" style="color:#4f6349;">${escapeHtml(t('docs2_open_cons'))} \u203a</div></div></div>`;
+        return main + openDoc + subs;
     };
     const byDate = (a, b) => String(b.d.date || '').localeCompare(String(a.d.date || '')) || String(b.d.rawNumber).localeCompare(String(a.d.rawNumber));
     const groupHtml = gl.map(g => {

@@ -434,10 +434,17 @@ I18N.en = {
         chg_warn_doc_note: 'The issued document will not change by itself.',
         order_del_blocked_head: 'This order can’t be deleted:',
         order_blk_pay: 'there are payment records: {n}. Delete them in the order first',
-        order_blk_docs: 'documents issued: {list}. Issued documents can’t be deleted',
+        order_blk_docs: 'documents issued: {list}. Such an order can’t be erased permanently',
         order_blk_doc_inv: 'invoice №{n}',
         order_blk_doc_dn: 'delivery note №{n}',
         order_blk_doc_cons: 'consolidated invoice',
+        order_blk_cons_first: 'the order is part of consolidated invoice {n}. Cancel that invoice first: “Documents” → “All documents” → tap the invoice → “Open invoice” → “Cancel invoice”',
+        order_del_docs_note: 'Documents issued: {list}.\nYou can move the order to the trash and restore it, but it can’t be erased permanently. The documents stay in “Documents” marked “Order deleted” and don’t count towards debts or statistics. Nothing is sent to the customer.',
+        trash_kept: 'kept',
+        trash_kept_docs: 'Kept: it has {list}. It can’t be erased permanently.',
+        trash_kept_pay: 'Kept: it has payment records. It can’t be erased permanently.',
+        docs2_order_deleted: 'Order deleted',
+        docs2_open_cons: 'Open invoice',
 
         // Common (additional)
         common_save: 'Save',

@@ -478,7 +478,11 @@ function renderDocumentsSection() {
 
 let _docsOpenEntry = null;
 
-async function openRegistryDoc(key) {
+let _regFromDocs2 = false; // v981: просмотр открыт со страницы «Все документы» нового раздела — туда и возвращаемся
+function docs2OpenDoc(key) { return openRegistryDoc(key, true); }
+
+async function openRegistryDoc(key, fromDocs2) {
+    _regFromDocs2 = !!fromDocs2;
     const d = _docsAll.find(x => x.key === key);
     if (!d) return;
     _docsTab = 'issued';
@@ -552,6 +556,15 @@ function registrySendDoc() {
 // (через список «Документов» с теми же фильтрами); переход по нижнему меню память сбрасывает.
 let _docsReturn = null; // { key, filter, q }
 function registryOpenOrder(orderId) {
+    if (_regFromDocs2) {
+        _regFromDocs2 = false;
+        _docPreview = null;
+        _docsOpenEntry = null;
+        closeModal();
+        if (typeof _setPreviewReadOnlyUi === 'function') _setPreviewReadOnlyUi(false, false);
+        docs2OpenOrder(orderId);
+        return;
+    }
     const entry = _docsOpenEntry;
     const ret = entry ? { key: entry.key, filter: Object.assign({}, _docsFilter), q: (document.getElementById('docsSearch') || {}).value || '' } : null;
     _docPreview = null;
@@ -589,6 +602,11 @@ function closeRegistryDocPreview() {
     _docsOpenEntry = null;
     if (typeof _setPreviewReadOnlyUi === 'function') _setPreviewReadOnlyUi(false, false);
     renderRegistryDocActions();
+    if (_regFromDocs2) {
+        _regFromDocs2 = false;
+        if (isAppPageOpen('docs2AllPage')) docs2RenderAll(false);
+        return;
+    }
     // Просмотр мог быть открыт не из списка (например, «Открыть счёт» у клиента) — тогда открываем список
     if (!isAppPageOpen('docsPage')) openAppPage('docsPage');
     renderDocumentsSection();

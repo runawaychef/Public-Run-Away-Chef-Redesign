@@ -58,6 +58,7 @@ async function dbEntityHasRefs(type, id) {
 
 let _orderDeleteVerified = false;
 let _orderDeleteHasStock = false;  // v977: по удаляемому заказу есть списание склада
+let _orderDeleteDocs = []; // v981
 let _orderStockChoice = null;      // v977: 'return' — вернуть на склад, 'keep' — оставить списанными
 function confirmOrderDeleteStock(choice) {
     _orderStockChoice = choice;
@@ -97,7 +98,10 @@ function openDeleteModal(id, type, label) {
         if (!o) return;
         orderDeleteGuard(o.id).then(async ok => {
             if (!ok) return;
-            try { _orderDeleteHasStock = (await orderOpenStockRows(o.id)).length > 0; }
+            try {
+                _orderDeleteHasStock = (await orderOpenStockRows(o.id)).length > 0;
+                _orderDeleteDocs = (await orderMoneyState(o.id)).docs; // v981: предупреждаем о счёте и накладной
+            }
             catch (e) { console.error(e); showInfo(t('error_save_check_connection')); return; }
             id = orders.indexOf(o);
             if (id === -1) return;
@@ -110,6 +114,7 @@ function openDeleteModal(id, type, label) {
     deleteType = type;
     _orderStockChoice = null;
     let text = `${t('delete_confirm_prefix')} ${label}?`;
+    if (type === 'order' && _orderDeleteDocs.length) text += '\n\n' + t('order_del_docs_note').replace('{list}', _orderDeleteDocs.join(', '));
     if (type === 'order' && typeof orderDeleteQuotaNote === 'function') {
         const note = orderDeleteQuotaNote(orders[id]);
         if (note) text += '\n\n' + note;
