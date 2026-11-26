@@ -1202,13 +1202,33 @@ function openExpenseRows(rows) {
     });
 }
 
+// v978: id строк склада, оставленных списанными при удалении позиции/упаковки. При ошибке запроса — исключение.
+async function orderKeptStockIds(orderId) {
+    const { data, error } = await db.from('order_losses').select('inventory_ids')
+        .eq('org_id', currentOrgId).eq('order_id', orderId).is('cancelled_at', null);
+    if (error) throw error;
+    const ids = new Set();
+    (data || []).forEach(r => (r.inventory_ids || []).forEach(x => ids.add(Number(x))));
+    return ids;
+}
+function dropKeptRows(rows, kept) { return (rows || []).filter(r => !kept.has(Number(r.id))); }
+
+// v978: несторнированные списания одной позиции (itemId) или одной упаковки (ingredientId) заказа
+async function positionStockRows(orderId, itemId, ingredientId) {
+    let q = db.from('inventory').select('id, type, ingredient_id, semi_finished_id, order_item_id').in('type', ['расход', 'сторно']);
+    q = itemId ? q.eq('order_item_id', itemId) : q.eq('order_id', orderId).eq('ingredient_id', ingredientId).is('order_item_id', null);
+    const { data, error } = await q;
+    if (error) throw error;
+    return openExpenseRows(itemId ? data : dropKeptRows(data, await orderKeptStockIds(orderId)));
+}
+
 async function reverseOrderMaterialStock(order, ingredientId) {
     const { data: allRows, error } = await db.from('inventory')
         .select('id, type, ingredient_id, semi_finished_id, order_item_id, quantity, batch_breakdown')
         .eq('order_id', order.id).eq('ingredient_id', ingredientId)
         .is('order_item_id', null).in('type', ['расход', 'сторно']);
     if (error) throw error;
-    const data = openExpenseRows(allRows);
+    const data = openExpenseRows(dropKeptRows(allRows, await orderKeptStockIds(order.id))); // v978
     const oLabel = order.order_number ? '№' + order.order_number : '#' + order.id;
     for (const r of (data || [])) {
         if (!r.batch_breakdown) continue;
@@ -1233,7 +1253,8 @@ async function reverseInventoryForOrder(orderId) {
             .eq('order_id', orderId)
             .in('type', ['расход', 'сторно']);
         if (error || !allRows || !allRows.length) return;
-        const data = openExpenseRows(allRows); // v969: уже сторнированные строки не возвращаем второй раз
+        // v978: оставленное списанным у удалённых позиций не возвращаем
+        const data = openExpenseRows(dropKeptRows(allRows, await orderKeptStockIds(orderId))); // v969: уже сторнированные строки не возвращаем второй раз
         if (!data.length) return;
 
         const o = orders.find(x => x.id === orderId);

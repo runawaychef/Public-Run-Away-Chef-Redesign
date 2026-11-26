@@ -2094,7 +2094,7 @@ async function rewriteOffRestoredOrder(orderId) {
             .select('id, type, ingredient_id, semi_finished_id, order_item_id')
             .eq('order_id', orderId).in('type', ['расход', 'сторно']);
         if (error) throw error;
-        if (openExpenseRows(rows).length) return;
+        if (openExpenseRows(dropKeptRows(rows, await orderKeptStockIds(orderId))).length) return; // v978
         for (const it of (order.items || [])) {
             const prod = products.find(p => p.id === it.product_id);
             if (!prod) continue;
@@ -2156,13 +2156,101 @@ async function orderOpenStockRows(orderId) {
         .select('id, type, ingredient_id, semi_finished_id, order_item_id')
         .eq('order_id', orderId).in('type', ['расход', 'сторно']);
     if (error) throw error;
-    return openExpenseRows(data);
+    return openExpenseRows(dropKeptRows(data, await orderKeptStockIds(orderId))); // v978
 }
 
 // Отменяет действующие записи о потерях заказа (восстановление из корзины)
 async function cancelOrderLosses(orderId) {
     await dbMust(db.from('order_losses').update({ cancelled_at: new Date().toISOString() })
-        .eq('org_id', currentOrgId).eq('order_id', orderId).is('cancelled_at', null));
+        .eq('org_id', currentOrgId).eq('order_id', orderId).eq('reason', 'order_deleted').is('cancelled_at', null)); // v978: потери по позициям остаются
+}
+
+// v978: потеря по удалённой позиции/упаковке. inventory_ids — строки склада, которые больше нельзя возвращать
+// (для демо-заказа сумма 0, но строки всё равно помечаются). Возвращает { id, amount }.
+async function savePositionLoss(order, info) {
+    const amount = order.is_demo ? 0 : Math.max(0, Math.round((Number(info.amount) || 0) * 100) / 100);
+    const { data, error } = await db.from('order_losses').insert({
+        org_id: currentOrgId, order_id: order.id, order_number: order.order_number || null,
+        loss_date: getLocalDateStr(0), amount, reason: info.itemId ? 'item_deleted' : 'material_deleted',
+        order_item_id: info.itemId || null, ingredient_id: info.ingredientId || null, item_name: info.name || null,
+        inventory_ids: info.rows.map(r => r.id),
+        created_by: currentEmployee ? currentEmployee.id : null
+    }).select('id').single();
+    if (error) throw error;
+    return { id: data.id, amount };
+}
+async function cancelLossById(id) {
+    await dbMust(db.from('order_losses').update({ cancelled_at: new Date().toISOString() }).eq('id', id));
+}
+
+// ==================== v978: ИЗМЕНЕНИЕ ЗАКАЗА С ОПЛАТОЙ ИЛИ ДОКУМЕНТОМ ====================
+// Проверка по базе. При ошибке запроса — исключение.
+async function orderMoneyState(orderId) {
+    const [o, p] = await Promise.all([
+        db.from('orders').select('inv_no, dn_no, consolidated_invoice_id').eq('id', orderId).single(),
+        db.from('order_payments').select('amount').eq('order_id', orderId)
+    ]);
+    if (o.error || p.error || !o.data) throw (o.error || p.error || new Error('order not found'));
+    const docs = [];
+    if (o.data.inv_no) docs.push(t('order_blk_doc_inv').replace('{n}', String(o.data.inv_no)));
+    if (o.data.dn_no) docs.push(t('order_blk_doc_dn').replace('{n}', String(o.data.dn_no)));
+    const cid = o.data.consolidated_invoice_id;
+    if (cid) {
+        if (typeof _payLoadConsNumbers === 'function') await _payLoadConsNumbers([cid]);
+        const num = typeof _payConsNumber === 'function' ? _payConsNumber(cid) : '…';
+        docs.push(t('order_blk_doc_cons') + (num !== '…' ? ' ' + num : ''));
+    }
+    const payCount = (p.data || []).length;
+    const paid = Math.round((p.data || []).reduce((s, x) => s + Number(x.amount), 0) * 100) / 100;
+    return { payCount, paid, docs, locked: payCount > 0 || docs.length > 0 };
+}
+function orderChangeWarning(st, oldTotal, newTotal) {
+    const lines = [t('chg_warn_head')];
+    if (st.payCount) lines.push('• ' + t('chg_warn_paid').replace('{sum}', formatMoney(st.paid)));
+    if (st.docs.length) lines.push('• ' + t('chg_warn_docs').replace('{list}', st.docs.join(', ')));
+    lines.push('• ' + t('chg_warn_total').replace('{old}', formatMoney(oldTotal)).replace('{new}', formatMoney(newTotal)));
+    const over = Math.round((st.paid - newTotal) * 100) / 100;
+    if (st.payCount && over > 0.004) lines.push('', t('chg_warn_overpaid').replace('{sum}', formatMoney(over)));
+    if (st.docs.length) lines.push('', t('chg_warn_doc_note'));
+    return lines.join('\n');
+}
+// Перед сохранением правки: true — можно сохранять. Спрашиваем, только если меняется сумма и есть оплата/документ.
+async function confirmOrderTotalChange(order, patched, modalId) {
+    const oldTotal = orderGrandTotal(order), newTotal = orderGrandTotal(Object.assign({}, order, patched));
+    if (Math.abs(newTotal - oldTotal) <= 0.004) return true;
+    let st;
+    showLoading();
+    try { st = await orderMoneyState(order.id); }
+    catch (e) { console.error(e); hideLoading(); await showInfo(t('error_save_check_connection')); return false; }
+    hideLoading();
+    if (!st.locked) return true;
+    const modal = modalId ? document.getElementById(modalId) : null;
+    if (modal) modal.style.display = 'none';
+    const ok = await showConfirm(orderChangeWarning(st, oldTotal, newTotal), { ok: t('common_save') });
+    if (!ok && modal) modal.style.display = 'flex';
+    return ok;
+}
+// Перед удалением позиции/упаковки. null — удалять нельзя (причина показана); иначе { warn, hasStock }.
+async function preparePositionDelete(order, id, type) {
+    const item = type === 'item' ? order.items[id] : null;
+    const mat = type === 'ordmat' ? (order.materials || []).find(m => m.ingredient_id === id) : null;
+    if (!item && !mat) return null;
+    showLoading();
+    try {
+        const st = await orderMoneyState(order.id);
+        if (item && st.locked && order.items.length <= 1) { hideLoading(); showInfo(t('pos_last_blocked')); return null; }
+        let warn = '';
+        if (st.locked) {
+            const patched = item ? { items: order.items.filter(x => x !== item) } : { materials: order.materials.filter(x => x !== mat) };
+            const oldTotal = orderGrandTotal(order), newTotal = orderGrandTotal(Object.assign({}, order, patched));
+            if (item || Math.abs(newTotal - oldTotal) > 0.004) warn = orderChangeWarning(st, oldTotal, newTotal);
+        }
+        // Черновик (ещё не сохранён) и отложенное списание — вопрос о складе не задаём
+        const hasStock = !!order.is_confirmed && !(item && order.inventory_pending)
+            && (await positionStockRows(order.id, item ? item.id : null, item ? null : id)).length > 0;
+        return { warn, hasStock };
+    } catch (e) { console.error(e); hideLoading(); showInfo(t('error_save_check_connection')); return null; }
+    finally { hideLoading(); }
 }
 
 // Продукты остались списанными: записываем стоимость в потери. Запись переживает стирание заказа.
@@ -2621,7 +2709,13 @@ function autoFillEditItemPrice() {
     if (p) document.getElementById('editItemPrice').value = p.price.toFixed(2);
 }
 
+let _savingItemEdit = false;
 async function saveItemEdit() {
+    if (_savingItemEdit) return;
+    _savingItemEdit = true;
+    try { await _saveItemEdit(); } finally { _savingItemEdit = false; }
+}
+async function _saveItemEdit() {
     suppressRealtimeFor3s();
     const order = orders.find(o => o.id === currentOrderId);
     if (!order || editItemIdx === null) return;
@@ -2635,8 +2729,14 @@ async function saveItemEdit() {
     // v969: изделие, уже стоящее в позиции, можно править, даже если оно позже ушло в архив
     const prod = products.find(p => p.name === productName && (!p.archived_at || (_curItem && p.id === _curItem.product_id)));
     if (!prod) { showInfo(t('orders_product_not_found')); return; }
-    const item = order.items[editItemIdx];
+    const idx = editItemIdx;
+    const item = order.items[idx];
     const oldDesc = `«${item.product}» × ${item.quantity}`;
+    // v978: заказ с оплатой или документом — предупреждаем до изменения суммы
+    const patchedItems = order.items.map((x, i) => i === idx ? Object.assign({}, x, { product_id: prod.id, product: prod.name, quantity, price: parseFloat(price.toFixed(2)) }) : x);
+    if (!(await confirmOrderTotalChange(order, { items: patchedItems }, 'editItemModal'))) return;
+    if (editItemIdx !== idx || order.items[idx] !== item) { closeModal(); return; }
+    suppressRealtimeFor3s();
 
     showLoading();
     try {
@@ -2954,6 +3054,8 @@ async function saveOrderMatEdit() {
     const qtyChanged = Math.abs(qty - Number(m.quantity)) >= 1e-9;
     const priceChanged = newPrice !== (Number(m.price) > 0 ? Number(m.price) : 0);
     if (!qtyChanged && !priceChanged) return; // не менялось
+    const patchedMats = order.materials.map(x => x === m ? Object.assign({}, x, { quantity: qty, price: newPrice }) : x);
+    if (!(await confirmOrderTotalChange(order, { materials: patchedMats }, null))) return; // v978
     suppressRealtimeFor3s();
     showLoading();
     try {

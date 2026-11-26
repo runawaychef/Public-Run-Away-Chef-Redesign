@@ -64,7 +64,25 @@ function confirmOrderDeleteStock(choice) {
     document.getElementById('orderStockModal').style.display = 'none';
     confirmDelete();
 }
+let _posDeleteInfo = null;   // v978: результат проверки перед удалением позиции/упаковки
+let _posDeletePreparing = false;
 function openDeleteModal(id, type, label) {
+    // v978: позиция/упаковка — сначала проверка по базе (оплата, документы, списание)
+    if ((type === 'item' || type === 'ordmat') && !_posDeleteInfo) {
+        const o = orders.find(x => x.id === currentOrderId);
+        if (!o || _posDeletePreparing) return;
+        const item = type === 'item' ? o.items[id] : null;
+        _posDeletePreparing = true;
+        preparePositionDelete(o, id, type).then(info => {
+            _posDeletePreparing = false;
+            if (!info || currentOrderId !== o.id) return;
+            const key = item ? o.items.findIndex(x => x.id === item.id) : id;
+            if (key === -1) return;
+            _posDeleteInfo = info;
+            try { openDeleteModal(key, type, label); } finally { _posDeleteInfo = null; }
+        }).catch(e => { _posDeletePreparing = false; console.error(e); });
+        return;
+    }
     // v968: заказ с работой/оплатой/документами не удаляется — сначала проверка по базе
     if (type === 'order' && !_orderDeleteVerified) {
         const o = orders[id];
@@ -94,8 +112,10 @@ function openDeleteModal(id, type, label) {
     }
     const dnote = (type === 'product' || type === 'ingredient' || type === 'semiFinished') ? deleteNoteFor(type, id) : '';
     if (dnote) text += '\n\n' + dnote;
-    // v977: по заказу списан склад — вместо обычного «Удалить» спрашиваем, что сделать с продуктами
-    const askStock = type === 'order' && _orderDeleteHasStock;
+    if (_posDeleteInfo && _posDeleteInfo.warn) text += '\n\n' + _posDeleteInfo.warn;
+    // v977: по заказу списан склад — вместо обычного «Удалить» спрашиваем, что сделать с продуктами (v978: и по позиции/упаковке)
+    const askStock = (type === 'order' && _orderDeleteHasStock) || !!(_posDeleteInfo && _posDeleteInfo.hasStock);
+    if (askStock) document.getElementById('orderStockQuestion').textContent = t(type === 'order' ? 'stock_choice_question' : 'stock_choice_question_pos');
     const modalId = askStock ? 'orderStockModal' : 'deleteModal';
     const textEl = document.getElementById(askStock ? 'orderStockText' : 'deleteModalText');
     textEl.style.whiteSpace = 'pre-line';
@@ -229,27 +249,69 @@ async function confirmDelete() {
             if (wasOpenInDetail && typeof stockCardReturnPending === 'function' && stockCardReturnPending()) await returnToStockCard();
             else if (wasOpenInDetail && typeof docsReturnPending === 'function' && docsReturnPending()) await returnToDocsPreview();
             else if (wasOpenInDetail && typeof docs2ReturnPending === 'function' && docs2ReturnPending()) await returnToDocs2();
-        } else if (deleteType === 'item') {
+        } else if (deleteType === 'item' || deleteType === 'ordmat') {
+            const isItem = deleteType === 'item';
+            const key = deleteId;
+            const stockChoice = _orderStockChoice;
             const order = orders.find(o => o.id === currentOrderId);
-            if (order) {
-                const item = order.items[deleteId];
-                // Если склад по этой позиции уже был списан — сторнируем точно
-                // (по order_item_id). Если списание ещё отложено (inventory_pending),
-                // сторнировать нечего — удалённая позиция просто не попадёт
-                // в processPendingInventory(), т.к. она уже убрана из order.items.
-                if (!order.inventory_pending) {
-                    await reverseInventoryForOrderItem(item.id);
+            const item = order && isItem ? order.items[key] : null;
+            const mat = order && !isItem ? (order.materials || []).find(m => m.ingredient_id === key) : null;
+            if (order && (item || mat)) {
+                // v978: перепроверка — оплату или документ могли добавить, пока окно было открыто
+                const st = await orderMoneyState(order.id);
+                if (item && st.locked && order.items.length <= 1) {
+                    hideLoading(); closeModal(); await showInfo(t('pos_last_blocked')); return;
                 }
-                await dbMust(db.from('order_item_ingredients').delete().eq('order_item_id', item.id));
-                const { error } = await db.from('order_items').delete().eq('id', item.id);
-                if (error) throw error;
-                order.items.splice(deleteId, 1);
-                renderDetailItems(order);
-                logActivity('item', `${t('log_position_deleted')} «${item.product}» × ${item.quantity} ${t('log_from_order')} ${orderLogNum(order)}`, order.id);
+                const pending = isItem && order.inventory_pending;
+                const rows = (order.is_confirmed && !pending) ? await positionStockRows(order.id, item ? item.id : null, item ? null : key) : [];
+                if (rows.length && !stockChoice) { // списание появилось уже после открытия окна — спрашиваем заново
+                    const lbl = item ? `${t('delete_label_position')} «${item.product}»` : `«${(ingredients.find(x => x.id === key) || {}).name || ''}»`;
+                    hideLoading(); closeModal();
+                    openDeleteModal(key, isItem ? 'item' : 'ordmat', lbl);
+                    return;
+                }
+                const keep = rows.length > 0 && stockChoice === 'keep';
+                const matQty = mat ? mat.quantity : 0;
+                const name = item ? item.product : ((ingredients.find(x => x.id === key) || {}).name || '');
+                let stockNote = rows.length ? t('log_stock_returned') : '';
+                let loss = null;
+                if (keep) {
+                    // Сначала потеря с пометкой строк склада: если записать не удалось, ничего не удаляем
+                    loss = await savePositionLoss(order, {
+                        itemId: item ? item.id : null, ingredientId: item ? null : key, name, rows,
+                        amount: item ? item.item_cost : mat.cost
+                    });
+                    stockNote = order.is_demo ? '' : t('log_loss_note').replace('{sum}', formatMoney(loss.amount));
+                }
+                const note = stockNote ? ', ' + stockNote : '';
+                try {
+                    if (item) {
+                        // Склад возвращаем точно по order_item_id; при отложенном списании возвращать нечего
+                        if (!keep && !order.inventory_pending) await reverseInventoryForOrderItem(item.id);
+                        await dbMust(db.from('order_item_ingredients').delete().eq('order_item_id', item.id));
+                        await updateChecked(db.from('order_items').delete().eq('id', item.id));
+                    } else if (keep) {
+                        await updateChecked(db.from('order_materials').delete().eq('id', mat.id));
+                    }
+                } catch (e) {
+                    if (loss) await cancelLossById(loss.id).catch(x => console.error(x));
+                    throw e;
+                }
+                if (item) {
+                    order.items.splice(order.items.indexOf(item), 1);
+                    renderDetailItems(order);
+                    logActivity('item', `${t('log_position_deleted')} «${item.product}» × ${item.quantity} ${t('log_from_order')} ${orderLogNum(order)}${note}`, order.id);
+                } else {
+                    if (keep) {
+                        order.materials = order.materials.filter(m => m !== mat);
+                        renderOrderMaterials(order);
+                        renderDetailItems(order);
+                    } else {
+                        await removeOrderMaterial(order, key);
+                    }
+                    logActivity('item', `${t('ordmat_log_deleted')} ${orderLogNum(order)}: «${name}» × ${matQty}${note}`, order.id);
+                }
             }
-        } else if (deleteType === 'ordmat') {
-            const order = orders.find(o => o.id === currentOrderId);
-            if (order) await removeOrderMaterial(order, deleteId);
         } else if (deleteType === 'ingredient') {
             const ing = ingredients[deleteId];
             const wasOpenInDetail = ing.id === currentIngredientId;

@@ -3941,7 +3941,7 @@ function hideSplashScreen() {
         <div id="orderStockModal" class="modal">
             <div class="modal-content">
                 <p id="orderStockText" class="mb-3 text-sm text-gray-800"></p>
-                <p class="mb-2 text-sm text-gray-800" style="font-weight:600;" data-i18n="stock_choice_question">Что сделать с продуктами и упаковкой, списанными по этому заказу?</p>
+                <p id="orderStockQuestion" class="mb-2 text-sm text-gray-800" style="font-weight:600;">Что сделать с продуктами и упаковкой, списанными по этому заказу?</p>
                 <p class="mb-3 text-xs text-gray-500" style="line-height:1.5;" data-i18n="stock_choice_hint">«Оставить списанными» — если продукты израсходованы: их стоимость запишется в потери.</p>
                 <div class="flex flex-col gap-2">
                     <button onclick="confirmOrderDeleteStock('return')" class="pill-btn" data-i18n="stock_choice_return">Удалить и вернуть на склад</button>
@@ -5361,13 +5361,13 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=10"></script>
     <script src="money.js?v=17"></script>
-    <script src="i18n-core.js?v=238"></script>
+    <script src="i18n-core.js?v=239"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=22"></script>
     <script src="auth.js?v=35"></script>
     <script src="employees.js?v=83"></script>
     <script src="company.js?v=30"></script>
-    <script src="inventory.js?v=94"></script>
+    <script src="inventory.js?v=95"></script>
     <script src="billing.js?v=28"></script>
     <script src="push.js?v=12"></script>
 <script src="ingredients.js?v=86"></script>
@@ -5376,7 +5376,7 @@ function hideSplashScreen() {
 <script src="products.js?v=71"></script>
 <script src="customers.js?v=90"></script>
 <script src="calendar.js?v=17"></script>
-<script src="orders.js?v=195"></script>
+<script src="orders.js?v=196"></script>
 <script src="dashboard.js?v=28"></script>
 <script src="invoice.js?v=57"></script>
 <script src="send-document.js?v=48"></script>
@@ -5387,7 +5387,7 @@ function hideSplashScreen() {
 <script src="bank.js?v=15"></script>
 <script src="stats.js?v=46"></script>
 <script src="history.js?v=11"></script>
-<script src="modals.js?v=31"></script>
+<script src="modals.js?v=32"></script>
 <script src="demoData.js?v=39"></script>
 <script src="helpers.js?v=59"></script>
 <script>
