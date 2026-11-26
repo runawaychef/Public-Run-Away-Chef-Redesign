@@ -39,6 +39,7 @@ async function pushShowLocked() {
     if (ok && typeof openPlanModal === 'function') openPlanModal();
 }
 async function refreshPushSettingsUI() {
+    syncPushLangOnStart();
     const block = document.getElementById('pushSettingsBlock');
     if (!block) return;
 
@@ -168,17 +169,29 @@ async function _disablePush() {
     }
 }
 
-// Вызывается из setLang() (i18n.js) при переключении RU/EN — если на этом
-// устройстве уже есть активная push-подписка, обновляем в ней сохранённый
-// язык, чтобы будущие уведомления приходили на актуальном языке.
+// v986: язык уведомлений обновляется при запуске. Смена языка перезагружает приложение,
+// поэтому этого достаточно. Пока вход не завершён (обновить нечего) — попробуем при следующем вызове.
+let _pushLangSynced = false;
+let _pushLangBusy = false;
+async function syncPushLangOnStart() {
+    if (_pushLangSynced || _pushLangBusy) return;
+    if (typeof currentOrgId === 'undefined' || !currentOrgId) return;
+    _pushLangBusy = true;
+    try { _pushLangSynced = await syncPushLangIfSubscribed(); } finally { _pushLangBusy = false; }
+}
+
+// Если на этом устройстве уже есть push-подписка, записываем в неё текущий язык.
+// Возвращает true, когда запись действительно обновлена.
 async function syncPushLangIfSubscribed() {
-    if (!_pushSupported() || typeof currentLang === 'undefined') return;
+    if (!_pushSupported() || typeof currentLang === 'undefined') return false;
     try {
         const reg = await navigator.serviceWorker.ready;
         const subscription = await reg.pushManager.getSubscription();
-        if (!subscription) return;
-        await db.from('push_subscriptions').update({ lang: currentLang }).eq('endpoint', subscription.endpoint);
-    } catch (e) { /* не критично — просто останется прошлый язык до следующего переключения */ }
+        if (!subscription) return false;
+        const { data, error } = await db.from('push_subscriptions').update({ lang: currentLang })
+            .eq('endpoint', subscription.endpoint).select('id');
+        return !error && !!data && data.length > 0;
+    } catch (e) { return false; /* не критично — попробуем в следующий раз */ }
 }
 
 // Переключатель конкретного типа уведомлений (например "Новые заказы").
