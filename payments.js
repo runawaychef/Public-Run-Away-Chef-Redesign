@@ -214,6 +214,13 @@ function _payChangedInfo(order, total, paid) {
     return _payChangedVs(order, total, s) ? { old: Number(s.total), cur: total, paid } : null;
 }
 
+// v979: концовка разового сообщения по ситуации: долг, оплачено полностью или переплата (сравнение в центах)
+function _payChangedEnding(chg) {
+    const diff = Math.round(chg.cur * 100) - Math.round(chg.paid * 100);
+    if (diff === 0) return t('pay_chg_end_paid');
+    return t(diff > 0 ? 'pay_chg_end_due' : 'pay_chg_end_over').replace('{sum}', formatMoney(Math.abs(diff) / 100));
+}
+
 function renderPayments() {
     const total = getOrderTotalValue();
     const paid = _orderPayments.reduce((s, p) => s + Number(p.amount), 0);
@@ -344,7 +351,7 @@ function renderPayments() {
     const stt = _payChgState[currentOrderId] || (_payChgState[currentOrderId] = { prev: undefined, warned: false });
     if (chg && stt.prev === false && !stt.warned) {
         stt.warned = true;
-        setTimeout(() => showInfo(t('pay_changed_once').replace('{old}', formatMoney(chg.old)).replace('{new}', formatMoney(chg.cur)).replace('{paid}', formatMoney(chg.paid))), 0);
+        setTimeout(() => showInfo(t('pay_changed_once').replace('{old}', formatMoney(chg.old)).replace('{new}', formatMoney(chg.cur)).replace('{paid}', formatMoney(chg.paid)) + ' ' + _payChangedEnding(chg)), 0);
     }
     if (!chg) stt.warned = false;
     stt.prev = !!chg;
