@@ -66,7 +66,7 @@ async function saveAppSnapshot() {
         } catch (e) { /* сеть недоступна — сохраняем без привязки, ниже просто не будем доверять такому снимку */ }
 
         const snapshot = {
-            orders, customers, products, ingredients, semiFinished, employees,
+            orders, cancelledOrders, customers, products, ingredients, semiFinished, employees,
             _orderPaidTotals, _orderCreditTotals,
             _inventoryCache,
             currentOrgId, currentOrgName, currentOrgPlan, currentOrgPlanIsOverridden, currentOrgCreatedAt,
@@ -108,6 +108,7 @@ function clearAppSnapshot() {
 // Вызывается один раз, из init(), до попытки любого обращения к серверу.
 function restoreAppFromSnapshot(snapshot) {
     orders = snapshot.orders || [];
+    cancelledOrders = snapshot.cancelledOrders || [];   // v983
     customers = snapshot.customers || [];
     products = snapshot.products || [];
     ingredients = snapshot.ingredients || [];
@@ -218,7 +219,7 @@ async function _doHandleInstantRestoreWrongAccount() {
     clearAppSnapshot();
     _instantRestoreDone = false;
     _snapshotAuthUserId = null;
-    orders = []; customers = []; products = []; ingredients = []; semiFinished = []; employees = [];
+    orders = []; cancelledOrders = []; customers = []; products = []; ingredients = []; semiFinished = []; employees = [];
     currentOrgId = null; currentOrgName = ''; currentEmployee = null;
     localStorage.removeItem('currentEmployee');
     document.getElementById('appContent').classList.add('app-locked');

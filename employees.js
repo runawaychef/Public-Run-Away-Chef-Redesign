@@ -276,7 +276,7 @@ const EMPLOYEE_SELECT_FIELDS = 'id, name, is_owner, user_id, can_view_costs, can
 function activeEmployees() { return (typeof employees !== 'undefined' && employees ? employees : []).filter(e => !e.archived_at); }
 function employeeTraces(emp) {
     const id = String(emp && emp.id);
-    const list = (typeof orders !== 'undefined' && orders) ? orders : [];
+    const list = ordersWithCancelled();
     return { master: list.filter(o => o.employee_id != null && String(o.employee_id) === id).length, created: list.filter(o => o.created_by != null && String(o.created_by) === id).length };
 }
 

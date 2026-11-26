@@ -568,7 +568,7 @@ function docs2RenderPaid(reapplyView) {
     const box = document.getElementById('docs2Paid');
     if (!box) return;
     const docs = (typeof _docsAll !== 'undefined' && Array.isArray(_docsAll)) ? _docsAll : [];
-    const ordById = new Map((typeof orders !== 'undefined' ? orders : []).map(o => [o.id, o]));
+    const ordById = new Map(ordersWithCancelled().map(o => [o.id, o]));
     const rows = _d2PRows.map(p => {
         const o = ordById.get(p.order_id) || null;
         const key = o ? String(o.customer_id || ('n:' + (o.customer || ''))) : 'x';

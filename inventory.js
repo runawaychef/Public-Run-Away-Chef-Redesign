@@ -1146,7 +1146,7 @@ async function reverseInventoryForOrderItem(orderItemId) {
             if (!r.batch_breakdown) return;
             const itemType = r.semi_finished_id ? 'semi_finished' : 'ingredient';
             const itemId = r.semi_finished_id || r.ingredient_id;
-            const o = orders.find(x => x.id === r.order_id);
+            const o = findAnyOrder(r.order_id);
             const oLabel = o && o.order_number ? '№' + o.order_number : '#' + r.order_id;
             const { error: rpcError } = await db.rpc('rpc_restore_stock', {
                 p_org_id: currentOrgId,

@@ -364,7 +364,7 @@ function customerNewInfo() {
     const id = currentCustomerId;
     if (id === null || !_draftCustomerIds.has(id)) return null;
     if (!document.getElementById('customerDetail')?.classList.contains('active')) return null;
-    if ((orders || []).some(o => o.customer_id === id)) return null; // уже есть заказы — это не черновик
+    if (ordersWithCancelled().some(o => o.customer_id === id)) return null; // уже есть заказы — это не черновик
     const v = k => (document.getElementById(k)?.value || '').trim();
     const hasData = ['cdName', 'cdContact', 'cdEmail', 'cdNotes', 'cdAddress', 'cdRegNumber', 'cdPersonalCode', 'cdVatCode'].some(k => v(k)) || (parseFloat(v('cdDiscount')) || 0) > 0;
     return {
@@ -416,7 +416,7 @@ async function cleanupCustomerDraftIfEmpty(custId) {
 async function cleanupAbandonedCustomerDrafts() {
     try {
         const blank = v => !(v && String(v).trim());
-        const withOrders = new Set((orders || []).map(o => o.customer_id).filter(x => x != null));
+        const withOrders = new Set(ordersWithCancelled().map(o => o.customer_id).filter(x => x != null));
         const stale = customers.filter(c =>
             blank(c.name) && blank(c.contact) && blank(c.email) && blank(c.address) && blank(c.notes) &&
             blank(c.reg_number) && blank(c.vat_code) && blank(c.personal_code) &&
@@ -740,7 +740,7 @@ async function renderCustomerCredit(cust) {
         document.getElementById('cdCreditRefundBtn').classList.toggle('hidden', bal <= 0.004);
         const kindKey = { from_order: 'credit_hist_from_order', applied: 'credit_hist_applied', refund: 'credit_hist_refund' };
         document.getElementById('cdCreditHistory').innerHTML = rows.slice(0, 10).map(r => {
-            const o = r.order_id ? orders.find(x => x.id === r.order_id) : null;
+            const o = r.order_id ? findAnyOrder(r.order_id) : null;
             const ord = o ? ' · №' + escapeHtml(String(o.order_number || o.id)) : '';
             const sign = Number(r.amount) > 0 ? '+' : '';
             return `<div>${escapeHtml(formatDateDMY(r.op_date))} · ${sign}${escapeHtml(formatMoney(Number(r.amount)))} · ${escapeHtml(t(kindKey[r.kind] || 'credit_hist_refund'))}${ord}</div>`;
@@ -1283,7 +1283,7 @@ function deleteCurrentCustomer() {
     if (idx === -1) return;
     const cust = customers[idx];
     // v950: клиента с заказами или авансом не удаляем — предлагаем архив
-    if (orders.some(o => o.customer_id === cust.id && isOrderSaved(o)) || Math.abs(_custBalance[cust.id] || 0) > 0.004) { openCustomerArchive(); return; }
+    if (ordersWithCancelled().some(o => o.customer_id === cust.id && isOrderSaved(o)) || Math.abs(_custBalance[cust.id] || 0) > 0.004) { openCustomerArchive(); return; }
     openDeleteModal(idx, 'customer', `${t('delete_label_customer')} «${cust.name || t('customers_no_name_fallback')}»`);
 }
 
@@ -1360,7 +1360,7 @@ async function saveCdHeader() {
         cust.name = name; cust.contact = contact; cust.email = email || null; cust.discount = parseFloat(discount.toFixed(2)); cust.vat_exempt = vatExempt; cust.notes = notes;
         cust.address = address; cust.reg_number = regNumber; cust.vat_code = vatCode; cust.personal_code = personalCode; cust.entity_type = entityType;
         cust.payment_term_days = paymentTermDays;
-        orders.forEach(o => { if (o.customer_id === cust.id) o.customer = name; });
+        ordersWithCancelled().forEach(o => { if (o.customer_id === cust.id) o.customer = name; });
         logActivity('customer', `${t('log_customer_changed')} «${oldName}»${oldName !== name ? ` → «${name}»` : ''}`);
         renderCustomerStats(cust);
         renderCustomerOrders();
@@ -1384,6 +1384,7 @@ function renderCustomerStats(cust) {
         [t('cust_cell_total'), formatMoney(customerTotalSpent(cust)), '#3c3a34'],
         [t('cust_cell_debt'), hasDebt ? formatMoney(debt) : '—', hasDebt ? '#c0685c' : '#a29c8c']);
     const hasOrders = custOrders.length > 0;
+    const hasAnyOrders = hasOrders || cancelledOrders.some(o => o.customer_id === cust.id);   // v983: список показываем и ради отменённых
     // Памятные даты в окне N дней (17.10): строка над ячейками (все даты) + золотая метка перед красной
     const upcoming = memoUpcoming(cust.id);
     const stripEl = document.getElementById('cdMemoStrip');
@@ -1400,7 +1401,7 @@ function renderCustomerStats(cust) {
     const btns = document.getElementById('cdStatsBtns');
     if (btns) btns.style.marginTop = hasOrders ? '8px' : '0';
     document.getElementById('cdStatsBlock')?.classList.remove('hidden');
-    document.getElementById('cdOrdersBlock')?.classList.toggle('hidden', !hasOrders);
+    document.getElementById('cdOrdersBlock')?.classList.toggle('hidden', !hasAnyOrders);
 }
 
 // Список заказов клиента с фильтром по периоду (Весь период/Неделя/Месяц/Год)
@@ -1435,7 +1436,7 @@ function renderCustomerOrders() {
     if (!cust || !container) return;
 
     const range = document.getElementById('cdDateRange').value;
-    let custOrders = orders.filter(o => o.customer_id === cust.id && isOrderSaved(o));
+    let custOrders = ordersWithCancelled().filter(o => o.customer_id === cust.id && isOrderSaved(o));   // v983: отменённые тоже видны здесь
 
     if (range === 'week' || range === 'month' || range === 'year') {
         const today = orgNowDate();
@@ -1465,6 +1466,15 @@ function renderCustomerOrders() {
     const statusFlag = { 'принят': 'flag-red', 'в работе': 'flag-yellow', 'выполнен': 'flag-green' };
     let html = '<table class="w-full table-text table-clean" style="table-layout:fixed;"><thead><tr class="text-xs"><th class="p-1 text-left" style="width:26%;">' + t('customers_col_number') + '</th><th class="p-1 text-left" style="width:25%;">' + t('customers_col_date') + '</th><th class="p-1 text-right" style="width:21%;">' + t('customers_col_sum') + ' (' + (CURRENCY_SYMBOLS[currentOrgCurrency] || currentOrgCurrency) + ')</th><th class="p-1 text-center" style="width:28%;">' + t('customers_col_status') + '</th></tr><tr class="tbl-gap"><th colspan="4"></th></tr></thead><tbody>';
     custOrders.forEach(o => {
+        if (o.cancelled_at) {   // v983
+            html += `<tr class="border-b order-row" style="color:#8f8a7c;" onclick="openCancelledOrder(${o.id})">
+            <td class="p-0.5 whitespace-nowrap">${escapeHtml(o.order_number || `#${o.id}`)}</td>
+            <td class="p-0.5">${formatDateDMY(o.date)}</td>
+            <td class="p-0.5 text-right" style="text-decoration:line-through;">${orderGrandTotal(o).toFixed(2)}</td>
+            <td class="p-0.5 text-center">${escapeHtml(t('cancel_status'))}</td>
+        </tr>`;
+            return;
+        }
         const oNum = o.order_number || `#${o.id}`;
         const payInfo = getOrderPaymentStatus(o);
         html += `<tr class="border-b order-row" onclick="goToOrderFromCustomer(${o.id})">
@@ -1506,7 +1516,7 @@ function _custArchiveRowUpdate() {
 // Кнопки в шапке карточки: пустой клиент (нет заказов и аванса) — «Удалить»; с историей — «В архив»; архивный — «Восстановить»
 function updateCustomerDetailButtons(cust) {
     if (!cust) return;
-    const hasOrders = orders.some(o => o.customer_id === cust.id && isOrderSaved(o));
+    const hasOrders = ordersWithCancelled().some(o => o.customer_id === cust.id && isOrderSaved(o));
     const hasCredit = Math.abs(_custBalance[cust.id] || 0) > 0.004;
     const empty = !hasOrders && !hasCredit;
     // Право «удаление» (can_delete) сохраняем: кнопка без класса perm-delete, иначе applyPermissions() у владельца снимает hidden

@@ -547,8 +547,8 @@ async function closeProductDetail() {
 // Изделие в заказах не удаляется, а уходит в архив. Строго: пока есть хоть один незакрытый заказ с изделием — нельзя.
 function activeProducts() { return products.filter(p => !p.archived_at); }
 function productUsage(prod) {
-    const ordersAll = (orders || []).filter(o => !o.deleted_at && (o.items || []).some(it => it.product_id === prod.id));
-    const ordersOpen = ordersAll.filter(o => o.status !== 'выполнен');
+    const ordersAll = ordersWithCancelled().filter(o => !o.deleted_at && (o.items || []).some(it => it.product_id === prod.id));
+    const ordersOpen = ordersAll.filter(o => o.status !== 'выполнен' && !o.cancelled_at);
     return { ordersAll, ordersOpen, hasTraces: ordersAll.length > 0 };
 }
 function refreshProductDelBtn(prod) {
@@ -666,7 +666,7 @@ async function savePdHeader() {
         prod.name = name; prod.price = parseFloat(price.toFixed(2));
         prod.batch_size = batchSize;
         prod.unit = unit;
-        orders.forEach(o => o.items.forEach(it => { if (it.product_id === prod.id) it.product = name; }));
+        ordersWithCancelled().forEach(o => o.items.forEach(it => { if (it.product_id === prod.id) it.product = name; }));
         updatePdUnitUI(unit);
         renderProductRecipe(prod);
         logActivity('product', `${t('log_product_changed')} «${prod.name}»${unitChanged ? ` (${t('ing_unit_label').toLowerCase()}: ${unitAbbrev(unit) || '—'})` : ''}`);

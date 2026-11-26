@@ -31,7 +31,7 @@ function formatHistoryRow(entry) {
     const timeStr = dt.toLocaleTimeString(dateLocale(), { hour: '2-digit', minute: '2-digit' });
 
     // Кликабельно только если есть order_id и такой заказ всё ещё существует
-    const orderExists = entry.order_id && orders.some(o => o.id === entry.order_id);
+    const orderExists = entry.order_id && !!findAnyOrder(entry.order_id);
     const rowClass = orderExists ? 'border-b order-row' : 'border-b';
     const clickAttr = orderExists ? ` onclick="openOrderFromHistory(${entry.order_id})"` : '';
 

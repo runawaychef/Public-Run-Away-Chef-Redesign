@@ -767,6 +767,35 @@
             transition: all 0.15s ease;
         }
         .pill-btn-secondary:active { transform: scale(0.96); opacity: 0.85; }
+        /* v983: отмена заказа и отменённые заказы */
+        .cancel-sub { font-size: 12px; color: #6b675d; margin: 4px 0 8px; line-height: 1.45; }
+        .cancel-q { font-size: 13px; font-weight: 700; color: #322f28; margin: 12px 0 6px; line-height: 1.4; }
+        .cancel-opt { display: block; width: 100%; text-align: left; border: 1px solid #ded9ca; background: #f4f1ea; border-radius: 11px; padding: 8px 10px; margin-bottom: 6px; }
+        .cancel-opt b { display: block; font-size: 12.5px; color: #322f28; }
+        .cancel-opt span { display: block; font-size: 11.5px; color: #6b675d; line-height: 1.4; }
+        .cancel-opt.selected { border-color: #7c9473; background: #e3ebdf; box-shadow: inset 0 0 0 1px #7c9473; }
+        .cancel-opt:disabled { opacity: 0.5; }
+        .cancel-part { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; font-size: 12.5px; color: #322f28; }
+        .cancel-part input { width: 105px; flex-shrink: 0; border: 1px solid #ded9ca; background: #f4f1ea; border-radius: 10px; padding: 6px 8px; font-size: 14px; text-align: right; }
+        .cancel-rest { font-size: 12px; color: #4f6349; font-weight: 700; }
+        .cancel-rest.bad { color: #8b3a3a; }
+        .cancel-link { border: 0; background: none; color: #4f6349; font-size: 12.5px; font-weight: 700; text-decoration: underline; padding: 4px 0; }
+        .cancel-note { font-size: 11.5px; color: #6b675d; margin: 6px 0 4px; line-height: 1.4; }
+        .cancel-select { width: 100%; border: 1px solid #ded9ca; background: #f4f1ea; border-radius: 10px; padding: 7px 8px; font-size: 13px; }
+        .cancel-error { margin-top: 10px; font-size: 12.5px; font-weight: 700; color: #8b3a3a; line-height: 1.4; }
+        .cx-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; font-weight: 700; color: #6b675d; margin: 4px 2px 8px; }
+        .cx-head button { border: 0; background: #e3e8df; color: #4f6349; border-radius: 999px; padding: 5px 11px; font-size: 11.5px; font-weight: 700; }
+        .cx-row { background: #fff; border-radius: 12px; padding: 9px 11px; margin-bottom: 7px; border-left: 4px solid #a29c8c; box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+        .cx-line { display: flex; justify-content: space-between; gap: 10px; font-size: 12.5px; color: #322f28; line-height: 1.7; }
+        .cx-line > span:last-child { text-align: right; flex-shrink: 0; max-width: 60%; }
+        .cx-name { font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cx-sum { color: #6b675d; text-decoration: line-through; }
+        .cx-meta { font-size: 11.5px; color: #6b675d; line-height: 1.5; }
+        .cx-badge { background: #f3e4e1; color: #8b3a3a; border-radius: 10px; padding: 7px 10px; font-size: 12.5px; font-weight: 700; margin-bottom: 8px; }
+        .cx-title { font-size: 14px; font-weight: 700; color: #322f28; margin-bottom: 4px; }
+        .cx-notes { background: #f4f1ea; border-radius: 10px; padding: 6px 9px; font-size: 12px; color: #4b483f; margin-top: 4px; white-space: pre-wrap; }
+        .cx-sec { border-top: 1px solid #ebe6d8; margin-top: 8px; padding-top: 6px; }
+        .cx-total { font-weight: 700; }
         /* Сводка отправленных документов под кнопкой в заказе (22.10) */
         #detailSendDocBtn.has-sum { border-radius: 10px 10px 0 0; }
         .doc-sum { background: #fff; border: 1px solid #e3e8df; border-top: 0; border-radius: 0 0 10px 10px; padding: 6px 10px; }
@@ -3524,6 +3553,7 @@ function hideSplashScreen() {
                                 <div class="status-option" onclick="setOrderPaymentFilter('paid')"><span><span class="dot" style="background:#7c9473;display:inline-block;margin-right:5px;"></span><span data-i18n="pay_status_paid">Оплачен</span></span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
                                 <div class="status-option" onclick="setOrderPaymentFilter('overdue')"><span><span class="dot" style="background:#8b3a3a;display:inline-block;margin-right:5px;"></span><span data-i18n="pay_status_overdue">Просрочен</span></span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
                                 <div class="status-option" onclick="setOrderPaymentFilter('noinv')"><span><span class="dot" style="background:#c9973a;display:inline-block;margin-right:5px;"></span><span data-i18n="orders_filter_no_invoice">Без счёта</span></span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
+                                <div id="orderPayCancelledOption" class="status-option hidden" style="border-top:1px solid #e3e0d6;" onclick="setOrderPaymentFilter('cancelled')"><span data-i18n="pay_status_cancelled">Отменённые</span><svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg></div>
                             </div>
                         </div>
 
@@ -3532,7 +3562,7 @@ function hideSplashScreen() {
                     <!-- Значения-носители для существующей логики фильтрации (getFilteredOrdersForList) — не отображаются -->
                     <select id="orderDateRangeFilter" class="hidden"><option value="all">Весь период</option><option value="week">Текущая неделя</option><option value="month">Текущий месяц</option><option value="custom">От - До</option></select>
                     <select id="orderEmployeeFilter" class="hidden"><option value="">Все исполнители</option></select>
-                    <select id="orderPaymentFilter" class="hidden"><option value="">Оплата: все</option><option value="unpaid">Не оплачен</option><option value="partial">Частично оплачен</option><option value="paid">Оплачен</option><option value="overdue">Просрочен</option><option value="noinv">Без счёта</option></select>
+                    <select id="orderPaymentFilter" class="hidden"><option value="">Оплата: все</option><option value="cancelled">Отменённые</option><option value="unpaid">Не оплачен</option><option value="partial">Частично оплачен</option><option value="paid">Оплачен</option><option value="overdue">Просрочен</option><option value="noinv">Без счёта</option></select>
 
                     <div id="orderCustomDateRange" class="hidden">
                         <input id="orderDateFrom" type="hidden">
@@ -3561,7 +3591,7 @@ function hideSplashScreen() {
             <!-- ДЕТАЛЬНЫЙ ВИД ЗАКАЗА -->
             <div id="orderDetail">
                 <div class="bg-white p-2 rounded-xl shadow-md mb-3">
-                    <div class="flex items-center justify-between gap-1.5">
+                    <div class="flex items-center justify-between flex-wrap gap-1.5">
                         <div class="flex gap-1.5">
                             <button onclick="closeOrderDetail()" class="pill-btn">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
@@ -3569,7 +3599,8 @@ function hideSplashScreen() {
                             </button>
                             <button onclick="goToCustomerFromOrder()" class="pill-btn" data-i18n="orders_customer_card">Карточка клиента</button>
                         </div>
-                        <div class="flex gap-1.5 items-center">
+                        <div class="flex gap-1.5 items-center" style="margin-left:auto;">
+                            <button id="cancelOrderBtn" onclick="openCancelOrder()" class="pill-btn-secondary hidden" data-i18n="cancel_btn">Отменить заказ</button>
                             <button onclick="deleteCurrentOrder()" class="pill-btn-danger perm-delete" data-i18n="common_delete">Удалить</button>
                         </div>
                     </div>
@@ -3947,6 +3978,19 @@ function hideSplashScreen() {
                     <button onclick="confirmOrderDeleteStock('return')" class="pill-btn" data-i18n="stock_choice_return">Удалить и вернуть на склад</button>
                     <button onclick="confirmOrderDeleteStock('keep')" class="pill-btn" data-i18n="stock_choice_keep">Удалить, оставить списанными</button>
                     <button onclick="closeModal()" class="pill-btn" data-i18n="common_cancel">Отмена</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- v983: отмена заказа (orders.js) -->
+        <div id="cancelOrderModal" class="modal">
+            <div class="modal-content" style="max-width:340px; max-height:86vh; overflow-y:auto;">
+                <h2 id="cancelOrderTitle" class="text-sm font-semibold text-gray-800"></h2>
+                <div id="cancelOrderBody"></div>
+                <div id="cancelOrderError" class="cancel-error hidden"></div>
+                <div class="flex gap-2" style="margin-top:12px;">
+                    <button onclick="cancelOrderNext()" class="pill-btn flex-1 justify-center" data-i18n="cancel_next_btn">Далее</button>
+                    <button onclick="closeCancelOrder()" class="pill-btn-secondary" data-i18n="common_back">Назад</button>
                 </div>
             </div>
         </div>
@@ -5009,6 +5053,23 @@ function hideSplashScreen() {
             </div>
         </div>
 
+        <!-- ===== v983: СТРАНИЦА «Отменённый заказ», только просмотр (orders.js openCancelledOrder) ===== -->
+        <div id="cancelledOrderPage" class="app-page">
+            <div class="bg-white rounded-xl shadow-md mb-3" style="padding:10px 12px 12px;">
+                <div class="flex items-center justify-between flex-wrap gap-1.5 mb-2">
+                    <button onclick="closeAppPage()" class="pill-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                        <span data-i18n="common_back">Назад</span>
+                    </button>
+                    <div class="flex gap-1.5" style="margin-left:auto;">
+                        <button onclick="copyCancelledOrder()" class="pill-btn-secondary" data-i18n="icon_copy_title">Копировать</button>
+                        <button id="cancelledDeleteBtn" onclick="deleteCancelledOrder()" class="pill-btn-danger hidden" data-i18n="common_delete">Удалить</button>
+                    </div>
+                </div>
+                <div id="cancelledOrderBody"></div>
+            </div>
+        </div>
+
         <!-- ===== СТРАНИЦА «Корзина удалённых заказов» (22.10; бывшее окно ordersTrashModal, orders.js openOrdersTrash) ===== -->
         <div id="ordersTrashPage" class="app-page">
             <div class="bg-white rounded-xl shadow-md mb-3" style="padding:10px 12px 12px;">
@@ -5362,34 +5423,34 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=10"></script>
     <script src="money.js?v=17"></script>
-    <script src="i18n-core.js?v=242"></script>
+    <script src="i18n-core.js?v=243"></script>
     <script src="supabaseClient.js?v=7"></script>
-    <script src="cache.js?v=22"></script>
+    <script src="cache.js?v=23"></script>
     <script src="auth.js?v=35"></script>
-    <script src="employees.js?v=83"></script>
+    <script src="employees.js?v=84"></script>
     <script src="company.js?v=30"></script>
-    <script src="inventory.js?v=95"></script>
+    <script src="inventory.js?v=96"></script>
     <script src="billing.js?v=28"></script>
     <script src="push.js?v=12"></script>
-<script src="ingredients.js?v=86"></script>
+<script src="ingredients.js?v=87"></script>
 <script src="batches.js?v=18"></script>
 <script src="semifinished.js?v=79"></script>
-<script src="products.js?v=71"></script>
-<script src="customers.js?v=90"></script>
+<script src="products.js?v=72"></script>
+<script src="customers.js?v=91"></script>
 <script src="calendar.js?v=17"></script>
-<script src="orders.js?v=198"></script>
+<script src="orders.js?v=199"></script>
 <script src="dashboard.js?v=28"></script>
 <script src="invoice.js?v=57"></script>
 <script src="send-document.js?v=49"></script>
 <script src="confirmation.js?v=7"></script>
 <script src="payments.js?v=53"></script>
 <script src="documents.js?v=17"></script>
-<script src="documents2.js?v=39"></script>
+<script src="documents2.js?v=40"></script>
 <script src="bank.js?v=15"></script>
-<script src="stats.js?v=46"></script>
-<script src="history.js?v=11"></script>
+<script src="stats.js?v=47"></script>
+<script src="history.js?v=12"></script>
 <script src="modals.js?v=34"></script>
-<script src="demoData.js?v=39"></script>
+<script src="demoData.js?v=40"></script>
 <script src="helpers.js?v=59"></script>
 <script>
 // SUPABASE_URL, SUPABASE_KEY, db перенесены в supabaseClient.js
@@ -5400,6 +5461,7 @@ function hideSplashScreen() {
 let products  = [];   // [{id, name, price, batch_size, cost_items, ingredients:[{id, ingredient_id, quantity}]}]
 let customers = [];   // [{id, name, contact, discount}]
 let orders    = [];   // [{id, customer, customer_id, date, status, discount, items:[{id, product, product_id, quantity, price}]}]
+let cancelledOrders = []; // v983: отменённые заказы — отдельно, чтобы не попадали в расчёты (orders.js)
 // employees, currentEmployee, logActivity, initLogin, selectEmployee, logoutEmployee
 // перенесены в employees.js
 
@@ -5477,14 +5539,14 @@ async function loadAllData(silent) {
     // Запоминаем, какие заказы были в памяти на момент СТАРТА загрузки: всё, что появится
     // локально за время запроса (новый черновик по кнопке "+"), в ответ сервера не попадёт
     // и не должно затираться (см. ниже, после сборки orders).
-    const _orderIdsAtStart = new Set((orders || []).map(o => o.id));
+    const _orderIdsAtStart = new Set((orders || []).concat(cancelledOrders || []).map(o => o.id));
     try {
         const [pRes, cRes, oRes, oiRes, eRes, ingRes, piRes, sfRes, sfiRes, opRes, omRes] = await Promise.all([
             fetchAllRows(() => db.from('products').select('id, name, price, batch_size, cost_items, unit, recipe_confirmed, track_stock, photo_url, archived_at').eq('org_id', currentOrgId).order('name').order('id')),
             fetchAllRows(() => db.from('customers').select('id, name, contact, email, discount, vat_exempt, notes, address, reg_number, vat_code, personal_code, entity_type, payment_term_days, invoice_mode, archived_at').eq('org_id', currentOrgId).order('name').order('id')),
             // invoice_snapshot / delivery_note_snapshot сюда НЕ входят: это копии документов с логотипом
             // (у большой пекарни ~15 МБ), в списке они не нужны — документы читают свой снимок из базы сами.
-            fetchAllRows(() => db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending, is_confirmed, is_demo, created_by, inv_no, dn_no, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via, invoice_sent_message_id, delivery_note_sent_message_id, invoice_delivery_status, delivery_note_delivery_status, consolidated_invoice_id, cons_excluded').eq('org_id', currentOrgId).is('deleted_at', null).order('id')),
+            fetchAllRows(() => db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending, is_confirmed, is_demo, created_by, inv_no, dn_no, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via, invoice_sent_message_id, delivery_note_sent_message_id, invoice_delivery_status, delivery_note_delivery_status, consolidated_invoice_id, cons_excluded, cancelled_at, cancelled_by, cancel_retained').eq('org_id', currentOrgId).is('deleted_at', null).order('id')),
             fetchAllRows(() => db.from('order_items').select('id, order_id, product_id, quantity, price, item_cost').eq('org_id', currentOrgId).order('id')),
             db.from('employees').select('id, name').eq('org_id', currentOrgId).order('name').limit(1000),
             fetchAllRows(() => db.from('ingredients').select('id, name, package_price, package_size, unit, shelf_life_days, kind, sale_price, archived_at').eq('org_id', currentOrgId).order('name').order('id')),
@@ -5607,6 +5669,9 @@ async function loadAllData(silent) {
                 created_by: o.created_by || null,
                 consolidated_invoice_id: o.consolidated_invoice_id || null,
                 cons_excluded: !!o.cons_excluded,
+                cancelled_at: o.cancelled_at || null,
+                cancelled_by: o.cancelled_by || null,
+                cancel_retained: o.cancel_retained != null ? Number(o.cancel_retained) : null,
                 inv_no: o.inv_no || null,
                 dn_no: o.dn_no || null,
                 invoice_sent_at: o.invoice_sent_at || null,
@@ -5630,6 +5695,9 @@ async function loadAllData(silent) {
                 if (!_orderIdsAtStart.has(o.id) && !_fetchedIds.has(o.id)) orders.push(o);
             });
         }
+
+        cancelledOrders = orders.filter(o => o.cancelled_at);   // v983
+        orders = orders.filter(o => !o.cancelled_at);
 
         saveAppSnapshot(); // кэш для мгновенного запуска (см. cache.js) — держим свежим после каждой успешной загрузки
         renderAllScreens();
@@ -6384,6 +6452,7 @@ const _backHandledDetailScreens = [
     { id: 'bankSettingsPage',   close: () => { if (typeof closeBankSettings === 'function') closeBankSettings(); } },
     { id: 'inventoryPage',      close: () => { if (typeof closeInventoryPage === 'function') closeInventoryPage(); } },
     { id: 'settingsPage',       close: () => { if (typeof closeSettingsPage === 'function') closeSettingsPage(); } },
+    { id: 'cancelledOrderPage', close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'ordersTrashPage',    close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },
     { id: 'companyInfoPage',    close: () => { if (typeof closeCompanyInfoPage === 'function') closeCompanyInfoPage(); } },
     { id: 'employeePage',       close: () => { if (typeof closeAppPage === 'function') closeAppPage(); } },

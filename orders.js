@@ -65,7 +65,17 @@ function displayOrders() {
     // ---- Табличный вид: блоки-«острова» по неделям (Пн–Вс), итог недели — отдельной
     // строкой под блоком; итогов за месяц нет. Состав и сортировка — как раньше,
     // фильтры общие с карточным видом. ----
+    refreshCancelledFilterOption();
     const filteredOrders = getFilteredOrdersForList();
+    // v983: фильтр «Отменённые» — свой простой список, без сумм продаж, оплат и свайпов
+    if (ordersCancelledMode()) {
+        const html = cancelledListHtml(filteredOrders);
+        const tb = document.getElementById('orderTableBody'); if (tb) tb.innerHTML = html;
+        const cb = document.getElementById('orderCardsBody'); if (cb) cb.innerHTML = html;
+        updateOrdersFilterSummary([]);
+        if (typeof positionOrdersViewToggle === 'function') requestAnimationFrame(positionOrdersViewToggle);
+        return;
+    }
     const sorted = [...filteredOrders].sort((a, b) => new Date(b.date) - new Date(a.date));
     const tbody = document.getElementById('orderTableBody');
 
@@ -1008,13 +1018,16 @@ function getFilteredOrdersForList(opts) {
     const paymentFilter  = document.getElementById('orderPaymentFilter')  ? document.getElementById('orderPaymentFilter').value  : '';
     // Черновики (заказ без номера) видит только автор; чужие черновики и пустые брошенные
     // черновики ожидающие удаления в списке не показываем
-    let filtered = orders.filter(isOrderVisible);
+    const cancelledMode = paymentFilter === 'cancelled';   // v983
+    let filtered = cancelledMode ? cancelledOrders.slice() : orders.filter(isOrderVisible);
+    if (!cancelledMode) {
     if (ordersStatusFilter || _dashSavedOnly || _dashUnpaidOnly) filtered = filtered.filter(isOrderSaved);
     if (_dashUnpaidOnly) filtered = filtered.filter(o => getOrderPaymentStatus(o).status !== 'paid');
     if (ordersStatusFilter) filtered = filtered.filter(o => o.status === ordersStatusFilter);
+    }
     if (selectedOrderCustomers.length > 0) filtered = filtered.filter(o => selectedOrderCustomers.includes(o.customer));
     if (employeeFilter) filtered = filtered.filter(o => String(o.employee_id) === employeeFilter);
-    if (paymentFilter) {
+    if (paymentFilter && !cancelledMode) {
         filtered = filtered.filter(o => {
             const info = getOrderPaymentStatus(o);
             if (paymentFilter === 'noinv') return orderNeedsInvoice(o);
@@ -1281,7 +1294,7 @@ function ordersFilterDescription() {
 function updateOrdersFilterSummary(filtered) {
     const el = document.getElementById('ordersFilterSummary');
     if (!el) return;
-    const desc = ordersFilterDescription();
+    const desc = ordersCancelledMode() ? '' : ordersFilterDescription();
     if (!desc) { el.classList.add('hidden'); _ofsFiltered = []; return; }
     _ofsFiltered = filtered;
     const hasVat = (typeof currentOrgVatRate !== 'undefined') && currentOrgVatRate > 0 && (currentOrgProtected || currentOrgVatPayer);
@@ -1447,6 +1460,7 @@ function isOrderVisible(o) {
 function updateDetailSaveUi(order) {
     const saved = isOrderSaved(order);
     document.getElementById('confirmOrderWrap')?.classList.toggle('hidden', saved);
+    document.getElementById('cancelOrderBtn')?.classList.toggle('hidden', !canShowCancelButton(order));   // v983
     const note = document.getElementById('detailAutosaveNote');
     if (note) {
         const key = saved ? 'company_autosave' : 'orders_draft_hint';
@@ -1540,7 +1554,7 @@ async function createDraftOrderAndOpen() {
 }
 
 async function copyOrder(i) {
-    const o = orders[i];
+    const o = (i && typeof i === 'object') ? i : orders[i];   // v983: отменённый заказ передаётся объектом
     const _cc = o && o.customer_id ? customers.find(c => c.id === o.customer_id) : null;
     if (_cc && _cc.archived_at) { showInfo(t('cust_archived_pick').replace('{name}', _cc.name)); return; }   // v950
     suppressRealtimeFor3s();
@@ -1647,10 +1661,19 @@ async function copyOrder(i) {
 // updateCustomerSelects, openDeleteModal, closeModal, editIndex/editItemIdx (главный скрипт).
 
 function openOrderDetail(orderId) {
+    const order = orders.find(o => o.id === orderId);
+    if (!order) {
+        // v983: отменённый заказ открывается только на просмотр; «вернуться туда, откуда открыли» тут не нужно
+        if (findCancelledOrder(orderId)) {
+            if (typeof forgetSmartStockReturn === 'function') forgetSmartStockReturn();
+            if (typeof forgetDocsReturn === 'function') forgetDocsReturn();
+            if (typeof forgetDocs2Return === 'function') forgetDocs2Return();
+            openCancelledOrder(orderId);
+        }
+        return;
+    }
     currentOrderId = orderId;
     _orderMatOpenFor = null; // блок «Упаковка» при открытии заказа всегда свёрнут
-    const order = orders.find(o => o.id === orderId);
-    if (!order) return;
 
     // Скрыть список, показать детальный вид
     document.getElementById('ordersList').classList.add('hidden');
@@ -2011,7 +2034,7 @@ async function loadOrdersTrash(withCleanup) {
 
         // Загружаем оставшиеся удалённые заказы
         const { data, error } = await db.from('orders')
-            .select('id, customer_id, order_date, status, notes, deleted_at, order_number, inv_no, dn_no, consolidated_invoice_id')
+            .select('id, customer_id, order_date, status, notes, deleted_at, order_number, inv_no, dn_no, consolidated_invoice_id, cancelled_at')
             .not('deleted_at', 'is', null)
             .order('deleted_at', { ascending: false });
         if (error) throw error;
@@ -2043,10 +2066,11 @@ async function loadOrdersTrash(withCleanup) {
             const docs = orderDocLabels(o);
             if (o.consolidated_invoice_id) docs.push(t('order_blk_doc_cons') + ' ' + (typeof _payConsNumber === 'function' ? _payConsNumber(o.consolidated_invoice_id) : ''));
             const keptNote = docs.length ? t('trash_kept_docs').replace('{list}', docs.join(', ')) : (paidIds.has(o.id) ? t('trash_kept_pay') : '');
-            html += `<div class="st-row trash-grid" ${dataAction('openTrashOrderActions', [o.id, custName, orderDate, orderNum, keptNote])}>
+            const cxMark = o.cancelled_at ? t('cancel_trash_mark') : '';   // v983
+            html += `<div class="st-row trash-grid" ${dataAction('openTrashOrderActions', [o.id, cxMark ? custName + ' · ' + cxMark : custName, orderDate, orderNum, keptNote])}>
                 <span class="st-num">${dateShort}</span>
                 <span class="st-num">${escapeHtml(orderNum)}</span>
-                <span class="st-name">${escapeHtml(custName)}</span>
+                <span class="st-name">${escapeHtml(custName)}${cxMark ? ` <span style="color:#8b3a3a; font-size:11px;">· ${escapeHtml(cxMark)}</span>` : ''}</span>
                 <span class="st-num${!keptNote && left <= 3 ? ' trash-left-warn' : ''}">${escapeHtml(keptNote ? t('trash_kept') : t('trash_days_left').replace('{n}', left))}</span>
             </div>`;
         });
@@ -3192,3 +3216,429 @@ async function recalcOrderCostBreakdown() {
 }
 
 
+// ==================== ОТМЕНА ЗАКАЗА (v983, часть 2) ====================
+// Отменённые заказы лежат ОТДЕЛЬНО, в cancelledOrders: так они сами не попадают в текущие заказы, долги,
+// производство, склад и статистику (всё это считает по массиву orders). Саму отмену делает функция базы
+// rpc_cancel_order — деньги, склад, потери и отметка пишутся одной транзакцией.
+const CANCEL_TEST_ORGS = [34]; // пока кнопка только в тестовой пекарне; перед открытием всем — убрать это условие
+
+function findCancelledOrder(id) { return (typeof cancelledOrders !== 'undefined' ? cancelledOrders : []).find(o => o.id === id) || null; }
+function findAnyOrder(id) { return (typeof orders !== 'undefined' ? orders : []).find(o => o.id === id) || findCancelledOrder(id); }
+// Для проверок «есть ли у клиента/сотрудника/изделия следы»: действующие вместе с отменёнными
+function ordersWithCancelled() { return (typeof orders !== 'undefined' ? orders : []).concat(typeof cancelledOrders !== 'undefined' ? cancelledOrders : []); }
+
+function canShowCancelButton(order) {
+    return !!order && CANCEL_TEST_ORGS.includes(Number(currentOrgId)) && hasPermission('can_delete') && isOrderSaved(order);
+}
+
+const _cents = v => Math.round((Number(v) || 0) * 100);
+
+// Состояние заказа по базе: оплаты, документы, списанный склад. При ошибке запроса — исключение.
+async function cancelOrderState(order) {
+    const [o, snap, p] = await Promise.all([
+        db.from('orders').select('inv_no, dn_no, consolidated_invoice_id').eq('id', order.id).single(),
+        db.from('orders').select('id', { count: 'exact', head: true }).eq('id', order.id).or('invoice_snapshot.not.is.null,delivery_note_snapshot.not.is.null'),
+        db.from('order_payments').select('amount').eq('order_id', order.id)
+    ]);
+    if (o.error || snap.error || p.error || !o.data) throw (o.error || snap.error || p.error || new Error('order not found'));
+    const docs = orderDocLabels(o.data);
+    if (!docs.length && (snap.count || 0) > 0) docs.push(t('cancel_doc_generic'));
+    let cons = null;
+    const cid = o.data.consolidated_invoice_id;
+    if (cid) {
+        if (typeof _payLoadConsNumbers === 'function') await _payLoadConsNumbers([cid]);
+        cons = typeof _payConsNumber === 'function' ? _payConsNumber(cid) : '…';
+    }
+    const paidC = (p.data || []).reduce((s, x) => s + _cents(x.amount), 0);
+    const hasStock = (await orderOpenStockRows(order.id)).length > 0;
+    return { docs, cons, paidC, payCount: (p.data || []).length, hasStock };
+}
+
+// Причина, по которой отменять нельзя (null — можно)
+function cancelBlockReason(st) {
+    if (st.cons !== null) return t('cancel_blk_cons').replace('{n}', st.cons === '…' ? '' : st.cons);
+    if (st.docs.length) return t('cancel_blk_docs').replace('{list}', st.docs.join(', '));
+    if (st.paidC < 0) return t('cancel_blk_negative');
+    return null;
+}
+
+let _cancelSt = null;
+
+async function openCancelOrder() {
+    const order = orders.find(o => o.id === currentOrderId);
+    if (!order) return;
+    if (!hasPermission('can_delete')) { showInfo(t('orders_no_permission_action')); return; }
+    if (!canShowCancelButton(order)) return;
+    showLoading();
+    let st;
+    try { st = await cancelOrderState(order); }
+    catch (e) { console.error(e); hideLoading(); await showInfo(t('error_save_check_connection')); return; }
+    hideLoading();
+    const reason = cancelBlockReason(st);
+    if (reason) { await showInfo(reason); return; }
+    _cancelSt = { orderId: order.id, paidC: st.paidC, hasStock: st.hasStock, mode: null, split: false, stock: null, method: '', parts: { refund: '', credit: '', retain: '' }, busy: false };
+    renderCancelModal();
+    document.getElementById('cancelOrderModal').style.display = 'flex';
+}
+
+function closeCancelOrder() {
+    document.getElementById('cancelOrderModal').style.display = 'none';
+    _cancelSt = null;
+}
+
+function _cancelOptHtml(selected, onclick, title, hint, disabled) {
+    return `<button type="button" class="cancel-opt${selected ? ' selected' : ''}"${disabled ? ' disabled' : ` onclick="${onclick}"`}>
+        <b>${escapeHtml(title)}</b>${hint ? `<span>${escapeHtml(hint)}</span>` : ''}</button>`;
+}
+
+function renderCancelModal() {
+    const s = _cancelSt;
+    const order = s && orders.find(o => o.id === s.orderId);
+    if (!order) return;
+    document.getElementById('cancelOrderTitle').textContent = t('cancel_title').replace('{num}', orderNumLabel(order));
+    let html = `<div class="cancel-sub">${escapeHtml(order.customer || t('orders_no_customer'))} · ${escapeHtml(formatDateDMY(order.date))} · ${escapeHtml(formatMoney(orderGrandTotal(order)))}</div>`;
+    if (s.paidC > 0) {
+        const noCust = !order.customer_id;
+        html += `<div class="cancel-q">${escapeHtml(t('cancel_money_q').replace('{sum}', formatMoney(s.paidC / 100)))}</div>`;
+        if (!s.split) {
+            html += _cancelOptHtml(s.mode === 'refund', "cancelPickMoney('refund')", t('cancel_opt_refund'), t('cancel_opt_refund_hint'))
+                + _cancelOptHtml(s.mode === 'credit', "cancelPickMoney('credit')", t('cancel_opt_credit'), t(noCust ? 'cancel_opt_credit_nocust' : 'cancel_opt_credit_hint'), noCust)
+                + _cancelOptHtml(s.mode === 'retain', "cancelPickMoney('retain')", t('cancel_opt_retain'), t('cancel_opt_retain_hint'));
+        } else {
+            const row = (key, label, disabled) => `<label class="cancel-part"><span>${escapeHtml(label)}</span><input type="text" inputmode="decimal" value="${escapeHtml(s.parts[key])}" ${disabled ? 'disabled' : ''} oninput="cancelPartInput('${key}', this.value)"></label>`;
+            html += row('refund', t('cancel_opt_refund')) + row('credit', t('cancel_opt_credit'), noCust) + row('retain', t('cancel_opt_retain'))
+                + (noCust ? `<div class="cancel-note">${escapeHtml(t('cancel_opt_credit_nocust'))}</div>` : '')
+                + '<div id="cancelRest" class="cancel-rest"></div>';
+        }
+        html += `<button type="button" class="cancel-link" onclick="cancelToggleSplit()">${escapeHtml(t(s.split ? 'cancel_unsplit_btn' : 'cancel_split_btn'))}</button>`;
+        const opt = (v, k) => `<option value="${v}"${s.method === v ? ' selected' : ''}>${escapeHtml(t(k))}</option>`;
+        html += `<div id="cancelMethodWrap" class="hidden"><div class="cancel-note">${escapeHtml(t('cancel_method_label'))}</div>
+            <select onchange="_cancelSt.method = this.value" class="cancel-select">${opt('', 'cancel_method_choose')}${opt('наличные', 'orders_method_cash')}${opt('карта', 'orders_method_card')}${opt('перевод', 'orders_method_transfer')}</select></div>`;
+    } else {
+        html += `<div class="cancel-note">${escapeHtml(t('cancel_no_money'))}</div>`;
+    }
+    if (s.hasStock) {
+        html += `<div class="cancel-q">${escapeHtml(t('cancel_stock_q'))}</div>`
+            + _cancelOptHtml(s.stock === 'return', "cancelPickStock('return')", t('cancel_stock_return'), t('cancel_stock_return_hint'))
+            + _cancelOptHtml(s.stock === 'keep', "cancelPickStock('keep')", t('cancel_stock_keep'), t('cancel_stock_keep_hint'));
+    }
+    document.getElementById('cancelOrderBody').innerHTML = html;
+    cancelError('');
+    cancelUpdateDynamic();
+}
+
+function cancelError(text) {
+    const el = document.getElementById('cancelOrderError');
+    el.textContent = text || '';
+    el.classList.toggle('hidden', !text);
+}
+function cancelPickMoney(mode) { if (_cancelSt) { _cancelSt.mode = mode; renderCancelModal(); } }
+function cancelPickStock(v) { if (_cancelSt) { _cancelSt.stock = v; renderCancelModal(); } }
+function cancelToggleSplit() {
+    const s = _cancelSt;
+    if (!s) return;
+    s.split = !s.split;
+    s.mode = null;
+    s.parts = { refund: '', credit: '', retain: '' };
+    renderCancelModal();
+}
+// Сумма из поля: пусто → 0; не число, минус или доли цента → null
+function _cancelParse(v) {
+    const str = String(v == null ? '' : v).trim().replace(/\s/g, '').replace(',', '.');
+    if (!str) return 0;
+    if (!/^(\d+(\.\d{0,2})?|\.\d{1,2})$/.test(str)) return null;
+    return _cents(str);
+}
+// Как распределены деньги, в центах: { refund, credit, retain }; null — в поле ошибка
+function _cancelAmounts() {
+    const s = _cancelSt;
+    if (s.split) {
+        const a = { refund: _cancelParse(s.parts.refund), credit: _cancelParse(s.parts.credit), retain: _cancelParse(s.parts.retain) };
+        return (a.refund === null || a.credit === null || a.retain === null) ? null : a;
+    }
+    return { refund: s.mode === 'refund' ? s.paidC : 0, credit: s.mode === 'credit' ? s.paidC : 0, retain: s.mode === 'retain' ? s.paidC : 0 };
+}
+function cancelPartInput(key, value) { if (_cancelSt) { _cancelSt.parts[key] = value; cancelError(''); cancelUpdateDynamic(); } }
+function cancelUpdateDynamic() {
+    const s = _cancelSt;
+    if (!s || !(s.paidC > 0)) return;
+    const a = _cancelAmounts();
+    const rest = document.getElementById('cancelRest');
+    if (rest) {
+        const left = a ? s.paidC - a.refund - a.credit - a.retain : null;
+        rest.textContent = a ? t(left < 0 ? 'cancel_rest_over' : 'cancel_rest').replace('{sum}', formatMoney(Math.abs(left) / 100)) : t('cancel_err_amount');
+        rest.classList.toggle('bad', left !== 0);
+    }
+    document.getElementById('cancelMethodWrap')?.classList.toggle('hidden', !(a && a.refund > 0));
+}
+
+function _cancelMethodLabel(m) {
+    const map = { 'наличные': 'orders_method_cash', 'карта': 'orders_method_card', 'перевод': 'orders_method_transfer', cash: 'orders_method_cash', card: 'orders_method_card', transfer: 'orders_method_transfer', 'аванс': 'cancel_method_credit' };
+    return map[m] ? t(map[m]) : (m || '');
+}
+
+// «Далее»: проверка выбора → итоговое окно → отмена
+async function cancelOrderNext() {
+    const s = _cancelSt;
+    const order = s && orders.find(o => o.id === s.orderId);
+    if (!order || s.busy) return;
+    let a = { refund: 0, credit: 0, retain: 0 };
+    if (s.paidC > 0) {
+        if (!s.split && !s.mode) { cancelError(t('cancel_err_choose_money')); return; }
+        a = _cancelAmounts();
+        if (!a) { cancelError(t('cancel_err_amount')); return; }
+        if (a.refund + a.credit + a.retain !== s.paidC) { cancelError(t('cancel_err_sum').replace('{sum}', formatMoney(s.paidC / 100))); return; }
+        if (a.credit > 0 && !order.customer_id) { cancelError(t('cancel_opt_credit_nocust')); return; }
+        if (a.refund > 0 && !s.method) { cancelError(t('cancel_err_method')); return; }
+    }
+    if (s.hasStock && !s.stock) { cancelError(t('cancel_err_choose_stock')); return; }
+
+    const lossAmount = s.hasStock && s.stock === 'keep' && !order.is_demo ? Math.round((Number(orderCost(order)) || 0) * 100) / 100 : 0;
+    const lines = [t('cancel_sum_head').replace('{num}', orderNumLabel(order)).replace('{cust}', order.customer || t('orders_no_customer')), ''];
+    if (a.refund > 0) lines.push('• ' + t('cancel_sum_refund').replace('{sum}', formatMoney(a.refund / 100)).replace('{method}', _cancelMethodLabel(s.method).toLowerCase()));
+    if (a.credit > 0) lines.push('• ' + t('cancel_sum_credit').replace('{sum}', formatMoney(a.credit / 100)));
+    if (a.retain > 0) lines.push('• ' + t('cancel_sum_retain').replace('{sum}', formatMoney(a.retain / 100)));
+    if (!(s.paidC > 0)) lines.push('• ' + t('cancel_no_money'));
+    if (s.hasStock) lines.push('• ' + t(s.stock === 'return' ? 'cancel_sum_stock_return' : 'cancel_sum_stock_keep'));
+    lines.push('', t('cancel_sum_final'));
+    if (currentOrgPlan === 'free' && order.is_confirmed && !order.is_demo) lines.push('', t('cancel_sum_quota'));
+
+    const modal = document.getElementById('cancelOrderModal');
+    modal.style.display = 'none';
+    const ok = await showConfirm(lines.join('\n'), { ok: t('cancel_btn'), cancel: t('common_back') });
+    if (!ok) { if (_cancelSt === s) modal.style.display = 'flex'; return; }
+    s.busy = true;
+    await runCancelOrder(s, a, lossAmount);
+}
+
+async function runCancelOrder(s, a, lossAmount) {
+    const order = orders.find(o => o.id === s.orderId);
+    if (!order) { _cancelSt = null; return; }
+    if (!hasPermission('can_delete')) { _cancelSt = null; showInfo(t('orders_no_permission_action')); return; }
+    showLoading();
+    let res;
+    try {
+        // Перепроверка перед самой отменой: пока окно было открыто, могли выставить документ или внести оплату.
+        // Правило «с документом не отменяем» действует только здесь, в приложении.
+        const st = await cancelOrderState(order);
+        const reason = cancelBlockReason(st);
+        if (reason || st.paidC !== s.paidC || st.hasStock !== s.hasStock) {
+            _cancelSt = null; hideLoading();
+            await showInfo(reason || t('cancel_err_changed'));
+            return;
+        }
+        suppressRealtimeFor3s();
+        const { data, error } = await db.rpc('rpc_cancel_order', {
+            p_org_id: currentOrgId,
+            p_order_id: order.id,
+            p_date: getLocalDateStr(0),
+            p_employee_id: currentEmployee ? currentEmployee.id : null,
+            p_refund: a.refund / 100,
+            p_refund_method: a.refund > 0 ? s.method : null,
+            p_to_credit: a.credit / 100,
+            p_retain: a.retain / 100,
+            p_stock: s.hasStock ? s.stock : null,
+            p_loss_amount: lossAmount,
+            p_snapshot: _payOrderSnap(order)
+        });
+        if (error) throw error;
+        res = data || {};
+    } catch (e) {
+        console.error(e);
+        _cancelSt = null;
+        await loadAllData(true); // ответ мог потеряться уже после отмены — берём правду из базы
+        hideLoading();
+        const m = String((e && e.message) || '');
+        if (m.includes('CANCEL_ACCESS_DENIED') || m.includes('CANCEL_BAD_EMPLOYEE')) await showInfo(t('cancel_err_access'));
+        else if (m.includes('CANCEL_ALREADY')) await showInfo(t('cancel_err_already'));
+        else if (/CANCEL_(AMOUNT_MISMATCH|STOCK_CHOICE|ORDER_DELETED|NOT_FOUND|PAID_NEGATIVE|IN_CONSOLIDATED|DRAFT)/.test(m)) await showInfo(t('cancel_err_changed'));
+        else showDbError(e, t('cancel_err_generic'));
+        if (!orders.some(o => o.id === s.orderId) && currentOrderId === s.orderId) _leaveCancelledDetail();
+        return;
+    }
+    _cancelSt = null;
+
+    // Переносим заказ в отменённые сразу, не дожидаясь перезагрузки
+    const cur = orders.find(o => o.id === s.orderId) || order;
+    const idx = orders.indexOf(cur);
+    if (idx !== -1) orders.splice(idx, 1);
+    if (!findCancelledOrder(cur.id)) cancelledOrders.push(Object.assign(cur, {
+        cancelled_at: new Date().toISOString(),
+        cancelled_by: currentEmployee ? currentEmployee.id : null,
+        cancel_retained: Number(res.retained || 0),
+        inventory_pending: false
+    }));
+    _leaveCancelledDetail();
+
+    const parts = [];
+    if (a.refund > 0) parts.push(t('cancel_log_refund').replace('{sum}', formatMoney(a.refund / 100)));
+    if (a.credit > 0) parts.push(t('cancel_log_credit').replace('{sum}', formatMoney(a.credit / 100)));
+    if (a.retain > 0) parts.push(t('cancel_log_retain').replace('{sum}', formatMoney(a.retain / 100)));
+    if (s.hasStock) parts.push(s.stock === 'return' ? t('log_stock_returned') : (cur.is_demo ? '' : t('log_loss_note').replace('{sum}', formatMoney(Number(res.loss || 0)))));
+    const note = parts.filter(Boolean).join(', ');
+    logActivity('order', `${t('trash_order_word')} ${orderLogNum(cur)} (${t('delete_label_customer')} «${cur.customer}») ${t('cancel_log_word')}${note ? ': ' + note : ''}`, cur.id);
+
+    await loadAllData(true);
+    if (typeof scheduleLoadInventory === 'function') scheduleLoadInventory();
+    if (a.credit > 0 && cur.customer_id && typeof loadCustomerBalance === 'function') {
+        try { await loadCustomerBalance(cur.customer_id); if (typeof _onCustBalancesChanged === 'function') _onCustBalancesChanged(); }
+        catch (e) { console.error(e); }
+    }
+    if (typeof scheduleRefreshOrderQuota === 'function') scheduleRefreshOrderQuota();
+    hideLoading();
+    await showInfo(t('cancel_done').replace('{num}', orderNumLabel(cur)));
+    // Заказ открывали из другого раздела — возвращаемся туда, как после удаления
+    if (typeof stockCardReturnPending === 'function' && stockCardReturnPending()) await returnToStockCard();
+    else if (typeof docsReturnPending === 'function' && docsReturnPending()) await returnToDocsPreview();
+    else if (typeof docs2ReturnPending === 'function' && docs2ReturnPending()) await returnToDocs2();
+}
+
+// Закрыть редактируемую карточку заказа, которого больше нет среди действующих
+function _leaveCancelledDetail() {
+    currentOrderId = null;
+    document.getElementById('ordersList').classList.remove('hidden');
+    document.getElementById('orderDetail').classList.remove('active');
+    if (typeof currentTabId !== 'undefined' && currentTabId === 'orders') {
+        document.getElementById('ordersViewToggle')?.classList.remove('hidden');
+        if (typeof positionOrdersViewToggle === 'function') positionOrdersViewToggle();
+    }
+    displayOrders();
+    refreshFab();
+}
+
+// ---- Список отменённых (фильтр «Отменённые» в «Оплате») ----
+function ordersCancelledMode() { return document.getElementById('orderPaymentFilter')?.value === 'cancelled'; }
+
+function _cancelDateLabel(ts) {
+    const d = ts ? new Date(ts) : null;
+    return d && !isNaN(d) ? d.toLocaleDateString(dateLocale(), { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—';
+}
+
+// Пункт фильтра есть, только пока есть отменённые заказы (в пекарнях без отмены его не видно)
+function refreshCancelledFilterOption() {
+    const has = (typeof cancelledOrders !== 'undefined') && cancelledOrders.length > 0;
+    const sel = document.getElementById('orderPaymentFilter');
+    if (!has && sel && sel.value === 'cancelled') {
+        sel.value = '';
+        document.querySelectorAll('#orderPaymentDropdown .status-option').forEach((o, i) => o.classList.toggle('selected', i === 0));
+        updateOrderFilterButtonsState();
+    }
+    document.getElementById('orderPayCancelledOption')?.classList.toggle('hidden', !has);
+}
+
+function clearCancelledFilter() {
+    document.getElementById('orderPaymentFilter').value = '';
+    document.querySelectorAll('#orderPaymentDropdown .status-option').forEach((o, i) => o.classList.toggle('selected', i === 0));
+    applyOrderFilter();
+}
+
+function cancelledListHtml(list) {
+    const rows = [...list].sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id).map(o => `<div class="cx-row" onclick="openCancelledOrder(${o.id})">
+        <div class="cx-line"><span class="cx-name">${escapeHtml(o.customer || t('orders_no_customer'))}</span><span class="cx-sum">${formatMoney(orderGrandTotal(o))}</span></div>
+        <div class="cx-line cx-meta"><span>${escapeHtml(orderNumLabel(o))} · ${escapeHtml(formatDateDMY(o.date))}</span><span>${escapeHtml(t('cancel_row_date').replace('{date}', _cancelDateLabel(o.cancelled_at)))}</span></div>
+    </div>`).join('');
+    return `<div class="cx-head"><span>${escapeHtml(t('cancel_list_head'))}: ${list.length}</span><button type="button" onclick="clearCancelledFilter()">✕ ${escapeHtml(t('dash_clear_filter'))}</button></div>`
+        + (rows || `<p class="text-xs text-gray-400 text-center py-4">${t('orders_none_found')}</p>`);
+}
+
+// ---- Просмотр отменённого заказа (только чтение) ----
+let _cancelViewId = null;
+
+function openCancelledOrder(orderId) {
+    if (!findCancelledOrder(orderId)) return;
+    _cancelViewId = orderId;
+    openAppPage('cancelledOrderPage');
+    renderCancelledOrder();
+}
+(window._appPageOnShow = window._appPageOnShow || {}).cancelledOrderPage = () => renderCancelledOrder();
+
+async function renderCancelledOrder() {
+    const id = _cancelViewId;
+    const o = findCancelledOrder(id);
+    const body = document.getElementById('cancelledOrderBody');
+    if (!body) return;
+    const delBtn = document.getElementById('cancelledDeleteBtn');
+    delBtn.classList.add('hidden');
+    if (!o) { body.innerHTML = `<p class="text-xs text-gray-400 text-center py-4">${t('orders_none_found')}</p>`; return; }
+    const who = employees.find(e => e.id === o.cancelled_by);
+    const tot = _orderTotals(o);
+    const bill = orderBillItems(o);
+    const line = (l, r, cls) => `<div class="cx-line${cls ? ' ' + cls : ''}"><span>${escapeHtml(l)}</span><span>${escapeHtml(r)}</span></div>`;
+    let html = `<div class="cx-badge">${escapeHtml(t('cancel_badge').replace('{date}', _cancelDateLabel(o.cancelled_at)))}${who ? ' · ' + escapeHtml(who.name) : ''}</div>`
+        + `<div class="cx-title">${escapeHtml(t('trash_order_word') + ' ' + orderNumLabel(o))}</div>`
+        + line(t('customers_col_number_alt'), o.customer || t('orders_no_customer'))
+        + line(t('history_col_date'), formatDateDMY(o.date))
+        + (o.employee ? line(t('orders_master'), o.employee) : '')
+        + (o.notes ? `<div class="cx-notes">${escapeHtml(o.notes)}</div>` : '')
+        + '<div class="cx-sec">'
+        + bill.map(it => line(`${it.product} × ${it.quantity}`, formatMoney(it.quantity * it.price))).join('')
+        + (Number(o.discount) > 0 ? line(t('cancel_view_discount').replace('{n}', String(o.discount)), '−' + formatMoney(tot.discount)) : '')
+        + (tot.vat > 0 ? line(t('cancel_view_vat'), formatMoney(tot.vat)) : '')
+        + line(t('cancel_view_total'), formatMoney(orderGrandTotal(o)), 'cx-total')
+        + '</div><div id="cancelledMoney" class="cx-sec"><span class="cx-meta">…</span></div>';
+    body.innerHTML = html;
+
+    try {
+        const [p, l] = await Promise.all([
+            db.from('order_payments').select('id, amount, method, kind, paid_at').eq('order_id', o.id).order('id'),
+            db.from('order_losses').select('amount').eq('org_id', currentOrgId).eq('order_id', o.id).eq('reason', 'order_cancelled').is('cancelled_at', null)
+        ]);
+        if (p.error || l.error) throw (p.error || l.error);
+        if (_cancelViewId !== id) return;
+        const box = document.getElementById('cancelledMoney');
+        if (!box) return;
+        const kinds = { payment: 'cancel_kind_payment', refund: 'cancel_kind_refund', to_credit: 'cancel_kind_to_credit', from_credit: 'cancel_kind_from_credit' };
+        let m = '';
+        (p.data || []).forEach(r => {
+            m += line(`${formatDateDMY(String(r.paid_at || '').slice(0, 10))} · ${t(kinds[r.kind] || 'cancel_kind_payment')}${r.kind === 'to_credit' || r.kind === 'from_credit' ? '' : ' · ' + _cancelMethodLabel(r.method)}`, formatMoney(Number(r.amount)));
+        });
+        if (!(p.data || []).length) m += `<div class="cx-meta">${escapeHtml(t('cancel_view_no_pay'))}</div>`;
+        if (Number(o.cancel_retained) > 0) m += line(t('cancel_view_retained'), formatMoney(o.cancel_retained), 'cx-total');
+        if ((l.data || []).length) m += `<div class="cx-meta" style="margin-top:6px;">${escapeHtml(t('cancel_view_stock_kept'))}${hasPermission('can_view_reports') && !o.is_demo ? ': ' + escapeHtml(formatMoney(l.data.reduce((sum, x) => sum + Number(x.amount), 0))) : ''}</div>`;
+        const deletable = !(p.data || []).length && !o.inv_no && !o.dn_no && !o.consolidated_invoice_id;
+        if (!deletable) m += `<div class="cx-meta" style="margin-top:6px;">${escapeHtml(t('cancel_view_kept_note'))}</div>`;
+        box.innerHTML = m;
+        delBtn.classList.toggle('hidden', !(deletable && hasPermission('can_delete')));
+    } catch (e) {
+        console.error(e);
+        const box = document.getElementById('cancelledMoney');
+        if (box && _cancelViewId === id) box.innerHTML = `<span class="cx-meta">${escapeHtml(t('error_save_check_connection'))}</span>`;
+    }
+}
+
+async function copyCancelledOrder() {
+    const o = findCancelledOrder(_cancelViewId);
+    if (!o) return;
+    const cc = o.customer_id ? customers.find(c => c.id === o.customer_id) : null;
+    if (cc && cc.archived_at) { showInfo(t('cust_archived_pick').replace('{name}', cc.name)); return; }
+    closeAllAppPages();
+    showTab('orders');
+    await copyOrder(o);
+}
+
+async function deleteCancelledOrder() {
+    const o = findCancelledOrder(_cancelViewId);
+    if (!o) return;
+    if (!hasPermission('can_delete')) { showInfo(t('ing_no_delete_permission')); return; }
+    if (!(await orderDeleteGuard(o.id, true))) return; // оплаты и документы проверяются по базе
+    const quota = typeof orderDeleteQuotaNote === 'function' ? orderDeleteQuotaNote(o) : '';
+    const ok = await showConfirm(t('cancel_delete_confirm').replace('{num}', orderNumLabel(o)) + (quota ? '\n\n' + quota : ''), { ok: t('common_delete') });
+    if (!ok) return;
+    showLoading();
+    try {
+        suppressRealtimeFor3s();
+        await updateChecked(db.from('orders').update({ deleted_at: new Date().toISOString() }).eq('id', o.id));
+        const i = cancelledOrders.findIndex(x => x.id === o.id);
+        if (i !== -1) cancelledOrders.splice(i, 1);
+        logActivity('order', `${t('trash_order_word')} ${orderLogNum(o)} (${t('delete_label_customer')} «${o.customer}») ${t('log_moved_to_trash')}`);
+        if (typeof scheduleRefreshOrderQuota === 'function') scheduleRefreshOrderQuota();
+        saveAppSnapshot();
+        await closeAppPage(true);
+        displayOrders();
+        if (document.getElementById('customerDetail')?.classList.contains('active')) {
+            const c = customers.find(x => x.id === currentCustomerId);
+            if (c) { renderCustomerStats(c); renderCustomerOrders(); updateCustomerDetailButtons(c); }
+        }
+    } catch (e) { console.error(e); showDbError(e, t('error_delete_generic')); }
+    finally { hideLoading(); }
+}

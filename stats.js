@@ -27,8 +27,9 @@ function refreshVatLabels() {
 
 function downloadBackup() {
     // Экспорт текущих данных (из кэша) в JSON для резервной копии
-    const exportOrders = orders.map(o => ({
+    const exportOrders = ordersWithCancelled().map(o => ({
         id: o.id,
+        cancelled_at: o.cancelled_at || undefined,
         customer: o.customer,
         date: o.date,
         status: o.status,

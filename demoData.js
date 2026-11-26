@@ -842,7 +842,7 @@ function refreshTourOrdersLink() {
     const wrap = document.getElementById('orderCardsWrap');
     if (!wrap) return;
     let el = document.getElementById('tourOrdersLink');
-    const own = (typeof orders !== 'undefined' ? orders : []).some(o => !o.is_demo);
+    const own = ordersWithCancelled().some(o => !o.is_demo);
     if (own || tourIsActive()) { if (el) el.remove(); return; } // v975: во время тура ссылки нет
     if (el) return;
     _tourInjectStyle();
@@ -1102,7 +1102,7 @@ async function resetOrgRun() {
 // Подсказка висит, пока в разделе нет ни одной позиции (архивные тоже считаются позицией). Ссылка на тур — под ней, пока нет своих (не демо) заказов.
 function _tourLinkWanted() {
     if (tourIsActive()) return false; // v975: во время тура ссылку «Пройти тур» не показываем
-    return !(typeof orders !== 'undefined' ? orders : []).some(o => !o.is_demo);
+    return !ordersWithCancelled().some(o => !o.is_demo);
 }
 function _sectionHintCfg(kind) {
     const A = (typeof products !== 'undefined' && Array.isArray(products)) ? products : [];
@@ -1148,6 +1148,6 @@ function _tourRefreshLinks() {
 }
 // Для списка заказов: пока нет ни одного сохранённого заказа, вместо «Заказов не найдено» показываем подсказку
 function ordersEmptyHtml() {
-    const none = !(typeof orders !== 'undefined' ? orders : []).some(o => typeof isOrderSaved === 'function' ? isOrderSaved(o) : true);
+    const none = !ordersWithCancelled().some(o => typeof isOrderSaved === 'function' ? isOrderSaved(o) : true);
     return `<p class="text-xs ${none ? 'text-gray-500 px-3' : 'text-gray-400'} text-center py-4">${t(none ? 'hint_orders_empty' : 'orders_none_found')}</p>`;
 }

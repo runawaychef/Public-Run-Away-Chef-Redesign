@@ -875,8 +875,8 @@ function ingredientUsage(ing) {
     let recipesAll = 0; // v966: рецепты архивных изделий/полуфабрикатов не блокируют архив, но считаются «следом»
     (products || []).forEach(p => { if ((p.ingredients || []).some(ri => ri.ingredient_id === ing.id)) { recipesAll++; if (!p.archived_at) recipes.push({ type: 'product', id: p.id, name: p.name || '' }); } });
     (semiFinished || []).forEach(s => { if ((s.ingredients || []).some(ri => ri.ingredient_id === ing.id)) { recipesAll++; if (!s.archived_at) recipes.push({ type: 'sf', id: s.id, name: s.name || '' }); } });
-    const ordersAll = (orders || []).filter(o => !o.deleted_at && (o.materials || []).some(m => m.ingredient_id === ing.id));
-    const ordersOpen = ordersAll.filter(o => o.status !== 'выполнен');
+    const ordersAll = ordersWithCancelled().filter(o => !o.deleted_at && (o.materials || []).some(m => m.ingredient_id === ing.id));
+    const ordersOpen = ordersAll.filter(o => o.status !== 'выполнен' && !o.cancelled_at);
     const c = (typeof _inventoryCache !== 'undefined' && _inventoryCache) ? _inventoryCache['ing_' + ing.id] : null;
     const balance = c ? _r4(c.in - c.out) : 0;
     const hasTraces = recipesAll > 0 || ordersAll.length > 0 || !!c;
@@ -1120,7 +1120,7 @@ async function renderIngredientStockBlock(ing) {
         // списанию из партий (batch_breakdown), сторно — по исходному расходу той же позиции.
         const costs = typeof realStockMovementCosts === 'function'
             ? realStockMovementCosts(data, batchRows || [], r => {
-                const od = r.order_id ? (orders || []).find(o => o.id === r.order_id)?.date : null;
+                const od = r.order_id ? findAnyOrder(r.order_id)?.date : null;
                 return Number(r.quantity) * unitCostAtDate(od || r.created_at.slice(0, 10));
             })
             : new Map();
@@ -1165,7 +1165,7 @@ async function renderIngredientStockBlock(ing) {
         data.forEach(r => {
             const cat = getCategory(r);
             // Для расходов/сторно по заказу берём дату самого заказа, а не created_at
-            const orderDate = r.order_id ? (orders || []).find(o => o.id === r.order_id)?.date : null;
+            const orderDate = r.order_id ? findAnyOrder(r.order_id)?.date : null;
             const dateStr = orderDate || r.created_at.slice(0, 10);
             const date = formatDateDMY(dateStr);
             const qty = Number(r.quantity);
