@@ -2234,7 +2234,7 @@ async function confirmOrderTotalChange(order, patched, modalId) {
 async function preparePositionDelete(order, id, type) {
     const item = type === 'item' ? order.items[id] : null;
     const mat = type === 'ordmat' ? (order.materials || []).find(m => m.ingredient_id === id) : null;
-    if (!item && !mat) return null;
+    if (!item && !mat) { delDiag('D9', type + ' ' + id); return null; }
     showLoading();
     try {
         const st = await orderMoneyState(order.id);
@@ -2249,7 +2249,7 @@ async function preparePositionDelete(order, id, type) {
         const hasStock = !!order.is_confirmed && !(item && order.inventory_pending)
             && (await positionStockRows(order.id, item ? item.id : null, item ? null : id)).length > 0;
         return { warn, hasStock };
-    } catch (e) { console.error(e); hideLoading(); showInfo(t('error_save_check_connection')); return null; }
+    } catch (e) { console.error(e); hideLoading(); delDiag('D8', String((e && e.message) || e)); return null; }
     finally { hideLoading(); }
 }
 
@@ -2778,11 +2778,19 @@ async function _saveItemEdit() {
     finally { hideLoading(); }
 }
 
+// v980 (диагностика): удаление позиции/упаковки не должно останавливаться молча — показываем код причины
+function delDiag(code, detail) {
+    console.error('delete diag', code, detail || '');
+    showInfo(t('del_diag').replace('{code}', code + (detail ? ' · ' + detail : '')));
+}
 function deleteItem(itemIdx) {
-    const order = orders.find(o => o.id === currentOrderId);
-    if (!order) return;
-    const item = order.items[itemIdx];
-    openDeleteModal(itemIdx, 'item', `${t('delete_label_position')} «${item.product}»`);
+    try {
+        const order = orders.find(o => o.id === currentOrderId);
+        if (!order) { delDiag('D1', 'order ' + currentOrderId); return; }
+        const item = order.items[itemIdx];
+        if (!item) { delDiag('D2', itemIdx + '/' + order.items.length); return; }
+        openDeleteModal(itemIdx, 'item', `${t('delete_label_position')} «${item.product}»`);
+    } catch (e) { delDiag('D8', String((e && e.message) || e)); }
 }
 
 // ==================== ДЕТАЛИЗАЦИЯ СЕБЕСТОИМОСТИ ЗАКАЗА ====================
@@ -3073,7 +3081,7 @@ async function saveOrderMatEdit() {
 }
 function deleteOrderMat(ingId) {
     const ing = ingredients.find(x => x.id === ingId);
-    if (!ing) return;
+    if (!ing) { delDiag('D12', 'ing ' + ingId); return; }
     openDeleteModal(ingId, 'ordmat', `«${ing.name}»`);
 }
 async function removeOrderMaterial(order, ingId) {

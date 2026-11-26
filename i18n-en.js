@@ -425,6 +425,7 @@ I18N.en = {
         stock_choice_question_pos: 'What should happen to the stock written off for this line?',
         ordmat_log_deleted: 'Packaging removed from order',
         pos_last_blocked: 'This is the last item of an order that has a payment or a document. You cannot delete it, but you can edit it.',
+        del_diag: 'Deletion did not happen. Please take a screenshot of this window. Code: {code}',
         chg_warn_head: 'Please note, this order has:',
         chg_warn_paid: 'paid: {sum}',
         chg_warn_docs: 'documents: {list}',

@@ -430,6 +430,7 @@ I18N.lt = {
         stock_choice_question_pos: 'Ką daryti su tuo, kas nurašyta pagal šią eilutę?',
         ordmat_log_deleted: 'Iš užsakymo pašalinta pakuotė',
         pos_last_blocked: 'Tai paskutinė užsakymo, kuriam yra mokėjimas arba dokumentas, pozicija. Jos ištrinti negalima, bet galima pakeisti.',
+        del_diag: 'Ištrinti nepavyko. Padarykite šio lango ekrano nuotrauką. Kodas: {code}',
         chg_warn_head: 'Dėmesio, šis užsakymas turi:',
         chg_warn_paid: 'apmokėta: {sum}',
         chg_warn_docs: 'dokumentai: {list}',

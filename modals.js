@@ -65,22 +65,30 @@ function confirmOrderDeleteStock(choice) {
     confirmDelete();
 }
 let _posDeleteInfo = null;   // v978: результат проверки перед удалением позиции/упаковки
-let _posDeletePreparing = false;
+let _posDeletePreparing = null;   // v980: { since } идущей проверки; не дольше POS_CHECK_TIMEOUT_MS
+const POS_CHECK_TIMEOUT_MS = 15000;
 function openDeleteModal(id, type, label) {
     // v978: позиция/упаковка — сначала проверка по базе (оплата, документы, списание)
     if ((type === 'item' || type === 'ordmat') && !_posDeleteInfo) {
         const o = orders.find(x => x.id === currentOrderId);
-        if (!o || _posDeletePreparing) return;
+        if (!o) { delDiag('D3', 'order ' + currentOrderId); return; }
+        if (_posDeletePreparing) { delDiag('D4', Math.round((Date.now() - _posDeletePreparing.since) / 1000) + 's'); return; }
         const item = type === 'item' ? o.items[id] : null;
-        _posDeletePreparing = true;
+        const run = _posDeletePreparing = { since: Date.now() };
+        // v980: проверка не ответила — снимаем блокировку и говорим об этом; опоздавший ответ игнорируем
+        const timer = setTimeout(() => {
+            if (_posDeletePreparing !== run) return;
+            _posDeletePreparing = null; hideLoading(); delDiag('D5', 'timeout');
+        }, POS_CHECK_TIMEOUT_MS);
+        const finish = () => { if (_posDeletePreparing !== run) return false; clearTimeout(timer); _posDeletePreparing = null; return true; };
         preparePositionDelete(o, id, type).then(info => {
-            _posDeletePreparing = false;
-            if (!info || currentOrderId !== o.id) return;
+            if (!finish() || !info) return; // причину отказа preparePositionDelete уже показал
+            if (currentOrderId !== o.id) { delDiag('D6', o.id + ' → ' + currentOrderId); return; }
             const key = item ? o.items.findIndex(x => x.id === item.id) : id;
-            if (key === -1) return;
+            if (key === -1) { delDiag('D7'); return; }
             _posDeleteInfo = info;
             try { openDeleteModal(key, type, label); } finally { _posDeleteInfo = null; }
-        }).catch(e => { _posDeletePreparing = false; console.error(e); });
+        }).catch(e => { finish(); hideLoading(); delDiag('D8', String((e && e.message) || e)); });
         return;
     }
     // v968: заказ с работой/оплатой/документами не удаляется — сначала проверка по базе
@@ -135,7 +143,7 @@ function openDeleteModal(id, type, label) {
 }
 
 async function confirmDelete() {
-    if (deleteId === null || !deleteType) return;
+    if (deleteId === null || !deleteType) { delDiag('D10'); return; }
     // Страховка: даже если кнопка удаления где-то по ошибке не спрятана,
     // без права can_delete фактическое удаление не выполнится.
     if (!hasPermission('can_delete')) {
@@ -311,6 +319,8 @@ async function confirmDelete() {
                     }
                     logActivity('item', `${t('ordmat_log_deleted')} ${orderLogNum(order)}: «${name}» × ${matQty}${note}`, order.id);
                 }
+            } else {
+                hideLoading(); closeModal(); delDiag('D11', (isItem ? 'item ' : 'ordmat ') + key); return;
             }
         } else if (deleteType === 'ingredient') {
             const ing = ingredients[deleteId];
