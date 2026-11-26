@@ -234,9 +234,11 @@ function renderDetailDocSummary(order) {
     if (!order || order.id !== currentOrderId) return;
     const invSent = !!order.invoice_sent_at, dnSent = !!order.delivery_note_sent_at;
     const confInfo = (typeof docsEnabled === 'function' && !docsEnabled() && _docSumSnaps[order.id]) ? _docSumSnaps[order.id].conf : null;
+    // v982: в сводке видны все выставленные документы, а не только отправленные
+    const invShown = invSent || !!order.inv_no, dnShown = dnSent || !!order.dn_no;
     const bad = (invSent && order.invoice_sent_via === 'email' && _docSumIsBad(order.invoice_delivery_status))
              || (dnSent && order.delivery_note_sent_via === 'email' && _docSumIsBad(order.delivery_note_delivery_status));
-    const solid = (!invSent && !dnSent && !confInfo) || bad;
+    const solid = (!invShown && !dnShown && !confInfo) || bad;
     btn.classList.toggle('pill-btn', solid);
     btn.classList.toggle('pill-btn-secondary', !solid);
 
@@ -250,13 +252,19 @@ function renderDetailDocSummary(order) {
             ? ` · ${escapeHtml(_sentViaLabel(order.invoice_sent_via))} · ${_docSumShortDT(order.invoice_sent_at)}${_docSumStatusHtml(order.invoice_sent_via, order.invoice_delivery_status)}`
             : ` · ${escapeHtml(t('doc_sum_not_sent'))}`;
         rows.push(`<div class="doc-sum-row" onclick="openDocFromOrderSummary('cons')"><span class="ds-text"><b>${escapeHtml(num)}</b> (${escapeHtml(t('bank_cons_word'))})${tail}</span>${go}</div>`);
-    } else if (invSent) {
-        const num = _formatDocNumber('invoice', nums.inv) || t('orders_doc_invoice');
-        rows.push(`<div class="doc-sum-row" onclick="openDocFromOrderSummary('inv')"><span class="ds-text"><b>${escapeHtml(num)}</b> · ${escapeHtml(_sentViaLabel(order.invoice_sent_via))} · ${_docSumShortDT(order.invoice_sent_at)}${_docSumStatusHtml(order.invoice_sent_via, order.invoice_delivery_status)}</span>${go}</div>`);
+    } else if (invShown) {
+        const num = _formatDocNumber('invoice', order.inv_no || nums.inv) || t('orders_doc_invoice');
+        const tail = invSent
+            ? ` · ${escapeHtml(_sentViaLabel(order.invoice_sent_via))} · ${_docSumShortDT(order.invoice_sent_at)}${_docSumStatusHtml(order.invoice_sent_via, order.invoice_delivery_status)}`
+            : ` · ${escapeHtml(t('doc_sum_not_sent'))}`;
+        rows.push(`<div class="doc-sum-row" onclick="openDocFromOrderSummary('inv')"><span class="ds-text"><b>${escapeHtml(num)}</b>${tail}</span>${go}</div>`);
     }
-    if (dnSent) {
-        const num = _formatDocNumber('delivery_note', nums.dn) || t('orders_doc_delivery_note');
-        rows.push(`<div class="doc-sum-row" onclick="openDocFromOrderSummary('dn')"><span class="ds-text"><b>${escapeHtml(num)}</b> · ${escapeHtml(_sentViaLabel(order.delivery_note_sent_via))} · ${_docSumShortDT(order.delivery_note_sent_at)}${_docSumStatusHtml(order.delivery_note_sent_via, order.delivery_note_delivery_status)}</span>${go}</div>`);
+    if (dnShown) {
+        const num = _formatDocNumber('delivery_note', order.dn_no || nums.dn) || t('orders_doc_delivery_note');
+        const tail = dnSent
+            ? ` · ${escapeHtml(_sentViaLabel(order.delivery_note_sent_via))} · ${_docSumShortDT(order.delivery_note_sent_at)}${_docSumStatusHtml(order.delivery_note_sent_via, order.delivery_note_delivery_status)}`
+            : ` · ${escapeHtml(t('docs2_dn_not_sent'))}`;
+        rows.push(`<div class="doc-sum-row" onclick="openDocFromOrderSummary('dn')"><span class="ds-text"><b>${escapeHtml(num)}</b>${tail}</span>${go}</div>`);
     }
     if (confInfo) {
         rows.push(`<div class="doc-sum-row" onclick="openOrderDocAction(${order.id})"><span class="ds-text"><b>${escapeHtml(t('conf_sum_label').replace('{n}', _confOrderNum(order)))}</b> · ${escapeHtml(_sentViaLabel(confInfo.snap.via))} · ${_docSumShortDT(confInfo.at)}</span>${go}</div>`);
@@ -436,7 +444,9 @@ async function _reserveDocSnapshot(order, docType, dateOverride) {
     const { data: freshRow, error: freshErr } = await db.from('orders').select(field).eq('id', order.id).single();
     if (freshErr) throw freshErr;
     const existing = freshRow ? freshRow[field] : null;
-    return await freezeDocumentSnapshot(order, docType, existing, dateOverride || undefined);
+    const snap = await freezeDocumentSnapshot(order, docType, existing, dateOverride || undefined);
+    if (order.id === currentOrderId) renderDetailDocSummary(order); // v982: открытая карточка сразу показывает выставленный документ
+    return snap;
 }
 
 // 21.10: из копий документов берём только номер, даты и состав для сравнения сумм — без логотипа
