@@ -1886,6 +1886,7 @@ async function confirmOrderManually() {
 
 // Мягко удаляет черновик с позициями (в корзину, склад возвращается, как при обычном удалении).
 async function discardDraftOrder(order) {
+    if (!(await orderDeleteGuard(order.id))) return false; // v977: черновик с оплатой тоже не удаляется
     suppressRealtimeFor3s();
     showLoading();
     try {
@@ -1990,11 +1991,11 @@ async function loadOrdersTrash(withCleanup) {
         if (withCleanup) {
             const cutoff = new Date();
             cutoff.setDate(cutoff.getDate() - TRASH_KEEP_DAYS);
-            // v968: стираем только заказы типа А (принят, без оплат и документов); остальные остаются в корзине навсегда
+            // v977: стираем заказы без оплат и документов (статус не важен); остальные остаются в корзине
             try {
                 const { data: old, error: oe } = await db.from('orders').select('id')
                     .not('deleted_at', 'is', null).lt('deleted_at', cutoff.toISOString())
-                    .eq('status', 'принят').is('inv_no', null).is('dn_no', null).is('consolidated_invoice_id', null);
+                    .is('inv_no', null).is('dn_no', null).is('consolidated_invoice_id', null);
                 if (oe) throw oe;
                 let ids = (old || []).map(r => r.id);
                 for (let i = 0; i < ids.length; i += 100) {
@@ -2131,7 +2132,9 @@ async function restoreOrder(orderId, orderNum) {
         await updateChecked(db.from('orders').update({ deleted_at: null }).eq('id', orderId));
         closeModal();
         await loadAllData();
-        await rewriteOffRestoredOrder(orderId); // v969: при удалении склад был сторнирован — списываем заново
+        await rewriteOffRestoredOrder(orderId); // v969: если склад возвращали — списываем заново; если оставили списанным — не трогаем
+        try { await cancelOrderLosses(orderId); } // v977: заказ вернулся — убираем его из потерь
+        catch (e) { console.error(e); hideLoading(); await showInfo(t('trash_loss_cancel_error')); }
         logActivity('order', `${t('trash_order_word')} ${num} ${t('log_restored_from_trash')}`);
         if (typeof scheduleRefreshOrderQuota === 'function') scheduleRefreshOrderQuota();
         hideLoading();
@@ -2141,19 +2144,53 @@ async function restoreOrder(orderId, orderNum) {
     finally { hideLoading(); }
 }
 
-// ==================== ПРАВИЛА УДАЛЕНИЯ ЗАКАЗА (v968) ====================
-// А. Ничего не было (статус «принят», нет оплат, нет выставленных документов) — в корзину на 30 дней.
-// Б. Есть следы работы (в работе / выполнен, оплата, документ) — не удаляется вообще.
+// ==================== СКЛАД И ПОТЕРИ ПРИ УДАЛЕНИИ ЗАКАЗА (v977) ====================
+// Номер заказа для журнала. Внутренний id не показываем: он общий для всех пекарен.
+function orderLogNum(order) {
+    return order && order.order_number ? '№' + order.order_number : t('log_draft_mark');
+}
+
+// «Расход»-строки склада по заказу, которые ещё не сторнированы. При ошибке запроса — исключение.
+async function orderOpenStockRows(orderId) {
+    const { data, error } = await db.from('inventory')
+        .select('id, type, ingredient_id, semi_finished_id, order_item_id')
+        .eq('order_id', orderId).in('type', ['расход', 'сторно']);
+    if (error) throw error;
+    return openExpenseRows(data);
+}
+
+// Отменяет действующие записи о потерях заказа (восстановление из корзины)
+async function cancelOrderLosses(orderId) {
+    await dbMust(db.from('order_losses').update({ cancelled_at: new Date().toISOString() })
+        .eq('org_id', currentOrgId).eq('order_id', orderId).is('cancelled_at', null));
+}
+
+// Продукты остались списанными: записываем стоимость в потери. Запись переживает стирание заказа.
+// Демо-заказы в потери не пишем. Возвращает сумму.
+async function saveOrderLoss(order) {
+    const amount = Math.round((Number(orderCost(order)) || 0) * 100) / 100;
+    if (order.is_demo) return amount;
+    await cancelOrderLosses(order.id); // на случай, если прошлая запись осталась действующей
+    await dbMust(db.from('order_losses').insert({
+        org_id: currentOrgId, order_id: order.id, order_number: order.order_number || null,
+        loss_date: getLocalDateStr(0), amount, reason: 'order_deleted',
+        created_by: currentEmployee ? currentEmployee.id : null
+    }));
+    return amount;
+}
+
+// ==================== ПРАВИЛА УДАЛЕНИЯ ЗАКАЗА (v968, изменены в v977) ====================
+// Граница — оплата: заказ без записей об оплате удаляется (в корзину) в любом статусе.
+// Заказы с выставленными документами пока не удаляются (изменится на этапе 3).
 // Проверка идёт по базе, а не по памяти. null — не удалось проверить (считаем «нельзя»).
 async function orderDeleteBlockers(orderId) {
     try {
         const [o, p] = await Promise.all([
-            db.from('orders').select('status, inv_no, dn_no, consolidated_invoice_id').eq('id', orderId).single(),
+            db.from('orders').select('inv_no, dn_no, consolidated_invoice_id').eq('id', orderId).single(),
             db.from('order_payments').select('id', { count: 'exact', head: true }).eq('order_id', orderId)
         ]);
         if (o.error || p.error || !o.data) return null;
         const r = [];
-        if (o.data.status && o.data.status !== 'принят') r.push(t('order_blk_status').replace('{s}', orderStatusLabel(o.data.status)));
         if ((p.count || 0) > 0) r.push(t('order_blk_pay').replace('{n}', String(p.count)));
         const docs = [];
         if (o.data.inv_no) docs.push(t('order_blk_doc_inv').replace('{n}', String(o.data.inv_no)));
@@ -2375,7 +2412,7 @@ async function saveDetailHeader() {
         if (old.discount !== order.discount) changes.push(`${t('customers_discount_word').toLowerCase()} ${old.discount}% → ${order.discount}%`);
         if ((old.employee || '') !== (order.employee || '')) changes.push(`${t('orders_master').toLowerCase()} «${old.employee || '—'}» → «${order.employee || '—'}»`);
         if (old.notes !== order.notes) changes.push(t('log_comment_changed'));
-        if (changes.length) logActivity('order', `${t('log_order_changed')} №${order.id}: ${changes.join(', ')}`, order.id);
+        if (changes.length) logActivity('order', `${t('log_order_changed')} ${orderLogNum(order)}: ${changes.join(', ')}`, order.id);
         showAutosaveToast();
     } catch (e) {
         console.error(e);
@@ -2539,7 +2576,7 @@ async function addItemToOrder() {
 
         await snapshotPromise; // на случай ветки без ожидания выше
         renderDetailItems(order);
-        logActivity('item', `${t('log_position_added')} ${t('log_to_order')} №${order.id}: «${prod.name}» × ${quantity}`, order.id);
+        logActivity('item', `${t('log_position_added')} ${t('log_to_order')} ${orderLogNum(order)}: «${prod.name}» × ${quantity}`, order.id);
         // Сбросить поля
         document.getElementById('newItemProduct').value = '';
         document.getElementById('newItemQty').value    = '';
@@ -2636,7 +2673,7 @@ async function saveItemEdit() {
 
         renderDetailItems(order);
         closeModal();
-        logActivity('item', `${t('log_position_changed')} ${t('log_in_order')} №${order.id}: ${oldDesc} → «${prod.name}» × ${quantity}`, order.id);
+        logActivity('item', `${t('log_position_changed')} ${t('log_in_order')} ${orderLogNum(order)}: ${oldDesc} → «${prod.name}» × ${quantity}`, order.id);
     } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); }
     finally { hideLoading(); }
 }
@@ -2886,7 +2923,7 @@ async function addOrderMaterial() {
         document.getElementById('newOrdMatPrice').value = '';
         renderOrderMaterials(order);
         renderDetailItems(order);
-        logActivity('item', `${t('ordmat_log_added')} №${order.id}: «${ing.name}» × ${qty}`, order.id);
+        logActivity('item', `${t('ordmat_log_added')} ${orderLogNum(order)}: «${ing.name}» × ${qty}`, order.id);
     } catch (e) { console.error(e); showInfo(t('error_save_check_connection')); renderOrderMaterials(order); }
     finally { hideLoading(); }
 }
@@ -3007,7 +3044,7 @@ async function recalcOrderCostBreakdown() {
         renderDetailItems(order);
         hideLoading();
         await openOrderCostBreakdown(); // перезагружаем детализацию
-        logActivity('order', `${t('log_cost_recalculated')} №${order.id} ${t('log_by_current_recipe')}`);
+        logActivity('order', `${t('log_cost_recalculated')} ${orderLogNum(order)} ${t('log_by_current_recipe')}`);
     } catch (e) {
         console.error(e);
         hideLoading();

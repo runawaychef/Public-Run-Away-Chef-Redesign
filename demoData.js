@@ -1081,6 +1081,9 @@ async function resetOrgRun() {
     try {
         const { error } = await db.rpc('rpc_reset_org_data', { p_org_id: currentOrgId, p_confirm: 'RESET' });
         if (error) throw error;
+        // v977: таблица потерь не связана с заказами внешним ключом — стираем отдельно
+        const { error: lossErr } = await db.from('order_losses').delete().eq('org_id', currentOrgId);
+        if (lossErr) console.error('Сброс: записи о потерях не стёрты', lossErr);
         if (typeof _tourInvalidateDemo === 'function') _tourInvalidateDemo();
         await loadAllData();
         await loadInventory();

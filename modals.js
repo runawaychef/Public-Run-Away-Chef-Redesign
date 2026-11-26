@@ -57,13 +57,24 @@ async function dbEntityHasRefs(type, id) {
 }
 
 let _orderDeleteVerified = false;
+let _orderDeleteHasStock = false;  // v977: по удаляемому заказу есть списание склада
+let _orderStockChoice = null;      // v977: 'return' — вернуть на склад, 'keep' — оставить списанными
+function confirmOrderDeleteStock(choice) {
+    _orderStockChoice = choice;
+    document.getElementById('orderStockModal').style.display = 'none';
+    confirmDelete();
+}
 function openDeleteModal(id, type, label) {
     // v968: заказ с работой/оплатой/документами не удаляется — сначала проверка по базе
     if (type === 'order' && !_orderDeleteVerified) {
         const o = orders[id];
         if (!o) return;
-        orderDeleteGuard(o.id).then(ok => {
+        orderDeleteGuard(o.id).then(async ok => {
             if (!ok) return;
+            try { _orderDeleteHasStock = (await orderOpenStockRows(o.id)).length > 0; }
+            catch (e) { console.error(e); showInfo(t('error_save_check_connection')); return; }
+            id = orders.indexOf(o);
+            if (id === -1) return;
             _orderDeleteVerified = true;
             try { openDeleteModal(id, type, label); } finally { _orderDeleteVerified = false; }
         });
@@ -71,6 +82,7 @@ function openDeleteModal(id, type, label) {
     }
     deleteId   = id;
     deleteType = type;
+    _orderStockChoice = null;
     let text = `${t('delete_confirm_prefix')} ${label}?`;
     if (type === 'order' && typeof orderDeleteQuotaNote === 'function') {
         const note = orderDeleteQuotaNote(orders[id]);
@@ -82,10 +94,13 @@ function openDeleteModal(id, type, label) {
     }
     const dnote = (type === 'product' || type === 'ingredient' || type === 'semiFinished') ? deleteNoteFor(type, id) : '';
     if (dnote) text += '\n\n' + dnote;
-    const textEl = document.getElementById('deleteModalText');
+    // v977: по заказу списан склад — вместо обычного «Удалить» спрашиваем, что сделать с продуктами
+    const askStock = type === 'order' && _orderDeleteHasStock;
+    const modalId = askStock ? 'orderStockModal' : 'deleteModal';
+    const textEl = document.getElementById(askStock ? 'orderStockText' : 'deleteModalText');
     textEl.style.whiteSpace = 'pre-line';
     textEl.textContent = text;
-    document.getElementById('deleteModal').style.display = 'flex';
+    document.getElementById(modalId).style.display = 'flex';
 
     // Заказ из сводного счёта: предупреждаем, что он выпадет из счёта (номер счёта догружаем при необходимости)
     const ord = type === 'order' ? orders[id] : null;
@@ -173,21 +188,42 @@ async function confirmDelete() {
         } else if (deleteType === 'order') {
             const order = orders[deleteId];
             const wasOpenInDetail = order.id === currentOrderId;
-            // Сторнируем списание со склада
-            await reverseInventoryForOrder(order.id);
+            const stockChoice = _orderStockChoice;
+            // v977: перепроверка перед самим удалением — оплату могли внести, пока окно было открыто
+            if (!(await orderDeleteGuard(order.id))) { hideLoading(); closeModal(); return; }
+            showLoading();
+            const hasStock = (await orderOpenStockRows(order.id)).length > 0;
+            if (hasStock && !stockChoice) { // списание появилось уже после открытия окна — спрашиваем заново
+                hideLoading(); closeModal();
+                openDeleteModal(orders.indexOf(order), 'order', `${t('delete_label_order_of')} «${order.customer}»`);
+                return;
+            }
+            let stockNote = '';
+            if (hasStock && stockChoice === 'keep') {
+                // Сначала потери: если записать не удалось, заказ не удаляем
+                const lossSum = await saveOrderLoss(order);
+                if (!order.is_demo) stockNote = t('log_loss_note').replace('{sum}', formatMoney(lossSum));
+            } else if (hasStock) {
+                await reverseInventoryForOrder(order.id);
+                stockNote = t('log_stock_returned');
+            }
             // Soft delete — помечаем как удалённый, не удаляем физически
-            const { error } = await db.from('orders')
-                .update({ deleted_at: new Date().toISOString() })
-                .eq('id', order.id);
-            if (error) throw error;
-            orders.splice(deleteId, 1);
+            try {
+                await updateChecked(db.from('orders')
+                    .update({ deleted_at: new Date().toISOString() })
+                    .eq('id', order.id));
+            } catch (e) {
+                if (hasStock && stockChoice === 'keep') await cancelOrderLosses(order.id).catch(x => console.error(x));
+                throw e;
+            }
+            orders.splice(orders.indexOf(order), 1);
             if (wasOpenInDetail) {
                 currentOrderId = null;
                 document.getElementById('ordersList').classList.remove('hidden');
                 document.getElementById('orderDetail').classList.remove('active');
             }
             displayOrders();
-            logActivity('order', `${t('trash_order_word')} №${order.id} (${t('delete_label_customer')} «${order.customer}») ${t('log_moved_to_trash')}`);
+            logActivity('order', `${t('trash_order_word')} ${orderLogNum(order)} (${t('delete_label_customer')} «${order.customer}») ${t('log_moved_to_trash')}${stockNote ? ', ' + stockNote : ''}`);
             if (typeof scheduleRefreshOrderQuota === 'function') scheduleRefreshOrderQuota();
             // Удалили заказ, открытый из карточки позиции, — возвращаемся в карточку (inventory.js, 22.10)
             if (wasOpenInDetail && typeof stockCardReturnPending === 'function' && stockCardReturnPending()) await returnToStockCard();
@@ -209,7 +245,7 @@ async function confirmDelete() {
                 if (error) throw error;
                 order.items.splice(deleteId, 1);
                 renderDetailItems(order);
-                logActivity('item', `${t('log_position_deleted')} «${item.product}» × ${item.quantity} ${t('log_from_order')} №${order.id}`, order.id);
+                logActivity('item', `${t('log_position_deleted')} «${item.product}» × ${item.quantity} ${t('log_from_order')} ${orderLogNum(order)}`, order.id);
             }
         } else if (deleteType === 'ordmat') {
             const order = orders.find(o => o.id === currentOrderId);

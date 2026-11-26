@@ -652,6 +652,8 @@ async function submitCreditOp() {
 
 // Отмена операции (клик по строке «Возврат» / «Перенос в аванс» / «Зачёт аванса» в списке оплат)
 async function undoPaymentOp(paymentId) {
+    // v977: отмена операции стирает запись — нужно право на удаление
+    if (!hasPermission('can_delete')) { showInfo(t('ing_no_delete_permission')); return; }
     const p = _orderPayments.find(x => x.id === paymentId);
     if (!p) return;
     if (!(await showConfirm(t('credit_undo_confirm')))) return;
@@ -750,6 +752,7 @@ function overpayChoice(kind) {
 }
 
 async function deletePayment() {
+    if (!hasPermission('can_delete')) { showInfo(t('ing_no_delete_permission')); return; }
     const id = document.getElementById('paymentEditId').value;
     if (!id) return;
     const p = _orderPayments.find(pay => String(pay.id) === String(id));
