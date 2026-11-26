@@ -27,7 +27,7 @@ async function bankCall(body) {
 
 function bankErrText(code) {
     const map = { PLAN_REQUIRED: 'bank_err_plan', FORBIDDEN: 'bank_err_forbidden', NO_AUTH: 'bank_err_forbidden',
-        ALREADY_APPLIED: 'bank_err_already', NO_MANUAL_PAYMENT: 'bank_err_nomanual', BAD_COUNTRY: 'bank_err_bank', BANK_NOT_FOUND: 'bank_err_bank', NOT_EURO: 'bank_err_not_euro', AMBIGUOUS: 'bank_err_nomanual', LINK_FAILED: 'bank_err_nomanual', NOT_APPLIED: 'bank_err_already', OVER_REMAINING: 'bank_err_over', OVER_TX_AMOUNT: 'bank_err_over' };
+        ALREADY_APPLIED: 'bank_err_already', NO_MANUAL_PAYMENT: 'bank_err_nomanual', BAD_COUNTRY: 'bank_err_bank', BANK_NOT_FOUND: 'bank_err_bank', NOT_EURO: 'bank_err_not_euro', AMBIGUOUS: 'bank_err_nomanual', LINK_FAILED: 'bank_err_nomanual', NOT_APPLIED: 'bank_err_already', OVER_REMAINING: 'bank_err_over', OVER_TX_AMOUNT: 'bank_err_over', ORDER_CANCELLED: 'bank_err_order_cancelled', BANK_ALLOC_CANCELLED: 'bank_err_cancelled_alloc' };
     return t(map[code] || 'bank_err_generic');
 }
 
@@ -251,6 +251,7 @@ function bankWhy(r) {
         amount_over_remaining: 'bank_why_over', payer_other_customer: 'bank_why_payer',
         number_amount_match_unverified_payer: 'bank_why_unverified', foreign_series_amount_match: 'bank_why_foreign',
         payer_amount_several_candidates: 'bank_why_several', amount_matches_snapshot_not_live: 'bank_why_snapshot',
+        cancelled_invoice: 'bank_why_cancelled',
     }[r.why];
     return k ? t(k) : '';
 }
