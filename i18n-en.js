@@ -2182,7 +2182,6 @@ I18N.en = {
         cancel_sum_final: "Cancellation can’t be undone.",
         cancel_sum_quota: "A cancelled order still counts towards your order limit.",
         cancel_blk_cons: "This order is part of consolidated invoice {n}. Cancel that invoice first.",
-        cancel_blk_docs: "Documents have been issued for this order: {list}. Cancelling such orders will come in a later update.",
         cancel_blk_negative: "More has been refunded than received for this order. Fix the payments first.",
         cancel_doc_generic: "invoice or delivery note",
         cancel_err_changed: "The order has changed. Open the cancellation again.",
@@ -2211,4 +2210,14 @@ I18N.en = {
         cancel_kind_to_credit: "Moved to credit",
         cancel_kind_from_credit: "From credit",
         cancel_delete_confirm: "Move cancelled order {num} to the trash?",
+        // v984: отмена заказов с документами
+        cancel_warn_inv: "{doc}: stays in “Documents” marked “Order cancelled”. This does not void the invoice and nothing is sent to the customer. If the customer already has it, let them know.",
+        cancel_warn_dn: "{doc}: the goods may already have been handed over. Cancel only if they were not delivered or have been returned.",
+        cancel_sum_inv: "{doc} stays in “Documents” marked “Order cancelled” (it is not voided)",
+        cancel_sum_dn: "{doc}: make sure the goods were not delivered or have been returned",
+        cancel_blk_unpaid_inv: "This order has an invoice that is not fully paid. For now it can’t be cancelled in this bakery: a payment for the invoice may still arrive through the bank.",
+        cancel_open_inv: "Open invoice {n}",
+        cancel_open_dn: "Open delivery note {n}",
+        docs_order_cancelled: "Order cancelled",
+        docs_order_cancelled_hint: "The order is cancelled. The document is kept and has not been voided.",
 };

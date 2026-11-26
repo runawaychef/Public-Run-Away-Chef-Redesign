@@ -213,7 +213,7 @@ function docs2RenderHome() {
         if (d.cancelled) return;
         if (!(d.kind === 'inv' && inCons.has(d.orderId))) { total++; if (d.kind === 'dn') totDn++; else totInv++; }
         if (d.kind === 'dn') {
-            if (String(d.date).slice(0, 7) === ym) { dnMonth++; if (!d.sentAt && !d.deleted) dnUnsent++; }
+            if (String(d.date).slice(0, 7) === ym) { dnMonth++; if (!d.sentAt && !d.deleted && !d.orderCancelled) dnUnsent++; }
             if (String(d.rawNumber || '') > lastDn) lastDn = String(d.rawNumber || '');
             return;
         }
@@ -314,6 +314,8 @@ let _d2Return = null;
 function docs2ReturnPending() { return !!_d2Return; }
 function forgetDocs2Return() { _d2Return = null; }
 function docs2OpenOrder(orderId) {
+    // v984: отменённый заказ открываем поверх текущей страницы раздела
+    if (typeof findCancelledOrder === 'function' && findCancelledOrder(orderId)) { openCancelledOrder(orderId); return; }
     let from = null;
     if (typeof isAppPageOpen === 'function') _D2_SUB_PAGES.forEach(id => { if (!from && isAppPageOpen(id)) from = id; });
     if (typeof closeAllAppPages === 'function') closeAllAppPages();
@@ -884,7 +886,7 @@ function docs2RenderDn(reapplyView) {
             key: String(o.customer_id || ('n:' + (o.customer || ''))), name: o.customer || t('orders_no_customer'),
             ym: String(o.date || '').slice(0, 7), oid: o.id, onum: o.order_number, c: Math.round(orderGrandTotal(o) * 100), date: o.date, number: '', sent: true }));
     } else {
-        items = docs.filter(d => d.kind === 'dn' && !d.cancelled && !d.deleted).map(d => ({
+        items = docs.filter(d => d.kind === 'dn' && !d.cancelled && !d.deleted && !d.orderCancelled).map(d => ({
             key: String(d.custId || ('n:' + (d.custName || ''))), name: d.custName || t('orders_no_customer'),
             ym: String(d.date || '').slice(0, 7), oid: d.orderId, onum: d.orderNumber, c: d.sumC || 0, date: d.date, number: d.number, sent: !!d.sentAt }));
         if (_d2D.unsent) items = items.filter(x => !x.sent);
@@ -1011,7 +1013,7 @@ function docs2RenderAll(reapplyView, keepFocus) {
     const stOk = x => {
         const d = x.d;
         if (!_d2A.st) return true;
-        if (d.deleted) return false;
+        if (d.deleted || d.orderCancelled) return false;
         if (_d2A.st === 'unsent') return !d.sentAt;
         if (d.kind === 'dn') return false;
         if (_d2A.st === 'paid') return d.pay === 'paid';
@@ -1022,12 +1024,12 @@ function docs2RenderAll(reapplyView, keepFocus) {
         && (q || !_d2A.period || x.ym === _d2A.period)
         && (!_d2A.type || (_d2A.type === 'dn' ? x.d.kind === 'dn' : x.d.kind !== 'dn'))
         && stOk(x));
-    const sumC = base.reduce((s, x) => s + (x.d.deleted ? 0 : x.c), 0);
+    const sumC = base.reduce((s, x) => s + (x.d.deleted || x.d.orderCancelled ? 0 : x.c), 0);
 
     const groups = new Map();
     base.forEach(x => {
         if (!groups.has(x.key)) groups.set(x.key, { key: x.key, name: x.name, items: [], sumC: 0 });
-        const g = groups.get(x.key); g.items.push(x); if (!x.d.deleted) g.sumC += x.c;
+        const g = groups.get(x.key); g.items.push(x); if (!x.d.deleted && !x.d.orderCancelled) g.sumC += x.c;
     });
     const gl = [...groups.values()].sort((a, b) => b.sumC - a.sumC);
     if (reapplyView) {
@@ -1061,12 +1063,13 @@ function docs2RenderAll(reapplyView, keepFocus) {
             else if (d.pay === 'unpaid') st.push(escapeHtml(t('docs2_st_unpaid')));
         }
         if (d.deleted) st = [escapeHtml(t('docs2_order_deleted'))];
+        else if (d.orderCancelled) st = [`<b style="color:#8b3a3a;">${escapeHtml(t('docs_order_cancelled'))}</b>`];
         else if (!d.sentAt) st.push(gold(t('docs_not_sent_cap')));
         const isCons = d.kind === 'cons';
         const cOpen = isCons && _d2A.cons.has(d.key);
         // Документ удалённого заказа открывается сам (заказа в списке нет)
-        const click = isCons ? "docs2AllCons(\'" + escapeHtml(d.key) + "\')" : (d.deleted ? "docs2OpenDoc(\'" + escapeHtml(d.key) + "\')" : 'docs2AllOpen(' + (x.oid || 0) + ')');
-        const main = `<div class="d2o"${d.deleted ? ' style="opacity:.55;"' : ''} onclick="${click}"><div class="l">
+        const click = isCons ? "docs2AllCons(\'" + escapeHtml(d.key) + "\')" : (d.deleted || d.orderCancelled ? "docs2OpenDoc(\'" + escapeHtml(d.key) + "\')" : 'docs2AllOpen(' + (x.oid || 0) + ')');
+        const main = `<div class="d2o"${d.deleted || d.orderCancelled ? ' style="opacity:.6;"' : ''} onclick="${click}"><div class="l">
             <div class="a">${escapeHtml(d.number || '')}</div>
             <div class="b">${escapeHtml(formatDateDMY(d.date))} \u00b7 ${escapeHtml(what)}</div>
             ${st.length ? `<div class="c">${st.join(' \u00b7 ')}</div>` : ''}</div>

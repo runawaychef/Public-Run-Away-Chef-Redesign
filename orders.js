@@ -3251,13 +3251,20 @@ async function cancelOrderState(order) {
     }
     const paidC = (p.data || []).reduce((s, x) => s + _cents(x.amount), 0);
     const hasStock = (await orderOpenStockRows(order.id)).length > 0;
-    return { docs, cons, paidC, payCount: (p.data || []).length, hasStock };
+    // v984: документы не мешают отмене, но о них предупреждаем. Снимок без номера считаем счётом (осторожный вариант).
+    const hasDn = !!o.data.dn_no;
+    const hasInv = !!o.data.inv_no || (!hasDn && (snap.count || 0) > 0);
+    const warns = [];
+    if (hasInv) warns.push({ kind: 'inv', label: o.data.inv_no ? t('order_blk_doc_inv').replace('{n}', String(o.data.inv_no)) : t('cancel_doc_generic') });
+    if (hasDn) warns.push({ kind: 'dn', label: t('order_blk_doc_dn').replace('{n}', String(o.data.dn_no)) });
+    return { docs, cons, warns, hasInv, totalC: _cents(orderGrandTotal(order)), paidC, payCount: (p.data || []).length, hasStock };
 }
 
 // Причина, по которой отменять нельзя (null — можно)
 function cancelBlockReason(st) {
     if (st.cons !== null) return t('cancel_blk_cons').replace('{n}', st.cons === '…' ? '' : st.cons);
-    if (st.docs.length) return t('cancel_blk_docs').replace('{list}', st.docs.join(', '));
+    // v984: в защищённой пекарне (работает банк) заказ с не полностью оплаченным счётом не отменяем — правило приложения
+    if (currentOrgProtected && st.hasInv && st.paidC < st.totalC) return t('cancel_blk_unpaid_inv');
     if (st.paidC < 0) return t('cancel_blk_negative');
     return null;
 }
@@ -3276,7 +3283,7 @@ async function openCancelOrder() {
     hideLoading();
     const reason = cancelBlockReason(st);
     if (reason) { await showInfo(reason); return; }
-    _cancelSt = { orderId: order.id, paidC: st.paidC, hasStock: st.hasStock, mode: null, split: false, stock: null, method: '', parts: { refund: '', credit: '', retain: '' }, busy: false };
+    _cancelSt = { orderId: order.id, warns: st.warns, paidC: st.paidC, hasStock: st.hasStock, mode: null, split: false, stock: null, method: '', parts: { refund: '', credit: '', retain: '' }, busy: false };
     renderCancelModal();
     document.getElementById('cancelOrderModal').style.display = 'flex';
 }
@@ -3297,6 +3304,7 @@ function renderCancelModal() {
     if (!order) return;
     document.getElementById('cancelOrderTitle').textContent = t('cancel_title').replace('{num}', orderNumLabel(order));
     let html = `<div class="cancel-sub">${escapeHtml(order.customer || t('orders_no_customer'))} · ${escapeHtml(formatDateDMY(order.date))} · ${escapeHtml(formatMoney(orderGrandTotal(order)))}</div>`;
+    html += s.warns.map(w => `<div class="cancel-warn">${escapeHtml(_cancelWarnText(w, 'cancel_warn_'))}</div>`).join('');
     if (s.paidC > 0) {
         const noCust = !order.customer_id;
         html += `<div class="cancel-q">${escapeHtml(t('cancel_money_q').replace('{sum}', formatMoney(s.paidC / 100)))}</div>`;
@@ -3325,6 +3333,11 @@ function renderCancelModal() {
     document.getElementById('cancelOrderBody').innerHTML = html;
     cancelError('');
     cancelUpdateDynamic();
+}
+
+function _cancelWarnText(w, prefix) {
+    const s = t(prefix + w.kind).replace('{doc}', w.label);
+    return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
 function cancelError(text) {
@@ -3400,6 +3413,7 @@ async function cancelOrderNext() {
     if (a.retain > 0) lines.push('• ' + t('cancel_sum_retain').replace('{sum}', formatMoney(a.retain / 100)));
     if (!(s.paidC > 0)) lines.push('• ' + t('cancel_no_money'));
     if (s.hasStock) lines.push('• ' + t(s.stock === 'return' ? 'cancel_sum_stock_return' : 'cancel_sum_stock_keep'));
+    if (s.warns.length) { lines.push(''); s.warns.forEach(w => lines.push('⚠ ' + _cancelWarnText(w, 'cancel_sum_'))); }
     lines.push('', t('cancel_sum_final'));
     if (currentOrgPlan === 'free' && order.is_confirmed && !order.is_demo) lines.push('', t('cancel_sum_quota'));
 
@@ -3419,10 +3433,10 @@ async function runCancelOrder(s, a, lossAmount) {
     let res;
     try {
         // Перепроверка перед самой отменой: пока окно было открыто, могли выставить документ или внести оплату.
-        // Правило «с документом не отменяем» действует только здесь, в приложении.
+        // Правило про неоплаченный счёт в защищённой пекарне действует только здесь, в приложении.
         const st = await cancelOrderState(order);
         const reason = cancelBlockReason(st);
-        if (reason || st.paidC !== s.paidC || st.hasStock !== s.hasStock) {
+        if (reason || st.paidC !== s.paidC || st.hasStock !== s.hasStock || JSON.stringify(st.warns) !== JSON.stringify(s.warns)) {
             _cancelSt = null; hideLoading();
             await showInfo(reason || t('cancel_err_changed'));
             return;
@@ -3575,7 +3589,8 @@ async function renderCancelledOrder() {
         + (Number(o.discount) > 0 ? line(t('cancel_view_discount').replace('{n}', String(o.discount)), '−' + formatMoney(tot.discount)) : '')
         + (tot.vat > 0 ? line(t('cancel_view_vat'), formatMoney(tot.vat)) : '')
         + line(t('cancel_view_total'), formatMoney(orderGrandTotal(o)), 'cx-total')
-        + '</div><div id="cancelledMoney" class="cx-sec"><span class="cx-meta">…</span></div>';
+        + '</div>' + _cancelledDocsHtml(o)
+        + '<div id="cancelledMoney" class="cx-sec"><span class="cx-meta">…</span></div>';
     body.innerHTML = html;
 
     try {
@@ -3603,6 +3618,35 @@ async function renderCancelledOrder() {
         console.error(e);
         const box = document.getElementById('cancelledMoney');
         if (box && _cancelViewId === id) box.innerHTML = `<span class="cx-meta">${escapeHtml(t('error_save_check_connection'))}</span>`;
+    }
+}
+
+// v984: документы отменённого заказа — только посмотреть
+function _cancelledDocsHtml(o) {
+    const btn = (type, key, num) => `<button type="button" class="cx-doc" onclick="openCancelledDoc(${o.id}, '${type}')">${escapeHtml(t(key).replace('{n}', _formatDocNumber(type, num)))} ›</button>`;
+    const list = (o.inv_no ? btn('invoice', 'cancel_open_inv', o.inv_no) : '') + (o.dn_no ? btn('delivery_note', 'cancel_open_dn', o.dn_no) : '');
+    return list ? `<div class="cx-sec">${list}<div class="cx-meta" style="margin-top:6px;">${escapeHtml(t('docs_order_cancelled_hint'))}</div></div>` : '';
+}
+
+async function openCancelledDoc(orderId, docType) {
+    if (!findCancelledOrder(orderId)) return;
+    showLoading(t('docs_opening'));
+    try {
+        const field = snapshotField(docType);
+        const { data, error } = await db.from('orders').select(field).eq('id', orderId).single();
+        if (error) throw error;
+        const snapshot = data && data[field];
+        if (!snapshot) throw new Error(t('inv_unknown_error'));
+        // fromOrderSummary: «Закрыть» просто убирает просмотр, страница заказа остаётся
+        _docPreview = { docType, snapshot, lang: currentLang, readOnly: true, persisted: true, orderId, consolidatedId: null, fromOrderSummary: true };
+        _setPreviewReadOnlyUi(true, false);
+        renderDocumentPreviewThumbnail();
+        document.getElementById('orderDocumentModal').style.display = 'flex';
+    } catch (e) {
+        console.error(e);
+        showInfo(t('inv_doc_error_prefix') + (e && e.message ? e.message : t('inv_unknown_error')));
+    } finally {
+        hideLoading();
     }
 }
 

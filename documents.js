@@ -49,7 +49,7 @@ async function _docsLoad() {
             .select('id, customer_id, order_number, order_date, deleted_at, consolidated_invoice_id, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via, invoice_delivery_status, delivery_note_delivery_status, '
                 // 2.11: список берёт ЛЁГКИЕ вычисляемые колонки (inv_no, inv_issue_date, ...), а не поля из тяжёлого снимка (в нём логотип ~105 КБ):
                 // чтение снимков с диска давало 2-3 с. Тяжёлые части снимка (для сумм удалённых заказов) — отдельным запросом ниже.
-                + 'inv:inv_no, invDate:inv_issue_date, invDue:inv_due_date, dn:dn_no, dnDate:dn_issue_date')
+                + 'cancelled_at, inv:inv_no, invDate:inv_issue_date, invDue:inv_due_date, dn:dn_no, dnDate:dn_issue_date')
             .eq('org_id', currentOrgId)
             .or('invoice_snapshot.not.is.null,delivery_note_snapshot.not.is.null')
             .order('id')).then(r => { _dg.ord = Math.round(performance.now() - _dg0); return r; }),
@@ -86,8 +86,10 @@ async function _docsLoad() {
         const live = orders.find(o => o.id === r.id) || null;
         const hv = heavy[r.id] || {};
         const deleted = !!r.deleted_at;
-        const custName = live ? (live.customer || _docsCustName(r.customer_id)) : _docsCustName(r.customer_id);
-        const base = { orderId: r.id, orderNumber: r.order_number || null, custId: r.customer_id || null, custName, deleted, live };
+        const gone = live || (typeof findCancelledOrder === 'function' ? findCancelledOrder(r.id) : null);
+        const custName = gone ? (gone.customer || _docsCustName(r.customer_id)) : _docsCustName(r.customer_id);
+        const orderCancelled = !deleted && !!r.cancelled_at; // v984: документ остаётся в списке с пометкой «Заказ отменён»
+        const base = { orderId: r.id, orderNumber: r.order_number || null, custId: r.customer_id || null, custName, deleted, orderCancelled, live };
         if (r.consolidated_invoice_id && r.invoice_sent_at) {
             const prev = sentByCons[r.consolidated_invoice_id];
             if (!prev || r.invoice_sent_at > prev.at) sentByCons[r.consolidated_invoice_id] = { at: r.invoice_sent_at, via: r.invoice_sent_via, status: r.invoice_delivery_status || null };
@@ -327,7 +329,7 @@ function _docsRenderTodo(box) {
 
 // Статус счёта для плиток (DN и отменённые — вне плиток; находятся поиском)
 function _docsInvStatus(d, today) {
-    if (d.kind === 'dn' || d.cancelled || d.deleted) return null;
+    if (d.kind === 'dn' || d.cancelled || d.deleted || d.orderCancelled) return null;
     if (d.pay === 'paid') return { paid: true };
     if (d.pay !== 'unpaid' && d.pay !== 'partial') return null;
     const over = !!d.due && d.due < today;
@@ -390,11 +392,12 @@ function renderDocumentsSection() {
     const all = _docsFiltered();
     const buildRow = d => {
         const sum = d.sumC != null ? formatMoney(d.sumC / 100) : '—';
-        const dim = (d.cancelled || d.deleted) ? 'opacity:.55;' : '';
+        const dim = (d.cancelled || d.deleted || d.orderCancelled) ? 'opacity:.55;' : '';
         const gold = txt => `<b style="color:#96712a;">${escapeHtml(txt)}</b>`;
         if (d.kind === 'dn') {
             const sub = [escapeHtml(d.number || '—'), formatDateDMY(d.date)];
             if (d.orderNumber) sub.push(escapeHtml(t('docs_order_n').replace('{n}', d.orderNumber)));
+            if (d.orderCancelled) sub.push(escapeHtml(t('docs_order_cancelled')));
             return `<div onclick="openRegistryDoc('${d.key}')" style="display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid #f0ebde; cursor:pointer; ${dim}">
                 <div style="flex:1; min-width:0;"><div style="font-size:14px; font-weight:700; color:#3c3a34;">${escapeHtml(d.custName)}</div>
                     <div style="font-size:12px; color:#888;">${sub.join(' · ')}</div>
@@ -407,13 +410,14 @@ function renderDocumentsSection() {
         else if (d.orderNumber) sub.push(escapeHtml(t('docs_order_n').replace('{n}', d.orderNumber)));
         if (d.cancelled) sub.push(escapeHtml(t('docs_cancelled')));
         else if (d.deleted) sub.push(escapeHtml(t('docs_order_deleted')));
+        else if (d.orderCancelled) sub.push(escapeHtml(t('docs_order_cancelled')));
         let sentLine = '';
         if (d.sentAt) {
             const st = _docsSentState(d);
             sentLine = st === 'alarm'
                 ? `<b style="color:#a3493d;">${escapeHtml(t('docs_mail_failed'))}</b>`
                 : escapeHtml(t('docs_sent_on').replace('{d}', _docsShortDate(d.sentAt)));
-        } else if (!d.cancelled && !d.deleted && d.pay !== 'paid') {
+        } else if (!d.cancelled && !d.deleted && !d.orderCancelled && d.pay !== 'paid') {
             sentLine = gold(t('docs_not_sent_cap'));
         }
         if (d.pay === 'partial') sentLine += (sentLine ? ' · ' : '') + gold(t('docs_partial'));
@@ -524,7 +528,7 @@ function renderRegistryDocActions() {
     const sendOrderId = d.kind === 'cons' ? d.liveMemberId : (d.live ? d.orderId : null);
     let html = '<div class="flex gap-2 flex-wrap">';
     if (sendOrderId && !d.cancelled) html += `<button onclick="registrySendDoc()" class="pill-btn flex-1 justify-center">${escapeHtml(t('docs_send'))}</button>`;
-    if (d.kind !== 'cons' && d.live) html += `<button onclick="registryOpenOrder(${d.orderId})" class="pill-btn-secondary flex-1 justify-center">${escapeHtml(t('docs_open_order'))}</button>`;
+    if (d.kind !== 'cons' && (d.live || d.orderCancelled)) html += `<button onclick="registryOpenOrder(${d.orderId})" class="pill-btn-secondary flex-1 justify-center">${escapeHtml(t('docs_open_order'))}</button>`;
     html += '</div>';
     if (d.kind === 'cons' && d.memberIds.length) {
         html += `<div style="font-size:12px; color:#6b675d; margin:10px 0 4px;">${escapeHtml(t('send_cons_member'))}</div>`;
@@ -534,6 +538,7 @@ function renderRegistryDocActions() {
             return `<div onclick="registryOpenOrder(${id})" style="display:flex; justify-content:space-between; font-size:13px; color:#4f6349; padding:4px 0; cursor:pointer;"><span>${escapeHtml(o.order_number ? '№' + o.order_number : '#' + o.id)} · ${formatDateDMY(o.date)}</span><span>${formatMoney(orderGrandTotal(o))} ›</span></div>`;
         }).join('');
     }
+    if (d.orderCancelled) html += `<div style="font-size:12px; color:#8b3a3a; margin-top:8px;">${escapeHtml(t('docs_order_cancelled_hint'))}</div>`;
     if (d.deleted) html += `<div style="font-size:12px; color:#9a9488; margin-top:8px;">${escapeHtml(t('docs_order_deleted_hint'))}</div>`;
     if (d.kind === 'cons' && d.cancelled) html += `<div style="font-size:12px; color:#9a9488; margin-top:8px;">${escapeHtml(t('docs_cons_cancelled_hint'))}</div>`;
     if (d.kind === 'cons' && !d.cancelled && typeof hasPermission === 'function' && hasPermission('can_delete')) {
@@ -556,6 +561,16 @@ function registrySendDoc() {
 // (через список «Документов» с теми же фильтрами); переход по нижнему меню память сбрасывает.
 let _docsReturn = null; // { key, filter, q }
 function registryOpenOrder(orderId) {
+    // v984: отменённый заказ — страница только для чтения поверх списка, «Назад» сам вернёт в список
+    if (typeof findCancelledOrder === 'function' && findCancelledOrder(orderId)) {
+        _regFromDocs2 = false;
+        _docPreview = null;
+        _docsOpenEntry = null;
+        closeModal();
+        if (typeof _setPreviewReadOnlyUi === 'function') _setPreviewReadOnlyUi(false, false);
+        openCancelledOrder(orderId);
+        return;
+    }
     if (_regFromDocs2) {
         _regFromDocs2 = false;
         _docPreview = null;

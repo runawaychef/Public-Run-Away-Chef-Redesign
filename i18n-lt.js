@@ -2179,7 +2179,6 @@ I18N.lt = {
         cancel_sum_final: "Atšaukimo atkurti negalima.",
         cancel_sum_quota: "Atšauktas užsakymas ir toliau įskaičiuojamas į užsakymų limitą.",
         cancel_blk_cons: "Šis užsakymas įtrauktas į suvestinę sąskaitą {n}. Pirmiausia ją atšaukite.",
-        cancel_blk_docs: "Šiam užsakymui išrašyti dokumentai: {list}. Tokių užsakymų atšaukimas atsiras vėlesniame atnaujinime.",
         cancel_blk_negative: "Pagal užsakymą grąžinta daugiau, nei gauta. Pirmiausia pataisykite mokėjimus.",
         cancel_doc_generic: "sąskaita ar važtaraštis",
         cancel_err_changed: "Užsakymo duomenys pasikeitė. Atšaukimą atverkite iš naujo.",
@@ -2208,4 +2207,14 @@ I18N.lt = {
         cancel_kind_to_credit: "Perkelta į avansą",
         cancel_kind_from_credit: "Iš avanso",
         cancel_delete_confirm: "Perkelti atšauktą užsakymą {num} į šiukšlinę?",
+        // v984: отмена заказов с документами
+        cancel_warn_inv: "{doc}: liks skiltyje „Dokumentai“ su žyma „Užsakymas atšauktas“. Sąskaita tuo neanuliuojama, klientui niekas nesiunčiama. Jei klientas ją jau turi, informuokite jį.",
+        cancel_warn_dn: "{doc}: prekės galėjo būti jau perduotos. Atšaukite tik jei prekės neatiduotos arba grąžintos.",
+        cancel_sum_inv: "{doc} liks skiltyje „Dokumentai“ su žyma „Užsakymas atšauktas“ (tai nėra anuliavimas)",
+        cancel_sum_dn: "{doc}: įsitikinkite, kad prekės neatiduotos arba grąžintos",
+        cancel_blk_unpaid_inv: "Šio užsakymo sąskaita apmokėta ne visa. Kol kas šioje kepykloje tokio užsakymo atšaukti negalima: mokėjimas pagal sąskaitą dar gali ateiti per banką.",
+        cancel_open_inv: "Atverti sąskaitą {n}",
+        cancel_open_dn: "Atverti važtaraštį {n}",
+        docs_order_cancelled: "Užsakymas atšauktas",
+        docs_order_cancelled_hint: "Užsakymas atšauktas. Dokumentas išsaugotas ir neanuliuotas.",
 };

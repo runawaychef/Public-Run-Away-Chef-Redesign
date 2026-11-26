@@ -391,7 +391,7 @@ function orderHasInvoice(o) { return !!(o && (o.inv_no || o.invoice_sent_at || o
 // Режим «По счёту» (31.10): документы ведутся и отслеживаются. В режиме «По заказу» разделы документов скрыты.
 function docsEnabled() { return typeof currentOrgPaymentMode !== 'undefined' && currentOrgPaymentMode === 'invoice'; }
 // Есть ли выставленные документы (после возврата с «По счёту» раздел остаётся доступным)
-function _anyIssuedDocs() { return (typeof orders !== 'undefined' ? orders : []).some(o => o && (o.inv_no || o.dn_no || o.consolidated_invoice_id)); }
+function _anyIssuedDocs() { return ordersWithCancelled().some(o => o && (o.inv_no || o.dn_no || o.consolidated_invoice_id)); }
 function refreshDocsVisibility() {
     if (typeof refreshDocs2Visibility === 'function') refreshDocs2Visibility(); // новый раздел «Документы» (тест, 31.10.2026)
     const show = docsEnabled() || _anyIssuedDocs();
