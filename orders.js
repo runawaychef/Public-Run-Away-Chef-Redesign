@@ -735,6 +735,15 @@ function openOrdersHelp() {
     } else {
         showHelpModal('help_orders_screen_title', 'help_orders_screen_text');
     }
+    _appendCancelHelp();
+}
+
+// v987: абзацы про отмену — только там, где отмена есть (или уже есть отменённые заказы)
+function _appendCancelHelp() {
+    const has = CANCEL_TEST_ORGS.includes(Number(currentOrgId)) || (typeof cancelledOrders !== 'undefined' && cancelledOrders.length > 0);
+    const el = has ? document.getElementById('helpModalText') : null;
+    if (el) el.insertAdjacentHTML('beforeend', t('help_orders_cancel_text').split('\n\n')
+        .map(p => `<p class="mb-2">${escapeHtml(p)}</p>`).join(''));
 }
 
 // Переключатель "Карточки / Таблица" — верхний правый угол экрана.

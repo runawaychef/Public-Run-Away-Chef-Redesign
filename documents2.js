@@ -613,7 +613,7 @@ function docs2RenderPaid(reapplyView) {
         const click = o ? ` onclick="docs2OpenOrder(${o.id})"` : '';
         return `<div class="d2o"${click}><div class="l">
             <div class="a">${escapeHtml(oname)}</div>
-            <div class="b">${escapeHtml(formatDateDMY(String(r.p.paid_at || '').slice(0, 10)))}${doc ? ' · ' + escapeHtml(doc) : ''}</div></div>
+            <div class="b">${escapeHtml(formatDateDMY(String(r.p.paid_at || '').slice(0, 10)))}${doc ? ' · ' + escapeHtml(doc) : ''}</div>${o && o.cancelled_at ? `<div class="c">${escapeHtml(t('docs_order_cancelled'))}</div>` : ''}</div>
             <div class="r"><b>${escapeHtml(formatMoney(r.c / 100))}</b></div></div>`;
     };
     const groupHtml = gl.map(g => {
