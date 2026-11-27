@@ -1382,6 +1382,8 @@
            заголовки колонок — тёплый серый (вариант B, как подписи разделителей). ОТКАТ: удалить этот блок. */
         #orderTableWrap .ot-head { margin-top: 4px; margin-bottom: 10px; border: var(--sb-edge); border-radius: 16px; box-shadow: var(--sb-shadow); color: #9a9488; }
         #orderTableWrap .ot-island { border: var(--sb-edge); box-shadow: var(--sb-shadow); }
+        /* v991: метка «не отправлен» в сводке документов карточки заказа */
+        .ds-notsent { display: inline-block; margin-left: 5px; padding: 1px 8px; border-radius: 8px; background: #fbdfc0; color: #8c4708; font-weight: 700; }
         /* ===== v990: свёрнутая шапка карточки заказа ===== */
         #detailHeadFields.hidden, #detailHeadSum.hidden, #dhNotes.hidden, #dhCredit.hidden, #detailAutosaveNote.hidden { display: none; }
         .dh-toggle { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 28px; cursor: pointer; }
@@ -5461,7 +5463,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=10"></script>
     <script src="money.js?v=17"></script>
-    <script src="i18n-core.js?v=248"></script>
+    <script src="i18n-core.js?v=250"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=23"></script>
     <script src="auth.js?v=35"></script>
@@ -5478,8 +5480,8 @@ function hideSplashScreen() {
 <script src="calendar.js?v=17"></script>
 <script src="orders.js?v=204"></script>
 <script src="dashboard.js?v=28"></script>
-<script src="invoice.js?v=57"></script>
-<script src="send-document.js?v=50"></script>
+<script src="invoice.js?v=58"></script>
+<script src="send-document.js?v=52"></script>
 <script src="confirmation.js?v=7"></script>
 <script src="payments.js?v=55"></script>
 <script src="documents.js?v=18"></script>

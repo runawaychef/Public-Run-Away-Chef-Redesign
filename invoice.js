@@ -334,6 +334,7 @@ async function freezeDocumentSnapshot(order, docType, existing, opts) {
     }
 
     const snapshot = {
+        builtAt: new Date().toISOString(),   // v992: когда собрана эта версия (сравнивается со временем отправки)
         number,
         issueDate,
         dueDate,
@@ -414,6 +415,7 @@ async function applyEditIssueDate(newDate) {
     }
     showLoading();
     try {
+        if (_docPreview.snapshot.issueDate !== newDate) _docPreview.snapshot.builtAt = new Date().toISOString(); // v992
         _docPreview.snapshot.issueDate = newDate;
         if (_docPreview.consolidatedId) {
             await updateChecked(db.from('consolidated_invoices').update({ snapshot: _docPreview.snapshot, issue_date: newDate }).eq('id', _docPreview.consolidatedId));
@@ -423,6 +425,7 @@ async function applyEditIssueDate(newDate) {
         }
         renderDocumentPreviewThumbnail();
         showAutosaveToast();
+        if (typeof refreshDocSummaryAfterEdit === 'function') refreshDocSummaryAfterEdit(); // v992
     } catch (e) {
         console.error(e);
         showInfo(t('error_save_check_connection'));
@@ -451,6 +454,7 @@ async function applyEditDueDate(newDate) {
     }
     showLoading();
     try {
+        if (_docPreview.snapshot.dueDate !== newDate) _docPreview.snapshot.builtAt = new Date().toISOString(); // v992
         _docPreview.snapshot.dueDate = newDate;
         if (_docPreview.consolidatedId) {
             await updateChecked(db.from('consolidated_invoices').update({ snapshot: _docPreview.snapshot, due_date: newDate }).eq('id', _docPreview.consolidatedId));
@@ -460,6 +464,7 @@ async function applyEditDueDate(newDate) {
         }
         renderDocumentPreviewThumbnail();
         showAutosaveToast();
+        if (typeof refreshDocSummaryAfterEdit === 'function') refreshDocSummaryAfterEdit(); // v992
     } catch (e) {
         console.error(e);
         showInfo(t('error_save_check_connection'));
@@ -966,6 +971,7 @@ async function freezeConsolidatedInvoice(orderIds, custId, opts) {
     const dueDate = (existing && existing.dueDate) || (opts && opts.dueDate) || getLocalDateStr(termDays);
 
     const snapshot = {
+        builtAt: new Date().toISOString(),   // v992
         number, issueDate, dueDate, calc: 2, vat_rate: rate,
         ...(currentOrgProtected ? {} : { vat_mode: orderVatExempt(list[0]) ? 'none' : 'vat' }),   // все заказы сводного счёта на одной стороне «с даты» (проверка в начале)
         customerNameFallback: (list[0] && list[0].customer) || '—',

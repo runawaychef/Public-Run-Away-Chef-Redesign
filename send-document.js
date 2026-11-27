@@ -119,15 +119,17 @@ function resetDocChangeState(orderId) { delete _docSumSnaps[orderId]; delete _do
 async function _loadDocSumSnaps(order) {
     const sel = ['inv', 'dn'].map(pre => {
         const col = pre === 'inv' ? 'invoice_snapshot' : 'delivery_note_snapshot';
-        return `${pre}_order:${col}->order, ${pre}_calc:${col}->calc, ${pre}_vat:${col}->vat_rate, ${pre}_od:${col}->>orderDate, ${pre}_num:${col}->>number`;
+        return `${pre}_order:${col}->order, ${pre}_calc:${col}->calc, ${pre}_vat:${col}->vat_rate, ${pre}_od:${col}->>orderDate, ${pre}_num:${col}->>number, ${pre}_built:${col}->>builtAt`;
     }).join(', ');
     const { data, error } = await db.from('orders').select(sel).eq('id', order.id).single();
     if (error) throw error;
     const r = data || {};
     const mk = pre => r[pre + '_num'] ? { number: r[pre + '_num'], calc: r[pre + '_calc'], vat_rate: r[pre + '_vat'], orderDate: r[pre + '_od'], order: r[pre + '_order'] || { items: [] } } : null;
-    const out = { inv: mk('inv'), dn: mk('dn'), cons: null };
+    const out = { inv: mk('inv'), dn: mk('dn'), cons: null,
+        built: { inv: r.inv_built || null, dn: r.dn_built || null, cons: null } }; // v992
     if (order.consolidated_invoice_id) {
-        const c = await db.from('consolidated_invoices').select('orders:snapshot->consolidated->orders').eq('id', order.consolidated_invoice_id).single();
+        const c = await db.from('consolidated_invoices').select('orders:snapshot->consolidated->orders, built:snapshot->>builtAt').eq('id', order.consolidated_invoice_id).single();
+        if (!c.error && c.data) out.built.cons = c.data.built || null;
         if (!c.error && c.data) out.cons = (c.data.orders || []).find(o => o.id === order.id) || null;
     }
     // v945: режим «По заказу» — подтверждение заказа тоже запоминается при отправке (orders.confirmation_*)
@@ -180,28 +182,43 @@ function _confChanged(order, s) {
     } catch (e) { console.error(e); return false; }
 }
 
+// v992: документ отправляли, а потом собрали новую версию (обновление без отправки, неудачная отправка,
+// ручная правка даты/срока). У версий, собранных до v992, времени нет — для них пометки нет.
+function _docOutdatedSent(sentAt, builtAt) {
+    return !!(sentAt && builtAt && Date.parse(builtAt) > Date.parse(sentAt));
+}
+function refreshDocSummaryAfterEdit() {
+    const order = orders.find(o => o.id === currentOrderId);
+    if (!order) return;
+    delete _docSumSnaps[order.id];
+    refreshDetailDocSummary(order);
+}
+
 // Список отправленных документов, которые не совпадают с текущим заказом: [{ num, oldTotal, curTotal }]
-function _docChangedList(order) {
+// v991: unsent=true — то же для выставленных, но НЕ отправленных (плашка только в карточке заказа).
+// Без второго аргумента поведение прежнее («Расхождения» и плашка об отправленных).
+function _docChangedList(order, unsent) {
+    const pick = sentAt => unsent ? !sentAt : !!sentAt;
     const sn = _docSumSnaps[order.id];
     if (!sn) return null;
     const list = [];
     const cur = orderGrandTotal(order);
     const same = (a, b) => Math.abs(a - b) < 0.005;
     if (order.consolidated_invoice_id) {
-        if (order.invoice_sent_at && sn.cons) {
+        if (pick(order.invoice_sent_at) && sn.cons) {
             const old = (Number(sn.cons.grossC) || 0) / 100;
             if (!same(old, cur) || (sn.cons.date && order.date && sn.cons.date !== order.date)) {
                 const n = typeof _payConsNumber === 'function' ? _payConsNumber(order.consolidated_invoice_id) : t('orders_doc_invoice');
                 list.push({ num: n, oldTotal: old, curTotal: cur });
             }
         }
-    } else if (order.invoice_sent_at && sn.inv && _docContentChanged(order, sn.inv)) {
+    } else if (pick(order.invoice_sent_at) && sn.inv && _docContentChanged(order, sn.inv)) {
         list.push({ num: _formatDocNumber('invoice', sn.inv.number), oldTotal: documentTotals(sn.inv).grandAll, curTotal: cur });
     }
-    if (sn.conf && typeof docsEnabled === 'function' && !docsEnabled() && _confChanged(order, sn.conf.snap)) {
+    if (!unsent && sn.conf && typeof docsEnabled === 'function' && !docsEnabled() && _confChanged(order, sn.conf.snap)) {
         list.push({ num: t('conf_sum_label').replace('{n}', _confOrderNum(order)), oldTotal: Number(sn.conf.snap.total), curTotal: cur });
     }
-    if (order.delivery_note_sent_at && sn.dn && _docContentChanged(order, sn.dn)) {
+    if (pick(order.delivery_note_sent_at) && sn.dn && _docContentChanged(order, sn.dn)) {
         list.push({ num: _formatDocNumber('delivery_note', sn.dn.number), oldTotal: documentTotals(sn.dn).grandAll, curTotal: cur });
     }
     return list;
@@ -246,24 +263,28 @@ function renderDetailDocSummary(order) {
     const rows = [];
     const consId = order.consolidated_invoice_id || null;
     const go = '<span class="ds-go">›</span>';
+    // v991: «не отправлен» — заметная оранжевая метка
+    const notSent = key => ` <span class="ds-notsent">${escapeHtml(t(key))}</span>`;
+    const built = (_docSumSnaps[order.id] && _docSumSnaps[order.id].built) || {}; // v992
+    const outdated = (sentAt, kind) => _docOutdatedSent(sentAt, built[kind]);
     if (consId) {
         const num = typeof _payConsNumber === 'function' ? _payConsNumber(consId) : t('orders_doc_invoice');
-        const tail = invSent
+        const tail = outdated(order.invoice_sent_at, 'cons') ? notSent('send_badge_outdated_inv') : invSent
             ? ` · ${escapeHtml(_sentViaLabel(order.invoice_sent_via))} · ${_docSumShortDT(order.invoice_sent_at)}${_docSumStatusHtml(order.invoice_sent_via, order.invoice_delivery_status)}`
-            : ` · ${escapeHtml(t('doc_sum_not_sent'))}`;
+            : notSent('send_badge_notsent_inv');
         rows.push(`<div class="doc-sum-row" onclick="openDocFromOrderSummary('cons')"><span class="ds-text"><b>${escapeHtml(num)}</b> (${escapeHtml(t('bank_cons_word'))})${tail}</span>${go}</div>`);
     } else if (invShown) {
         const num = _formatDocNumber('invoice', order.inv_no || nums.inv) || t('orders_doc_invoice');
-        const tail = invSent
+        const tail = outdated(order.invoice_sent_at, 'inv') ? notSent('send_badge_outdated_inv') : invSent
             ? ` · ${escapeHtml(_sentViaLabel(order.invoice_sent_via))} · ${_docSumShortDT(order.invoice_sent_at)}${_docSumStatusHtml(order.invoice_sent_via, order.invoice_delivery_status)}`
-            : ` · ${escapeHtml(t('doc_sum_not_sent'))}`;
+            : notSent('send_badge_notsent_inv');
         rows.push(`<div class="doc-sum-row" onclick="openDocFromOrderSummary('inv')"><span class="ds-text"><b>${escapeHtml(num)}</b>${tail}</span>${go}</div>`);
     }
     if (dnShown) {
         const num = _formatDocNumber('delivery_note', order.dn_no || nums.dn) || t('orders_doc_delivery_note');
-        const tail = dnSent
+        const tail = outdated(order.delivery_note_sent_at, 'dn') ? notSent('send_badge_outdated_dn') : dnSent
             ? ` · ${escapeHtml(_sentViaLabel(order.delivery_note_sent_via))} · ${_docSumShortDT(order.delivery_note_sent_at)}${_docSumStatusHtml(order.delivery_note_sent_via, order.delivery_note_delivery_status)}`
-            : ` · ${escapeHtml(t('docs2_dn_not_sent'))}`;
+            : notSent('send_badge_notsent_dn');
         rows.push(`<div class="doc-sum-row" onclick="openDocFromOrderSummary('dn')"><span class="ds-text"><b>${escapeHtml(num)}</b>${tail}</span>${go}</div>`);
     }
     if (confInfo) {
@@ -273,6 +294,11 @@ function renderDetailDocSummary(order) {
     try { chgList = _docChangedList(order); } catch (e) { console.error(e); }
     if (chgList && chgList.length) {
         rows.push(`<div class="doc-sum-row" onclick="openOrderDocAction(${order.id})" style="background:#f8efd9;color:#8a6a1f;"><span class="ds-text">${escapeHtml(t('doc_changed_plate').replace('{docs}', _docChangedText(chgList)))}</span>${go}</div>`);
+    }
+    let unsentChg = null;
+    try { unsentChg = _docChangedList(order, true); } catch (e) { console.error(e); }
+    if (unsentChg && unsentChg.length) {
+        rows.push(`<div class="doc-sum-row" onclick="openOrderDocAction(${order.id})" style="background:#f8efd9;color:#8a6a1f;"><span class="ds-text">⚠️ ${escapeHtml(t('doc_changed_unsent_plate').replace('{docs}', _docChangedText(unsentChg)))}</span>${go}</div>`);
     }
     if (chgList) {
         const stt = _docChgState[order.id] || (_docChgState[order.id] = { prev: undefined, warned: false });
@@ -296,7 +322,8 @@ async function refreshDetailDocSummary(order, force) {
     renderDetailDocSummary(order);
     const needInv = order.invoice_sent_at && !order.consolidated_invoice_id;
     const needDn = !!order.delivery_note_sent_at;
-    if (order.invoice_sent_at || order.delivery_note_sent_at || (typeof docsEnabled === 'function' && !docsEnabled())) {
+    const issuedAny = !!(order.inv_no || order.dn_no || order.consolidated_invoice_id); // v991
+    if (issuedAny || order.invoice_sent_at || order.delivery_note_sent_at || (typeof docsEnabled === 'function' && !docsEnabled())) {
         if (force) delete _docChgState[order.id];
         try { await _loadDocSumSnaps(order); } catch (e) { console.error('Сводка документов: снимки для сравнения не загрузились', e); }
         if (order.id === currentOrderId) renderDetailDocSummary(order);
@@ -452,7 +479,7 @@ async function _reserveDocSnapshot(order, docType, dateOverride) {
 // 21.10: из копий документов берём только номер, даты и состав для сравнения сумм — без логотипа
 // (полная копия с логотипом весит сотни КБ; на слабой связи форма не успевала открыться, код C).
 // Полную копию по-прежнему грузит только «Посмотреть».
-const _SEND_SNAP_FIELDS = ['number', 'issueDate', 'dueDate'];
+const _SEND_SNAP_FIELDS = ['number', 'issueDate', 'dueDate', 'builtAt'];
 async function _sendLoadRow(orderId) {
     const part = (col, pre) => _SEND_SNAP_FIELDS.map(f => `${pre}_${f}:${col}->>${f}`).join(', ')
         + `, ${pre}_calc:${col}->calc, ${pre}_vat:${col}->vat_rate, ${pre}_od:${col}->>orderDate, ${pre}_order:${col}->order`;
@@ -461,7 +488,7 @@ async function _sendLoadRow(orderId) {
         .eq('id', orderId).single();
     if (error) throw error;
     const r = data || {};
-    const snap = pre => r[pre + '_number'] ? { number: r[pre + '_number'], issueDate: r[pre + '_issueDate'], dueDate: r[pre + '_dueDate'],
+    const snap = pre => r[pre + '_number'] ? { number: r[pre + '_number'], issueDate: r[pre + '_issueDate'], dueDate: r[pre + '_dueDate'], builtAt: r[pre + '_builtAt'],
         calc: r[pre + '_calc'], vat_rate: r[pre + '_vat'], orderDate: r[pre + '_od'], order: r[pre + '_order'] || { items: [] } } : null;
     return { invoice_snapshot: snap('inv'), delivery_note_snapshot: snap('dn'),
         invoice_sent_at: r.invoice_sent_at, invoice_sent_via: r.invoice_sent_via,
@@ -484,6 +511,7 @@ function _sendBuildDocInfo(order, row) {
             issued, changed, oldTotal,
             number: issued ? _formatDocNumber(dt, snap.number) : null,
             issueDate: snap ? snap.issueDate : null,
+            builtAt: snap ? snap.builtAt || null : null, // v992
             sentAt: row[dt === 'invoice' ? 'invoice_sent_at' : 'delivery_note_sent_at'] || null,
             sentVia: row[dt === 'invoice' ? 'invoice_sent_via' : 'delivery_note_sent_via'] || null,
         };
@@ -946,13 +974,15 @@ function _sendBadgeHtml(dt, order) {
             kind = 'bad'; title = t(status === 'bounced' ? 'send_badge_bounced' : 'send_badge_spam');
         } else if (changed) {
             kind = 'changed'; title = t('send_badge_changed' + sfx);
+        } else if (_docOutdatedSent(d.sentAt, (dt === 'invoice' && st.consExisting) ? (st.consExisting.snapshot || {}).builtAt : d.builtAt)) {
+            kind = 'none'; title = t('send_badge_outdated' + sfx); tail = ''; // v992
         } else {
             kind = 'sent'; title = t('send_badge_sent' + sfx);
             const label = status && status !== 'sent' ? _deliveryStatusLabel(status) : '';
             if (label) tail += ` · ${label}`;
         }
     }
-    const c = { sent: ['#dbe8d3', '#35522c'], none: ['#ecebe6', '#5f5b52'], changed: ['#f8e8b8', '#7a5a12'], bad: ['#f3ded9', '#9c3f33'] }[kind];
+    const c = { sent: ['#dbe8d3', '#35522c'], none: ['#fbdfc0', '#8c4708'], changed: ['#f8e8b8', '#7a5a12'], bad: ['#f3ded9', '#9c3f33'] }[kind];
     return `<div class="send-badge send-badge-${kind}" style="margin:6px 0 0 28px; font-size:12px; line-height:1.4; background:${c[0]}; color:${c[1]}; border-radius:9px; padding:6px 9px;"><b>${escapeHtml(title)}</b>${escapeHtml(tail)}</div>`;
 }
 
@@ -1404,6 +1434,8 @@ async function _sendPrepareDocs(order, types, lang, noPdf) {
         const pdf = noPdf ? null : await buildDocumentPdf(dt, snap, lang);
         out.push({ dt, snap, num, updated, cons: !!cons, pdf, filename: _sendAttachmentName(dt, lang, num, orderNumLabel) });
     }
+    // v991: документ мог быть выставлен или обновлён — открытая карточка сравнивает со свежей копией
+    if (order.id === currentOrderId) { delete _docSumSnaps[order.id]; refreshDetailDocSummary(order); }
     return out;
 }
 
