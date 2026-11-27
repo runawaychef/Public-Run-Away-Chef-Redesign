@@ -20,6 +20,7 @@ let currentOrgPaymentMode = 'order'; // 'order' — оплата прямо в �
 let currentOrgInvoicingFrom = null;  // organizations.invoicing_from — «вести учёт с даты» (YYYY-MM-DD): заказы раньше не требуют счёта; null = все (30.10.2026)
 let currentOrgCashNoInv = false;     // частные клиенты: наличные без счёта (только защищённая орг. id1)
 let currentOrgProtected = false;     // organizations.is_protected
+let currentOrgRole = null;           // memberships.role вошедшего аккаунта ('owner' | 'staff'); null = неизвестно (v997)
 let currentOrgMemoRemindDays = 7;   // за сколько дней напоминать о памятных датах (organizations.memo_remind_days, общее для пекарни)       // IANA-пояс организации (напр. 'Europe/Vilnius'); null = по устройству
 let currentOrgBccSelf = false;      // глобальный тумблер "присылать копию себе" при email-отправке документов — дефолт для чекбокса в шите отправки
 
@@ -222,6 +223,7 @@ async function loadCurrentOrg() {
             .single();
         if (error) throw error;
         currentOrgId = data.org_id;
+        currentOrgRole = data.role || null;
         currentOrgName = localizedOrgName((data.organizations && data.organizations.name) || '');
         // plan_override (выставляется вручную из Simple Hub, см. admin_set_org_plan) —
         // "побеждает" реальный тариф по оплате. Нужен для тестовых организаций,

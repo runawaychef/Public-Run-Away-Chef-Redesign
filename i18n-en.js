@@ -65,7 +65,7 @@ I18N.en = {
         plan_after_cancel_note: 'After {date} the plan will switch to Free.',
         plan_past_due_warn: 'The payment failed. Update your payment method, otherwise the plan will be switched off.',
         plan_note_google_play: 'The subscription was made through Google Play. You can manage it in the Google Play app: Payments & subscriptions.',
-        plan_note_owner_only: 'The plan is changed by the owner or a manager.',
+        plan_note_owner_only: 'Only the owner can change the plan.',
         plan_web_price_note: 'Tax is included in the price. The subscription is for 1 month and renews automatically every month at the same price until you cancel. Cancel any time: Plan → Manage subscription. Stripe (Link) takes the payment and charges the renewals.',
         plan_manage_note: 'Cancel, change plan or card, and invoices are in subscription management.',
         plan_pay_success: 'Payment received, the plan is active.',

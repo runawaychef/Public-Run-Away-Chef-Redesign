@@ -165,9 +165,12 @@ function isPlayApp() {
     return yes;
 }
 
-// Менять тариф может владелец и сотрудник с правом управлять командой.
+// Менять тариф и подписку может только владелец (v997): вход выполнен аккаунтом владельца
+// И выбран сотрудник-владелец. Выбор сотрудника идёт без PIN, поэтому одного выбора мало.
+// Роль неизвестна — кнопки скрыты. Сервер (create-checkout, create-portal) проверяет роль сам.
 function canManagePlan() {
-    return typeof hasPermission === 'function' && hasPermission('can_manage_team');
+    return typeof currentOrgRole !== 'undefined' && currentOrgRole === 'owner'
+        && typeof currentEmployee !== 'undefined' && !!(currentEmployee && currentEmployee.is_owner);
 }
 
 async function loadBillingInfo() {
@@ -202,6 +205,7 @@ async function _billingFnErrorCode(error) {
 // и переходим на неё. Тариф включится только после реальной оплаты (вебхук).
 async function startWebCheckout(planKey) {
     if (isPlayApp()) return; // страховка: в приложении Google Play этой кнопки быть не должно
+    if (!canManagePlan()) return; // только владелец (v997)
     if (!webPayVisible()) return; // рубильник оплаты на сайте выключен
     const btn = document.getElementById(`planWebBtn_${planKey}`);
     const originalLabel = btn ? btn.textContent : '';
@@ -214,7 +218,9 @@ async function startWebCheckout(planKey) {
         });
         if (error || !data || !data.url) {
             const code = await _billingFnErrorCode(error);
-            if (code === 'ALREADY_GOOGLE_PLAY') {
+            if (code === 'OWNER_ONLY') {
+                showInfo(t('plan_note_owner_only'));
+            } else if (code === 'ALREADY_GOOGLE_PLAY') {
                 showInfo(t('plan_note_google_play'));
             } else if (code === 'ALREADY_SUBSCRIBED_WEB') {
                 showInfo(t('plan_manage_note'));
@@ -236,6 +242,7 @@ async function startWebCheckout(planKey) {
 // портал Stripe (отмена, карта, смена тарифа).
 async function openBillingPortal() {
     if (isPlayApp()) return;
+    if (!canManagePlan()) return; // только владелец (v997)
     if (!webPayVisible()) return;
     const btn = document.getElementById('planPortalBtn');
     const originalLabel = btn ? btn.textContent : '';
@@ -245,7 +252,8 @@ async function openBillingPortal() {
             body: { orgId: currentOrgId, returnUrl: location.origin + location.pathname }
         });
         if (error || !data || !data.url) {
-            showInfo(t('plan_purchase_error'));
+            const code = await _billingFnErrorCode(error);
+            showInfo(t(code === 'OWNER_ONLY' ? 'plan_note_owner_only' : 'plan_purchase_error'));
             if (btn) { btn.disabled = false; btn.textContent = originalLabel; }
             return;
         }
@@ -505,6 +513,7 @@ async function purchasePlan(planKey) {
     const product = PLAN_PRODUCTS[planKey];
     if (!product) return;
     if (!webPayVisible()) return; // рубильник оплаты выключен (11.11.2026)
+    if (!canManagePlan()) return; // только владелец (v997)
 
     const service = await getBillingService();
     if (!service) {

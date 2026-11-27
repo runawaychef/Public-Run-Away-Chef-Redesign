@@ -628,6 +628,7 @@ async function signOutAccount() {
     clearAppSnapshot();
     _instantRestoreDone = false;
     currentEmployee = null;
+    currentOrgRole = null;
     document.getElementById('settingsBtn').classList.add('hidden');
     document.getElementById('statsBtn').classList.add('hidden');
     showAuthScreen();

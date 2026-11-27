@@ -71,7 +71,7 @@ async function saveAppSnapshot() {
             _inventoryCache,
             currentOrgId, currentOrgName, currentOrgPlan, currentOrgPlanIsOverridden, currentOrgCreatedAt,
             currentOrgCustomersUsed, currentOrgOrdersUsed,
-            currentOrgCurrency, currentOrgCountry, currentOrgVatPayer, currentOrgVatPayerFrom, currentOrgVatRate, currentOrgBccSelf, currentOrgTimezone, currentOrgMemoRemindDays, currentOrgPaymentMode, currentOrgCashNoInv, currentOrgInvoicingFrom, currentOrgProtected,
+            currentOrgCurrency, currentOrgCountry, currentOrgVatPayer, currentOrgVatPayerFrom, currentOrgVatRate, currentOrgBccSelf, currentOrgTimezone, currentOrgMemoRemindDays, currentOrgPaymentMode, currentOrgCashNoInv, currentOrgInvoicingFrom, currentOrgProtected, currentOrgRole,
             currentEmployee,
             authUserId,
             savedAt: Date.now()
@@ -137,6 +137,7 @@ function restoreAppFromSnapshot(snapshot) {
     currentOrgCashNoInv = !!snapshot.currentOrgCashNoInv;
     currentOrgInvoicingFrom = snapshot.currentOrgInvoicingFrom || null;
     currentOrgProtected = !!snapshot.currentOrgProtected;
+    currentOrgRole = snapshot.currentOrgRole || null;
     currentEmployee = snapshot.currentEmployee;
     _snapshotAuthUserId = snapshot.authUserId || null;
 
@@ -221,7 +222,7 @@ async function _doHandleInstantRestoreWrongAccount() {
     _instantRestoreDone = false;
     _snapshotAuthUserId = null;
     orders = []; cancelledOrders = []; customers = []; products = []; ingredients = []; semiFinished = []; employees = [];
-    currentOrgId = null; currentOrgName = ''; currentEmployee = null;
+    currentOrgId = null; currentOrgName = ''; currentEmployee = null; currentOrgRole = null;
     localStorage.removeItem('currentEmployee');
     document.getElementById('appContent').classList.add('app-locked');
     showLoading();
@@ -238,6 +239,7 @@ async function handleInstantRestoreSessionExpired() {
     clearAppSnapshot();
     _instantRestoreDone = false;
     currentEmployee = null;
+    currentOrgRole = null;
     localStorage.removeItem('currentEmployee');
     document.getElementById('appContent').classList.add('app-locked');
     document.getElementById('settingsBtn').classList.add('hidden');
