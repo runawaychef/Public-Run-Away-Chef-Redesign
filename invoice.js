@@ -615,10 +615,10 @@ function buildDocumentHtml(docType, snapshot, lang) {
         </tr>`;
     });
 
-    const issueDateRow = `${tDoc('history_col_date', lang)}: ${formatDateDMY(issueDate)} <button onclick="promptEditIssueDate()" style="border:none;background:none;cursor:pointer;padding:0 0 0 4px;vertical-align:middle;color:#9ca3af;" title="${escapeHtml(t('inv_edit_issue_date'))}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/></svg></button>`;
+    const issueDateRow = `${tDoc('history_col_date', lang)}: ${formatDateDMY(issueDate)}`; // v993: карандаши убраны, выставленный документ в просмотре не редактируется
 
     const dueDateRow = isInvoice
-        ? `<div>${tDoc('inv_due_date', lang)}: ${formatDateDMY(dueDate)} <button onclick="promptEditDueDate()" style="border:none;background:none;cursor:pointer;padding:0 0 0 4px;vertical-align:middle;color:#9ca3af;" title="${escapeHtml(t('inv_edit_due_date'))}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z"/></svg></button></div>`
+        ? `<div>${tDoc('inv_due_date', lang)}: ${formatDateDMY(dueDate)}</div>`
         : '';
 
     const amountWords = amountInWords(grandAll, org.currency_code || 'EUR', lang);
