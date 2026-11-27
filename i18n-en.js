@@ -1168,6 +1168,7 @@ I18N.en = {
         ing_unit_of_measure: 'Unit of measure',
         ing_edit_record_title: 'Edit record',
         ing_edit_batch_title: 'Edit batch',
+        batch_zero_hint: 'To remove leftover stock, enter 0 and tap “Save”.',
         ing_price_record_title: 'Price history record',
         ing_date_effective_label: 'Date (effective from)',
         ing_new_ingredient_title: 'New ingredient',

@@ -1157,6 +1157,7 @@ I18N.uk = {
         ing_unit_of_measure: 'Одиниця виміру',
         ing_edit_record_title: 'Редагувати запис',
         ing_edit_batch_title: 'Редагувати партію',
+        batch_zero_hint: 'Щоб прибрати зайвий залишок, вкажіть 0 і натисніть «Зберегти».',
         ing_price_record_title: 'Запис історії цін',
         ing_date_effective_label: 'Дата (з якого числа діє ціна)',
         ing_new_ingredient_title: 'Новий інгредієнт',

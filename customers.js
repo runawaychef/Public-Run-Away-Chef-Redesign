@@ -1553,7 +1553,8 @@ function _custArchiveIssues(cust, bal) {
     const today = getLocalDateStr(0);
     const debt = customerDebt(cust);
     const unpaid = customerUnpaidOrders(cust).length;
-    const open = mine.filter(o => o.status !== 'выполнен');
+    // v995: черновик без оплаты архиву не мешает (оформить его при архивном клиенте нельзя)
+    const open = mine.filter(o => o.status !== 'выполнен' && (isOrderSaved(o) || (_orderPaidTotals[o.id] || 0) > 0.004));
     const future = open.filter(o => o.date && o.date > today);
     const noDoc = docsEnabled() ? mine.filter(o => o.is_confirmed && o.status === 'выполнен' && !o.inv_no && !o.consolidated_invoice_id && !o.cons_excluded) : [];
     const list = [];

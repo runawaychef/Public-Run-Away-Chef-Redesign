@@ -1035,6 +1035,23 @@ async function deleteEmployee() {
     const userId = document.getElementById('employeeEditUserId').value;
     if (!id) return;
 
+    // v995: заказы в корзине в памяти не загружены — проверяем связи по базе до удаления
+    let linked = 0;
+    showLoading();
+    try {
+        const { count, error } = await db.from('orders').select('id', { count: 'exact', head: true })
+            .eq('org_id', currentOrgId).or(`employee_id.eq.${id},created_by.eq.${id}`);
+        if (error) throw error;
+        linked = count || 0;
+    } catch (e) {
+        console.error(e); hideLoading(); showInfo(t('employees_delete_error')); return;
+    }
+    hideLoading();
+    if (linked > 0) {
+        if (await showConfirm(t('employees_delete_has_records'), { ok: t('employees_archive_btn'), cancel: t('common_cancel') })) archiveEmployee();
+        return;
+    }
+
     const warning = userId
         ? t('employees_delete_warning_with_login')
         : t('employees_delete_warning_simple');

@@ -1881,6 +1881,12 @@ async function cleanupOrderDraftIfEmpty(orderId) {
     } catch (e) { console.error('Не удалось удалить пустой черновик заказа (будет убран при следующем запуске):', e); }
 }
 
+// v995: архивный клиент черновика (или null)
+function draftArchivedCustomer(order) {
+    const c = order && order.customer_id ? customers.find(x => x.id === order.customer_id) : null;
+    return c && c.archived_at ? c : null;
+}
+
 // Сохраняет черновик как настоящий заказ: клиент обязателен; номер заказа выдаётся здесь
 // и записывается ОДНИМ обновлением вместе с is_confirmed = true (push сотрудникам
 // срабатывает на этот переход и берёт номер из той же записи). Возвращает true при успехе.
@@ -1890,6 +1896,11 @@ async function saveDraftOrder(order) {
     if (!order.customer_id) {
         if (order.id === currentOrderId) { _detailHeadOpen = true; renderDetailHead(order); } // v990: показать поле «Клиент»
         showInfo(t('orders_save_need_customer')); return false;
+    }
+    const arch = draftArchivedCustomer(order); // v995: черновик архивного клиента не оформляется
+    if (arch) {
+        if (order.id === currentOrderId) { _detailHeadOpen = true; renderDetailHead(order); }
+        showInfo(t('cust_archived_pick').replace('{name}', arch.name || '')); return false;
     }
     // Full: не хватает ингредиентов под этот заказ — предупреждаем, но не блокируем (30.10)
     if (typeof orderStockShortList === 'function') {
@@ -1974,6 +1985,7 @@ async function resolveDraftOnLeave(order) {
         return await discardDraftOrder(order);
     }
     if (!hasClient && !hasItems) return true; // пустой черновик удалит cleanupOrderDraftIfEmpty
+    if (draftArchivedCustomer(order)) return true; // v995: оформить нельзя — выходим, черновик остаётся черновиком
     if (hasClient && hasItems) return await saveDraftOrder(order);
     if (hasClient && !hasItems) {
         const save = await showConfirm(t('orders_leave_empty_confirm'), { ok: t('orders_btn_save'), cancel: t('orders_btn_delete') });

@@ -1157,6 +1157,7 @@ I18N.lt = {
         ing_unit_of_measure: 'Matavimo vienetas',
         ing_edit_record_title: 'Redaguoti įrašą',
         ing_edit_batch_title: 'Redaguoti partiją',
+        batch_zero_hint: 'Norėdami pašalinti nereikalingą likutį, įrašykite 0 ir paspauskite „Išsaugoti“.',
         ing_price_record_title: 'Kainų istorijos įrašas',
         ing_date_effective_label: 'Data (nuo kada galioja kaina)',
         ing_new_ingredient_title: 'Naujas ingredientas',

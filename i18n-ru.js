@@ -1167,6 +1167,7 @@ I18N.ru = {
         ing_unit_of_measure: 'Единица измерения',
         ing_edit_record_title: 'Редактировать запись',
         ing_edit_batch_title: 'Редактировать партию',
+        batch_zero_hint: 'Чтобы убрать лишний остаток, укажите 0 и нажмите «Сохранить».',
         ing_price_record_title: 'Запись истории цен',
         ing_date_effective_label: 'Дата (с какого числа действует цена)',
         ing_new_ingredient_title: 'Новый ингредиент',

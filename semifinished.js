@@ -769,7 +769,7 @@ async function loadSfPriceHistory(sf) {
             const isIn = r.type === 'приход';
             const sign = isIn ? '+' : '−';
             const color = isIn ? '#4f6349' : '#c0685c';
-            html += `<tr class="border-b ing-hist-row" ${dataAction('editSfInventoryRecord', [r.id, Number(r.quantity), r.notes || ''])}>
+            html += `<tr class="border-b ing-hist-row">
                 <td class="p-0.5">${date}</td>
                 <td class="p-0.5 text-right font-semibold" style="color:${color};">${sign}${Number(r.quantity).toFixed(2)} ${unitLabel}</td>
                 <td class="p-0.5 text-gray-500">${escapeHtml(typeof stockNoteDisplay === 'function' ? stockNoteDisplay(r.notes || '') : (r.notes || ''))}</td>
