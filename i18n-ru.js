@@ -2037,7 +2037,7 @@ I18N.ru = {
         dash_status_label: 'Статус',
         dash_clear_filter: 'Сбросить фильтр',
         dash_tomorrow: 'Заказы на завтра',
-        dash_unpaid: 'Ждут оплаты',
+        dash_unpaid: 'Не оплачено',
         dash_to_pay: 'К оплате: {sum}',
         dash_overdue: 'Просрочено: {n}',
         dash_no_invoice: 'Без счёта: {n}',

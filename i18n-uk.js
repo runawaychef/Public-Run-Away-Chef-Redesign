@@ -2035,7 +2035,7 @@ I18N.uk = {
         dash_status_label: 'Статус',
         dash_clear_filter: 'Скинути фільтр',
         dash_tomorrow: 'Замовлення на завтра',
-        dash_unpaid: 'Очікують оплати',
+        dash_unpaid: 'Не сплачено',
         dash_to_pay: 'До сплати: {sum}',
         dash_overdue: 'Прострочено: {n}',
         dash_no_invoice: 'Без рахунку: {n}',

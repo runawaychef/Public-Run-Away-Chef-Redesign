@@ -2035,7 +2035,7 @@ I18N.lt = {
         dash_status_label: 'Statusas',
         dash_clear_filter: 'Išvalyti filtrą',
         dash_tomorrow: 'Rytojaus užsakymai',
-        dash_unpaid: 'Laukia apmokėjimo',
+        dash_unpaid: 'Neapmokėta',
         dash_to_pay: 'Mokėti: {sum}',
         dash_overdue: 'Pradelsta: {n}',
         dash_no_invoice: 'Be sąskaitos: {n}',

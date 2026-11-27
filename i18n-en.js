@@ -2038,7 +2038,7 @@ I18N.en = {
         dash_status_label: 'Status',
         dash_clear_filter: 'Clear filter',
         dash_tomorrow: 'Orders for tomorrow',
-        dash_unpaid: 'Awaiting payment',
+        dash_unpaid: 'Unpaid',
         dash_to_pay: 'Due: {sum}',
         dash_overdue: 'Overdue: {n}',
         dash_no_invoice: 'No invoice: {n}',

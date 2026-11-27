@@ -360,6 +360,13 @@ async function returnToDocs2() {
 function docs2RenderWait(reapplyView) {
     const box = document.getElementById('docs2Wait');
     if (!box) return;
+    // v998: одна страница на двоих — из Дашборда «Не оплачено» (по заказам), из «Документов» «Ждут оплаты»
+    const title = document.querySelector('#docs2WaitPage h2');
+    if (title) {
+        const key = window._d2FromDash ? 'dash_unpaid' : 'docs_tile_wait';
+        title.setAttribute('data-i18n', key);
+        title.textContent = t(key);
+    }
     if (_d2ByInv()) { docs2RenderWaitInv(reapplyView); return; }   // v956: режим «по счёту» — список счетов
     const today = getLocalDateStr(0);
     const all = _d2Unpaid();
