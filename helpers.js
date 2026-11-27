@@ -947,7 +947,9 @@ function _appPageShowTop() {
     document.getElementById('settingsBtn')?.classList.toggle('active', settingsTop);
     // Иконка «Статистики» подсвечена, только пока открыт раздел статистики и сверху нет «Настроек»/«Умного склада» (31.10)
     // Иконка «Документы» (новый раздел, тест) подсвечена, пока верхняя страница — одна из страниц docs2* (31.10.2026)
-    const docs2Top = String(appPageTop() || '').indexOf('docs2') === 0;
+    // v999: окно «Не оплачено», открытое из Дашборда, — та же страница docs2WaitPage, но это не раздел «Документы»
+    const fromDashTop = appPageTop() === 'docs2WaitPage' && !!window._d2FromDash;
+    const docs2Top = !fromDashTop && String(appPageTop() || '').indexOf('docs2') === 0;
     document.getElementById('docs2Btn')?.classList.toggle('active', docs2Top);
     document.getElementById('statsBtn')?.classList.toggle('active', !smartTop && !settingsTop && !docs2Top && typeof currentTabId !== 'undefined' && currentTabId === 'stats');
     // «Умный склад» — отдельный раздел: в нижнем меню ничего не подсвечиваем (22.10);
