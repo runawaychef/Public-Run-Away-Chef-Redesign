@@ -1475,6 +1475,7 @@ function updateDetailSaveUi(order) {
         note.setAttribute('data-i18n', key);
         note.textContent = t(key);
     }
+    renderDetailHead(order); // v990
 }
 
 function orderNumLabel(o) { return o.order_number ? ('№' + o.order_number) : (o.is_demo ? t('order_demo_label') : t('orders_draft_label')); }
@@ -1668,6 +1669,42 @@ async function copyOrder(i) {
 // svgEdit/svgDelete, fillDetailCustomerSelect, updateProductSelects,
 // updateCustomerSelects, openDeleteModal, closeModal, editIndex/editItemIdx (главный скрипт).
 
+// ---- v990: свёрнутая шапка карточки заказа ----
+// Несохранённый заказ открывается развёрнутым, сохранённый — свёрнутым. Поля формы остаются
+// в разметке (saveDetailHeader читает их всегда), меняется только видимость.
+let _detailHeadOpen = false;
+
+function renderDetailHead(order) {
+    order = order || orders.find(o => o.id === currentOrderId);
+    if (!order || order.id !== currentOrderId) return;
+    const open = _detailHeadOpen;
+    document.getElementById('detailHeadFields')?.classList.toggle('hidden', !open);
+    document.getElementById('detailHeadSum')?.classList.toggle('hidden', open);
+    // Подсказку о несохранённом заказе не прячем и в свёрнутом виде
+    document.getElementById('detailAutosaveNote')?.classList.toggle('hidden', !open && isOrderSaved(order));
+    const act = document.getElementById('detailHeadToggleText');
+    if (act) act.textContent = t(open ? 'order_head_collapse' : 'order_head_expand');
+    const chev = document.getElementById('detailHeadChev');
+    if (chev) chev.style.transform = open ? 'rotate(180deg)' : '';
+    const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+    set('dhCustomer', order.customer || t('orders_no_customer'));
+    set('dhDate', order.date ? formatDateDMY(order.date) : '—');
+    set('dhStatusLabel', orderStatusLabelCap(order.status));
+    const notes = String(order.notes || '').replace(/\s+/g, ' ').trim();
+    set('dhNotes', notes ? '💬 ' + notes : '');
+    document.getElementById('dhNotes')?.classList.toggle('hidden', !notes);
+    const hint = document.getElementById('detailCreditHint');
+    const hintText = hint && !hint.classList.contains('hidden') ? hint.textContent : '';
+    set('dhCredit', hintText);
+    document.getElementById('dhCredit')?.classList.toggle('hidden', !hintText);
+}
+
+function toggleDetailHead() {
+    _detailHeadOpen = !_detailHeadOpen;
+    closeAllOrderStatusDropdowns();
+    renderDetailHead();
+}
+
 function openOrderDetail(orderId) {
     const order = orders.find(o => o.id === orderId);
     if (!order) {
@@ -1682,6 +1719,7 @@ function openOrderDetail(orderId) {
     }
     currentOrderId = orderId;
     _orderMatOpenFor = null; // блок «Упаковка» при открытии заказа всегда свёрнут
+    _detailHeadOpen = !isOrderSaved(order); // v990
 
     // Скрыть список, показать детальный вид
     document.getElementById('ordersList').classList.add('hidden');
@@ -1860,7 +1898,10 @@ async function cleanupOrderDraftIfEmpty(orderId) {
 async function saveDraftOrder(order) {
     if (!order) return false;
     if (isOrderSaved(order)) return true;
-    if (!order.customer_id) { showInfo(t('orders_save_need_customer')); return false; }
+    if (!order.customer_id) {
+        if (order.id === currentOrderId) { _detailHeadOpen = true; renderDetailHead(order); } // v990: показать поле «Клиент»
+        showInfo(t('orders_save_need_customer')); return false;
+    }
     // Full: не хватает ингредиентов под этот заказ — предупреждаем, но не блокируем (30.10)
     if (typeof orderStockShortList === 'function') {
         const sh = orderStockShortList(order);
@@ -2584,6 +2625,7 @@ async function saveDetailHeader() {
 }
 
 function renderDetailItems(order) {
+    renderDetailHead(order); // v990: сводка шапки обновляется вместе с карточкой (в т. ч. при откате сохранения)
     if (order && order.id === currentOrderId && typeof renderDetailDocSummary === 'function') renderDetailDocSummary(order);   // v943: плашка «заказ изменён после документа»
     if (order && order.id === currentOrderId && typeof renderPayments === 'function' && _orderPaymentsFor === order.id) renderPayments();   // v945: пересчёт блока оплаты и плашка «изменён после оплаты»
     const tbody = document.getElementById('detailItemsBody');

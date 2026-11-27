@@ -82,6 +82,7 @@ function renderOrderCreditHint() {
     const bal = (order && order.customer_id) ? (_custBalance[order.customer_id] || 0) : 0;
     if (bal > 0.004) box.textContent = t('credit_hint_order').replace('{sum}', formatMoney(bal));
     box.classList.toggle('hidden', !(bal > 0.004));
+    if (typeof renderDetailHead === 'function') renderDetailHead(); // v990: строка об авансе видна и в свёрнутой шапке
 }
 // v949: при открытии заказа и смене клиента — подгрузить баланс и показать строку; блок «Оплата» пересчитать
 async function refreshOrderCreditHint() {

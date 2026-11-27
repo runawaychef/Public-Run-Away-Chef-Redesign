@@ -919,6 +919,43 @@ function _sendDatesHtml(dt) {
     return `<div style="display:flex; gap:8px; margin-top:10px;">${_sendDateTileHtml('inv_issue', t('send_date_inv'), di.issueDate)}${_sendDateTileHtml('inv_due', t('send_date_due'), di.dueDate)}</div>${hint}`;
 }
 
+// v990: документ по этой строке уже выставлен (для сводного — выставлен сам сводный счёт).
+// Новый, ещё не выставленный сводный счёт отправленным не считается.
+function _sendRowIssued(dt) {
+    const st = _sendSheetState, d = st.docs[dt];
+    if (dt === 'invoice' && st.consExisting) return true;
+    if (dt === 'invoice' && st.invKind === 'cons' && !d.issued) return false;
+    return !!d.issued;
+}
+function _sendRowSent(dt) { return _sendRowIssued(dt) && !!_sendSheetState.docs[dt].sentAt; }
+
+// v990: заметная плашка статуса в строке документа. Приоритет: письмо не дошло →
+// изменён после отправки → отправлен → выставлен, но не отправлен. Показывается только ПОСЛЕДНЯЯ отправка.
+function _sendBadgeHtml(dt, order) {
+    if (!_sendRowIssued(dt)) return '';
+    const st = _sendSheetState, d = st.docs[dt];
+    const sfx = dt === 'invoice' ? '_inv' : '_dn';
+    let kind, title, tail = '';
+    if (!d.sentAt) {
+        kind = 'none'; title = t('send_badge_notsent' + sfx);
+    } else {
+        const status = d.sentVia === 'email' ? (dt === 'invoice' ? order.invoice_delivery_status : order.delivery_note_delivery_status) : null;
+        const changed = (dt === 'invoice' && st.consExisting) ? !!st.consExisting.changed : !!d.changed;
+        tail = ` · ${_docSumShortDT(d.sentAt)} · ${_sentViaLabel(d.sentVia)}`;
+        if (_docSumIsBad(status)) {
+            kind = 'bad'; title = t(status === 'bounced' ? 'send_badge_bounced' : 'send_badge_spam');
+        } else if (changed) {
+            kind = 'changed'; title = t('send_badge_changed' + sfx);
+        } else {
+            kind = 'sent'; title = t('send_badge_sent' + sfx);
+            const label = status && status !== 'sent' ? _deliveryStatusLabel(status) : '';
+            if (label) tail += ` · ${label}`;
+        }
+    }
+    const c = { sent: ['#dbe8d3', '#35522c'], none: ['#ecebe6', '#5f5b52'], changed: ['#f8e8b8', '#7a5a12'], bad: ['#f3ded9', '#9c3f33'] }[kind];
+    return `<div class="send-badge send-badge-${kind}" style="margin:6px 0 0 28px; font-size:12px; line-height:1.4; background:${c[0]}; color:${c[1]}; border-radius:9px; padding:6px 9px;"><b>${escapeHtml(title)}</b>${escapeHtml(tail)}</div>`;
+}
+
 function _sendDocRowHtml(dt, order) {
     const st = _sendSheetState, d = st.docs[dt], on = !!st.checked[dt];
     const isCons = dt === 'invoice' && (st.consExisting || (st.invKind === 'cons' && !d.issued));
@@ -928,15 +965,14 @@ function _sendDocRowHtml(dt, order) {
     if (isCons && st.consExisting) {
         const c = st.consExisting;
         status = t('send_doc_status_issued').replace('{number}', c.number).replace('{date}', formatDateDMY(c.issueDate));
-        if (d.sentAt) status += t('send_doc_status_sent').replace('{date}', _formatSentDateTime(d.sentAt)).replace('{via}', _sentViaLabel(d.sentVia));
     } else if (isCons) {
         status = t('send_cons_status_new');
     } else if (!d.issued) {
         status = t('send_doc_status_new');
     } else {
         status = t('send_doc_status_issued').replace('{number}', d.number).replace('{date}', formatDateDMY(d.issueDate));
-        if (d.sentAt) status += t('send_doc_status_sent').replace('{date}', _formatSentDateTime(d.sentAt)).replace('{via}', _sentViaLabel(d.sentVia));
     }
+    const badge = _sendBadgeHtml(dt, order);
     const warn = (d.changed && !isCons)
         ? `<div style="margin:6px 0 0 28px; font-size:12px; background:#f8efd9; color:#8a6a1f; border-radius:8px; padding:6px 8px;">${t('send_doc_changed_warn').replace('{old}', formatMoney(d.oldTotal)).replace('{new}', formatMoney(orderGrandTotal(order)))}</div>`
         : '';
@@ -946,7 +982,7 @@ function _sendDocRowHtml(dt, order) {
             <b style="font-size:14px; color:#3c3a34;">${label}</b>
             <span onclick="openSendDocPreview('${dt}')" style="margin-left:auto; color:#4f6349; font-weight:700; font-size:12px; text-decoration:underline; cursor:pointer;">${t('send_view')}</span>
         </div>
-        <div style="font-size:12px; color:#888; margin:4px 0 0 28px;">${status}</div>${warn}${on ? _sendDatesHtml(dt) : ''}${(dt === 'invoice' && on) ? _consBlockHtml(order) : ''}</div>`;
+        <div style="font-size:12px; color:#888; margin:4px 0 0 28px;">${status}</div>${badge}${warn}${on ? _sendDatesHtml(dt) : ''}${(dt === 'invoice' && on) ? _consBlockHtml(order) : ''}</div>`;
 }
 
 function _renderSendSheet() {
@@ -1013,7 +1049,12 @@ function _renderSendSheet() {
     }
 
     const canSubmit = types.length > 0 && (!isEmail || hasEmail) && !(_isConsInvoice() && !st.consExisting && !st.consSel.length);
+    // v990: всё отмеченное уже отправлялось — кнопка прямо говорит, что это повтор
+    const isResend = types.length > 0 && types.every(_sendRowSent);
+    const countTail = types.length > 1 ? ` (${types.length})` : '';
     const btnLabel = isNone ? t('send_issue_btn')
+        : (isResend && isEmail) ? (t('send_resend_btn') + countTail)
+        : isResend ? (t('send_reshare_btn') + countTail)
         : (st.fromDone && isEmail) ? (t('send_issue_send_btn') + (types.length > 1 ? ` (${types.length})` : ''))
         : isEmail ? t('send_button') : (t('send_share_btn') + (types.length > 1 ? ` (${types.length})` : ''));
     const vatNote = (st.fromDone && st.checked.invoice && typeof orderVatExempt === 'function' && orderVatExempt(order) && !currentOrgProtected)

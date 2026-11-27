@@ -1382,6 +1382,17 @@
            заголовки колонок — тёплый серый (вариант B, как подписи разделителей). ОТКАТ: удалить этот блок. */
         #orderTableWrap .ot-head { margin-top: 4px; margin-bottom: 10px; border: var(--sb-edge); border-radius: 16px; box-shadow: var(--sb-shadow); color: #9a9488; }
         #orderTableWrap .ot-island { border: var(--sb-edge); box-shadow: var(--sb-shadow); }
+        /* ===== v990: свёрнутая шапка карточки заказа ===== */
+        #detailHeadFields.hidden, #detailHeadSum.hidden, #dhNotes.hidden, #dhCredit.hidden, #detailAutosaveNote.hidden { display: none; }
+        .dh-toggle { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 28px; cursor: pointer; }
+        .dh-act { display: flex; align-items: center; gap: 3px; flex: none; font-size: 12px; font-weight: 700; color: #4f6349; }
+        .dh-row { display: flex; align-items: center; gap: 10px; }
+        .dh-main { flex: 1; min-width: 0; cursor: pointer; }
+        .dh-cust { font-size: 14px; font-weight: 700; color: #3c3a34; overflow-wrap: anywhere; }
+        .dh-date { font-size: 12.5px; color: #6b675d; margin-top: 1px; }
+        .dh-status-wrap { flex: none; width: 128px; }
+        .dh-notes { margin-top: 7px; font-size: 12.5px; color: #3c3a34; background: #f4f1ea; border-radius: 10px; padding: 6px 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+        .dh-credit { margin-top: 5px; font-size: 11.5px; font-weight: 600; color: #4f6349; }
         /* ===== THEME-UNIFIED-DETAIL (27.10.2026): карточка заказа в новом стиле =====
            Только #orderDetail; цвета верхних кнопок прежние. ОТКАТ: удалить этот блок. */
         #orderDetail > .bg-white, #orderDetail > .mb-3.bg-white { border-radius: 16px; box-shadow: var(--sb-shadow); border: var(--sb-edge); }
@@ -3607,10 +3618,32 @@ function hideSplashScreen() {
                             <button onclick="deleteCurrentOrder()" class="pill-btn-danger perm-delete" data-i18n="common_delete">Удалить</button>
                         </div>
                     </div>
-                    <p id="detailOrderId" class="text-sm font-semibold text-gray-600 mt-2 mb-1"></p>
+                    <!-- v990: шапка заказа сворачивается (orders.js renderDetailHead) -->
+                    <div class="dh-toggle mt-2 mb-1" onclick="toggleDetailHead()">
+                        <p id="detailOrderId" class="text-sm font-semibold text-gray-600"></p>
+                        <span class="dh-act"><span id="detailHeadToggleText"></span>
+                            <svg id="detailHeadChev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+                        </span>
+                    </div>
                     <p id="detailAutosaveNote" class="text-[11px] text-gray-400 mb-1" data-i18n="company_autosave">Изменения сохраняются автоматически</p>
                     <div id="detailConsBanner" class="hidden" style="background:#eef2ea; color:#4f6349; border-radius:10px; padding:7px 10px; margin:4px 0 8px; font-size:12px; line-height:1.45;"></div>
-                    <div class="grid grid-cols-2 gap-1 mb-2">
+                    <div id="detailHeadSum" class="dh-sum hidden">
+                        <div class="dh-row">
+                            <div class="dh-main" onclick="toggleDetailHead()">
+                                <div id="dhCustomer" class="dh-cust"></div>
+                                <div id="dhDate" class="dh-date"></div>
+                            </div>
+                            <div class="dh-status-wrap" onclick="event.stopPropagation();">
+                                <button type="button" class="field-select-btn" onclick="toggleDetailStatusDropdown()">
+                                    <span id="dhStatusLabel"></span>
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 9l6 6 6-6"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="dhNotes" class="dh-notes hidden" onclick="toggleDetailHead()"></div>
+                        <div id="dhCredit" class="dh-credit hidden"></div>
+                    </div>
+                    <div id="detailHeadFields" class="grid grid-cols-2 gap-1 mb-2">
                         <div>
                             <label class="table-text text-gray-500" data-i18n="customers_col_number_alt">Клиент</label>
                             <div class="search-input-wrap">
@@ -5428,7 +5461,7 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=10"></script>
     <script src="money.js?v=17"></script>
-    <script src="i18n-core.js?v=247"></script>
+    <script src="i18n-core.js?v=248"></script>
     <script src="supabaseClient.js?v=7"></script>
     <script src="cache.js?v=23"></script>
     <script src="auth.js?v=35"></script>
@@ -5443,12 +5476,12 @@ function hideSplashScreen() {
 <script src="products.js?v=72"></script>
 <script src="customers.js?v=91"></script>
 <script src="calendar.js?v=17"></script>
-<script src="orders.js?v=203"></script>
+<script src="orders.js?v=204"></script>
 <script src="dashboard.js?v=28"></script>
 <script src="invoice.js?v=57"></script>
-<script src="send-document.js?v=49"></script>
+<script src="send-document.js?v=50"></script>
 <script src="confirmation.js?v=7"></script>
-<script src="payments.js?v=54"></script>
+<script src="payments.js?v=55"></script>
 <script src="documents.js?v=18"></script>
 <script src="documents2.js?v=42"></script>
 <script src="bank.js?v=16"></script>
