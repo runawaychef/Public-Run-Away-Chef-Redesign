@@ -438,7 +438,7 @@ I18N.lt = {
         chg_warn_overpaid: 'Susidarys permoka {sum}. Ją galima grąžinti arba perkelti į kliento avansą mokėjimo skiltyje, dabar arba vėliau.',
         chg_warn_doc_note: 'Išrašytas dokumentas pats nepasikeis.',
         order_del_blocked_head: 'Šio užsakymo ištrinti negalima:',
-        order_blk_pay: 'yra apmokėjimo įrašų: {n}. Pirmiausia ištrinkite juos užsakyme',
+        order_blk_pay: 'yra apmokėjimo įrašų: {n}. Jei mokėjimas įvestas per klaidą, ištrinkite jį užsakyme. Jei klientas atsisakė užsakymo, atšaukite jį mygtuku „Atšaukti užsakymą“ kortelės apačioje',
         order_blk_docs: 'išrašyti dokumentai: {list}. Toks užsakymas negali būti ištrintas visam laikui',
         order_blk_doc_inv: 'sąskaita Nr. {n}',
         order_blk_doc_dn: 'važtaraštis Nr. {n}',

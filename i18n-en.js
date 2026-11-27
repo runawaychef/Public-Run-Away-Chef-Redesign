@@ -433,7 +433,7 @@ I18N.en = {
         chg_warn_overpaid: 'This will leave an overpayment of {sum}. You can refund it or move it to the customer advance in the payment section, now or later.',
         chg_warn_doc_note: 'The issued document will not change by itself.',
         order_del_blocked_head: 'This order can’t be deleted:',
-        order_blk_pay: 'there are payment records: {n}. Delete them in the order first',
+        order_blk_pay: 'there are payment records: {n}. If a payment was entered by mistake, delete it in the order. If the customer gave up the order, cancel it with the “Cancel order” button at the bottom of the order',
         order_blk_docs: 'documents issued: {list}. Such an order can’t be erased permanently',
         order_blk_doc_inv: 'invoice №{n}',
         order_blk_doc_dn: 'delivery note №{n}',

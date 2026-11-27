@@ -738,10 +738,9 @@ function openOrdersHelp() {
     _appendCancelHelp();
 }
 
-// v987: абзацы про отмену — только там, где отмена есть (или уже есть отменённые заказы)
+// v987: абзацы про отмену заказа в справке экрана заказов
 function _appendCancelHelp() {
-    const has = CANCEL_TEST_ORGS.includes(Number(currentOrgId)) || (typeof cancelledOrders !== 'undefined' && cancelledOrders.length > 0);
-    const el = has ? document.getElementById('helpModalText') : null;
+    const el = document.getElementById('helpModalText');
     if (el) el.insertAdjacentHTML('beforeend', t('help_orders_cancel_text').split('\n\n')
         .map(p => `<p class="mb-2">${escapeHtml(p)}</p>`).join(''));
 }
@@ -3229,7 +3228,6 @@ async function recalcOrderCostBreakdown() {
 // Отменённые заказы лежат ОТДЕЛЬНО, в cancelledOrders: так они сами не попадают в текущие заказы, долги,
 // производство, склад и статистику (всё это считает по массиву orders). Саму отмену делает функция базы
 // rpc_cancel_order — деньги, склад, потери и отметка пишутся одной транзакцией.
-const CANCEL_TEST_ORGS = [34]; // пока кнопка только в тестовой пекарне; перед открытием всем — убрать это условие
 
 function findCancelledOrder(id) { return (typeof cancelledOrders !== 'undefined' ? cancelledOrders : []).find(o => o.id === id) || null; }
 function findAnyOrder(id) { return (typeof orders !== 'undefined' ? orders : []).find(o => o.id === id) || findCancelledOrder(id); }
@@ -3237,7 +3235,7 @@ function findAnyOrder(id) { return (typeof orders !== 'undefined' ? orders : [])
 function ordersWithCancelled() { return (typeof orders !== 'undefined' ? orders : []).concat(typeof cancelledOrders !== 'undefined' ? cancelledOrders : []); }
 
 function canShowCancelButton(order) {
-    return !!order && CANCEL_TEST_ORGS.includes(Number(currentOrgId)) && hasPermission('can_delete') && isOrderSaved(order);
+    return !!order && hasPermission('can_delete') && isOrderSaved(order);
 }
 
 const _cents = v => Math.round((Number(v) || 0) * 100);
