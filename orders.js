@@ -878,8 +878,11 @@ function orderAutoDue(o) {
     d.setDate(d.getDate() + orderAutoTerm(o));
     return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
+// v994: ЕДИНЫЙ срок оплаты для списка, календаря, Главной и клиентов: срок сводного счёта → срок счёта заказа → срок из заказа → дата + отсрочка.
+let _consDue = {};   // id сводного счёта -> срок оплаты (отменённых здесь нет); грузится в loadAllData
+function orderInvDue(o) { return (o && ((o.consolidated_invoice_id && _consDue[o.consolidated_invoice_id]) || o.inv_due_date)) || null; }
+function orderEffectiveDue(o) { return orderInvDue(o) || (o && o.due_date) || orderAutoDue(o) || null; }
 // Поле «Оплатить до» в шапке карточки заказа. У заказа со счётом показывается срок счёта (меняется в самом счёте).
-let _detailInvDue = {};   // orderId -> срок счёта (кэш)
 function refreshDetailDue(order) {
     const lbl = document.getElementById('detailDueBtnLabel'), inp = document.getElementById('detailDue'), btn = document.getElementById('detailDueBtn');
     if (!lbl || !inp || !order) return;
@@ -887,10 +890,9 @@ function refreshDetailDue(order) {
     inp.value = order.due_date || '';
     if (hasInv) {
         btn.style.opacity = '0.75';
-        const d = _detailInvDue[order.id];
+        const d = orderInvDue(order);
         lbl.textContent = d ? formatDateDMY(d) + ' · ' + t('order_due_inv') : t('order_due_inv');
         lbl.style.color = (d && d < getLocalDateStr(0) && getOrderPaymentStatus(order).status !== 'paid') ? '#a3493d' : '';   // просрочка — красным и у заказа со счётом
-        if (d === undefined) _loadDetailInvDue(order);
         return;
     }
     btn.style.opacity = '';
@@ -899,19 +901,6 @@ function refreshDetailDue(order) {
     const today = getLocalDateStr(0);
     const over = eff && eff < today && getOrderPaymentStatus(order).status !== 'paid';
     lbl.style.color = over ? '#a3493d' : '';
-}
-async function _loadDetailInvDue(order) {
-    try {
-        const { data, error } = await db.from('orders').select('inv_due_date, consolidated_invoice_id').eq('id', order.id).single();
-        if (error) throw error;
-        let due = data.inv_due_date || null;
-        if (data.consolidated_invoice_id) {
-            const r = await db.from('consolidated_invoices').select('due_date, cancelled_at').eq('id', data.consolidated_invoice_id).single();
-            if (!r.error && r.data && !r.data.cancelled_at && r.data.due_date) due = r.data.due_date;
-        }
-        _detailInvDue[order.id] = due || null;
-    } catch (e) { console.error('срок счёта', e); _detailInvDue[order.id] = null; }
-    if (currentOrderId === order.id) refreshDetailDue(order);
 }
 function openDetailDueCalendar() {
     const order = orders.find(o => o.id === currentOrderId);
@@ -945,7 +934,7 @@ function getOrderPaymentStatus(order) {
         status = 'paid';
     }
     const today = getLocalDateStr(0);
-    const dueEff = order.due_date || orderAutoDue(order);   // срок заказа; если не задан — дата заказа + отсрочка клиента
+    const dueEff = orderEffectiveDue(order);   // v994: единый срок (счёт → заказ → дата + отсрочка)
     const overdue = !!dueEff && dueEff < today && status !== 'paid';
     return { paidAmt, creditAmt, grandAmt, status, overdue };
 }

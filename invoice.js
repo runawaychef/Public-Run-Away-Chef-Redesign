@@ -378,6 +378,7 @@ async function freezeDocumentSnapshot(order, docType, existing, opts) {
     await updateChecked(db.from('orders').update({ [field]: snapshot }).eq('id', order.id));
     order[field] = snapshot;
     order[docType === 'invoice' ? 'inv_no' : 'dn_no'] = snapshot.number;   // колонки inv_no/dn_no в базе вычисляются из снимка (30.10.2026)
+    if (docType === 'invoice') order.inv_due_date = snapshot.dueDate || null;   // v994
     // Держим кэш мгновенного запуска (cache.js) в курсе присвоенного номера
     // немедленно — иначе при сворачивании приложения (Android часто выгружает
     // процесс из памяти) следующий запуск может подставить старый снимок без
@@ -1010,6 +1011,7 @@ async function freezeConsolidatedInvoice(orderIds, custId, opts) {
     if (insErr) throw insErr;
     await updateChecked(db.from('orders').update({ consolidated_invoice_id: ins.id }).in('id', ids).eq('org_id', currentOrgId));
     list.forEach(o => { o.consolidated_invoice_id = ins.id; });
+    if (dueDate) _consDue[ins.id] = dueDate;   // v994
     if (typeof saveAppSnapshot === 'function') saveAppSnapshot();
     return { id: ins.id, snapshot };
 }

@@ -17,7 +17,7 @@ let _customerOpenedFromOrderId = null;
 function customerUnpaidOrders(c) {
     return orders.filter(o => {
         const matches = o.customer_id != null ? o.customer_id === c.id : o.customer === c.name;
-        if (!matches) return false;
+        if (!matches || !isOrderSaved(o)) return false;   // v994: черновики не входят (как на Главной)
         const info = getOrderPaymentStatus(o);
         return (info.grandAmt - info.paidAmt) > 0.01;
     });
@@ -33,16 +33,12 @@ function unpaidOrdersLabel(n) {
     return t('cust_unpaid_' + form).replace('{n}', n);
 }
 
+// v994: customerDebt — всё неоплаченное; customerOverdue — часть с прошедшим сроком (входит в первую сумму)
 function customerDebt(c) {
-    let debt = 0;
-    orders.forEach(o => {
-        const matches = o.customer_id != null ? o.customer_id === c.id : o.customer === c.name;
-        if (!matches) return;
-        const info = getOrderPaymentStatus(o);
-        const owed = info.grandAmt - info.paidAmt;
-        if (owed > 0.01) debt += owed;
-    });
-    return debt;
+    return customerUnpaidOrders(c).reduce((sum, o) => { const i = getOrderPaymentStatus(o); return sum + (i.grandAmt - i.paidAmt); }, 0);
+}
+function customerOverdue(c) {
+    return customerUnpaidOrders(c).reduce((sum, o) => { const i = getOrderPaymentStatus(o); return sum + (i.overdue ? i.grandAmt - i.paidAmt : 0); }, 0);
 }
 
 // Сумма всех покупок клиента за всё время — та же логика сопоставления
@@ -58,10 +54,11 @@ function customerTotalSpent(c) {
 }
 
 function displayCustomers() {
-    // Сначала клиенты с задолженностью, потом остальные — внутри каждой
-    // группы по алфавиту.
+    // v994: сначала с просрочкой, потом с неоплаченным, потом остальные —
+    // внутри каждой группы по алфавиту.
+    const rank = new Map(customers.map(c => [c.id, customerOverdue(c) > 0.01 ? 2 : (customerDebt(c) > 0.01 ? 1 : 0)]));
     customers.sort((a, b) => {
-        const debtDiff = (customerDebt(b) > 0.01 ? 1 : 0) - (customerDebt(a) > 0.01 ? 1 : 0);
+        const debtDiff = rank.get(b.id) - rank.get(a.id);
         return debtDiff !== 0 ? debtDiff : (a.name||"").localeCompare(b.name||"");
     });
     let warningCount = 0;
@@ -104,12 +101,14 @@ function renderCustomerTiles(body) {
         const hasName = !!(c.name && c.name.trim());
         const debt = customerDebt(c);
         const hasDebt = debt > 0.01;
+        const over = hasDebt ? customerOverdue(c) : 0;
         const orderCnt = orders.filter(o => o.customer_id != null ? o.customer_id === c.id : o.customer === c.name).length;
         const total = _custInt(customerTotalSpent(c));
         const cur = Math.round(customerCurrentOrdersSum(c));
         // Плитка 2 в ряд (31.10.2026, вариант В1): название + «N зак.» сверху; внизу слева «ВСЕГО» и сумма, справа подписанные строки «Долг» (красная) и «В работе» (зелёная, заказы не выполнены)
         const credit = _custBalance[c.id] || 0;   // v949: аванс клиента
-        const rows = (hasDebt ? `<div class="cva-r debt"><span>${escapeHtml(t('cust_tile_debt'))}</span>${escapeHtml(_custMoneyNum(debt))}</div>` : '')
+        const rows = (hasDebt ? `<div class="cva-r unpaid"><span>${escapeHtml(t('cust_tile_debt'))}</span>${escapeHtml(_custMoneyNum(debt))}</div>` : '')
+            + (over > 0.01 ? `<div class="cva-r debt"><span>${escapeHtml(t('cust_tile_over'))}</span>${escapeHtml(_custMoneyNum(over))}</div>` : '')
             + (credit > 0.004 ? `<div class="cva-r cred"><span>${escapeHtml(t('cust_tile_credit'))}</span>${escapeHtml(_custMoneyNum(credit))}</div>` : '')
             + (cur > 0 ? `<div class="cva-r cur"><span>${escapeHtml(t('cust_tile_work'))}</span>${_custInt(cur)}</div>` : '');
         return `<div class="pt-tile ctl-tile cva${hasName ? '' : ' noname'}" data-name="${escapeHtml((c.name || '').toLowerCase())}" onclick="openCustomerDetail(${c.id})">
@@ -135,7 +134,8 @@ function renderCustomerCards() {
         const debt = customerDebt(c);
         const hasDebt = debt > 0.01;
         const unpaidCnt = hasDebt ? customerUnpaidOrders(c).length : 0;
-        const stripe = !hasName || hasDebt ? `<div class="stripe" style="background:#c0685c;"></div>` : '';
+        const over = hasDebt ? customerOverdue(c) : 0;
+        const stripe = !hasName || over > 0.01 ? `<div class="stripe" style="background:#c0685c;"></div>` : '';
         const nameText = hasName ? escapeHtml(c.name) : t('customer_no_name');
         const contactText = c.contact && c.contact.trim() ? escapeHtml(c.contact) : '—';
         const orderCnt = orders.filter(o => o.customer_id != null ? o.customer_id === c.id : o.customer === c.name).length;
@@ -145,7 +145,7 @@ function renderCustomerCards() {
         { const term = Number(c.payment_term_days) || 0; const s = term > 0 ? t('cust_req_term').replace('{n}', term) : (c.payment_term_days !== null && c.payment_term_days !== undefined && c.payment_term_days !== '' ? t('cust_req_term_zero') : ''); if (s) tagList.push(`<span class="oc-tag">${escapeHtml(s.charAt(0).toUpperCase() + s.slice(1))}</span>`); }   // 0 дней задан явно — «Оплата в день заказа» (13.11.2026)
         { const memoTag = memoCustomerTagHtml(c.id); if (memoTag) tagList.push(memoTag); } // памятная дата скоро — перед тревожными
         { const cr = _custBalance[c.id] || 0; if (cr > 0.004) tagList.push(`<span class="oc-tag oc-tag-credit">${escapeHtml(t('cust_tag_credit').replace('{sum}', formatMoney(cr)))}</span>`); }   // v949: аванс клиента
-        if (unpaidCnt > 0) tagList.push(`<button type="button" class="oc-tag oc-tag-red" onclick="event.stopPropagation(); openCustomerUnpaidModal(${c.id})">${unpaidOrdersLabel(unpaidCnt)}</button>`);
+        if (unpaidCnt > 0) tagList.push(`<button type="button" class="oc-tag ${over > 0.01 ? 'oc-tag-red' : 'oc-tag-unpaid'}" onclick="event.stopPropagation(); openCustomerUnpaidModal(${c.id})">${unpaidOrdersLabel(unpaidCnt)}</button>`);
         html += `
         <div class="order-card" data-name="${escapeHtml((c.name || '').toLowerCase())}" style="cursor:pointer;" onclick="openCustomerDetail(${c.id})">
             ${stripe}
@@ -155,7 +155,7 @@ function renderCustomerCards() {
                 ${stockCardCellsHtml3(
                     [t('cust_cell_orders'), String(orderCnt), '#3c3a34'],
                     [t('cust_cell_total'), formatMoney(customerTotalSpent(c)), '#3c3a34'],
-                    [t('cust_cell_debt'), hasDebt ? formatMoney(debt) : '—', hasDebt ? '#c0685c' : '#a29c8c'])}
+                    _custUnpaidCell(debt, over))}
                 ${tagList.length ? `<div class="oc-tags">${tagList.join('')}</div>` : ''}
             </div>
         </div>`;
@@ -163,9 +163,16 @@ function renderCustomerCards() {
     body.innerHTML = html;
 }
 
+// v994: ячейка «Не оплачено», под суммой красным — просроченная часть
+function _custUnpaidCell(debt, over) {
+    const has = debt > 0.01;
+    return [t('cust_cell_debt'), has ? formatMoney(debt) : '—', has ? '#3c3a34' : '#a29c8c',
+        over > 0.01 ? escapeHtml(t('cust_cell_over').replace('{sum}', formatMoney(over))) : ''];
+}
+
 // Три ячейки в серой плашке (тот же вид, что на складе)
 function stockCardCellsHtml3(a, b, c) {
-    const cell = (x, first) => `<div class="oc-cell${first ? '' : ' oc-cell-sep'}"><div class="oc-cell-lbl">${x[0]}</div><div class="oc-cell-val" style="color:${x[2]};">${x[1]}</div></div>`;
+    const cell = (x, first) => `<div class="oc-cell${first ? '' : ' oc-cell-sep'}"><div class="oc-cell-lbl">${x[0]}</div><div class="oc-cell-val" style="color:${x[2]};">${x[1]}</div>${x[3] ? `<div class="oc-cell-over">${x[3]}</div>` : ''}</div>`;
     return `<div class="oc-cells">${cell(a, true)}${cell(b, false)}${cell(c, false)}</div>`;
 }
 
@@ -225,7 +232,7 @@ function _unpaidGroupHtml(opts) {
                 <div style="font-size:11.5px; color:#6b675d; margin-top:2px;">${opts.sub}</div>
             </div>
             <div style="text-align:right; flex-shrink:0;">
-                <div style="font-size:14px; font-weight:700; color:#c0685c;">${formatMoney(opts.total)}</div>
+                <div style="font-size:14px; font-weight:700; color:${opts.over ? '#c0685c' : '#3c3a34'};">${formatMoney(opts.total)}</div>
                 ${btn}
             </div>
         </div>
@@ -273,6 +280,7 @@ async function openCustomerUnpaidModal(custId) {
             title: (isCons ? t('cust_unpaid_cons') + ' ' : t('cust_unpaid_inv') + ' ') + escapeHtml(g.doc.number || ''),
             sub: t('cust_unpaid_from').replace('{d}', formatDateDMY(g.doc.date)),
             total: g.orders.reduce((sum, o) => sum + leftOf(o), 0),
+            over: g.orders.some(o => getOrderPaymentStatus(o).overdue),
             btnLabel: t('cust_unpaid_open'), btnBg: '#7c9473', btnColor: '#fff',
             btnAction: `openCustomerUnpaidDoc(${custId}, '${g.key}')`,
             cards: _custOrdersTableHtml(g.orders.map(o => {
@@ -286,6 +294,7 @@ async function openCustomerUnpaidModal(custId) {
             boxStyle: 'background:#f6f4ec; border:1px dashed #d9d3c0;', titleColor: '#6b675d',
             title: t('cust_unpaid_none'), sub: t('cust_unpaid_none_sub'),
             total: noInv.reduce((sum, o) => sum + leftOf(o), 0),
+            over: noInv.some(o => getOrderPaymentStatus(o).overdue),
             btnLabel: '',
             cards: _custOrdersTableHtml(noInv.map(o => _unpaidOrderCardHtml(o, '', true, noInv.length === 1)).join(''), true, noInv.length === 1 ? 'single' : 'multi'),
         });
@@ -1378,11 +1387,12 @@ function renderCustomerStats(cust) {
     const debt = customerDebt(cust);
     const hasDebt = debt > 0.01;
     const unpaidCnt = hasDebt ? customerUnpaidOrders(cust).length : 0;
+    const over = hasDebt ? customerOverdue(cust) : 0;
     const cellsEl = document.getElementById('cdStatsCells');
     if (cellsEl) cellsEl.innerHTML = stockCardCellsHtml3(
         [t('cust_cell_orders'), String(custOrders.length), '#3c3a34'],
         [t('cust_cell_total'), formatMoney(customerTotalSpent(cust)), '#3c3a34'],
-        [t('cust_cell_debt'), hasDebt ? formatMoney(debt) : '—', hasDebt ? '#c0685c' : '#a29c8c']);
+        _custUnpaidCell(debt, over));
     const hasOrders = custOrders.length > 0;
     const hasAnyOrders = hasOrders || cancelledOrders.some(o => o.customer_id === cust.id);   // v983: список показываем и ради отменённых
     // Памятные даты в окне N дней (17.10): строка над ячейками (все даты) + золотая метка перед красной
@@ -1393,7 +1403,7 @@ function renderCustomerStats(cust) {
             _memoItemHtml(x.m, { onTap: `openMemoEdit(${x.m.id}, 'detail')`, soon: true, whenHtml: escapeHtml(_memoWhenText(x.n)) })).join('')}</div>` : '';
     // Метка памятной даты здесь не нужна — дублировала строку выше (17.10); в списке клиентов метка остаётся
     const tags = [];
-    if (unpaidCnt > 0) tags.push(`<button type="button" class="oc-tag oc-tag-red" onclick="openCustomerUnpaidModal(${cust.id})">${unpaidOrdersLabel(unpaidCnt)}</button>`);
+    if (unpaidCnt > 0) tags.push(`<button type="button" class="oc-tag ${over > 0.01 ? 'oc-tag-red' : 'oc-tag-unpaid'}" onclick="openCustomerUnpaidModal(${cust.id})">${unpaidOrdersLabel(unpaidCnt)}</button>`);
     const tagsEl = document.getElementById('cdStatsTags');
     if (tagsEl) tagsEl.innerHTML = tags.length ? `<div class="oc-tags">${tags.join('')}</div>` : '';
     // У клиента без заказов ячейки и список заказов пусты — скрываем их; кнопки «Календарь» и «Памятные даты» остаются

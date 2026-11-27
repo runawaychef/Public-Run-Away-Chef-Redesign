@@ -520,6 +520,8 @@
         .order-card .oc-cell-sep, #cdStatsBlock .oc-cell-sep, .itm-card .oc-cell-sep { border-left: 1px solid #e5e0d0; }
         .order-card .oc-cell-lbl, #cdStatsBlock .oc-cell-lbl, .itm-card .oc-cell-lbl { font-size: 11px; color: #a29c8c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .order-card .oc-cell-val, #cdStatsBlock .oc-cell-val, .itm-card .oc-cell-val { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .order-card .oc-cell-over, #cdStatsBlock .oc-cell-over { font-size: 11px; font-weight: 700; line-height: 1.25; margin-top: 2px; color: #a3493d; font-variant-numeric: tabular-nums; }
+        .order-card .oc-tag-unpaid, #cdStatsBlock .oc-tag-unpaid { font-weight: 700; cursor: pointer; }
         .order-card .oc-sum { font-size: 15px; font-weight: 700; color: #322f28; font-variant-numeric: tabular-nums; white-space: nowrap; flex-shrink: 0; }
         .order-card .oc-pay-line { font-size: 11.5px; margin-top: 6px; }
         .order-card .oc-items { margin-top: 8px; padding-top: 8px; border-top: 1px solid #f1efe9; font-size: 11.5px; color: #7a7568; }
@@ -1749,6 +1751,7 @@
 /* кнопка «Неоплачено» и порядок кнопок статистики (шаг 7) */
 #cdStatsTags .oc-tag { display:inline-flex; align-items:center; justify-content:center; min-height:36px; min-width:120px; padding:0 8px; border-radius:13px; font-size:12.5px; font-weight:700; box-shadow: 0 6px 10px -6px rgba(163,73,61,0.35); }
 #cdStatsTags .oc-tags { margin-top:10px; }
+#cdStatsTags .oc-tag-unpaid { box-shadow: 0 6px 10px -6px rgba(70,58,30,0.35); border:1px solid #e5e0d0; }
 #customerDetail #cdStatsBtns [onclick^="openCustomerMemoDates"] { flex: 0 0 120px; }
         /* Ярлыки документов в карточке заказа (30.10.2026) */
         .oc-doc-line { display:flex; flex-wrap:wrap; gap:5px; margin-top:7px; }
@@ -1788,16 +1791,18 @@
         .cva-name { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 600; line-height: 1.2; color: #322f28; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; }
         .cva-cnt { flex-shrink: 0; font-size: 10px; font-weight: 700; line-height: 15px; color: #7a7568; white-space: nowrap; }
         .cva.noname .cva-cnt { margin-right: 0; }
-        .cva-bot { margin-top: auto; display: flex; align-items: flex-end; justify-content: space-between; gap: 6px; }
+        .cva-bot { margin-top: auto; display: flex; flex-direction: column; align-items: stretch; gap: 5px; }   /* v994: строки сумм под «Всего», на всю ширину */
         .cva-l { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
         .cva-cap { font-size: 9.5px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: #8d887b; white-space: nowrap; line-height: 12px; }
         .cva-total { font-size: 19px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; color: #322f28; white-space: nowrap; font-variant-numeric: tabular-nums; min-width: 0; }
         .cva-total.sm { font-size: 16px; }
         .cva-total i { font-style: normal; font-size: 11px; font-weight: 700; color: #7a7568; margin-left: 2px; letter-spacing: 0; }
-        .cva-side { display: flex; flex-direction: column; gap: 1px; flex-shrink: 0; }
+        .cva-side { display: flex; flex-direction: column; gap: 2px; border-top: 1px solid #f1efe9; padding-top: 5px; }
+        .cva-side:empty { display: none; }
         .cva-r { display: flex; justify-content: space-between; gap: 5px; font-size: 10px; font-weight: 700; line-height: 13px; white-space: nowrap; font-variant-numeric: tabular-nums; }
         .cva-r span { color: #8d887b; font-weight: 600; }
-        .cva-r.debt { color: #a3493d; } .cva-r.cur { color: #4f6349; } .cva-r.cred { color: #4f6349; }
+        .cva-r.unpaid { color: #322f28; }
+        .cva-r.debt { color: #a3493d; } .cva-r.debt span { color: #a3493d; } .cva-r.cur { color: #4f6349; } .cva-r.cred { color: #4f6349; }
         .order-card .oc-tag-credit { background: #e6eddf; color: #4f6349; font-weight: 700; }
         /* ===== /THEME-UNIFIED-TILES-CUST2 ===== */
         /* ===== THEME-UNIFIED-TILES-MENU (31.10.2026): плитки «Меню» — 2 в ряд, размер как у плиток «Настроек» (вариант B: название сверху, цена и фото снизу) =====
@@ -5463,9 +5468,9 @@ function hideSplashScreen() {
 
 <script src="dates.js?v=10"></script>
     <script src="money.js?v=17"></script>
-    <script src="i18n-core.js?v=250"></script>
+    <script src="i18n-core.js?v=251"></script>
     <script src="supabaseClient.js?v=7"></script>
-    <script src="cache.js?v=23"></script>
+    <script src="cache.js?v=24"></script>
     <script src="auth.js?v=35"></script>
     <script src="employees.js?v=84"></script>
     <script src="company.js?v=30"></script>
@@ -5476,15 +5481,15 @@ function hideSplashScreen() {
 <script src="batches.js?v=18"></script>
 <script src="semifinished.js?v=79"></script>
 <script src="products.js?v=72"></script>
-<script src="customers.js?v=91"></script>
+<script src="customers.js?v=92"></script>
 <script src="calendar.js?v=17"></script>
-<script src="orders.js?v=204"></script>
-<script src="dashboard.js?v=28"></script>
-<script src="invoice.js?v=59"></script>
+<script src="orders.js?v=205"></script>
+<script src="dashboard.js?v=29"></script>
+<script src="invoice.js?v=60"></script>
 <script src="send-document.js?v=52"></script>
 <script src="confirmation.js?v=7"></script>
 <script src="payments.js?v=55"></script>
-<script src="documents.js?v=18"></script>
+<script src="documents.js?v=19"></script>
 <script src="documents2.js?v=42"></script>
 <script src="bank.js?v=16"></script>
 <script src="stats.js?v=47"></script>
@@ -5586,7 +5591,7 @@ async function loadAllData(silent) {
             fetchAllRows(() => db.from('customers').select('id, name, contact, email, discount, vat_exempt, notes, address, reg_number, vat_code, personal_code, entity_type, payment_term_days, invoice_mode, archived_at').eq('org_id', currentOrgId).order('name').order('id')),
             // invoice_snapshot / delivery_note_snapshot сюда НЕ входят: это копии документов с логотипом
             // (у большой пекарни ~15 МБ), в списке они не нужны — документы читают свой снимок из базы сами.
-            fetchAllRows(() => db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending, is_confirmed, is_demo, created_by, inv_no, dn_no, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via, invoice_sent_message_id, delivery_note_sent_message_id, invoice_delivery_status, delivery_note_delivery_status, consolidated_invoice_id, cons_excluded, cancelled_at, cancelled_by, cancel_retained').eq('org_id', currentOrgId).is('deleted_at', null).order('id')),
+            fetchAllRows(() => db.from('orders').select('id, customer_id, order_date, status, discount, vat_exempt, employee_id, notes, order_number, due_date, inventory_pending, is_confirmed, is_demo, created_by, inv_no, dn_no, invoice_sent_at, invoice_sent_via, delivery_note_sent_at, delivery_note_sent_via, invoice_sent_message_id, delivery_note_sent_message_id, invoice_delivery_status, delivery_note_delivery_status, consolidated_invoice_id, inv_due_date, cons_excluded, cancelled_at, cancelled_by, cancel_retained').eq('org_id', currentOrgId).is('deleted_at', null).order('id')),
             fetchAllRows(() => db.from('order_items').select('id, order_id, product_id, quantity, price, item_cost').eq('org_id', currentOrgId).order('id')),
             db.from('employees').select('id, name').eq('org_id', currentOrgId).order('name').limit(1000),
             fetchAllRows(() => db.from('ingredients').select('id, name, package_price, package_size, unit, shelf_life_days, kind, sale_price, archived_at').eq('org_id', currentOrgId).order('name').order('id')),
@@ -5606,6 +5611,15 @@ async function loadAllData(silent) {
         if (sfRes.error) throw sfRes.error;
         if (sfiRes.error) throw sfiRes.error;
         if (opRes.error) throw opRes.error;
+
+        // v994: сроки сводных счетов — для единого срока оплаты. Ошибка не мешает загрузке (остаются прежние сроки).
+        try {
+            const cdRes = await fetchAllRows(() => db.from('consolidated_invoices').select('id, due_date, cancelled_at').eq('org_id', currentOrgId).order('id'));
+            if (cdRes.error) throw cdRes.error;
+            const map = {};
+            (cdRes.data || []).forEach(c => { if (!c.cancelled_at && c.due_date) map[c.id] = c.due_date; });
+            _consDue = map;
+        } catch (e) { console.error('сроки сводных счетов', e); }
 
         // Суммы платежей по каждому заказу — для отметки статуса оплаты в списке
         _orderPaidTotals = {};
@@ -5708,6 +5722,7 @@ async function loadAllData(silent) {
                 is_demo: !!o.is_demo,
                 created_by: o.created_by || null,
                 consolidated_invoice_id: o.consolidated_invoice_id || null,
+                inv_due_date: o.inv_due_date || null,
                 cons_excluded: !!o.cons_excluded,
                 cancelled_at: o.cancelled_at || null,
                 cancelled_by: o.cancelled_by || null,

@@ -652,6 +652,7 @@ async function registryCancelConsInvoice() {
             .eq('consolidated_invoice_id', d.consId).eq('org_id', currentOrgId));
         const freed = orders.filter(o => o.consolidated_invoice_id === d.consId);
         freed.forEach(o => { o.consolidated_invoice_id = null; });
+        delete _consDue[d.consId];   // v994
         if (typeof _consInvCancelled !== 'undefined') _consInvCancelled[d.consId] = true;
         const desc = `${t('log_cons_cancelled')} ${d.number}`;
         if (freed.length) freed.forEach(o => logActivity('order', desc, o.id));

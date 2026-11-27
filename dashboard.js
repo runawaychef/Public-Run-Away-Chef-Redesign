@@ -104,46 +104,6 @@ async function dashOpenUnpaid() {
     openDocs2Wait('all', false, true);
 }
 
-// Срок оплаты заказа — как в «Документах»: срок сводного счёта, иначе срок счёта заказа, иначе срок, вписанный в заказе.
-// Сроки счетов в памяти приложения не лежат — берём лёгким запросом только по неоплаченным заказам (кэш на 30 с).
-let _dashDue = { map: {}, at: 0, busy: null };
-function _dashDueOf(o) { return (_dashDue.map[o.id] !== undefined ? _dashDue.map[o.id] : null) || o.due_date || (typeof orderAutoDue === 'function' ? orderAutoDue(o) : null) || null; }
-function _dashLoadDue(force) {
-    if (typeof db === 'undefined' || typeof currentOrgId === 'undefined' || !currentOrgId) return Promise.resolve(false);
-    if (_dashDue.busy) return _dashDue.busy;
-    if (!force && Date.now() - _dashDue.at < 30000) return Promise.resolve(false);
-    const unpaid = _dashSavedOrders().filter(o => getOrderPaymentStatus(o).status !== 'paid');
-    const chunk = (a, n) => { const r = []; for (let k = 0; k < a.length; k += n) r.push(a.slice(k, k + n)); return r; };
-    _dashDue.busy = (async () => {
-        try {
-            const map = {};
-            const ids = unpaid.map(o => o.id);
-            const invRows = [];
-            for (const part of chunk(ids, 150)) {
-                const { data, error } = await db.from('orders').select('id, inv_due_date, consolidated_invoice_id').eq('org_id', currentOrgId).in('id', part);
-                if (error) throw error;
-                (data || []).forEach(r => invRows.push(r));
-            }
-            const consIds = [...new Set(invRows.map(r => r.consolidated_invoice_id).filter(Boolean))];
-            const cons = {};
-            for (const part of chunk(consIds, 150)) {
-                const { data, error } = await db.from('consolidated_invoices').select('id, due_date, cancelled_at').eq('org_id', currentOrgId).in('id', part);
-                if (error) throw error;
-                (data || []).forEach(c => { if (!c.cancelled_at) cons[c.id] = c.due_date || null; });
-            }
-            invRows.forEach(r => { map[r.id] = (r.consolidated_invoice_id && cons[r.consolidated_invoice_id]) || r.inv_due_date || null; });
-            const prev = JSON.stringify(_dashDue.map);
-            _dashDue.map = map; _dashDue.at = Date.now();
-            return prev !== JSON.stringify(map);
-        } catch (e) {
-            console.error('dashboard: сроки счетов', e);
-            _dashDue.at = Date.now();
-            return false;
-        } finally { _dashDue.busy = null; }
-    })();
-    return _dashDue.busy;
-}
-
 // Строки плашки «Склад»: на Full (аналитика) — только позиции с критичным остатком; на Light/Free — список целиком
 function _dashStockFull() {
     try { return hasPlanFeature('cost_analytics'); } catch (e) { return false; }
@@ -210,7 +170,7 @@ function _dashUnpaid(saved) {
         if (st.status === 'paid') return;
         n++;
         remC += Math.max(0, Math.round(st.grandAmt * 100) - Math.round(st.paidAmt * 100));
-        if (_dashDueOf(o) && _dashDueOf(o) < getLocalDateStr(0)) overdue++;
+        if (st.overdue) overdue++;
         if (byInvoice && !orderHasInvoice(o)) noInvoice++;
     });
     return { n, rem: remC / 100, overdue, noInvoice, byInvoice };
@@ -552,12 +512,11 @@ function renderDashboard() {
         _dashSet('dashUnpaid', String(u.n));
         _dashSet('dashUnpaidSub', u.n ? `${escapeHtml(t('dash_to_pay_s'))}<span> · ${_dashMoney(u.rem)}</span>` : '&nbsp;');
         let overSum = 0;
-        saved.forEach(o => { const st = getOrderPaymentStatus(o); const dd = _dashDueOf(o); if (st.status !== 'paid' && dd && dd < getLocalDateStr(0)) overSum += Math.max(0, st.grandAmt - st.paidAmt); });
+        saved.forEach(o => { const st = getOrderPaymentStatus(o); if (st.overdue) overSum += Math.max(0, st.grandAmt - st.paidAmt); });
         _dashSet('dashOverLine', u.overdue ? `${escapeHtml(t('docs_tile_over'))} · ${_dashMoney(overSum)} · ${u.overdue}` : '');
         const debtor = u.n ? _dashTopDebtor(saved) : null;
         _dashSet('dashDebtLbl', debtor ? escapeHtml(t('dash_biggest')) : '&nbsp;');
         _dashSet('dashDebtName', debtor ? escapeHtml(debtor.name) : '&nbsp;');
-        if (u.n && !_dashDue.busy && Date.now() - _dashDue.at >= 30000) _dashLoadDue(false).then(ch => { if (ch) renderDashboard(); });
         _dashSet('dashDebtSum', debtor ? _dashMoney(debtor.rem) : '');
     } catch (e) {
         console.error('dashboard: orders', e);
