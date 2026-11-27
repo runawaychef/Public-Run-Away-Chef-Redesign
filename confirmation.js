@@ -19,6 +19,7 @@ function _confOrderNum(order) { return order.order_number ? String(order.order_n
 async function openOrderConfirmation(orderId) {
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
+    if (draftMoneyBlocked(order)) return; // v996
     showLoading();
     let org;
     try {

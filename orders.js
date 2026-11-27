@@ -1464,7 +1464,19 @@ function updateDetailSaveUi(order) {
         note.setAttribute('data-i18n', key);
         note.textContent = t(key);
     }
+    // v996: оплата и документы — только у сохранённого заказа (уже внесённая в черновик оплата остаётся видна)
+    const hasPaid = Math.abs((typeof _orderPaidTotals !== 'undefined' && _orderPaidTotals[order.id]) || 0) > 0.004;
+    document.getElementById('detailDraftPayHint')?.classList.toggle('hidden', saved);
+    document.getElementById('detailPayBlock')?.classList.toggle('hidden', !saved && !hasPaid);
+    document.getElementById('detailDocBlock')?.classList.toggle('hidden', !saved);
     renderDetailHead(order); // v990
+}
+
+// v996: общая проверка для действий с деньгами и документами. true — это черновик, действие не выполняем.
+function draftMoneyBlocked(order) {
+    if (!order || isOrderSaved(order)) return false;
+    showInfo(t('orders_draft_pay_hint'));
+    return true;
 }
 
 function orderNumLabel(o) { return o.order_number ? ('№' + o.order_number) : (o.is_demo ? t('order_demo_label') : t('orders_draft_label')); }

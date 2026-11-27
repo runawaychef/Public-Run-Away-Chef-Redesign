@@ -497,6 +497,7 @@ function openAddPaymentModal(fillRemaining) {
     document.getElementById('paymentDeleteBtn').classList.add('hidden');
 
     const order = orders.find(o => o.id === currentOrderId);
+    if (draftMoneyBlocked(order)) return; // v996
     _payModalSub(order);
 
     // Заказ из сводного счёта с остатком по счёту — по умолчанию оплата по счёту
@@ -567,6 +568,7 @@ function openCreditOp(kind) {
     const s = _creditOpOrderState();
     const order = s.order;
     if (!order) return;
+    if (kind === 'from_credit' && draftMoneyBlocked(order)) return; // v996: из черновика деньги можно только вернуть
     const custId = order.customer_id || null;
     const name = order.customer || '';
     const bal = custId ? (_custBalance[custId] || 0) : 0;
@@ -705,6 +707,7 @@ async function savePayment() {
     if (!amount || amount <= 0) { showInfo(t('pay_amount_required')); return; }
     if (!paidAt) { showInfo(t('pay_date_required')); return; }
     if (!currentOrderId) return;
+    if (!id && draftMoneyBlocked(orders.find(o => o.id === currentOrderId))) return; // v996
 
     if (!id && _payModal && _payModal.mode === 'cons' && _payModal.cons) {
         await _saveConsPayment(Math.round(amount * 100), paidAt, method, note);

@@ -487,7 +487,8 @@ async function bankSheetLoad() {
     s.loading = false;
     if (!r.ok) { s.invoices = []; bankSheetRender(); await showInfo(bankErrText(r.error)); return; }
     // 21.10: зачёт только на счета (решение владельца); заказы без счёта — только для кнопки «Выставить счёт»
-    s.orderOnly = (r.invoices || []).filter((i) => i.kind === 'order_only');
+    // v996: по черновику счёт не выставляется
+    s.orderOnly = (r.invoices || []).filter((i) => i.kind === 'order_only' && !orders.some((o) => o.id === i.ref_id && !isOrderSaved(o)));
     s.invoices = (r.invoices || []).filter((i) => i.kind !== 'order_only');
     // Заранее отмечаем предложение сервера
     const prop = (s.row.invoices || []);

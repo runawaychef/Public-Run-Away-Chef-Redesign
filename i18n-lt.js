@@ -1362,6 +1362,7 @@ I18N.lt = {
         customers_duplicate_name: 'Klientas „{name}“ jau yra sąraše. Pakeiskite vardą.',
         customers_create_error: 'Nepavyko sukurti kliento. Patikrinkite ryšį.',
         orders_draft_hint: 'Juodraštis. Norėdami sukurti užsakymą, pasirinkite klientą, pridėkite pozicijų ir apačioje paspauskite „Išsaugoti užsakymą“.',
+        orders_draft_pay_hint: 'Mokėjimas ir dokumentai atsiras išsaugojus užsakymą.',
         card_draft_hint: 'Juodraštis. Paspauskite „Išsaugoti“, kad sukurtumėte kortelę.',
         orders_new_order_title: 'Naujas užsakymas',
         orders_save_need_customer: 'Pasirinkite klientą — be jo užsakymo išsaugoti negalima.',

@@ -1364,6 +1364,7 @@ I18N.en = {
         customers_duplicate_name: 'Customer “{name}” already exists. Please change the name.',
         customers_create_error: 'Failed to create the customer. Check your connection.',
         orders_draft_hint: 'Draft. To create the order, select a customer, add items and tap “Save order” at the bottom.',
+        orders_draft_pay_hint: 'Payment and documents appear after you save the order.',
         card_draft_hint: 'Draft. Tap “Save” to create the card.',
         orders_new_order_title: 'New order',
         orders_save_need_customer: 'Select a customer: the order cannot be saved without one.',

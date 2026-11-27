@@ -1152,6 +1152,7 @@ async function openSendDocumentSheet(orderId, docType, opts) {
 async function _openSendDocumentSheetImpl(orderId, docType, seq, opts) {
     const order = orders.find(o => o.id === orderId);
     if (!order) { _sendOpenFail('A', { orderId, type: typeof orderId, ordersLoaded: (orders || []).length }); return; }
+    if (draftMoneyBlocked(order)) return; // v996
     const cust = order.customer_id ? customers.find(c => c.id === order.customer_id) : null;
 
     showLoading();
